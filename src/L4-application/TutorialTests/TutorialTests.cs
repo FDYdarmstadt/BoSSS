@@ -28,7 +28,7 @@ namespace BoSSS.Application.TutorialTests {
 
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
 
-            //AllUpTest.RunWorksheets("quickStartCNS/IsentropicVortex.tex");
+            AllUpTest.RunWorksheet("quickStartCNS/IsentropicVortex.tex");
             //AllUpTest.RunWorksheets("MetaJobManager/MetaJobManager.tex");
             //AllUpTest.RunWorksheets("GridGeneration/GridGeneration.tex");
             //AllUpTest.RunWorksheets("quickStartIBM/channel.tex");
@@ -42,8 +42,8 @@ namespace BoSSS.Application.TutorialTests {
             // ---
             //AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
-            AllUpTest.RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
-            AllUpTest.RunWorksheet("convergenceStudyTutorial/convStudy.tex"); 
+            //AllUpTest.RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
+            //AllUpTest.RunWorksheet("convergenceStudyTutorial/convStudy.tex"); 
 
             AllUpTest.OneTimeTearDown();
         }

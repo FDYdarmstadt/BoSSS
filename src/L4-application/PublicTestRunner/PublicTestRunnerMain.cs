@@ -358,6 +358,7 @@ namespace PublicTestRunner {
 
             Console.WriteLine("******* Starting job deployment/submission *******");
 
+            DateTime start = DateTime.Now;
 
             cnt = 0;
             var allJobs = new List<(Job job, string ResFile, string testname)>();
@@ -375,28 +376,53 @@ namespace PublicTestRunner {
             // phase 2: wait until complete...
             // ===================================
 
+            const double TimeOutSec = 200*60;
+
             var alreadyFinished = InteractiveShell.WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) {
                 var s = j.Status;
-                return (s != JobStatus.Failed || s != JobStatus.FinishedSuccessful);
+                if (s == JobStatus.Failed)
+                    return true;
+                if (s == JobStatus.FinishedSuccessful)
+                    return true;
+                return false;
             }).ToArray();
 
             foreach ( var t in alreadyFinished) {
                 Console.WriteLine("already finished: " + t.Name + ": " + t.Status);
             }
 
-            while (InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120) > 0) {
+            double RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
+
+            while (InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120, TimeOutSeconds: RestTime) > 0) {
 
                 if(job != null) {
                     Console.WriteLine("just finished: " + job.Name + ": " + job.Status);
                 }
+
+                RestTime = TimeOutSec - (DateTime.Now - start).TotalSeconds;
+                if(RestTime <= 1.0) {
+                    Console.Error.WriteLine("timeout.");
+                    break;
+                }
+                RestTime = Math.Max(1, RestTime);
             }
             Thread.Sleep(10000);
             Console.WriteLine("----------------------------------");
             Console.WriteLine("All jobs finished - Summary:");
             Console.WriteLine("----------------------------------");
+            int SuccessfulFinishedCount = 0;
             foreach (var j in allJobs) {
+                if (j.job.Status == JobStatus.FinishedSuccessful)
+                    SuccessfulFinishedCount++;
                 Console.WriteLine(j.testname + ": " + j.job.ToString());
             }
+            if(SuccessfulFinishedCount == allJobs.Count) {
+                Console.WriteLine("All tests/jobs finished successfully.");
+            } else {
+                Console.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {allJobs.Count - SuccessfulFinishedCount} have other states.");
+
+            }
+
 
             // ===================================
             // phase 3: collect files
