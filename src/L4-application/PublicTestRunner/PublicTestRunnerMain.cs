@@ -1,5 +1,6 @@
 ﻿using BoSSS.Application.BoSSSpad;
 using ilPSP;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
@@ -390,8 +391,22 @@ namespace PublicTestRunner {
                 }
             }
 
+
+
             using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
-                foreach (var jj in allJobs) {
+
+                var allNotSuccessful = allJobs.Where(jj => jj.job.Status != JobStatus.FinishedSuccessful).ToArray();
+                var allSuccessful = allJobs.Where(jj => jj.job.Status == JobStatus.FinishedSuccessful).ToArray();
+
+                if (allNotSuccessful.Length > 0) {
+                    ot.WriteLine("All jobs not finished successful:");
+                    foreach (var jj in allJobs) {
+                        Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.testname}, at {jj.job.DeploymentDirectory})");
+                    }
+                }
+
+                var _allJobs = ArrayTools.Cat(allNotSuccessful,allSuccessful);
+                foreach (var jj in _allJobs) {
                     var j = jj.job;
                     int sz = j.NumberOfMPIProcs;
                     ot.WriteLine("##fdhgjegf763748trfhe8hurdsinf598ugf498jvhsn*hbbvc#####!################");
@@ -429,17 +444,32 @@ namespace PublicTestRunner {
                     ot.WriteLine("########################################################################");
 
                     ot.WriteLine("[[[Stdout: ");
-                    ot.WriteLine(j.Stdout);
+                    try {
+                        ot.WriteLine(j.Stdout);
+                    } catch (Exception e) {
+                        ot.WriteLine($"{e.GetType().Name} during reading of stdout stream: {e.Message}");
+                        ot.WriteLine(e.StackTrace);
+                    }
                     ot.WriteLine("]]]");
 
-                    string stderr = j.Stderr;
-                    if (stderr.IsEmptyOrWhite()) {
-                        ot.WriteLine("[[[Empty Error Stream: this is good!]]]");
-                    } else {
-                        ot.WriteLine("[[[Stderr:");
-                        ot.WriteLine(stderr);
-                        ot.WriteLine("]]]");
+                    try {
+                        string stderr = j.Stderr;
+
+                        if (stderr.IsEmptyOrWhite()) {
+                            ot.WriteLine("[[[Empty Error Stream: this is good!]]]");
+                        } else {
+                            ot.WriteLine("[[[Stderr:");
+                            ot.WriteLine(stderr);
+                            ot.WriteLine("]]]");
+                        }
+                    } catch (Exception e) {
+                        
+                        ot.WriteLine($"{e.GetType().Name} during reading of stderr stream: {e.Message}");
+                        ot.WriteLine(e.StackTrace);
                     }
+
+
+                    
 
                     ot.WriteLine();
                     ot.WriteLine();

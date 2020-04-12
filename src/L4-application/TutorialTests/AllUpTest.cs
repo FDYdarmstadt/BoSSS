@@ -40,7 +40,7 @@ namespace BoSSS.Application.TutorialTests {
             // try to terminate batch processor, if still running:
             int timeoucount = 0;
             while (MiniBatchProcessor.Server.IsRunning) {
-                MiniBatchProcessor.Server.SendTerminationSignal();
+                MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds:-1);
                 Thread.Sleep(10000);
 
                 timeoucount++;
