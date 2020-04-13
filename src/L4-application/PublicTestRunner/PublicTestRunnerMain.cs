@@ -59,7 +59,7 @@ namespace PublicTestRunner {
             typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
             //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
             typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
-            typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+            //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
             typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
             typeof(BoSSS.Application.ExternalBinding.Initializer),
             //typeof(BoSSS.Application.TutorialTests.AllUpTest),
@@ -67,7 +67,7 @@ namespace PublicTestRunner {
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(CNS.Program),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
             typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),

@@ -81,10 +81,6 @@
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
       <Name>BoSSS.Solution</Name>
     </ProjectReference>
-    <ProjectReference Include="..\AdaptiveMeshRefinementTest\AdaptiveMeshRefinementTest.csproj">
-      <Project>{cf280064-130d-4c5a-9ab1-0615243b01c6}</Project>
-      <Name>AdaptiveMeshRefinementTest</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ALTSTests\ALTSTests.csproj">
       <Project>{76ef162b-6f5f-48b7-8c24-40fb80d9c8c1}</Project>
       <Name>ALTSTests</Name>
