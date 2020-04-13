@@ -78,19 +78,37 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
 
             GenericTest(Tst, C);
-            if(AgglomerationTreshold > 0.01 && deg > 1) {
-                ScalingTest(Tst, new[] { 4, 8, 16 }, vmode, deg);
-            }
+           
         }
 
 #if !DEBUG
+
+        /// <summary>
+        /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void ScalingViscosityJumpTest_p2(
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+            ScalingViscosityJumpTest(2, vmode);
+        }
+
+        /// <summary>
+        /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void ScalingViscosityJumpTest_p3(
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+            ScalingViscosityJumpTest(3, vmode);
+        }
+
         /// <summary>
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
-        [Test]
         public static void ScalingViscosityJumpTest(
 
-            [Values(2, 3, 4)] int deg,
+            [Values(2, 3)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
             ) {
 
