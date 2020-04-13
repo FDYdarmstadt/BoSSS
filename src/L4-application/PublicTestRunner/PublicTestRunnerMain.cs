@@ -56,7 +56,6 @@ namespace PublicTestRunner {
             typeof(BoSSS.Application.ipViscosity.TestSolution),
             typeof(BoSSS.Application.MultigridTest.MultigridMain),
             typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
             //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
             typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
             //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
@@ -68,6 +67,7 @@ namespace PublicTestRunner {
 
         static Type[] ReleaseOnlyTests = new Type[] {
             //typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
             typeof(CNS.Program),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
             typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
