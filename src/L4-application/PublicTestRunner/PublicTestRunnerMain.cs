@@ -534,6 +534,14 @@ namespace PublicTestRunner {
                     ot.WriteLine();
                     ot.WriteLine();
                     ot.WriteLine();
+
+                    if(jj.job.Status == JobStatus.FinishedSuccessful) {
+                        try {
+                            Directory.Delete(jj.job.DeploymentDirectory, true);
+                        } catch(Exception e) {
+                            Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                        }
+                    }
                 }
             }
 
