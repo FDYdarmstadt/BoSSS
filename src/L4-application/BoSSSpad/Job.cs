@@ -139,11 +139,9 @@ namespace BoSSS.Application.BoSSSpad {
 
             string fileName = Path.GetFileName(a.Location);
             var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
-            if(allMatch.Length >= 1) {
+            if(allMatch.Length > 1) {
                 throw new ApplicationException("internal error in assembly collection.");
             }
-
-
 
 
             foreach (AssemblyName b in a.GetReferencedAssemblies()) {
