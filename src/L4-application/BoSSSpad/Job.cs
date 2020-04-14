@@ -116,9 +116,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IEnumerable<Assembly> AllDependentAssemblies {
             get {
-                List<Assembly> assiList = new List<Assembly>();
+                HashSet<Assembly> assiList = new HashSet<Assembly>();
                 GetAllAssemblies(this.EntryAssembly, assiList, Path.GetDirectoryName(EntryAssembly.Location));
-                return assiList.AsReadOnly();
+                return assiList.ToArray();
             }
         }
 
@@ -132,11 +132,19 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="SearchPath">
         /// Path to search for assemblies
         /// </param>
-        private static void GetAllAssemblies(Assembly a, List<Assembly> assiList, string SearchPath) {
+        private static void GetAllAssemblies(Assembly a, HashSet<Assembly> assiList, string SearchPath) {
             if (assiList.Contains(a))
                 return;
-
             assiList.Add(a);
+
+            string fileName = Path.GetFileName(a.Location);
+            var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
+            if(allMatch.Length >= 1) {
+                throw new ApplicationException("internal error in assembly collection.");
+            }
+
+
+
 
             foreach (AssemblyName b in a.GetReferencedAssemblies()) {
                 Assembly na;
