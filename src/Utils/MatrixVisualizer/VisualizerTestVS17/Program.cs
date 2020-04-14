@@ -11,8 +11,7 @@ namespace VisualizerTest {
     class Program {
 
         static void Main(string[] args) {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(args, Application.GetBoSSSInstallDir(), out dummy);
+            Application.InitMPI();
 
             MultidimensionalArray myMultidimensionalArray = MultidimensionalArray.Create(3, 6);
             myMultidimensionalArray[1, 2] = 3.0;

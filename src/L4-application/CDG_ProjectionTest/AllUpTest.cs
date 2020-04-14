@@ -15,7 +15,6 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         /// </summary>
         [OneTimeTearDown]
         public void OneTimeTearDown() {
-            csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
@@ -23,11 +22,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         /// </summary>
         [OneTimeSetUp]
         public void OneTimeSetUp() {
-            bool MpiInit;
-            Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
         }
 
 

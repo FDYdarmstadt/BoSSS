@@ -36,13 +36,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
-
-           
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>

@@ -35,20 +35,9 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
 
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
-                || System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
-                || System.Environment.MachineName.ToLowerInvariant().Contains("terminal03")
-                ) {
-                // This is Florians Laptop;
-                // he is to poor to afford MATLAB, so he uses OCTAVE
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            }
+            
 
         }
 
@@ -100,8 +89,13 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void MultiplyTest(
-            [Values(XDGusage.none, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+#if DEBUG
+            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
+            [Values(1)] int DGOrder,
+#else
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
+#endif
             [Values(false)] bool compressL1,
             [Values(false, true)] bool compressL2) { 
 
@@ -312,8 +306,13 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void SubMatrixTest(
+#if DEBUG
+            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
+            [Values(1)] int DGOrder,
+#else
             [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(1, 3)] int DGOrder,
+#endif
             [Values(false, true)] bool compressL1,
             [Values(false, true)] bool compressL2) { 
 
@@ -516,8 +515,13 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void SpMVTest(
+#if DEBUG
+            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
+            [Values(1)] int DGOrder,
+#else
             [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(1, 3)] int DGOrder,
+#endif
             [Values(false, true)] bool compressL1,
             [Values(false, true)] bool compressL2) {
 

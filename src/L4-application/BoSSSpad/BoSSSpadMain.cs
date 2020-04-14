@@ -126,10 +126,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // launch the app
             // ==============
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                Utils.GetBoSSSInstallDir(),
-                out bool mpiInitialized);
+            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
 
             switch (mode) {
                 case Modes.Worksheet:
@@ -226,8 +223,8 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotImplementedException();
             }
 
-            if (mpiInitialized)
-                csMPI.Raw.mpiFinalize();
+            if (IinitializedMPI)
+                BoSSS.Solution.Application.FinalizeMPI();
 
             return errCount;
         }

@@ -26,10 +26,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         [OneTimeSetUp]
         public static void Init() {
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application<FSI_Control>.GetBoSSSInstallDir(),
-                out _);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [OneTimeTearDown]

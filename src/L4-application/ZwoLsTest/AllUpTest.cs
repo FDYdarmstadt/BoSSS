@@ -25,11 +25,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
         [OneTimeSetUp]
         public static void SetUp() {
-            bool MpiInit;
-            Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [OneTimeTearDown]

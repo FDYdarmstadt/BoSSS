@@ -34,12 +34,7 @@ namespace MPITest {
 
         [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [OneTimeTearDown]

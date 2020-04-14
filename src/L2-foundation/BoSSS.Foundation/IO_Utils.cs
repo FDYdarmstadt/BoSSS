@@ -34,6 +34,190 @@ namespace BoSSS.Foundation.IO {
     public static class Utils {
 
         /// <summary>
+        /// BoSSS install directory, e.g. 'C:\Program Files\FDY\BoSSS'.
+        /// Within this directory, one would find e.g. the subdirectory 'bin\native\win\amd64'
+        /// where native libraries are included.
+        /// </summary>
+        public const string BOSSS_INSTALL = "BOSSS_INSTALL";
+
+        /// <summary>
+        /// Name of environment variable which 
+        /// overrides for location of native libraries if defined.
+        /// </summary>
+        public const string BOSSS_NATIVE_OVERRIDE = "BOSSS_NATIVE_OVERRIDE";
+
+        /// <summary>
+        /// Returns the installation path of the BoSSS native libraries.
+        /// The search priority should be:
+        /// 1. if defined, the <see cref="BOSSS_NATIVE_OVERRIDE"/> environment variable
+        /// 2. if existent, a local 'amd64' subdirectory
+        /// 3. if <see cref="BOSSS_INSTALL"/>, the respective subdirectory, e.g. 'C:\Program Files\FDY\BoSSS\bin\native\win\amd64'
+        /// </summary>
+        public static string GetNativeLibraryDir(ILog logger = null) {
+            {
+                string overr = System.Environment.GetEnvironmentVariable(BOSSS_NATIVE_OVERRIDE);
+                if (overr != null) {
+                    Console.WriteLine($"Note: {BOSSS_NATIVE_OVERRIDE} variable is defined: libraries will be searched at: '{overr}'.");
+                    return overr;
+                }
+            }
+
+            string ilPSP_Directory = GetBoSSSInstallDir(logger);
+
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                // ++++++++++
+                // MS windows 
+                // ++++++++++
+
+                // search for "amd64"  subdirectories locally (in application directory)
+                // =====================================================================
+                DirectoryInfo nativeDir = null; // directory where we search for native lib's
+                {
+                    DirectoryInfo di = null;
+
+                    System.Reflection.Assembly a = System.Reflection.Assembly.GetEntryAssembly();
+                    if (a == null) {
+                        // Entry assembly might be null if called from
+                        // unmanaged code; fall back to executing assembly in
+                        // this case
+                        a = System.Reflection.Assembly.GetExecutingAssembly();
+                    }
+
+                    di = new DirectoryInfo(Path.GetDirectoryName(a.Location));
+
+                    if (IntPtr.Size == 8) {
+                        // seem to run on 64-Bit windows
+                        //Console.WriteLine("running 64 bit");
+                        nativeDir = di.GetDirectories("amd64").FirstOrDefault();
+                    } else if (IntPtr.Size == 4) {
+                        // seem to run on 32-Bit windows
+                        nativeDir = di.GetDirectories("x86").FirstOrDefault();
+
+                    } else {
+                        throw new ApplicationException("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
+                    }
+
+                    if (nativeDir != null) {
+                        return nativeDir.FullName;
+                    }
+                }
+
+
+                // if not found, search for a BoSSS-Installation globally
+                // ======================================================
+
+                if (nativeDir == null || !nativeDir.Exists) {
+
+                    DirectoryInfo _di = null;
+
+                    if (ilPSP_Directory != null && ilPSP_Directory.Length > 0) {
+                        // search in the path of the optional ilPSP directory
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        DirectoryInfo d = new DirectoryInfo(ilPSP_Directory);
+                        _di = new DirectoryInfo(Path.Combine(d.FullName, "bin", "native", "win"));
+                        if (!_di.Exists) {
+                            Console.Error.WriteLine("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
+                        }
+                    } else {
+                        Console.Error.WriteLine("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system settings.");
+                        _di = new DirectoryInfo(".");
+                    }
+
+                    if (IntPtr.Size == 8) {
+                        // seem to run on 64-Bit windows
+                        //Console.WriteLine("running 64 bit");
+                        nativeDir = _di.GetDirectories("amd64").FirstOrDefault();
+                    } else if (IntPtr.Size == 4) {
+                        // seem to run on 32-Bit windows
+                        Console.Error.WriteLine("Warning: seem to run on 32 bit - unless you build native libraries yourself, this is not supported; expecting libraries in directory 'x86'.");
+                        nativeDir = _di.GetDirectories("x86").FirstOrDefault();
+                    } else {
+                        throw new ApplicationException("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
+                    }
+
+                    if (nativeDir != null)
+                        return nativeDir.FullName;
+                }
+
+            } else if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                // ++++
+                // Unix
+                // ++++
+
+                // search for "amd64"  subdirectories locally (in application directory)
+                // =====================================================================
+                DirectoryInfo nativeDir = null; // directory where we search for native lib's
+                {
+                    DirectoryInfo di = null;
+
+                    System.Reflection.Assembly a = System.Reflection.Assembly.GetEntryAssembly();
+                    if (a == null) {
+                        // Entry assembly might be null if called from
+                        // unmanaged code; fall back to executing assembly in
+                        // this case
+                        a = System.Reflection.Assembly.GetExecutingAssembly();
+                    }
+
+                    di = new DirectoryInfo(Path.GetDirectoryName(a.Location));
+
+                    if (IntPtr.Size == 8) {
+                        nativeDir = di.GetDirectories("amd64-openmpi").FirstOrDefault();
+                    } else if (IntPtr.Size == 4) {
+                        // seem to run on 32-Bit windows
+                        Console.Error.WriteLine("Warning: seem to run on 32 bit - unless you build native libraries yourself, this is not supported.");
+
+                    } else {
+                        throw new ApplicationException("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
+                    }
+                }
+
+                if (nativeDir != null)
+                    return nativeDir.FullName;
+
+                // if not found, search for a BoSSS-Installation globally
+                // ======================================================
+
+                if (nativeDir == null || !nativeDir.Exists) {
+
+                    DirectoryInfo _di = null;
+
+                    if (ilPSP_Directory != null && ilPSP_Directory.Length > 0) {
+                        // search in the path of the optional ilPSP directory
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        DirectoryInfo d = new DirectoryInfo(ilPSP_Directory);
+                        _di = new DirectoryInfo(Path.Combine(d.FullName, "bin", "native", "linux"));
+                        if (!_di.Exists) {
+                            Console.Error.WriteLine("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
+                        }
+                    } else {
+                        Console.Error.WriteLine("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system setings.");
+                        _di = new DirectoryInfo(".");
+                    }
+
+                    if (IntPtr.Size == 8) {
+                        // seem to run on 64-Bit windows
+                        //Console.WriteLine("running 64 bit");
+                        nativeDir = _di.GetDirectories("amd64-openmpi").FirstOrDefault();
+                    } else if (IntPtr.Size == 4) {
+                        // seem to run on 32-Bit linux
+                        nativeDir = _di.GetDirectories("x86").FirstOrDefault();
+                    } else {
+                        throw new ApplicationException("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
+                    }
+
+                }
+
+                if (nativeDir != null)
+                    return nativeDir.FullName;
+            }
+
+            Console.Error.WriteLine("Unable to find directory for native libraries; BoSSS will most likely crash.");
+            return "";
+        }
+
+        /// <summary>
         /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
         /// and verifies the existence of this directory.
         /// </summary>
@@ -46,35 +230,35 @@ namespace BoSSS.Foundation.IO {
             }
 
             string si1 = System.Environment.GetEnvironmentVariable(
-                "BOSSS_INSTALL", EnvironmentVariableTarget.User);
+                BOSSS_INSTALL, EnvironmentVariableTarget.User);
             if (si1 != null && si1.Length > 0)
-                Print("found USER variable 'BOSSS_INSTALL': '" + si1 + "'.");
+                Print($"found USER variable '{BOSSS_INSTALL}': '" + si1 + "'.");
             else
-                Print("unable to find a USER variable 'BOSSS_INSTALL'.");
+                Print($"unable to find a USER variable '{BOSSS_INSTALL}'.");
 
-            string si2 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.Machine);
+            string si2 = System.Environment.GetEnvironmentVariable(BOSSS_INSTALL, EnvironmentVariableTarget.Machine);
             if (si2 != null && si2.Length > 0)
-                Print("found MACHINE variable 'BOSSS_INSTALL': '" + si2 + "'.");
+                Print($"found MACHINE variable '{BOSSS_INSTALL}': '" + si2 + "'.");
             else
-                Print("unable to find a MACHINE variable 'BOSSS_INSTALL'.");
+                Print($"unable to find a MACHINE variable '{BOSSS_INSTALL}'.");
 
-            string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
+            string si3 = System.Environment.GetEnvironmentVariable (BOSSS_INSTALL);
             if (si3 != null && si3.Length > 0)
-                Print ("found variable 'BOSSS_INSTALL': '" + si3 + "'.");
+                Print ($"found variable '{BOSSS_INSTALL}': '" + si3 + "'.");
             else
-                Print("unable to find a variable 'BOSSS_INSTALL'.");
+                Print($"unable to find a variable '{BOSSS_INSTALL}'.");
 
 
             string si = null;
             if (si1 != null && si1.Length > 0) {
                 si = si1;
-                Print("Picking USER setting.");
+                Print($"Picking USER setting.");
             } else if (si2 != null && si2.Length > 0) {
                 si = si2;
-                Print("Picking MACHINE setting.");
+                Print($"Picking MACHINE setting.");
             } else if (si3 != null && si3.Length > 0) {
                 si = si3;
-                Print("Picking general setting.");
+                Print($"Picking general setting.");
             }
 
             if (si != null && si.Length > 0) {
@@ -87,10 +271,10 @@ namespace BoSSS.Foundation.IO {
                 if (success) {
                     //logger.Error(Err);
                     //throw new ApplicationException(Err);
-                    Console.WriteLine("   !!!  WARNING  !!! Environment variable 'BOSSS_INSTALL' is defined as '" + si + "', but directory seems to be non-existent. Could lead to Problems!");
+                    Console.WriteLine($"   !!!  WARNING  !!! Environment variable '{BOSSS_INSTALL}' is defined as '" + si + "', but directory seems to be non-existent. Could lead to Problems!");
                 }
             } else {
-                logger.Info("Unable to find environment variable 'BOSSS_INSTALL'; Hopefully the directory of the executable contains 'amd64' and 'x86', otherwise we're screwed.");
+                logger.Info($"Unable to find environment variable '{BOSSS_INSTALL}'; Hopefully the directory of the executable contains 'amd64' and 'x86', otherwise we're screwed.");
             }
             return si;
         }

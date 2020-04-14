@@ -273,6 +273,16 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+            {
+                // test for really strange errors
+                for(int i = 0; i < files.Count; i++) {
+                    for(int j = i+1; j < files.Count; j++) {
+                        if (Path.GetFileName(files[i]).Equals(Path.GetFileName(files[j])))
+                            throw new ApplicationException("strange internal error");
+                    }
+                }
+            }
+
             // create deployment directory.
             string DeployDir = myJob.DeploymentDirectory;
             if (!Directory.Exists(DeployDir))

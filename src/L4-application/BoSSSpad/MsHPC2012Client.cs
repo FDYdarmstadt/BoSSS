@@ -164,8 +164,10 @@ namespace BoSSS.Application.BoSSSpad {
 
             int id = int.Parse(idToken);
 
+            
 
             List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
+
             ISchedulerCollection allJobs = Scheduler.GetJobList(null, null);
             foreach (SchedulerJob sJob in allJobs) {
                 if(sJob.Id != id)
@@ -222,7 +224,7 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotImplementedException("Unknown job state: " + JD.State);
             }
 
-
+            
         }
 
 
@@ -248,11 +250,16 @@ namespace BoSSS.Application.BoSSSpad {
         public override string Submit(Job myJob) {
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
             
+            //Console.WriteLine("MsHPC2012Client: submitting job...");
+            //Console.Out.Flush();
+
+
             ISchedulerJob job = null;
             ISchedulerTask task = null;
 
             // Create a job and add a task to the job.
             job = Scheduler.CreateJob();
+            
             job.Name = myJob.Name;
             job.Project = PrjName;
             job.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
@@ -292,7 +299,6 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             job.AddTask(task);
-
 
             // Start the job.
             Scheduler.SubmitJob(job, Username != null ? Username : null, Password);

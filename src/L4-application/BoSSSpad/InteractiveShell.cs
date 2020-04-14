@@ -292,6 +292,27 @@ namespace BoSSS.Application.BoSSSpad {
         }
         
         /// <summary>
+        /// Creates a database in a temporary directory
+        /// </summary>
+        static public IDatabaseInfo CreateTempDatabase() {
+
+            DirectoryInfo TempDir;
+            {
+                var rnd = new Random();
+                bool Exists = false;
+                do {
+                    var tempPath = Path.GetTempPath();
+                    var tempDir = rnd.Next().ToString();
+                    TempDir = new DirectoryInfo(Path.Combine(tempPath, tempDir));
+                    Exists = TempDir.Exists;
+                } while (Exists == true);
+            }
+            
+            string path = TempDir.FullName;
+            return OpenOrCreateDatabase(path);
+        }
+
+        /// <summary>
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {

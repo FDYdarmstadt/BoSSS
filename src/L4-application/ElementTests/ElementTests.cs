@@ -32,11 +32,7 @@ namespace BoSSS.Application.ElementTests {
         /// </summary>
         [OneTimeSetUp]
         public void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [Test]

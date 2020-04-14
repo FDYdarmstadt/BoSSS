@@ -190,10 +190,10 @@ namespace BoSSS.Solution {
         /// </summary>
         private static ILog m_Logger = LogManager.GetLogger(typeof(Application<T>));
 
-        /// <summary>
-        /// Indicates whether a running application must finalize MPI
-        /// </summary>
-        private static bool m_MustFinalizeMPI = false;
+        ///// <summary>
+        ///// Indicates whether a running application must finalize MPI
+        ///// </summary>
+        //private static bool m_MustFinalizeMPI = false;
 
         /// <summary>
         /// Set this variable to false if database IO is desired, but no
@@ -248,12 +248,10 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
-        /// and verifies the existence of this directory.
+        /// respective location of native libraries
         /// </summary>
-        /// <returns></returns>
-        public static string GetBoSSSInstallDir() {
-            return BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir(m_Logger);
+        public static string GetNativeLibraryDir() {
+            return BoSSS.Foundation.IO.Utils.GetNativeLibraryDir(m_Logger);
         }
 
 
@@ -280,19 +278,31 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Application startup. Performs bootstrapping of unmanaged resources
-        /// and initializes MPI.
+        /// Application startup. Performs bootstrapping of unmanaged resources and initializes MPI.
+        /// This method may be called multiple times in an application lifetime -- the MPI init is only performed once.
         /// </summary>
         /// <param name="args">
         /// command line arguments
         /// </param>
-        public static void InitMPI(string[] args) {
-            // MPI Init
+        /// <returns>
+        /// Whether this call actually initialized MPI
+        /// - true, if this routine actually called <see cref="IMPIdriver.Init"/>; then, the call should be 
+        ///   an other call to <see cref="FinalizeMPI"/>.
+        /// - false, if not.
+        /// </returns>
+        public static bool InitMPI(string[] args = null) {
+            if (args == null)
+                args = new string[0];
+
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
             ilPSP.Environment.Bootstrap(
                 args,
-                GetBoSSSInstallDir(),
-                out m_MustFinalizeMPI);
-            if(m_MustFinalizeMPI) {
+                GetNativeLibraryDir(),
+                out bool _MustFinalizeMPI);
+
+            if(_MustFinalizeMPI) {
                 int rank, size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
@@ -315,9 +325,11 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
+            ReadBatchModeConnectorConfig();
 
-            
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
+            return _MustFinalizeMPI;
         }
 
         /// <summary>
@@ -394,7 +406,7 @@ namespace BoSSS.Solution {
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-                InitMPI(args);
+                bool _MustFinalizeMPI = InitMPI(args);
                 ReadBatchModeConnectorConfig();
 
 
@@ -417,7 +429,7 @@ namespace BoSSS.Solution {
 
                 if(!argsParseSuccess) {
                     MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                    m_MustFinalizeMPI = false;
+                    _MustFinalizeMPI = false;
                     System.Environment.Exit(-1);
                 }
 
@@ -443,7 +455,8 @@ namespace BoSSS.Solution {
 
                 AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
-                FinalizeMPI();
+                if(_MustFinalizeMPI)
+                    FinalizeMPI();
 
 #if DEBUG
             }
@@ -478,7 +491,11 @@ namespace BoSSS.Solution {
                     if(ArgValue == null)
                         break;
 
-                    if(ArgCounter < _args.Count) {
+                    System.Environment.SetEnvironmentVariable(ArgOverrideName, null); // delete the envvar
+                    // many test internally call the _Main function with arguments;
+                    // this would be overridden (and thus not work properly) if we don't delete the variable here and now.
+
+                    if (ArgCounter < _args.Count) {
                         _args[ArgCounter] = ArgValue;
                     } else {
                         _args.Add(ArgValue);
@@ -694,10 +711,9 @@ namespace BoSSS.Solution {
         /// <summary>
         /// the very end of any BoSSS application.
         /// </summary>
-        protected static void FinalizeMPI() {
-            if (m_MustFinalizeMPI) {
-                MPI.Wrappers.csMPI.Raw.mpiFinalize();
-            }
+        public static void FinalizeMPI() {
+            MPI.Wrappers.csMPI.Raw.mpiFinalize();
+            
         }
 
         /// <summary>
@@ -3322,6 +3338,8 @@ namespace BoSSS.Solution {
         protected double[] Fake() {
             return GenericBlas.Linspace(-1, 1, 2);
         }
+
+        
     }
 
 }

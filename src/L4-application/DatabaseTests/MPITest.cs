@@ -13,11 +13,7 @@ namespace BoSSS.Application.DatabaseTests
         [OneTimeSetUp]
         public static void InitOnce()
         {
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out bool dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [OneTimeTearDown]
@@ -25,7 +21,7 @@ namespace BoSSS.Application.DatabaseTests
         {
             //  removed MPI shutdown, this causes the test to crash without result (for some reason, this method is called multiple times)
             //  tests seem to work without MPI shutdown anyway
-            //csMPI.Raw.mpiFinalize();
+            csMPI.Raw.mpiFinalize();
         }
     }
 }

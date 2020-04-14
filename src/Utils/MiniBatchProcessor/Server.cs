@@ -130,7 +130,33 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Sends a signal which should terminate a running server instance.
         /// </summary>
-        public static void SendTerminationSignal() {
+        public static void SendTerminationSignal(bool WaitForOtherJobstoFinish = true, int TimeOutInSeconds = 1800) {
+            if (WaitForOtherJobstoFinish) {
+                DateTime st = DateTime.Now;
+
+                var Q = ClientAndServer.Queue.ToArray();
+                var W = ClientAndServer.Working.ToArray();
+
+                while (Q.Length > 0 || W.Length > 0) {
+                    Console.WriteLine($"Waiting for other jobs to finish; in queue: {Q.Length}, working: {W.Length}.");
+                    foreach (var j in Q) {
+                        Console.WriteLine(j);
+                    }
+                    foreach (var j in W) {
+                        Console.WriteLine(j);
+                    }
+                    
+                    Thread.Sleep(60000);
+                    if(TimeOutInSeconds > 0) {
+                        var dur = DateTime.Now - st;
+                        if(dur.TotalSeconds > TimeOutInSeconds) {
+                            Console.WriteLine($" Waiting for {dur.TotalSeconds}; timeout of {TimeOutInSeconds} reached.");
+                        }
+                    }
+                }
+            
+            }
+
             using (var s = File.Create(TerminationSignalPath)) {
                 s.Flush();
                 s.Close();

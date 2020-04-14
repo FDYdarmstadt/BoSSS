@@ -45,11 +45,7 @@ namespace BoSSS.Application.MultigridTest {
 
         [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
 
             //GridCommons grd = Grid2D.Cartesian2DGrid(RandomSpacing(), RandomSpacing());
             //grid = new GridData(Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-7, 7, 8), GenericBlas.Linspace(-1, 1, 2)));
@@ -745,11 +741,82 @@ namespace BoSSS.Application.MultigridTest {
         /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
         /// </summary>
         [Test]
+        public static void XDG_ProlongationTest_agg0_trw0_eye(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.0, 0, MultigridOperator.Mode.Eye);
+        }
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>        [Test]
+        public static void XDG_ProlongationTest_agg0_trw0_idmass(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.0, 0, MultigridOperator.Mode.IdMass);
+        }
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>
+        [Test]
+        public static void XDG_ProlongationTest_agg0_trw1_eye(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.0, 1, MultigridOperator.Mode.Eye);
+        }
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>
+        [Test]
+        public static void XDG_ProlongationTest_agg0_trw1_idmass(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.0, 1, MultigridOperator.Mode.IdMass);
+        }
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>
+        [Test]
+        public static void XDG_ProlongationTest_agg03_trw0_eye(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.3, 0, MultigridOperator.Mode.Eye);
+        }
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>
+        [Test]
+        public static void XDG_ProlongationTest_agg03_trw0_idmass(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.3, 0, MultigridOperator.Mode.IdMass);
+        }
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>
+        [Test]
+        public static void XDG_ProlongationTest_agg03_trw1_eye(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.3, 1, MultigridOperator.Mode.Eye);
+        }
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>
+        [Test]
+        public static void XDG_ProlongationTest_agg03_trw1_idmass(
+            [Values(0, 1, 2, 3)] int p
+            ) {
+            XDG_ProlongationTest(p, 0.3, 1, MultigridOperator.Mode.IdMass);
+        }
+
+        /// <summary>
+        /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
+        /// </summary>
         public static void XDG_ProlongationTest(
-            [Values(0, 1, 2, 3)] int p,
-            [Values(0.0, 0.3)] double AggregationThreshold,
-            [Values(0, 1)] int TrackerWidth,
-            [Values(MultigridOperator.Mode.Eye, MultigridOperator.Mode.IdMass)] MultigridOperator.Mode mode) {
+            int p,
+            double AggregationThreshold,
+            int TrackerWidth,
+            MultigridOperator.Mode mode) {
 
             XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant

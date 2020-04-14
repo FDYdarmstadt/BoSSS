@@ -370,6 +370,8 @@ namespace BoSSS.Application.BoSSSpad {
         public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
             while(true) {
+                MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
+
                 Thread.Sleep((int)PollingIntervallSeconds);
 
                 if(TimeOutSeconds > 0) {

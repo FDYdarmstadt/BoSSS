@@ -34,22 +34,9 @@ namespace BoSSS.Application.Rheology
         [OneTimeSetUp]
         public static void Init()
         {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
 
-            // Tweaking to use OCTAVE instead of MATLAB
-            if(System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")) {
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
-            } else if(System.Environment.MachineName.ToLowerInvariant().Contains("stormbreaker")) { 
-                // This is Florians Laptop;
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
-            }
-
+            
         }
 
         [OneTimeTearDown]

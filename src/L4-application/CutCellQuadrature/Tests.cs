@@ -29,11 +29,7 @@ namespace CutCellQuadrature {
 
         [OneTimeSetUp]
         public static void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [OneTimeTearDown]
