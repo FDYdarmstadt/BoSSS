@@ -716,7 +716,7 @@ namespace BoSSS.Application.BoSSSpad {
             if (AssignedBatchProc == null)
                 return JobStatus.PreActivation;
 
-            // test is session exists
+            // test if session exists
             ISessionInfo[] RR = this.AllSessions;
             ISessionInfo R = RR.Length > 0 ? RR.OrderBy(si => si.CreationTime).Last() : null;
 
