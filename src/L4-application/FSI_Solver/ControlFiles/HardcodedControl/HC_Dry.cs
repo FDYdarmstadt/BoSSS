@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_Dry : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control SingleParticleFalling(int k = 4, int amrLevel = 4) {
+        public static FSI_Control SingleParticleFalling(int k = 2, int amrLevel = 2) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
 
@@ -80,6 +80,125 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
+
+            return C;
+        }
+        public static FSI_Control TwoParticleCollision(int k = 2, int amrLevel = 2) {
+            FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
+            //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
+
+            // Domain
+            // =============================
+            List<string> boundaryValues = new List<string> {
+                "Wall"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel);
+
+            // Coupling Properties
+            // =============================
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LevelSetSmoothing = false;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
+
+            // Fluid Properties
+            // =============================
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.IncludeConvection = false;
+            double particleDensity = 100;
+            C.pureDryCollisions = true;
+
+            // Particle Properties
+            // =============================   
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
+            double particleRadius = 0.1;
+            C.Particles = new List<Particle> {
+                new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }),
+                new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0 },0, 0, new double[] {0,0.1 })
+            };
+
+            // misc. solver options
+            // =============================  
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LevelSetSmoothing = false;
+
+
+            // Timestepping
+            // =============================  
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 100);
+
+            return C;
+        }
+
+        public static FSI_Control ThreeParticleCollision(int k = 2, int amrLevel = 3) {
+            FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
+            //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
+            C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
+            // Domain
+            // =============================
+            List<string> boundaryValues = new List<string> {
+                "Wall"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel);
+
+            // Coupling Properties
+            // =============================
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LevelSetSmoothing = false;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
+
+            // Fluid Properties
+            // =============================
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.IncludeConvection = false;
+            double particleDensity = 1;
+            C.pureDryCollisions = true;
+
+            // Particle Properties
+            // =============================   
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
+            double particleRadius = 0.1;
+            C.Particles = new List<Particle> {
+                new Particle_Ellipsoid(motion1, particleRadius, particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }),
+                new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {-0.13,0 },0, 0, new double[] {0,0}),
+                new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {0.13,0},0, 0, new double[] {0,0 }),
+                //new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {0.25, 0 },0, 0, new double[] {-0.1,0 }),
+                //new Particle_Ellipsoid(motion1, particleRadius, particleRadius, new double[] {-0.25,0},0, 0, new double[] {0.1,0 }),
+                //new Particle_Ellipsoid(motion1, particleRadius, particleRadius, new double[] {-0.25,0.215},0, 0, new double[] {0.1,-0.1}),
+                //new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {0,0.5 },0, 0, new double[] {0,-0.1 })
+            };
+
+            // misc. solver options
+            // =============================  
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LevelSetSmoothing = false;
+
+
+            // Timestepping
+            // =============================  
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 1000);
 
             return C;
         }

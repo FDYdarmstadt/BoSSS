@@ -58,7 +58,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 long GlobalID, GlobalCellIndex;
                 bool IsInside, onthisProc;
-                double[] pt = new double[] { double.MaxValue, double.MaxValue };
+                double[] pt = new double[] { 0,0 };
                 GridDat.LocatePoint(pt, out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, 
                     LsTrk != null ? LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement() : null);
                 

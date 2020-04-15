@@ -86,10 +86,11 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 100, double dtMax = 1e-3) {
+        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 500, double dtMax = 1e-3, double minDist = 1e-3) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
+            C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
             //C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision", 1);
-            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
 
             List<string> boundaryValues = new List<string> {
                 "Wall_left",
@@ -98,10 +99,11 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetAddaptiveMeshRefinement(3);
+            C.SetAddaptiveMeshRefinement(4);
             C.SetGrid(lengthX: 5, lengthY: 1, cellsPerUnitLength: 6, periodicX: false, periodicY: false);
             C.hydrodynamicsConvergenceCriterion = 1e-3;
             C.pureDryCollisions = false;
+            C.minDistanceThreshold = minDist;
 
             // Fluid Properties
             // =============================
@@ -115,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Defining particles
             C.Particles = new List<Particle>();
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, 0);
-            C.Particles.Add(new Particle_Sphere(motion, 0.125, new double[] { 0.0, 0 }, 0, 0, new double[] { 0, 0}));
+            C.Particles.Add(new Particle_Sphere(motion, 0.125, new double[] { 0.0, 0 }, 0, 0, new double[] { 0, 0 }));
 
             // Quadrature rules
             // =============================   
@@ -149,7 +151,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: dtMax, noOfTimesteps: (int)(1/dtMax));
+            C.SetTimesteps(dt: dtMax, noOfTimesteps: 10000);
 
             // haben fertig...
             // ===============

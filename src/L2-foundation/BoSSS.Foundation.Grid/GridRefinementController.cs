@@ -252,7 +252,7 @@ namespace BoSSS.Foundation.Grid {
                 if (levelIndicator[globalIndex] < CellsWithMaxRefineLevel[globalIndex] && globalCurrentLevel[globalIndex] <= CellsWithMaxRefineLevel[globalIndex]) {
                     if (globalCurrentLevel[globalIndex] == CellsWithMaxRefineLevel[globalIndex])
                         levelIndicator[globalIndex] = globalCurrentLevel[globalIndex];
-                    else
+                    else 
                         levelIndicator[globalIndex] = globalCurrentLevel[globalIndex] + 1;
                     GetLevelIndicatiorRecursive(globalIndex, levelIndicator[globalIndex] - 1, globalNeighbourship, levelIndicator);
                 }
@@ -263,31 +263,7 @@ namespace BoSSS.Foundation.Grid {
             for (int j = 0; j < globalJ; j++) {
                 levelIndicator[j] = levelIndicator[j].MPIMax();
             }
-
             return levelIndicator;
-        }
-
-        /// <summary>
-        /// Recursive computation for the desired level of each global cell.
-        /// </summary>
-        /// <param name="globalCellIndex">
-        /// The global index of the current cell.
-        /// </param>
-        /// <param name="LevelIndNeighbour"></param>
-        /// <param name="globalNeighbourship">
-        /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
-        /// </param>
-        /// <param name="levelIndicator"></param>
-        static void GetLevelIndicatiorRecursive(int globalCellIndex, int LevelIndNeighbour, int[][] globalNeighbourship, int[] levelIndicator) {
-            if (LevelIndNeighbour <= 0)
-                return;
-            for (int j = 0; j < globalNeighbourship[globalCellIndex].Length; j++) {
-                int jNeigh = globalNeighbourship[globalCellIndex][j];
-                if (levelIndicator[jNeigh] < LevelIndNeighbour) {
-                    levelIndicator[jNeigh] = LevelIndNeighbour;
-                    GetLevelIndicatiorRecursive(jNeigh, LevelIndNeighbour - 1, globalNeighbourship, levelIndicator);
-                }
-            }
         }
 
         /// <summary>
@@ -326,7 +302,29 @@ namespace BoSSS.Foundation.Grid {
             return globalDesiredLevel;
         }
 
-
+        /// <summary>
+        /// Recursive computation for the desired level of each global cell.
+        /// </summary>
+        /// <param name="globalCellIndex">
+        /// The global index of the current cell.
+        /// </param>
+        /// <param name="LevelIndNeighbour"></param>
+        /// <param name="globalNeighbourship">
+        /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
+        /// </param>
+        /// <param name="levelIndicator"></param>
+        static void GetLevelIndicatiorRecursive(int globalCellIndex, int LevelIndNeighbour, int[][] globalNeighbourship, int[] levelIndicator) {
+            if (LevelIndNeighbour <= 0)
+                return;
+            for (int j = 0; j < globalNeighbourship[globalCellIndex].Length; j++) {
+                int jNeigh = globalNeighbourship[globalCellIndex][j];
+                if (levelIndicator[jNeigh] < LevelIndNeighbour) {
+                    levelIndicator[jNeigh] = LevelIndNeighbour;
+                    GetLevelIndicatiorRecursive(jNeigh, LevelIndNeighbour - 1, globalNeighbourship, levelIndicator);
+                }
+            }
+        }
+        
         /// <summary>
         /// Recursive computation for the desired level of each global cell.
         /// </summary>
@@ -374,7 +372,6 @@ namespace BoSSS.Foundation.Grid {
             for (int j = 0; j < J; j++) {
                 localCurrentLevel[j] = currentGrid.Cells.GetCell(j).RefinementLevel;
             }
-
             int[][] exchangeGlobalCurrentLevel = localCurrentLevel.MPIGatherO(0);
             exchangeGlobalCurrentLevel = exchangeGlobalCurrentLevel.MPIBroadcast(0);
 

@@ -179,80 +179,55 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control TestSingleDryParticleAgainstWall(bool meshRefine = false) {
-            FSI_Control C = new FSI_Control(2, "DryParticleWallCollision");
-            C.SessionName = C.ProjectName;
-            C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = meshRefine;
+        public static FSI_Control TestSingleDryParticleAgainstWall(bool meshRefine = true) {
+            FSI_Control C = new FSI_Control(degree: 2, projectName: "DryParticleWallCollision");
 
-            // grid and boundary conditions
-            // ============================
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 14, periodicX: false, periodicY: false);
-
-            // Initial Values
-            // ==============
-
-            // Coupling Properties
+            C.SetGrid(lengthX: 6, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(meshRefine ? 1 : 0);
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-
-
-            // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.1;
             C.pureDryCollisions = true;
-            double particleDensity = 1.0;
+            C.PhysicalParameters.IncludeConvection = true;
+            // Particle Properties
+            // =============================
+            double particleDensity = 1;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);
-            // Particles
-            // =========
-            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { -0.5, -0.5 }, startAngl: 90.0, startTransVelocity: new double[] { 1, -1 }, startRotVelocity: 0));
+            C.fixPosition = true;
+            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { -0.5, -0.5 }, startAngl: 90.0, activeStress: 0, startTransVelocity: new double[] { 1, -1 }));
 
             double V = 0;
             foreach (var p in C.Particles) {
                 V = Math.Max(V, p.Motion.GetTranslationalVelocity(0).L2Norm());
             }
-
             if (V <= 0)
                 throw new ArithmeticException();
 
-
-            // Physical Parameters
-            // ===================
-
-            C.PhysicalParameters.IncludeConvection = true;
-
-
-            // misc. solver options
-            // ====================
-
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            double dt = (1 / (14 * V)) * (meshRefine ? 0.5 * 0.5 * 0.5 * 0.2 : 0.1);
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 100.0 / V;
+            C.NoOfTimesteps = 500;
+            C.NoOfTimesteps = int.MaxValue;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.MaxSolverIterations = 10;
-            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.RefinementLevel = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LSunderrelax = 1.0;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.LSunderrelax = 1;
+            C.maxIterationsFullyCoupled = 100;
 
-            // Timestepping
-            // ============
-
-            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
-            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-
-            double dt = (1 /(14 * V)) * (meshRefine ? 0.5 * 0.5 * 0.5 * 0.2 : 0.1);
-            C.dtMax = dt;
-            C.dtMin = dt;
-
-            C.Endtime = 100.0 / V;
-            C.NoOfTimesteps = 500;
-
-            // haben fertig...
-            // ===============
-
-            C.LevelSetSmoothing = false;
             return C;
         }
 

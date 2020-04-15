@@ -1156,7 +1156,7 @@ namespace BoSSS.Foundation.XDG {
             ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
             int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             var msk = new BitArray(J);
-
+           
             // check for cell color, necessary to prevent failing on periodic boundaries
             //int[] coloredCells = Regions.ColorMap4Spc[GetSpeciesId("B")];
 
@@ -1174,7 +1174,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             int failCountGlobal = fail_count.MPISum();
-            if (failCountGlobal > 0)
+            if (failCountGlobal > 0 && GridDat.MpiRank == 0)
                 (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
 
             return failCountGlobal;
@@ -1245,7 +1245,6 @@ namespace BoSSS.Foundation.XDG {
 
             // update tracker
             // ==============
-
             UpdateTracker();
             this.Regions.Version = VersionCounter;
             this.m_VersionCnt = VersionCounter;

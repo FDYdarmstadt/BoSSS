@@ -208,11 +208,12 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-        public void SetTimesteps(double dt, int noOfTimesteps) {
+        public void SetTimesteps(double dt, int noOfTimesteps, bool staticTimestep = true) {
             dtMax = dt;
             dtMin = dt;
             Endtime = noOfTimesteps * dt;
             NoOfTimesteps = noOfTimesteps;
+            this.staticTimestep = staticTimestep;
         }
 
 
@@ -295,7 +296,7 @@ namespace BoSSS.Application.FSI_Solver {
             get;
             set;
         }
-
+        public bool fixPosition = false;
         public enum CollisionModel {
             RepulsiveForce = 0,
 
@@ -304,6 +305,8 @@ namespace BoSSS.Application.FSI_Solver {
             NoCollisionModel = 2
 
         }
+
+        public double minDistanceThreshold = 0;
 
         [DataMember]
         public CollisionModel collisionModel = CollisionModel.MomentumConservation;

@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private double m_CollisionTimestep = 0;
         [DataMember]
-        private Vector m_PreCollisionVelocity = new Vector(m_Dim);
+        private Vector NormalAndTangetialVelocityPreCollision = new Vector(m_Dim);
         [DataMember]
         private readonly List<Vector> m_CollisionTranslationalVelocity = new List<Vector>();
         [DataMember]
@@ -314,10 +314,10 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// The translational velocity of the particle before a colllision is triggered. This value is used by the momentum conservation model.
+        /// The translational velocity of the particle before a colllision is triggered. Decomposed into an normal and tangential part. This value is used by the momentum conservation model.
         /// </summary>
-        internal Vector GetPreCollisionVelocity() {
-            return m_PreCollisionVelocity;
+        internal Vector GetNormalAndTangetialVelocityPreCollision() {
+            return NormalAndTangetialVelocityPreCollision;
         }
 
         /// <summary>
@@ -560,11 +560,11 @@ namespace BoSSS.Application.FSI_Solver {
         public void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             double[] tempForces = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++) {
-                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-10)
+                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-8)
                     tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
             }
             m_HydrodynamicForces[0] = new Vector(tempForces);
-            if (Math.Abs(fullListHydrodynamics[particleID * 3 + m_Dim]) > 1e-10)
+            if (Math.Abs(fullListHydrodynamics[particleID * 3 + m_Dim]) > 1e-8)
                 m_HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + m_Dim];
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
@@ -679,7 +679,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual Vector CalculateTranslationalVelocity(double dt) {
             Vector l_TranslationalVelocity = m_TranslationalVelocity[1] + (m_TranslationalAcceleration[0] + 4 * m_TranslationalAcceleration[1] + m_TranslationalAcceleration[2]) * dt / 6;
             for (int d = 0; d < l_TranslationalVelocity.Dim; d++) {
-                if (Math.Abs(l_TranslationalVelocity[d]) < 1e-10)
+                if (Math.Abs(l_TranslationalVelocity[d]) < 1e-8)
                     l_TranslationalVelocity[d] = 0;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -694,7 +694,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual Vector CalculateTranslationalVelocity(double dt, double collisionTimestep) {
             Vector l_TranslationalVelocity = m_TranslationalVelocity[1] + m_TranslationalAcceleration[0] * (dt - collisionTimestep) / 6;
             for (int d = 0; d < l_TranslationalVelocity.Dim; d++) {
-                if (Math.Abs(l_TranslationalVelocity[d]) < 1e-10)
+                if (Math.Abs(l_TranslationalVelocity[d]) < 1e-8)
                     l_TranslationalVelocity[d] = 0;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -708,7 +708,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double CalculateAngularVelocity(double dt) {
             double l_RotationalVelocity = m_RotationalVelocity[1] + (m_RotationalAcceleration[0] + 4 * m_RotationalAcceleration[1] + m_RotationalAcceleration[2]) * dt / 6;
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            if (Math.Abs(l_RotationalVelocity) > 1e-10)
+            if (Math.Abs(l_RotationalVelocity) > 1e-8)
                 return l_RotationalVelocity;
             else
                 return 0;
@@ -722,7 +722,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double CalculateAngularVelocity(double dt, double collisionTimestep) {
             double l_RotationalVelocity = m_RotationalVelocity[1] + m_RotationalAcceleration[0] * (dt - collisionTimestep) / 6;
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            if (l_RotationalVelocity > 1e-10)
+            if (l_RotationalVelocity > 1e-8)
                 return l_RotationalVelocity;
             else
                 return 0;
@@ -735,8 +735,8 @@ namespace BoSSS.Application.FSI_Solver {
             Vector normalVector = m_CollisionNormalVector.Last();
             Vector TangentialVector = new Vector(- normalVector[1], normalVector[0]);
             Vector Velocity = m_TranslationalVelocity[0];
-            m_PreCollisionVelocity = new Vector(Velocity * normalVector, Velocity * TangentialVector);
-            Aux.TestArithmeticException(m_PreCollisionVelocity, "particle velocity before collision");
+            NormalAndTangetialVelocityPreCollision = new Vector(Velocity * normalVector, Velocity * TangentialVector);
+            Aux.TestArithmeticException(NormalAndTangetialVelocityPreCollision, "particle velocity before collision");
         }
 
         /// <summary>
