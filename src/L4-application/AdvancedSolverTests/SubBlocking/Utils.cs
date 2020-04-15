@@ -196,22 +196,25 @@ namespace AdvancedSolverTests.SubBlocking
             return vec;
         }
 
-        public static void SetDefaultSplitSelection(this SubBlockSelector sbs, MatrixShape shape, bool upper) {
+        public static void SetDefaultSplitSelection(this SubBlockSelector sbs, MatrixShape shape, bool upper, bool islocal=true) {
             switch (shape) {
                 case MatrixShape.diagonal:
                 case MatrixShape.full:
-                    sbs.DefaultCellSplit(upper);
+                    sbs.DefaultCellSplit(upper, islocal);
                     break;
                 case MatrixShape.diagonal_var:
                 case MatrixShape.full_var:
                     sbs.DefaultSpeciesSplit(upper);
+                    if(!islocal) sbs.AllExternalCellsSelection();
                     break;
                 case MatrixShape.diagonal_spec:
                 case MatrixShape.full_spec:
                     sbs.DefaultVarSplit(upper);
+                    if (!islocal) sbs.AllExternalCellsSelection();
                     break;
                 case MatrixShape.diagonal_var_spec:
                 case MatrixShape.full_var_spec:
+                    sbs.DefaultCellSplit(upper, islocal);
                     break;
                 default:
                     throw new NotSupportedException(String.Format("{0} is not supported by this test", shape));
@@ -239,16 +242,25 @@ namespace AdvancedSolverTests.SubBlocking
                 sbs.VariableSelector(OtherVars);
         }
 
-        private static void DefaultCellSplit(this SubBlockSelector sbs, bool upper) {
+        private static void DefaultCellSplit(this SubBlockSelector sbs, bool upper, bool islocal=true) {
             List<int> odds = new List<int>();
             List<int> even = new List<int>();
-            for (int i = 0; i < sbs.GetMapping.LocalNoOfBlocks; i++) {
+            int i0, iE;
+            if (islocal) {
+                i0 = 0;
+                iE = sbs.GetMapping.LocalNoOfBlocks;
+            } else {
+                i0 = sbs.GetMapping.LocalNoOfBlocks;
+                iE = sbs.GetMapping.AggGrid.iLogicalCells.NoOfExternalCells+ sbs.GetMapping.LocalNoOfBlocks;
+            }
+
+            for (int i = i0; i < iE; i++) {
                 if (i % 2 != 0)
                     odds.Add(i);
                 else
                     even.Add(i);
             }
-            sbs.CellSelector(upper ? odds : even);
+            sbs.CellSelector(upper ? odds : even, false);
         }
 
 
@@ -441,5 +453,38 @@ namespace AdvancedSolverTests.SubBlocking
             M.AccSubMatrixTo(1.0,ret, RowISrc, default(int[]), new int[0], default(int[]), ExtISrc, ExtITrg);
             return ret;
         }
+
+        public static int[] GetCellsOfOverlappingTestBlock(MultigridMapping map) {
+            List<int> testcells = new List<int>();
+
+            //find block with 4 neighbours
+            for (int iCell = 0; iCell < map.LocalNoOfBlocks; iCell++) {
+                int[] NC = map.AggGrid.iLogicalCells.CellNeighbours[iCell];
+                if (NC.Length == 4) {
+                    foreach (int c in NC) {
+                        if (c >= map.LocalNoOfBlocks) {
+                            testcells.Add(c);
+                        } else if (!map.IsLocalBlock(map.FirstBlock + c)) {
+                            testcells.Add(c);
+                        }
+                    }
+                    if (testcells.Count > 0) {
+                        testcells.Add(iCell);
+                        break;
+                    }
+
+                }
+            }
+            Debug.Assert(testcells.Count > 0);
+            return testcells.ToArray();
+        }
+
+        public static int[] GetIdcOfSubBlock(MultigridMapping map, int[] cells) {
+            List<int> idc = new List<int>();
+            foreach (int c in cells)
+                idc.AddRange(GetIndcOfExtCell(map,c));
+            return idc.ToArray();
+        }
+           
     }
 }

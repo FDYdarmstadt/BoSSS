@@ -297,8 +297,7 @@ namespace AdvancedSolverTests.SubBlocking
             }
         }
 
-
-
+        [Test]
         public static void VectorCellwiseOperation(
             [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
@@ -321,7 +320,7 @@ namespace AdvancedSolverTests.SubBlocking
             var M_ext = BlockMask.GetAllExternalRows(map, M);
             var mask = new TestMask(sbs, M_ext);
             var eblocks = mask.GetSubBlocks(M, true, false, false);
-            Dictionary<int, int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
+            //Dictionary<int, int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
 
             //Arrange --- generate rnd vector and distribute it
             double[] vec = new double[map.LocalLength];
@@ -374,12 +373,108 @@ namespace AdvancedSolverTests.SubBlocking
             Assert.IsTrue(Res_g.L2Norm()==0.0);
         }
 
-        public static void SubSelection() {
-            throw new NotImplementedException();
+        [Test]
+        public static void SubSelection(
+            [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full_var, MatrixShape.full)] MatrixShape MShape,
+            [Values(4)] int Res) {
+
+            Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
+            Console.WriteLine("SubSelection({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
+
+            //Arrange --- create test matrix, MG mapping
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, Res);
+            MultigridMapping map = mgo.Mapping;
+            BlockMsrMatrix M = mgo.OperatorMatrix;
+
+            //Arrange --- get mask
+            int[] cells = Utils.GetCellsOfOverlappingTestBlock(map);
+            Array.Sort(cells);
+            var sbs = new SubBlockSelector(map);
+            sbs.CellSelector(cells,false);
+            BlockMsrMatrix M_ext = BlockMask.GetAllExternalRows(map,M);
+            var mask = new BlockMask(sbs, M_ext);
+
+            //Arrange --- get GlobalIdxList
+            int[] idc = Utils.GetIdcOfSubBlock(map,cells);
+            bool[] coup = Utils.SetCoupling(MShape);
+
+            var M_sub = mask.GetSubBlockMatrix(M, false, coup[1], coup[2]);
+
+            var infNorm = MultidimensionalArray.Create(4, 1);
+            int rank = map.MpiRank;
+            using (BatchmodeConnector matlab = new BatchmodeConnector()) {
+
+                double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i] + 1.0);
+                Assert.IsTrue(GlobIdx.Length == M_sub.NoOfRows);
+
+                matlab.PutSparseMatrix(M, "M");
+                // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
+                matlab.PutSparseMatrixRankExclusive(M_sub, "M_sub");
+                matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                matlab.Cmd("M_0 = full(M(Idx_0, Idx_0));");
+                matlab.Cmd("M_1 = full(M(Idx_1, Idx_1));");
+                matlab.Cmd("M_2 = full(M(Idx_2, Idx_2));");
+                matlab.Cmd("M_3 = full(M(Idx_3, Idx_3));");
+                matlab.Cmd("n=[0; 0; 0; 0];");
+                matlab.Cmd("n(1,1)=norm(M_0-M_sub_0,inf);");
+                matlab.Cmd("n(2,1)=norm(M_1-M_sub_1,inf);");
+                matlab.Cmd("n(3,1)=norm(M_2-M_sub_2,inf);");
+                matlab.Cmd("n(4,1)=norm(M_3-M_sub_3,inf);");
+                matlab.GetMatrix(infNorm, "n");
+                matlab.Execute();
+            }
+            Assert.IsTrue(infNorm[rank, 0] == 0.0);
         }
 
-        public static void VectorSplitOperation() {
-            throw new NotImplementedException();
+        [Test]
+        public static void VectorSplitOperation(
+            [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
+            [Values(4)] int Res) {
+
+            Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
+            Console.WriteLine("VectorSplitOperation({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
+
+            //Arrange --- create test matrix, MG mapping
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, Res);
+            MultigridMapping map = mgo.Mapping;
+            BlockMsrMatrix M = mgo.OperatorMatrix;
+            BlockMsrMatrix M_ext = BlockMask.GetAllExternalRows(map, M);
+            double[] Vec = Utils.GetRandomVector(M_ext.RowPartitioning.LocalLength);
+
+            //Arrange --- setup masking
+            SubBlockSelector sbsA = new SubBlockSelector(map);
+            sbsA.SetDefaultSplitSelection(MShape, true, false);
+            BlockMask maskA = new BlockMask(sbsA, M_ext);
+
+            SubBlockSelector sbsB = new SubBlockSelector(map);
+            sbsB.SetDefaultSplitSelection(MShape, false, false);
+            BlockMask maskB = new BlockMask(sbsB, M_ext);
+
+            double[] VecAB = new double[Vec.Length];
+
+            //Arrange --- some time measurement
+            Stopwatch stw = new Stopwatch();
+            stw.Reset();
+
+            //Act --- 
+            stw.Start();
+            var VecA = maskA.GetSubBlockVec(Vec, new double[0]);
+            var VecB = maskB.GetSubBlockVec(Vec, new double[0]);
+
+            maskA.AccVecToFull(VecA, VecAB, new double[0]);
+            maskB.AccVecToFull(VecB, VecAB, new double[0]);
+            stw.Stop();
+
+            Debug.Assert(Vec.L2Norm() != 0);
+            double fac = ((MShape == MatrixShape.full_var || MShape == MatrixShape.diagonal_var) && UseXdg == XDGusage.none) ? -2.0 : -1.0;
+            VecAB.AccV(fac, Vec);
+
+            //Assert --- are extracted blocks and 
+            Assert.IsTrue(VecAB.L2Norm() == 0.0, String.Format("L2Norm neq 0!"));
         }
 
         [Test]

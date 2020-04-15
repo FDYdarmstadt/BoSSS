@@ -794,7 +794,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <returns>DOF of ghost cells available on this proc</returns>
         public int GetLocalLength_Ext() {
-            ilPSP.MPICollectiveWatchDog.Watch();
             int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + Locoffset);
             int Len = 0;
@@ -812,7 +811,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Fields"></param>
         /// <returns></returns>
         public int[] GetSubvectorIndices_Ext(params int[] Fields) {
-            ilPSP.MPICollectiveWatchDog.Watch();
             int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i=>i + Locoffset);
             List<int> R = new List<int>();

@@ -26,6 +26,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         private class BlockMaskLoc : BlockMaskBase {
             public BlockMaskLoc(SubBlockSelector sbs) : base(sbs, csMPI.Raw._COMM.SELF) {
+                base.GenerateAllMasks();
                 foreach (var idx in this.m_GlobalMask) {
                     Debug.Assert(idx >= m_map.i0);
                     Debug.Assert(idx < m_map.iE);
@@ -50,6 +51,12 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
             }
 
+            protected override int m_SubBlockOffset {
+                get {
+                    return 0;
+                }
+            }
+
         }
 
         /// <summary>
@@ -57,7 +64,13 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         private class BlockMaskExt : BlockMaskBase {
 
-            public BlockMaskExt(SubBlockSelector SBS) : base(SBS, SBS.GetMapping.MPI_Comm) {
+            public BlockMaskExt(SubBlockSelector SBS, int LocMaskOffset) : base(SBS, SBS.GetMapping.MPI_Comm) {
+                
+                // must be set before mask generation
+                m_LocOffset = LocMaskOffset;
+                m_extLocLen = m_map.GetLocalLength_Ext();
+
+                base.GenerateAllMasks();
                 foreach (int idx in this.m_GlobalMask) {
                     Debug.Assert(idx < m_map.i0 || idx >= m_map.iE);
                 }
@@ -71,6 +84,9 @@ namespace BoSSS.Solution.AdvancedSolvers
                     Debug.Assert(idx < LE);
                 }
             }
+
+            private int m_LocOffset;
+            private int m_extLocLen;
 
             protected override int m_NoOfCells {
                 get {
@@ -91,7 +107,13 @@ namespace BoSSS.Solution.AdvancedSolvers
             /// </summary>
             protected override int m_LocalLength {
                 get {
-                    return m_map.GetLocalLength_Ext();
+                    return m_extLocLen;
+                }
+            }
+
+            protected override int m_SubBlockOffset {
+                get {
+                    return m_LocOffset;
                 }
             }
 
@@ -136,7 +158,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             BMLoc = new BlockMaskLoc(sbs);
             
             if (m_includeExternalCells) {
-                BMExt = new BlockMaskExt(sbs);
+                BMExt = new BlockMaskExt(sbs, BMLoc.LocalDOF);
                 SetThisShitUp(new BlockMaskBase[] { BMLoc, BMExt });
             } else {
                 SetThisShitUp(new BlockMaskBase[] { BMLoc });
@@ -164,16 +186,18 @@ namespace BoSSS.Solution.AdvancedSolvers
             foreach (var mask in masks) {
                 var tmp = mask.GetAllSubMatrixCellOffsets().ToArray();
                 //If there are any external cells do something different:
-                if (mask.GetType() == typeof(BlockMaskExt)) {
-                    int offset = BMLoc.LocalDOF;
-                    for (int i = 0; i < tmp.Length; i++)
-                        tmp[i] += offset;
-                }
+                //if (mask.GetType() == typeof(BlockMaskExt)) {
+                //    int offset = BMLoc.LocalDOF;
+                //    for (int i = 0; i < tmp.Length; i++)
+                //        tmp[i] += offset;
+                //}
                 tmpOffsetList.AddRange(tmp);
                 tmpLengthList.AddRange(mask.GetAllSubMatrixCellLength());
                 tmpNi0.AddRange(mask.m_StructuredNi0.ToList());
 
             }
+            if(tmpOffsetList.Count()==0)
+                throw new ArgumentException("Nothing Selected. Mask is empty");
             Debug.Assert(tmpOffsetList != null);
             Debug.Assert(tmpLengthList != null);
             Debug.Assert(tmpNi0 != null);
@@ -331,6 +355,8 @@ namespace BoSSS.Solution.AdvancedSolvers
             if (m_includeExternalCells&& BMExt!=null) {
                 //var ExtMatrix = this.GetExternalSubBlockMatrixOnly(target);
                 //int RowOffset = m_map.iE;
+                if (ignoreCellCoupling)
+                    throw new NotImplementedException("if overlapping is included only extraction of diagonal blocks is supported");
                 Sblocks.AddRange(GetMaskBlocks(m_ExtRows, BMExt, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling));
             }
 
@@ -411,8 +437,6 @@ namespace BoSSS.Solution.AdvancedSolvers
                                             extNi0 ColNi0 = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode];
                                             int Targeti0 = ListenToGlobalId ? RowNi0.Gi0 : RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
                                             int Targetj0 = ColNi0.Gi0;
-                                            //int Targeti0 = RowNi0.Gi0;
-                                            //int Targetj0 = ColNi0.Gi0;
                                             int Subi0 = mask.GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
                                             int Subj0 = mask.GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
                                             int Subie = Subi0 + RowNi0.N - 1;
@@ -476,82 +500,181 @@ namespace BoSSS.Solution.AdvancedSolvers
             return submatrix;
         }
 
+//        private void DeleteIgnoredBlocks(BlockMsrMatrix target, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
+            
+//            var RowNi0s = this.StructuredNi0;
+//            var ColNi0s = this.StructuredNi0;
 
+//            int auxIdx = 0;
+//            for (int iLoc = 0; iLoc < RowNi0s.Length; iLoc++) {
+//                for (int jLoc = 0; jLoc < ColNi0s.Length; jLoc++) {
+//                    if (ignoreCellCoupling && jLoc != iLoc) {
+//                        continue;
+//                    }
+//                    for (int iVar = 0; iVar < RowNi0s[iLoc].Length; iVar++) {
+//                        for (int jVar = 0; jVar < ColNi0s[jLoc].Length; jVar++) {
+//                            if (ignoreVarCoupling && jVar != iVar) {
+//                                continue;
+//                            }
+//                            for (int iSpc = 0; iSpc < RowNi0s[iLoc][iVar].Length; iSpc++) {
+//                                for (int jSpc = 0; jSpc < ColNi0s[jLoc][jVar].Length; jSpc++) {
+//                                    if (ignoreSpecCoupling && jSpc != iSpc) {
+//                                        continue;
+//                                    }
+//                                    for (int iMode = 0; iMode < RowNi0s[iLoc][iVar][iSpc].Length; iMode++) {
+//                                        int SubRowIdx = RowNi0s[iLoc][iVar][iSpc][iMode].Si0 + (IsLocalMask ? 0 : BMLoc.LocalDOF);
+//                                        for (int jMode = 0; jMode < ColNi0s[jLoc][jVar][jSpc].Length; jMode++) {
+
+//                                            extNi0 RowNi0 = RowNi0s[iLoc][iVar][iSpc][iMode];
+//                                            extNi0 ColNi0 = ColNi0s[jLoc][jVar][jSpc][jMode];
+//                                            int Targeti0 = IsLocalMask ? RowNi0.Gi0 : RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
+//                                            int Targetj0 = ColNi0.Gi0;
+
+//                                            var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
+
+//                                            //Debug.Assert(source.RowPartitioning.IsInLocalRange(Targeti0) && source.ColPartition.IsInLocalRange(Targetj0) && mask.GetType() == typeof(BlockMaskLoc) || mask.GetType() == typeof(BlockMaskExt));
+//                                            int SubColIdx = ColNi0s[jLoc][jVar][jSpc][jMode].Si0 + (IsLocalMask ? 0 : BMLoc.LocalDOF);
+//#if Debug
+                                            
+//                                            SubMSR.ReadBlock(SubRowIdx, SubColIdx, tmpBlock);
+//                                            Debug.Assert(tmpBlock.Sum() == 0);
+//                                            Debug.Assert(tmpBlock.InfNorm() == 0);
+//#endif
+
+//                                            try {
+//                                                source.ReadBlock(Targeti0, Targetj0,
+//                                                tmpBlock);
+//                                            } catch (Exception e) {
+//                                                Console.WriteLine("row: " + Targeti0);
+//                                                Console.WriteLine("col: " + Targetj0);
+//                                                throw new Exception(e.Message);
+//                                            }
+//                                            Debug.Assert(SubRowIdx < SubMSR.RowPartitioning.LocalLength);
+//                                            Debug.Assert(SubColIdx < SubMSR.ColPartition.LocalLength);
+
+
+//                                            SubMSR.AccBlock(SubRowIdx, SubColIdx, 1.0, tmpBlock);
+
+
+
+
+
+//                                            source.AccSubMatrixTo();
+
+//                                            //SubColIdx += mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode].N;
+//                                        }
+
+//                                        //SubColIdx = 0;
+//                                        //SubRowIdx += mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode].N;
+//                                    }
+//                                    //SubRowIdx = 0;
+//                                }
+//                            }
+//                        }
+//                    }
+
+
+
+//                    auxIdx++;
+//                }
+//                auxIdx++;
+//            }
+//        }
       
         private void GetMaskMatrix(BlockMsrMatrix target, BlockMsrMatrix source, BlockMaskBase mask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
 
-            var SubMSR = target;
+            
 
             //int SubRowIdx = 0;
             //int SubColIdx = 0;
 
-            bool ListenToGlobalId = true;
+
             // pay attention to offset of local stuff ...
             // target is concidered to 
-            if (mask.GetType() == typeof(BlockMaskExt)) {
-                ListenToGlobalId = false;
-            }
+            bool IsLocalMask = mask.GetType() == typeof(BlockMaskLoc);
+
+            //extNi0[][][][] RowNi0s = IsLocalMask ? this.StructuredNi0 : mask.m_StructuredNi0;
+            //extNi0[][][][] ColNi0s = IsLocalMask ? mask.m_StructuredNi0 : this.StructuredNi0;
+            extNi0[][][][] RowNi0s = mask.m_StructuredNi0;
+            extNi0[][][][] ColNi0s = this.StructuredNi0;
+            
+            
 
             int auxIdx = 0;
-            for (int iLoc = 0; iLoc < mask.m_StructuredNi0.Length; iLoc++) {
-                for (int jLoc = 0; jLoc < mask.m_StructuredNi0.Length; jLoc++) {
+            for (int iLoc = 0; iLoc < RowNi0s.Length; iLoc++) {
+                for (int jLoc = 0; jLoc < ColNi0s.Length; jLoc++) {
                     if (ignoreCellCoupling && jLoc != iLoc) {
                         continue;
                     }
-                    for (int iVar = 0; iVar < mask.m_StructuredNi0[iLoc].Length; iVar++) {
-                        for (int jVar = 0; jVar < mask.m_StructuredNi0[jLoc].Length; jVar++) {
+                    for (int iVar = 0; iVar < RowNi0s[iLoc].Length; iVar++) {
+                        for (int jVar = 0; jVar < ColNi0s[jLoc].Length; jVar++) {
                             if (ignoreVarCoupling && jVar != iVar) {
                                 continue;
                             }
-                            for (int iSpc = 0; iSpc < mask.m_StructuredNi0[iLoc][iVar].Length; iSpc++) {
-                                for (int jSpc = 0; jSpc < mask.m_StructuredNi0[jLoc][jVar].Length; jSpc++) {
+                            for (int iSpc = 0; iSpc < RowNi0s[iLoc][iVar].Length; iSpc++) {
+                                for (int jSpc = 0; jSpc < ColNi0s[jLoc][jVar].Length; jSpc++) {
                                     if (ignoreSpecCoupling && jSpc != iSpc) {
                                         continue;
                                     }
-                                    for (int iMode = 0; iMode < mask.m_StructuredNi0[iLoc][iVar][iSpc].Length; iMode++) {
-                                        int SubRowIdx = mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode].Si0;
-                                        for (int jMode = 0; jMode < mask.m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
+                                    for (int iMode = 0; iMode < RowNi0s[iLoc][iVar][iSpc].Length; iMode++) {
+                                        int Trgi0 = RowNi0s[iLoc][iVar][iSpc][iMode].Si0;
+                                        for (int jMode = 0; jMode < ColNi0s[jLoc][jVar][jSpc].Length; jMode++) {
 
-                                            extNi0 RowNi0 = mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode];
-                                            extNi0 ColNi0 = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode];
-                                            int Targeti0 = ListenToGlobalId? RowNi0.Gi0: RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
-                                            int Targetj0 = ColNi0.Gi0;
+                                            extNi0 RowNi0 = RowNi0s[iLoc][iVar][iSpc][iMode];
+                                            extNi0 ColNi0 = ColNi0s[jLoc][jVar][jSpc][jMode];
+                                            int Srci0 = IsLocalMask? RowNi0.Gi0: RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
+                                            int Srcj0 = ColNi0.Gi0;
 
                                             var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
 
-                                            Debug.Assert(source.RowPartitioning.IsInLocalRange(Targeti0) && source.RowPartitioning.IsInLocalRange(Targetj0) && mask.GetType() == typeof(BlockMaskLoc) || mask.GetType() == typeof(BlockMaskExt));
-                                            int SubColIdx = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode].Si0;
+                                            int Trgj0 = ColNi0s[jLoc][jVar][jSpc][jMode].Si0;
 #if Debug
-                                            
+
                                             SubMSR.ReadBlock(SubRowIdx, SubColIdx, tmpBlock);
                                             Debug.Assert(tmpBlock.Sum() == 0);
                                             Debug.Assert(tmpBlock.InfNorm() == 0);
 #endif
 
                                             try {
-                                                source.ReadBlock(Targeti0, Targetj0,
+                                                source.ReadBlock(Srci0, Srcj0,
                                                 tmpBlock);
                                             } catch (Exception e) {
-                                                Console.WriteLine("row: " + Targeti0);
-                                                Console.WriteLine("col: " + Targetj0);
+                                                Console.WriteLine("row: " + Srci0);
+                                                Console.WriteLine("col: " + Srcj0);
                                                 throw new Exception(e.Message);
                                             }
-                                            Debug.Assert(SubRowIdx < SubMSR.RowPartitioning.LocalLength);
-                                            Debug.Assert(SubColIdx < SubMSR.ColPartition.LocalLength);
+                                            Debug.Assert(Trgi0 < target.RowPartitioning.LocalLength);
+                                            Debug.Assert(Trgj0 < target.ColPartition.LocalLength);
 
-                                            
-                                            SubMSR.AccBlock(SubRowIdx, SubColIdx, 1.0, tmpBlock);
-                                            //SubColIdx += mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode].N;
-                                        }
-                                       
-                                        //SubColIdx = 0;
-                                        //SubRowIdx += mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode].N;
+
+                                            target.AccBlock(Trgi0, Trgj0, 1.0, tmpBlock);
+
+                                            //int[] TrgRowIdc = RowNi0.N.ForLoop(i=>i+ Trgi0);
+                                            //int[] TrgColIdc = ColNi0.N.ForLoop(i => i + Trgj0);
+                                            //int[] SrcRowIdc = RowNi0.N.ForLoop(i => i + Srci0);
+                                            //int[] SrcColIdc = ColNi0.N.ForLoop(i => i + Srcj0);
+
+                                            //if (BMExt != null && IsLocalMask) {
+                                            //    int ExtColOffset = BMExt.m_StructuredNi0[jLoc][jVar][jSpc][jMode].Gi0;
+                                            //    int ExtColLen = BMExt.m_StructuredNi0[jLoc][jVar][jSpc][jMode].N;
+                                            //    int[] ExtColIdc = ExtColLen.ForLoop(i => i + ExtColOffset);
+
+                                            //    //add external cols
+                                            //    source.AccSubMatrixTo(1.0, target, SrcRowIdc, TrgRowIdc, new int[0], default(int[]), ExtColIdc, TrgColIdc);
+                                            //}
+
+                                            ////add local block
+                                            //source.AccSubMatrixTo(1.0, target, SrcRowIdc, TrgRowIdc, SrcColIdc, TrgColIdc);
+
+                                        } 
                                     }
-                                    //SubRowIdx = 0;
                                 }
                             }
                         }
                     }
+
+
+
                     auxIdx++;
                 }
                 auxIdx++;
@@ -636,9 +759,10 @@ namespace BoSSS.Solution.AdvancedSolvers
             var subvector = new double[SubL];
             int acc_offset = BMLoc.LocalDOF;
             int target_offset = m_map.LocalLength;
-            if(BMExt.m_LocalMask!=null && BMExt.LocalDOF > 0)
+            if(BMExt !=null && BMExt.LocalDOF > 0)
                 subvector.AccV(1.0, extvector, default(int[]), BMExt.m_LocalMask, acc_index_shift: acc_offset, b_index_shift: (-target_offset));
-            subvector.AccV(1.0, locvector, default(int[]), BMLoc.m_LocalMask);
+            if(BMLoc != null && BMLoc.LocalDOF > 0)
+                subvector.AccV(1.0, locvector, default(int[]), BMLoc.m_LocalMask);
             return subvector;
         }
 
@@ -646,8 +770,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             where V : IList<double>
             where W : IList<double>
             where U : IList<double> {
-            locvector.AccV(1.0, accVector, BMLoc.m_LocalMask, default(int[]));
-            if (BMExt != null) {
+            if (BMLoc != null && BMLoc.LocalDOF > 0)
+                locvector.AccV(1.0, accVector, BMLoc.m_LocalMask, default(int[]));
+            if (BMExt != null && BMExt.LocalDOF > 0) {
                 int target_offset = m_map.LocalLength;
                 int acc_offset = BMLoc.LocalDOF;
                 if (BMExt.m_LocalMask != null && BMExt.LocalDOF > 0)
@@ -957,7 +1082,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             var SBS = new SubBlockSelector(map);
             SBS.CellSelector(extcells, false);
-            var AllExtMask = new BlockMaskExt(SBS);
+            var AllExtMask = new BlockMaskExt(SBS,0);
 
             var ExternalRows_BlockI0 = AllExtMask.GetAllSubMatrixCellOffsets();
             var ExternalRows_BlockN = AllExtMask.GetAllSubMatrixCellLength();

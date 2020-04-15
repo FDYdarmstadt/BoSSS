@@ -120,7 +120,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="ListOfCellIdx"></param>
         /// <param name="global"></param>
         /// <returns></returns>
-        public SubBlockSelectorBase CellSelector<V>(V ListOfCellIdx, bool global = true)
+        public SubBlockSelectorBase CellSelector<V>(V ListOfCellIdx, bool global = false)
             where V : IList<int>{
             int LocNoOfBlocks = m_NoLocalCells;
             int GlobNoOfBlocks = m_NoTotalCells;
@@ -455,13 +455,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int m_i0 {
             get {
-                return m_map.i0;
+                return m_map.AggGrid.CellPartitioning.i0;
             }
         }
 
         private int m_iE {
             get {
-                return m_map.iE;
+                return m_map.AggGrid.CellPartitioning.iE;
             }
         }
 
@@ -555,7 +555,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
             //TestForQuadraticMatrix();   
-            GenerateAllMasks();
+            //GenerateAllMasks();
         }
 
         protected abstract int m_NoOfCells {
@@ -567,6 +567,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         protected abstract int m_LocalLength {
+            get;
+        }
+
+        protected abstract int m_SubBlockOffset {
             get;
         }
 
@@ -591,7 +595,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotSupportedException("Supports only quadratic matrices");
         }
 
-        private void GenerateAllMasks() {
+        protected void GenerateAllMasks() {
             int NoOfCells = m_NoOfCells;
             int NoOfVariables = m_NoOfVariables;
             int[][] NoOfSpecies = m_NoOfSpecies;
@@ -605,7 +609,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             List<int> Localint = new List<int>();
             List<int> SubBlockIdx = new List<int>();
 
-            int SubOffset = 0;
+            int SubOffset = m_SubBlockOffset; // 0 for local mask and BMLoc.LocalDof for external mask
             int Ni0Length = 0;
             int MaskLen = 0;
             int prevLocie = m_map.LocalNoOfBlocks; 
@@ -621,8 +625,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // loop over cells...
             for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
-                emptysel &= !m_sbs.CellFilter(iLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
-                int jLoc = m_CellOffset + iLoc; //sic:to address correctly, external cells offset has to be concidered, you know ...
+                int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be concidered, you know ...
+                emptysel &= !m_sbs.CellFilter(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
                 if (!m_sbs.CellFilter(jLoc))
                     continue;
                 var tmpVar = new List<extNi0[][]>();
@@ -667,7 +671,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     tmpVar.Add(tmpSpc.ToArray());
                 }
-                    tmpCell.Add(tmpVar.ToArray());
+                tmpCell.Add(tmpVar.ToArray());
             }
             var tmpStructNi0 = tmpCell.ToArray();
 
@@ -685,8 +689,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
             int LocLen = m_LocalLength; // this method uses MPI-communication in case of BMExt and should not be called from inside if statement!
 
-            if (emptysel)
-                Console.WriteLine("WARNING: no cells selceted with {0}", this.ToString());
             if (!emptysel) {
                 Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1));
                 Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1));
