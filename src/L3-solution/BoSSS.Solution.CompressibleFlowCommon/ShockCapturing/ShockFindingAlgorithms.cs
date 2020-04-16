@@ -17,8 +17,10 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Statistic;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
@@ -626,5 +628,248 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             return result;
         }
+
+        public static void FindPoints(string sessionPath, ISessionInfo session, TestCases testCase, bool plotDGFields = false, bool plotSeedingsPoints = false, bool plotInflectionsPoints = false, bool plotCurves = false, bool plotStartEndPairs = false) {
+            #region Get values from DG fields
+            GridData gridData;
+            SinglePhaseField field;
+            SinglePhaseField avField;
+            SinglePhaseField levelSetField;
+            ISessionInfo mySession;
+
+            switch (testCase) {
+                case TestCases.av:
+                    mySession = session;
+                    var myTimestep = mySession.Timesteps.Last();
+                    gridData = (GridData)myTimestep.Fields.First().GridDat;
+                    field = (SinglePhaseField)myTimestep.Fields.Find("rho");
+                    avField = (SinglePhaseField)myTimestep.Fields.Find("artificialViscosity");
+                    levelSetField = (SinglePhaseField)myTimestep.Fields.Find("levelSet");
+                    break;
+
+                default:
+                    throw new NotSupportedException("This setting does not exist.");
+            }
+
+            MultidimensionalArray avValues = GetAvMeanValues(gridData, avField);
+            #endregion
+
+            #region Plot DG fields
+            if (plotDGFields) {
+                Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: 2);
+                plotDriver.PlotFields(sessionPath + "Fields", 0.0, new DGField[] { field, avField, levelSetField });
+            }
+            #endregion
+
+            #region Create seedings points
+            int N = 100;
+            int numOfPoints;
+            double[] nodes;
+            MultidimensionalArray morePoints;
+            MultidimensionalArray fValues;
+            int[] iterations;
+            double[] finalFValues;
+            double eps;
+            bool[] converged;
+            int[] jCell;
+
+            switch (testCase) {
+                case TestCases.av:
+                    numOfPoints = avValues.Lengths[0];
+                    //numOfPoints  = 330;
+                    eps = 1e-12;
+                    morePoints = MultidimensionalArray.Create(numOfPoints, N + 1, 2);
+                    fValues = MultidimensionalArray.Create(numOfPoints, N + 1);
+                    iterations = new int[numOfPoints];
+                    finalFValues = new double[numOfPoints];
+                    converged = new bool[numOfPoints];
+                    jCell = new int[numOfPoints];
+
+                    // Seed points
+                    for (int i = 0; i < numOfPoints; i++) {
+                        int jLocal = (int)avValues[i, 0];
+                        double[] cellCenter = gridData.Cells.GetCenter(jLocal);
+                        morePoints[i, 0, 0] = cellCenter[0];
+                        morePoints[i, 0, 1] = cellCenter[1];
+                    }
+                    break;
+
+                case TestCases.av3x3:
+                    int numOfCells = avValues.Lengths[0];
+                    int numOfPointsPerCell = 9;
+                    numOfPoints = numOfCells * numOfPointsPerCell;
+                    eps = 1e-12;
+                    morePoints = MultidimensionalArray.Create(numOfPoints, N + 1, 2);
+                    fValues = MultidimensionalArray.Create(numOfPoints, N + 1);
+                    iterations = new int[numOfPoints];
+                    finalFValues = new double[numOfPoints];
+                    converged = new bool[numOfPoints];
+                    jCell = new int[numOfPoints];
+
+                    // Seed points
+                    for (int i = 0; i < numOfCells; i++) {
+                        int jLocal = (int)avValues[i, 0];
+                        MultidimensionalArray grid = Get3x3Grid(gridData, jLocal);
+                        for (int j = 0; j < numOfPointsPerCell; j++) {
+                            morePoints[i * numOfPointsPerCell + j, 0, 0] = grid[j, 0];
+                            morePoints[i * numOfPointsPerCell + j, 0, 1] = grid[j, 1];
+                        }
+                    }
+                    break;
+
+                default:
+                    throw new NotSupportedException("This setting does not exist.");
+            }
+
+            Console.WriteLine("Total number of points: " + morePoints.Lengths[0]);
+            #endregion
+
+            #region Find inflection point for every seeding point
+            double[] x;
+            double[] y;
+            double[] secondDerivative;
+            double[] stepSize;
+            double[] values;
+
+            for (int i = 0; i < morePoints.Lengths[0]; i++) {
+                //MultidimensionalArray points = MultidimensionalArray.Create(N + 1, 2);
+                secondDerivative = new double[N + 1];
+                stepSize = new double[N + 1];
+                values = new double[N + 1];
+                bool pointFound;
+                int jLocal;
+
+                //MultidimensionalArray start = MultidimensionalArray.CreateWrapper(startingPoint, 1, startingPoint.Length);
+                //points.SetSubArray(start.ExtractSubArrayShallow(0, -1), new int[]{0, -1});
+
+                int iter = WalkOnCurve(gridData, field, N, eps, morePoints.ExtractSubArrayShallow(i, -1, -1), secondDerivative, stepSize, values, out pointFound, out jLocal, patchRecoveryGradient: true, patchRecoveryHessian: true);
+
+                x = morePoints.ExtractSubArrayShallow(i, -1, 0).To1DArray();
+                y = morePoints.ExtractSubArrayShallow(i, -1, 1).To1DArray();
+                Array.Resize(ref x, iter);
+                Array.Resize(ref y, iter);
+                //double[] results = new double[iter];
+
+                switch (testCase) {
+                    case TestCases.av:
+                    case TestCases.av3x3:
+                        //fValues[i, j] = field.ProbeAt(new double[] {x[j], y[j]});
+                        fValues.SetSubVector(values, new int[] { i, -1 });
+                        break;
+                }
+
+                // Save more stuff
+                iterations[i] = iter;
+                finalFValues[i] = fValues[i, iter - 1];
+                converged[i] = pointFound;
+                jCell[i] = jLocal;
+
+                if (i % 100 == 0) {
+                    Console.WriteLine("Point " + i);
+                }
+
+                // Write text file
+                //    string path = "C:\\tmp\\ReconstructLevelSet\\curve_" + i + ".txt";
+                //    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(path)){
+                //sw.WriteLine("x \t y \t z");
+
+                //        string resultLine;
+                //        for (int j = 0; j < iter; j++){
+                //            resultLine = x[j] + "\t" + y[j] + "\t" + fValues[i, j];
+                //            sw.WriteLine(resultLine);
+                //        }
+
+                //        sw.Flush();
+                //    }
+            }
+            #endregion
+
+            #region Plot seeding points
+            if (plotSeedingsPoints) {
+                // Write text file
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "seedingPoints.txt")) {
+                    string resultLine;
+                    for (int j = 0; j < morePoints.Lengths[0]; j++) {
+                        resultLine = morePoints[j, 0, 0] + "\t"
+                                   + morePoints[j, 0, 1] + "\t"
+                                   + fValues[j, 0];
+                        sw.WriteLine(resultLine);
+                    }
+                    sw.Flush();
+                }
+            }
+            #endregion
+
+            #region Plot inflections points
+            if (plotInflectionsPoints) {
+                // Write text file
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "inflectionPoints.txt")) {
+                    string resultLine;
+                    for (int j = 0; j < morePoints.Lengths[0]; j++) {
+                        int pointFound = converged[j] ? 1 : 0;
+                        resultLine = morePoints[j, iterations[j] - 1, 0] + "\t"
+                                   + morePoints[j, iterations[j] - 1, 1] + "\t"
+                                   + finalFValues[j] + "\t"
+                                   + pointFound;
+                        sw.WriteLine(resultLine);
+                    }
+
+                    sw.Flush();
+                }
+            }
+            #endregion
+
+            #region Plot curves
+            if (plotCurves) {
+                for (int i = 0; i < morePoints.Lengths[0]; i++) {
+                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "curve_" + i + ".txt")) {
+                        string resultLine;
+                        for (int j = 0; j < iterations[i]; j++) {
+                            resultLine = morePoints[i, j, 0] + "\t" + morePoints[i, j, 1] + "\t" + fValues[i, j];
+                            sw.WriteLine(resultLine);
+                        }
+                        sw.Flush();
+                    }
+                }
+            }
+            #endregion
+
+            #region Plot points consisting of seeding and inflection point
+            for (int j = 0; j < morePoints.Lengths[0]; j++) {
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "startEndPairs_" + j + ".txt")) {
+
+                    string resultLine;
+                    int pointFound = converged[j] ? 1 : 0;
+
+                    // Starting point
+                    resultLine = morePoints[j, 0, 0] + "\t"
+                               + morePoints[j, 0, 1] + "\t"
+                               + fValues[j, 0] + "\t"
+                               + pointFound;
+                    sw.WriteLine(resultLine);
+
+                    // End point
+                    resultLine = morePoints[j, iterations[j] - 1, 0] + "\t"
+                               + morePoints[j, iterations[j] - 1, 1] + "\t"
+                               + fValues[j, iterations[j] - 1] + "\t"
+                               + pointFound;
+                    sw.WriteLine(resultLine);
+
+                    sw.Flush();
+                }
+            }
+            #endregion
+        }
+
+        private static DGField Find(this IEnumerable<DGField> fields, string name) {
+            return fields.Where(f => f.Identification == name).SingleOrDefault();
+        }
+    }
+
+
+    public enum TestCases {
+        av = 0,
+
+        av3x3
     }
 }
