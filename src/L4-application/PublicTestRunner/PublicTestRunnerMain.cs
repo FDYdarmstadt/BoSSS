@@ -357,7 +357,7 @@ namespace PublicTestRunner {
                 Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
             }
 
-            Console.WriteLine("******* Starting job deployment/submission *******");
+            Console.WriteLine($"******* Starting job deployment/submission ({DateTime.Now}) *******");
 
             DateTime start = DateTime.Now;
 
@@ -484,6 +484,7 @@ namespace PublicTestRunner {
             } else {
                 Console.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {AllOpenJobs.Count - SuccessfulFinishedCount} have other states.");
             }
+            Console.WriteLine($"{DateTime.Now}");
             
             return returnCode;
         }
