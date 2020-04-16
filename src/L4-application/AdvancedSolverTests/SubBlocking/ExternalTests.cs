@@ -194,7 +194,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- Extract SubMatrix
             stw.Start();
-            BlockMsrMatrix subM = mask.GetSubBlockMatrix(M, false , coup[1], coup[2]);
+            BlockMsrMatrix subM = mask.GetSubBlockMatrix(M, false , coup[0], coup[1]);
             stw.Stop();
 
             //Arrange --- Extract Blocks in Matlab and substract
@@ -255,7 +255,7 @@ namespace AdvancedSolverTests.SubBlocking
             //Act --- Extract subblocks
             stw.Start();
             //var eblocks = mask.GetSubBlocks(M,coup[0],coup[1],coup[2]);
-            var eblocks = mask.GetSubBlocks(M, true, false, false);
+            var eblocks = mask.GetSubBlocks(M, false, false);
             stw.Stop();
 
             //Assert --- same number of blocks?
@@ -319,7 +319,7 @@ namespace AdvancedSolverTests.SubBlocking
             sbs.AllExternalCellsSelection();
             var M_ext = BlockMask.GetAllExternalRows(map, M);
             var mask = new TestMask(sbs, M_ext);
-            var eblocks = mask.GetSubBlocks(M, true, false, false);
+            var eblocks = mask.GetSubBlocks(M, false, false);
             //Dictionary<int, int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
 
             //Arrange --- generate rnd vector and distribute it
@@ -336,7 +336,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Arrange --- get extended (loc+external cells) vector
             double[] Vec_ext = new double[vec.Length + vec_ex.Vector_Ext.Length];
-            mask.AccVecToFull(vec_ex.Vector_Ext, Vec_ext);
+            mask.AccSubVec(vec_ex.Vector_Ext, Vec_ext);
 
             bool test = eblocks.Length.MPIEquals();
             Debug.Assert(test);
@@ -345,10 +345,10 @@ namespace AdvancedSolverTests.SubBlocking
             stw.Start();
             for (int i=0; i < eblocks.Length; i++) {
                 int iBlock = i + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                double[] vec_i = mask.GetVectorCellwise(Vec_ext, iBlock);
+                double[] vec_i = mask.GetSubVecOfCell(Vec_ext, iBlock);
                 double[] Res_i = new double[vec_i.Length];
                 eblocks[i].MatVecMul(1.0, vec_i, 0.0, Res_i);
-                mask.AccVecCellwiseToFull(Res_i, iBlock, Res_ext);
+                mask.AccSubVecOfCell(Res_i, iBlock, Res_ext);
                 if (map.MpiRank == 0) {
                     eblocks[i].ConvertToMsr().SaveToTextFileSparseDebug(String.Format("block_{0}_{1}", i, map.MpiRank));
                     vec_i.SaveToTextFileDebug(String.Format("vec_{0}_{1}", i, map.MpiRank));
@@ -358,7 +358,7 @@ namespace AdvancedSolverTests.SubBlocking
             stw.Stop();
 
             //Act --- project Res_i onto Res_g and Res_g=M_ext*vec_ext-Res_g
-            double[] Res_g = mask.GetSubBlockVec(Res_ext);
+            double[] Res_g = mask.GetSubVec(Res_ext);
             var qM_ext=M_ext.ConvertToQuadraticBMsr(mask.Global_IList_ExternalCells);
             qM_ext.SpMV(1.0, vec_ex.Vector_Ext, -1.0, Res_g);
 
@@ -400,7 +400,7 @@ namespace AdvancedSolverTests.SubBlocking
             int[] idc = Utils.GetIdcOfSubBlock(map,cells);
             bool[] coup = Utils.SetCoupling(MShape);
 
-            var M_sub = mask.GetSubBlockMatrix(M, false, coup[1], coup[2]);
+            var M_sub = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
 
             var infNorm = MultidimensionalArray.Create(4, 1);
             int rank = map.MpiRank;
@@ -462,11 +462,11 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- 
             stw.Start();
-            var VecA = maskA.GetSubBlockVec(Vec, new double[0]);
-            var VecB = maskB.GetSubBlockVec(Vec, new double[0]);
+            var VecA = maskA.GetSubVec(Vec, new double[0]);
+            var VecB = maskB.GetSubVec(Vec, new double[0]);
 
-            maskA.AccVecToFull(VecA, VecAB, new double[0]);
-            maskB.AccVecToFull(VecB, VecAB, new double[0]);
+            maskA.AccSubVec(VecA, VecAB, new double[0]);
+            maskB.AccSubVec(VecB, VecAB, new double[0]);
             stw.Stop();
 
             Debug.Assert(Vec.L2Norm() != 0);

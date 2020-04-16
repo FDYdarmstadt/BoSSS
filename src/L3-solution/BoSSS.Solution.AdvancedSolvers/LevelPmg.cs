@@ -124,7 +124,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BlockMsrMatrix P01HiMatrix = null;
 
                 if (UseDiagonalPmg) {
-                    HighOrderBlocks_LU = hMask.GetSubBlocks(op.OperatorMatrix, true, false, false);
+                    HighOrderBlocks_LU = hMask.GetSubBlocks(op.OperatorMatrix, false, false);
                     int NoOfBlocks = HighOrderBlocks_LU.Length;
                     HighOrderBlocks_LUpivots = new int[NoOfBlocks][];
 
@@ -226,13 +226,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
 
             // project to low-p/coarse
-            double[] Res_c = lMask.GetSubBlockVec(Res_f);
+            double[] Res_c = lMask.GetSubVec(Res_f);
 
             // low-p solve
             intSolver.Solve(Cor_c, Res_c);
 
             // accumulate low-p correction
-            lMask.AccVecToFull(Cor_c, Cor_f);
+            lMask.AccSubVec(Cor_c, Cor_f);
 
             if (UseHiOrderSmoothing) {
                 // solver high-order 
@@ -255,10 +255,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             int NpTotHi = HighOrderBlocks_LU[j].NoOfRows;
                             x_hi = new double[NpTotHi];
 
-                            double[] b_f = hMask.GetVectorCellwise(Res_f, j);
+                            double[] b_f = hMask.GetSubVecOfCell(Res_f, j);
                             Debug.Assert(b_f.Length == NpTotHi);
                             HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
-                            hMask.AccVecCellwiseToFull(x_hi, j, X);
+                            hMask.AccSubVecOfCell(x_hi, j, X);
                         }
 
                     }
@@ -266,11 +266,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (m_highMaskLen > 0) {
                         int Hc = m_highMaskLen;
                         // project to low-p/coarse
-                        double[] hi_Res_c = hMask.GetSubBlockVec(Res_f);
+                        double[] hi_Res_c = hMask.GetSubVec(Res_f);
                         Debug.Assert(hi_Res_c.Length == m_highMaskLen);
                         double[] hi_Cor_c = new double[Hc];
                         hiSolver.Solve(hi_Cor_c, hi_Res_c);
-                        hMask.AccVecToFull(hi_Cor_c, X);
+                        hMask.AccSubVec(hi_Cor_c, X);
                     }
                 }
             }

@@ -625,7 +625,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //get subblocks from masking
                         MultidimensionalArray[] hiBlocks = null;
-                        hiBlocks = HiMask.GetSubBlocks(op.OperatorMatrix, true, true, false); //gets diagonal-blocks only
+                        hiBlocks = HiMask.GetSubBlocks(op.OperatorMatrix, true, false); //gets diagonal-blocks only
                         loBlock = lowMask.GetSubBlockMatrix(op.OperatorMatrix);
 
                         //get inverse of hiorder blocks
@@ -735,7 +735,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         int rows = BMfullBlocks[iPart].GetNoOfMaskedRows;
                         double[] druffdamit = rows.ForLoop<double>(i=>1.0);
 
-                        BMfullBlocks[iPart].AccVecToFull(druffdamit, XExchange.Vector_Ext, SolScale);
+                        BMfullBlocks[iPart].AccSubVec(druffdamit, XExchange.Vector_Ext, SolScale);
 
                         //int[] ci = BlockIndices_Local[iPart];
                         //int[] ciE = BlockIndices_External[iPart];
@@ -1146,7 +1146,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             ////chackScheiss_iPart.SaveToTextFile("chackScheiss" + iPart + ".txt");
                             //if (ciE != null && ciE.Length > 0)
                             //    bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
-                            var bi=BMfullBlocks[iPart].GetSubBlockVec(ResExchange.Vector_Ext, Res);
+                            var bi=BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                             double[] xi = new double[bi.Length];
                             if (UsePMGinBlocks) {
                                 // +++++++++++++++++++++++++++++++++
@@ -1176,7 +1176,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //int Llo = ciLo.Length;
 
                                 //double[] biLo = new double[Llo];
-                                var biLo=BMloBlocks[iPart].GetSubBlockVec(ResExchange.Vector_Ext, Res);
+                                var biLo=BMloBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                                 //biLo.AccV(1.0, bi, default(int[]), ciLo);
                                 double[] xiLo = new double[biLo.Length];
                                 try {
@@ -1186,14 +1186,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     throw ae;
                                 }
 
-                                BMloBlocks[iPart].AccVecToFull(xiLo,Xdummy);
+                                BMloBlocks[iPart].AccSubVec(xiLo,Xdummy);
                                 //xi.AccV(1.0, xiLo, ciLo, default(int[]));
 
                                 {
-                                    xi = BMfullBlocks[iPart].GetSubBlockVec(Xdummy);
+                                    xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
                                     // re-evaluate the residual
                                     this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
-                                    BMfullBlocks[iPart].AccVecToFull(bi,Resdummy);
+                                    BMfullBlocks[iPart].AccSubVec(bi,Resdummy);
 
                                     // solve the high-order system
                                     //int[] ciHi = PmgBlock_HiModes[iPart];
@@ -1218,20 +1218,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         //    biHi[n] = bi[ciHi[ptr_CiHi + n]];
                                         //}
 
-                                        biHi = BMhiBlocks[iPart].GetVectorCellwise(Resdummy, j);
+                                        biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
 
                                         HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
 
                                         //for (int n = 0; n < Np; n++) {
                                         //    xi[ciHi[ptr_CiHi + n]] = xiHi[n];
                                         //}
-                                        BMhiBlocks[iPart].AccVecCellwiseToFull(xiHi, j,Xdummy);
+                                        BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j,Xdummy);
                                         
                                         //ptr_CiHi += Np;
                                     }
                                     //Debug.Assert(ptr_CiHi == ciHi.Length);
                                 }
-                                xi=BMfullBlocks[iPart].GetSubBlockVec(Xdummy);
+                                xi=BMfullBlocks[iPart].GetSubVec(Xdummy);
                                 Xdummy.ClearEntries();
                                 Resdummy.ClearEntries();
 
@@ -1250,7 +1250,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //X.AccV(1.0, xi, ci, default(int[]));
                             //if (ciE != null && ciE.Length > 0)
                             //    XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
-                            BMfullBlocks[iPart].AccVecToFull(xi, XExchange.Vector_Ext,X);
+                            BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext,X);
                         }
                     }
 

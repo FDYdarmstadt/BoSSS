@@ -157,23 +157,23 @@ namespace AdvancedSolverTests.SubBlocking
         }
 
         public static bool[] SetCoupling(MatrixShape shape) {
-            bool[] coupling = new bool[3];
+            bool[] coupling = new bool[2];
             switch (shape) {
                 case MatrixShape.diagonal:
                 case MatrixShape.full:
-                    coupling = new bool[] { true, true, true };
+                    coupling = new bool[] { true, true };
                     break;
                 case MatrixShape.diagonal_var:
                 case MatrixShape.full_var:
-                    coupling = new bool[] { true, false, true };
+                    coupling = new bool[] { false, true };
                     break;
                 case MatrixShape.diagonal_spec:
                 case MatrixShape.full_spec:
-                    coupling = new bool[] { true, true, false };
+                    coupling = new bool[] { true, false };
                     break;
                 case MatrixShape.diagonal_var_spec:
                 case MatrixShape.full_var_spec:
-                    coupling = new bool[] { true, false, false };
+                    coupling = new bool[] { false, false };
                     break;
                 default:
                     throw new NotSupportedException(String.Format("{0} is not supported by this test", shape));

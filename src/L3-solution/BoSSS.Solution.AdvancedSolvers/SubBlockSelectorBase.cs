@@ -473,6 +473,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     public struct extNi0
     {
+        /// <summary>
+        /// stores offsets and length of a sub block.
+        /// <paramref name="Li0"/> refers to local index of <see cref="IBlockPartitioning"/>.
+        /// <paramref name="Gi0"/> refers to global index of <see cref="IBlockPartitioning"/>.
+        /// <paramref name="Si0"/> is a local index,
+        /// which numbers the entries of this mask consecutively.
+        /// </summary>
+        /// <param name="Li0">local offset</param>
+        /// <param name="Gi0">global offset</param>
+        /// <param name="Si0">offset relative to mask</param>
+        /// <param name="N">length of block</param>
         public extNi0(int Li0, int Gi0, int Si0, int N) {
             m_Li0 = Li0;
             m_Gi0 = Gi0;
@@ -513,9 +524,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public abstract class BlockMaskBase {
 
         /// <summary>
-        /// auxiliary structure. Stores Offsets and Length of something.
+        /// auxiliary structure. Stores Offsets and Length of subblocks.
         /// </summary>
-        
         private struct Ni0 {
             public Ni0(int i0, int N) {
                 m_i0 = i0;
@@ -535,8 +545,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Generates Block Mask from Sub block selection. 
-        /// Sub matrix can be generated of the multigrid operator overgiven to Sub block selection.
+        /// Generates Block Mask (index lists) from Sub block selection based on a multigrid mapping. 
+        /// abstract parts are individuallized by child classes: <see cref="BlockMask.BlockMaskLoc"/> and <see cref="BlockMask.BlockMaskExt"/>
         /// </summary>
         /// <param name="SBS"></param>
         public BlockMaskBase(SubBlockSelector SBS, MPI_Comm MPIcomm) {
@@ -553,10 +563,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for (int iVar = 0; iVar < m_NoOfVariables; iVar++) {
                     m_NoOfSpecies[iCell][iVar] = m_AggBS[iVar].GetNoOfSpecies(iCell+ m_CellOffset);
                 }
-            }
-            //TestForQuadraticMatrix();   
-            //GenerateAllMasks();
+            } 
         }
+
+        // the subseqent members are different
+        // dependant on mask type: local or external
 
         protected abstract int m_NoOfCells {
             get;
@@ -574,7 +585,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
         }
 
-        //internal get
+        // ============
+        // internal get
+        // ============
         private SubBlockSelectorBase m_sbs;
         protected MultigridMapping m_map;
         private AggregationGridBasis[] m_AggBS;
@@ -582,19 +595,102 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private int m_NoOfVariables;
         private int[][] m_NoOfSpecies;
         private MPI_Comm m_MPIcomm;
-        //internal set
-        public List<int> m_GlobalMask = null;
-        public List<int> m_LocalMask = null;
-        public List<int> m_SubBlockMask = null;
-        public extNi0[][][][] m_StructuredNi0 = null;
-        public int m_Ni0Len;
-        private int m_MaskLen;
-        private Ni0[] m_Ni0;
 
-        private bool TestForQuadraticMatrix() {
-            throw new NotSupportedException("Supports only quadratic matrices");
+        // ============
+        // internal set
+        // ============
+        #region internal set
+        
+        /// <summary>
+        /// global indices in this mask
+        /// </summary>
+        public List<int> m_GlobalMask = null;
+
+        /// <summary>
+        /// local indices in this mask
+        /// </summary>
+        public List<int> m_LocalMask = null;
+
+        /// <summary>
+        /// subblock indices in this mask
+        /// </summary>
+        public List<int> m_SubBlockMask = null;
+
+        /// <summary>
+        /// stores offsets (of local, global and subblock numbering) and lengths of dg blocks
+        /// structure mimics subblock hierarchy:
+        /// 1 idx : cells
+        /// 2 idx : variables
+        /// 3 idx : species
+        /// 4 idx : dg blocks
+        /// content : offset (of local, global and subblock numbering) and length of dg block
+        /// </summary>
+        public extNi0[][][][] m_StructuredNi0 = null;
+
+        /// <summary>
+        /// number of DG subblocks in this mask
+        /// </summary>
+        public int m_Ni0Len;
+
+        /// <summary>
+        /// DOF within this mask
+        /// </summary>
+        private int m_MaskLen;
+
+        /// <summary>
+        /// same content as <see cref="m_StructuredNi0"/> but stored in a plain array
+        /// </summary>
+        private Ni0[] m_Ni0;
+        #endregion
+
+
+        /// <summary>
+        /// Pre generate offsets and lengths for the DG blocks.
+        /// Used in <see cref="GenerateAllMasks"/>.
+        /// </summary>
+        /// <returns>Ni0 for a default Variable upto the maximal occuring DGdegree</returns>
+        private Ni0[] Ni0Gen() {
+            int maxDG = m_DGdegree.Max();
+            var ModeOffsetNLengt = new List<Ni0>();
+            for (int p = 0; p < maxDG + 1; p++) {
+                int aux = p == 0 ? 0 : GetNp(p - 1);
+                int pOffset = aux;
+                int pLength = GetNp(p) - aux;
+                Debug.Assert(p == 0 || ModeOffsetNLengt.Last().i0 < pOffset);
+                Debug.Assert(p == 0 || ModeOffsetNLengt.Last().N < pLength);
+                ModeOffsetNLengt.Add(new Ni0(pOffset, pLength));
+            }
+            Ni0[] Ni0array = ModeOffsetNLengt.ToArray();
+            Debug.Assert(Ni0array.GroupBy(x => x.i0).Any(g => g.Count() == 1));
+            return Ni0array;
         }
 
+        private int GetNp(int p) {
+            int Np = -1;
+            int SpacDim = m_map.AggGrid.SpatialDimension;
+            Debug.Assert(p >= 0);
+            switch (SpacDim) {
+                case 1:
+                    Np = p + 1 + p + 1;
+                    break;
+                case 2:
+                    Np = (p * p + 3 * p + 2) / 2;
+                    break;
+                case 3:
+                    Np = (p * p * p + 6 * p * p + 11 * p + 6) / 6;
+                    break;
+                default:
+                    throw new Exception("wtf?Spacialdim=1,2,3 expected");
+            }
+            return Np;
+        }
+
+        /// <summary>
+        /// The core of the masking
+        /// Generates index lists and the Ni0-struct-list corresponding to mask
+        /// and is called by the child classes: local and external mask
+        /// Note: the smallest unit are DG sub blocks!
+        /// </summary>
         protected void GenerateAllMasks() {
             int NoOfCells = m_NoOfCells;
             int NoOfVariables = m_NoOfVariables;
@@ -684,16 +780,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
             }
-
-
 #endif
-            int LocLen = m_LocalLength; // this method uses MPI-communication in case of BMExt and should not be called from inside if statement!
 
             if (!emptysel) {
                 Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1));
                 Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1));
                 Debug.Assert(ListNi0.Count() == NumOfNi0);
-                Debug.Assert(MaskLen <= LocLen);
+                Debug.Assert(MaskLen <= m_LocalLength);
                 Debug.Assert(Localint.GroupBy(x => x).Any(g => g.Count() == 1));
                 Debug.Assert(Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
                 Debug.Assert(Localint.Count() == MaskLen);
@@ -710,11 +803,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// 
+        /// Get the local index list of a cell within this mask
         /// </summary>
         /// <param name="iCell"></param>
         /// <returns></returns>
-        public int[] GetCellwiseLocalidx(int iCell) {
+        public int[] GetLocalidcOfCell(int iCell) {
             List<int> cellidx = new List<int>();
             for (int i = 0; i < m_StructuredNi0[iCell].Length; i++) {
                 for (int j = 0; j < m_StructuredNi0[iCell][i].Length; j++) {
@@ -732,11 +825,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// 
+        /// Get the Global index list of a cell within this mask
         /// </summary>
         /// <param name="iCell"></param>
         /// <returns></returns>
-        public int[] GetCellwiseGlobalidx(int iCell) {
+        public int[] GetGlobalidcOfCell(int iCell) {
             List<int> cellidx = new List<int>();
             for (int i = 0; i < m_StructuredNi0[iCell].Length; i++) {
                 for (int j = 0; j < m_StructuredNi0[iCell][i].Length; j++) {
@@ -754,11 +847,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// 
+        /// Get the length of a cell within this mask
         /// </summary>
         /// <param name="iCell"></param>
         /// <returns></returns>
-        public int GetCellwiseLength(int iCell) {
+        public int GetLengthOfCell(int iCell) {
             int len = 0;
             Debug.Assert(iCell< m_StructuredNi0.Length);
             for (int i = 0; i < m_StructuredNi0[iCell].Length; i++) {
@@ -772,22 +865,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return len;
         }
 
+        /// <summary>
+        /// Get Block length for cells in mask
+        /// </summary>
+        /// <returns></returns>
         public List<int> GetAllSubMatrixCellLength() {
-            var intList = new List<int>();
+            var SubM_N = new List<int>();
             for (int iCell = 0; iCell < m_StructuredNi0.Length; iCell++) {
-                intList.Add(GetCellwiseLength(iCell));
+                SubM_N.Add(GetLengthOfCell(iCell));
             }
-            return intList;
+            return SubM_N;
         }
 
-        private int GetCellwiseSubIdx(int iCell) {
-            return m_StructuredNi0[iCell][0][0][0].Si0;
-        }
-
+        /// <summary>
+        /// Gets all offsets of subblock index for cellblocks in this mask.
+        /// </summary>
+        /// <returns></returns>
         public List<int> GetAllSubMatrixCellOffsets() {
             var intList = new List<int>();
             for (int iCell = 0; iCell < m_StructuredNi0.Length; iCell++)
-                intList.Add(GetCellwiseSubIdx(iCell));
+                intList.Add(m_StructuredNi0[iCell][0][0][0].Si0);
             return intList;
         }
 
@@ -804,60 +901,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// 
+        /// Number of cell blocks in mask
         /// </summary>
-        /// <param name="iCell"></param>
-        /// <returns></returns>
-        private extNi0[][][] GetSubBlockNi0Cellwise(int iCell) {
-            return m_StructuredNi0[iCell];
-        }
-
-        /// <summary>
-        /// Pre generates Offsets and Length for a default Variable block with the maximal DGdegree, to save computation time.
-        /// </summary>
-        /// <returns></returns>
-        private Ni0[] Ni0Gen() {
-            int maxDG = m_DGdegree.Max();
-            var ModeOffsetNLengt = new List<Ni0>();
-            for (int p = 0; p < maxDG + 1; p++) {
-                int aux = p == 0 ? 0 : GetNp(p - 1);
-                int pOffset = aux;
-                int pLength = GetNp(p) - aux;
-                Debug.Assert(p == 0 || ModeOffsetNLengt.Last().i0 < pOffset);
-                Debug.Assert(p == 0 || ModeOffsetNLengt.Last().N < pLength);
-                ModeOffsetNLengt.Add(new Ni0(pOffset, pLength));
-            }
-            Ni0[] Ni0array = ModeOffsetNLengt.ToArray();
-            Debug.Assert(Ni0array.GroupBy(x => x.i0).Any(g => g.Count() == 1));
-            return Ni0array;
-        }
-
-        private int GetNp(int p) {
-            int Np = -1;
-            int SpacDim = m_map.AggGrid.SpatialDimension;
-            Debug.Assert(p >= 0);
-            switch (SpacDim) {
-                case 1:
-                    Np = p + 1 + p + 1;
-                    break;
-                case 2:
-                    Np = (p * p + 3 * p + 2) / 2;
-                    break;
-                case 3:
-                    Np = (p * p * p + 6 * p * p + 11 * p + 6) / 6;
-                    break;
-                default:
-                    throw new Exception("wtf?Spacialdim=1,2,3 expected");
-            }
-            return Np;
-        }
-
-        /// <summary>
-        /// Returns the local number of subblocks rowwise.
-        /// </summary>
-        public int LocalLength {
+        public int NoOfCells {
             get {
-                return m_Ni0Len;
+                return m_StructuredNi0.Length;
             }
         }
 

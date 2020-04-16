@@ -145,7 +145,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- diagonal subblock extraction
             stw.Start();
-            var blocks = mask.GetSubBlocks(Mprep, coupling[0], coupling[1], coupling[2]);
+            var blocks = mask.GetSubBlocks(Mprep, coupling[0], coupling[1]);
             stw.Stop();
 
             //Assert --- all diagonal blocks are extracted
@@ -212,7 +212,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- establish submatrix
             stw.Start();
-            var Mext = mask.GetSubBlockMatrix(M, false, coup[1], coup[2]);
+            var Mext = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
             stw.Stop();
             Mext.Acc(-1.0, M);
 
@@ -275,8 +275,6 @@ namespace AdvancedSolverTests.SubBlocking
             SubBlockSelector SBS = new SubBlockSelector(map);
             
             BlockMask mask = new BlockMask(SBS, null);
-            bool[] coupling = Utils.SetCoupling(MShape);
-            //var blocks = mask.GetSubBlocks(M, coupling[0], coupling[1], coupling[2]);
 
             //Arrange --- some time measurement
             Stopwatch stw = new Stopwatch();
@@ -289,8 +287,8 @@ namespace AdvancedSolverTests.SubBlocking
 
             for (int i = 0; i < map.LocalNoOfBlocks; i++) {
                 stw.Start();
-                double[] Vec_i = mask.GetVectorCellwise(Vec,i);
-                mask.AccVecCellwiseToFull(Vec_i,i, Vec_col);
+                double[] Vec_i = mask.GetSubVecOfCell(Vec,i);
+                mask.AccSubVecOfCell(Vec_i,i, Vec_col);
                 stw.Stop();
             }
             Vec_col.AccV(-1.0, Vec);
@@ -336,11 +334,11 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- 
             stw.Start();
-            var VecA = maskA.GetSubBlockVec(Vec);
-            var VecB = maskB.GetSubBlockVec(Vec);
+            var VecA = maskA.GetSubVec(Vec);
+            var VecB = maskB.GetSubVec(Vec);
 
-            maskA.AccVecToFull(VecA, VecAB);
-            maskB.AccVecToFull(VecB, VecAB);
+            maskA.AccSubVec(VecA, VecAB);
+            maskB.AccSubVec(VecB, VecAB);
             stw.Stop();
 
             Debug.Assert(Vec.L2Norm() != 0);
@@ -385,8 +383,8 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- subblock extraction
             stw.Start();
-            var blocksA = maskA.GetSubBlocks(mgo.OperatorMatrix, false, false, false);
-            var blocksB = maskB.GetSubBlocks(mgo.OperatorMatrix, false, false, false);
+            var blocksA = maskA.GetSubBlocks(mgo.OperatorMatrix, false, false);
+            var blocksB = maskB.GetSubBlocks(mgo.OperatorMatrix, false, false);
             stw.Stop();
 
             //Assert --- 
