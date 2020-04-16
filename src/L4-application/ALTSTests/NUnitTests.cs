@@ -33,17 +33,13 @@ namespace ALTSTests {
                 () => new NUnitTests());
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         static public void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            BoSSS.Solution.Application.InitMPI();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         static public void Cleanup() {
-            //Console.Out.Dispose();
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
         public static void ALTSDynClustering(int order, int subGrids, double maxEnergyNorm) {

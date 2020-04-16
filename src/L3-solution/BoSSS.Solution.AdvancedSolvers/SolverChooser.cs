@@ -812,7 +812,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                    templinearSolve = KcycleMultiSchwarz(lc, LocalDOF);
+                    templinearSolve = KcycleMultiSchwarz(lc, MultigridSequence, LocalDOF);
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
@@ -1662,7 +1662,10 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
+        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, AggregationGridData[] MultigridSequence, int[] _LocalDOF) {
+            if (MultigridSequence.Length < 1)
+                throw new ArgumentException("At least one multigrid level is required.");
+
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
@@ -1671,7 +1674,7 @@ namespace BoSSS.Solution {
             var SolverChain = new List<ISolverSmootherTemplate>();
             
 
-            for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
+            for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels && iLevel < MultigridSequence.Length; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
 

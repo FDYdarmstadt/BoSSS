@@ -32,17 +32,12 @@ namespace MPITest {
             Cleanup();
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            BoSSS.Solution.Application.InitMPI();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();

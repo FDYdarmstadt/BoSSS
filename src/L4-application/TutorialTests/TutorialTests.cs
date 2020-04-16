@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.IO;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 
@@ -23,8 +24,11 @@ namespace BoSSS.Application.TutorialTests {
     static class TutorialTestsMain {
         
         static void Main(string[] args) {
-            AllUpTest.TestFixtureSetUp();
-            //AllUpTest.RunWorksheets("quickStartCNS/IsentropicVortex.tex");
+            AllUpTest.OneTimeSetUp();
+
+            AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+
+            AllUpTest.RunWorksheet("quickStartCNS/IsentropicVortex.tex");
             //AllUpTest.RunWorksheets("MetaJobManager/MetaJobManager.tex");
             //AllUpTest.RunWorksheets("GridGeneration/GridGeneration.tex");
             //AllUpTest.RunWorksheets("quickStartIBM/channel.tex");
@@ -36,12 +40,12 @@ namespace BoSSS.Application.TutorialTests {
             //AllUpTest.RunWorksheets("tutorial6/tutorial6.tex");
             //AllUpTest.RunWorksheets("tutorial9-SIP/sip.tex");
             // ---
-            AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
+            //AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
-            //AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
-            //AllUpTest.RunWorksheets("convergenceStudyTutorial/convStudy.tex"); 
+            //AllUpTest.RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
+            //AllUpTest.RunWorksheet("convergenceStudyTutorial/convStudy.tex"); 
 
-            AllUpTest.TestFixtureTearDown();
+            AllUpTest.OneTimeTearDown();
         }
 
     }

@@ -39,6 +39,9 @@ using ilPSP.Tracing;
 namespace BoSSS.Solution.AdvancedSolvers {
 
 
+    /// <summary>
+    /// Additive Schwarz method with optional, multiplicative coarse-grid correction.
+    /// </summary>
     public class Schwarz : ISolverSmootherTemplate, ISolverWithCallback {
 
         /// <summary>

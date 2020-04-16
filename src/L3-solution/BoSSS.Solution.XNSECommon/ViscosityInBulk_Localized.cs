@@ -22,6 +22,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
+    /*
     class ViscosityInBulk_GradUTerm_Localized : ViscosityInBulk_GradUTerm {
 
         public ViscosityInBulk_GradUTerm_Localized(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB)
@@ -83,4 +84,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 return 0;
             }
         }
+
+    */
 }

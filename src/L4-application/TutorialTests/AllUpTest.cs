@@ -33,73 +33,152 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// MPI finalization.
         /// </summary>
-        [TestFixtureTearDown]
-        static public void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
+        [OneTimeTearDown]
+        static public void OneTimeTearDown() {
+            //csMPI.Raw.mpiFinalize();
+
+            // try to terminate batch processor, if still running:
+            //int timeoucount = 0;
+            //while (MiniBatchProcessor.Server.IsRunning) {
+            //    Console.WriteLine("Terminating MiniBatchProcessor...");
+            //    MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds:-1);
+            //    Thread.Sleep(10000);
+
+            //    timeoucount++;
+            //    if (timeoucount > 100) {
+            //        Assert.Fail("Unable to kill MiniBatchProcessor - server");
+            //    }
+            //}
+            //Console.WriteLine("MiniBatchProcessor terminated.");
         }
 
         /// <summary>
         /// MPI init.
         /// </summary>
-        [TestFixtureSetUp]
-        static public void TestFixtureSetUp() {
-            BoSSS.Solution.Application.InitMPI(new string[0]);
+        [OneTimeSetUp]
+        static public void OneTimeSetUp() {
+            //BoSSS.Solution.Application.InitMPI(new string[0]);
 
-             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
-                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
-                ) {
-                // This is Florians Laptop;
-                // he is to poor to afford MATLAB, so he uses OCTAVE
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
-            } 
+            
 
-            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
-            if (Directory.Exists(preExistingDb)) {
-                //preExistingDb.Delete(true);
-                Directory.Delete(preExistingDb, true);
-            }
+            //string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            //if (Directory.Exists(preExistingDb)) {
+            //    //preExistingDb.Delete(true);
+            //    Directory.Delete(preExistingDb, true);
+            //}
         }
 
-        static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+        //static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+        internal static string DirectoryOffset = "";
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.tex")]
+        [Test]
+        static public void Run__IsentropicVortex() {
+            RunWorksheet("IsentropicVortex.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
+        //[Test]
+        static public void Run__MetaJobManager() {
+            RunWorksheet("MetaJobManager.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
+        //[Test]
+        static public void Run__GridGeneration() {
+            RunWorksheet("GridGeneration.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("quickStartIBM/channel.tex")]
+        //[Test]
+        static public void Run__channel() {
+            RunWorksheet("channel.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.tex")]
+        [Test]
+        static public void Run__tutorialMatlab() {
+            RunWorksheet("tutorialMatlab.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial2/uebung2tutorial.tex")]
+        [Test]
+        static public void Run__uebung2tutorial() {
+            RunWorksheet("uebung2tutorial.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial4/tutorial4.tex")]
+        [Test]
+        static public void Run__tutorial4() {
+            RunWorksheet("tutorial4.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial5/uebung5tutorial.tex")]
+        [Test]
+        static public void Run__uebung5tutorial() {
+            RunWorksheet("uebung5tutorial.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial6/tutorial6.tex")]
+        [Test]
+        static public void Run__tutorial6() {
+            RunWorksheet("tutorial6.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial9-SIP/sip.tex")]
+        [Test]
+        static public void Run__sip() {
+            RunWorksheet("sip.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.tex")]
+        [Test]
+        static public void Run__Poisson() {
+            RunWorksheet("Poisson.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.tex")]
+        [Test]
+        static public void Run__StokesEq() {
+            RunWorksheet("StokesEq.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack( "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex")]
+        [Test]
+        static public void Run__CsharpAndBoSSSpad() {
+            RunWorksheet("CsharpAndBoSSSpad.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
+        //[Test]
+        static public void Run__convStudy() {
+            RunWorksheet("convStudy.tex");
+        }
 
         /// <summary>
-        /// Runs all the worksheets contained in the BoSSS handbook.
+        /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
-        [Test]
-        static public void RunWorksheets([Values(
-            "quickStartCNS/IsentropicVortex.tex",
-            "MetaJobManager/MetaJobManager.tex",
-            "GridGeneration/GridGeneration.tex",
-            "quickStartIBM/channel.tex",
-            "shortTutorialMatlab/tutorialMatlab.tex",
-            // ----
-            "tutorial2/uebung2tutorial.tex",
-            "tutorial4/tutorial4.tex",
-            "tutorial5/uebung5tutorial.tex",
-            "tutorial6/tutorial6.tex",
-            "tutorial9-SIP/sip.tex",
-            // ---
-            "tutorial10-PoissonSystem/Poisson.tex",
-            "tutorial11-Stokes/StokesEq.tex",
-            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex",
-            "convergenceStudyTutorial/convStudy.tex"
-            //"ParameterStudy/ParameterStudy.tex"
-
-            )] string TexFileName) {
-
-
-            // remove - if present - any pre-existing default database
-
-            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
-            if (Directory.Exists(preExistingDb)) {
-                Directory.Delete(preExistingDb, true);
-            }
-            
+        static public void RunWorksheet(string TexFileName) {
 
             // run test:
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
+
+            MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false);
 
             int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
 
@@ -108,17 +187,7 @@ namespace BoSSS.Application.TutorialTests {
             Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
 
-            // try to terminate batch processor, if still running:
-            int timeoucount = 0;
-            while(MiniBatchProcessor.Server.IsRunning) {
-                MiniBatchProcessor.Server.SendTerminationSignal();
-                Thread.Sleep(10000);
-
-                timeoucount++;
-                if(timeoucount > 100) {
-                    Assert.Fail("Unable to kill MiniBatchProcessor - server");
-                }
-            }
+            
 
 
             //foreach(var db in BoSSS.Application.BoSSSpad.InteractiveShell.databases) {

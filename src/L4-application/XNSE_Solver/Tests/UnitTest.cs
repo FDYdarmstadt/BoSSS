@@ -27,6 +27,8 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using ilPSP;
+using BoSSS.Solution.AdvancedSolvers.Testing;
+using ilPSP.Connectors.Matlab;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -39,22 +41,25 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// MPI finalize.
         /// </summary>
-        [TestFixtureTearDown]
-        static public void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        static public void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
         /// MPI init.
         /// </summary>
-        [TestFixtureSetUp]
-        static public void TestFixtureSetUp() {
+        [OneTimeSetUp]
+        static public void OneTimeSetUp() {
+            
             BoSSS.Solution.Application.InitMPI(new string[0]);
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 
 
-
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
         [Test]
         public static void ViscosityJumpTest(
 #if DEBUG
@@ -70,13 +75,82 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new ViscosityJumpTest();
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
-            //C.ImmediatePlotPeriod = 1;
-            //C.SuperSampling = 3;
-            
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
-                
+
             GenericTest(Tst, C);
+           
         }
+
+#if !DEBUG
+
+        /// <summary>
+        /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void ScalingViscosityJumpTest_p2(
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+            ScalingViscosityJumpTest(2, vmode);
+        }
+
+        /// <summary>
+        /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void ScalingViscosityJumpTest_p3(
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+            ScalingViscosityJumpTest(3, vmode);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        public static void ScalingViscosityJumpTest(
+
+            [Values(2, 3)] int deg,
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+
+            double AgglomerationTreshold = 0.1;
+
+            var Tst = new ViscosityJumpTest();
+            var LaLa = new List<XNSE_Control>();
+            foreach(var Res in new[] { 4, 8, 16 }) {
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
+                LaLa.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingViscosityJumpTest-p" + deg);
+        }
+#endif
+
+
+#if !DEBUG        
+        /// <summary>
+        /// <see cref="SinglePhaseChannel"/>
+        /// </summary>
+        [Test]
+        public static void ScalingSinglePhaseChannelTest(
+            [Values(1, 2, 3)] int deg,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode) //
+        {
+
+            double AgglomerationTreshold = 0.1;
+
+            var Tst = new SinglePhaseChannel(0.0);
+            var LaLa = new List<XNSE_Control>();
+            foreach(var Res in new[] { 1, 2, 3, 4 }) {
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 2;
+                LaLa.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingSinglePhaseChannelTest-p" + deg);
+        }
+#endif      
+
 
         [Test]
         public static void BcTest_PressureOutletTest(
@@ -100,10 +174,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
+            ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg);
         }
 
 
-        
+
         [Test]
         public static void MovingDropletTest(
 #if DEBUG
@@ -127,7 +202,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #endif
             ) {
 
-            if (deg == 3 && AgglomerationTreshold <= 0.01)
+            if(deg == 3 && AgglomerationTreshold <= 0.01)
                 return;
 
             var Tst = new MovingDropletTest(Radius, includeConvection, bSteady);
@@ -136,6 +211,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
+            //if(AgglomerationTreshold > 0.01) {
+            //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
+            //}
         }
 
         [Test]
@@ -146,7 +224,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0)] double angle
 #else
-            [Values(3, 4)] int deg,
+            [Values(2, 3, 4)] int deg,
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle
@@ -158,17 +236,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
 
             GenericTest(Tst, C);
+            if(deg < 3)
+                ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
+
         }
 
 
-        
+
         [Test]
         public static void TranspiratingChannelTest(
             [Values(2)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(0.0, 0.1)] double U2,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
-            [Values(true,false)] bool periodicity
+            [Values(true, false)] bool periodicity
             ) {
 
             var Tst = new TranspiratingChannelTest(U2, periodicity);
@@ -178,9 +259,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.LinearSolver.MaxSolverIterations = 100;
             //C.Solver_MaxIterations = 100;
             GenericTest(Tst, C);
+            //if(AgglomerationTreshold > 0) {
+            //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
+            //}
         }
-        
 
+
+        /// <summary>
+        /// <see cref="PolynomialTestForConvection"/>
+        /// </summary>
         [Test]
         public static void PolynomialTestForConvectionTest(
             [Values(3)] int deg,
@@ -199,7 +286,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         private static void GenericTest(ITest Tst, XNSE_Control C) {
-            using (var solver = new XNSE_SolverMain()) {
+            using(var solver = new XNSE_SolverMain()) {
 
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 4;
@@ -217,31 +304,51 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 double[] LastErrors = solver.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt);
                 double[] ErrThresh = Tst.AcceptableL2Error;
-                if (LastErrors.Length != ErrThresh.Length)
+                if(LastErrors.Length != ErrThresh.Length)
                     throw new ApplicationException();
-                for (int i = 0; i < ErrThresh.Length; i++) {
+                for(int i = 0; i < ErrThresh.Length; i++) {
                     Console.WriteLine("L2 error, '{0}': \t{1}", solver.CurrentSolution.Mapping.Fields[i].Identification, LastErrors[i]);
                 }
 
                 double[] ResThresh = Tst.AcceptableResidual;
                 double[] ResNorms = new double[ResThresh.Length];
-                if (solver.CurrentResidual.Mapping.Fields.Count != ResThresh.Length)
+                if(solver.CurrentResidual.Mapping.Fields.Count != ResThresh.Length)
                     throw new ApplicationException();
-                for (int i = 0; i < ResNorms.Length; i++) {
+                for(int i = 0; i < ResNorms.Length; i++) {
                     ResNorms[i] = solver.CurrentResidual.Mapping.Fields[i].L2Norm();
                     Console.WriteLine("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Mapping.Fields[i].Identification, ResNorms[i]);
                 }
-                                
-                for (int i = 0; i < ErrThresh.Length; i++)
+
+                for(int i = 0; i < ErrThresh.Length; i++)
                     Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
-                
-                for (int i = 0; i < ResNorms.Length; i++)
+
+                for(int i = 0; i < ResNorms.Length; i++)
                     Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
             }
         }
 
+
+        private static void ScalingTest(ITest Tst, int[] ResolutionS, ViscosityMode vmode, int deg) {
+#if !DEBUG
+            string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
+
+            double AgglomerationTreshold = 0.1;
+                        
+            var LaLa = new List<XNSE_Control>();
+            foreach(var Res in ResolutionS) {
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
+                C.SkipSolveAndEvaluateResidual = false;
+                LaLa.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: Name);
+#endif
+        }
+
+
         static XNSE_Control TstObj2CtrlObj(ITest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode, 
-            SurfaceStressTensor_IsotropicMode SurfTensionMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local) {
+            SurfaceStressTensor_IsotropicMode SurfTensionMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local,
+            int GridResolution = 1) {
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
 
@@ -262,7 +369,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // grid
             // ====
 
-            C.GridFunc = tst.CreateGrid;
+            C.GridFunc = () => tst.CreateGrid(GridResolution);
 
             // boundary conditions
             // ===================

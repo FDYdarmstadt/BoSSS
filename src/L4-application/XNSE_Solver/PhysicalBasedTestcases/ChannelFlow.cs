@@ -311,7 +311,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -588,7 +587,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ComputeEnergyProperties = false;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations=50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -892,7 +890,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ComputeEnergyProperties = false;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -1175,7 +1172,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ComputeEnergyProperties = false;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;

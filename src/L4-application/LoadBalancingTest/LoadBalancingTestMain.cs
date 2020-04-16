@@ -25,7 +25,7 @@ namespace BoSSS.Application.LoadBalancingTest {
     /// <summary>
     /// App which performs basic tests on dynamic load balancing.
     /// </summary>
-    class LoadBalancingTestMain : BoSSS.Solution.Application<AppControlSolver> {
+    public class LoadBalancingTestMain : BoSSS.Solution.Application<AppControlSolver> {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;

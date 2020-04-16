@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using ilPSP;
 
 namespace CNS.Tests.IBMTests {
 
@@ -44,6 +45,7 @@ namespace CNS.Tests.IBMTests {
         /// <summary>
         /// Test using zeroth order DG
         /// </summary>
+        [NUnitFileToCopyHack("Tests/IBMTests/IBMCylinderTests.zip")]
         [Test]
         public static void IBMCylinder0th() {
             int dgDegree = 0;
@@ -149,7 +151,7 @@ namespace CNS.Tests.IBMTests {
         }
 
         private static IBMControl CylinderControl(int dgDegree, double endTime) {
-            string dbPath = @"..\..\Tests\IBMTests\IBMCylinderTests.zip";
+            string dbPath = @"IBMCylinderTests.zip";
             double Mach = 0.2;
             double agglomerationThreshold = 0.3;
             int gridSize = 64;

@@ -55,9 +55,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
         
-        public GridCommons CreateGrid() {
+        public GridCommons CreateGrid(int Resolution) {
+            if (Resolution < 1)
+                throw new ArgumentException();
 
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 5 * Resolution + 1), GenericBlas.Linspace(-2, 2, 5 * Resolution + 1));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 2), GenericBlas.Linspace(-2, 2, 2));
 
             grd.EdgeTagNames.Add(1, "Velocity_Inlet");

@@ -48,8 +48,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         [CodeGenExport]
         public void BoSSSInitialize() {
-            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out mustFinalizeMPI);
-            //Console.WriteLine("elo from " +  Enviroment.MPIEnv.MPI_Rank + " of " + Enviroment.MPIEnv.MPI_Size);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>

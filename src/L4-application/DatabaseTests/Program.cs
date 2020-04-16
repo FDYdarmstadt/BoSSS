@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace BoSSS.Application.DatabaseTests
 {
-    class Program
+    public class DatabaseTestsProgram
     {
         public static void Main()
         {

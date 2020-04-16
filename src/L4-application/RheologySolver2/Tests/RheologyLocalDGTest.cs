@@ -124,7 +124,6 @@ namespace BoSSS.Application.Rheology {
             C.grd = cells2;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.ComputeL2Error = true;
 
             //Physical Params

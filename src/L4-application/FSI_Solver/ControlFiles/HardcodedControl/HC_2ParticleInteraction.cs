@@ -14,16 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using System.Collections.Generic;
-using BoSSS.Platform;
-using BoSSS.Solution.Control;
-using BoSSS.Foundation.Grid;
-using System.Diagnostics;
-using BoSSS.Solution.AdvancedSolvers;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
-using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -58,12 +49,11 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             double particleDensity = 1;
-            C.gravity = new double[] { 0, 0 };
 
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, relaxationFactor, addaptiveUnderrelaxation);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1.5);
+            
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1.5);
             double particleRadius = 0.5;
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0.0, 0.0 }, 0, 1)

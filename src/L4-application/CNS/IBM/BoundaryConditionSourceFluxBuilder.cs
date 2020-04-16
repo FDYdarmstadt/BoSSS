@@ -56,7 +56,9 @@ namespace CNS.IBM {
             }
 
             string levelSetBoundaryType = control.LevelSetBoundaryTag;
-            boundaryCondition = boundaryMap.GetBoundaryCondition(levelSetBoundaryType);
+            if (levelSetBoundaryType != "None") {
+                boundaryCondition = boundaryMap.GetBoundaryCondition(levelSetBoundaryType);
+            }
         }
 
         /// <summary>
@@ -65,21 +67,23 @@ namespace CNS.IBM {
         /// </summary>
         /// <param name="boundaryOperator"></param>
         public override void BuildFluxes(Operator boundaryOperator) {
-            foreach (var equationComponent in standardOperator.DensityComponents) {
-                boundaryOperator.DensityComponents.Add(
-                    equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));
-            }
-
-            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
-                foreach (var equationComponent in standardOperator.MomentumComponents[d]) {
-                    boundaryOperator.MomentumComponents[d].Add(
+            if (this.boundaryCondition != null) {
+                foreach (var equationComponent in standardOperator.DensityComponents) {
+                    boundaryOperator.DensityComponents.Add(
                         equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));
                 }
-            }
 
-            foreach (var equationComponent in standardOperator.EnergyComponents) {
-                boundaryOperator.EnergyComponents.Add(
-                        equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));
+                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
+                    foreach (var equationComponent in standardOperator.MomentumComponents[d]) {
+                        boundaryOperator.MomentumComponents[d].Add(
+                            equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));
+                    }
+                }
+
+                foreach (var equationComponent in standardOperator.EnergyComponents) {
+                    boundaryOperator.EnergyComponents.Add(
+                            equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));
+                }
             }
         }
     }

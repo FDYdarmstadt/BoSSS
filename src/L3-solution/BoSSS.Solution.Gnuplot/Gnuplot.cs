@@ -838,11 +838,6 @@ namespace BoSSS.Solution.Gnuplot {
         /// Plots <paramref name="x"/> vs. <paramref name="y"/> using a
         /// logarithmic scaling for <paramref name="y"/>
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="title"></param>
-        /// <param name="format"></param>
-        /// <param name="deferred"></param>
         public void PlotXLogY(IEnumerable<double> x, IEnumerable<double> y, string title = null, PlotFormat format = null, bool deferred = true) {
             PlotXY(
                 x,
@@ -859,11 +854,6 @@ namespace BoSSS.Solution.Gnuplot {
         /// logarithmic scaling for <paramref name="x"/> and
         /// <paramref name="y"/>
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="title"></param>
-        /// <param name="format"></param>
-        /// <param name="deferred"></param>
         public void PlotLogXLogY(IEnumerable<double> x, IEnumerable<double> y, string title = null,
             PlotFormat format = null, bool deferred = true) {
             PlotXY(
@@ -1045,9 +1035,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetXRange(double min, double max) {
             using (StringWriter stw = new StringWriter()) {
                 stw.Write("set xrange [");
-                stw.Write(min.ToString(nfoi));
+                stw.Write(min.ToString("0.######e-00", nfoi));
                 stw.Write(":");
-                stw.Write(max.ToString(nfoi));
+                stw.Write(max.ToString("0.######e-00", nfoi));
                 stw.Write("]");
                 Cmd(stw.ToString());
             }
@@ -1061,9 +1051,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetX2Range(double min, double max) {
             using (StringWriter stw = new StringWriter()) {
                 stw.Write("set x2range [");
-                stw.Write(min.ToString(nfoi));
+                stw.Write(min.ToString("0.######e-00", nfoi));
                 stw.Write(":");
-                stw.Write(max.ToString(nfoi));
+                stw.Write(max.ToString("0.######e-00", nfoi));
                 stw.Write("]");
                 Cmd(stw.ToString());
             }
@@ -1131,9 +1121,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetYRange(double min, double max) {
             using (StringWriter stringWriter = new StringWriter()) {
                 stringWriter.Write("set yrange [");
-                stringWriter.Write(min.ToString(nfoi));
+                stringWriter.Write(min.ToString("0.######e-00", nfoi));
                 stringWriter.Write(":");
-                stringWriter.Write(max.ToString(nfoi));
+                stringWriter.Write(max.ToString("0.######e-00", nfoi));
                 stringWriter.Write("]");
                 Cmd(stringWriter.ToString());
             }
@@ -1145,9 +1135,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetY2Range(double min, double max) {
             using (StringWriter stringWriter = new StringWriter()) {
                 stringWriter.Write("set y2range [");
-                stringWriter.Write(min.ToString(nfoi));
+                stringWriter.Write(min.ToString("0.######e-00", nfoi));
                 stringWriter.Write(":");
-                stringWriter.Write(max.ToString(nfoi));
+                stringWriter.Write(max.ToString("0.######e-00", nfoi));
                 stringWriter.Write("]");
                 Cmd(stringWriter.ToString());
             }

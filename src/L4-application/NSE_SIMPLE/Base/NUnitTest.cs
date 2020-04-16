@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution;
+using ilPSP;
 using NUnit.Framework;
 using System;
 
@@ -26,16 +27,12 @@ namespace NSE_SIMPLE {
     [TestFixture]
     static public class NUnitTest {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         static public void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         static public void Cleanup() {
             //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
@@ -44,6 +41,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the steady 2D-Channel flow using the 'Steady_SIMPLE' algorithm.
         /// </summary>
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void IncompressibleSteadyPoiseuilleFlowTest() {
             var C = NSE_SIMPLE.Incompressible.ControlExamples.PoiseuilleFlow();
@@ -73,6 +71,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the Taylor vortex flow using the 'Unsteady_SIMPLE' algorithm.
         /// </summary>
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void IncompressibleUnsteadyTaylorVortexTest() {
             var C = NSE_SIMPLE.Incompressible.ControlExamples.UnsteadyTaylorVortex();
@@ -103,6 +102,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the unsteady smooth interface solver.
         /// </summary>
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void MultiphaseUnsteadyWaveTest() {
 
@@ -139,6 +139,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the steady low-Mach solver for Couette flow with temperature gradient.
         /// </summary>
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void LowMachSteadyCouetteWithTemperatureGradientTest() {
             var C = NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient();

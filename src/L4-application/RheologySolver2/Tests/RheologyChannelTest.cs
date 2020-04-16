@@ -116,7 +116,6 @@ namespace BoSSS.Application.Rheology {
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SetInitialConditions = true;
             C.ComputeL2Error = true;
 

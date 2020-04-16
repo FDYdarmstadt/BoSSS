@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP.Tracing;
+using ilPSP.Utils;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -50,7 +52,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// Soves a linear system using a direct solver.
+        /// Solves a linear system using a direct solver.
         /// </summary>
         /// <param name="Matrix">the matrix of the linear problem.</param>
         /// <param name="X">Output, (hopefully) the solution.</param>
@@ -69,6 +71,26 @@ namespace ilPSP.LinSolvers {
             using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 slv.DefineMatrix(Matrix);
                 var SolRes = slv.Solve(X, B.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Condition number estimate by MUMPS; Rem.: MUMPS manual does not tell in which norm; it does not seem to be as reliable as MATLAB condest
+        /// </summary>
+        public static double Condest_MUMPS(this IMutableMatrixEx Mtx) {
+            using(new FuncTrace()) {
+                using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                    slv.Statistics = MUMPS.MUMPSStatistics.AllStatistics;
+
+                    slv.DefineMatrix(Mtx);
+                    double[] dummyRHS = new double[Mtx.RowPartitioning.LocalLength];
+                    double[] dummySol = new double[dummyRHS.Length];
+                    dummyRHS.SetAll(1.11);
+
+                    slv.Solve(dummySol, dummyRHS);
+
+                    return slv.LastCondNo;
+                }
             }
         }
     }

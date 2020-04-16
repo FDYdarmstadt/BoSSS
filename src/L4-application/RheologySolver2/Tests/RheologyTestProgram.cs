@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
 using MPI.Wrappers;
@@ -30,19 +31,15 @@ namespace BoSSS.Application.Rheology
     static class RheologyTestProgram
     {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init()
         {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
 
-
+            
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup()
         {
             //Console.Out.Dispose();
@@ -94,6 +91,38 @@ namespace BoSSS.Application.Rheology
             bool checkPressure = true;
             GenericTest(C, AcceptableRes, AcceptableResError, checkPressure);
         }
+
+//#if !DEBUG
+        //Test 2.1: Condition number scaling test 
+        [Test]
+        public static void ScalingChannelTestStokesCondition(
+            [Values(1, 2)] int deg,
+            [Values(0.0, 0.5, 1.0)] double beta
+            )
+        {
+
+            int[] GridResS;
+
+            GridResS = new[] { 5, 6, 7, 8 };
+
+            var CC = new List<RheologyControl>();
+            foreach(int GridRes in GridResS) {
+                var C = RheologyChannelTest.ChannelStokes(GridRes, deg, beta);
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 2;
+                C.Stokes = true;
+                C.Penalty2 = 2.0;
+
+                C.NonLinearSolver.MinSolverIterations = 2;
+                C.NonLinearSolver.MaxSolverIterations = 3;
+
+                CC.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(CC, true, "ScalingChannelTestStokesCondition-p" + deg);
+        }
+//#endif
+
 
      
         //TESTS_CHANNEL_END_______________________________________________________________________________________________________________

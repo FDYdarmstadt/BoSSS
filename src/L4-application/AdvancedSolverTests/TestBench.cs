@@ -6,13 +6,9 @@ using System;
 namespace AdvancedSolverTests {
     [TestFixture]
     public abstract class TestBench {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public virtual void SetUp() {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         public abstract void Run();
@@ -20,9 +16,8 @@ namespace AdvancedSolverTests {
         /// <summary>
         /// 
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public virtual void TearDown() {
-            csMPI.Raw.mpiFinalize();
         }
     }
 }

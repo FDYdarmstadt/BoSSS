@@ -34,7 +34,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// configuration item for the change-of-basis in 
         /// </summary>
-        public class ChangeOfBasisConfig {
+        public class ChangeOfBasisConfig : ICloneable {
 
             /// <summary>
             /// a list of variable indices -- given by mapping <see cref="map"/> -- onto which this configuartion item applies.
@@ -55,6 +55,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// pre-conditioner mode
             /// </summary>
             public Mode mode;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public object Clone() {
+                var r =new ChangeOfBasisConfig();
+                r.mode = this.mode;
+                r.DegreeS = this.DegreeS.CloneAs();
+                r.VarIndex = this.VarIndex.CloneAs();
+                return r;
+            }
         }
 
         /// <summary>
@@ -111,6 +122,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         ChangeOfBasisConfig[] m_Config;
+
+        /// <summary>
+        /// Multigrid Operator configuration in current level
+        /// </summary>
+        public ChangeOfBasisConfig[] Config {
+            get {
+                return m_Config.Select(c => c.CloneAs()).ToArray();
+            }
+        }
 
         /// <summary>
         /// the DG degrees on this level

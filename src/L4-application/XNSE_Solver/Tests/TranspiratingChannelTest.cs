@@ -128,11 +128,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         
         bool m_periodic = true;
 
-        public GridCommons CreateGrid() {
+        public GridCommons CreateGrid(int Resolution) {
+            if (Resolution < 1)
+                throw new ArgumentException();
 
 
-            var yNodes = GenericBlas.Linspace(-1, 1, 16);
-            var xNodes = GenericBlas.Linspace(-2, 6, 25);
+            var yNodes = GenericBlas.Linspace(-1, 1, 15*Resolution + 1);
+            var xNodes = GenericBlas.Linspace(-2, 6, 24*Resolution + 1);
             //var yNodes = GenericBlas.Linspace(-1, 1, 6);
             //var xNodes = GenericBlas.Linspace(-2, 2, 4);
 

@@ -647,7 +647,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Tests if a string is empty or contains only whitespaces.
+        /// Tests if a string is null/empty or contains only whitespaces.
         /// </summary>
         public static bool IsEmptyOrWhite(this string s) {
             if (s == null)
@@ -660,6 +660,22 @@ namespace ilPSP {
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Converts a wildcard-string into a regular expression; probably stolen from stackoverflow.
+        /// </summary>
+        public static System.Text.RegularExpressions.Regex WildcardToRegex(this string pattern) {
+            return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
+            Replace("\\*", ".*").
+            Replace("\\?", ".") + "$");
+        }
+
+        /// <summary>
+        /// Tests if <paramref name="test"/> matches <paramref name="wildcard"/>.
+        /// </summary>
+        public static bool WildcardMatch(this string wildcard, string test) {
+            return WildcardToRegex(wildcard).IsMatch(test);
         }
 
         /// <summary>
