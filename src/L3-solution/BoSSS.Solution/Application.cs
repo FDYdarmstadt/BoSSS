@@ -43,10 +43,107 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 
 namespace BoSSS.Solution {
+
+    /// <summary>
+    /// Configuration of <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>
+    /// </summary>
+    [DataContract]
+    public class MatlabConnectorConfig {
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable"/>
+        /// </summary>
+        [DataMember]
+        public string MatlabExecuteable;
+
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.Flav"/>
+        /// </summary>
+        [DataMember]
+        public string Flav = ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor.Matlab.ToString();
+
+
+        /// <summary>
+        /// Loads configuration from default location in user directory
+        /// </summary>
+        public static MatlabConnectorConfig LoadDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            if(!File.Exists(ConfigFile)) {
+                var r = new MatlabConnectorConfig();
+                r.SaveDefault(userDir);
+                return r;
+            }
+            string str = File.ReadAllText(ConfigFile);
+
+            return Deserialize(str);
+        }
+
+        /// <summary>
+        /// Saves configuration in default location in user directory
+        /// </summary>
+        public void SaveDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            var Str = this.Serialize();
+            File.WriteAllText(ConfigFile, Str);
+        }
+
+
+        /// <summary>
+        /// JSON deserialization
+        /// </summary>
+        public static MatlabConnectorConfig Deserialize(string Str) {
+
+
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
+            };
+
+
+            using(var tr = new StringReader(Str)) {
+                //string typeName = tr.ReadLine();
+                Type ControlObjectType = typeof(MatlabConnectorConfig); //Type.GetType(typeName);
+                using(JsonReader reader = new JsonTextReader(tr)) {
+                    var obj = formatter.Deserialize(reader, ControlObjectType);
+
+                    MatlabConnectorConfig ctrl = (MatlabConnectorConfig)obj;
+                    return ctrl;
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// JSON serialization
+        /// </summary>
+        public string Serialize() {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error,
+                Formatting = Newtonsoft.Json.Formatting.Indented
+            };
+
+            using(var tw = new StringWriter()) {
+                //tw.WriteLine(this.GetType().AssemblyQualifiedName);
+                using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
+                    formatter.Serialize(writer, this);
+                }
+
+                string Ret = tw.ToString();
+                return Ret;
+            }
+        }
+
+    }
+
 
     /// <summary>
     /// Non-generic version of the <see cref="Application{T}"/>-class for
@@ -93,10 +190,10 @@ namespace BoSSS.Solution {
         /// </summary>
         private static ILog m_Logger = LogManager.GetLogger(typeof(Application<T>));
 
-        /// <summary>
-        /// Indicates whether a running application must finalize MPI
-        /// </summary>
-        private static bool m_MustFinalizeMPI = false;
+        ///// <summary>
+        ///// Indicates whether a running application must finalize MPI
+        ///// </summary>
+        //private static bool m_MustFinalizeMPI = false;
 
         /// <summary>
         /// Set this variable to false if database IO is desired, but no
@@ -151,28 +248,61 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
-        /// and verifies the existence of this directory.
+        /// respective location of native libraries
         /// </summary>
-        /// <returns></returns>
-        public static string GetBoSSSInstallDir() {
-            return BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir(m_Logger);
+        public static string GetNativeLibraryDir() {
+            return BoSSS.Foundation.IO.Utils.GetNativeLibraryDir(m_Logger);
+        }
+
+
+        
+
+        /// <summary>
+        /// Re-loads optional user-configuration file for Matlab connector <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>.
+        /// </summary>
+        public static void ReadBatchModeConnectorConfig() {
+            string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            if(userDir.IsEmptyOrWhite())
+                return;
+
+            try {
+                var o = MatlabConnectorConfig.LoadDefault(userDir);
+
+                ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor) System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
+                ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+
+            } catch(Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}");
+            }
+            
         }
 
         /// <summary>
-        /// Application startup. Performs bootstrapping of unmanaged resources
-        /// and initializes MPI.
+        /// Application startup. Performs bootstrapping of unmanaged resources and initializes MPI.
+        /// This method may be called multiple times in an application lifetime -- the MPI init is only performed once.
         /// </summary>
         /// <param name="args">
         /// command line arguments
         /// </param>
-        public static void InitMPI(string[] args) {
-            // MPI Init
+        /// <returns>
+        /// Whether this call actually initialized MPI
+        /// - true, if this routine actually called <see cref="IMPIdriver.Init"/>; then, the call should be 
+        ///   an other call to <see cref="FinalizeMPI"/>.
+        /// - false, if not.
+        /// </returns>
+        public static bool InitMPI(string[] args = null) {
+            if (args == null)
+                args = new string[0];
+
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
             ilPSP.Environment.Bootstrap(
                 args,
-                GetBoSSSInstallDir(),
-                out m_MustFinalizeMPI);
-            if(m_MustFinalizeMPI) {
+                GetNativeLibraryDir(),
+                out bool _MustFinalizeMPI);
+
+            if(_MustFinalizeMPI) {
                 int rank, size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
@@ -195,6 +325,11 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
+            ReadBatchModeConnectorConfig();
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            return _MustFinalizeMPI;
         }
 
         /// <summary>
@@ -263,24 +398,102 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
-#if !DEBUG
+#if DEBUG
+            {
+#else
             try {
 #endif
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-                InitMPI(args);
-        
+                bool _MustFinalizeMPI = InitMPI(args);
+                ReadBatchModeConnectorConfig();
+
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
+                args = ArgsFromEnvironmentVars(args);
+
+
+                // parse arguments
+                CommandLineOptions opt = new CommandLineOptions();
+                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+                bool argsParseSuccess;
+                if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                    argsParseSuccess = parser.ParseArguments(args, opt);
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                } else {
+                    argsParseSuccess = false;
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                }
+
+                if(!argsParseSuccess) {
+                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                    _MustFinalizeMPI = false;
+                    System.Environment.Exit(-1);
+                }
+
+                if(opt.ControlfilePath != null) {
+                    opt.ControlfilePath = opt.ControlfilePath.Trim();
+                }
+                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+                // Delete old plots if requested
+                if(opt.delPlt) {
+                    DeleteOldPlotFiles();
+                }
+
+
+                // load control file
+                T ctrlV2 = null;
+                T[] ctrlV2_ParameterStudy = null;
+                if(!noControlFile) {
+                    LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                } else {
+                    ctrlV2 = new T();
+                }
+
+                AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
+
+                if(_MustFinalizeMPI)
+                    FinalizeMPI();
+
+#if DEBUG
+            }
+#else
+            } catch(Exception e) {
+                Console.Error.WriteLine(e.StackTrace);
+                Console.Error.WriteLine();
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine(e.GetType().Name + ":");
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine();
+                Console.Error.Flush();
+                System.Environment.Exit(-1);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Appends specially named environment variables (BOSSS_ARG_n) as the n-th command line argument
+        /// </summary>
+        public static string[] ArgsFromEnvironmentVars(string[] args) {
+            {
                 List<string> _args = new List<string>(args);
                 int ArgCounter = 0;
-                while (true) {
+                while(true) {
                     string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
                     string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
-                    if (ArgValue == null)
+                    if(ArgValue == null)
                         break;
+
+                    System.Environment.SetEnvironmentVariable(ArgOverrideName, null); // delete the envvar
+                    // many test internally call the _Main function with arguments;
+                    // this would be overridden (and thus not work properly) if we don't delete the variable here and now.
 
                     if (ArgCounter < _args.Count) {
                         _args[ArgCounter] = ArgValue;
@@ -292,62 +505,10 @@ namespace BoSSS.Solution {
 
                     ArgCounter++;
                 }
-
                 args = _args.ToArray();
-
-
-                // parse arguments
-                CommandLineOptions opt = new CommandLineOptions();
-                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                    argsParseSuccess = parser.ParseArguments(args, opt);
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                } else {
-                    argsParseSuccess = false;
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                }
-
-                if (!argsParseSuccess) {
-                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                    m_MustFinalizeMPI = false;
-                    System.Environment.Exit(-1);
-                }
-
-                if (opt.ControlfilePath != null) {
-                    opt.ControlfilePath = opt.ControlfilePath.Trim();
-                }
-                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-
-                // Delete old plots if requested
-                if (opt.delPlt) {
-                    DeleteOldPlotFiles();
-                }
-
-
-                // load control file
-                T ctrlV2 = null;
-                T[] ctrlV2_ParameterStudy = null;
-                if (!noControlFile) {
-                    LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-                } else {
-                    ctrlV2 = new T();
-                }
-
-                AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
-
-                FinalizeMPI();
-            
-#if !DEBUG
-            } catch(Exception e) {
-                Console.Error.WriteLine(e.StackTrace);
-                Console.Error.WriteLine();
-                Console.Error.WriteLine(e.GetType().Name);
-                Console.Error.WriteLine(e.Message);
-                Console.Error.Flush();
-                System.Environment.Exit(-1);
             }
-#endif
+
+            return args;
         }
 
         /// <summary>
@@ -385,7 +546,7 @@ namespace BoSSS.Solution {
 
                 ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
-            } else if (ControlFilePath.ToLower().EndsWith(".cs")) {
+            } else if (ControlFilePath.ToLower().EndsWith(".cs") || ControlFilePath.ToLower().EndsWith(".bws")) {
                 // +++++++++
                 // C#-script
                 // +++++++++
@@ -550,10 +711,9 @@ namespace BoSSS.Solution {
         /// <summary>
         /// the very end of any BoSSS application.
         /// </summary>
-        protected static void FinalizeMPI() {
-            if (m_MustFinalizeMPI) {
-                MPI.Wrappers.csMPI.Raw.mpiFinalize();
-            }
+        public static void FinalizeMPI() {
+            MPI.Wrappers.csMPI.Raw.mpiFinalize();
+            
         }
 
         /// <summary>
@@ -569,6 +729,7 @@ namespace BoSSS.Solution {
                 this.Control = new T();
             }
 
+            ReadBatchModeConnectorConfig();
 
             // set . as decimal separator:
             // ===========================
@@ -919,6 +1080,8 @@ namespace BoSSS.Solution {
 
                     CurrentSessionInfo.Description = this.Control.ProjectDescription;
 
+                    if (this.Control.ProjectName != null)
+                        CurrentSessionInfo.KeysAndQueries.Add(PROJECTNAME_KEY, this.Control.ProjectName);
                     if (this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
@@ -1040,18 +1203,19 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                if (DoDbLogging) {
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
+                if(this.CurrentSessionInfo != null) {
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:SpatialDimension", GridData.SpatialDimension);
+
                     try //ToDo
-                    { 
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-                    }
-                    catch (InvalidCastException e)
                     {
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    } catch(InvalidCastException e) {
                         Console.WriteLine("Error: Could not log everything.\n {0}", e);
                     }
                 }
@@ -1163,10 +1327,41 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || this.Control.DbPath.IsNullOrEmpty()) {
+            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                return new DatabaseInfo(this.Control.DbPath);
+                List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+                if (!this.Control.DbPath.IsNullOrEmpty())
+                    allPaths.Add((this.Control.DbPath, null));
+                if (this.Control.AlternateDbPaths != null)
+                    allPaths.AddRange(this.Control.AlternateDbPaths);
+
+                string mName = System.Environment.MachineName.ToLowerInvariant();
+
+                string dbPath = null;
+                foreach(var t in allPaths) {
+                    string path = t.Item1;
+                    string filter = t.Item2;
+
+                    if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                        if (!mName.Contains(filter)) {
+                            continue;
+                        } 
+                    }
+
+                    if(Directory.Exists(path) || File.Exists(path)) { // th latter is for ZIP-file databases
+                        dbPath = path;
+                        break;
+                    }
+
+                }
+
+                if(dbPath == null) {
+                    throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
+                }
+
+
+                return new DatabaseInfo(dbPath);
             }
         }
 
@@ -1283,11 +1478,6 @@ namespace BoSSS.Solution {
             }
         }
 
-        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern) {
-            return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
-            Replace("\\*", ".*").
-            Replace("\\?", ".") + "$");
-        }
 
         /// <summary>
         /// Adds some DG field to <see cref="m_RegisteredFields"/> and, optionally, to <see cref="m_IOFields"/>.
@@ -1306,7 +1496,7 @@ namespace BoSSS.Solution {
 
             //FieldOpts fopts;
             //bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
-            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(f.Identification)).SingleOrDefault().Value;
+            FieldOpts fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(f.Identification)).SingleOrDefault().Value;
 
             if (fopts != null) {
                 if (ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
@@ -1458,9 +1648,23 @@ namespace BoSSS.Solution {
 
                 time = tsi_toLoad.PhysicalTime;
 
+                if(tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
+                    var tsiI = tp.GetInternal() as TimestepInfo;
+                    if(tsiI != null) {
+                        OnRestartTimestepInfo(tsiI);
+                    }
+                }
+                
                 DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
                 return tsi_toLoad.TimeStepNumber;
             }
+        }
+
+        /// <summary>
+        /// called on a restart, after the <see cref="TimestepInfo"/> is loaded from database.
+        /// </summary>
+        protected virtual void OnRestartTimestepInfo(TimestepInfo tsi) {
+
         }
 
         /// <summary>
@@ -1569,7 +1773,6 @@ namespace BoSSS.Solution {
 
                 // pass 2: XDG fields
                 // ===========================
-
                 if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
@@ -1606,6 +1809,10 @@ namespace BoSSS.Solution {
                     }
                 }
             }
+        }
+
+        protected virtual void ResetInitial() {
+            // intended to be used user-specific but not necessary
         }
 
         /// <summary>
@@ -1717,9 +1924,9 @@ namespace BoSSS.Solution {
         /// </list>
         /// </remarks>
         public virtual void RunSolverMode() {
-            
+
             SetUpEnvironment(); // remark: tracer is not avail before setup
-            
+
             using (var tr = new FuncTrace()) {
 
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
@@ -1769,98 +1976,103 @@ namespace BoSSS.Solution {
                 int i = i0.MajorNumber;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
-
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                        PlotCurrentState(physTime, new TimestepNumber(i, s + 1), this.Control.SuperSampling);
                 }
+                { 
 
-                for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
-                    tr.Info("performing timestep " + i + ", physical time = " + physTime);
-                    this.MpiRedistributeAndMeshAdapt(i, physTime);
-                    this.QueryResultTable.UpdateKey("Timestep", ((int)i));
-                    double dt = RunSolverOneStep(i, physTime, -1);
-                    tr.Info("simulated time: " + dt + " timeunits.");
-                    tr.LogMemoryStat();
-                    physTime += dt;
-
-                    ITimestepInfo tsi = null;
-                    if (i % SavePeriod == 0) {
-                        tsi = SaveToDatabase(i, physTime);
-                        this.ProfilingLog();
+                    if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
+                        ResetInitial();
+                        if (this.Control.ImmediatePlotPeriod > 0)
+                            PlotCurrentState(physTime, i0, this.Control.SuperSampling);
                     }
-                    if (this.RollingSave > 0) {
-                        if (tsi == null) {
+
+                    for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
+                        tr.Info("performing timestep " + i + ", physical time = " + physTime);
+                        this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        double dt = RunSolverOneStep(i, physTime, -1);
+                        tr.Info("simulated time: " + dt + " timeunits.");
+                        tr.LogMemoryStat();
+                        physTime += dt;
+
+                        ITimestepInfo tsi = null;
+                        if (i % SavePeriod == 0) {
                             tsi = SaveToDatabase(i, physTime);
+                            this.ProfilingLog();
                         }
-                        rollingSavesTsi.Add(Tuple.Create(i, tsi));
+                        if (this.RollingSave > 0) {
+                            if (tsi == null) {
+                                tsi = SaveToDatabase(i, physTime);
+                            }
+                            rollingSavesTsi.Add(Tuple.Create(i, tsi));
 
-                        while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
-                            var top_i_tsi = rollingSavesTsi[0];
+                            while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
+                                var top_i_tsi = rollingSavesTsi[0];
 
-                            rollingSavesTsi.RemoveAt(0);
+                                rollingSavesTsi.RemoveAt(0);
 
-                            if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
-                                if (DatabaseDriver.FsDriver != null &&
-                                    !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                                    if (MPIRank == 0) {
-                                        this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
-                                        ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
+                                    if (DatabaseDriver.FsDriver != null &&
+                                        !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                                        if (MPIRank == 0) {
+                                            this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                            ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                        }
                                     }
                                 }
                             }
                         }
+
+                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                            PlotCurrentState(physTime, i, this.Control.SuperSampling);
+                    }
+                    i--;
+
+                    if (i % SavePeriod != 0) {
+                        SaveToDatabase(i, physTime);
                     }
 
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
-                        PlotCurrentState(physTime, i, this.Control.SuperSampling);
-                }
-                i--;
 
-                if (i % SavePeriod != 0) {
-                    SaveToDatabase(i, physTime);
-                }
+                    // Evaluate queries and write log file (either to session directory
+                    // or current directory)
+                    m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
+                    foreach (var kv in m_queryHandler.QueryResults) {
+                        QueryResultTable.LogValue(kv.Key, kv.Value);
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
+                            this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
+                    }
 
-               
-                // Evaluate queries and write log file (either to session directory
-                // or current directory)
-                m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
-                foreach (var kv in m_queryHandler.QueryResults) {
-                    QueryResultTable.LogValue(kv.Key, kv.Value);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
-                        this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
-                }
+                    if (MPIRank == 0 && m_queryHandler.QueryResults.Count > 0) {
+                        TextWriter queryLogFile_Txt;
 
-                if (MPIRank == 0 && m_queryHandler.QueryResults.Count > 0) {
-                    TextWriter queryLogFile_Txt;
+                        if (Control != null && Control.savetodb) {
+                            queryLogFile_Txt = DatabaseDriver.FsDriver.GetNewLog("queryResults", this.CurrentSessionInfo.ID);
+                        } else {
+                            try {
+                                queryLogFile_Txt = new StreamWriter("queryResults.txt");
+                            } catch (Exception e) {
+                                // in a parameter study, 
+                                //     - when running in different processes
+                                //     - but simultaneously
+                                //     - without database
+                                //  two or more processes may try to access queryResults.txt 
+                                //  => Exception
+                                // this is such a rare case, that I don't implement a smarter solution
+                                // (in the parameter study case, the query results will be in the ParameterStudy file anyway
 
-                    if (Control != null && Control.savetodb) {
-                        queryLogFile_Txt = DatabaseDriver.FsDriver.GetNewLog("queryResults", this.CurrentSessionInfo.ID);
-                    } else {
-                        try {
-                            queryLogFile_Txt = new StreamWriter("queryResults.txt");
-                        } catch (Exception e) {
-                            // in a parameter study, 
-                            //     - when running in different processes
-                            //     - but simultaneously
-                            //     - without database
-                            //  two or more processes may try to access queryResults.txt 
-                            //  => Exception
-                            // this is such a rare case, that I don't implement a smarter solution
-                            // (in the parameter study case, the query results will be in the ParameterStudy file anyway
+                                Console.WriteLine("WARNING: not writing queryResults.txt file due to exception: {0} \n '{1}'",
+                                    e.GetType().Name, e.Message);
+                                queryLogFile_Txt = null;
+                            }
+                        }
 
-                            Console.WriteLine("WARNING: not writing queryResults.txt file due to exception: {0} \n '{1}'",
-                                e.GetType().Name, e.Message);
-                            queryLogFile_Txt = null;
+                        if (queryLogFile_Txt != null) {
+                            QueryHandler.LogQueryResults(m_queryHandler.QueryResults, queryLogFile_Txt);
+                            queryLogFile_Txt.Close();
                         }
                     }
 
-                    if (queryLogFile_Txt != null) {
-                        QueryHandler.LogQueryResults(m_queryHandler.QueryResults, queryLogFile_Txt);
-                        queryLogFile_Txt.Close();
-                    }
+                    CorrectlyTerminated = true;
                 }
-
-                CorrectlyTerminated = true;
             }
         }
 
@@ -2316,14 +2528,18 @@ namespace BoSSS.Solution {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
 
-
+        /// <summary>
+        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.SessionName"/>
+        /// </summary>
+        public const string SESSIONNAME_KEY = "SessionName";
 
 
         /// <summary>
-        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>
-        /// under this key.
+        /// The name of a specific project should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.ProjectName"/>
         /// </summary>
-        public const string SESSIONNAME_KEY = "SessionName";
+        public const string PROJECTNAME_KEY = "ProjectName";
 
         /// <summary>
         /// Called before application finishes (internal Bye)
@@ -3091,6 +3307,17 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
+        /// </summary>
+        /// <returns>
+        /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
+        /// </returns>
+        virtual public IDictionary<string, double> OperatorAnalysis() {
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
         /// This method just forces the C# - compiler to integrate
         /// BoSSS.Foundation.Grid.dll into the manifest of BoSSS.Solution.dll;
         /// Otherwise, without this useless method BoSSS.Foundation.Grid.dll
@@ -3111,24 +3338,9 @@ namespace BoSSS.Solution {
         protected double[] Fake() {
             return GenericBlas.Linspace(-1, 1, 2);
         }
+
+        
     }
 
-    /*
-    /// <summary>
-    /// Application mode - solving, plotting, 
-    /// </summary>
-    public enum Mode {
-
-        /// <summary>
-        /// run in solver mode
-        /// </summary>
-        Solver,
-
-        /// <summary>
-        /// Do a parameter study
-        /// </summary>
-        ParameterStudy,
-    }
-    */
 }
 

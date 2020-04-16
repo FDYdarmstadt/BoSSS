@@ -132,7 +132,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             m_TSCchain = BDFCommon.GetChain(BDForder);
 
-            m_LsTrk = LsTrk;
+            base.m_LsTrk = LsTrk;
 
             int S = m_TSCchain[0].S;
             Debug.Assert(S == m_TSCchain.Length);
@@ -251,10 +251,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         int m_PopulatedStackDepth = 0;
 
-        /// <summary>
-        /// Unscaled, agglomerated mass matrix used by the preconditioner.
-        /// </summary>
-        BlockMsrMatrix m_PrecondMassMatrix;
+
 
 
         /// <summary>
@@ -274,7 +271,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 restartInfo[i - 1] = new List<DGField>();
 
                 if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
 
                     DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
                     restartInfo[i - 1].Add(phiField);
@@ -311,6 +308,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                case LevelSetHandling.FSI_Coupled_Iterative:
                     // noop.
                     break;
 
@@ -851,6 +849,108 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
+
+        public void ResetDataAfterBalancing(IEnumerable<DGField> Fields)
+            //IEnumerable<DGField> IterationResiduals
+            //LevelSetTracker LsTrk,
+            //AggregationGridData[] _MultigridSequence) //
+        {
+            using (new FuncTrace()) {
+
+                //if (m_PrivateBalancingInfo == null)
+                //    throw new NotSupportedException();
+
+                //base.m_LsTrk = LsTrk;
+
+                //if (Fields.Count() != m_PrivateBalancingInfo.NoOfFields)
+                //    throw new ArgumentException();
+                //if (IterationResiduals.Count() != m_PrivateBalancingInfo.NoOfFields)
+                //    throw new ArgumentException();
+
+                // restore solution stack
+                //m_Stack_u = new CoordinateVector[m_PrivateBalancingInfo.m_Stack_u.Length];
+                m_Stack_u[0] = new CoordinateVector(Fields.ToArray());
+                //for (int s = 1; s < m_Stack_u.Length; s++) {
+                //    m_Stack_u[s] = new CoordinateVector(Fields.Select(dgf => dgf.CloneAs()).ToArray());
+                //}
+
+                //base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
+
+                //for (int i = 0; i < m_Stack_u.Length; i++) {
+                //    if (m_PrivateBalancingInfo.m_Stack_u[i]) {
+                //        DGField[] _Fields = m_Stack_u[i].Mapping.Fields.ToArray();
+                //        for (int iF = 0; iF < _Fields.Length; iF++) {
+                //            _Fields[iF].Clear();
+                //            //L.RestoreDGField(_Fields[iF], GetName__Stack_u(i, iF));
+                //        }
+                //    }
+                //}
+
+                // restore mass matrix
+                //m_Stack_MassMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_MassMatrix.Length];
+                //for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
+                //    if (m_PrivateBalancingInfo.m_Stack_MassMatrix[i]) {
+                //        m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
+                //        //L.RestoreMatrix(m_Stack_MassMatrix[i], GetName__Stack_MassMatrix(i), CurrentStateMapping, CurrentStateMapping);
+                //        m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, 1 - i)
+                //            .MassMatrixFactory
+                //            .AccMassMatrix(m_Stack_MassMatrix[i], CurrentStateMapping, _alpha: Config_MassScale);
+                //    }
+                //}
+
+
+                // Agglomerator
+                //if (m_PrivateBalancingInfo.m_Agglomeration) {
+                //    double[] oldAggTrsh = m_PrivateBalancingInfo.m_Agglomeration_oldTrsh;
+                //    if (oldAggTrsh != null && oldAggTrsh.Length <= 0) {
+                //        oldAggTrsh = null;
+                //    }
+
+                //    m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                //        __AgglomerationTreshold: base.Config_AgglomerationThreshold,
+                //        AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
+                //        ExceptionOnFailedAgglomeration: true,
+                //        oldTs__AgglomerationTreshold: oldAggTrsh);
+
+                //}
+
+                // restore operator matrix
+                //m_Stack_OpMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_Operator.Length];
+                //m_Stack_OpAffine = new double[m_PrivateBalancingInfo.m_Stack_Operator.Length][];
+                //for (int i = 0; i < m_Stack_OpMatrix.Length; i++) {
+
+                //    if (!m_PrivateBalancingInfo.m_Stack_Operator[i])
+                //        continue;
+
+                //    m_Stack_OpMatrix[i] = new BlockMsrMatrix(CurrentStateMapping);
+                //    m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
+                //    this.ComputeOperatorMatrix(m_Stack_OpMatrix[i], m_Stack_OpAffine[i],
+                //        m_Stack_u[i].Mapping, m_Stack_u[i].Mapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
+                //}
+
+                // finished
+                //m_PrivateBalancingInfo = null;
+                //base.MultigridSequence = _MultigridSequence;
+                InitMultigrid(Fields.ToArray(), this.useX);
+
+                // in case of steady level set the xdgAggBasis need to be updated
+                //if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
+                //    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                //    Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
+                //    base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
+
+                //    // matrix used for precond (must be agglomerated)
+                //    if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
+                //        MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
+                //        m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                //        m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                //    }
+                //}
+
+            }
+        }
+
+
         public TimeStepperInit Timestepper_Init;
 
         /// <summary>
@@ -975,7 +1075,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 bool updateAgglom = false;
                 if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0)
                     || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_IterationCounter == 0)
-                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration)) {
+                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration) || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
 
                     m_CoupledIterations++;
                     if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
@@ -1141,7 +1241,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // right-hand-side, resp. affine vector
                 double[] RHS = new double[CurrentAffine.Length];
                 if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // MovingMesh:
                     // (1/dt)*(M1*u1 - M0*u0) + theta1*(Op1*u1 + b1) + theta0*(Op0*u0 + b0);
@@ -1231,8 +1331,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
 #if DEBUG
-                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity
-                    && this.ComputeMassMatrix == null) {
+                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity && this.ComputeMassMatrix == null) {
                     // compare "private" and "official" mass matrix stack
                     // (private may be removed soon)
 
@@ -1440,7 +1539,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 for (int i = 0; i < this.m_Stack_u.Length; i++)
                     SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
-
+                
                 // delete new agglomeration; in case of splitting, the agglomeration for the **bulk operator timestep** does not depend on previous time-steps
                 m_CurrentAgglomeration = null;
             }
@@ -1498,7 +1597,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.Config_MultigridOperator);
 
                     //System.SaveToTextFileSparse("MatrixNOsplitting.txt");
-                    //RHS.SaveToTextFile("rhsNOsplitting.txt ");
+                    //RHS.SaveToTextFile("rhsNOsplitting.txt");
 
                     using (var tr = new FuncTrace()) {
                         // init linear solver

@@ -207,7 +207,6 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-
     /// <summary>
     /// Central difference scheme for divergence operator.
     /// </summary>
@@ -299,17 +298,17 @@ namespace BoSSS.Solution.NSECommon {
                                     //res = rhoIn * Uout * inp.Normale[Component];
                                     break;
                                 }
-                            case PhysicsMode.Combustion:
+                            case PhysicsMode.Combustion: { 
                                 // opt1:
                                 TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
-                                double[] args = new double[NumberOfSpecies + 1];
+                                double[] args = new double[NumberOfSpecies-1 + 1];
                                 args[0] = TemperatureOut;
-                                for(int n = 1; n < NumberOfSpecies + 1; n++) {
+                                for(int n = 1; n < NumberOfSpecies ; n++) {
                                     args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
                                 }
                                 res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
                                 break;
-                    
+                                }
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
                         }
@@ -326,8 +325,8 @@ namespace BoSSS.Solution.NSECommon {
                                 res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Combustion:
-                                // throw new NotImplementedException("Has to be implemented!");
-                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies + 2); // TODO! MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
+                       
+                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);  
                                 res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component]; //TODO 
                                 break;
                             default:
@@ -364,8 +363,8 @@ namespace BoSSS.Solution.NSECommon {
                     res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies + 1); //TODO Y3
-                    DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, NumberOfSpecies + 1); //TODO Y3
+                    DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies); 
+                    DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, NumberOfSpecies); 
                      densityIn = (EoS.GetDensity(DensityArguments_In));
                      densityOut = (EoS.GetDensity(DensityArguments_Out));
                     if(double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
@@ -444,8 +443,9 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.AllOn;
-                //     return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+                //return TermActivationFlags.AllOn;
+
             }
         }
 
@@ -454,8 +454,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags InnerEdgeTerms {
             get {
-                return TermActivationFlags.AllOn;
-                //     return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -464,11 +463,49 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.AllOn;
-                //     return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.UxGradV | TermActivationFlags.GradV;
             }
         }
 
 
     }
+
+
+
+    //class Form<T> : IEdgeForm, IVolumeForm, ISupportsJacobianComponent
+    //    where T : IEdgeForm, IVolumeForm, ISupportsJacobianComponent {
+
+    //    T innerComponent;
+
+    //    public Form(T equationComponent) {
+    //        this.innerComponent = equationComponent;
+    //    }
+
+    //    public IList<string> ArgumentOrdering => ArrayTools.Cat(innerComponent.ArgumentOrdering, innerComponent.ParameterOrdering);
+
+    //    public IList<string> ParameterOrdering => new string[] { };
+
+    //    public TermActivationFlags BoundaryEdgeTerms => throw new NotImplementedException();
+
+    //    public TermActivationFlags InnerEdgeTerms => throw new NotImplementedException();
+
+    //    public TermActivationFlags VolTerms => throw new NotImplementedException();
+
+    //    public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+    //        return innerComponent.BoundaryEdgeForm()
+    //    }
+
+    //    public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+    //        throw new NotImplementedException();
+    //    }
+
+    //    public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+    //        throw new NotImplementedException();
+    //    }
+
+    //    public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+    //        throw new NotImplementedException();
+    //    }
+    //}
+
 }

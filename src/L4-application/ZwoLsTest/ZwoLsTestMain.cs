@@ -350,11 +350,6 @@ namespace BoSSS.Application.ZwoLsTest {
             }
 
             // operator matrix assembly
-            //Op.ComputeMatrixEx(LsTrk,
-            //    u.Mapping, null, u.Mapping,
-            //    OperatorMatrix, Affine, false, 0.0, true,
-            //    Agg.CellLengthScales, null, null,
-            //    LsTrk.GetSpeciesId("B"));
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping, LsTrk.GetSpeciesId("B"));
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);

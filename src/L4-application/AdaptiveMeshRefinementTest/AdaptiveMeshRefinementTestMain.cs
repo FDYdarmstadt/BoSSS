@@ -30,7 +30,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 () => new AdaptiveMeshRefinementTestMain());
             //AllUpTest.SetUp();
             //AllUpTest.RuntimeCostDynamicBalanceTest(2);
-            //AllUpTest.TestFixtureTearDown();
+            //AllUpTest.OneTimeTearDown();
         }
 
         public int TestCase = 2;
@@ -292,7 +292,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             List<int[]> Coarsening;
             if (MPISize > 1) {
                 List<Tuple<int, BitArray>> cellMaskRefinementLevel = GetCellMaskWithRefinementLevels();
-                AnyChange = GridRefinementController.ComputeGridChange((GridData)this.GridData, LsTrk.Regions.GetCutCellMask(), cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
+                AnyChange = GridRefinementController.ComputeGridChange((GridData)this.GridData, LsTrk.Regions.GetCutCellMask().GetBitMask(), cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
             }
             else
                 AnyChange = GridRefinementController.ComputeGridChange((GridData) this.GridData, LsTrk.Regions.GetCutCellMask(), LevelIndicator, out CellsToRefineList, out Coarsening);

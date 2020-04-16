@@ -90,6 +90,10 @@
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
       <Name>BoSSS.Solution</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RheologySolver2\Rheology2.csproj">
+      <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
+      <Name>Rheology2</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

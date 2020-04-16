@@ -25,7 +25,7 @@ namespace BoSSS.Solution.Utils {
     /// <summary>
     /// Implementation of the k-means clustering algorithm
     /// </summary>
-    class Kmeans {
+    public class Kmeans {
         private double[] data;
         private double[] oldLocalMeans;
         private int numOfCluster;

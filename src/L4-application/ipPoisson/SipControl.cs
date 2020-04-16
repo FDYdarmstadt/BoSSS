@@ -111,11 +111,11 @@ namespace BoSSS.Application.SipPoisson {
         [DataMember]
         public bool SuppressExceptionPrompt = false;
 
-        /// <summary>
-        /// Outputpath for analysis data. Set path to enable analysis output, e.g. calculation of condition number, residual plots for each multigridlevel, etc.
-        /// </summary>
-        [DataMember]
-        public string WriteMeSomeAnalyse = null;
+        ///// <summary>
+        ///// Outputpath for analysis data. Set path to enable analysis output, e.g. calculation of condition number, residual plots for each multigridlevel, etc.
+        ///// </summary>
+        //[DataMember]
+        //public string WriteMeSomeAnalyse = null;
 
     }
 }

@@ -37,7 +37,7 @@ namespace CNS.Tests.Ringleb {
         /// <returns></returns>
         private static RinglebControl GetTemplate(int dgDegree, StiffenedGas eos) {
             RinglebControl c = new RinglebControl();
-            c.DbPath = "../../Tests/Ringleb/ringlebTests.zip";
+            c.DbPath = "ringlebTests.zip";
             c.savetodb = false;
 
             c.ActiveOperators = Operators.Convection;

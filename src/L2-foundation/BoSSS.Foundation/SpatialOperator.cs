@@ -2283,7 +2283,7 @@ namespace BoSSS.Foundation {
                         foreach (int j in CellList) {
                             int iFld = FieldCounter[j];
                             int nFld = CoordCounter[j];
-                            if (iFld > NoOfDomFields)
+                            if (iFld >= NoOfDomFields)
                                 continue; // finished with cell 'j'
 
                             AnyLoc = -1;
@@ -2334,7 +2334,7 @@ namespace BoSSS.Foundation {
 
                                 int iFldCol = FieldCounter[jCol];
                                 int nFldCol = CoordCounter[jCol];
-                                if (iFldCol > NoOfDomFields)
+                                if (iFldCol >= NoOfDomFields)
                                     continue; // finished with cell
 
                                 int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, jCol, nFldCol);
@@ -2373,7 +2373,7 @@ namespace BoSSS.Foundation {
                             // ------------------
                             foreach (int j in __CellList) {
                                 int iFld = FieldCounter[j];
-                                if (iFld > NoOfDomFields)
+                                if (iFld >= NoOfDomFields)
                                     continue; // finished with cell 'j'
 
                                 int Nj = domMap.BasisS[iFld].GetLength(j);

@@ -246,7 +246,8 @@ namespace BoSSS.Solution.NSECommon {
 
                 case ViscosityOption.VariableViscosity:
                 case ViscosityOption.VariableViscosityDimensionless:
-                    throw new NotImplementedException("Nonlinear dependence - todo.");
+                    //throw new NotImplementedException("Nonlinear dependence - todo.");
+                   return new IEquationComponent[] { this };
 
 
                 default:
@@ -305,15 +306,15 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double penalty(IGridData g, int jCellIn, int jCellOut, int iEdge) {
             /*
-            double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
-            double cVA = g.iGeomCells.GetCellVolume(jCellIn);
-            double penaltySizeFactor_A = eAr / cVA;
+              double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
+              double cVA = g.iGeomCells.GetCellVolume(jCellIn);
+              double penaltySizeFactor_A = eAr / cVA;
 
-            double penaltySizeFactor_B = 0;
-            if(jCellOut >= 0) {
-                double cVB = g.iGeomCells.GetCellVolume(jCellOut);
-                penaltySizeFactor_B = eAr / cVB;
-            }
+              double penaltySizeFactor_B = 0;
+              if(jCellOut >= 0) {
+              double cVB = g.iGeomCells.GetCellVolume(jCellOut);
+              penaltySizeFactor_B = eAr / cVB;
+              }
             */
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
@@ -391,8 +392,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Dirichlet boundary value: the given velocity at the boundary.
         /// </summary>
-        protected double g_Diri(double[] X, double time, int EdgeTag, int d) {
-            if(this.g_Diri_Override == null) {
+        protected virtual double g_Diri(double[] X, double time, int EdgeTag, int d) {
+            if (this.g_Diri_Override == null) {
+
                 Func<double[], double, double> boundVel = this.velFunction[d][EdgeTag];
                 double ret = boundVel(X, time);
 
@@ -457,13 +459,7 @@ namespace BoSSS.Solution.NSECommon {
             
         }
 
-        //public override IList<string> ArgumentOrdering
-        //{
-        //    get
-        //    {
-        //        return new string[] { VariableNames.Velocity_d(m_iComp) };
-        //    }
-        //}
+        
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
@@ -531,7 +527,7 @@ namespace BoSSS.Solution.NSECommon {
                     // inhom. Dirichlet b.c.
                     // +++++++++++++++++++++
 
-                    double g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+                    double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
 
                     for(int d = 0; d < inp.D; d++) {
                         double nd = inp.Normal[d];
@@ -553,7 +549,8 @@ namespace BoSSS.Solution.NSECommon {
                     double g_D;
 
                     for(int dN = 0; dN < D; dN++) {
-                        g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+
+                        g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
 
                         for(int dD = 0; dD < D; dD++) {
                             // consistency
@@ -577,11 +574,12 @@ namespace BoSSS.Solution.NSECommon {
                     if(ls > 0)
                         m_beta = muA / ls;
 
+
                     int D = inp.D;
                     double g_D;
 
                     for(int dN = 0; dN < D; dN++) {
-                        g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+                        g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
 
                         for(int dD = 0; dD < D; dD++) {
                             // consistency
@@ -610,7 +608,7 @@ namespace BoSSS.Solution.NSECommon {
                     // tangential dissipation force term
                     for(int d1 = 0; d1 < D; d1++) {
                         for(int d2 = 0; d2 < D; d2++) {
-                            g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, d2);
+                            g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, d2);
                             Acc -= (m_beta * P[d1, d2] * (_uA[d2] - g_D)) * (P[d1, m_iComp] * _vA) * base.m_alpha;
                         }
                     }

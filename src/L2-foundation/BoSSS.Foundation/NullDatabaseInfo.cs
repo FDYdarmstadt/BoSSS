@@ -58,18 +58,18 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// An empty collection.
         /// </summary>
-        public IEnumerable<ISessionInfo> Sessions {
+        public IList<ISessionInfo> Sessions {
             get {
-                yield break;
+                return new ISessionInfo[0];
             }
         }
 
         /// <summary>
         /// An empty collection.
         /// </summary>
-        public IEnumerable<IGridInfo> Grids {
+        public IList<IGridInfo> Grids {
             get {
-                yield break;
+                return new IGridInfo[0];
             }
         }
 
@@ -82,9 +82,46 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+        /// <summary>
+        /// Contains nothing
+        /// </summary>
+        public (string, string)[] AlternateDbPaths {
+            get {
+                return new ValueTuple<string, string>[0];
+            }
+        }
+
+        /// <summary>
+        /// Reference equality
+        /// </summary>
+        public bool Equals(IDatabaseInfo other) {
+            return object.ReferenceEquals(this,other);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
+            return this.Equals(obj as NullDatabaseInfo);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return 1; // deactivate hashing
+        }
+
+        /// <summary>
+        /// Always false
+        /// </summary>
+        public bool PathMatch(string otherPath) {
+            return false;
+        }
+
         #endregion
 
 
-        
+
     }
 }

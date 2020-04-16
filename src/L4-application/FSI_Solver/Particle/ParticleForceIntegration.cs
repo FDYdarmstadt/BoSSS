@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Utils;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -27,14 +28,13 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleHydrodynamicsIntegration {
 
-        public ParticleHydrodynamicsIntegration(int spatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity) {
+        public ParticleHydrodynamicsIntegration(int spatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, double fluidViscosity) {
             m_SpatialDim = spatialDim;
             m_RequiredOrder = U[0].Basis.Degree * 3 + 2;
             m_U = U.ToArray();
             m_P = P;
             m_LevelSetTracker = levelSetTracker;
             m_GridData = m_LevelSetTracker.GridDat;
-            m_CutCells = cutCells;
             m_FluidViscosity = fluidViscosity;
         }
 
@@ -51,14 +51,12 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private readonly GridData m_GridData;
         [DataMember]
-        private readonly CellMask m_CutCells;
-        [DataMember]
         private readonly double m_FluidViscosity;
 
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double[] Forces(out List<double[]>[] stressToPrintOut) {
+        internal double[] Forces(out List<double[]>[] stressToPrintOut, CellMask cutCells) {
             double[] tempForces = new double[m_SpatialDim];
             double[] IntegrationForces = tempForces.CloneAs();
             List<double[]>[] stressToPrint = new List<double[]>[m_SpatialDim];
@@ -85,7 +83,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int[] noOfIntegrals = new int[] { 1 };
                 XQuadSchemeHelper SchemeHelper = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, m_CutCells);
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, cutCells);
                 ICompositeQuadRule<QuadRule> surfaceRule = cqs.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder);
 
                 CellQuadrature.GetQuadrature(noOfIntegrals, m_GridData, surfaceRule,
@@ -100,7 +98,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double Torque(double[] position) {
+        internal double Torque(double[] position, CellMask cutCells) {
             double tempTorque = new double();
             void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                 int K = result.GetLength(1);
@@ -120,7 +118,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
             var SchemeHelper2 = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, m_CutCells);
+            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, cutCells);
             CellQuadrature.GetQuadrature(new int[] { 1 }, m_LevelSetTracker.GridDat, cqs2.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
@@ -200,7 +198,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         /// <param name="NodeSetClone">
         /// The node set.
-        /// simulation).
         /// </param>
         /// <param name="currentPosition">
         /// The current position of the particle.
@@ -209,11 +206,13 @@ namespace BoSSS.Application.FSI_Solver {
             double temp1;
             double temp2;
             temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
+            //temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
+            temp1 *= -(NodeSetClone[k, 1] - currentPosition[1]);
             if (double.IsNaN(temp1) || double.IsInfinity(temp1))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
             temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
+            //temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
+            temp2 *= (NodeSetClone[k, 0] - currentPosition[0]);
             if (double.IsNaN(temp2) || double.IsInfinity(temp2))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
             return temp1 + temp2;
@@ -283,11 +282,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         private double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
             double[] SummandsVelGradient = new double[3];
-            double SummandsPressure;
             SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
-            SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
+            double SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
             return NeumaierSummation(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 

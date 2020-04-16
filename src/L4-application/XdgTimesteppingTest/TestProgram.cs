@@ -33,22 +33,83 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// <summary>
         /// MPI startup.
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application<XdgTimesteppingTestControl>.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             csMPI.Raw.mpiFinalize();
+        }
+
+        /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(
+#if DEBUG
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)]
+#else
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)]
+#endif
+            TimeSteppingScheme tsc,
+            [Values(8)] int NoOfTs
+            ) {
+            TestConvection_MovingInterface_SingleInitLowOrder(tsc, 0.2, NoOfTs);
+        }
+        /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02(
+#if DEBUG
+            [Values(TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#else
+            [Values(TimeSteppingScheme.RK1, TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK4, TimeSteppingScheme.RK_ImplicitEuler, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#endif
+            TimeSteppingScheme tsc,
+            [Values(8)] int NoOfTs
+            ) {
+            TestConvection_MovingInterface_SingleInitLowOrder(tsc, 0.2, NoOfTs);
+        }
+        /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023(
+#if DEBUG
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)]
+#else
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)]
+#endif
+            TimeSteppingScheme tsc,
+            [Values(8)] int NoOfTs
+            ) {
+            TestConvection_MovingInterface_SingleInitLowOrder(tsc, 0.23, NoOfTs);
+        }
+        /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023(
+#if DEBUG
+            [Values(TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#else
+            [Values(TimeSteppingScheme.RK1, TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK4, TimeSteppingScheme.RK_ImplicitEuler, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#endif
+            TimeSteppingScheme tsc,
+            [Values(8)] int NoOfTs
+            ) {
+            TestConvection_MovingInterface_SingleInitLowOrder(tsc, 0.23, NoOfTs);
         }
 
         /// <summary>
@@ -56,14 +117,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// as well as the <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping"/> time-stepper at 
         /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
         /// </summary>
-        [Test]
         public static void TestConvection_MovingInterface_SingleInitLowOrder(
-            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.ImplicitEuler,
-            TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4,
-            TimeSteppingScheme.RK1, TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK4,
-            TimeSteppingScheme.RK_ImplicitEuler, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)] TimeSteppingScheme tsc,
-            [Values(0.2, 0.23)] double TimestepSize,
-            [Values(8)] int NoOfTs
+            TimeSteppingScheme tsc,
+            double TimestepSize,
+            int NoOfTs
             ) {
 
             // set up
@@ -152,19 +209,88 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_Splitting_LowOrder_BDF_t02(
+#if DEBUG
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)]
+#else
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)]
+#endif
+            TimeSteppingScheme tsc,
+            [Values(8)] int NoOfTs,
+            [Values(0.0)] double TimeOffest
+            ) {
+            TestConvection_Splitting_LowOrder(tsc, 0.2, NoOfTs, TimeOffest);
+        }
+
+        /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_Splitting_LowOrder_RK_t02(
+#if DEBUG
+            [Values(TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#else
+            [Values(TimeSteppingScheme.RK1, TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK4, TimeSteppingScheme.RK_ImplicitEuler, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#endif
+            TimeSteppingScheme tsc,
+            [Values(8)] int NoOfTs,
+            [Values(0.0)] double TimeOffest
+            ) {
+            TestConvection_Splitting_LowOrder(tsc, 0.2, NoOfTs, TimeOffest);
+        }
+
+        /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_Splitting_LowOrder_BDF_t023(
+#if DEBUG
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)]
+#else
+            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)]
+#endif
+            TimeSteppingScheme tsc,
+
+            [Values(8)] int NoOfTs,
+            [Values(0.0)] double TimeOffest
+            ) {
+            TestConvection_Splitting_LowOrder(tsc, 0.23, NoOfTs, TimeOffest);
+        }
+
+        /// <summary>
+        /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping"/> time-stepper at 
+        /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
+        /// </summary>
+        [Test]
+        public static void TestConvection_Splitting_LowOrder_RK_t023(
+#if DEBUG
+            [Values(TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#else
+            [Values(TimeSteppingScheme.RK1, TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK4, TimeSteppingScheme.RK_ImplicitEuler, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)]
+#endif
+            TimeSteppingScheme tsc,
+            [Values(8)] int NoOfTs,
+            [Values(0.0)] double TimeOffest
+            ) {
+            TestConvection_Splitting_LowOrder(tsc, 0.23, NoOfTs, TimeOffest);
+        }
+
+        /// <summary>
         /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping"/>
         /// as well as the <see cref="BoSSS.Solution.XdgTimestepping.XdgRKTimestepping"/> time-stepper at 
         /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.
         /// </summary>
-        [Test]
         public static void TestConvection_Splitting_LowOrder(
-            [Values(TimeSteppingScheme.ExplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.ImplicitEuler,
-            TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4,
-            TimeSteppingScheme.RK1, TimeSteppingScheme.RK1u1, TimeSteppingScheme.RK3, TimeSteppingScheme.RK4,
-            TimeSteppingScheme.RK_ImplicitEuler, TimeSteppingScheme.RK_CrankNic, TimeSteppingScheme.RK_IMEX3)] TimeSteppingScheme tsc,
-            [Values(0.2, 0.23)] double TimestepSize,
-            [Values(8)] int NoOfTs,
-            [Values(0.0)] double TimeOffest
+            TimeSteppingScheme tsc,
+            double TimestepSize,
+            int NoOfTs,
+            double TimeOffest
             ) {
 
             // set up

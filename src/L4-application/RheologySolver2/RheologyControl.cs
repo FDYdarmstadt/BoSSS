@@ -22,6 +22,7 @@ using System.Text;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using System.Runtime.Serialization;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.Rheology {
 
@@ -61,19 +62,21 @@ namespace BoSSS.Application.Rheology {
         // 
 
         /// <summary>
-        /// Reynoldsnumber of System (Re= rho * U * L / eta_0)
+        /// Reynolds-Number of System (Re= rho * U * L / eta_0)
         /// </summary>
         [DataMember]
         public double Reynolds = 1;
 
         /// <summary>
-        /// Weissenbergnumber of System (We= lambda_1 * U / L) 
+        /// Weissenberg-Number of System (We= lambda_1 * U / L) 
         /// </summary>
         [DataMember]
         public double Weissenberg = 0.5;
 
         /// <summary>
         /// Retardation vs Relaxation ratio (beta = lambda_2 / lambda_1 = eta_s / eta_0)
+        /// - beta = 0: no Newtonian contribution in momentum equation
+        /// - beta = 1: Newtonian fluid, all viscous effects computed in momentum equation
         /// </summary>
         [DataMember]
         public double beta = 0.11;
@@ -92,6 +95,13 @@ namespace BoSSS.Application.Rheology {
         [DataMember]
         public double ObjectiveParam = 1.0;
 
+
+        /// <summary>
+        /// Giesekus model factor with which Giesekus term should be multiplied, if factor = 0 we have Oldroyd B
+        /// </summary>
+        [DataMember]
+        public double giesekusfactor = 0.0;
+
         //_____________________________________________________________________________________________
 
         //SOLVING SYSTEM
@@ -102,6 +112,12 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         [DataMember]
         public bool Stokes = false;
+
+        /// <summary>
+        /// Stokes (true), but iterative for convection in constitutive
+        /// </summary>
+        [DataMember]
+        public bool StokesConvection = false;
 
         /// <summary>
         /// insert initial conditions
@@ -161,7 +177,7 @@ namespace BoSSS.Application.Rheology {
         /// Use finite differences Jacobian for Linearization
         /// </summary>
         [DataMember]
-        public bool useJacobianForOperatorMatrix = false;
+        public bool useFDJacobianForOperatorMatrix = false;
 
         /// <summary>
         /// periodic BC?
@@ -212,35 +228,35 @@ namespace BoSSS.Application.Rheology {
         [DataMember]
         public double StressPenalty = 1.0;
 
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock;// LeftInverse_DiagBlock;  // SymPart_DiagBlockEquilib_DropIndefinite;
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock;// LeftInverse_DiagBlock;  // SymPart_DiagBlockEquilib_DropIndefinite;
 
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum + pressure/conti-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode NSEBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum + pressure/conti-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode NSEBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
 
-        /// <summary>
-        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
+        ///// <summary>
+        ///// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
 
-        /// <summary>
-        /// Block-Preconditiond for the stresses/constitutive-block of the system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock;
+        ///// <summary>
+        ///// Block-Preconditiond for the stresses/constitutive-block of the system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock;
 
-        /// <summary>
-        /// Block-Preconditiond for the stresses/constitutive-block of the system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityGradientBlockPrecondMode = MultigridOperator.Mode.Eye;
+        ///// <summary>
+        ///// Block-Preconditiond for the stresses/constitutive-block of the system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode VelocityGradientBlockPrecondMode = MultigridOperator.Mode.Eye;
 
         /// <summary>
         /// Refinement level for adaptive mesh refinement
@@ -305,11 +321,11 @@ namespace BoSSS.Application.Rheology {
         //DEBUGGING PARAMETERS
         //_____________________________________________________________________________________________
 
-        /// <summary>
-        /// Analysis of Operator Matrix (rank, cond...)?
-        /// </summary>
-        [DataMember]
-        public bool OperatorMatrixAnalysis = false;
+        ///// <summary>
+        ///// Analysis of Operator Matrix (rank, cond...)?
+        ///// </summary>
+        //[DataMember]
+        //public bool OperatorMatrixAnalysis = false;
 
         /// <summary>
         /// Compute L2 Error of exact solution?
@@ -419,6 +435,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         [DataMember]
         public int deg;
+        
         /// <summary>
         /// Grid resolution
         /// </summary>
@@ -432,6 +449,8 @@ namespace BoSSS.Application.Rheology {
         /// %
         /// </summary>
         public override void SetDGdegree(int degree) {
+            FieldOptions.Clear();
+
             FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
@@ -452,6 +471,73 @@ namespace BoSSS.Application.Rheology {
             FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
         }
 
+        /// <summary>
+        /// Dummy override
+        /// </summary>
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// Mainly for use by the job manager in BoSSSpad, in order to check if a specific configuration is already computed 
+        /// (i.e. an equal control object can be found in the database),
+        /// or not.
+        /// Therefore, we only check attributes that considered `essential' properties (e.g. <see cref="Weissenberg"/>, not <see cref="AppControl.Tags"/>),
+        /// in order to avoid a discrimination which is `too sharp'.
+        /// </summary>
+        public override bool Equals(object obj) {
+            if(!base.Equals(obj))
+                return false; // checks initial values, etc.
+
+            RheologyControl oCtrl = obj as RheologyControl;
+            if(oCtrl == null)
+                return false;
+
+            if(this.Weissenberg != oCtrl.Weissenberg)
+                return false;
+
+            if(this.Reynolds != oCtrl.Reynolds)
+                return false;
+
+            if(this.Stokes != oCtrl.Stokes)
+                return false;
+
+            if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
+                return false;
+
+            if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
+                return false;
+ 
+            if(this.alpha != oCtrl.alpha)
+                return false;
+
+            if(this.beta != oCtrl.beta)
+                return false;
+
+            if(this.GravitySource != oCtrl.GravitySource)
+                return false;
+
+            if(!this.Penalty1.ListEquals(oCtrl.Penalty1))
+                return false;
+
+            if(this.Penalty2 != oCtrl.Penalty2)
+                return false;
+
+            if(!this.PresPenalty1.ListEquals(oCtrl.PresPenalty1))
+                return false;
+
+            if(this.PresPenalty2 != oCtrl.PresPenalty2)
+                return false;
+
+            if(this.PresPenalty2 != oCtrl.PresPenalty2)
+                return false;
+
+                        if(this.PresPenalty2 != oCtrl.PresPenalty2)
+                return false;
+
+
+            return true;
+        }
 
     }
 }

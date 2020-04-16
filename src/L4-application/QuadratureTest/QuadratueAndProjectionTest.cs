@@ -48,7 +48,7 @@ namespace QuadratureAndProjectionTest {
         /// <summary>
         /// Sets up the current test application and the corresponding context
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void SetUp() {
             testApplication = new TestApplication(this);
             context = testApplication.GridData;

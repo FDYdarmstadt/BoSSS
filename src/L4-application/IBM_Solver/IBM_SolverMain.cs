@@ -25,10 +25,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Tecplot;
 using ilPSP.Utils;
 using ilPSP.Tracing;
-using BoSSS.Platform;
 using ilPSP.LinSolvers;
 using BoSSS.Solution.Utils;
-using BoSSS.Foundation.SpecFEM;
 using MPI.Wrappers;
 using BoSSS.Foundation.IO;
 using System.Diagnostics;
@@ -37,10 +35,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
-using NUnit.Framework;
-using BoSSS.Solution.XNSECommon;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -126,20 +121,6 @@ namespace BoSSS.Application.IBM_Solver {
 #pragma warning restore 649
         #endregion
 
-        IDictionary<SpeciesId, IEnumerable<double>> Rho {
-            get {
-                double rho = this.Control.PhysicalParameters.rho_A;
-
-                int D = this.GridData.SpatialDimension;
-
-                double[] _rho = new double[D];
-                _rho.SetAll(rho);
-
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
-                return R;
-            }
-        }
 
         /// <summary>
         /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
@@ -155,8 +136,9 @@ namespace BoSSS.Application.IBM_Solver {
                 //No MassMatrix for the pressure
                 _rho[D] = 0;
 
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
+                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>> {
+                    { this.LsTrk.GetSpeciesId("A"), _rho }
+                };
 
                 return R;
             }
@@ -441,13 +423,13 @@ namespace BoSSS.Application.IBM_Solver {
                         this.FluidSpecies, this.HMForder,
                         this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
                         false, this.Control.NonLinearSolver, this.Control.LinearSolver
-                        );
+                        ) {
+                        m_ResLogger = base.ResLogger,
+                        m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification),
 
-                    m_BDF_Timestepper.m_ResLogger = base.ResLogger;
-                    m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-            
-                    m_BDF_Timestepper.SessionPath = SessionPath;
-                    m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
+                        SessionPath = SessionPath,
+                        Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
+                    };
                 }
 
             } else {
@@ -468,51 +450,55 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        int DelComputeOperatorMatrix_CallCounter = 0;
-
 
         void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
             int D = this.LsTrk.GridDat.SpatialDimension;
 
-            var U0_CurrentState = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
+            if (Control.PhysicalParameters.IncludeConvection) {
 
-            // this method assumes that the parameter velocity is reference-equal to the current state 
-            for (int d = 0; d < D; d++)
-                if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)))
-                    throw new ApplicationException("internal error");
-            
-            if (this.U0MeanRequired) {
-                VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(ParameterVar.Skip(D).Take(D).Select(f => (SinglePhaseField)f).ToArray());
-                foreach (var um in U0mean)
-                    Debug.Assert(um.Basis.Degree == 0);
+                var U0_CurrentState = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
 
-                ComputeAverageU(U0_CurrentState, U0mean);
-            } else {
-                //U0_U0mean = new SinglePhaseField[2 * D];
+                // this method assumes that the parameter velocity is reference-equal to the current state 
+                for (int d = 0; d < D; d++)
+                    if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)))
+                        throw new ApplicationException("internal error");
+
+                if (this.U0MeanRequired) {
+                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(ParameterVar.Skip(D).Take(D).Select(f => (SinglePhaseField)f).ToArray());
+                    foreach (var um in U0mean)
+                        Debug.Assert(um.Basis.Degree == 0);
+
+                    ComputeAverageU(U0_CurrentState, U0mean);
+                } else {
+                    //U0_U0mean = new SinglePhaseField[2 * D];
+                }
             }
         }
+
+        int DelComputeOperatorMatrix_CallCounter = 0;
 
         /// <summary>
         /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
         /// </summary>
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
-            DelComputeOperatorMatrix_CallCounter++;
             int D = this.LsTrk.GridDat.SpatialDimension;
+            
 
             // compute operator
             //Debug.Assert(OpMatrix.InfNorm() == 0.0);
             //Debug.Assert(OpAffine.L2Norm() == 0.0);
-
             // Create Parameters fields
             DGField[] Params;
             {
                 var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
                 SinglePhaseField[] U0_U0mean;
-                if (this.U0MeanRequired) {
+                if (this.U0MeanRequired) 
+                    {
                     Basis U0meanBasis = new Basis(GridData, 0);
                     VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
                     U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
-                } else {
+                }
+                else {
                     U0_U0mean = new SinglePhaseField[2 * D];
                 }
                 Params = ArrayTools.Cat<DGField>(U0_U0mean);
@@ -522,7 +508,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
-
+                DelComputeOperatorMatrix_CallCounter++;
 
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
@@ -594,7 +580,6 @@ namespace BoSSS.Application.IBM_Solver {
             // Set Pressure Reference Point
             if (!this.boundaryCondMap.DirichletPressureBoundary) {
                 if (OpMatrix != null) {
-
                     IBMSolverUtils.SetPressureReferencePoint(
                         CurrentSolution.Mapping,
                         this.GridData.SpatialDimension,
@@ -635,11 +620,12 @@ namespace BoSSS.Application.IBM_Solver {
         //SinglePhaseField blocking = null;
 
         /// <summary>
-        /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
+        /// Depending on settings <see cref="BoSSS.Solution.Control.AppControl.TimesteppingMode"/>, computes either one time-step or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
 
+                /*
                 //Es folgt: die Analyse des Operators
                 if (this.Control.OperatorMatrixAnalysis == true && AnalyseCounter!=0)
                 {
@@ -653,7 +639,7 @@ namespace BoSSS.Application.IBM_Solver {
                     myAnalysis.Analyse();
                     AnalyseCounter--;
                 }
-
+                */
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
@@ -962,8 +948,7 @@ namespace BoSSS.Application.IBM_Solver {
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
             base.SetInitial();
 
-            double LevsetMin, LevsetMax;
-            this.LevSet.GetExtremalValues(out LevsetMin, out LevsetMax);
+            this.LevSet.GetExtremalValues(out double LevsetMin, out double LevsetMax);
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
@@ -1063,11 +1048,11 @@ namespace BoSSS.Application.IBM_Solver {
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
-                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG);
+                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
 
                 //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
 
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, domain, null, false);
+                ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, domain, null, false);
                 if (SetFarField)
                 {
                     LevSet.Clear(NegMask);
@@ -1351,7 +1336,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Attention: SENSITIVE TO LEVEL INDICATOR
         /// </summary>
-        bool debug = true;
+        readonly bool debug = true;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.

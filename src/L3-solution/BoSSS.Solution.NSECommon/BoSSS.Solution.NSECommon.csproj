@@ -47,7 +47,7 @@
       <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -71,6 +71,7 @@
     <Compile Include="RHSManuSourceNS.cs" />
     <Compile Include="RHSManuSourceTransportEq.cs" />
     <Compile Include="SIPDiffusion.cs" />
+    <Compile Include="SIPDiffusionBase.cs" />
     <Compile Include="SIPPressureCorrection.cs" />
     <Compile Include="LinearizedScalarConvection.cs" />
     <Compile Include="MaterialLawBase.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="IncompressibleBcType.cs" />
     <Compile Include="IncompressibleBoundaryCondMap.cs" />
     <Compile Include="LinearizedConvection.cs" />
+    <Compile Include="LinearizedConvectionJacobiBase.cs" />
     <Compile Include="PressureGradient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SolverUtils.cs" />

@@ -33,6 +33,8 @@ using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.Timestepping;
+using Newtonsoft.Json;
+using BoSSS.Solution.EnergyCommon;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -48,7 +50,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Ctor.
         /// </summary>
         public XNSE_Control() {
-            base.NoOfMultigridLevels = 1;
+            base.LinearSolver.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
@@ -69,25 +71,26 @@ namespace BoSSS.Application.XNSE_Solver {
             return typeof(XNSE_SolverMain);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public override void SetDGdegree(int p) {
+            SetFieldOptions(p, Math.Max(2, p));
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
-            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
+            FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
-                Degree = VelDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("FilteredVelocityX", new FieldOpts() {
+            FieldOptions.Add("FilteredVelocity*", new FieldOpts() {
                 SaveToDB = SaveFilteredVelocity
             });
-            FieldOptions.Add("FilteredVelocityY", new FieldOpts() {
-                SaveToDB = SaveFilteredVelocity
-            });
-            FieldOptions.Add("SurfaceForceDiagnosticX", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
-            });
-            FieldOptions.Add("SurfaceForceDiagnosticY", new FieldOpts() {
+            FieldOptions.Add("SurfaceForceDiagnostic*", new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.FALSE
             });
             FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
@@ -243,9 +246,14 @@ namespace BoSSS.Application.XNSE_Solver {
             CapillaryHeight,
 
             /// <summary>
-            /// Evaporative mass flux and speed of displacement 
+            /// Evaporative mass flux and speed of displacement (Line interface)
             /// </summary>
-            Evaporation
+            EvaporationL,
+
+            /// <summary>
+            /// Evaporative mass flux and speed of displacement (circle interface)
+            /// </summary>
+            EvaporationC
         }
 
         /// <summary>
@@ -349,6 +357,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// array of additional parameter values for some testcases
         /// </summary>
+        [DataMember]
         public double[] AdditionalParameters;
 
         ///// <summary>
@@ -381,16 +390,16 @@ namespace BoSSS.Application.XNSE_Solver {
         //[DataMember]
         //public int Solver_MinIterations = 4;
 
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
-        /// <summary>
-        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        /// </summary>
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
+        ///// <summary>
+        ///// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
+        ///// </summary>
+        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
 
         /// <summary>
         /// See <see cref="ContinuityProjection"/>
@@ -399,7 +408,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
 
         /// <summary>
-        /// Enforce the level-set to be globally conervativ, by adding a constant to the level-set field
+        /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
@@ -420,14 +429,43 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.
         /// </summary>
-        [DataMember]
-        public bool ComputeEnergy = false;
+        //[DataMember]
+        //public bool ComputeEnergy = false;
 
         /// <summary>
-        /// If true, energy balance at the interface will be evaluated in every cycle.
+        /// if true, kinetic energy equation will be solved 
         /// </summary>
         [DataMember]
-        public bool ComputeInterfaceEnergy = false;
+        public bool solveKineticEnergyEquation = false;
+
+        /// <summary>
+        /// discretization option for the visocus source terms of the kinetic energy equation
+        /// </summary>
+        [DataMember]
+        public KineticEnergyViscousSourceTerms kinEViscousDiscretization;
+
+        /// <summary>
+        /// discretization option for the pressure source terms of the kinetic energy equation
+        /// </summary>
+        [DataMember]
+        public KineticEnergyPressureSourceTerms kinEPressureDiscretization;
+
+        /// <summary>
+        /// switch for the pressure term in the Dissipation term
+        /// </summary>
+        [DataMember]
+        public bool withDissipativePressure;
+
+        /// <summary>
+        /// Block-Precondition for the kinetic-Energy-block
+        /// </summary>
+        public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+
+        /// <summary>
+        /// If true, various energy properties will be evaluated in every cycle.
+        /// </summary>
+        [DataMember]
+        public bool ComputeEnergyProperties = false;
 
         /// <summary>
         /// if true, the jump condition for mass, momentum and energy will be checked
@@ -441,6 +479,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool CheckInterfaceProps = false;
 
+        /// <summary>
+        /// Registers all utility (also energy) fields to IOFields
+        /// </summary>
+        [DataMember]
+        public bool RegisterUtilitiesToIOFields = false;
+        
         /// <summary>
         /// average method for interface values
         /// </summary>
@@ -469,11 +513,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public InterfaceAveraging InterAverage = InterfaceAveraging.density;
 
 
-        /// <summary>
-        /// Turn XDG for the velocity on/off; if off, only the pressure is approximated by XDG,
-        /// the velocity is plain DG.
-        /// </summary>
-        //public bool UseXDG4Velocity = true;
 
         /// <summary>
         /// An explicit expression of the Level-set over time.
@@ -507,21 +546,33 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// switch for the computation of the coupled heat solver
         /// </summary>
+        [DataMember]
         public bool solveCoupledHeatEquation = false;
+
+        /// <summary>
+        /// switch for advanced parameter Update for nonlinear solver
+        /// </summary>
+        [DataMember]
+        public bool useSolutionParamUpdate = false;
 
         /// <summary>
         /// only available if no heat equation is solved
         /// </summary>
-        public Func<double, double> prescribedMassflux;
+        public Func<double[], double, double> prescribedMassflux_Evaluator;
+
+        [DataMember]
+        public IBoundaryAndInitialData prescribedMassflux;
 
         /// <summary>
         /// implementations for the conductivity part (laplace operator) of the heat equation 
         /// </summary>
+        [DataMember]
         public ConductivityInSpeciesBulk.ConductivityMode conductMode = ConductivityInSpeciesBulk.ConductivityMode.SIP;
 
         /// <summary>
         /// Block-Precondition for the Temperature-block
         /// </summary>
+        [DataMember]
         public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
 

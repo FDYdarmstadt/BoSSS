@@ -32,15 +32,17 @@ namespace BoSSS.Solution.RheologyCommon {
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         protected double m_Weissenberg;
         double m_StressPenalty;
+        bool m_useFDJacobian;
 
         /// <summary>
         /// Initialize objective
         /// </summary>
-        public ConstitutiveEqns_Objective(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double Penalty) {
+        public ConstitutiveEqns_Objective(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double Penalty, bool UseFDJacobian) {
             this.Component = Component;
             this.m_BcMap = _BcMap;
             this.m_Weissenberg = Weissenberg;
             this.m_StressPenalty = Penalty;
+            this.m_useFDJacobian = UseFDJacobian;
 
         }
 
@@ -99,19 +101,20 @@ namespace BoSSS.Solution.RheologyCommon {
         /// </summary>
         public IList<string> ParameterOrdering {
             get {
-                // not required anymore - with new Jacobian, velocities are arguments, too.
-                return null;
-
-                //switch (Component) {
-                //    case 0:
-                //        return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY };
-                //    case 1:
-                //        return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
-                //    case 2:
-                //        return new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
-                //    default:
-                //        throw new NotImplementedException();
-                //}
+                if (m_useFDJacobian) {
+                    switch (Component) {
+                        case 0:
+                            return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY };
+                        case 1:
+                            return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
+                        case 2:
+                            return new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
+                        default:
+                            throw new NotImplementedException();
+                    }
+                } else {
+                    return null;
+                }
             }
         }
 
@@ -119,7 +122,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Extraction of velocity gradients from arguments
         /// </summary>
         void GetVelocityGrad(out double Grad1, out double Grad2, out double Grad3, out double Grad4, double[,] U) {
-            int offset = 3; // offset into trial var array
+            int offset = 4; // offset into trial var array
             switch (Component) {
                 case 0:
                 //VelGrads = new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY };
@@ -139,8 +142,8 @@ namespace BoSSS.Solution.RheologyCommon {
 
                 case 2:
                 //VelGrads = new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
-                Grad1 = U[offset + 0, 0];
-                Grad2 = U[offset + 0, 1];
+                Grad1 = U[offset + 1, 0];
+                Grad2 = U[offset + 1, 1];
                 Grad3 = U[offset + 1, 0];
                 Grad4 = U[offset + 1, 1];
                 break;
@@ -154,12 +157,23 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Calculating the integral of the volume part
         /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] Grad_T, double V, double[] GradV) {
-            //double Grad1 = cpv.Parameters[0];
-            //double Grad2 = cpv.Parameters[1];
-            //double Grad3 = cpv.Parameters[2];
-            //double Grad4 = cpv.Parameters[3];
-            GetVelocityGrad(out double Grad1, out double Grad2, out double Grad3, out double Grad4, Grad_T);
 
+            double Grad1;
+            double Grad2;
+            double Grad3;
+            double Grad4;
+
+            if (m_useFDJacobian) {
+
+                Grad1 = cpv.Parameters[0];
+                Grad2 = cpv.Parameters[1];
+                Grad3 = cpv.Parameters[2];
+                Grad4 = cpv.Parameters[3];
+
+            } else {
+
+                GetVelocityGrad(out Grad1, out Grad2, out Grad3, out Grad4, Grad_T);
+            }
 
             double res = 0.0;
             res = ((Grad1 * T[0] + Grad2 * T[1]) + (Grad3 * T[2] + Grad4 * T[3]));
@@ -173,9 +187,10 @@ namespace BoSSS.Solution.RheologyCommon {
         public double InnerEdgeForm(ref CommonParams inp, double[] Tin, double[] Tout, double[,] Grad_Tin, double[,] Grad_Tout,
             double Vin, double Vout, double[] Grad_Vin, double[] Grad_Vout) {
 
-            double res = 0.0;
-            res += (Tin[0] - Tout[0]) + (Tin[1] - Tout[1]) + (Tin[2] - Tout[2]) + (Tin[3] - Tout[3]);
-            return (-m_Weissenberg) * res * (Vin - Vout);
+            //double res = 0.0;
+            //res += (Tin[0] - Tout[0]) + (Tin[1] - Tout[1]) + (Tin[2] - Tout[2]) + (Tin[3] - Tout[3]);
+            //return (-m_Weissenberg) * res * (Vin - Vout);
+            return 0.0;
         }
 
         /// <summary>

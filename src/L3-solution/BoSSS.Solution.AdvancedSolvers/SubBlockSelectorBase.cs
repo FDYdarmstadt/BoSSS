@@ -151,7 +151,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         tmpList.Add(tmpIdx);
                 }
             } else {
-                tmpList = ListOfCellIdx.ToList();
+                tmpList = ListOfCellIdx;
             }
             if (tmpList.Count <= 0)
                 this.m_CellFilter = GetDoNothingInstruction();
@@ -331,8 +331,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         #region BasisInstructions
 
         private Func<int, bool> GetListInstruction(IEnumerable<int> intList) {
+#if DEBUG
             if(!intList.IsSet())
                 throw new ArgumentException("List contains duplicates!");
+#endif
             bool[] Selector = new bool[intList.Max() + 1];
             foreach(int i in intList) {
                 Selector[i] = true;
@@ -398,6 +400,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Func<int, bool> CellFilter {
             get { return m_CellFilter; }
         }

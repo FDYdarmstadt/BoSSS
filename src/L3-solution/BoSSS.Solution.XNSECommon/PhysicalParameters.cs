@@ -82,6 +82,13 @@ namespace BoSSS.Solution.XNSECommon {
         public double lambda_I = 0.0;
 
         /// <summary>
+        /// coefficient for the surface divergence term in the Boussinesq-Scriven surface model
+        /// if negative the value will be computed by (surface dilatational viscosity(lambda_I) - surface shear viscosity(mu_I))
+        /// </summary>
+        [DataMember]
+        public double lambdaI_tilde = -1.0;
+
+        /// <summary>
         /// dissipation coefficient for the effective wall force (fluid A)
         /// </summary>
         [DataMember]
@@ -134,6 +141,30 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public double Weissenberg_b = 0.0;
+
+        /// <summary>
+        /// Giesekus dimensionless: Giesekus factor (fluid A)
+        /// </summary>
+        [DataMember]
+        public double giesekusfactor_a = 0.0;
+
+        /// <summary>
+        /// Giesekus dimensionless: Giesekus factor (fluid B)
+        /// </summary>
+        [DataMember]
+        public double giesekusfactor_b = 0.0;
+
+        /// <summary>
+        /// Giesekus in fluid A?
+        /// </summary>
+        [DataMember]
+        public bool Giesekus_a = false;
+
+        /// <summary>
+        /// Giesekus in fluid B?
+        /// </summary>
+        [DataMember]
+        public bool Giesekus_b = false;
 
         /// <summary>
         /// is the interface a material one or is it non-material?

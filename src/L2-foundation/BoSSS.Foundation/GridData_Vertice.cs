@@ -322,6 +322,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 
                                 double eps = h[j] * 1.0e-6;
 
+
                                 locTree.FindNearPoints(foundPoints, eps, pt);
                                 if (foundPoints.Count < 1)
                                     throw new ApplicationException("error in algorithm");

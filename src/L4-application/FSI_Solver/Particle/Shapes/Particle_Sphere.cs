@@ -17,7 +17,6 @@ limitations under the License.
 using System;
 using System.Runtime.Serialization;
 using ilPSP;
-using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -60,7 +59,6 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(radius, "Particle radius");
 
             Motion.GetParticleLengthscale(radius);
-            Motion.GetParticleMinimalLengthscale(radius);
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
 
@@ -102,25 +100,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
-            // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? m_Radius + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : m_Radius;
-            var distance = point.L2Distance(Motion.GetPosition(0));
-            if (distance < (radiusTolerance)) {
-                return true;
-            }
-            return false;
+        public override bool Contains(Vector point, double tolerance = 0) {
+            double radiusTolerance = m_Radius + tolerance;
+            double distance = point.L2Distance(Motion.GetPosition(0));
+            return distance < radiusTolerance;
         }
 
         /// <summary>
@@ -129,11 +115,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
-            double length = Math.Sqrt(vector[0].Pow2() + vector[1].Pow2());
-            double CosT = vector[0] / length;
-            double SinT = vector[1] / length;
-            double[] SupportPoint = new double[SpatialDim];
+        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
+            double CosT = supportVector[0] / length;
+            double SinT = supportVector[1] / length;
+            Vector SupportPoint = new Vector(SpatialDim);
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
             SupportPoint[0] = CosT * m_Radius + Motion.GetPosition(0)[0];

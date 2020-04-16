@@ -27,16 +27,12 @@ namespace CutCellQuadrature {
     [TestFixture]
     public partial class Program : Application {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void TearDown() {
             csMPI.Raw.mpiFinalize();
         }

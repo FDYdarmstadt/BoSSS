@@ -37,7 +37,7 @@
   <ItemGroup>
     <Reference Include="nunit.framework, Version=3.4.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -53,8 +53,6 @@
     <Compile Include="ConvectionInBulk_LLF.cs" />
     <Compile Include="ConvectionInBulk_Localized.cs" />
     <Compile Include="CutCellBoundingBoxes.cs" />
-    <Compile Include="EnergyOperatorComponents.cs" />
-    <Compile Include="EnergyUtils.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
     <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
     <Compile Include="PressureStabilizationAtLevelSet.cs" />
@@ -72,8 +70,6 @@
     <Compile Include="CurvatureAlgortihms.cs" />
     <Compile Include="Divergence.cs" />
     <Compile Include="DoNotTouchParameters.cs" />
-    <Compile Include="OperatorConfiguration.cs" />
-    <Compile Include="OperatorFactory.cs" />
     <Compile Include="PhysicalParameters.cs" />
     <Compile Include="PressureFormAtLevelSet.cs" />
     <Compile Include="PressureInBulk.cs" />

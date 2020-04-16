@@ -20,9 +20,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         static void Main(string[] args) {
             var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
-            AUT.TestFixtureSetUp();
+            AUT.OneTimeSetUp();
             AUT.AllUp();
-            AUT.TestFixtureTearDown();
+            AUT.OneTimeTearDown();
         }
 
 
@@ -99,7 +99,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         SinglePhaseField origin;
         SinglePhaseField result;
 
-        ContinuousDGField cdgField;
+        ConstrainedDGField cdgField;
 
         SpecFemField specField;
         SinglePhaseField specFieldDG;
@@ -120,7 +120,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             Basis cdgBasis = new Basis(this.GridData, degree);
 
             origin = new SinglePhaseField(dgBasis, "origin");
-            cdgField = new ContinuousDGField(cdgBasis);
+            cdgField = new ConstrainedDGField(cdgBasis);
             result = new SinglePhaseField(cdgBasis, "result");
 
 

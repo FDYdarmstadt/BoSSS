@@ -40,9 +40,9 @@ namespace BoSSS.Application.SpecFEM {
             //    return new SpecFEMMain();
             //});
             var AUT = new BoSSS.Application.SpecFEM.AllUpTest();
-            AUT.TestFixtureSetUp();
+            AUT.OneTimeSetUp();
             AUT.AllUp(false, false);
-            AUT.TestFixtureTearDown();
+            AUT.OneTimeTearDown();
         }
 
         internal bool m_periodicX = true;

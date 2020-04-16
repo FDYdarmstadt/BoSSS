@@ -176,9 +176,7 @@ namespace BoSSS.Solution.Control {
     /// The linear solver config
     /// </summary>
     [Serializable]
-    public class LinearSolverConfig : ICloneable, IEquatable<LinearSolverConfig>
-    {
-
+    public class LinearSolverConfig : ICloneable, IEquatable<LinearSolverConfig> {
 
         /// <summary>
         /// This will print out more information about iterations.
@@ -190,7 +188,7 @@ namespace BoSSS.Solution.Control {
         /// that are used to construct the accelerated solution.
         /// </summary>
         [DataMember]
-        public int MaxKrylovDim=30;
+        public int MaxKrylovDim = 30;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
@@ -215,7 +213,7 @@ namespace BoSSS.Solution.Control {
         /// Sets the algorithm to use for linear solving, e.g. MUMPS or GMRES.
         /// </summary>
         [DataMember]
-        public LinearSolverCode SolverCode= LinearSolverCode.classic_pardiso;
+        public LinearSolverCode SolverCode = LinearSolverCode.classic_pardiso;
 
         /// <summary>
         /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
@@ -258,7 +256,7 @@ namespace BoSSS.Solution.Control {
                 NoOfMultigridLevels = this.NoOfMultigridLevels,
                 SolverCode = this.SolverCode,
                 TargetBlockSize = this.TargetBlockSize
-        };
+            };
             return clone;
         }
 

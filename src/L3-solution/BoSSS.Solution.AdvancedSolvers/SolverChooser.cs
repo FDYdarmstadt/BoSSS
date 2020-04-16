@@ -315,6 +315,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_direct_lapack:
                 case LinearSolverCode.exp_Kcycle_schwarz:
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
+                case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
                     precond = null;
                     break;
                 case LinearSolverCode.automatic:
@@ -457,6 +458,8 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Selfmade Preconditioner is used!");
                     precond[0] = m_precond;
                     break;
+
+
 
 
                 default:
@@ -832,7 +835,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                    templinearSolve = KcycleMultiSchwarz(lc, LocalDOF);
+                    templinearSolve = KcycleMultiSchwarz(lc, MultigridSequence, LocalDOF);
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
@@ -1683,7 +1686,10 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
+        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, AggregationGridData[] MultigridSequence, int[] _LocalDOF) {
+            if (MultigridSequence.Length < 1)
+                throw new ArgumentException("At least one multigrid level is required.");
+
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
@@ -1694,7 +1700,7 @@ namespace BoSSS.Solution {
             var SolverChain = new List<ISolverSmootherTemplate>();
             
 
-            for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
+            for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels && iLevel < MultigridSequence.Length; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
 
@@ -1859,7 +1865,7 @@ namespace BoSSS.Solution {
                     */
 
                     var CoarseSolver = new LevelPmg() {
-                        UseHiOrderSmoothing = false,
+                        UseHiOrderSmoothing = true,
                         CoarseLowOrder = 1
                     };
                     GenerateInfoMessageAtSetup(CoarseSolver,NoOfBlocks);

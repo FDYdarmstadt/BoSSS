@@ -32,16 +32,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     public static class ElementalTestProgramm {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
 
         }
