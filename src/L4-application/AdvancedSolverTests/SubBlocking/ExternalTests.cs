@@ -23,20 +23,21 @@ namespace AdvancedSolverTests.SubBlocking
         /// <summary>
         /// MPI init
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            //bool dummy;
+            //ilPSP.Environment.Bootstrap(
+            //    new string[0],
+            //    BoSSS.Solution.Application.GetBoSSSInstallDir(),
+            //    out dummy);
+            //Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void TestFixtureTearDown() {
             csMPI.Raw.mpiFinalize();
         }

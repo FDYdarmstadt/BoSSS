@@ -151,7 +151,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         tmpList.Add(tmpIdx);
                 }
             } else {
-                tmpList = ListOfCellIdx;
+                tmpList = ListOfCellIdx.ToList();
             }
             if (tmpList.Count <= 0)
                 this.m_CellFilter = GetDoNothingInstruction();

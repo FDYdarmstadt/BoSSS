@@ -744,6 +744,86 @@ namespace BoSSS.Solution.AdvancedSolvers
             return BlockMsrMatrix.Multiply(Perm, M);
         }
 
+        #region stuff for Operator Testing
+        /// <summary>
+        /// Extracts blocks from matrix <paramref name="source"/>, i.e. one block per cell and the coupling between these cells.
+        /// This might only work for local available cells
+        /// </summary>
+        public MultidimensionalArray[,] GetFullSubBlocks(BlockMsrMatrix source, bool ignoreVarCoupling = false, bool ignoreSpecCoupling = false) {
+            int NoOfCells = StructuredNi0.Length;
+            MultidimensionalArray[,] Sblocks = new MultidimensionalArray[NoOfCells, NoOfCells];
+
+            for (int iLoc = 0; iLoc < StructuredNi0.Length; iLoc++) {
+                for (int jLoc = 0; jLoc < StructuredNi0.Length; jLoc++) {
+
+                    Sblocks[iLoc, jLoc] = GetBlock(source, ignoreVarCoupling, ignoreSpecCoupling, iLoc, jLoc);
+                }
+            }
+            return Sblocks;
+        }
+
+        private MultidimensionalArray GetBlock(BlockMsrMatrix target, bool ignoreVarCoupling, bool ignoreSpecCoupling, int iLoc, int jLoc) {
+            var _Sblocks = MultidimensionalArray.Create(BMLoc.GetLengthOfCell(iLoc), BMLoc.GetLengthOfCell(jLoc));
+
+
+            for (int iVar = 0; iVar < StructuredNi0[iLoc].Length; iVar++) { // loop over (row/codomain/test) variables
+                for (int jVar = 0; jVar < StructuredNi0[jLoc].Length; jVar++) { // loop over (column/domain/trial) variables
+                    if (ignoreVarCoupling && jVar != iVar) {
+                        continue;
+                    }
+                    for (int iSpc = 0; iSpc < StructuredNi0[iLoc][iVar].Length; iSpc++) { // loop over species 
+                        for (int jSpc = 0; jSpc < StructuredNi0[jLoc][jVar].Length; jSpc++) {
+                            if (ignoreSpecCoupling && jSpc != iSpc) {
+                                continue;
+                            }
+                            for (int iMode = 0; iMode < StructuredNi0[iLoc][iVar][iSpc].Length; iMode++) {
+                                for (int jMode = 0; jMode < StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
+                                    extNi0 RowNi0 = StructuredNi0[iLoc][iVar][iSpc][iMode];
+                                    extNi0 ColNi0 = StructuredNi0[jLoc][jVar][jSpc][jMode];
+                                    int Targeti0 = RowNi0.Gi0;
+                                    int Targetj0 = ColNi0.Gi0;
+                                    int Subi0 = BMLoc.GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
+                                    int Subj0 = BMLoc.GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
+                                    int Subie = Subi0 + RowNi0.N - 1;
+                                    int Subje = Subj0 + ColNi0.N - 1;
+
+                                    target.ReadBlock(Targeti0, Targetj0,
+                                        _Sblocks.ExtractSubArrayShallow(new int[] { Subi0, Subj0 }, new int[] { Subie, Subje }));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return _Sblocks;
+        }
+
+        public int[] GlobalIndices {
+            get {
+                List<int> tmp = new List<int>();
+                if (m_includeExternalCells) {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_GlobalMask);
+                    if (BMExt != null)
+                        tmp.AddRange(BMExt.m_GlobalMask);
+                    if (BMLoc == null && BMExt == null)
+                        throw new Exception("empty mask. what a waste of time!");
+                } else {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_GlobalMask);
+                    else
+                        throw new Exception("empty mask. what a waste of time!");
+                }
+                return tmp.ToArray();
+
+            }
+        }
+
+
+        #endregion
+
+
         #region stuff for testing
         // ==========
         // Stuff dedicated to testing ...

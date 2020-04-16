@@ -13,26 +13,24 @@ using AdvancedSolverTests.SubBlocking;
 
 namespace AdvancedSolverTests {
     
-    [TestFixture]
     class AdvancedSolverMain {
 
         /// <summary>
         /// MPI init
         /// </summary>
-        [TestFixtureSetUp]
         public static void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            //bool dummy;
+            //ilPSP.Environment.Bootstrap(
+            //    new string[0],
+            //    BoSSS.Solution.Application.GetBoSSSInstallDir(),
+            //    out dummy);
+            //Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [TestFixtureTearDown]
         public static void TestFixtureTearDown() {
             csMPI.Raw.mpiFinalize();
         }

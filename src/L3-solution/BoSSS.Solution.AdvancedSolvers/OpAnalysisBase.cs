@@ -507,7 +507,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
            
             var Mask = new BlockMask(Sel);
 
-            MultidimensionalArray[] Blocks = Mask.GetDiagonalBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
+            MultidimensionalArray[] Blocks = Mask.GetSubBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
             Debug.Assert(Blocks.Length == J);
 
             double[] BCN = new double[J];
@@ -561,7 +561,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
                     Sel.VariableSelector(this.VarGroup);
-                    Sel.SelectCellList(LocBlk, global: false);
+                    Sel.CellSelector(LocBlk, global: false);
                     var Mask = new BlockMask(Sel);
 
                     MultidimensionalArray[,] Blocks = Mask.GetFullSubBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
