@@ -687,14 +687,26 @@ namespace BoSSS.Application.BoSSSpad {
             private set;
         }
 
+        JobStatus? statusCache;
+
         /// <summary>
         /// Whats up with this job?
         /// </summary>
         public JobStatus Status {
             get {
-                int SubmitCount;
-                string DD;
-                return GetStatus(out SubmitCount, out DD);
+                if (statusCache == null) {
+                    int SubmitCount;
+                    string DD;
+                    var s = GetStatus(out SubmitCount, out DD);
+
+                    if(s == JobStatus.FinishedSuccessful) {
+                        statusCache = s; // probably, not a lot things are happening status-wise with this job anymore
+                    }
+
+                    return s;
+                } else {
+                    return statusCache.Value;
+                }
             }
         }
 
