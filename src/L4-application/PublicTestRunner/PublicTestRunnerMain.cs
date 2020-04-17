@@ -30,10 +30,12 @@ namespace PublicTestRunner {
         }
 
         public override void Fail(string message) {
+            Console.Error.WriteLine("Assertion Fail: " + message);
             //Assert.Fail(message);
         }
 
         public override void Fail(string message, string detailMessage) {
+            Console.Error.WriteLine("Assertion Fail: " + message + ": " + ", detailed message is: " + detailMessage);
             //Assert.Fail(message + ", details: " + detailMessage);
         }
     }
@@ -67,7 +69,7 @@ namespace PublicTestRunner {
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(CNS.Program),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
             typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
@@ -288,8 +290,8 @@ namespace PublicTestRunner {
         static public int JobManagerRun(string AssemblyFilter) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-            if(MpiSize != 1) {
-                throw new NotSupportedException("runjobmanager subprogram must be executed serially"); 
+            if (MpiSize != 1) {
+                throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
             // ===================================
@@ -321,10 +323,10 @@ namespace PublicTestRunner {
                         if (!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
                             continue;
                     }
-                    
+
                     var allTst4Assi = GetTestsInAssembly(a);
 
-                    for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) { 
+                    for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                         allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
                     }
                 }
@@ -355,197 +357,203 @@ namespace PublicTestRunner {
                 Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
             }
 
-            Console.WriteLine("******* Starting job deployment/submission *******");
+            Console.WriteLine($"******* Starting job deployment/submission ({DateTime.Now}) *******");
 
             DateTime start = DateTime.Now;
 
             cnt = 0;
-            var allJobs = new List<(Job job, string ResFile, string testname)>();
-            foreach(var t in allTests) {
+            var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
+            foreach (var t in allTests) {
                 cnt++;
                 Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
                 var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride);
                 Console.WriteLine($"Successfully submitted {j.j.Name}.");
-                allJobs.Add(j);
+                AllOpenJobs.Add(j);
             }
 
-            Console.WriteLine("******* All jobs deployed *******");
+            Console.WriteLine($"******* All jobs deployed ({DateTime.Now}) *******");
 
             // ===================================
             // phase 2: wait until complete...
             // ===================================
 
-            const double TimeOutSec = 200*60;
-
-            var alreadyFinished = InteractiveShell.WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) {
-                var s = j.Status;
-                if (s == JobStatus.Failed)
-                    return true;
-                if (s == JobStatus.FinishedSuccessful)
-                    return true;
-                return false;
-            }).ToArray();
-
-            foreach ( var t in alreadyFinished) {
-                Console.WriteLine("already finished: " + t.Name + ": " + t.Status);
-            }
-
-            double RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
-
-            while (InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120, TimeOutSeconds: RestTime) > 0) {
-
-                if(job != null) {
-                    Console.WriteLine("just finished: " + job.Name + ": " + job.Status);
-                }
-
-                RestTime = TimeOutSec - (DateTime.Now - start).TotalSeconds;
-                if(RestTime <= 1.0) {
-                    Console.Error.WriteLine("timeout.");
-                    break;
-                }
-                RestTime = Math.Max(1, RestTime);
-            }
-            Thread.Sleep(10000);
-            Console.WriteLine("----------------------------------");
-            Console.WriteLine("All jobs finished - Summary:");
-            Console.WriteLine("----------------------------------");
-            int SuccessfulFinishedCount = 0;
-            foreach (var j in allJobs) {
-                if (j.job.Status == JobStatus.FinishedSuccessful)
-                    SuccessfulFinishedCount++;
-                Console.WriteLine(j.testname + ": " + j.job.ToString());
-            }
-            if(SuccessfulFinishedCount == allJobs.Count) {
-                Console.WriteLine("All tests/jobs finished successfully.");
-            } else {
-                Console.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {allJobs.Count - SuccessfulFinishedCount} have other states.");
-
-            }
-
-
-            // ===================================
-            // phase 3: collect files
-            // ===================================
-
             int returnCode = 0;
 
-            string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
+            var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
-            foreach (var j in allJobs) {
-                //Console.WriteLine(j.ToString());
-
-                if (j.job.Status != JobStatus.FinishedSuccessful)
-                    returnCode--;
-
-                try {
-                    string[] sourceFiles = Directory.GetFiles(j.job.DeploymentDirectory, "result-*.xml");
-
-                    foreach (var orig in sourceFiles) {
-                        string n = Path.GetFileName(orig);
-                        string dest = Path.Combine(CurrentDir, n);
-                        File.Copy(orig, dest);
-                    }
-                } catch(IOException ioe) {
-                    Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
-                    returnCode--;
-                }
-            }
-
-
-
+            const double TimeOutSec = 200 * 60;
             using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
-                var allNotSuccessful = allJobs.Where(jj => jj.job.Status != JobStatus.FinishedSuccessful).ToArray();
-                var allSuccessful = allJobs.Where(jj => jj.job.Status == JobStatus.FinishedSuccessful).ToArray();
+                (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
 
-                if (allNotSuccessful.Length > 0) {
-                    ot.WriteLine("All jobs not finished successful:");
-                    foreach (var jj in allJobs) {
-                        Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.testname}, at {jj.job.DeploymentDirectory})");
+                    string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
+
+                    var RecentlyFinished = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
+
+                    for (int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
+                        var jj = AllOpenJobs[iJob];
+                        var s = jj.job.Status;
+
+                        if (s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
+                            // message:
+                            Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
+
+                            // copy stdout and stderr to logfile
+                            LogResultFile(ot, jj.job, jj.testname, jj.ResFile);
+
+                            // copy xml result file
+                            try {
+                                string[] sourceFiles = Directory.GetFiles(jj.job.DeploymentDirectory, "result-*.xml");
+
+                                foreach (var orig in sourceFiles) {
+                                    string n = Path.GetFileName(orig);
+                                    string dest = Path.Combine(CurrentDir, n);
+                                    File.Copy(orig, dest);
+                                }
+                            } catch (IOException ioe) {
+                                Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                                returnCode--;
+                            }
+
+                            // delete deploy directory directory
+                            if (s == JobStatus.FinishedSuccessful) {
+                                try {
+                                    Directory.Delete(jj.job.DeploymentDirectory, true);
+                                } catch (Exception e) {
+                                    Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                                }
+                            }
+
+                            // move job to 'finished' list
+                            var X = (jj.job, jj.ResFile, jj.testname, s);
+                            AllFinishedJobs.Add(X);
+                            RecentlyFinished.Add(X);
+
+                            AllOpenJobs.RemoveAt(iJob);
+                            iJob--;
+                        }
                     }
+
+                    return RecentlyFinished.ToArray();
                 }
 
-                var _allJobs = ArrayTools.Cat(allNotSuccessful,allSuccessful);
-                foreach (var jj in _allJobs) {
-                    var j = jj.job;
-                    int sz = j.NumberOfMPIProcs;
-                    ot.WriteLine("##fdhgjegf763748trfhe8hurdsinf598ugf498jvhsn*hbbvc#####!################");
-                    ot.WriteLine("########################################################################");
-                    ot.WriteLine("########################################################################");
-                    ot.WriteLine("####  " + jj.testname);
-                    ot.WriteLine("########################################################################");
-                    ot.WriteLine("########################################################################");
-                    ot.WriteLine("########################################################################");
-                    ot.WriteLine("#### Deploy directory: " + j.DeploymentDirectory);
-                    ot.WriteLine("#### Full test name:   " + j.Name);
-                    ot.WriteLine("#### Number of procs:  " + j.NumberOfMPIProcs);
-                    ot.WriteLine("#### Status:           " + j.Status);
-                    ot.WriteLine("#### Job ID:           " + j.BatchProcessorIdentifierToken);
-                    //                                   +   +   +   +
-                    if (j.NumberOfMPIProcs <= 1) {
-                        ot.WriteLine("#### Result File:      " + jj.ResFile);
-                        ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.DeploymentDirectory, jj.ResFile)));
-                    } else {
-                        for (int i = 0; i < sz; i++) {
-                            if (i == 0)
-                                ot.WriteLine("#### Result Files:     " + MpiResFileNameMod(i, sz, jj.ResFile));
-                            else
-                                ot.WriteLine("####                   " + MpiResFileNameMod(i, sz, jj.ResFile));
-                        }
-                        for (int i = 0; i < sz; i++) {
-                            if (i == 0)
-                                ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.DeploymentDirectory, MpiResFileNameMod(i, sz, jj.ResFile))));
-                            else
-                                ot.WriteLine("####                   " + File.Exists(Path.Combine(j.DeploymentDirectory, MpiResFileNameMod(i, sz, jj.ResFile))));
-                        }
-                    }
-                    ot.WriteLine("########################################################################");
-                    ot.WriteLine("########################################################################");
-                    ot.WriteLine("########################################################################");
-
-                    ot.WriteLine("[[[Stdout: ");
-                    try {
-                        ot.WriteLine(j.Stdout);
-                    } catch (Exception e) {
-                        ot.WriteLine($"{e.GetType().Name} during reading of stdout stream: {e.Message}");
-                        ot.WriteLine(e.StackTrace);
-                    }
-                    ot.WriteLine("]]]");
-
-                    try {
-                        string stderr = j.Stderr;
-
-                        if (stderr.IsEmptyOrWhite()) {
-                            ot.WriteLine("[[[Empty Error Stream: this is good!]]]");
-                        } else {
-                            ot.WriteLine("[[[Stderr:");
-                            ot.WriteLine(stderr);
-                            ot.WriteLine("]]]");
-                        }
-                    } catch (Exception e) {
-                        
-                        ot.WriteLine($"{e.GetType().Name} during reading of stderr stream: {e.Message}");
-                        ot.WriteLine(e.StackTrace);
-                    }
-
-
-                    
-
-                    ot.WriteLine();
-                    ot.WriteLine();
-                    ot.WriteLine();
-
-                    if(jj.job.Status == JobStatus.FinishedSuccessful) {
-                        try {
-                            Directory.Delete(jj.job.DeploymentDirectory, true);
-                        } catch(Exception e) {
-                            Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
-                        }
-                    }
+                UpdateFinishedJobs();
+                double RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
+                while (RestTime > 1.0 && AllOpenJobs.Count > 0) {
+                    Thread.Sleep(2 * 60 * 1000); // sleep for 2 minutes
+                    UpdateFinishedJobs();
+                    RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
                 }
             }
 
+            // ===================================
+            // phase 3: summary
+            // ===================================
+
+
+            if (AllOpenJobs.Count == 0) {
+                Console.WriteLine("----------------------------------------------------------------------------------------------------");
+                Console.WriteLine($"All jobs/tests finished ({DateTime.Now}) - Summary:");
+                Console.WriteLine("----------------------------------------------------------------------------------------------------");
+            } else {
+                Console.WriteLine("----------------------------------------------------------------------------------------------------");
+                Console.WriteLine($"Reaches Time-out of {TimeOutSec / 60} Minutes; {AllOpenJobs.Count} jobs/tests still running; ({DateTime.Now}) - Summary:");
+                Console.WriteLine("----------------------------------------------------------------------------------------------------");
+
+                returnCode -= 1;
+            }
+
+            int SuccessfulFinishedCount = 0;
+            foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
+                Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname}");
+                SuccessfulFinishedCount++;
+            }
+
+            foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) {
+                Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.DeploymentDirectory}");
+                returnCode -= 1;
+            }
+            foreach (var jj in AllOpenJobs) {
+                Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.Status}");
+                returnCode -= 1;
+            }
+
+            // very final message:
+            if (SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
+                Console.WriteLine("All tests/jobs finished successfully.");
+            } else {
+                Console.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {AllOpenJobs.Count - SuccessfulFinishedCount} have other states.");
+            }
+            Console.WriteLine($"{DateTime.Now}");
+            
             return returnCode;
+        }
+
+        private static void LogResultFile(StreamWriter ot, Job j, string testname, string ResFile) {
+            int sz = j.NumberOfMPIProcs;
+            ot.WriteLine("##fdhgjegf763748trfhe8hurdsinf598ugf498jvhsn*hbbvc#####!################");
+            ot.WriteLine("########################################################################");
+            ot.WriteLine("########################################################################");
+            ot.WriteLine("####  " + testname);
+            ot.WriteLine("########################################################################");
+            ot.WriteLine("########################################################################");
+            ot.WriteLine("########################################################################");
+            ot.WriteLine("#### Deploy directory: " + j.DeploymentDirectory);
+            ot.WriteLine("#### Full test name:   " + j.Name);
+            ot.WriteLine("#### Number of procs:  " + j.NumberOfMPIProcs);
+            ot.WriteLine("#### Status:           " + j.Status);
+            ot.WriteLine("#### Job ID:           " + j.BatchProcessorIdentifierToken);
+            //                                   +   +   +   +
+            if (j.NumberOfMPIProcs <= 1) {
+                ot.WriteLine("#### Result File:      " + ResFile);
+                ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.DeploymentDirectory, ResFile)));
+            } else {
+                for (int i = 0; i < sz; i++) {
+                    if (i == 0)
+                        ot.WriteLine("#### Result Files:     " + MpiResFileNameMod(i, sz, ResFile));
+                    else
+                        ot.WriteLine("####                   " + MpiResFileNameMod(i, sz, ResFile));
+                }
+                for (int i = 0; i < sz; i++) {
+                    if (i == 0)
+                        ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.DeploymentDirectory, MpiResFileNameMod(i, sz, ResFile))));
+                    else
+                        ot.WriteLine("####                   " + File.Exists(Path.Combine(j.DeploymentDirectory, MpiResFileNameMod(i, sz, ResFile))));
+                }
+            }
+            ot.WriteLine("########################################################################");
+            ot.WriteLine("########################################################################");
+            ot.WriteLine("########################################################################");
+
+            ot.WriteLine("[[[Stdout: ");
+            try {
+                ot.WriteLine(j.Stdout);
+            } catch (Exception e) {
+                ot.WriteLine($"{e.GetType().Name} during reading of stdout stream: {e.Message}");
+                ot.WriteLine(e.StackTrace);
+            }
+            ot.WriteLine("]]]");
+
+            try {
+                string stderr = j.Stderr;
+
+                if (stderr.IsEmptyOrWhite()) {
+                    ot.WriteLine("[[[Empty Error Stream: this is good!]]]");
+                } else {
+                    ot.WriteLine("[[[Stderr:");
+                    ot.WriteLine(stderr);
+                    ot.WriteLine("]]]");
+                }
+            } catch (Exception e) {
+
+                ot.WriteLine($"{e.GetType().Name} during reading of stderr stream: {e.Message}");
+                ot.WriteLine(e.StackTrace);
+            }
+
+            ot.WriteLine();
+            ot.WriteLine();
+            ot.WriteLine();
+            ot.Flush();
         }
 
         static string DebugOrReleaseSuffix {
@@ -738,6 +746,17 @@ namespace PublicTestRunner {
 
 
         static int Main(string[] args) {
+            /*
+            string targ = @"\\hpccluster\hpccluster-scratch\JenkinsCI\cluster\BoSSStstApr16_1446-PublicTestRunner2020Apr16_144921\ExternalBinding.CodeGen.exe";
+            Directory.GetCurrentDirectory();
+
+            var a = typeof(BoSSS.Application.ExternalBinding.CodeGen.Test).Assembly;
+            var origin = a.Location;
+
+            File.Copy(origin, targ);
+
+            return -1;
+            */
             //Debugger.Launch();
             Console.WriteLine("BoSSS NUnit test runner.");
 

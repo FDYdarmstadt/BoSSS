@@ -302,7 +302,24 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new IOException("File '" + fTarget + "' already exists - wont over write.");
                 }
 
-                File.Copy(fOrg, fTarget);
+                int MaxTry = 10;
+                for (int iTry = 0; iTry < MaxTry; iTry++) {
+                    // on network file-systems, there seem to be some rare hiccups, sometimes:
+                    // hundreds of files copied successfully, suddenly an IOException: file already exists.
+                    // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
+
+                    try {
+                        File.Copy(fOrg, fTarget, iTry > 0);
+                        if(iTry > 0) {
+                            Console.WriteLine("success.");
+                        }
+                        break;
+                    } catch (IOException e) {
+                        Console.Error.WriteLine(e.GetType().Name + " during copy of file '" + fOrg + "' --> '" + fTarget + "' : " + e.Message);
+                        Console.WriteLine($"Retrying {iTry + 1} of {MaxTry} (waiting for some time before) ...");
+                        System.Threading.Thread.Sleep(77 * 1000); // sleep for 77 seconds...
+                    }
+                }
                 if (OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
                     //if (OriginDir != null)
                     //    Console.WriteLine();
