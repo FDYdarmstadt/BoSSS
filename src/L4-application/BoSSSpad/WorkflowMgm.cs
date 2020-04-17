@@ -427,7 +427,13 @@ namespace BoSSS.Application.BoSSSpad {
 
             var QueueAndRun = this.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) {
                 var s = j.Status;
-                return (s != JobStatus.Failed && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation);
+                if (s == JobStatus.Failed)
+                    return false;
+                if (s == JobStatus.FinishedSuccessful)
+                    return false;
+                if (s == JobStatus.PreActivation)
+                    return false;
+                return true;
             }).ToArray();
             if(QueueAndRun.Length == 0) {
                 JustFinished = null;
@@ -435,8 +441,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             while(true) {
-                Thread.Sleep((int)PollingIntervallSeconds);
-
+                
                 if(TimeOutSeconds > 0) {
                     double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
                     if(RuntimeSoFar > TimeOutSeconds) {
