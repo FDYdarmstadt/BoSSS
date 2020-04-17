@@ -629,18 +629,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return result;
         }
 
-        public static void FindPoints(string sessionPath, ISessionInfo session, TestCases testCase, bool plotDGFields = false, bool plotSeedingsPoints = false, bool plotInflectionsPoints = false, bool plotCurves = false, bool plotStartEndPairs = false) {
-            #region Get values from DG fields
+        public static void FindPoints(string sessionPath, ISessionInfo session, SeedingSetup testCase, bool plotDGFields = false, bool plotSeedingsPoints = false, bool plotInflectionsPoints = false, bool plotCurves = false, bool plotStartEndPairs = false) {
+            #region Get DG fields, AV values
             GridData gridData;
             SinglePhaseField field;
             SinglePhaseField avField;
             SinglePhaseField levelSetField;
-            ISessionInfo mySession;
 
             switch (testCase) {
-                case TestCases.av:
-                    mySession = session;
-                    var myTimestep = mySession.Timesteps.Last();
+                case SeedingSetup.av:
+                    var myTimestep = session.Timesteps.Last();
                     gridData = (GridData)myTimestep.Fields.First().GridDat;
                     field = (SinglePhaseField)myTimestep.Fields.Find("rho");
                     avField = (SinglePhaseField)myTimestep.Fields.Find("artificialViscosity");
@@ -648,23 +646,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     break;
 
                 default:
-                    throw new NotSupportedException("This setting does not exist.");
+                    throw new NotSupportedException("This seeding setup does not exist.");
             }
 
             MultidimensionalArray avValues = GetAvMeanValues(gridData, avField);
             #endregion
 
-            #region Plot DG fields
-            if (plotDGFields) {
-                Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: 2);
-                plotDriver.PlotFields(sessionPath + "Fields", 0.0, new DGField[] { field, avField, levelSetField });
-            }
-            #endregion
-
             #region Create seedings points
-            int N = 100;
+            int maxNumOfIterations = 100;
             int numOfPoints;
-            double[] nodes;
             MultidimensionalArray morePoints;
             MultidimensionalArray fValues;
             int[] iterations;
@@ -672,14 +662,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double eps;
             bool[] converged;
             int[] jCell;
+            double[] nodes;
 
             switch (testCase) {
-                case TestCases.av:
+                case SeedingSetup.av:
                     numOfPoints = avValues.Lengths[0];
                     //numOfPoints  = 330;
                     eps = 1e-12;
-                    morePoints = MultidimensionalArray.Create(numOfPoints, N + 1, 2);
-                    fValues = MultidimensionalArray.Create(numOfPoints, N + 1);
+                    morePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 2);
+                    fValues = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1);
                     iterations = new int[numOfPoints];
                     finalFValues = new double[numOfPoints];
                     converged = new bool[numOfPoints];
@@ -694,13 +685,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     }
                     break;
 
-                case TestCases.av3x3:
+                case SeedingSetup.av3x3:
                     int numOfCells = avValues.Lengths[0];
                     int numOfPointsPerCell = 9;
                     numOfPoints = numOfCells * numOfPointsPerCell;
                     eps = 1e-12;
-                    morePoints = MultidimensionalArray.Create(numOfPoints, N + 1, 2);
-                    fValues = MultidimensionalArray.Create(numOfPoints, N + 1);
+                    morePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 2);
+                    fValues = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1);
                     iterations = new int[numOfPoints];
                     finalFValues = new double[numOfPoints];
                     converged = new bool[numOfPoints];
@@ -720,8 +711,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 default:
                     throw new NotSupportedException("This setting does not exist.");
             }
-
-            Console.WriteLine("Total number of points: " + morePoints.Lengths[0]);
+            Console.WriteLine("Total number of seeding points: " + morePoints.Lengths[0]);
             #endregion
 
             #region Find inflection point for every seeding point
@@ -733,16 +723,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             for (int i = 0; i < morePoints.Lengths[0]; i++) {
                 //MultidimensionalArray points = MultidimensionalArray.Create(N + 1, 2);
-                secondDerivative = new double[N + 1];
-                stepSize = new double[N + 1];
-                values = new double[N + 1];
+                secondDerivative = new double[maxNumOfIterations + 1];
+                stepSize = new double[maxNumOfIterations + 1];
+                values = new double[maxNumOfIterations + 1];
                 bool pointFound;
                 int jLocal;
 
                 //MultidimensionalArray start = MultidimensionalArray.CreateWrapper(startingPoint, 1, startingPoint.Length);
                 //points.SetSubArray(start.ExtractSubArrayShallow(0, -1), new int[]{0, -1});
 
-                int iter = WalkOnCurve(gridData, field, N, eps, morePoints.ExtractSubArrayShallow(i, -1, -1), secondDerivative, stepSize, values, out pointFound, out jLocal, patchRecoveryGradient: true, patchRecoveryHessian: true);
+                int iter = WalkOnCurve(gridData, field, maxNumOfIterations, eps, morePoints.ExtractSubArrayShallow(i, -1, -1), secondDerivative, stepSize, values, out pointFound, out jLocal, patchRecoveryGradient: true, patchRecoveryHessian: true);
 
                 x = morePoints.ExtractSubArrayShallow(i, -1, 0).To1DArray();
                 y = morePoints.ExtractSubArrayShallow(i, -1, 1).To1DArray();
@@ -751,8 +741,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 //double[] results = new double[iter];
 
                 switch (testCase) {
-                    case TestCases.av:
-                    case TestCases.av3x3:
+                    case SeedingSetup.av:
+                    case SeedingSetup.av3x3:
                         //fValues[i, j] = field.ProbeAt(new double[] {x[j], y[j]});
                         fValues.SetSubVector(values, new int[] { i, -1 });
                         break;
@@ -781,6 +771,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
                 //        sw.Flush();
                 //    }
+            }
+            #endregion
+
+            #region Plot DG fields
+            if (plotDGFields) {
+                Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: 2);
+                plotDriver.PlotFields(sessionPath + "Fields", 0.0, new DGField[] { field, avField, levelSetField });
             }
             #endregion
 
@@ -866,10 +863,26 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
     }
 
+    public class InflectionPointFinder {
+        private SinglePhaseField gradientX;
+        private SinglePhaseField gradientY;
+        private SinglePhaseField hessianXX;
+        private SinglePhaseField hessianXY;
+        private SinglePhaseField hessianYX;
+        private SinglePhaseField hessianYY;
 
-    public enum TestCases {
+        private MultidimensionalArray resultGradX;
+        private MultidimensionalArray resultGradY;
+        private MultidimensionalArray resultHessXX;
+        private MultidimensionalArray resultHessXY;
+        private MultidimensionalArray resultHessYX;
+        private MultidimensionalArray resultHessYY;
+
+        private IGridData gridData;
+    }
+
+    public enum SeedingSetup {
         av = 0,
-
         av3x3
     }
 }
