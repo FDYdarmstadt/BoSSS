@@ -53,6 +53,7 @@ namespace ilPSP.Connectors.Matlab {
             }
         }
 
+        /*
         /// <summary>
         /// Evaluation of the eigenvalues of a full matrix
         /// <paramref name="M"/>.
@@ -79,6 +80,7 @@ namespace ilPSP.Connectors.Matlab {
                 return output.Storage;
             }
         }
+        */
 
         /// <summary>
         /// MATLAB function 'condest' (condition number estimation for sparse
@@ -271,7 +273,7 @@ namespace ilPSP.Connectors.Matlab {
 
 
         /// <summary>
-        /// MATLAB function 'eigs' (eigenvalues of a matrix);
+        /// MATLAB function 'eigs' (eigenvalues of a sparse matrix);
         /// </summary>
         /// <param name="C">
         /// options, ('lm': largest magnitude, etc.) see MATLAB documentation.
@@ -280,21 +282,82 @@ namespace ilPSP.Connectors.Matlab {
         /// Number of eigenvalues.
         /// </param>
         /// <param name="M">
-        /// Matrix.
+        /// A sparse Matrix.
         /// </param>
         /// <param name="__WorkingPath"></param>
         public static double[] eigs(this IMutableMatrixEx M, int K, string C, string __WorkingPath = null) {
             using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
                 if (M == null)
                     throw new ArgumentNullException();
-                MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
+                if(K < 1)
+                    throw new ArgumentOutOfRangeException();
+
+                MultidimensionalArray output = MultidimensionalArray.Create(K, 1);
                 connector.PutSparseMatrix(M, "Matrix");
-                connector.Cmd(string.Format("EV = eigs(Matrix,{0},'{1}')", K, C));
+                connector.Cmd(string.Format("EV = eigs(Matrix,{0},'{1}');", K, C));
                 connector.GetMatrix(output, "EV");
 
                 connector.Execute(false);
 
                 return output.GetColumn(0);
+            }
+        }
+
+
+        /// <summary>
+        /// MATLAB function 'eigs' (eigenvalues of a dense matrix);
+        /// </summary>
+        /// <param name="M">
+        /// A sparse Matrix.
+        /// </param>
+        /// <param name="__WorkingPath"></param>
+        public static double[] eigs(this IMatrix M, string __WorkingPath = null) {
+            using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
+                if (M == null)
+                    throw new ArgumentNullException();
+                if(M.NoOfCols != M.NoOfRows) {
+                    throw new ArgumentException("Not supported for non-symmetrical matrices.");
+                }
+                int N = M.NoOfCols;
+
+                MultidimensionalArray output = MultidimensionalArray.Create(N, 1);
+                connector.PutMatrix(M, "Matrix");
+                connector.Cmd(string.Format("EV = eigs(Matrix,{0});", M.NoOfCols));
+                connector.GetMatrix(output, "EV");
+
+                connector.Execute(false);
+
+                return output.GetColumn(0);
+            }
+        }
+        
+        /// <summary>
+        /// MATLAB function 'eigs' (eigenvalues and eigenvectors);
+        /// </summary>
+        /// <param name="M">
+        /// A sparse Matrix.
+        /// </param>
+        /// <param name="__WorkingPath"></param>
+        public static (double[] EigenVals, MultidimensionalArray EigenVect) eigsV(this IMatrix M, string __WorkingPath = null) {
+            using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
+                if (M == null)
+                    throw new ArgumentNullException();
+                if(M.NoOfCols != M.NoOfRows) {
+                    throw new ArgumentException("Not supported for non-symmetrical matrices.");
+                }
+                int N = M.NoOfCols;
+
+                MultidimensionalArray eVect = MultidimensionalArray.Create(N, N);
+                MultidimensionalArray eVal = MultidimensionalArray.Create(N, 1);
+                connector.PutMatrix(M, "Matrix");
+                connector.Cmd(string.Format("[V,D] = eigs(Matrix,{0});", M.NoOfCols));
+                connector.Cmd(string.Format("ev = diag(D);"));
+                connector.GetMatrix(eVect, "V");
+                connector.GetMatrix(eVal, "ev");
+
+                connector.Execute(false);
+
+                return (eVal.GetColumn(0), eVect);
             }
         }
     }
