@@ -17,7 +17,7 @@ using ilPSP.Utils;
 namespace AdvancedSolverTests.SubBlocking
 {
     [TestFixture]
-    class ExternalTests
+    static public class ExternalTests
     {
 
         /// <summary>
