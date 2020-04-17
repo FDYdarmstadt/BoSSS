@@ -18,12 +18,14 @@ using System;
 using System.IO;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
+using MPI.Wrappers;
 
 namespace BoSSS.Application.TutorialTests {
 
     static class TutorialTestsMain {
         
         static void Main(string[] args) {
+            BoSSS.Solution.Application.InitMPI(new string[0]);
             AllUpTest.OneTimeSetUp();
 
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
@@ -37,15 +39,16 @@ namespace BoSSS.Application.TutorialTests {
             //AllUpTest.RunWorksheets("tutorial2/uebung2tutorial.tex");
             //AllUpTest.RunWorksheets("tutorial4/tutorial4.tex");
             //AllUpTest.RunWorksheets("tutorial5/uebung5tutorial.tex");
-            //AllUpTest.RunWorksheets("tutorial6/tutorial6.tex");
+            AllUpTest.RunWorksheet("tutorial6/tutorial6.tex");
             //AllUpTest.RunWorksheets("tutorial9-SIP/sip.tex");
             // ---
             //AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
-            //AllUpTest.RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
-            //AllUpTest.RunWorksheet("convergenceStudyTutorial/convStudy.tex"); 
+            //AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
+            //AllUpTest.RunWorksheets("convergenceStudyTutorial/convStudy.tex"); 
 
             AllUpTest.OneTimeTearDown();
+            csMPI.Raw.mpiFinalize();
         }
 
     }

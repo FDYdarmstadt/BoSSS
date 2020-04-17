@@ -746,6 +746,17 @@ namespace PublicTestRunner {
 
 
         static int Main(string[] args) {
+            /*
+            string targ = @"\\hpccluster\hpccluster-scratch\JenkinsCI\cluster\BoSSStstApr16_1446-PublicTestRunner2020Apr16_144921\ExternalBinding.CodeGen.exe";
+            Directory.GetCurrentDirectory();
+
+            var a = typeof(BoSSS.Application.ExternalBinding.CodeGen.Test).Assembly;
+            var origin = a.Location;
+
+            File.Copy(origin, targ);
+
+            return -1;
+            */
             //Debugger.Launch();
             Console.WriteLine("BoSSS NUnit test runner.");
 
