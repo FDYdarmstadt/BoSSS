@@ -63,13 +63,12 @@ namespace PublicTestRunner {
             //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
             typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
             typeof(BoSSS.Application.ExternalBinding.Initializer),
-            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
             typeof(MPITest.Program)
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(CNS.Program),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
             typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
@@ -90,14 +89,14 @@ namespace PublicTestRunner {
 
         static (Type type, int NoOfProcs)[] MpiReleaseOnlyTests = new (Type type, int NoOfProcs)[] {
             (typeof(MPITest.Program), 4),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
-            //(typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
-            //(typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
+            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+            (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+            (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
             //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
             //(typeof(ALTSTests.Program), 4),
             //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
-            //(typeof(HilbertTest.HilbertTest), 4),
-            //(typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
+            (typeof(HilbertTest.HilbertTest), 4),
+            (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
         };
 
 

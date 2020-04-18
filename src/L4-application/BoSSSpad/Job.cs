@@ -663,6 +663,7 @@ namespace BoSSS.Application.BoSSSpad {
                     } else {
                         stderr = "";
                     }
+                    return null;
                 }
 
                 BatchProcessorClient.RetryIOop(op, "reading of stderr file", true);
