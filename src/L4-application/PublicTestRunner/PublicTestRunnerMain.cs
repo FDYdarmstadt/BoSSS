@@ -435,7 +435,7 @@ namespace PublicTestRunner {
                 Console.WriteLine("----------------------------------------------------------------------------------------------------");
             } else {
                 Console.WriteLine("----------------------------------------------------------------------------------------------------");
-                Console.WriteLine($"Reaches Time-out of {TimeOutSec / 60} Minutes; {AllOpenJobs.Count} jobs/tests still running; ({DateTime.Now}) - Summary:");
+                Console.WriteLine($"Reached Time-out of {TimeOutSec / 60} Minutes; {AllOpenJobs.Count} jobs/tests still running; ({DateTime.Now}) - Summary:");
                 Console.WriteLine("----------------------------------------------------------------------------------------------------");
 
                 returnCode -= 1;
@@ -447,20 +447,23 @@ namespace PublicTestRunner {
                 SuccessfulFinishedCount++;
             }
 
+            int OtherStatCount = 0;
             foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) {
                 Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.DeploymentDirectory}");
                 returnCode -= 1;
+                OtherStatCount++;
             }
             foreach (var jj in AllOpenJobs) {
                 Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.Status}");
                 returnCode -= 1;
+                OtherStatCount++;
             }
 
             // very final message:
             if (SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                 Console.WriteLine("All tests/jobs finished successfully.");
             } else {
-                Console.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {AllOpenJobs.Count - SuccessfulFinishedCount} have other states.");
+                Console.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
             }
             Console.WriteLine($"{DateTime.Now}");
             
