@@ -31,35 +31,36 @@ namespace BoSSS.Application.TutorialTests {
     static public class AllUpTest {
 
         /// <summary>
-        /// MPI finalization.
+        /// Finalization.
         /// </summary>
-        //[OneTimeTearDown]
-        static public void OneTimeTearDown() {
+        static public void OneTimeTearDown(bool killBatch) {
             //csMPI.Raw.mpiFinalize();
 
-            // try to terminate batch processor, if still running:
-            int timeoucount = 0;
-            while (MiniBatchProcessor.Server.IsRunning) {
-                Console.WriteLine("Terminating MiniBatchProcessor...");
-                MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds: -1);
-                Thread.Sleep(10000);
+            if (killBatch) {
+                // try to terminate batch processor, if still running:
+                int timeoucount = 0;
+                while (MiniBatchProcessor.Server.IsRunning) {
+                    Console.WriteLine("Terminating MiniBatchProcessor...");
+                    MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds: -1);
+                    Thread.Sleep(10000);
 
-                timeoucount++;
-                if (timeoucount > 100) {
-                    Assert.Fail("Unable to kill MiniBatchProcessor - server");
+                    timeoucount++;
+                    if (timeoucount > 100) {
+                        Assert.Fail("Unable to kill MiniBatchProcessor - server");
+                    }
                 }
+                Console.WriteLine("MiniBatchProcessor terminated.");
             }
-            Console.WriteLine("MiniBatchProcessor terminated.");
         }
 
         /// <summary>
-        /// MPI init.
+        /// Init.
         /// </summary>
         //[OneTimeSetUp]
-        static public void OneTimeSetUp() {
+        static public bool OneTimeSetUp() {
             //BoSSS.Solution.Application.InitMPI(new string[0]);
 
-            MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false);
+            return MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false);
 
             //string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
             //if (Directory.Exists(preExistingDb)) {
@@ -178,7 +179,7 @@ namespace BoSSS.Application.TutorialTests {
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
 
-            OneTimeSetUp();
+            bool iStartedThisShit = OneTimeSetUp();
 
             int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
 
@@ -188,7 +189,7 @@ namespace BoSSS.Application.TutorialTests {
             Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
 
             // shutting down the local mini batch processor:
-            OneTimeTearDown();
+            OneTimeTearDown(iStartedThisShit);
 
             //foreach(var db in BoSSS.Application.BoSSSpad.InteractiveShell.databases) {
             //    db.

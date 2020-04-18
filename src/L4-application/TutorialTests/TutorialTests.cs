@@ -32,24 +32,24 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
             BoSSS.Solution.Application.InitMPI(new string[0]);
             
-            /*
-            AllUpTest.OneTimeSetUp();
-var losScriptos = GetListOfScripts();
-            foreach(var s in losScriptos) {
-                AllUpTest.RunWorksheet(s);
-            }
-
-            AllUpTest.OneTimeTearDown();
-            */
+          
+            //var losScriptos = GetListOfScripts();
+            //int r = 0;
+            //AllUpTest.RunWorksheet(losScriptos[int.Parse(args[0])]);
+            //foreach(var s in losScriptos) {
+            //    AllUpTest.RunWorksheet(s);
+            //}
 
 
-            
+
+
             var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
             int r = tr.Execute(new[] { "--result=result-TutorialTests.xml" });
 
 
             csMPI.Raw.mpiFinalize();
 
+            
             return r;
         }
 
