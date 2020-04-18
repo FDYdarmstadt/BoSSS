@@ -25,6 +25,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace BoSSS.Application.BoSSSpad {
     /// <summary>
@@ -285,8 +286,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // create deployment directory.
             string DeployDir = myJob.DeploymentDirectory;
-            if (!Directory.Exists(DeployDir))
-                Directory.CreateDirectory(DeployDir);
+            CreateDirectoryWR(DeployDir);
 
             Console.WriteLine("Deployment directory: " + DeployDir);
             string OriginDir = null;
@@ -294,41 +294,15 @@ namespace BoSSS.Application.BoSSSpad {
             // copy files
             foreach (var fOrg in files) {
                 string fNmn = Path.GetFileName(fOrg);
-                if (fNmn.Equals("mscorlib.dll"))
+                if(fNmn.Equals("mscorlib.dll"))
                     throw new ApplicationException("internal error - something went wrong during filtering.");
 
                 string fTarget = Path.Combine(DeployDir, fNmn);
-                if (File.Exists(fTarget)) {
-                    throw new IOException("File '" + fTarget + "' already exists - wont over write.");
-                }
-
-                int MaxTry = 10;
-                for (int iTry = 0; iTry < MaxTry; iTry++) {
-                    // on network file-systems, there seem to be some rare hiccups, sometimes:
-                    // hundreds of files copied successfully, suddenly an IOException: file already exists.
-                    // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
-
-                    try {
-                        File.Copy(fOrg, fTarget, iTry > 0);
-                        if(iTry > 0) {
-                            Console.WriteLine("success.");
-                        }
-                        break;
-                    } catch (IOException e) {
-                        Console.Error.WriteLine(e.GetType().Name + " during copy of file '" + fOrg + "' --> '" + fTarget + "' : " + e.Message);
-                        Console.WriteLine($"Retrying {iTry + 1} of {MaxTry} (waiting for some time before) ...");
-                        System.Threading.Thread.Sleep(77 * 1000); // sleep for 77 seconds...
-                    }
-                }
-                if (OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
-                    //if (OriginDir != null)
-                    //    Console.WriteLine();
+                
+                CopyFileWR(fOrg, fTarget);
+                if(OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
                     OriginDir = Path.GetDirectoryName(fOrg);
-                    //Console.WriteLine("Source directory: " + OriginDir);
-                    //Console.Write("   copied: ");
                 }
-
-                //Console.Write(Path.GetFileName(fOrg) + " ");
             }
             Console.WriteLine("copied " + files.Count + " files.");
 
@@ -336,15 +310,13 @@ namespace BoSSS.Application.BoSSSpad {
             if (AdditionalFiles != null) {
                 foreach (var t in AdditionalFiles) {
                     string fTarget = Path.Combine(DeployDir, t.Item2);
-                    if (File.Exists(fTarget)) {
-                        throw new IOException("File '" + fTarget + "' already exists - wont over write.");
-                    }
-                    File.WriteAllBytes(fTarget, t.Item1);
-                    Console.WriteLine("   writing file: " + t.Item2);
+                    byte[] Content = t.Item1;
+                    WriteFileWR(fTarget, Content);
+                    Console.WriteLine("   written file: " + t.Item2);
                 }
             }
 
-            //
+            // deploy runtime
             if (DeployRuntime) {
                 string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
                 string BosssBinNative = Path.Combine(BosssInstall, "bin", Path.Combine("native", "win"));
@@ -356,12 +328,204 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("deployment finished.");
 
             // test
-            if (myJob.GetControl() != null) {
-                var directories = this.GetAllExistingDeployDirectories(myJob);
-                if (directories == null || directories.Length <= 0) {
-                    throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+            TestWR(myJob);
+        }
+
+        private void TestWR(Job myJob) {
+
+            Exception OP(int iTry) {
+                if(myJob.GetControl() != null) {
+                    var directories = this.GetAllExistingDeployDirectories(myJob);
+                    if(directories == null || directories.Length <= 0) {
+                        return new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+                    }
+                }
+                return null;
+            }
+
+            RetryIOop(OP, "testing of job deployment", false);
+        }
+
+
+        /// <summary>
+        /// Generic IO operation with re-try (seems to be necessary when working with network file systems).
+        /// </summary>
+        internal static void RetryIOop(Func<int,Exception> op, string Message, bool SurpressException) {
+            int MaxTry = 10;
+            Random rnd = null;
+            Exception latest = null;
+            for(int iTry = 0; iTry < MaxTry; iTry++) {
+                // on network file-systems, there seem to be some rare hiccups, sometimes:
+                // hundreds of files copied successfully, suddenly an IOException: file already exists.
+                // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
+
+                try {
+
+                    latest = op(iTry);
+                    if(latest != null)
+                        break;
+                    else {
+                        if(iTry > 0)
+                            Console.WriteLine("success.");
+                        return;
+                    }
+                } catch(IOException e) {
+                    Console.Error.WriteLine(e.GetType().Name + " " + Message +  " : " + e.Message);
+                    
+                    Console.WriteLine($"Retrying {iTry + 1} of {MaxTry} (waiting for some time before) ...");
+                    if(rnd == null)
+                        rnd = new Random();
+                    latest = e;
+                    int iwait = rnd.Next(77 * 1000);
+                    System.Threading.Thread.Sleep(iwait); // sleep for at most 77 seconds...
                 }
             }
+
+            if(SurpressException == false && latest != null)
+                throw latest;
+        }
+
+
+        /// <summary>
+        /// File write with re-try (seems to be necessary when working with network file systems).
+        /// </summary>
+        private static void WriteFileWR(string fTarget, byte[] Content) {
+
+            Exception OP(int iTry) {
+                if(iTry == 0 && File.Exists(fTarget)) {
+                    return new IOException("File '" + fTarget + "' already exists - wont over write.");
+                }
+                File.WriteAllBytes(fTarget, Content);
+                return null;
+            }
+
+            RetryIOop(OP, "writing file '" + fTarget + "'", false);
+
+            /*
+            int MaxTry = 10;
+            Random rnd = null;
+            Exception latest = null;
+            for(int iTry = 0; iTry < MaxTry; iTry++) {
+                // on network file-systems, there seem to be some rare hiccups, sometimes:
+                // hundreds of files copied successfully, suddenly an IOException: file already exists.
+                // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
+
+                try {
+                    if(iTry == 0 && File.Exists(fTarget)) {
+                        latest = new IOException("File '" + fTarget + "' already exists - wont over write.");
+                        break;
+                    }
+                    File.WriteAllBytes(fTarget, Content);
+
+                    if(iTry > 0) {
+                        Console.WriteLine("success.");
+                    }
+                    return;
+                } catch(IOException e) {
+                    Console.Error.WriteLine(e.GetType().Name + " during writing of file '" + fTarget + "' : " + e.Message);
+                    Console.WriteLine($"Retrying {iTry + 1} of {MaxTry} (waiting for some time before) ...");
+                    if(rnd == null)
+                        rnd = new Random();
+                    latest = e;
+                    int iwait = rnd.Next(77 * 1000);
+                    System.Threading.Thread.Sleep(iwait); // sleep for at most 77 seconds...
+                }
+            }
+
+            if(latest != null)
+                throw latest;
+            */
+        }
+
+        /// <summary>
+        /// File copy with re-try (seems to be necessary when working with network file systems).
+        /// </summary>
+        private static void CopyFileWR(string fOrg, string fTarget, bool SurpressException = false) {
+            
+            Exception op(int iTry) {
+                File.Copy(fOrg, fTarget, iTry > 0);
+                return null;
+            }
+
+            RetryIOop(op, " copy of file '" + fOrg + "' --> '" + fTarget + "'", SurpressException);
+
+            
+
+            /*
+            int MaxTry = 10;
+            Random rnd = null;
+            Exception latest = null;
+            for(int iTry = 0; iTry < MaxTry; iTry++) {
+                // on network file-systems, there seem to be some rare hiccups, sometimes:
+                // hundreds of files copied successfully, suddenly an IOException: file already exists.
+                // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
+
+                try {
+                    File.Copy(fOrg, fTarget, iTry > 0);
+                    if(iTry > 0) {
+                        Console.WriteLine("success.");
+                    }
+                    return;
+                } catch(IOException e) {
+                    Console.Error.WriteLine(e.GetType().Name + " during copy of file '" + fOrg + "' --> '" + fTarget + "' : " + e.Message);
+                    Console.WriteLine($"Retrying {iTry + 1} of {MaxTry} (waiting for some time before) ...");
+                    if(rnd == null)
+                        rnd = new Random();
+                    latest = e;
+                    int iwait = rnd.Next(77 * 1000);
+                    System.Threading.Thread.Sleep(iwait); // sleep for at most 77 seconds...
+                }
+            }
+
+            if(SurpressException == false && latest != null)
+                throw latest;
+            */
+        }
+
+        /// <summary>
+        /// File copy with re-try (seems to be necessary when working with network file systems).
+        /// </summary>
+        private static void CreateDirectoryWR(string dstSubDir, bool SurpressException = false) {
+            
+            Exception op(int i) {
+                if(!Directory.Exists(dstSubDir))
+                    Directory.CreateDirectory(dstSubDir);
+                return null;
+            }
+
+            RetryIOop(op, "creation of directory '" + dstSubDir + "'", SurpressException);
+
+            /*
+            int MaxTry = 10;
+            Random rnd = null;
+            Exception latest = null;
+            for(int iTry = 0; iTry < MaxTry; iTry++) {
+                // on network file-systems, there seem to be some rare hiccups, sometimes:
+                // hundreds of files copied successfully, suddenly an IOException: file already exists.
+                // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
+
+                try {
+                    if (!Directory.Exists(dstSubDir))
+                        Directory.CreateDirectory(dstSubDir);
+
+                    if(iTry > 0) {
+                        Console.WriteLine("success.");
+                    }
+                    return;
+                } catch(IOException e) {
+                    Console.Error.WriteLine(e.GetType().Name + " during creation of directory '" + dstSubDir + "' : " + e.Message);
+                    Console.WriteLine($"Retrying {iTry + 1} of {MaxTry} (waiting for some time before) ...");
+                    if(rnd == null)
+                        rnd = new Random();
+                    latest = e;
+                    int iwait = rnd.Next(77 * 1000);
+                    System.Threading.Thread.Sleep(iwait); // sleep for at most 77 seconds...
+                }
+            }
+
+            if(SurpressException == false && latest != null)
+                throw latest;
+            */
         }
 
         /// <summary>
@@ -370,11 +534,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="srcDir"></param>
         /// <param name="dstDir"></param>
         /// <param name="filter">search pattern/filter</param>
-        static void CopyDirectoryRec(string srcDir, string dstDir, string filter) {
+        public static void CopyDirectoryRec(string srcDir, string dstDir, string filter) {
             string[] srcFiles = Directory.GetFiles(srcDir);
 
             foreach (string srcFile in srcFiles) {
-                TryCopy(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)));
+                //TryCopy(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)));
+                CopyFileWR(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)), SurpressException:true);
             }
 
             string[] subDirs;
@@ -385,31 +550,11 @@ namespace BoSSS.Application.BoSSSpad {
             foreach (string srcAbsDir in subDirs) {
                 string srcRelDir = Path.GetFileName(srcAbsDir);
                 string dstSubDir = Path.Combine(dstDir, srcRelDir);
-                if (!Directory.Exists(dstSubDir))
-                    Directory.CreateDirectory(dstSubDir);
+                CreateDirectoryWR(dstSubDir);
                 CopyDirectoryRec(srcAbsDir, dstSubDir, null);
             }
         }
 
-        /// <summary>
-        /// Utility function which tries to copy a file from
-        /// <paramref name="sourceFileName"/> to
-        /// <paramref name="destFileName"/> overwriting existing files if
-        /// required. Issues a warning (but proceeds as normal) if the copy
-        /// process fails.
-        /// </summary>
-        /// <param name="sourceFileName">
-        /// The path to the file to be copied
-        /// </param>
-        /// <param name="destFileName">The path to the destination</param>
-        static void TryCopy(string sourceFileName, string destFileName) {
-            try {
-                File.Copy(sourceFileName, destFileName, true);
-            } catch (Exception e) {
-                Console.WriteLine("WARNING: Unable to copy to: '"
-                    + destFileName + "': " + e.GetType().Name + " says:'" + e.Message + "'");
-            }
-        }
     }
 }
 

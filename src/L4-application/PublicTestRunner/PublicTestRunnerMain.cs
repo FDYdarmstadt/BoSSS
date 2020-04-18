@@ -256,36 +256,7 @@ namespace PublicTestRunner {
             }
         }
 
-        /// <summary>
-        /// (tries to) do a recursive copy of a directory
-        /// </summary>
-        static void CopyDirectoryRec(string srcDir, string dstDir) {
-
-            void TryCopy(string sourceFileName, string destFileName) {
-                try {
-                    File.Copy(sourceFileName, destFileName, true);
-                } catch (Exception e) {
-                    Console.WriteLine("WARNING: Unable to copy to: '"
-                        + destFileName + "': " + e.GetType().Name + " says:'" + e.Message + "'");
-                }
-            }
-
-            string[] srcFiles = Directory.GetFiles(srcDir);
-
-            foreach (string srcFile in srcFiles) {
-                TryCopy(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)));
-            }
-
-            string[] subDirs = Directory.GetDirectories(srcDir);
-            foreach (string srcAbsDir in subDirs) {
-                string srcRelDir = Path.GetFileName(srcAbsDir);
-                string dstSubDir = Path.Combine(dstDir, srcRelDir);
-                if (!Directory.Exists(dstSubDir))
-                    Directory.CreateDirectory(dstSubDir);
-                CopyDirectoryRec(srcAbsDir, dstSubDir);
-            }
-        }
-
+        
 
         static public int JobManagerRun(string AssemblyFilter) {
 
@@ -310,7 +281,7 @@ namespace PublicTestRunner {
             if (!bpc.DeployRuntime) {
                 NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + "_amd64"));
                 NativeOverride.Create();
-                CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName);
+                BatchProcessorClient.CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName, null);
             } else {
                 NativeOverride = null;
             }
@@ -357,27 +328,35 @@ namespace PublicTestRunner {
                 Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
             }
 
-            Console.WriteLine($"******* Starting job deployment/submission ({DateTime.Now}) *******");
+            Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
             DateTime start = DateTime.Now;
 
+            int returnCode = 0;
             cnt = 0;
             var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
             foreach (var t in allTests) {
-                cnt++;
-                Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride);
-                Console.WriteLine($"Successfully submitted {j.j.Name}.");
-                AllOpenJobs.Add(j);
+                try {
+                    cnt++;
+                    Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
+                    var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride);
+                    Console.WriteLine($"Successfully submitted {j.j.Name}.");
+                    AllOpenJobs.Add(j);
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
+                    returnCode--;
+                }
             }
 
-            Console.WriteLine($"******* All jobs deployed ({DateTime.Now}) *******");
-
+            if(returnCode == 0) {
+                Console.WriteLine($"******* All jobs/tests deployed ({DateTime.Now}) *******");
+            } else {
+                Console.WriteLine($"******* Deployed finished ({DateTime.Now}) -- SOME DEPLOYMENT(S) FAILED *******");
+            }
             // ===================================
             // phase 2: wait until complete...
             // ===================================
 
-            int returnCode = 0;
 
             var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 

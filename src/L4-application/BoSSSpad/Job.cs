@@ -620,16 +620,25 @@ namespace BoSSS.Application.BoSSSpad {
                 if (AssignedBatchProc == null)
                     throw new NotSupportedException("Job is not activated.");
 
-                string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
-                if (StdoutFile != null && File.Exists(StdoutFile)) {
-                    using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                        using (StreamReader reader = new StreamReader(stream)) {
-                            return reader.ReadToEnd();
+                string stdout = "";
+
+                Exception op(int itry) {
+                    string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
+                    if(StdoutFile != null && File.Exists(StdoutFile)) {
+                        using(FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                            using(StreamReader reader = new StreamReader(stream)) {
+                                stdout = reader.ReadToEnd();
+                            }
                         }
+                    } else {
+                        stdout = "";
                     }
-                } else {
-                    return "";
+                    return null;
                 }
+
+                BatchProcessorClient.RetryIOop(op, "reading of stdout file", true);
+
+                return stdout;
             }
         }
 
@@ -641,16 +650,24 @@ namespace BoSSS.Application.BoSSSpad {
                 if (AssignedBatchProc == null)
                     throw new NotSupportedException("Job is not activated.");
 
-                string StderrFile = AssignedBatchProc.GetStderrFile(this);
-                if (StderrFile != null && File.Exists(StderrFile)) {
-                    using (FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                        using (StreamReader reader = new StreamReader(stream)) {
-                            return reader.ReadToEnd();
+                string stderr = "";
+
+                Exception op(int itry) {
+                    string StderrFile = AssignedBatchProc.GetStderrFile(this);
+                    if(StderrFile != null && File.Exists(StderrFile)) {
+                        using(FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                            using(StreamReader reader = new StreamReader(stream)) {
+                                stderr = reader.ReadToEnd();
+                            }
                         }
+                    } else {
+                        stderr = "";
                     }
-                } else {
-                    return "";
                 }
+
+                BatchProcessorClient.RetryIOop(op, "reading of stderr file", true);
+
+                return stderr;
             }
         }
 
