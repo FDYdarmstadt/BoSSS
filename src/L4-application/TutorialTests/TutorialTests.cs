@@ -38,6 +38,7 @@ namespace BoSSS.Application.TutorialTests {
             //AllUpTest.RunWorksheet(losScriptos[int.Parse(args[0])]);
             //foreach(var s in losScriptos) {
             //    AllUpTest.RunWorksheet(s);
+            //    break;
             //}
 
 

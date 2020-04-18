@@ -37,6 +37,9 @@ namespace BoSSS.Application.TutorialTests {
             //csMPI.Raw.mpiFinalize();
 
             if (killBatch) {
+                Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
+                Console.Out.Flush();
+
                 // try to terminate batch processor, if still running:
                 int timeoucount = 0;
                 while (MiniBatchProcessor.Server.IsRunning) {
@@ -49,6 +52,7 @@ namespace BoSSS.Application.TutorialTests {
                         Assert.Fail("Unable to kill MiniBatchProcessor - server");
                     }
                 }
+
                 Console.WriteLine("MiniBatchProcessor terminated.");
             }
         }

@@ -64,11 +64,11 @@ namespace PublicTestRunner {
             typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
             typeof(BoSSS.Application.ExternalBinding.Initializer),
             typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+            typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(MPITest.Program)
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(CNS.Program),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
             typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
