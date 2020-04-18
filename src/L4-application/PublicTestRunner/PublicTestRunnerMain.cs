@@ -374,7 +374,10 @@ namespace PublicTestRunner {
 
                         if (s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
                             // message:
-                            Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
+                            if(s== JobStatus.FinishedSuccessful)
+                                Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
+                            else
+                                Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.DeploymentDirectory + " (" + DateTime.Now + ")");
 
                             // copy stdout and stderr to logfile
                             LogResultFile(ot, jj.job, jj.testname, jj.ResFile);
