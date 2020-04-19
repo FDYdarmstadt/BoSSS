@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.IO;
 using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -152,53 +153,57 @@ namespace BoSSS.Application.BoSSSpad {
         /// All deployment directories which potentially could match the job on the current batch processor.
         /// </summary>
         virtual public DirectoryInfo[] GetAllExistingDeployDirectories(Job myJob) {
-            if (!Path.IsPathRooted(DeploymentBaseDirectory))
-                throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
+            using (var tr = new FuncTrace()) {
+                if (!Path.IsPathRooted(DeploymentBaseDirectory))
+                    throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
 
-            var jobControl = myJob.GetControl();
-            if (jobControl == null)
-                return null;
+                var jobControl = myJob.GetControl();
+                if (jobControl == null)
+                    return null;
 
-            // find all deployment directories relevant for project & job
-            // ==========================================================
-            string ShortName = JobDirectoryBaseName(myJob);
+                // find all deployment directories relevant for project & job
+                // ==========================================================
+                string ShortName = JobDirectoryBaseName(myJob);
 
-            var AllDirs = Directory.GetDirectories(DeploymentBaseDirectory, ShortName + "*");
-
-
-            // filter appropriate ones 
-            // =======================
-
-            var filtDirs = new List<DirectoryInfo>();
-            foreach (string dir in AllDirs) {
-                string ControlObj = Path.Combine(dir, "control.obj");
-                if (File.Exists(ControlObj)) {
-                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
-                    if (InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
-                        filtDirs.Add(new DirectoryInfo(dir));
-                        continue;
-                    }
+                string[] AllDirs;
+                using (new BlockTrace("DIRECTORY_QUERY", tr)) {
+                    AllDirs = Directory.GetDirectories(DeploymentBaseDirectory, ShortName + "*");
                 }
 
-                string ControlScript = Path.Combine(dir, "control.cs");
-                if (File.Exists(ControlScript)) {
-                    int control_index = 0;
-                    int i = myJob.CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
-                    if (i >= 0) {
-                        control_index = int.Parse(myJob.CommandLineArguments[i + 1]);
-                    }
+                // filter appropriate ones 
+                // =======================
+                var filtDirs = new List<DirectoryInfo>();
+                using (new BlockTrace("DIRECTORY_FILTERING", tr)) {
+                    foreach (string dir in AllDirs) {
+                        string ControlObj = Path.Combine(dir, "control.obj");
+                        if (File.Exists(ControlObj)) {
+                            var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
+                            if (InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
+                                filtDirs.Add(new DirectoryInfo(dir));
+                                continue;
+                            }
+                        }
 
-                    var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
-                    if (InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
-                        filtDirs.Add(new DirectoryInfo(dir));
-                        continue;
+                        string ControlScript = Path.Combine(dir, "control.cs");
+                        if (File.Exists(ControlScript)) {
+                            int control_index = 0;
+                            int i = myJob.CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
+                            if (i >= 0) {
+                                control_index = int.Parse(myJob.CommandLineArguments[i + 1]);
+                            }
+
+                            var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
+                            if (InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
+                                filtDirs.Add(new DirectoryInfo(dir));
+                                continue;
+                            }
+                        }
                     }
                 }
+                // return
+                // ======
+                return filtDirs.ToArray();
             }
-
-            // return
-            // ======
-            return filtDirs.ToArray();
         }
 
         /// <summary>
@@ -259,91 +264,95 @@ namespace BoSSS.Application.BoSSSpad {
         /// but does not submit the job.
         /// </summary>
         virtual public void DeployExecuteables(Job myJob, IEnumerable<Tuple<byte[], string>> AdditionalFiles) {
+            using (var tr = new FuncTrace()) {
+                Console.WriteLine("Deploying executables and additional files ...");
 
-            Console.WriteLine("Deploying executables and additional files ...");
-
-            // Collect files
-            List<string> files = new List<string>();
-            {
-                //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
-                string MainAssemblyDir = Path.GetDirectoryName(myJob.EntryAssembly.Location);
-                foreach (var a in myJob.AllDependentAssemblies) {
-                    if (IsNotSystemAssembly(a, MainAssemblyDir)) {
-                        files.Add(a.Location);
+                // Collect files
+                List<string> files = new List<string>();
+                using (new BlockTrace("ASSEMBLY_COLLECTION", tr)) {
+                    //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
+                    string MainAssemblyDir = Path.GetDirectoryName(myJob.EntryAssembly.Location);
+                    foreach (var a in myJob.AllDependentAssemblies) {
+                        if (IsNotSystemAssembly(a, MainAssemblyDir)) {
+                            files.Add(a.Location);
+                        }
+                    }
+               
+                    // test for really strange errors
+                    for (int i = 0; i < files.Count; i++) {
+                        for (int j = i + 1; j < files.Count; j++) {
+                            if (Path.GetFileName(files[i]).Equals(Path.GetFileName(files[j])))
+                                throw new ApplicationException("strange internal error");
+                        }
                     }
                 }
-            }
 
-            {
-                // test for really strange errors
-                for(int i = 0; i < files.Count; i++) {
-                    for(int j = i+1; j < files.Count; j++) {
-                        if (Path.GetFileName(files[i]).Equals(Path.GetFileName(files[j])))
-                            throw new ApplicationException("strange internal error");
+                // create deployment directory.
+                string DeployDir = myJob.DeploymentDirectory;
+                CreateDirectoryWR(DeployDir);
+
+                Console.WriteLine("Deployment directory: " + DeployDir);
+                string OriginDir = null;
+
+                // copy files
+                using (new BlockTrace("EXECOPY", tr)) {
+                    foreach (var fOrg in files) {
+                        string fNmn = Path.GetFileName(fOrg);
+                        if (fNmn.Equals("mscorlib.dll"))
+                            throw new ApplicationException("internal error - something went wrong during filtering.");
+
+                        string fTarget = Path.Combine(DeployDir, fNmn);
+
+                        CopyFileWR(fOrg, fTarget);
+                        if (OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
+                            OriginDir = Path.GetDirectoryName(fOrg);
+                        }
                     }
                 }
-            }
+                Console.WriteLine("copied " + files.Count + " files.");
 
-            // create deployment directory.
-            string DeployDir = myJob.DeploymentDirectory;
-            CreateDirectoryWR(DeployDir);
-
-            Console.WriteLine("Deployment directory: " + DeployDir);
-            string OriginDir = null;
-
-            // copy files
-            foreach (var fOrg in files) {
-                string fNmn = Path.GetFileName(fOrg);
-                if(fNmn.Equals("mscorlib.dll"))
-                    throw new ApplicationException("internal error - something went wrong during filtering.");
-
-                string fTarget = Path.Combine(DeployDir, fNmn);
-                
-                CopyFileWR(fOrg, fTarget);
-                if(OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
-                    OriginDir = Path.GetDirectoryName(fOrg);
+                // additional files
+                if (AdditionalFiles != null) {
+                    foreach (var t in AdditionalFiles) {
+                        string fTarget = Path.Combine(DeployDir, t.Item2);
+                        byte[] Content = t.Item1;
+                        WriteFileWR(fTarget, Content);
+                        Console.WriteLine("   written file: " + t.Item2);
+                    }
                 }
-            }
-            Console.WriteLine("copied " + files.Count + " files.");
 
-            // additional files
-            if (AdditionalFiles != null) {
-                foreach (var t in AdditionalFiles) {
-                    string fTarget = Path.Combine(DeployDir, t.Item2);
-                    byte[] Content = t.Item1;
-                    WriteFileWR(fTarget, Content);
-                    Console.WriteLine("   written file: " + t.Item2);
+                // deploy runtime
+                using (new BlockTrace("DEPLOY_RUNTIME", tr)) {
+                    if (DeployRuntime) {
+                        string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                        string BosssBinNative = Path.Combine(BosssInstall, "bin", Path.Combine("native", "win"));
+                        CopyDirectoryRec(BosssBinNative, DeployDir, "amd64");
+                        Console.WriteLine("   copied 'amd64' runtime.");
+                    }
                 }
+
+                // finally
+                Console.WriteLine("deployment finished.");
+
+                // test
+                TestWR(myJob);
             }
-
-            // deploy runtime
-            if (DeployRuntime) {
-                string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                string BosssBinNative = Path.Combine(BosssInstall, "bin", Path.Combine("native", "win"));
-                CopyDirectoryRec(BosssBinNative, DeployDir, "amd64");
-                Console.WriteLine("   copied 'amd64' runtime.");
-            }
-
-            // finally
-            Console.WriteLine("deployment finished.");
-
-            // test
-            TestWR(myJob);
         }
 
         private void TestWR(Job myJob) {
-
-            Exception OP(int iTry) {
-                if(myJob.GetControl() != null) {
-                    var directories = this.GetAllExistingDeployDirectories(myJob);
-                    if(directories == null || directories.Length <= 0) {
-                        return new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+            using (new FuncTrace()) {
+                Exception OP(int iTry) {
+                    if (myJob.GetControl() != null) {
+                        var directories = this.GetAllExistingDeployDirectories(myJob);
+                        if (directories == null || directories.Length <= 0) {
+                            return new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+                        }
                     }
+                    return null;
                 }
-                return null;
-            }
 
-            RetryIOop(OP, "testing of job deployment", false);
+                RetryIOop(OP, "testing of job deployment", false);
+            }
         }
 
 

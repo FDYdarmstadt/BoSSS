@@ -23,6 +23,7 @@ using Microsoft.Hpc.Scheduler.Properties;
 using BoSSS.Platform;
 using ilPSP;
 using System.Runtime.Serialization;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -161,70 +162,80 @@ namespace BoSSS.Application.BoSSSpad {
         /// Job status.
         /// </summary>
         public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+            using (var tr = new FuncTrace()) {
+                int id = int.Parse(idToken);
 
-            int id = int.Parse(idToken);
 
-            
 
-            List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
+                List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
+                ISchedulerCollection allJobs;
+                using (new BlockTrace("Scheduler.GetJobList", tr)) {
+                    allJobs = Scheduler.GetJobList(null, null);
+                }
+                using (new BlockTrace("ID_FILTERING", tr)) {
+                    foreach (SchedulerJob sJob in allJobs) {
+                        if (sJob.Id != id)
+                            continue;
+                        allFoundJobs.Add(sJob);
+                    }
 
-            ISchedulerCollection allJobs = Scheduler.GetJobList(null, null);
-            foreach (SchedulerJob sJob in allJobs) {
-                if(sJob.Id != id)
-                    continue;
-                allFoundJobs.Add(sJob);
+                    if (allFoundJobs.Count <= 0) {
+                        // some weird state
+                        isRunning = false;
+                        isTerminated = false;
+                        ExitCode = int.MinValue;
+                        return;
+                    }
+                }
+
+                SchedulerJob JD;
+                using (new BlockTrace("SORTING", tr)) {
+                    JD = allFoundJobs.ElementAtMax(MsHpcJob => MsHpcJob.SubmitTime);
+                }
+
+                using (new BlockTrace("TASK_FILTERING", tr)) {
+                    ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
+                    ExitCode = int.MinValue;
+                    foreach (ISchedulerTask t in tasks) {
+                        DeployDir = t.WorkDirectory;
+                        ExitCode = t.ExitCode;
+                    }
+                }
+
+                using (new BlockTrace("STATE_EVAL", tr)) {
+                    switch (JD.State) {
+                        case JobState.Configuring:
+                        case JobState.Submitted:
+                        case JobState.Validating:
+                        case JobState.ExternalValidation:
+                        case JobState.Queued:
+                            isRunning = false;
+                            isTerminated = false;
+                            break;
+
+                        case JobState.Running:
+                        case JobState.Finishing:
+                            isRunning = true;
+                            isTerminated = false;
+                            break;
+
+                        case JobState.Finished:
+                            isRunning = false;
+                            isTerminated = true;
+                            break;
+
+                        case JobState.Failed:
+                        case JobState.Canceled:
+                        case JobState.Canceling:
+                            isRunning = false;
+                            isTerminated = true;
+                            break;
+
+                        default:
+                            throw new NotImplementedException("Unknown job state: " + JD.State);
+                    }
+                }
             }
-
-            if (allFoundJobs.Count <= 0) {
-                // some weird state
-                isRunning = false;
-                isTerminated = false;
-                ExitCode = int.MinValue;
-                return;
-            }
-
-            SchedulerJob JD = allFoundJobs.ElementAtMax(MsHpcJob => MsHpcJob.SubmitTime);
-            
-            ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
-            ExitCode = int.MinValue;
-            foreach (ISchedulerTask t in tasks) {
-                DeployDir = t.WorkDirectory;
-                ExitCode = t.ExitCode;
-            }
-            
-            switch (JD.State) {
-                case JobState.Configuring:
-                case JobState.Submitted:
-                case JobState.Validating:
-                case JobState.ExternalValidation:
-                case JobState.Queued:
-                isRunning = false;
-                isTerminated = false;
-                break;
-
-                case JobState.Running:
-                case JobState.Finishing:
-                isRunning = true;
-                isTerminated = false;
-                break;
-
-                case JobState.Finished:
-                isRunning = false;
-                isTerminated = true;
-                break;
-
-                case JobState.Failed:
-                case JobState.Canceled:
-                case JobState.Canceling:
-                isRunning = false;
-                isTerminated = true;
-                break;
-
-                default:
-                throw new NotImplementedException("Unknown job state: " + JD.State);
-            }
-
-            
         }
 
 
@@ -248,62 +259,64 @@ namespace BoSSS.Application.BoSSSpad {
         /// Submit the job to the Microsoft HPC server.
         /// </summary>
         public override string Submit(Job myJob) {
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            
-            //Console.WriteLine("MsHPC2012Client: submitting job...");
-            //Console.Out.Flush();
+            using (new FuncTrace()) {
+                string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
+
+                //Console.WriteLine("MsHPC2012Client: submitting job...");
+                //Console.Out.Flush();
 
 
-            ISchedulerJob job = null;
-            ISchedulerTask task = null;
+                ISchedulerJob job = null;
+                ISchedulerTask task = null;
 
-            // Create a job and add a task to the job.
-            job = Scheduler.CreateJob();
-            
-            job.Name = myJob.Name;
-            job.Project = PrjName;
-            job.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
-            job.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                // Create a job and add a task to the job.
+                job = Scheduler.CreateJob();
 
-            job.UserName = Username;
-            
-            task = job.CreateTask();
-            task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
-            task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                job.Name = myJob.Name;
+                job.Project = PrjName;
+                job.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
+                job.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
 
-            task.WorkDirectory = myJob.DeploymentDirectory;
+                job.UserName = Username;
 
-            using(var str = new StringWriter()) {
-                str.Write("mpiexec ");
-                str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
-                foreach (string arg in myJob.CommandLineArguments) {
-                    str.Write(" ");
-                    str.Write(arg);
+                task = job.CreateTask();
+                task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
+                task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+
+                task.WorkDirectory = myJob.DeploymentDirectory;
+
+                using (var str = new StringWriter()) {
+                    str.Write("mpiexec ");
+                    str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
+                    foreach (string arg in myJob.CommandLineArguments) {
+                        str.Write(" ");
+                        str.Write(arg);
+                    }
+
+                    task.CommandLine = str.ToString();
+                }
+                foreach (var kv in myJob.EnvironmentVars) {
+                    string name = kv.Key;
+                    string valu = kv.Value;
+                    task.SetEnvironmentVariable(name, valu);
                 }
 
-                task.CommandLine = str.ToString();
+                task.StdOutFilePath = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
+                task.StdErrFilePath = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+
+                if (ComputeNodes != null) {
+                    foreach (string node in ComputeNodes)
+                        job.RequestedNodes.Add(node);
+                }
+
+
+                job.AddTask(task);
+
+                // Start the job.
+                Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
+
+                return job.Id.ToString();
             }
-            foreach( var kv in myJob.EnvironmentVars) {
-                string name = kv.Key;
-                string valu = kv.Value;
-                task.SetEnvironmentVariable(name, valu);
-            }
-
-            task.StdOutFilePath = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
-            task.StdErrFilePath = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
-
-            if(ComputeNodes != null) {
-                foreach(string node in ComputeNodes)
-                    job.RequestedNodes.Add(node);
-            }
-
-
-            job.AddTask(task);
-
-            // Start the job.
-            Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
-
-            return job.Id.ToString();
         }
     }
 }

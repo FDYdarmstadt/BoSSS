@@ -22,6 +22,7 @@ using System.IO;
 using System.Reflection;
 using BoSSS.Platform;
 using System.Runtime.Serialization;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
     
@@ -136,63 +137,64 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="BatchProcessorClient.EvaluateStatus"/>.  
         /// </summary>
         public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
-            //if (!object.ReferenceEquals(this, myJob.AssignedBatchProc))
-            //    throw new ArgumentException("Why you ask me?");
-            //string FullName = GetFullJobName(myJob);
-            //MiniBatchProcessor.JobData[] AllProblems = FilterJobData(myJob);
-            //MiniBatchProcessor.JobData JD = null;
-            //if (AllProblems.Length > 0) {
-            //    if (myJob.BatchProcessorIdentifierToken == null) {
-            //        JD = AllProblems.ElementAtMax(jd => jd.SubmitTime);
-            //    } else {
-            //        int idSearch = (int)(myJob.BatchProcessorIdentifierToken);
-            //        JD = AllProblems.SingleOrDefault(jobDat => jobDat.ID == idSearch);
-            //    }
-            //}
-            //SubmitCount = AllProblems.Length;
-            //if (AllProblems.Length <= 0 || JD == null) {
-            //    // we know nothing
-            //    isRunning = false;
-            //    isFailed = false;
-            //    wasSuccessful = false;
-            //    DeployDir = null;
-            //    return;
-            //}
+            using (new FuncTrace()) {
+                //if (!object.ReferenceEquals(this, myJob.AssignedBatchProc))
+                //    throw new ArgumentException("Why you ask me?");
+                //string FullName = GetFullJobName(myJob);
+                //MiniBatchProcessor.JobData[] AllProblems = FilterJobData(myJob);
+                //MiniBatchProcessor.JobData JD = null;
+                //if (AllProblems.Length > 0) {
+                //    if (myJob.BatchProcessorIdentifierToken == null) {
+                //        JD = AllProblems.ElementAtMax(jd => jd.SubmitTime);
+                //    } else {
+                //        int idSearch = (int)(myJob.BatchProcessorIdentifierToken);
+                //        JD = AllProblems.SingleOrDefault(jobDat => jobDat.ID == idSearch);
+                //    }
+                //}
+                //SubmitCount = AllProblems.Length;
+                //if (AllProblems.Length <= 0 || JD == null) {
+                //    // we know nothing
+                //    isRunning = false;
+                //    isFailed = false;
+                //    wasSuccessful = false;
+                //    DeployDir = null;
+                //    return;
+                //}
 
-            int ID = int.Parse(idToken);
-            var mbpStatus = MiniBatchProcessor.ClientAndServer.GetStatusFromID(ID, out ExitCode);
+                int ID = int.Parse(idToken);
+                var mbpStatus = MiniBatchProcessor.ClientAndServer.GetStatusFromID(ID, out ExitCode);
 
 
-            switch(mbpStatus) {
-                case MiniBatchProcessor.JobStatus.Queued:
-                // we know nothing
-                isRunning = false;
-                isTerminated = false;
-                return;
+                switch (mbpStatus) {
+                    case MiniBatchProcessor.JobStatus.Queued:
+                        // we know nothing
+                        isRunning = false;
+                        isTerminated = false;
+                        return;
 
-                case MiniBatchProcessor.JobStatus.Finished:
-                // we know nothing
-                isRunning = false;
-                isTerminated = true;
-                return;
+                    case MiniBatchProcessor.JobStatus.Finished:
+                        // we know nothing
+                        isRunning = false;
+                        isTerminated = true;
+                        return;
 
-                case MiniBatchProcessor.JobStatus.Working:
-                // we know nothing
-                isRunning = true;
-                isTerminated = false;
-                return;
+                    case MiniBatchProcessor.JobStatus.Working:
+                        // we know nothing
+                        isRunning = true;
+                        isTerminated = false;
+                        return;
 
-                case MiniBatchProcessor.JobStatus.Undefined:
-                // we know nothing
-                isRunning = false;
-                isTerminated = false;
-                return;
+                    case MiniBatchProcessor.JobStatus.Undefined:
+                        // we know nothing
+                        isRunning = false;
+                        isTerminated = false;
+                        return;
 
-                default:
-                throw new NotImplementedException();
+                    default:
+                        throw new NotImplementedException();
+                }
+
             }
-
-
 
         }
 
