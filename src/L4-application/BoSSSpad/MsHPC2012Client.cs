@@ -168,11 +168,15 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                 ISchedulerJob JD;
-                if (optInfo != null && optInfo is ISchedulerJob _JD) {
-                    JD = _JD;
-                } else {
+                //if (optInfo != null && optInfo is ISchedulerJob _JD) {
+                //    JD = _JD;
+                //} else {
+                using (new BlockTrace("Scheduler.OpenJob", tr)) {
                     JD = Scheduler.OpenJob(id);
                 }
+                Console.WriteLine("MsHPC: state of job " + JD.Name + ": " + JD.State);
+
+                //}
                 /*
                  * the following seems really slow 
                  * 

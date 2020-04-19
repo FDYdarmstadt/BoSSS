@@ -254,7 +254,7 @@ namespace ilPSP.Tracing {
 
             m_Logger = LogManager.GetLogger(callingType);
             if (m_DoLogging) {
-                m_Logger.Info("ENTERING '" + _name + "'");
+                m_Logger.Info("ENTERING " + _name);
             }
         }
 
@@ -287,7 +287,7 @@ namespace ilPSP.Tracing {
 
             m_Logger = LogManager.GetLogger(callingType);
             if (m_DoLogging) {
-                m_Logger.Info("ENTERING '" + UserName + "'");
+                m_Logger.Info("ENTERING " + UserName);
             }
         }
 
@@ -438,7 +438,7 @@ namespace ilPSP.Tracing {
 
             if (f.DoLogging) {
                 m_Logger = f.m_Logger;
-                m_Logger.Info("BLKENTER '" + _name);
+                m_Logger.Info("BLKENTER " + _name);
             }
         }
 
