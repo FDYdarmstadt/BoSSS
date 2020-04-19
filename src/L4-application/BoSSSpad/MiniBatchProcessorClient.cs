@@ -136,7 +136,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// See <see cref="BatchProcessorClient.EvaluateStatus"/>.  
         /// </summary>
-        public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (new FuncTrace()) {
                 //if (!object.ReferenceEquals(this, myJob.AssignedBatchProc))
                 //    throw new ArgumentException("Why you ask me?");
@@ -213,7 +213,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// See <see cref="MiniBatchProcessorClient.Submit(Job)"/>.
         /// </summary>
-        public override string Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob) {
             string FullName = GetFullJobName(myJob);
             //var AllProblems = FilterJobData(myJob);
             //if (AllProblems.Length > 0) {
@@ -231,7 +231,7 @@ namespace BoSSS.Application.BoSSSpad {
             };
 
             int id = MiniBatchProcessor.Client.SubmitJob(JD);
-            return id.ToString(); ;
+            return (id.ToString(), JD);
         }
     }
 }

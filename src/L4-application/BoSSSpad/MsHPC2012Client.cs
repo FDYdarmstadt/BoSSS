@@ -161,17 +161,30 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Job status.
         /// </summary>
-        public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (var tr = new FuncTrace()) {
                 int id = int.Parse(idToken);
 
 
 
+                ISchedulerJob JD;
+                if (optInfo != null && optInfo is ISchedulerJob _JD) {
+                    JD = _JD;
+                } else {
+                    JD = Scheduler.OpenJob(id);
+                }
+                /*
+                 * the following seems really slow 
+                 * 
+                 * 
                 List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
                 ISchedulerCollection allJobs;
                 using (new BlockTrace("Scheduler.GetJobList", tr)) {
-                    allJobs = Scheduler.GetJobList(null, null);
+                    allJobs = Scheduler.Get
                 }
+                int cc = allJobs.Count;
+                Console.WriteLine("MsHpcClient: " + cc + " jobs.");
+                tr.Logger.Info("list of " + cc + " jobs.");
                 using (new BlockTrace("ID_FILTERING", tr)) {
                     foreach (SchedulerJob sJob in allJobs) {
                         if (sJob.Id != id)
@@ -192,6 +205,8 @@ namespace BoSSS.Application.BoSSSpad {
                 using (new BlockTrace("SORTING", tr)) {
                     JD = allFoundJobs.ElementAtMax(MsHpcJob => MsHpcJob.SubmitTime);
                 }
+                */
+
 
                 using (new BlockTrace("TASK_FILTERING", tr)) {
                     ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
@@ -256,30 +271,26 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Submit the job to the Microsoft HPC server.
+        /// Submits the job to the Microsoft HPC server.
         /// </summary>
-        public override string Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob) {
             using (new FuncTrace()) {
                 string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
 
-                //Console.WriteLine("MsHPC2012Client: submitting job...");
-                //Console.Out.Flush();
-
-
-                ISchedulerJob job = null;
+                ISchedulerJob MsHpcJob = null;
                 ISchedulerTask task = null;
 
                 // Create a job and add a task to the job.
-                job = Scheduler.CreateJob();
+                MsHpcJob = Scheduler.CreateJob();
 
-                job.Name = myJob.Name;
-                job.Project = PrjName;
-                job.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
-                job.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                MsHpcJob.Name = myJob.Name;
+                MsHpcJob.Project = PrjName;
+                MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
+                MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
 
-                job.UserName = Username;
+                MsHpcJob.UserName = Username;
 
-                task = job.CreateTask();
+                task = MsHpcJob.CreateTask();
                 task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
 
@@ -306,16 +317,16 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (ComputeNodes != null) {
                     foreach (string node in ComputeNodes)
-                        job.RequestedNodes.Add(node);
+                        MsHpcJob.RequestedNodes.Add(node);
                 }
 
 
-                job.AddTask(task);
+                MsHpcJob.AddTask(task);
 
                 // Start the job.
-                Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
+                Scheduler.SubmitJob(MsHpcJob, Username != null ? Username : null, Password);
 
-                return job.Id.ToString();
+                return (MsHpcJob.Id.ToString(), MsHpcJob);
             }
         }
     }

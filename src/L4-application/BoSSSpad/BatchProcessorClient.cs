@@ -152,7 +152,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// All deployment directories which potentially could match the job on the current batch processor.
         /// </summary>
-        virtual public DirectoryInfo[] GetAllExistingDeployDirectories(Job myJob) {
+        public DirectoryInfo[] GetAllExistingDeployDirectories(Job myJob) {
             using (var tr = new FuncTrace()) {
                 if (!Path.IsPathRooted(DeploymentBaseDirectory))
                     throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
@@ -211,14 +211,18 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="myJob">Job to submit.</param>
         /// <returns>
-        /// An optional identifier token (<see cref="Job.BatchProcessorIdentifierToken"/>).
+        /// An identifier token (<see cref="Job.BatchProcessorIdentifierToken"/>)
+        /// as well as an optional (internal) object
         /// </returns>
-        abstract public string Submit(Job myJob);
+        abstract public (string id, object optJobObj) Submit(Job myJob);
 
         /// <summary>
         /// Try to get some information about a job from the job manager.
         /// </summary>
         /// <param name="idToken">Identification within batch processor</param>
+        /// <param name="optInfo">
+        /// Optional internal job object, returned form <see cref="Submit(Job)"/>
+        /// </param>
         /// <param name="DeployDir"></param>
         /// <param name="isRunning">
         /// True, if <paramref name="myJob"/> is currently running.
@@ -229,7 +233,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="isTerminated">
         /// True, if the application has exited
         /// </param>
-        public abstract void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode);
+        public abstract void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode);
 
         /// <summary>
         /// Path to standard output file, if present - otherwise null.

@@ -184,7 +184,7 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// .
         /// </summary>
-        public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (var tr = new FuncTrace()) {
                 //string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
                 //DeployDir = null;
@@ -291,7 +291,7 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// 
         /// </summary>
-        public override string Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob) {
             using (new FuncTrace()) {
                 // load users .bashrc with all dependencies
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" });
@@ -352,7 +352,7 @@ namespace BoSSS.Application.BoSSSpad
                     .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
                 Console.WriteLine(jobId);
 
-                return jobId;
+                return (jobId, null);
             }
         }
 

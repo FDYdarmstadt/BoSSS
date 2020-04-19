@@ -87,13 +87,18 @@ namespace BoSSS.Application.BoSSSpad {
         
 
         /// <summary>
-        /// (Optional) object used by some batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
+        /// (Optional) object used by batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
         /// in order to identify the job.
         /// </summary>
         public string BatchProcessorIdentifierToken {
             private set;
             get;
         }
+
+        /// <summary>
+        /// Some internal object that the job keeps for the batch processor
+        /// </summary>
+        object BatchProcessorObject;
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
@@ -793,7 +798,7 @@ namespace BoSSS.Application.BoSSSpad {
                     return JobStatus.PreActivation;
 
                 // ask the batch processor
-                AssignedBatchProc.EvaluateStatus(bpcToken, DD, out bool isRunning, out bool isTerminated, out int ExitCode);
+                AssignedBatchProc.EvaluateStatus(bpcToken, this.BatchProcessorObject, DD, out bool isRunning, out bool isTerminated, out int ExitCode);
                 bool isPending = (isRunning == false) && (isTerminated == false);
 
                 if (isPending)
@@ -934,7 +939,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // submit job
                 using (new BlockTrace("JOB_SUBMISSION", tr)) {
-                    this.BatchProcessorIdentifierToken = bpc.Submit(this);
+                    (this.BatchProcessorIdentifierToken, this.BatchProcessorObject) = bpc.Submit(this);
                     File.WriteAllText(Path.Combine(this.DeploymentDirectory, "IdentifierToken.txt"), this.BatchProcessorIdentifierToken);
                 }
             }
