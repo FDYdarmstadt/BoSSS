@@ -175,7 +175,7 @@ namespace BoSSS.Application.BoSSSpad {
                     JD = Scheduler.OpenJob(id);
                 }
                 Console.WriteLine("MsHPC: state of job " + JD.Name + ": " + JD.State);
-
+                
                 //}
                 /*
                  * the following seems really slow 
