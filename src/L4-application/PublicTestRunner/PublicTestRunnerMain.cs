@@ -200,6 +200,7 @@ namespace PublicTestRunner {
             return R.ToArray();
         }
 
+        
         static string[] LocateFile(string PartialPath) {
             DirectoryInfo repoRoot;
             try {
@@ -233,7 +234,7 @@ namespace PublicTestRunner {
             
             return r;
         }
-
+        
 
         static string[] LocateFileRecursive(string RelPath, DirectoryInfo absPath, string SomeFileName) {
             List<string> ret = new List<string>();
@@ -845,6 +846,7 @@ namespace PublicTestRunner {
             Console.WriteLine("         nunit3        : execute all tests in FILTER within this process.");
             Console.WriteLine("                         additional arguments are passed to NUnit.");
             Console.WriteLine("         runjobmanager : submit tests to the job manger.");
+            Console.WriteLine("         help          : prints this message.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
 
@@ -888,6 +890,11 @@ namespace PublicTestRunner {
                 case "runjobmanager":
                 DeleteResultFiles();
                 ret = JobManagerRun(args[1]);
+                break;
+
+                case "help":
+                PrintMainUsage();
+                ret = 0;
                 break;
 
                 default:
