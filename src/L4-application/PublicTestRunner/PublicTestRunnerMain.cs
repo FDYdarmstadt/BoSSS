@@ -770,7 +770,7 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
-            var assln = GetAllAssemblies();
+            Assembly[] assln = GetAllAssemblies();
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
@@ -788,8 +788,12 @@ namespace PublicTestRunner {
                 string resFileName = Path.GetFileNameWithoutExtension(arg_i.Replace("--result=", ""));
                 args[i] = "--result=" + MpiResFileNameMod( MpiRank, MpiSize, resFileName);
 
-            }
 
+                var parAssis = GetAllMpiAssemblies();
+                foreach(var t in parAssis) {
+                    t.Asbly.AddToArray(ref assln);
+                }
+            }
 
             int count = 0;
             bool ret = false;
