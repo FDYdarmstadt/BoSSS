@@ -354,7 +354,7 @@ namespace PublicTestRunner {
         }
 
 
-        static public int JobManagerRun(string AssemblyFilter) {
+        static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             if (MpiSize != 1) {
@@ -379,7 +379,7 @@ namespace PublicTestRunner {
                 InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
-                BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
+                BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
 
                 DirectoryInfo NativeOverride;
                 if (!bpc.DeployRuntime) {
@@ -395,7 +395,16 @@ namespace PublicTestRunner {
                     var assln = GetAllAssemblies();
                     foreach (var a in assln) {
                         if (!AssemblyFilter.IsEmptyOrWhite()) {
-                            if (!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
+
+                            string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                            bool AnyMatch = false;
+                            foreach(var filter in sFilters) {
+                                if(!filter.WildcardMatch(Path.GetFileName(a.Location)))
+                                    AnyMatch = true;
+                            }
+
+                            if (AnyMatch == false)
                                 continue;
                         }
 
@@ -791,7 +800,14 @@ namespace PublicTestRunner {
             bool ret = false;
             foreach(var a in assln) {
                 if(!AssemblyFilter.IsEmptyOrWhite()) {
-                    if(!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
+                    bool AnyMatch = false;
+                    string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach(var filter in sFilters) {
+                        if(!filter.WildcardMatch(Path.GetFileName(a.Location)))
+                            AnyMatch = true;
+                    }
+
+                    if(AnyMatch == false)
                         continue;
 
                     Console.WriteLine("Matching assembly: " + a.Location);
@@ -889,7 +905,24 @@ namespace PublicTestRunner {
 
                 case "runjobmanager":
                 DeleteResultFiles();
-                ret = JobManagerRun(args[1]);
+                int iQueue = 1;
+                string filter = args[1];
+                if(args.Length == 3 && args[2].StartsWith("queue#")) {
+                    try {
+                        iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                    } catch(Exception) {
+                        ret = -1;
+                        Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
+                        PrintMainUsage();
+                        break;
+                    }
+                } else {
+                    ret = -1;
+                    PrintMainUsage();
+                    break;
+                }
+
+                ret = JobManagerRun(filter, iQueue);
                 break;
 
                 case "help":
