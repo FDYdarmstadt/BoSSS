@@ -52,14 +52,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// </summary>
         static void Main(string[] args) {
 
-            TestProgram.Init();
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.RK1, 0.2d, 8);
-            TestProgram.Cleanup();
-            Assert.AreEqual(1, 2, "remove me");
+            //TestProgram.Init();
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.RK1, 0.2d, 8);
+            //TestProgram.Cleanup();
+            //Assert.AreEqual(1, 2, "remove me");
 
-            //BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
-            //    return new XdgTimesteppingMain();
-            //});
+            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
+                return new XdgTimesteppingMain();
+            });
         }
 #pragma warning disable 649
 

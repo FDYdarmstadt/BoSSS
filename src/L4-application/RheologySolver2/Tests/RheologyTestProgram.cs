@@ -31,20 +31,6 @@ namespace BoSSS.Application.Rheology
     static class RheologyTestProgram
     {
 
-        [OneTimeSetUp]
-        public static void Init()
-        {
-            BoSSS.Solution.Application.InitMPI();
-
-            
-        }
-
-        [OneTimeTearDown]
-        public static void Cleanup()
-        {
-            //Console.Out.Dispose();
-            //csMPI.Raw.mpiFinalize();
-        }
 
         //TESTS_CHANNEL__________________________________________________________________________________________________
         //Test 1: Insert exact solution and only compute residual.

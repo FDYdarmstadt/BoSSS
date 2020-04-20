@@ -46,16 +46,13 @@ namespace HilbertTest {
 #if Debug
             System.Threading.Thread.Sleep(5000);
 #endif
-            SetUp();
+            BoSSS.Solution.Application.InitMPI();
             Test();
-            Cleanup();
+            BoSSS.Solution.Application.FinalizeMPI();
 
         }
 
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            csMPI.Raw.mpiFinalize();
-        }
+   
 
         [Test]
         public static void Test() {

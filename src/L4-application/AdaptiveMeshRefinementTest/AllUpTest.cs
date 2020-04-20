@@ -45,7 +45,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [OneTimeTearDown]
+        //[OneTimeTearDown]
         public static void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }

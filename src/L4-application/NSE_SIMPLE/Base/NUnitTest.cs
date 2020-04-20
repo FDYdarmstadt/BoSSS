@@ -27,16 +27,6 @@ namespace NSE_SIMPLE {
     [TestFixture]
     static public class NUnitTest {
 
-        [OneTimeSetUp]
-        static public void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        [OneTimeTearDown]
-        static public void Cleanup() {
-            //Console.Out.Dispose();
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
-        }
 
         /// <summary>
         /// Tests the steady 2D-Channel flow using the 'Steady_SIMPLE' algorithm.
