@@ -896,30 +896,32 @@ namespace PublicTestRunner {
             BoSSS.Solution.Application.InitMPI();
 
 
-            int ret = -1; 
-            switch (args[0]) {
+            int ret = -1;
+            switch(args[0]) {
                 case "nunit3":
                 ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
                 break;
-                               
+
 
                 case "runjobmanager":
                 DeleteResultFiles();
                 int iQueue = 1;
                 string filter = args[1];
-                if(args.Length == 3 && args[2].StartsWith("queue#")) {
-                    try {
-                        iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                    } catch(Exception) {
+                if(args.Length == 3) {
+                    if(args[2].StartsWith("queue#")) {
+                        try {
+                            iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                        } catch(Exception) {
+                            ret = -1;
+                            Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
+                            PrintMainUsage();
+                            break;
+                        }
+                    } else {
                         ret = -1;
-                        Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
                         PrintMainUsage();
                         break;
                     }
-                } else {
-                    ret = -1;
-                    PrintMainUsage();
-                    break;
                 }
 
                 ret = JobManagerRun(filter, iQueue);
