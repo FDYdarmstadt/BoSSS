@@ -57,20 +57,20 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         private bool patchRecoveryGradient;
         private bool patchRecoveryHessian;
 
+        /// <summary>
+        /// Main result data structure
+        /// <see cref="MultidimensionalArray"/> with three dimensions
+        /// [0]: number of seedings points, [1]: maximum number of iterations to find the inflection point, [2]: data (*)
+        /// Explanation for (*):
+        /// [0]: x-coordinates, [1]: y-coordinates, [2]: field values, [3]: second derivative, [4]: step size
+        /// </summary>
         public MultidimensionalArray MorePoints {
             get;
             private set;
         }
 
-        int maxNumOfIterations = 100;
-        int numOfPoints;
-        MultidimensionalArray fValues;
-        int[] iterations;
-        double[] finalFValues;
-        double eps;
         bool[] converged;
-        int[] jCell;
-        double[] nodes;
+        int[] iterations;
 
         //####################################################################################################
         public InflectionPointFinder(string sessionPath, ISessionInfo session) {
@@ -84,9 +84,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             this.levelSetField = (SinglePhaseField)myTimestep.Fields.Find("levelSet");
         }
 
-        public MultidimensionalArray FindPoints(SeedingSetup testCase, bool patchRecoveryGradient, bool patchRecoveryHessian) {
+        public MultidimensionalArray FindPoints(SeedingSetup testCase, bool patchRecoveryGradient, bool patchRecoveryHessian, int maxNumOfIterations = 100, double eps = 1e-12) {
+            #region Init
             this.patchRecoveryGradient = patchRecoveryGradient;
             this.patchRecoveryHessian = patchRecoveryHessian;
+            #endregion
+
+            int numOfPoints;
+            int[] jCell;
 
             #region Create seedings points based on artificial viscosity
             MultidimensionalArray avValues = ShockFindingHelperFunctions.GetAVMeanValues(gridData, avField);
@@ -94,12 +99,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             switch (testCase) {
                 case SeedingSetup.av:
                     numOfPoints = avValues.Lengths[0];
-                    //numOfPoints  = 330;
-                    eps = 1e-12;
-                    MorePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 2);
-                    fValues = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1);
+                    MorePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 5);
                     iterations = new int[numOfPoints];
-                    finalFValues = new double[numOfPoints];
                     converged = new bool[numOfPoints];
                     jCell = new int[numOfPoints];
 
@@ -116,11 +117,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     int numOfCells = avValues.Lengths[0];
                     int numOfPointsPerCell = 9;
                     numOfPoints = numOfCells * numOfPointsPerCell;
-                    eps = 1e-12;
-                    MorePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 2);
-                    fValues = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1);
+                    MorePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 5);
                     iterations = new int[numOfPoints];
-                    finalFValues = new double[numOfPoints];
                     converged = new bool[numOfPoints];
                     jCell = new int[numOfPoints];
 
@@ -144,22 +142,24 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             #region Find inflection point for every seeding point
             double[] x;
             double[] y;
-            double[] secondDerivative;
-            double[] stepSize;
-            double[] values;
 
             for (int i = 0; i < MorePoints.Lengths[0]; i++) {
-                //MultidimensionalArray points = MultidimensionalArray.Create(N + 1, 2);
-                secondDerivative = new double[maxNumOfIterations + 1];
-                stepSize = new double[maxNumOfIterations + 1];
-                values = new double[maxNumOfIterations + 1];
-                bool pointFound;
-                int jLocal;
+                /*
+                MultidimensionalArray test = MultidimensionalArray.Create(10, 2, 5);
+                test[0, 0, 0] = 0;
+                test[0, 0, 1] = 1;
+                test[0, 0, 2] = 2;
+                test[0, 0, 3] = 3;
+                test[0, 1, 4] = 4;
+                test[0, 1, 1] = 1;
+                test[0, 1, 2] = 2;
+                test[0, 1, 3] = 3;
+                test[0, 1, 4] = 4;
+                var bla = test.ExtractSubArrayShallow(0, -1, -1);
+                var bla3 = test.ExtractSubArrayShallow(0, -1, 3);
+                */
 
-                //MultidimensionalArray start = MultidimensionalArray.CreateWrapper(startingPoint, 1, startingPoint.Length);
-                //points.SetSubArray(start.ExtractSubArrayShallow(0, -1), new int[]{0, -1});
-
-                int iter = WalkOnCurve(gridData, densityField, maxNumOfIterations, eps, MorePoints.ExtractSubArrayShallow(i, -1, -1), secondDerivative, stepSize, values, out pointFound, out jLocal);
+                int iter = WalkOnCurve(gridData, densityField, MorePoints.ExtractSubArrayShallow(i, -1, -1), out bool pointFound, out int jLocal);
 
                 x = MorePoints.ExtractSubArrayShallow(i, -1, 0).To1DArray();
                 y = MorePoints.ExtractSubArrayShallow(i, -1, 1).To1DArray();
@@ -167,37 +167,23 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 Array.Resize(ref y, iter);
                 //double[] results = new double[iter];
 
-                switch (testCase) {
-                    case SeedingSetup.av:
-                    case SeedingSetup.av3x3:
-                        //fValues[i, j] = field.ProbeAt(new double[] {x[j], y[j]});
-                        fValues.SetSubVector(values, new int[] { i, -1 });
-                        break;
-                }
+                // NECESSARY????????
+                //switch (testCase) {
+                //    case SeedingSetup.av:
+                //    case SeedingSetup.av3x3:
+                //        //fValues[i, j] = field.ProbeAt(new double[] {x[j], y[j]});
+                //        fValues.SetSubVector(values, new int[] { i, -1 });
+                //        break;
+                //}
 
                 // Save more stuff
                 iterations[i] = iter;
-                finalFValues[i] = fValues[i, iter - 1];
                 converged[i] = pointFound;
                 jCell[i] = jLocal;
 
                 if (i % 100 == 0) {
                     Console.WriteLine("Point " + i);
                 }
-
-                // Write text file
-                //    string path = "C:\\tmp\\ReconstructLevelSet\\curve_" + i + ".txt";
-                //    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(path)){
-                //sw.WriteLine("x \t y \t z");
-
-                //        string resultLine;
-                //        for (int j = 0; j < iter; j++){
-                //            resultLine = x[j] + "\t" + y[j] + "\t" + fValues[i, j];
-                //            sw.WriteLine(resultLine);
-                //        }
-
-                //        sw.Flush();
-                //    }
             }
             #endregion
 
@@ -217,7 +203,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     for (int j = 0; j < MorePoints.Lengths[0]; j++) {
                         resultLine = MorePoints[j, 0, 0] + "\t"
                                    + MorePoints[j, 0, 1] + "\t"
-                                   + fValues[j, 0];
+                                   + MorePoints[j, 0, 2];
                         sw.WriteLine(resultLine);
                     }
                     sw.Flush();
@@ -232,7 +218,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                         int pointFound = converged[j] ? 1 : 0;
                         resultLine = MorePoints[j, iterations[j] - 1, 0] + "\t"
                                    + MorePoints[j, iterations[j] - 1, 1] + "\t"
-                                   + finalFValues[j] + "\t"
+                                   + MorePoints[j, iterations[j] - 1, 2] + "\t"
                                    + pointFound;
                         sw.WriteLine(resultLine);
                     }
@@ -246,7 +232,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "curve_" + i + ".txt")) {
                         string resultLine;
                         for (int j = 0; j < iterations[i]; j++) {
-                            resultLine = MorePoints[i, j, 0] + "\t" + MorePoints[i, j, 1] + "\t" + fValues[i, j];
+                            resultLine = MorePoints[i, j, 0] + "\t" + MorePoints[i, j, 1] + "\t" + MorePoints[i, j, 2];
                             sw.WriteLine(resultLine);
                         }
                         sw.Flush();
@@ -263,14 +249,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     // Starting point
                     resultLine = MorePoints[j, 0, 0] + "\t"
                                + MorePoints[j, 0, 1] + "\t"
-                               + fValues[j, 0] + "\t"
+                               + MorePoints[j, 0, 2] + "\t"
                                + pointFound;
                     sw.WriteLine(resultLine);
 
                     // End point
                     resultLine = MorePoints[j, iterations[j] - 1, 0] + "\t"
                                + MorePoints[j, iterations[j] - 1, 1] + "\t"
-                               + fValues[j, iterations[j] - 1] + "\t"
+                               + MorePoints[j, iterations[j] - 1, 2] + "\t"
                                + pointFound;
                     sw.WriteLine(resultLine);
 
@@ -279,8 +265,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
-
         //####################################################################################################
+
         private double[] NormalizedGradientByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
             if (this.gradientX == null) {
                 // Evaluate gradient
@@ -375,24 +361,26 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return g_alpha_alpha;
         }
 
-
         /// <summary>
         /// Algorithm to find an inflection point along a curve in the direction of the gradient
         /// </summary>
         /// <param name="gridData">The corresponding grid</param>
         /// <param name="field">The DG field, which shall be evalauted</param>
-        /// <param name="maxIterations">The maximum number of iterations (user defined)</param>
-        /// <param name="threshold">A threshold, e.g. 1e-6 (user defined)</param>
-        /// <param name="points">The points along the curve (first entry has to be user defined)</param>
-        /// <param name="secondDerivative">The second derivative at each point</param>
-        /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
-        /// <returns></returns>
-        private int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, out int jLocal, bool byFlux = true) {
+        /// <param name="points">
+        /// The points along the curve (first point has to be user defined)
+        /// Lenghts --> [0]: maxIterations + 1, [1]: 5
+        /// [1]: x | y | function values | second derivatives | step sizes
+        /// </param>
+        /// <param name="converged">Has an inflection point been found?</param>
+        /// <param name = "jLocal" >Local cell index of the inflection point (if found)</ param >
+        /// < param name="byFlux">Calculation of the first and second order derivatives, default: true</param>
+        /// <returns>The amount of iterations needed in order to find the inflection point</returns>
+        private int WalkOnCurve(GridData gridData, SinglePhaseField field, MultidimensionalArray points, out bool converged, out int jLocal, bool byFlux = true) {
             // Init
             converged = false;
 
             // Current (global) point
-            double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
+            double[] currentPoint = new double[] { points[0, 0], points[0, 1] };
 
             // Compute global cell index of current point
             gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
@@ -407,9 +395,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             // Evaluate the second derivative
             try {
                 if (byFlux) {
-                    secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
+                    points[0, 3] = SecondDerivativeByFlux(field, jLocal, nodeSet);
                 } else {
-                    secondDerivative[0] = ShockFindingHelperFunctions.SecondDerivative(field, jLocal, nodeSet);
+                    points[0, 3] = ShockFindingHelperFunctions.SecondDerivative(field, jLocal, nodeSet);
                 }
             } catch (NotSupportedException) {
                 return 0;
@@ -418,14 +406,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             // Evaluate the function
             MultidimensionalArray f = MultidimensionalArray.Create(1, 1);
             field.Evaluate(jLocal, 1, nodeSet, f);
-            values[0] = f[0, 0];
+            points[0, 2] = f[0, 0];
 
             // Set initial step size to 0.5 * h_minGlobal
             // Set the search direction depending on the sign of the curvature
-            stepSize[0] = 0.5 * gridData.Cells.h_minGlobal;
+            points[0, 4] = 0.5 * gridData.Cells.h_minGlobal;
 
             int n = 1;
-            while (n < maxIterations + 1) {
+            while (n < points.Lengths[0]) {
                 // Evaluate the gradient of the current point
                 double[] gradient;
                 if (byFlux) {
@@ -435,8 +423,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 }
 
                 // Compute new point along curve
-                currentPoint[0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
-                currentPoint[1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
+                currentPoint[0] = currentPoint[0] + gradient[0] * points[n - 1, 4];
+                currentPoint[1] = currentPoint[1] + gradient[1] * points[n - 1, 4];
 
                 // New point has been calculated --> old node set is invalid
                 nodeSet = null;
@@ -475,14 +463,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 // Evaluate the function
                 f.Clear();
                 field.Evaluate(jLocal, 1, nodeSet, f);
-                values[n] = f[0, 0];
+                points[n, 2] = f[0, 0];
 
                 // Evaluate the second derivative of the new point
                 try {
                     if (byFlux) {
-                        secondDerivative[n] = SecondDerivativeByFlux(field, jLocal, nodeSet);
+                        points[n, 3] = SecondDerivativeByFlux(field, jLocal, nodeSet);
                     } else {
-                        secondDerivative[n] = ShockFindingHelperFunctions.SecondDerivative(field, jLocal, nodeSet);
+                        points[n, 3] = ShockFindingHelperFunctions.SecondDerivative(field, jLocal, nodeSet);
                     }
                 } catch (NotSupportedException) {
                     break;
@@ -490,10 +478,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
                 // Check if sign of second derivative has changed
                 // Halve the step size and change direction
-                if (Math.Sign(secondDerivative[n]) != Math.Sign(secondDerivative[n - 1])) {
-                    stepSize[n] = -stepSize[n - 1] / 2;
+                if (Math.Sign(points[n, 3]) != Math.Sign(points[n - 1, 3])) {
+                    points[n, 4] = -points[n - 1, 4] / 2;
                 } else {
-                    stepSize[n] = stepSize[n - 1];
+                    points[n, 4] = points[n - 1, 4];
                 }
 
                 n++;
@@ -503,7 +491,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 double[] diff = new double[currentPoint.Length];
                 diff[0] = points[n - 1, 0] - points[n - 2, 0];
                 diff[1] = points[n - 1, 1] - points[n - 2, 1];
-                if (diff.L2Norm() < threshold) {
+                if (diff.L2Norm() < 1e-12) {
                     converged = true;
                     break;
                 }
