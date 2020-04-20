@@ -85,7 +85,9 @@ namespace PublicTestRunner {
             (typeof(MPITest.Program), 4),
             (typeof(MPITest.Program), 3),
             (typeof(MPITest.Program), 2),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+            (typeof(AdvancedSolverTests.SubBlocking.LocalTests),4),
+            (typeof(AdvancedSolverTests.SubBlocking.ExternalTests),4)
         };
 
         static (Type type, int NoOfProcs)[] MpiReleaseOnlyTests = new (Type type, int NoOfProcs)[] {

@@ -40,8 +40,6 @@ namespace BoSSS.Solution {
         /// <param name="nc"></param>
         /// <param name="lc"></param>
         public SolverFactory(NonLinearSolverConfig nc, LinearSolverConfig lc) {
-            lc_check = lc.CloneAs();
-            nc_check = nc.CloneAs();
             m_lc = lc;
             m_nc = nc;
         }
@@ -56,7 +54,7 @@ namespace BoSSS.Solution {
         /// <param name="ts_MultigridOperatorConfig"></param>
         /// <param name="ts_SessionPath"></param>
         /// <param name="ts_MGS"></param>
-        public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis,  MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, string ts_SessionPath, AggregationGridData[] ts_MGS) {
+        public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, string ts_SessionPath, AggregationGridData[] ts_MGS) {
 
             if (m_nonlinsolver != null && (m_linsolver == null || m_precond == null))
                 throw new NotImplementedException("an uncomplete nonlinear solver is overgiven.");
@@ -202,7 +200,7 @@ namespace BoSSS.Solution {
                         ts_MultigridBasis,
                         MultigridOperatorConfig) {
                         m_NLSequence = new NonlinearSolver[] { myFixPoint, myNewton }
-                    };           
+                    };
                     break;
 
                 case NonLinearSolverCode.selfmade:
@@ -303,7 +301,7 @@ namespace BoSSS.Solution {
             int MultigridSeqLength = MultigridSequence.Length;
 
             switch (lc.SolverCode) {
-                
+
                 //no preconditioner used ...
                 case LinearSolverCode.classic_mumps:
                 case LinearSolverCode.classic_pardiso:
@@ -458,10 +456,11 @@ namespace BoSSS.Solution {
                                 },
                                 UsePMGinBlocks=false,
                                 EnableOverlapScaling=false,
-                                pLow=1,
+                                CoarseLowOrder=1,
                             },
                     };
                     break;
+
                 case LinearSolverCode.selfmade:
                     Console.WriteLine("Selfmade Preconditioner is used!");
                     precond[0] = m_precond;
@@ -475,29 +474,33 @@ namespace BoSSS.Solution {
             }
 
             if (precond != null) {
-                //special stdout stuff for Schwarz Preconds
-                if (precond[0] is Schwarz)
-                    Console.WriteLine("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks.MPISum());
-                if (precond.Length > 1) {
-                    foreach (var pre in precond) {
-                        SetLinItCallback(pre, true);
-                    }
-                } else {
-                    SetLinItCallback(precond[0], true);
+                
+                foreach (var pre in precond) {
+                    GenerateInfoMessageAtSetup(pre,NoOfBlocks);
+                    SetLinItCallback(pre, true);
                 }
-#if DEBUG
-                if (precond.Length > 1) {
-                    foreach (var pre in precond) {
-                        Console.WriteLine("preconditioner: {0}", pre.GetType());
-                    }
-                } else {
-                    Console.WriteLine("preconditioner: {0}", precond[0].GetType());
-                }
-#endif
+
                 Check_precond();
             }
 
             return precond;
+        }
+
+        private void GenerateInfoMessageAtSetup(ISolverSmootherTemplate solver, int NoOfBlocks) {
+            Console.WriteLine("preconditioner: {0}", solver.GetType());
+            List<string> solverinfotxt = new List<string>();
+            if (solver.GetType() == typeof(LevelPmg)) {
+                solverinfotxt.Add("entries upto p=" + ((LevelPmg)solver).CoarseLowOrder + " are assigned to low order blocks");
+            }
+            if (solver.GetType() == typeof(Schwarz)) {
+                if (((Schwarz)solver).UsePMGinBlocks) {
+                    solverinfotxt.Add("pmg used in Schwarz Blocks");
+                    solverinfotxt.Add("entries upto p=" + ((Schwarz)solver).CoarseLowOrder + " are assigned to low order blocks");
+                }
+                solverinfotxt.Add("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks);
+            }
+            foreach(string line in solverinfotxt)
+                Console.WriteLine(solver.GetType()+" INFO:\t"+ line);
         }
 
         /// <summary>
@@ -1020,9 +1023,6 @@ namespace BoSSS.Solution {
         /// </summary>
         private NonLinearSolverConfig m_nc;
 
-        private LinearSolverConfig lc_check;
-        private NonLinearSolverConfig nc_check;
-
         /// <summary>
         /// For developers, who want full control over solvers: In <see cref="selfmade_linsolver"/> you can insert your own config of linear solver.
         /// Clear() will clear the selfmade stuff and enables solver creation from linear and nonlinear config again.
@@ -1308,8 +1308,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         private void Check_linsolver() {
-            if (!m_lc.Equals(lc_check))
-                Console.WriteLine("WARNING: LinearSolverConfig was changed since constructor!");
+            //tbd
         }
 
         /// <summary>
@@ -1317,8 +1316,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         private void Check_precond() {
-            if (!m_lc.Equals(lc_check))
-                Console.WriteLine("WARNING: LinearSolverConfig was changed since constructor!");
+            
         }
 
         /// <summary>
@@ -1326,8 +1324,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         private void Check_nonlinsolver() {
-            if(!m_nc.Equals(nc_check))
-                Console.WriteLine("WARNING: NonLinearSolverConfig was changed since constructor!");
+            //tbd
         }
 
         /// <summary>
@@ -1419,6 +1416,8 @@ namespace BoSSS.Solution {
             bool isLinPrecond = true;
 
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
 
             ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[MSLength];
             for (int iLevel = 0; iLevel < MSLength; iLevel++) {
@@ -1496,6 +1495,8 @@ namespace BoSSS.Solution {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
 
             //MultigridOperator Current = op;
             ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[MSLength];
@@ -1595,6 +1596,9 @@ namespace BoSSS.Solution {
             List<ISolverSmootherTemplate> MG_list = new List<ISolverSmootherTemplate>();
 
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
+
             int MaxMGDepth = GetMGdepth(DirectKickIn, MSLength, _LocalDOF);
             SetLinItCallback(subsmootherchain, true);
 
@@ -1669,7 +1673,9 @@ namespace BoSSS.Solution {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
-            
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
+
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
             
@@ -1768,6 +1774,8 @@ namespace BoSSS.Solution {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
 
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
@@ -1840,7 +1848,7 @@ namespace BoSSS.Solution {
                         UseHiOrderSmoothing = true,
                         CoarseLowOrder = 1
                     };
-
+                    GenerateInfoMessageAtSetup(CoarseSolver,NoOfBlocks);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,

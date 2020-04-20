@@ -403,7 +403,7 @@ namespace MPI.Wrappers {
         /// <paramref name="comm"/>--communicator.
         /// </summary>
         static public bool MPIOr(this bool b, MPI_Comm comm) {
-            int loc = b ? 1 : 0;
+            int loc = b ? 1: 0;
             unsafe {
                 int glob = 0;
                 csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
