@@ -160,8 +160,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// </summary>
         [Test]
         public static void TestConvection_MovingInterface_MultiinitHighOrder(
+#if DEBUG
+            [Values(1)] int PolyOrder,
+            [Values(0.2, 0.23)] double TimestepSize
+#else
             [Values(1, 2, 3)] int PolyOrder,
             [Values(0.2, 0.23)] double TimestepSize
+#endif
             ) {
 
             // set up

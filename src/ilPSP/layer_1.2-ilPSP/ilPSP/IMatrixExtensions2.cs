@@ -239,6 +239,100 @@ namespace ilPSP {
                     inp[i, j] = o[i, j];
         }
 
+        /// <summary>
+        /// Eigenvalues for a symmetrical matrix
+        /// </summary>
+        /// <param name="Inp">
+        /// On entry some symmetrical matrix, unchanged on exit. 
+        /// Symmetry is not checked.
+        /// Only the lower matrix triangle is considered, the upper part is ignored.
+        /// </param>
+        /// <returns></returns>
+        public static double[] EigsSymm(this IMatrix Inp) {
+            var ret = EigenspaceSymmInternal(Inp, false);
+            return ret.EigenVals;
+        }
+
+
+        /// <summary>
+        /// Eigenvalues and Eigenvectors of a symmetrical matrix
+        /// </summary>
+        /// <param name="Inp">
+        /// On entry some symmetrical matrix, unchanged on exit. 
+        /// Symmetry is not checked.
+        /// Only the lower matrix triangle is considered, the upper part is ignored.
+        /// </param>
+        /// <returns>
+        /// Eigenvalues and Eigenvectors
+        /// </returns>
+        public static (double[] EigenVals, MultidimensionalArray EigenVect) EigenspaceSymm(this IMatrix Inp) {
+            var ret = EigenspaceSymmInternal(Inp, true);
+            return ret;
+        }
+
+        static (double[] EigenVals, MultidimensionalArray EigenVect) EigenspaceSymmInternal(this IMatrix Inp, bool ComputeVectors) {
+            if(Inp.NoOfCols != Inp.NoOfRows) {
+                throw new ArgumentException("Not supported for non-symmetrical matrices.");
+            }
+            int N = Inp.NoOfRows;
+
+            int JOBZ = ComputeVectors ? 'V' : 'N';
+            // 'N':  Compute eigenvalues only;
+            // 'V':  Compute eigenvalues and eigenvectors.
+
+            int UPLO = 'L';
+            // 'U':  Upper triangle of A is stored;
+            // 'L':  Lower triangle of A is stored.
+
+            unsafe {
+                double[] InpBuffer = TempBuffer.GetTempBuffer(out int RefInp, N * N);
+                double[] Eigis = new double[N];
+                MultidimensionalArray EigiVect = ComputeVectors ? MultidimensionalArray.Create(N, N) : null;
+
+                fixed(double* pInp = InpBuffer, pEigis = Eigis) {
+                    CopyToUnsafeBuffer(Inp, pInp, true);
+
+                    int LDA = N;
+                    int info;
+
+                    // phase 1: work size estimation
+                    double WorkSize;
+                    int LWORK = -1; // triggers estimation 
+                    LAPACK.F77_LAPACK.DSYEV_(ref JOBZ, ref UPLO, ref N, pInp, ref LDA, pEigis, &WorkSize, ref LWORK, out info);
+                    if(info != 0) {
+                        TempBuffer.FreeTempBuffer(RefInp);
+                        throw new ArithmeticException("LAPACK DSYEV (symmetrical matrix eigenvalues) returned info " + info);
+                    }
+
+                    LWORK = (int)WorkSize;
+
+                    // phase 2: computation
+                    double[] WorkBuffer = TempBuffer.GetTempBuffer(out int RefWork, LWORK * 1);
+                    fixed(double* pWork = WorkBuffer) {
+
+                        LAPACK.F77_LAPACK.DSYEV_(ref JOBZ, ref UPLO, ref N, pInp, ref LDA, pEigis, pWork, ref LWORK, out info);
+                        TempBuffer.FreeTempBuffer(RefWork);
+                        if(info != 0) {
+                            TempBuffer.FreeTempBuffer(RefInp);
+                            throw new ArithmeticException("LAPACK DSYEV (symmetrical matrix eigenvalues) returned info " + info);
+                        }
+
+                        if(EigiVect != null)
+                            CopyFromUnsafeBuffer(EigiVect, pInp, true);
+
+                    }
+                }
+                TempBuffer.FreeTempBuffer(RefInp);
+
+
+                return (Eigis, EigiVect);
+            }
+
+
+
+        }
+
+
     }
 }
 

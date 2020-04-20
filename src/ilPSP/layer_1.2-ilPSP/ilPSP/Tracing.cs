@@ -254,7 +254,7 @@ namespace ilPSP.Tracing {
 
             m_Logger = LogManager.GetLogger(callingType);
             if (m_DoLogging) {
-                m_Logger.Info("ENTERING '" + _name);
+                m_Logger.Info("ENTERING " + _name);
             }
         }
 
@@ -268,16 +268,18 @@ namespace ilPSP.Tracing {
             _name = UserName;
 
             Type callingType = null;
+            string filtername;
             {
                 StackFrame fr = new StackFrame(1, true);
 
                 System.Reflection.MethodBase m = fr.GetMethod();
                 callingType = m.DeclaringType;
+                filtername = callingType.FullName;
             }
             Tracer.Push_MethodCallRecord(UserName);
 
             for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
-                if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {
+                if (filtername.StartsWith(Tracer.m_NamespacesToLog[i])) {
                     m_DoLogging = true;
                     break;
                 }
@@ -285,7 +287,7 @@ namespace ilPSP.Tracing {
 
             m_Logger = LogManager.GetLogger(callingType);
             if (m_DoLogging) {
-                m_Logger.Info("ENTERING '" + _name);
+                m_Logger.Info("ENTERING " + UserName);
             }
         }
 
@@ -436,7 +438,7 @@ namespace ilPSP.Tracing {
 
             if (f.DoLogging) {
                 m_Logger = f.m_Logger;
-                m_Logger.Info("BLKENTER '" + _name);
+                m_Logger.Info("BLKENTER " + _name);
             }
         }
 

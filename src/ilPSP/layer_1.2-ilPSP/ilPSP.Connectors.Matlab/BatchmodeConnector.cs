@@ -670,6 +670,8 @@ namespace ilPSP.Connectors.Matlab {
         ProcessStartInfo psi;
 
 
+        bool SuccessfulExe = false;
+
         /// <summary>
         /// executes all commands
         /// </summary>
@@ -677,6 +679,7 @@ namespace ilPSP.Connectors.Matlab {
         /// a reader to the standard output of the MATLAB process.
         /// </returns>
         public void Execute(bool PrintOutput = true) {
+            SuccessfulExe = false;
             ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true)
                 throw new InvalidOperationException("Execute can be called only once.");
@@ -781,6 +784,8 @@ namespace ilPSP.Connectors.Matlab {
                     throw new NotImplementedException("output object type not implemented.");
                 }
             }
+
+            SuccessfulExe = true;
         }
 
 
@@ -806,11 +811,15 @@ namespace ilPSP.Connectors.Matlab {
         /// Kills the MATLAB process
         /// </summary>
         public void Dispose() {
-            foreach (var f in CreatedFiles) {
-                File.Delete(f);
-            }
-            if (DelWorkingDir) {
-                Directory.Delete(WorkingDirectory.FullName, true);
+            if (SuccessfulExe) {
+                foreach (var f in CreatedFiles) {
+                    File.Delete(f);
+                }
+                if (DelWorkingDir) {
+                    Directory.Delete(WorkingDirectory.FullName, true);
+                }
+            } else {
+                // keeping files for diagnostic purposes
             }
         }
     }
