@@ -83,7 +83,11 @@ namespace MiniBatchProcessor {
         /// <param name="RunExternal">
         /// If true, an external process is used.
         /// </param>
-        public static void StartIfNotRunning(bool RunExternal = true) {
+        /// <returns>
+        /// - true: the server was just started
+        /// - false: the server is already running
+        /// </returns>
+        public static bool StartIfNotRunning(bool RunExternal = true) {
             if (ServerExternal != null && ServerExternal.HasExited) {
                 ServerExternal.Dispose();
                 ServerExternal = null;
@@ -95,13 +99,13 @@ namespace MiniBatchProcessor {
 
             if (ServerExternal != null || ServerInternal != null || IsRunning) {
                 Console.WriteLine("Mini batch processor is already running.");
-                return;
+                return false;
             }
             Random r = new Random();
             r.Next(100, 5000);
             if (IsRunning) {
                 Console.WriteLine("Mini batch processor is already running.");
-                return;
+                return false;
             }
 
             if (RunExternal) {
@@ -125,6 +129,7 @@ namespace MiniBatchProcessor {
 
                 ServerInternal = ServerThread;
             }
+            return true;
         }
 
         /// <summary>
@@ -134,8 +139,10 @@ namespace MiniBatchProcessor {
             if (WaitForOtherJobstoFinish) {
                 DateTime st = DateTime.Now;
 
-                var Q = ClientAndServer.Queue.ToArray();
-                var W = ClientAndServer.Working.ToArray();
+                Random rnd = new Random();
+
+                JobData[] Q = ClientAndServer.Queue.ToArray();
+                JobData[] W = ClientAndServer.Working.ToArray();
 
                 while (Q.Length > 0 || W.Length > 0) {
                     Console.WriteLine($"Waiting for other jobs to finish; in queue: {Q.Length}, working: {W.Length}.");
@@ -146,13 +153,16 @@ namespace MiniBatchProcessor {
                         Console.WriteLine(j);
                     }
                     
-                    Thread.Sleep(60000);
+                    Thread.Sleep(rnd.Next(60001));
                     if(TimeOutInSeconds > 0) {
                         var dur = DateTime.Now - st;
                         if(dur.TotalSeconds > TimeOutInSeconds) {
                             Console.WriteLine($" Waiting for {dur.TotalSeconds}; timeout of {TimeOutInSeconds} reached.");
                         }
                     }
+
+                    Q = ClientAndServer.Queue.ToArray();
+                    W = ClientAndServer.Working.ToArray();
                 }
             
             }

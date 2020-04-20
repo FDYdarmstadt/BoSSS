@@ -106,7 +106,8 @@ namespace MPITest {
 
                 var Test = EigVec.GEMM(D, EigVec.Transpose());
                 Test.Acc(-1.0, SomeMtx);
-                Console.WriteLine("Eigenvect error: " + Test.InfNorm());
+                double err = Test.InfNorm();
+                Assert.LessOrEqual(err, 1e-8);
             }
 
             
