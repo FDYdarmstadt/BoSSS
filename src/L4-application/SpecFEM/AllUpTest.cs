@@ -26,21 +26,6 @@ namespace BoSSS.Application.SpecFEM {
     [TestFixture]
     public class AllUpTest {
 
-        /// <summary>
-        /// MPI Finalization.
-        /// </summary>
-        [OneTimeTearDown]
-        public void OneTimeTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
-
-        /// <summary>
-        /// MPI init.
-        /// </summary>
-        [OneTimeSetUp]
-        public void OneTimeSetUp() {
-            BoSSS.Solution.Application.InitMPI(new string[0]);
-        }
 
         /// <summary>
         /// not the smartest way to define such a test...

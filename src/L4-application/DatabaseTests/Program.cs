@@ -12,13 +12,13 @@ namespace BoSSS.Application.DatabaseTests
     {
         public static void Main()
         {
-            MPITest.InitOnce();
+            BoSSS.Solution.Application.InitMPI();
             PrintActiveThreads();
 #if DEBUG
             StartDebugger();
 #endif
             RunTest();
-            MPITest.TearDown();
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
         static void RunTest()

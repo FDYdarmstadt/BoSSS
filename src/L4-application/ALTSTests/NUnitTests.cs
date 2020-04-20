@@ -33,14 +33,6 @@ namespace ALTSTests {
                 () => new NUnitTests());
         }
 
-        [OneTimeSetUp]
-        static public void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        [OneTimeTearDown]
-        static public void Cleanup() {
-        }
 
         public static void ALTSDynClustering(int order, int subGrids, double maxEnergyNorm) {
             NUnitTests test = null;

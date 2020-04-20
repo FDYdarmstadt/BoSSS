@@ -72,6 +72,11 @@ namespace PublicTestRunner {
         /// Referencing any type of the assembly will do.
         /// </summary>
         (Type type, int NoOfProcs)[] MpiReleaseOnlyTests { get; }
+
+        /// <summary>
+        /// Root for data searches
+        /// </summary>
+        DirectoryInfo GetRepositoryBaseDir();
     }
 
     /// <summary>
@@ -149,6 +154,34 @@ namespace PublicTestRunner {
                     };
             }
         }
+
+        virtual public DirectoryInfo GetRepositoryBaseDir() {
+            DirectoryInfo repoRoot;
+            try {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                repoRoot = dir.Parent.Parent.Parent.Parent.Parent;
+
+                var src = repoRoot.GetDirectories("src").SingleOrDefault();
+                var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
+                var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
+
+                if (src == null || !src.Exists)
+                    return null;
+                //throw new Exception();
+                if (libs == null || !libs.Exists)
+                    return null;
+                //throw new Exception();
+                if (doc == null || !doc.Exists)
+                    return null;
+                //throw new Exception();
+
+            } catch (Exception) {
+                return null;
+                //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
+            }
+
+            return repoRoot;
+        }
     }
 
     /// <summary>
@@ -161,7 +194,7 @@ namespace PublicTestRunner {
         static Assembly[] GetAllAssemblies() {
             var R = new HashSet<Assembly>();
 
-            foreach(var t in TestTypeProvider.FullTest) {
+            foreach (var t in TestTypeProvider.FullTest) {
                 //Console.WriteLine("test type: " + t.FullName);
                 var a = t.Assembly;
                 //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
@@ -174,7 +207,7 @@ namespace PublicTestRunner {
             }
 #endif
 
-            
+
 
             return R.ToArray();
         }
@@ -186,7 +219,7 @@ namespace PublicTestRunner {
                 //Console.WriteLine("test type: " + t.type.FullName + " (" + t.NoOfProcs + " procs).");
                 //Console.WriteLine("  assembly: " + t.type.Assembly.FullName + " @ " + t.type.Assembly.Location);
                 bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                if(!contains) {
+                if (!contains) {
                     R.Add((t.type.Assembly, t.NoOfProcs));
                 }
                 //Console.WriteLine("  added? " + (!contains));
@@ -202,41 +235,21 @@ namespace PublicTestRunner {
             return R.ToArray();
         }
 
-        
+
         static string[] LocateFile(string PartialPath) {
-            DirectoryInfo repoRoot;
-            try {
-                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                repoRoot = dir.Parent.Parent.Parent.Parent.Parent;
-
-                var src = repoRoot.GetDirectories("src").SingleOrDefault();
-                var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
-                var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
-
-                if (src == null || !src.Exists)
-                    return null;
-                    //throw new Exception();
-                if (libs == null || !libs.Exists)
-                    return null;
-                    //throw new Exception();
-                if (doc == null || !doc.Exists)
-                    return null;
-                    //throw new Exception();
-
-            } catch (Exception) {
+            DirectoryInfo repoRoot = TestTypeProvider.GetRepositoryBaseDir();
+            if (repoRoot == null)
                 return null;
-                //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
-            }
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);
-            if(r == null || r.Length <= 0) {
-                throw new IOException("unable to find file '" + PartialPath  + "'"); 
+            if (r == null || r.Length <= 0) {
+                throw new IOException("unable to find file '" + PartialPath + "'");
             }
-            
+
             return r;
         }
-        
+
 
         static string[] LocateFileRecursive(string RelPath, DirectoryInfo absPath, string SomeFileName) {
             List<string> ret = new List<string>();
@@ -255,7 +268,7 @@ namespace PublicTestRunner {
 
             }
 
-            foreach(var d in absPath.GetDirectories()) {
+            foreach (var d in absPath.GetDirectories()) {
                 ret.AddRange(LocateFileRecursive(RelPath + d.Name + "/", d, SomeFileName));
             }
 
@@ -269,26 +282,26 @@ namespace PublicTestRunner {
             var s = new HashSet<string>();
 
             var ttt = a.GetTypes();
-            foreach(var t in ttt) {
-                if(t.IsClass) {
+            foreach (var t in ttt) {
+                if (t.IsClass) {
                     var mmm = t.GetMethods();
 
-                    foreach(var m in mmm) {
+                    foreach (var m in mmm) {
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
-                        
-                        if(m.GetCustomAttribute(typeof(TestAttribute)) != null) {
-                            r.Add(t.FullName + "." +  m.Name);
+
+                        if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
+                            r.Add(t.FullName + "." + m.Name);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
                         }
 
-                        if(m.GetCustomAttribute(typeof(TestAttribute)) != null
+                        if (m.GetCustomAttribute(typeof(TestAttribute)) != null
                            || m.GetCustomAttribute(typeof(SetUpAttribute)) != null
                            || m.GetCustomAttribute(typeof(OneTimeSetUpAttribute)) != null) {
                             var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
 
-                            if(dc != null) {
-                                foreach(string someFile in dc.SomeFileNames) {
+                            if (dc != null) {
+                                foreach (string someFile in dc.SomeFileNames) {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
@@ -350,13 +363,23 @@ namespace PublicTestRunner {
                 tracerfile.Flush();
                 tracerfile.Close();
                 tracerfile.Dispose();
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Console.Error.WriteLine(e.GetType().Name + " during closing of tracing: " + e.Message);
             }
         }
 
+        static bool FilterAssembly(Assembly a, string AssemblyFilter) {
+            if (AssemblyFilter.IsEmptyOrWhite())
+                return true;
+            string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var filter in sFilters) {
+                if (filter.WildcardMatch(Path.GetFileName(a.Location)))
+                    return true;
+            }
+            return false;
+        }
 
-        static public int JobManagerRun(string AssemblyFilter) {
+        static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             if (MpiSize != 1) {
@@ -381,7 +404,7 @@ namespace PublicTestRunner {
                 InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
-                BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
+                BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
 
                 DirectoryInfo NativeOverride;
                 if (!bpc.DeployRuntime) {
@@ -396,31 +419,25 @@ namespace PublicTestRunner {
                 {
                     var assln = GetAllAssemblies();
                     foreach (var a in assln) {
-                        if (!AssemblyFilter.IsEmptyOrWhite()) {
-                            if (!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
-                                continue;
-                        }
-
-                        var allTst4Assi = GetTestsInAssembly(a);
-
-                        for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                            allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                        if (FilterAssembly(a, AssemblyFilter)) {
+                            var allTst4Assi = GetTestsInAssembly(a);
+                            for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                            }
                         }
                     }
                 }
                 {
                     var ParAssln = GetAllMpiAssemblies();
                     foreach (var TT in ParAssln) {
-                        if (!AssemblyFilter.IsEmptyOrWhite()) {
-                            if (!AssemblyFilter.WildcardMatch(Path.GetFileName(TT.Asbly.Location)))
-                                continue;
-                        }
+                        if (FilterAssembly(TT.Asbly, AssemblyFilter)) {
 
-                        var a = TT.Asbly;
-                        var allTst4Assi = GetTestsInAssembly(a);
+                            var a = TT.Asbly;
+                            var allTst4Assi = GetTestsInAssembly(a);
 
-                        for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                            allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                            for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                            }
                         }
                     }
                 }
@@ -712,7 +729,7 @@ namespace PublicTestRunner {
                 }
 
                 // create job
-                Job j = new Job(final_jName, typeof(PublicTestRunnerMain));
+                Job j = new Job(final_jName, TestTypeProvider.GetType());
                 string resultFile = $"result-{dor}-{TestName}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
@@ -768,7 +785,7 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
-            var assln = GetAllAssemblies();
+            Assembly[] assln = GetAllAssemblies();
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
@@ -786,18 +803,21 @@ namespace PublicTestRunner {
                 string resFileName = Path.GetFileNameWithoutExtension(arg_i.Replace("--result=", ""));
                 args[i] = "--result=" + MpiResFileNameMod( MpiRank, MpiSize, resFileName);
 
-            }
 
+                var parAssis = GetAllMpiAssemblies();
+                foreach(var t in parAssis) {
+                    t.Asbly.AddToArray(ref assln);
+                }
+            }
 
             int count = 0;
             bool ret = false;
             foreach(var a in assln) {
-                if(!AssemblyFilter.IsEmptyOrWhite()) {
-                    if(!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
-                        continue;
-
-                    Console.WriteLine("Matching assembly: " + a.Location);
+                if(!FilterAssembly(a, AssemblyFilter)) {
+                    continue;
                 }
+                Console.WriteLine("Matching assembly: " + a.Location);
+                
                 count++;
 
                 MegaMurxPlusPlus(a);
@@ -818,9 +838,10 @@ namespace PublicTestRunner {
                 ret = ret | (r != 0);
             }
 
-            if (!AssemblyFilter.IsEmptyOrWhite()) {
+            {
                 if(count <= 0) {
                     Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
+                    return -1;
                 }
             }
 
@@ -863,7 +884,8 @@ namespace PublicTestRunner {
         /// A hook to find tests within the entire heap of assemblies.
         /// </param>
         /// <returns></returns>
-        public static int _Main(string[] args, ITestTypeProvider ttp) { 
+        public static int _Main(string[] args, ITestTypeProvider ttp) {
+            TestTypeProvider = ttp;
             Console.WriteLine("BoSSS NUnit test runner.");
 
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
@@ -882,16 +904,35 @@ namespace PublicTestRunner {
             BoSSS.Solution.Application.InitMPI();
 
 
-            int ret = -1; 
-            switch (args[0]) {
+            int ret = -1;
+            switch(args[0]) {
                 case "nunit3":
                 ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
                 break;
-                               
+
 
                 case "runjobmanager":
                 DeleteResultFiles();
-                ret = JobManagerRun(args[1]);
+                int iQueue = 1;
+                string filter = args[1];
+                if(args.Length == 3) {
+                    if(args[2].StartsWith("queue#")) {
+                        try {
+                            iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                        } catch(Exception) {
+                            ret = -1;
+                            Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
+                            PrintMainUsage();
+                            break;
+                        }
+                    } else {
+                        ret = -1;
+                        PrintMainUsage();
+                        break;
+                    }
+                }
+
+                ret = JobManagerRun(filter, iQueue);
                 break;
 
                 case "help":
