@@ -49,7 +49,7 @@ namespace AdvancedSolverTests {
             //SubBlockTests.WriteOutTestMatrices();
             //SubBlockTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2,MatrixShape.diagonal_var_spec);
             //SubBlockTests.SplitVectorOperations(XDGusage.none, 2, MatrixShape.diagonal_var);
-            //SubBlockTests.SubSelection(SelectionType.species);
+            LocalTests.SubSelection(SelectionType.species);
             //LocalTests.CellwiseSubSelection(SelectionType.species);
             //ExternalTests.ExternalIndexTest(XDGusage.all,2);
             //ExternalTests.ExternalIndexTest(XDGusage.all, 2,4);

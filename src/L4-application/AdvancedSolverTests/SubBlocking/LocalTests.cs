@@ -146,7 +146,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- diagonal subblock extraction
             stw.Start();
-            var blocks = mask.GetSubBlocks(Mprep, coupling[0], coupling[1]);
+            var blocks = mask.GetDiagonalBlocks(Mprep, coupling[0], coupling[1]);
             stw.Stop();
 
             //Assert --- all diagonal blocks are extracted
@@ -384,8 +384,8 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- subblock extraction
             stw.Start();
-            var blocksA = maskA.GetSubBlocks(mgo.OperatorMatrix, false, false);
-            var blocksB = maskB.GetSubBlocks(mgo.OperatorMatrix, false, false);
+            var blocksA = maskA.GetDiagonalBlocks(mgo.OperatorMatrix, false, false);
+            var blocksB = maskB.GetDiagonalBlocks(mgo.OperatorMatrix, false, false);
             stw.Stop();
 
             //Assert --- 

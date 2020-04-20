@@ -507,7 +507,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
            
             var Mask = new BlockMask(Sel);
 
-            MultidimensionalArray[] Blocks = Mask.GetSubBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
+            MultidimensionalArray[] Blocks = Mask.GetDiagonalBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
             Debug.Assert(Blocks.Length == J);
 
             double[] BCN = new double[J];

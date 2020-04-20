@@ -3986,8 +3986,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //C.ContiField = XNSE_Control.ContinuityProjection.ContinuousDG;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-            C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
+            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
+            //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.MaxSolverIterations = 200;
             C.LinearSolver.TargetBlockSize = 1200;

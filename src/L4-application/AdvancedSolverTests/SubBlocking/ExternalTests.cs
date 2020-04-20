@@ -256,7 +256,7 @@ namespace AdvancedSolverTests.SubBlocking
             //Act --- Extract subblocks
             stw.Start();
             //var eblocks = mask.GetSubBlocks(M,coup[0],coup[1],coup[2]);
-            var eblocks = mask.GetSubBlocks(M, false, false);
+            var eblocks = mask.GetDiagonalBlocks(M, false, false);
             stw.Stop();
 
             //Assert --- same number of blocks?
@@ -320,7 +320,7 @@ namespace AdvancedSolverTests.SubBlocking
             sbs.AllExternalCellsSelection();
             var M_ext = BlockMask.GetAllExternalRows(map, M);
             var mask = new TestMask(sbs, M_ext);
-            var eblocks = mask.GetSubBlocks(M, false, false);
+            var eblocks = mask.GetDiagonalBlocks(M, false, false);
             //Dictionary<int, int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
 
             //Arrange --- generate rnd vector and distribute it
