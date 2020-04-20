@@ -34,61 +34,7 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     [Serializable]
     public class MsHPC2012Client : BatchProcessorClient {
-        /*
-        /// <summary>
-        /// Configuration options specific to the <see cref="MiniBatchProcessorClient"/>
-        /// </summary>
-        [Serializable]
-        public new class Config : BatchProcessorClient.Config {
-
-            /// <summary>
-            /// %
-            /// </summary>
-            public string ServerName;
-            
-            /// <summary>
-            /// %
-            /// </summary>
-            public string Username;
-            
-            /// <summary>
-            /// %
-            /// </summary>
-            public string Password;
-            
-            /// <summary>
-            /// %
-            /// </summary>
-            public string[] ComputeNodes = null;
-
-            /// <summary>
-            /// %
-            /// </summary>
-            public override BatchProcessorClient Instance() {
-                return new MsHPC2012Client(
-                    base.DeploymentBaseDirectory,
-                    ServerName,
-                    Username,
-                    Password,
-                    ComputeNodes,
-                    base.DeployRuntime);
-            }
-        }
         
-        /// <summary>
-        /// .
-        /// </summary>
-        public override BatchProcessorClient.Config GetConfig() {
-            return new MsHPC2012Client.Config() {
-                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
-                DeployRuntime = this.DeployRuntime,
-                ComputeNodes = this.m_ComputeNodes.CloneAs(),
-                Username = this.m_Username,
-                Password = this.m_Password,
-                ServerName = this.m_ServerName
-            };
-        }
-        */
 
         /// <summary>
         /// Ctor.
@@ -174,11 +120,10 @@ namespace BoSSS.Application.BoSSSpad {
                 using (new BlockTrace("Scheduler.OpenJob", tr)) {
                     JD = Scheduler.OpenJob(id);
                 }
-                Console.WriteLine("MsHPC: state of job " + JD.Name + ": " + JD.State);
-
+                
                 //}
                 /*
-                 * the following seems really slow 
+                 * the following seems really slow:
                  * 
                  * 
                 List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();

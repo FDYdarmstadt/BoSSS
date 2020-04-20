@@ -44,71 +44,122 @@ namespace PublicTestRunner {
         }
     }
 
-
-    static class PublicTestRunnerMain {
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface ITestTypeProvider {
+        
+        /// <summary>
+        /// List of serial tests (one MPI core) that should be executed in DEBUG and RELEASE mode.
+        /// Referencing any type of the assembly will do.
+        /// </summary>
+        Type[] FullTest { get; }
 
         /// <summary>
-        /// List of tests that should be executed in DEBUG and RELEASE; referencing any type of the assembly will do.
+        /// List of serial tests (one MPI core) that should be executed only in RELEASE mode.
+        /// Referencing any type of the assembly will do.
         /// </summary>
-        static Type[] FullTest = new Type[] {
-            typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-            typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-            typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
-            typeof(BoSSS.Application.ElementTests.ElementTests),
-            typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
-            typeof(CutCellQuadrature.Program),
-            typeof(BoSSS.Application.XDGTest.UnitTest),
-            typeof(BoSSS.Application.SpecFEM.AllUpTest),
-            typeof(BoSSS.Application.ipViscosity.TestSolution),
-            typeof(BoSSS.Application.MultigridTest.MultigridMain),
-            typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-            //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
-            typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
-            //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
-            typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
-            typeof(BoSSS.Application.ExternalBinding.Initializer),
-            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
-            typeof(MPITest.Program)
-        };
+        Type[] ReleaseOnlyTests { get; }
 
-        static Type[] ReleaseOnlyTests = new Type[] {
-            typeof(CNS.Program),
-            typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
-            typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
-            typeof(LTSTests.Program),
-            //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
-            typeof(NSE_SIMPLE.SIMPLESolver),
-            typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
-            typeof(ALTSTests.Program),
-            typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
-        };
+        /// <summary>
+        /// List of parallel tests that should be executed in DEBUG and RELEASE mode.
+        /// Referencing any type of the assembly will do.
+        /// </summary>
+        (Type type, int NoOfProcs)[] MpiFullTests { get; }
 
-        static (Type type, int NoOfProcs)[] MpiFullTests = new (Type type, int NoOfProcs)[] {
-            (typeof(MPITest.Program), 4),
-            (typeof(MPITest.Program), 3),
-            (typeof(MPITest.Program), 2),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
-        };
+        /// <summary>
+        /// List of parallel tests that should be executed only in RELEASE mode.
+        /// Referencing any type of the assembly will do.
+        /// </summary>
+        (Type type, int NoOfProcs)[] MpiReleaseOnlyTests { get; }
+    }
 
-        static (Type type, int NoOfProcs)[] MpiReleaseOnlyTests = new (Type type, int NoOfProcs)[] {
-            (typeof(MPITest.Program), 4),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-            (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
-            (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
-            //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
-            //(typeof(ALTSTests.Program), 4),
-            //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
-            (typeof(HilbertTest.HilbertTest), 4),
-            (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
-        };
+    /// <summary>
+    /// 
+    /// </summary>
+    public class PublicTests : ITestTypeProvider {
 
+        virtual public Type[] FullTest {
+            get {
+                return new Type[] {
+                        typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
+                        typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+                        typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
+                        typeof(BoSSS.Application.ElementTests.ElementTests),
+                        typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+                        typeof(CutCellQuadrature.Program),
+                        typeof(BoSSS.Application.XDGTest.UnitTest),
+                        typeof(BoSSS.Application.SpecFEM.AllUpTest),
+                        typeof(BoSSS.Application.ipViscosity.TestSolution),
+                        typeof(BoSSS.Application.MultigridTest.MultigridMain),
+                        typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+                        //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+                        typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+                        //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+                        typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
+                        typeof(BoSSS.Application.ExternalBinding.Initializer),
+                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
+                        typeof(MPITest.Program)
+                    };
+            }
+        }
 
+        virtual public Type[] ReleaseOnlyTests {
+            get {
+                return new Type[] {
+                        typeof(CNS.Program),
+                        typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
+                        typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
+                        typeof(LTSTests.Program),
+                        //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
+                        typeof(NSE_SIMPLE.SIMPLESolver),
+                        typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
+                        typeof(ALTSTests.Program),
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
+                    };
+            }
+        }
+
+        virtual public (Type type, int NoOfProcs)[] MpiFullTests {
+            get {
+                return new (Type type, int NoOfProcs)[] {
+                        (typeof(MPITest.Program), 4),
+                        (typeof(MPITest.Program), 3),
+                        (typeof(MPITest.Program), 2),
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+                    };
+            }
+        }
+
+        virtual public (Type type, int NoOfProcs)[] MpiReleaseOnlyTests {
+            get {
+                return new (Type type, int NoOfProcs)[] {
+                        (typeof(MPITest.Program), 4),
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
+                        //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
+                        //(typeof(ALTSTests.Program), 4),
+                        //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
+                        (typeof(HilbertTest.HilbertTest), 4),
+                        (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
+                    };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Subroutines of the test runner
+    /// </summary>
+    public static class PublicTestRunnerMain {
+
+        static ITestTypeProvider TestTypeProvider;
 
         static Assembly[] GetAllAssemblies() {
             var R = new HashSet<Assembly>();
 
-            foreach(var t in FullTest) {
+            foreach(var t in TestTypeProvider.FullTest) {
                 //Console.WriteLine("test type: " + t.FullName);
                 var a = t.Assembly;
                 //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
@@ -116,7 +167,7 @@ namespace PublicTestRunner {
                 //Console.WriteLine("  added? " + added);
             }
 #if !DEBUG
-            foreach (var t in ReleaseOnlyTests) {
+            foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
                 R.Add(t.Assembly);
             }
 #endif
@@ -129,7 +180,7 @@ namespace PublicTestRunner {
         static (Assembly Asbly, int NoOfProcs)[] GetAllMpiAssemblies() {
             var R = new List<(Assembly Asbly, int NoOfProcs)>();
 
-            foreach (var t in MpiFullTests) {
+            foreach (var t in TestTypeProvider.MpiFullTests) {
                 //Console.WriteLine("test type: " + t.type.FullName + " (" + t.NoOfProcs + " procs).");
                 //Console.WriteLine("  assembly: " + t.type.Assembly.FullName + " @ " + t.type.Assembly.Location);
                 bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
@@ -139,7 +190,7 @@ namespace PublicTestRunner {
                 //Console.WriteLine("  added? " + (!contains));
             }
 #if !DEBUG
-            foreach (var t in MpiReleaseOnlyTests) {
+            foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
                 bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
                 if (!contains) {
                     R.Add((t.type.Assembly, t.NoOfProcs));
@@ -208,8 +259,6 @@ namespace PublicTestRunner {
 
             return ret.ToArray();
         }
-
-
 
         static (int NoOfTests, string[] tests, string[] shortnames, string[] RequiredFiles) GetTestsInAssembly(Assembly a) {
             var r = new List<string>(); // full test names
@@ -802,19 +851,15 @@ namespace PublicTestRunner {
         }
 
 
-        static int Main(string[] args) {
-            /*
-            string targ = @"\\hpccluster\hpccluster-scratch\JenkinsCI\cluster\BoSSStstApr16_1446-PublicTestRunner2020Apr16_144921\ExternalBinding.CodeGen.exe";
-            Directory.GetCurrentDirectory();
-
-            var a = typeof(BoSSS.Application.ExternalBinding.CodeGen.Test).Assembly;
-            var origin = a.Location;
-
-            File.Copy(origin, targ);
-
-            return -1;
-            */
-            //Debugger.Launch();
+        /// <summary>
+        /// the real main-function
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="ttp">
+        /// A hook to find tests within the entire heap of assemblies.
+        /// </param>
+        /// <returns></returns>
+        public static int _Main(string[] args, ITestTypeProvider ttp) { 
             Console.WriteLine("BoSSS NUnit test runner.");
 
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
@@ -854,6 +899,10 @@ namespace PublicTestRunner {
 
             return ret;
             
+        }
+
+        static int Main(string[] args) {
+            return _Main(args, new PublicTests());
         }
     }
 }
