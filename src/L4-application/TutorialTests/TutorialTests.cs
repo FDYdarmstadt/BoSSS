@@ -30,6 +30,15 @@ namespace BoSSS.Application.TutorialTests {
 
         static int Main(string[] args) {
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+
+            // if we enter Main, it seems we are executing the tutorial tests locally...
+            // so delete any local tex files since we want to run the scripts from dolc/handbook
+            var localTexFiles = (new DirectoryInfo(Directory.GetCurrentDirectory())).GetFiles("*.tex");
+            foreach (var f in localTexFiles) {
+                f.Delete();
+            }
+
+
             BoSSS.Solution.Application.InitMPI(new string[0]);
             
           
@@ -45,7 +54,10 @@ namespace BoSSS.Application.TutorialTests {
 
 
             var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
-            int r = tr.Execute(new[] { "--result=result-TutorialTests.xml" });
+            
+            int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
+                //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad" 
+            });
 
 
             csMPI.Raw.mpiFinalize();
