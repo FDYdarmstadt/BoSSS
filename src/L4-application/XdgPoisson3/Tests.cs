@@ -33,20 +33,12 @@ namespace BoSSS.Application.XdgPoisson3 {
     static public class Tests {
 
 
-        /// <summary>
-        /// MPI finalize.
-        /// </summary>
-        [OneTimeTearDown]
-        static public void OneTimeTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
 
         /// <summary>
         /// MPI init.
         /// </summary>
         [OneTimeSetUp]
         static public void OneTimeSetUp() {
-            BoSSS.Solution.Application.InitMPI(new string[0]);
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 

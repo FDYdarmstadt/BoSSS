@@ -34,16 +34,6 @@ namespace LTSTests {
                 () => new NUnitTests());
         }
 
-        [OneTimeSetUp]
-        static public void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        [OneTimeTearDown]
-        static public void Cleanup() {
-            //Console.Out.Dispose();
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
-        }
 
         public static void LTS2order_dtCoarse(bool LTS = true, bool ALTS = false, int numOfSubgrids = 3) {
             Program test = null;

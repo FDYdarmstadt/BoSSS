@@ -46,17 +46,14 @@ namespace HilbertTest {
 #if Debug
             System.Threading.Thread.Sleep(5000);
 #endif
-            SetUp();
+            BoSSS.Solution.Application.InitMPI();
             Test();
-            Cleanup();
+            BoSSS.Solution.Application.FinalizeMPI();
 
         }
 
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            csMPI.Raw.mpiFinalize();
-        }
-
+   
+        [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
         [Test]
         public static void Test() {
             //ilPSP.Environment.StdoutOnlyOnRank0 = false;
@@ -92,7 +89,7 @@ namespace HilbertTest {
 
         static private bool TestingGridDistributionEven() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
-            string dbPath = @"..\..\Tests.zip";
+            string dbPath = @"Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
@@ -129,7 +126,7 @@ namespace HilbertTest {
 
         static private bool TestingdirectHilbertEven() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
-            string dbPath = @"..\..\Tests.zip";
+            string dbPath = @"Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_directHilbert(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
@@ -165,7 +162,7 @@ namespace HilbertTest {
         }
 
         static private bool TestingGridDistributionUneven() {
-            string dbPath = @"..\..\Tests.zip";
+            string dbPath = @"Tests.zip";
             //TestCase: 3x3 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "ccb23f25-04e9-467a-b667-bb3d642b6447", "9b24a2e6-2ce5-4de2-bd08-37a930f0df06", 3, 3);
             using (var solver = new HilbertTest()) {
@@ -201,7 +198,7 @@ namespace HilbertTest {
         }
 
         static private bool TestingdirectHilbertUneven() {
-            string dbPath = @"..\..\Tests.zip";
+            string dbPath = @"Tests.zip";
             //TestCase: 3x3 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_directHilbert(dbPath, "ccb23f25-04e9-467a-b667-bb3d642b6447", "9b24a2e6-2ce5-4de2-bd08-37a930f0df06", 3, 3);
             using (var solver = new HilbertTest()) {

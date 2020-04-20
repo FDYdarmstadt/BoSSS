@@ -36,22 +36,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
     [TestFixture]
     static class TestProgram {
 
-        /// <summary>
-        /// MPI init
-        /// </summary>
-        [OneTimeSetUp]
-        public static void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
 
-        /// <summary>
-        /// MPI teardown
-        /// </summary>
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            csMPI.Raw.mpiFinalize();
-        }
 
         [Test]
         public static void TestCartesian() {

@@ -50,16 +50,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         static void Main(string[] args) {
 
-            TestProgram.Init();
-            BoSSS.Application.FSI_Solver.TestProgram.PeriodicTest();
-            TestProgram.Cleanup();
-            throw new ApplicationException( "remove me");
-            /*
+            //BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Application.FSI_Solver.TestProgram.PeriodicTest();
+            //BoSSS.Solution.Application.FinalizeMPI();
+            //throw new ApplicationException( "remove me");
+            
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
                 return p;
             });
-            */
+            
         }
 
         /// <summary>

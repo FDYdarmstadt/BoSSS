@@ -32,17 +32,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     public static class ElementalTestProgramm {
 
-        [OneTimeSetUp]
-        public static void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        [OneTimeTearDown]
-        public static void Cleanup() {
-
-        }
-
-
+        
         // ==========================
         // Check boundary conditions
         // ==========================

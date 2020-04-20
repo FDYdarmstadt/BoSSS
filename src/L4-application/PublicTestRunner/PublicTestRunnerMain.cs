@@ -72,6 +72,11 @@ namespace PublicTestRunner {
         /// Referencing any type of the assembly will do.
         /// </summary>
         (Type type, int NoOfProcs)[] MpiReleaseOnlyTests { get; }
+
+        /// <summary>
+        /// Root for data searches
+        /// </summary>
+        DirectoryInfo GetRepositoryBaseDir();
     }
 
     /// <summary>
@@ -147,6 +152,34 @@ namespace PublicTestRunner {
                     };
             }
         }
+
+        virtual public DirectoryInfo GetRepositoryBaseDir() {
+            DirectoryInfo repoRoot;
+            try {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                repoRoot = dir.Parent.Parent.Parent.Parent.Parent;
+
+                var src = repoRoot.GetDirectories("src").SingleOrDefault();
+                var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
+                var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
+
+                if (src == null || !src.Exists)
+                    return null;
+                //throw new Exception();
+                if (libs == null || !libs.Exists)
+                    return null;
+                //throw new Exception();
+                if (doc == null || !doc.Exists)
+                    return null;
+                //throw new Exception();
+
+            } catch (Exception) {
+                return null;
+                //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
+            }
+
+            return repoRoot;
+        }
     }
 
     /// <summary>
@@ -202,29 +235,9 @@ namespace PublicTestRunner {
 
 
         static string[] LocateFile(string PartialPath) {
-            DirectoryInfo repoRoot;
-            try {
-                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                repoRoot = dir.Parent.Parent.Parent.Parent.Parent;
-
-                var src = repoRoot.GetDirectories("src").SingleOrDefault();
-                var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
-                var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
-
-                if (src == null || !src.Exists)
-                    return null;
-                //throw new Exception();
-                if (libs == null || !libs.Exists)
-                    return null;
-                //throw new Exception();
-                if (doc == null || !doc.Exists)
-                    return null;
-                //throw new Exception();
-
-            } catch (Exception) {
+            DirectoryInfo repoRoot = TestTypeProvider.GetRepositoryBaseDir();
+            if (repoRoot == null)
                 return null;
-                //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
-            }
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);
@@ -714,7 +727,7 @@ namespace PublicTestRunner {
                 }
 
                 // create job
-                Job j = new Job(final_jName, typeof(PublicTestRunnerMain));
+                Job j = new Job(final_jName, TestTypeProvider.GetType());
                 string resultFile = $"result-{dor}-{TestName}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {

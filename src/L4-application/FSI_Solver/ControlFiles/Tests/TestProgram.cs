@@ -24,16 +24,6 @@ namespace BoSSS.Application.FSI_Solver {
     [TestFixture]
     static class TestProgram {
 
-        [OneTimeSetUp]
-        public static void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            csMPI.Raw.mpiFinalize();
-        }
 
         [Test]
         public static void TestParticleParameter()

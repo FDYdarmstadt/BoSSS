@@ -13,9 +13,9 @@ namespace AdvancedSolverTests {
         }
 
         static void RunTest(TestBench test) {
-            test.SetUp();
+            Application.InitMPI();
             test.Run();
-            test.TearDown();
+            Application.FinalizeMPI();
         }
 
         static readonly Dictionary<string, TestBench> availableTests = new Dictionary<string, TestBench>()
