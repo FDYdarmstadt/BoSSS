@@ -15,38 +15,66 @@ limitations under the License.
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
+using MPI.Wrappers;
+using NUnit.Framework;
+using NUnitLite;
 
 namespace BoSSS.Application.TutorialTests {
 
     static class TutorialTestsMain {
-        
-        static void Main(string[] args) {
-            AllUpTest.OneTimeSetUp();
 
+        static int Main(string[] args) {
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+            BoSSS.Solution.Application.InitMPI(new string[0]);
+            
+          
+            //var losScriptos = GetListOfScripts();
+            //int r = 0;
+            //AllUpTest.RunWorksheet(losScriptos[int.Parse(args[0])]);
+            //foreach(var s in losScriptos) {
+            //    AllUpTest.RunWorksheet(s);
+            //    break;
+            //}
 
-            AllUpTest.RunWorksheet("quickStartCNS/IsentropicVortex.tex");
-            //AllUpTest.RunWorksheets("MetaJobManager/MetaJobManager.tex");
-            //AllUpTest.RunWorksheets("GridGeneration/GridGeneration.tex");
-            //AllUpTest.RunWorksheets("quickStartIBM/channel.tex");
-            //AllUpTest.RunWorksheets("shortTutorialMatlab/tutorialMatlab.tex");
-            // ----
-            //AllUpTest.RunWorksheets("tutorial2/uebung2tutorial.tex");
-            //AllUpTest.RunWorksheets("tutorial4/tutorial4.tex");
-            //AllUpTest.RunWorksheets("tutorial5/uebung5tutorial.tex");
-            //AllUpTest.RunWorksheets("tutorial6/tutorial6.tex");
-            //AllUpTest.RunWorksheets("tutorial9-SIP/sip.tex");
-            // ---
-            //AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
-            //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
-            //AllUpTest.RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
-            //AllUpTest.RunWorksheet("convergenceStudyTutorial/convStudy.tex"); 
 
-            AllUpTest.OneTimeTearDown();
+
+
+            var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
+            int r = tr.Execute(new[] { "--result=result-TutorialTests.xml" });
+
+
+            csMPI.Raw.mpiFinalize();
+
+            
+            return r;
         }
 
+        static string[] GetListOfScripts() {
+            var r = new List<string>();
+            
+
+            var mmm = typeof(AllUpTest).GetMethods();
+
+            foreach(var m in mmm) {
+
+                if(m.GetCustomAttribute(typeof(TestAttribute)) != null) {
+                    var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
+
+                    if(dc != null) {
+                        r.AddRange(dc.SomeFileNames);
+                    }
+                }
+            }
+
+            return r.ToArray();
+        }
     }
+
+
 }
+    

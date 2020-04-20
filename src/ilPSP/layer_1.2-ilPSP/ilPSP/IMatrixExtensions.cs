@@ -1945,6 +1945,24 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Accumulates some vector to the diagonal of the matrix.
+        /// </summary>
+        static public void AccDiag<T,V>(this T M, V diag) 
+            where T : IMatrix 
+            where V: IEnumerable<double> //
+        {
+            if (M.NoOfCols != M.NoOfRows)
+                throw new NotSupportedException("must be quadratic.");
+
+            int i = 0;
+            foreach(double d in diag) {
+                M[i, i] += d;
+                i++;
+            }
+        }
+
+
+        /// <summary>
         /// Least-squares-solve (LAPACK function DGELSY) with multiple right-hand-side vectors.
         /// </summary>
         /// <param name="Mtx">

@@ -17,6 +17,7 @@ limitations under the License.
 
 using BoSSS.Foundation.IO;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -86,13 +87,18 @@ namespace BoSSS.Application.BoSSSpad {
         
 
         /// <summary>
-        /// (Optional) object used by some batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
+        /// (Optional) object used by batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
         /// in order to identify the job.
         /// </summary>
         public string BatchProcessorIdentifierToken {
             private set;
             get;
         }
+
+        /// <summary>
+        /// Some internal object that the job keeps for the batch processor
+        /// </summary>
+        object BatchProcessorObject;
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
@@ -116,9 +122,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IEnumerable<Assembly> AllDependentAssemblies {
             get {
-                List<Assembly> assiList = new List<Assembly>();
+                HashSet<Assembly> assiList = new HashSet<Assembly>();
                 GetAllAssemblies(this.EntryAssembly, assiList, Path.GetDirectoryName(EntryAssembly.Location));
-                return assiList.AsReadOnly();
+                return assiList.ToArray();
             }
         }
 
@@ -132,11 +138,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="SearchPath">
         /// Path to search for assemblies
         /// </param>
-        private static void GetAllAssemblies(Assembly a, List<Assembly> assiList, string SearchPath) {
+        private static void GetAllAssemblies(Assembly a, HashSet<Assembly> assiList, string SearchPath) {
             if (assiList.Contains(a))
                 return;
-
             assiList.Add(a);
+
+            string fileName = Path.GetFileName(a.Location);
+            var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
+            if(allMatch.Length > 1) {
+                throw new ApplicationException("internal error in assembly collection.");
+            }
+
 
             foreach (AssemblyName b in a.GetReferencedAssemblies()) {
                 Assembly na;
@@ -614,16 +626,25 @@ namespace BoSSS.Application.BoSSSpad {
                 if (AssignedBatchProc == null)
                     throw new NotSupportedException("Job is not activated.");
 
-                string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
-                if (StdoutFile != null && File.Exists(StdoutFile)) {
-                    using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                        using (StreamReader reader = new StreamReader(stream)) {
-                            return reader.ReadToEnd();
+                string stdout = "";
+
+                Exception op(int itry) {
+                    string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
+                    if(StdoutFile != null && File.Exists(StdoutFile)) {
+                        using(FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                            using(StreamReader reader = new StreamReader(stream)) {
+                                stdout = reader.ReadToEnd();
+                            }
                         }
+                    } else {
+                        stdout = "";
                     }
-                } else {
-                    return "";
+                    return null;
                 }
+
+                BatchProcessorClient.RetryIOop(op, "reading of stdout file", true);
+
+                return stdout;
             }
         }
 
@@ -635,16 +656,25 @@ namespace BoSSS.Application.BoSSSpad {
                 if (AssignedBatchProc == null)
                     throw new NotSupportedException("Job is not activated.");
 
-                string StderrFile = AssignedBatchProc.GetStderrFile(this);
-                if (StderrFile != null && File.Exists(StderrFile)) {
-                    using (FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                        using (StreamReader reader = new StreamReader(stream)) {
-                            return reader.ReadToEnd();
+                string stderr = "";
+
+                Exception op(int itry) {
+                    string StderrFile = AssignedBatchProc.GetStderrFile(this);
+                    if(StderrFile != null && File.Exists(StderrFile)) {
+                        using(FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                            using(StreamReader reader = new StreamReader(stream)) {
+                                stderr = reader.ReadToEnd();
+                            }
                         }
+                    } else {
+                        stderr = "";
                     }
-                } else {
-                    return "";
+                    return null;
                 }
+
+                BatchProcessorClient.RetryIOop(op, "reading of stderr file", true);
+
+                return stderr;
             }
         }
 
@@ -681,14 +711,26 @@ namespace BoSSS.Application.BoSSSpad {
             private set;
         }
 
+        JobStatus? statusCache;
+
         /// <summary>
         /// Whats up with this job?
         /// </summary>
         public JobStatus Status {
             get {
-                int SubmitCount;
-                string DD;
-                return GetStatus(out SubmitCount, out DD);
+                if (statusCache == null) {
+                    int SubmitCount;
+                    string DD;
+                    var s = GetStatus(out SubmitCount, out DD);
+
+                    if(s == JobStatus.FinishedSuccessful) {
+                        statusCache = s; // probably, not a lot things are happening status-wise with this job anymore
+                    }
+
+                    return s;
+                } else {
+                    return statusCache.Value;
+                }
             }
         }
 
@@ -705,75 +747,77 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         private JobStatus GetStatus(out int SubmitCount, out string DD) {
-            SubmitCount = 0;
-            DD = null;
-            if (AssignedBatchProc == null)
-                return JobStatus.PreActivation;
+            using (new FuncTrace()) {
+                SubmitCount = 0;
+                DD = null;
+                if (AssignedBatchProc == null)
+                    return JobStatus.PreActivation;
 
-            // test is session exists
-            ISessionInfo[] RR = this.AllSessions;
-            ISessionInfo R = RR.Length > 0 ? RR.OrderBy(si => si.CreationTime).Last() : null;
+                // test if session exists
+                ISessionInfo[] RR = this.AllSessions;
+                ISessionInfo R = RR.Length > 0 ? RR.OrderBy(si => si.CreationTime).Last() : null;
 
-            if (RR.Any(si => !si.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
-                return JobStatus.FinishedSuccessful;
+                if (RR.Any(si => !si.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
+                    return JobStatus.FinishedSuccessful;
 
-            // find the deployment directory
-            var directories = AssignedBatchProc.GetAllExistingDeployDirectories(this);
-            if(this.DeploymentDirectory != null) {
-                DirectoryInfo diAdd = new DirectoryInfo(this.DeploymentDirectory);
-                if(diAdd.Exists) {
-                    if(directories == null)
-                        directories = new DirectoryInfo[0];
+                // find the deployment directory
+                var directories = AssignedBatchProc.GetAllExistingDeployDirectories(this);
+                if (this.DeploymentDirectory != null) {
+                    DirectoryInfo diAdd = new DirectoryInfo(this.DeploymentDirectory);
+                    if (diAdd.Exists) {
+                        if (directories == null)
+                            directories = new DirectoryInfo[0];
 
-                    diAdd.AddToArray(ref directories);
+                        diAdd.AddToArray(ref directories);
+                    }
                 }
-            }
 
-            if(directories == null || directories.Length <= 0) {
-                return JobStatus.PreActivation;
-                //throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
-            }
-            Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
-            DirectoryInfo _DD = directories.Last();
-            DD = _DD.FullName;
-            SubmitCount = DD.Length;
-
-            // Obtain token
-            string bpcToken = this.BatchProcessorIdentifierToken;
-            if(bpcToken.IsNullOrEmpty()) {
-                try {
-                    var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                    bpcToken = l.Trim();
-                    this.BatchProcessorIdentifierToken = bpcToken;
-                } catch(Exception) {
-                    // job was probably deployed, but never submitted
-                    // ignore this.
+                if (directories == null || directories.Length <= 0) {
+                    return JobStatus.PreActivation;
+                    //throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
                 }
+                Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
+                DirectoryInfo _DD = directories.Last();
+                DD = _DD.FullName;
+                SubmitCount = DD.Length;
+
+                // Obtain token
+                string bpcToken = this.BatchProcessorIdentifierToken;
+                if (bpcToken.IsNullOrEmpty()) {
+                    try {
+                        var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
+                        bpcToken = l.Trim();
+                        this.BatchProcessorIdentifierToken = bpcToken;
+                    } catch (Exception) {
+                        // job was probably deployed, but never submitted
+                        // ignore this.
+                    }
+                }
+
+                if (bpcToken.IsEmptyOrWhite())
+                    return JobStatus.PreActivation;
+
+                // ask the batch processor
+                AssignedBatchProc.EvaluateStatus(bpcToken, this.BatchProcessorObject, DD, out bool isRunning, out bool isTerminated, out int ExitCode);
+                bool isPending = (isRunning == false) && (isTerminated == false);
+
+                if (isPending)
+                    return JobStatus.PendingInExecutionQueue;
+                if (isRunning)
+                    return JobStatus.InProgress;
+
+                if (isTerminated) {
+                    if (R != null && R.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG))
+                        return JobStatus.Failed;
+
+                    if (ExitCode != 0)
+                        return JobStatus.Failed;
+
+                    return JobStatus.FinishedSuccessful;
+                }
+
+                throw new IOException("Unable to determine job status.");
             }
-            
-            if(bpcToken.IsEmptyOrWhite())
-                return JobStatus.PreActivation;
-
-            // ask the batch processor
-            AssignedBatchProc.EvaluateStatus(bpcToken, DD, out bool isRunning, out bool isTerminated, out int ExitCode);
-            bool isPending = (isRunning == false) && (isTerminated == false);
-
-            if (isPending)
-                return JobStatus.PendingInExecutionQueue;
-            if (isRunning)
-                return JobStatus.InProgress;
-
-            if(isTerminated) {
-                if(R != null && R.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG))
-                    return JobStatus.Failed;
-
-                if(ExitCode != 0)
-                    return JobStatus.Failed;
-
-                return JobStatus.FinishedSuccessful;
-            }
-
-            throw new IOException("Unable to determine job status.");
         }
 
         /// <summary>
@@ -788,114 +832,117 @@ namespace BoSSS.Application.BoSSSpad {
         /// resp. every time the worksheet is restarted.
         /// </remarks>
         public void Activate(BatchProcessorClient bpc) {
+            using (var tr = new FuncTrace()) {
+                // ============================================
+                // ensure that this method is only called once.
+                // ============================================
+                if (this.AssignedBatchProc != null)
+                    throw new NotSupportedException("Job can only be activated once.");
+                AssignedBatchProc = bpc;
 
-            // ============================================
-            // ensure that this method is only called once.
-            // ============================================
-            if (this.AssignedBatchProc != null)
-                throw new NotSupportedException("Job can only be activated once.");
-            AssignedBatchProc = bpc;
+                // ================
+                // check job status
+                // ================
+                string DeployDir;
+                int SubmitCount;
+                var status = GetStatus(out SubmitCount, out DeployDir);
+                this.DeploymentDirectory = DeployDir;
 
-            // ================
-            // check job status
-            // ================
-            string DeployDir;
-            int SubmitCount;
-            var status = GetStatus(out SubmitCount, out DeployDir);
-            this.DeploymentDirectory = DeployDir;
+                // ==============
+                // check Database
+                // ==============
+                var RR = this.AllSessions;
 
-            // ==============
-            // check Database
-            // ==============
-            var RR = this.AllSessions;
-
-            // =================
-            // decide what to do
-            // =================
-            switch (status) {
-                case JobStatus.PreActivation:
-                    DeployDir = null;
-                    this.DeploymentDirectory = null;
-                    Console.WriteLine("Job not submitted yet, or no result session is known - starting submission.");
-                    break;
-
-                case JobStatus.Failed:
-                    if (RR.Length <= 0) {
+                // =================
+                // decide what to do
+                // =================
+                switch (status) {
+                    case JobStatus.PreActivation:
                         DeployDir = null;
                         this.DeploymentDirectory = null;
-                        Console.WriteLine("Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.");
+                        Console.WriteLine("Job not submitted yet, or no result session is known - starting submission.");
                         break;
-                    }
-                    if (RetryCount <= SubmitCount) {
-                        Console.WriteLine("Job is failed {0} times, maximum number of tries reached, no further action.", SubmitCount);
+
+                    case JobStatus.Failed:
+                        if (RR.Length <= 0) {
+                            DeployDir = null;
+                            this.DeploymentDirectory = null;
+                            Console.WriteLine("Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.");
+                            break;
+                        }
+                        if (RetryCount <= SubmitCount) {
+                            Console.WriteLine("Job is failed {0} times, maximum number of tries reached, no further action.", SubmitCount);
+                            return;
+                        } else {
+                            DeployDir = null;
+                            this.DeploymentDirectory = null;
+                            Console.WriteLine("Job is failed, retrying (Submitted {0} times so far); performing new deployment and submission.", SubmitCount);
+                            break;
+                        }
+                    case JobStatus.PendingInExecutionQueue:
+                        Console.WriteLine("Job submitted, waiting for launch - no further action.");
                         return;
-                    } else {
-                        DeployDir = null;
-                        this.DeploymentDirectory = null;
-                        Console.WriteLine("Job is failed, retrying (Submitted {0} times so far); performing new deployment and submission.", SubmitCount);
-                        break;
-                    }
-                case JobStatus.PendingInExecutionQueue:
-                    Console.WriteLine("Job submitted, waiting for launch - no further action.");
-                    return;
 
-                case JobStatus.FinishedSuccessful:
-                    if (RR.Length <= 0) {
-                        DeployDir = null;
-                        this.DeploymentDirectory = null;
-                        Console.WriteLine("Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.");
-                        break;
-                    }
-                    ISessionInfo LatestSession = RR.OrderBy(sinf => sinf.CreationTime).Last();
-                    Console.WriteLine("Job was successful (according to job manager), latest session related to job is:");
-                    Console.WriteLine(LatestSession.ToString());
-                    Console.WriteLine("No further action.");
-                    return;
+                    case JobStatus.FinishedSuccessful:
+                        if (RR.Length <= 0) {
+                            DeployDir = null;
+                            this.DeploymentDirectory = null;
+                            Console.WriteLine("Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.");
+                            break;
+                        }
+                        ISessionInfo LatestSession = RR.OrderBy(sinf => sinf.CreationTime).Last();
+                        Console.WriteLine("Job was successful (according to job manager), latest session related to job is:");
+                        Console.WriteLine(LatestSession.ToString());
+                        Console.WriteLine("No further action.");
+                        return;
 
-                case JobStatus.InProgress:
-                    Console.Write("Job has been started (according to job manager), ");
-                    if (RR.Length > 0) {
-                        Console.WriteLine("latest known session is:");
-                        ISessionInfo LatestSession2 = RR.OrderBy(sinf => sinf.CreationTime).Last();
-                        Console.WriteLine(LatestSession2.ToString());
-                    } else {
-                        Console.WriteLine("no session information available at this point.");
-                    }
-                    Console.WriteLine("No further action.");
-                    return;
+                    case JobStatus.InProgress:
+                        Console.Write("Job has been started (according to job manager), ");
+                        if (RR.Length > 0) {
+                            Console.WriteLine("latest known session is:");
+                            ISessionInfo LatestSession2 = RR.OrderBy(sinf => sinf.CreationTime).Last();
+                            Console.WriteLine(LatestSession2.ToString());
+                        } else {
+                            Console.WriteLine("no session information available at this point.");
+                        }
+                        Console.WriteLine("No further action.");
+                        return;
 
-                default:
-                    throw new NotImplementedException();
-            }
-
-
-            // ========================================================================
-            // finally, it might be necessary to submit the job to the batch processor. 
-            // ========================================================================
-
-            // deploy executables:
-            bool RequiresDeploy = false;
-            if (DeployDir == null) {
-                if (!Directory.Exists(this.DeploymentDirectory) ||
-                        !File.Exists(Path.Combine(DeployDir, Path.GetFileName(this.EntryAssembly.Location)))) {
-                    RequiresDeploy = true;
+                    default:
+                        throw new NotImplementedException();
                 }
-            } else {
-                RequiresDeploy = false;
+
+
+                // ========================================================================
+                // finally, it might be necessary to submit the job to the batch processor. 
+                // ========================================================================
+
+                // deploy executables:
+                bool RequiresDeploy = false;
+                if (DeployDir == null) {
+                    if (!Directory.Exists(this.DeploymentDirectory) ||
+                            !File.Exists(Path.Combine(DeployDir, Path.GetFileName(this.EntryAssembly.Location)))) {
+                        RequiresDeploy = true;
+                    }
+                } else {
+                    RequiresDeploy = false;
+                }
+
+                // some database syncing might be necessary 
+                FiddleControlFile(bpc);
+
+                // deploy additional files
+                if (RequiresDeploy) {
+                    this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
+                    bpc.DeployExecuteables(this, AdditionalDeploymentFiles);
+                }
+
+                // submit job
+                using (new BlockTrace("JOB_SUBMISSION", tr)) {
+                    (this.BatchProcessorIdentifierToken, this.BatchProcessorObject) = bpc.Submit(this);
+                    File.WriteAllText(Path.Combine(this.DeploymentDirectory, "IdentifierToken.txt"), this.BatchProcessorIdentifierToken);
+                }
             }
-
-            // some database syncing might be necessary 
-            FiddleControlFile(bpc);
-
-            // deploy additional files
-            if (RequiresDeploy) {
-                this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
-                bpc.DeployExecuteables(this, AdditionalDeploymentFiles);
-            }
-
-            // submit job
-            this.BatchProcessorIdentifierToken = bpc.Submit(this);
-            File.WriteAllText(Path.Combine(this.DeploymentDirectory, "IdentifierToken.txt"), this.BatchProcessorIdentifierToken);
         }
 
         int m_RetryCount = 1;
