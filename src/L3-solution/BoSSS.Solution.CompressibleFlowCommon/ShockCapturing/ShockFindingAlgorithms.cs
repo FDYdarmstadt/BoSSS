@@ -17,8 +17,10 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Statistic;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
@@ -29,26 +31,493 @@ using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
+    public class InflectionPointFinder {
+        private SinglePhaseField gradientX;
+        private SinglePhaseField gradientY;
+        private SinglePhaseField hessianXX;
+        private SinglePhaseField hessianXY;
+        private SinglePhaseField hessianYX;
+        private SinglePhaseField hessianYY;
+
+        private MultidimensionalArray resultGradX;
+        private MultidimensionalArray resultGradY;
+        private MultidimensionalArray resultHessXX;
+        private MultidimensionalArray resultHessXY;
+        private MultidimensionalArray resultHessYX;
+        private MultidimensionalArray resultHessYY;
+
+        private readonly GridData gridData;
+        private readonly SinglePhaseField densityField;
+        private readonly SinglePhaseField avField;
+        private readonly SinglePhaseField levelSetField;
+
+        private readonly string sessionPath;
+        private readonly ISessionInfo session;
+
+        private bool patchRecoveryGradient;
+        private bool patchRecoveryHessian;
+
+        public MultidimensionalArray MorePoints {
+            get;
+            private set;
+        }
+
+        int maxNumOfIterations = 100;
+        int numOfPoints;
+        MultidimensionalArray fValues;
+        int[] iterations;
+        double[] finalFValues;
+        double eps;
+        bool[] converged;
+        int[] jCell;
+        double[] nodes;
+
+        //####################################################################################################
+        public InflectionPointFinder(string sessionPath, ISessionInfo session) {
+            this.sessionPath = sessionPath;
+            this.session = session;
+
+            ITimestepInfo myTimestep = session.Timesteps.Last();
+            this.gridData = (GridData)myTimestep.Fields.First().GridDat;
+            this.densityField = (SinglePhaseField)myTimestep.Fields.Find("rho");
+            this.avField = (SinglePhaseField)myTimestep.Fields.Find("artificialViscosity");
+            this.levelSetField = (SinglePhaseField)myTimestep.Fields.Find("levelSet");
+        }
+
+        public MultidimensionalArray FindPoints(SeedingSetup testCase, bool patchRecoveryGradient, bool patchRecoveryHessian) {
+            this.patchRecoveryGradient = patchRecoveryGradient;
+            this.patchRecoveryHessian = patchRecoveryHessian;
+
+            #region Create seedings points based on artificial viscosity
+            MultidimensionalArray avValues = ShockFindingHelperFunctions.GetAVMeanValues(gridData, avField);
+
+            switch (testCase) {
+                case SeedingSetup.av:
+                    numOfPoints = avValues.Lengths[0];
+                    //numOfPoints  = 330;
+                    eps = 1e-12;
+                    MorePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 2);
+                    fValues = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1);
+                    iterations = new int[numOfPoints];
+                    finalFValues = new double[numOfPoints];
+                    converged = new bool[numOfPoints];
+                    jCell = new int[numOfPoints];
+
+                    // Seed points
+                    for (int i = 0; i < numOfPoints; i++) {
+                        int jLocal = (int)avValues[i, 0];
+                        double[] cellCenter = gridData.Cells.GetCenter(jLocal);
+                        MorePoints[i, 0, 0] = cellCenter[0];
+                        MorePoints[i, 0, 1] = cellCenter[1];
+                    }
+                    break;
+
+                case SeedingSetup.av3x3:
+                    int numOfCells = avValues.Lengths[0];
+                    int numOfPointsPerCell = 9;
+                    numOfPoints = numOfCells * numOfPointsPerCell;
+                    eps = 1e-12;
+                    MorePoints = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 2);
+                    fValues = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1);
+                    iterations = new int[numOfPoints];
+                    finalFValues = new double[numOfPoints];
+                    converged = new bool[numOfPoints];
+                    jCell = new int[numOfPoints];
+
+                    // Seed points
+                    for (int i = 0; i < numOfCells; i++) {
+                        int jLocal = (int)avValues[i, 0];
+                        MultidimensionalArray grid = ShockFindingHelperFunctions.Get3x3Grid(gridData, jLocal);
+                        for (int j = 0; j < numOfPointsPerCell; j++) {
+                            MorePoints[i * numOfPointsPerCell + j, 0, 0] = grid[j, 0];
+                            MorePoints[i * numOfPointsPerCell + j, 0, 1] = grid[j, 1];
+                        }
+                    }
+                    break;
+
+                default:
+                    throw new NotSupportedException("This setting does not exist.");
+            }
+            Console.WriteLine("Total number of seeding points: " + MorePoints.Lengths[0]);
+            #endregion
+
+            #region Find inflection point for every seeding point
+            double[] x;
+            double[] y;
+            double[] secondDerivative;
+            double[] stepSize;
+            double[] values;
+
+            for (int i = 0; i < MorePoints.Lengths[0]; i++) {
+                //MultidimensionalArray points = MultidimensionalArray.Create(N + 1, 2);
+                secondDerivative = new double[maxNumOfIterations + 1];
+                stepSize = new double[maxNumOfIterations + 1];
+                values = new double[maxNumOfIterations + 1];
+                bool pointFound;
+                int jLocal;
+
+                //MultidimensionalArray start = MultidimensionalArray.CreateWrapper(startingPoint, 1, startingPoint.Length);
+                //points.SetSubArray(start.ExtractSubArrayShallow(0, -1), new int[]{0, -1});
+
+                int iter = WalkOnCurve(gridData, densityField, maxNumOfIterations, eps, MorePoints.ExtractSubArrayShallow(i, -1, -1), secondDerivative, stepSize, values, out pointFound, out jLocal);
+
+                x = MorePoints.ExtractSubArrayShallow(i, -1, 0).To1DArray();
+                y = MorePoints.ExtractSubArrayShallow(i, -1, 1).To1DArray();
+                Array.Resize(ref x, iter);
+                Array.Resize(ref y, iter);
+                //double[] results = new double[iter];
+
+                switch (testCase) {
+                    case SeedingSetup.av:
+                    case SeedingSetup.av3x3:
+                        //fValues[i, j] = field.ProbeAt(new double[] {x[j], y[j]});
+                        fValues.SetSubVector(values, new int[] { i, -1 });
+                        break;
+                }
+
+                // Save more stuff
+                iterations[i] = iter;
+                finalFValues[i] = fValues[i, iter - 1];
+                converged[i] = pointFound;
+                jCell[i] = jLocal;
+
+                if (i % 100 == 0) {
+                    Console.WriteLine("Point " + i);
+                }
+
+                // Write text file
+                //    string path = "C:\\tmp\\ReconstructLevelSet\\curve_" + i + ".txt";
+                //    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(path)){
+                //sw.WriteLine("x \t y \t z");
+
+                //        string resultLine;
+                //        for (int j = 0; j < iter; j++){
+                //            resultLine = x[j] + "\t" + y[j] + "\t" + fValues[i, j];
+                //            sw.WriteLine(resultLine);
+                //        }
+
+                //        sw.Flush();
+                //    }
+            }
+            #endregion
+
+            return MorePoints;
+        }
+
+        public void PlotAction(bool plotDGFields, bool plotSeedingsPoints, bool plotInflectionsPoints, bool plotCurves, bool plotStartEndPairs) {
+            if (plotDGFields) {
+                Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: 2);
+                plotDriver.PlotFields(sessionPath + "Fields", 0.0, new DGField[] { densityField, avField, levelSetField });
+            }
+
+            if (plotSeedingsPoints) {
+                // Write text file
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "seedingPoints.txt")) {
+                    string resultLine;
+                    for (int j = 0; j < MorePoints.Lengths[0]; j++) {
+                        resultLine = MorePoints[j, 0, 0] + "\t"
+                                   + MorePoints[j, 0, 1] + "\t"
+                                   + fValues[j, 0];
+                        sw.WriteLine(resultLine);
+                    }
+                    sw.Flush();
+                }
+            }
+
+            if (plotInflectionsPoints) {
+                // Write text file
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "inflectionPoints.txt")) {
+                    string resultLine;
+                    for (int j = 0; j < MorePoints.Lengths[0]; j++) {
+                        int pointFound = converged[j] ? 1 : 0;
+                        resultLine = MorePoints[j, iterations[j] - 1, 0] + "\t"
+                                   + MorePoints[j, iterations[j] - 1, 1] + "\t"
+                                   + finalFValues[j] + "\t"
+                                   + pointFound;
+                        sw.WriteLine(resultLine);
+                    }
+
+                    sw.Flush();
+                }
+            }
+
+            if (plotCurves) {
+                for (int i = 0; i < MorePoints.Lengths[0]; i++) {
+                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "curve_" + i + ".txt")) {
+                        string resultLine;
+                        for (int j = 0; j < iterations[i]; j++) {
+                            resultLine = MorePoints[i, j, 0] + "\t" + MorePoints[i, j, 1] + "\t" + fValues[i, j];
+                            sw.WriteLine(resultLine);
+                        }
+                        sw.Flush();
+                    }
+                }
+            }
+
+            for (int j = 0; j < MorePoints.Lengths[0]; j++) {
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "startEndPairs_" + j + ".txt")) {
+
+                    string resultLine;
+                    int pointFound = converged[j] ? 1 : 0;
+
+                    // Starting point
+                    resultLine = MorePoints[j, 0, 0] + "\t"
+                               + MorePoints[j, 0, 1] + "\t"
+                               + fValues[j, 0] + "\t"
+                               + pointFound;
+                    sw.WriteLine(resultLine);
+
+                    // End point
+                    resultLine = MorePoints[j, iterations[j] - 1, 0] + "\t"
+                               + MorePoints[j, iterations[j] - 1, 1] + "\t"
+                               + fValues[j, iterations[j] - 1] + "\t"
+                               + pointFound;
+                    sw.WriteLine(resultLine);
+
+                    sw.Flush();
+                }
+            }
+        }
+
+
+        //####################################################################################################
+        private double[] NormalizedGradientByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
+            if (this.gradientX == null) {
+                // Evaluate gradient
+                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+                gradientX = new SinglePhaseField(basis, "gradientX");
+                gradientY = new SinglePhaseField(basis, "gradientY");
+                gradientX.DerivativeByFlux(1.0, field, d: 0);
+                gradientY.DerivativeByFlux(1.0, field, d: 1);
+
+                if (this.patchRecoveryGradient) {
+                    gradientX = ShockFindingHelperFunctions.PatchRecovery(gradientX);
+                    gradientY = ShockFindingHelperFunctions.PatchRecovery(gradientY);
+                }
+            }
+
+            if (this.resultGradX == null) {
+                resultGradX = MultidimensionalArray.Create(1, 1);
+                resultGradY = MultidimensionalArray.Create(1, 1);
+            }
+
+            gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
+            gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
+
+            double[] gradient = new double[] { resultGradX[0, 0], resultGradY[0, 0] };
+            gradient.Normalize();
+            return gradient;
+        }
+
+        private double SecondDerivativeByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
+            if (this.gradientX == null) {
+                // Evaluate gradient
+                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+                gradientX = new SinglePhaseField(basis, "gradientX");
+                gradientY = new SinglePhaseField(basis, "gradientY");
+                gradientX.DerivativeByFlux(1.0, field, d: 0);
+                gradientY.DerivativeByFlux(1.0, field, d: 1);
+
+                if (this.patchRecoveryGradient) {
+                    gradientX = ShockFindingHelperFunctions.PatchRecovery(gradientX);
+                    gradientY = ShockFindingHelperFunctions.PatchRecovery(gradientY);
+                }
+            }
+
+            if (this.hessianXX == null) {
+                // Evaluate Hessian matrix
+                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+                hessianXX = new SinglePhaseField(basis, "hessianXX");
+                hessianXY = new SinglePhaseField(basis, "hessianXY");
+                hessianYX = new SinglePhaseField(basis, "hessianYX");
+                hessianYY = new SinglePhaseField(basis, "hessianYY");
+                hessianXX.DerivativeByFlux(1.0, gradientX, d: 0);
+                hessianXY.DerivativeByFlux(1.0, gradientX, d: 1);
+                hessianYX.DerivativeByFlux(1.0, gradientY, d: 0);
+                hessianYY.DerivativeByFlux(1.0, gradientY, d: 1);
+
+                if (this.patchRecoveryHessian) {
+                    hessianXX = ShockFindingHelperFunctions.PatchRecovery(hessianXX);
+                    hessianXY = ShockFindingHelperFunctions.PatchRecovery(hessianXY);
+                    hessianYX = ShockFindingHelperFunctions.PatchRecovery(hessianYX);
+                    hessianYY = ShockFindingHelperFunctions.PatchRecovery(hessianYY);
+                }
+            }
+
+            if (this.resultGradX == null) {
+                resultGradX = MultidimensionalArray.Create(1, 1);
+                resultGradY = MultidimensionalArray.Create(1, 1);
+            }
+
+            if (this.resultHessXX == null) {
+                resultHessXX = MultidimensionalArray.Create(1, 1);
+                resultHessXY = MultidimensionalArray.Create(1, 1);
+                resultHessYX = MultidimensionalArray.Create(1, 1);
+                resultHessYY = MultidimensionalArray.Create(1, 1);
+            }
+
+            gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
+            gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
+
+            hessianXX.Evaluate(jCell, 1, nodeSet, resultHessXX);
+            hessianXY.Evaluate(jCell, 1, nodeSet, resultHessXY);
+            hessianYX.Evaluate(jCell, 1, nodeSet, resultHessYX);
+            hessianYY.Evaluate(jCell, 1, nodeSet, resultHessYY);
+
+            // Compute second derivative along curve
+            double g_alpha_alpha = 2 * ((resultHessXX[0, 0] * resultGradX[0, 0] + resultHessXY[0, 0] * resultGradY[0, 0]) * resultGradX[0, 0]
+                + (resultHessYX[0, 0] * resultGradX[0, 0] + resultHessYY[0, 0] * resultGradY[0, 0]) * resultGradY[0, 0]);
+
+            if (g_alpha_alpha == 0.0 || g_alpha_alpha.IsNaN()) {
+                throw new NotSupportedException("Second derivative is zero");
+            }
+
+            return g_alpha_alpha;
+        }
+
+
+        /// <summary>
+        /// Algorithm to find an inflection point along a curve in the direction of the gradient
+        /// </summary>
+        /// <param name="gridData">The corresponding grid</param>
+        /// <param name="field">The DG field, which shall be evalauted</param>
+        /// <param name="maxIterations">The maximum number of iterations (user defined)</param>
+        /// <param name="threshold">A threshold, e.g. 1e-6 (user defined)</param>
+        /// <param name="points">The points along the curve (first entry has to be user defined)</param>
+        /// <param name="secondDerivative">The second derivative at each point</param>
+        /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
+        /// <returns></returns>
+        private int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, out int jLocal, bool byFlux = true) {
+            // Init
+            converged = false;
+
+            // Current (global) point
+            double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
+
+            // Compute global cell index of current point
+            gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+
+            // Compute local node set
+            NodeSet nodeSet = ShockFindingHelperFunctions.GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
+
+            // Get local cell index of current point
+            int j0Grd = gridData.CellPartitioning.i0;
+            jLocal = (int)(GlobalIndex - j0Grd);
+
+            // Evaluate the second derivative
+            try {
+                if (byFlux) {
+                    secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
+                } else {
+                    secondDerivative[0] = ShockFindingHelperFunctions.SecondDerivative(field, jLocal, nodeSet);
+                }
+            } catch (NotSupportedException) {
+                return 0;
+            }
+
+            // Evaluate the function
+            MultidimensionalArray f = MultidimensionalArray.Create(1, 1);
+            field.Evaluate(jLocal, 1, nodeSet, f);
+            values[0] = f[0, 0];
+
+            // Set initial step size to 0.5 * h_minGlobal
+            // Set the search direction depending on the sign of the curvature
+            stepSize[0] = 0.5 * gridData.Cells.h_minGlobal;
+
+            int n = 1;
+            while (n < maxIterations + 1) {
+                // Evaluate the gradient of the current point
+                double[] gradient;
+                if (byFlux) {
+                    gradient = NormalizedGradientByFlux(field, jLocal, nodeSet);
+                } else {
+                    gradient = ShockFindingHelperFunctions.NormalizedGradient(field, jLocal, nodeSet);
+                }
+
+                // Compute new point along curve
+                currentPoint[0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
+                currentPoint[1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
+
+                // New point has been calculated --> old node set is invalid
+                nodeSet = null;
+
+                // Check if new point is still in the same cell or has moved to one of its neighbours
+                if (!gridData.Cells.IsInCell(currentPoint, jLocal)) {
+                    // Get indices of cell neighbours
+                    gridData.GetCellNeighbours(jLocal, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);
+
+                    double[] newLocalCoord = new double[currentPoint.Length];
+                    bool found = false;
+                    // Find neighbour
+                    foreach (int neighbour in cellNeighbours) {
+                        if (gridData.Cells.IsInCell(currentPoint, neighbour, newLocalCoord)) {
+                            // If neighbour has been found, update
+                            jLocal = neighbour + j0Grd;
+                            nodeSet = ShockFindingHelperFunctions.GetLocalNodeSet(gridData, currentPoint, jLocal);
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (found == false) {
+                        Console.WriteLine("No neighbour found");
+                        return n;
+                    }
+                } else {
+                    // New point is still in the same cell --> update only the coordiantes (local node set)
+                    nodeSet = ShockFindingHelperFunctions.GetLocalNodeSet(gridData, currentPoint, jLocal + j0Grd);
+                }
+
+                // Update output
+                points[n, 0] = currentPoint[0];
+                points[n, 1] = currentPoint[1];
+
+                // Evaluate the function
+                f.Clear();
+                field.Evaluate(jLocal, 1, nodeSet, f);
+                values[n] = f[0, 0];
+
+                // Evaluate the second derivative of the new point
+                try {
+                    if (byFlux) {
+                        secondDerivative[n] = SecondDerivativeByFlux(field, jLocal, nodeSet);
+                    } else {
+                        secondDerivative[n] = ShockFindingHelperFunctions.SecondDerivative(field, jLocal, nodeSet);
+                    }
+                } catch (NotSupportedException) {
+                    break;
+                }
+
+                // Check if sign of second derivative has changed
+                // Halve the step size and change direction
+                if (Math.Sign(secondDerivative[n]) != Math.Sign(secondDerivative[n - 1])) {
+                    stepSize[n] = -stepSize[n - 1] / 2;
+                } else {
+                    stepSize[n] = stepSize[n - 1];
+                }
+
+                n++;
+
+                // Termination criterion
+                // Remark: n has already been incremented!
+                double[] diff = new double[currentPoint.Length];
+                diff[0] = points[n - 1, 0] - points[n - 2, 0];
+                diff[1] = points[n - 1, 1] - points[n - 2, 1];
+                if (diff.L2Norm() < threshold) {
+                    converged = true;
+                    break;
+                }
+            }
+
+            return n;
+        }
+    }
+
     /// <summary>
     /// Static methods for locating the inflection points of a DG Field
     /// in two dimensions. Can be used to find the shock location. 
     /// </summary>
-    public static class ShockFindingAlgorithms {
-
-        private static SinglePhaseField gradientX;
-        private static SinglePhaseField gradientY;
-        private static SinglePhaseField hessianXX;
-        private static SinglePhaseField hessianXY;
-        private static SinglePhaseField hessianYX;
-        private static SinglePhaseField hessianYY;
-
-        private static MultidimensionalArray resultGradX;
-        private static MultidimensionalArray resultGradY;
-        private static MultidimensionalArray resultHessXX;
-        private static MultidimensionalArray resultHessXY;
-        private static MultidimensionalArray resultHessYX;
-        private static MultidimensionalArray resultHessYY;
-
+    public static class ShockFindingHelperFunctions {
         public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalCellIndex) {
             int D = 2;
             MultidimensionalArray GlobalVerticesIn = MultidimensionalArray.CreateWrapper(globalPoint, 1, D);
@@ -71,34 +540,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double[] tmp = gradient.ExtractSubArrayShallow(0, 0, -1).To1DArray();
             tmp.Normalize();
             return tmp;
-        }
-
-        public static double[] NormalizedGradientByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
-            if (gradientX == null) {
-                // Evaluate gradient
-                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
-                gradientX = new SinglePhaseField(basis, "gradientX");
-                gradientY = new SinglePhaseField(basis, "gradientY");
-                gradientX.DerivativeByFlux(1.0, field, d: 0);
-                gradientY.DerivativeByFlux(1.0, field, d: 1);
-
-                if (PatchRecoveryGradient) {
-                    gradientX = PatchRecovery(gradientX);
-                    gradientY = PatchRecovery(gradientY);
-                }
-            }
-
-            if (resultGradX == null) {
-                resultGradX = MultidimensionalArray.Create(1, 1);
-                resultGradY = MultidimensionalArray.Create(1, 1);
-            }
-
-            gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
-            gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
-
-            double[] gradient = new double[] { resultGradX[0, 0], resultGradY[0, 0] };
-            gradient.Normalize();
-            return gradient;
         }
 
         public static double SecondDerivative(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
@@ -128,214 +569,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return g_alpha_alpha;
         }
 
-        public static double SecondDerivativeByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
-            if (gradientX == null) {
-                // Evaluate gradient
-                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
-                gradientX = new SinglePhaseField(basis, "gradientX");
-                gradientY = new SinglePhaseField(basis, "gradientY");
-                gradientX.DerivativeByFlux(1.0, field, d: 0);
-                gradientY.DerivativeByFlux(1.0, field, d: 1);
-
-                if (PatchRecoveryGradient) {
-                    gradientX = PatchRecovery(gradientX);
-                    gradientY = PatchRecovery(gradientY);
-                }
-            }
-
-            if (hessianXX == null) {
-                // Evaluate Hessian matrix
-                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
-                hessianXX = new SinglePhaseField(basis, "hessianXX");
-                hessianXY = new SinglePhaseField(basis, "hessianXY");
-                hessianYX = new SinglePhaseField(basis, "hessianYX");
-                hessianYY = new SinglePhaseField(basis, "hessianYY");
-                hessianXX.DerivativeByFlux(1.0, gradientX, d: 0);
-                hessianXY.DerivativeByFlux(1.0, gradientX, d: 1);
-                hessianYX.DerivativeByFlux(1.0, gradientY, d: 0);
-                hessianYY.DerivativeByFlux(1.0, gradientY, d: 1);
-
-                if (PatchRecoveryHessian) {
-                    hessianXX = PatchRecovery(hessianXX);
-                    hessianXY = PatchRecovery(hessianXY);
-                    hessianYX = PatchRecovery(hessianYX);
-                    hessianYY = PatchRecovery(hessianYY);
-                }
-            }
-
-            if (resultGradX == null) {
-                resultGradX = MultidimensionalArray.Create(1, 1);
-                resultGradY = MultidimensionalArray.Create(1, 1);
-            }
-
-            if (resultHessXX == null) {
-                resultHessXX = MultidimensionalArray.Create(1, 1);
-                resultHessXY = MultidimensionalArray.Create(1, 1);
-                resultHessYX = MultidimensionalArray.Create(1, 1);
-                resultHessYY = MultidimensionalArray.Create(1, 1);
-            }
-
-            gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
-            gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
-
-            hessianXX.Evaluate(jCell, 1, nodeSet, resultHessXX);
-            hessianXY.Evaluate(jCell, 1, nodeSet, resultHessXY);
-            hessianYX.Evaluate(jCell, 1, nodeSet, resultHessYX);
-            hessianYY.Evaluate(jCell, 1, nodeSet, resultHessYY);
-
-            // Compute second derivative along curve
-            double g_alpha_alpha = 2 * ((resultHessXX[0, 0] * resultGradX[0, 0] + resultHessXY[0, 0] * resultGradY[0, 0]) * resultGradX[0, 0]
-                + (resultHessYX[0, 0] * resultGradX[0, 0] + resultHessYY[0, 0] * resultGradY[0, 0]) * resultGradY[0, 0]);
-
-            if (g_alpha_alpha == 0.0 || g_alpha_alpha.IsNaN()) {
-                throw new NotSupportedException("Second derivative is zero");
-            }
-
-            return g_alpha_alpha;
-        }
-
-        private static bool PatchRecoveryGradient;
-
-        private static bool PatchRecoveryHessian;
-
-        /// <summary>
-        /// Algorithm to find an inflection point along a curve in the direction of the gradient
-        /// </summary>
-        /// <param name="gridData">The corresponding grid</param>
-        /// <param name="field">The DG field, which shall be evalauted</param>
-        /// <param name="maxIterations">The maximum number of iterations (user defined)</param>
-        /// <param name="threshold">A threshold, e.g. 1e-6 (user defined)</param>
-        /// <param name="points">The points along the curve (first entry has to be user defined)</param>
-        /// <param name="secondDerivative">The second derivative at each point</param>
-        /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
-        /// <returns></returns>
-        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, out int jLocal, bool patchRecoveryGradient = false, bool patchRecoveryHessian = false, bool byFlux = true) {
-            // Init
-            converged = false;
-            PatchRecoveryGradient = patchRecoveryGradient;
-            PatchRecoveryHessian = patchRecoveryHessian;
-
-            // Current (global) point
-            double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
-
-            // Compute global cell index of current point
-            gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
-
-            // Compute local node set
-            NodeSet nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
-
-            // Get local cell index of current point
-            int j0Grd = gridData.CellPartitioning.i0;
-            jLocal = (int)(GlobalIndex - j0Grd);
-
-            // Evaluate the second derivative
-            try {
-                if (byFlux) {
-                    secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
-                } else {
-                    secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
-                }
-            } catch (NotSupportedException) {
-                return 0;
-            }
-
-            // Evaluate the function
-            MultidimensionalArray f = MultidimensionalArray.Create(1, 1);
-            field.Evaluate(jLocal, 1, nodeSet, f);
-            values[0] = f[0, 0];
-
-            // Set initial step size to 0.5 * h_minGlobal
-            // Set the search direction depending on the sign of the curvature
-            stepSize[0] = 0.5 * gridData.Cells.h_minGlobal;
-
-            int n = 1;
-            while (n < maxIterations + 1) {
-                // Evaluate the gradient of the current point
-                double[] gradient;
-                if (byFlux) {
-                    gradient = NormalizedGradientByFlux(field, jLocal, nodeSet);
-                } else {
-                    gradient = NormalizedGradient(field, jLocal, nodeSet);
-                }
-
-                // Compute new point along curve
-                currentPoint[0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
-                currentPoint[1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
-
-                // New point has been calculated --> old node set is invalid
-                nodeSet = null;
-
-                // Check if new point is still in the same cell or has moved to one of its neighbours
-                if (!gridData.Cells.IsInCell(currentPoint, jLocal)) {
-                    // Get indices of cell neighbours
-                    gridData.GetCellNeighbours(jLocal, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);
-
-                    double[] newLocalCoord = new double[currentPoint.Length];
-                    bool found = false;
-                    // Find neighbour
-                    foreach (int neighbour in cellNeighbours) {
-                        if (gridData.Cells.IsInCell(currentPoint, neighbour, newLocalCoord)) {
-                            // If neighbour has been found, update
-                            jLocal = neighbour + j0Grd;
-                            nodeSet = GetLocalNodeSet(gridData, currentPoint, jLocal);
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (found == false) {
-                        Console.WriteLine("No neighbour found");
-                        return n;
-                    }
-                } else {
-                    // New point is still in the same cell --> update only the coordiantes (local node set)
-                    nodeSet = GetLocalNodeSet(gridData, currentPoint, jLocal + j0Grd);
-                }
-
-                // Update output
-                points[n, 0] = currentPoint[0];
-                points[n, 1] = currentPoint[1];
-
-                // Evaluate the function
-                f.Clear();
-                field.Evaluate(jLocal, 1, nodeSet, f);
-                values[n] = f[0, 0];
-
-                // Evaluate the second derivative of the new point
-                try {
-                    if (byFlux) {
-                        secondDerivative[n] = SecondDerivativeByFlux(field, jLocal, nodeSet);
-                    } else {
-                        secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
-                    }
-                } catch (NotSupportedException) {
-                    break;
-                }
-
-                // Check if sign of second derivative has changed
-                // Halve the step size and change direction
-                if (Math.Sign(secondDerivative[n]) != Math.Sign(secondDerivative[n - 1])) {
-                    stepSize[n] = -stepSize[n - 1] / 2;
-                } else {
-                    stepSize[n] = stepSize[n - 1];
-                }
-
-                n++;
-
-                // Termination criterion
-                // Remark: n has already been incremented!
-                double[] diff = new double[currentPoint.Length];
-                diff[0] = points[n - 1, 0] - points[n - 2, 0];
-                diff[1] = points[n - 1, 1] - points[n - 2, 1];
-                if (diff.L2Norm() < threshold) {
-                    converged = true;
-                    break;
-                }
-            }
-
-            return n;
-        }
-
         /// <summary>
         /// Returns all cells with the respective artificial viscosity value
         /// if the value is larger than zero
@@ -343,7 +576,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="gridData"></param>
         /// <param name="avField"></param>
         /// <returns><see cref="MultidimensionalArray"/>, first index: cellIndex, second index: artificial viscosity value</returns>
-        public static MultidimensionalArray GetAvMeanValues(GridData gridData, SinglePhaseField avField) {
+        public static MultidimensionalArray GetAVMeanValues(GridData gridData, SinglePhaseField avField) {
             CellMask allCells = CellMask.GetFullMask(gridData);
             double[] cellIndices = new double[allCells.NoOfItemsLocally];
             double[] avValues = new double[allCells.NoOfItemsLocally];
@@ -425,48 +658,48 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return grid;
         }
 
-        public static MultidimensionalArray SortPoints(GridData gridData, SinglePhaseField field, MultidimensionalArray points, bool byFlux = false) {
-            double[] sortedXCoords = new double[points.Lengths[0]];
-            double[] sortedYCoords = new double[points.Lengths[0]];
-            int keptEntries = 0;
+        //public static MultidimensionalArray SortPoints(GridData gridData, SinglePhaseField field, MultidimensionalArray points, bool byFlux = false) {
+        //    double[] sortedXCoords = new double[points.Lengths[0]];
+        //    double[] sortedYCoords = new double[points.Lengths[0]];
+        //    int keptEntries = 0;
 
-            for (int i = 0; i < points.Lengths[0]; i++) {
-                // Compute global cell index of the point
-                double[] currentPoint = points.ExtractSubArrayShallow(i, 0, -1).To1DArray();
-                gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+        //    for (int i = 0; i < points.Lengths[0]; i++) {
+        //        // Compute global cell index of the point
+        //        double[] currentPoint = points.ExtractSubArrayShallow(i, 0, -1).To1DArray();
+        //        gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
 
-                // Compute local node set
-                NodeSet nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
+        //        // Compute local node set
+        //        NodeSet nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
 
-                // Get local cell index of current point
-                int j0Grd = gridData.CellPartitioning.i0;
-                int jLocal = (int)(GlobalIndex - j0Grd);
+        //        // Get local cell index of current point
+        //        int j0Grd = gridData.CellPartitioning.i0;
+        //        int jLocal = (int)(GlobalIndex - j0Grd);
 
-                // Calculate secondDerivative
-                double secondDerivative;
-                if (byFlux) {
-                    secondDerivative = SecondDerivativeByFlux(field, jLocal, nodeSet);
-                } else {
-                    secondDerivative = SecondDerivative(field, jLocal, nodeSet);
-                }
+        //        // Calculate secondDerivative
+        //        double secondDerivative;
+        //        if (byFlux) {
+        //            secondDerivative = SecondDerivativeByFlux(field, jLocal, nodeSet,);
+        //        } else {
+        //            secondDerivative = SecondDerivative(field, jLocal, nodeSet);
+        //        }
 
-                // Select points where second derivative is larger than zero
-                if (secondDerivative > 0.0) {
-                    sortedXCoords[keptEntries] = currentPoint[0];
-                    sortedYCoords[keptEntries] = currentPoint[1];
-                    keptEntries++;
-                }
-            }
+        //        // Select points where second derivative is larger than zero
+        //        if (secondDerivative > 0.0) {
+        //            sortedXCoords[keptEntries] = currentPoint[0];
+        //            sortedYCoords[keptEntries] = currentPoint[1];
+        //            keptEntries++;
+        //        }
+        //    }
 
-            // Resize final array
-            MultidimensionalArray result = MultidimensionalArray.Create(keptEntries, points.Lengths[1], points.Lengths[2]);
-            for (int i = 0; i < keptEntries; i++) {
-                result[i, 0, 0] = sortedXCoords[i];
-                result[i, 0, 1] = sortedYCoords[i];
-            }
+        //    // Resize final array
+        //    MultidimensionalArray result = MultidimensionalArray.Create(keptEntries, points.Lengths[1], points.Lengths[2]);
+        //    for (int i = 0; i < keptEntries; i++) {
+        //        result[i, 0, 0] = sortedXCoords[i];
+        //        result[i, 0, 1] = sortedYCoords[i];
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
         /// <summary>
         /// Performs the patch recovery on a given DG field
@@ -626,5 +859,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             return result;
         }
+
+        public static DGField Find(this IEnumerable<DGField> fields, string name) {
+            return fields.Where(f => f.Identification == name).SingleOrDefault();
+        }
+    }
+
+    public enum SeedingSetup {
+        av = 0,
+        av3x3
     }
 }
