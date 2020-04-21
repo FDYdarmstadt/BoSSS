@@ -52,7 +52,7 @@ namespace BoSSS.Application.SipPoisson {
             R.DbPath = @"D:\bosss_db_masterthesis";
 
             //R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("T", new FieldOpts() { Degree = 4, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
@@ -60,7 +60,7 @@ namespace BoSSS.Application.SipPoisson {
             R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             R.LinearSolver.TargetBlockSize = 1000;
             R.SuperSampling = 2;
-            R.NoOfMultigridLevels = 4;
+            R.NoOfMultigridLevels = 4;            
 
             string grid = "49a33f3f-6c8d-48fe-af1d-054ff3c3d000";
 

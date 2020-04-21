@@ -393,15 +393,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
 
                     // compute the direct Injector for the coarsest mesh
-                    MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq.Last().iGeomCells.Count];
+                    MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq[0].iLogicalCells.NoOfLocalUpdatedCells];
 
                     Stopwatch stop = new Stopwatch();
                     stop.Start();
+
+                    /*
+                    // first approach by locally ensuring continuity and smoothness at inner edges
                     int maxMGlevel = agSeq.Length - 1;
                     AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis, InjectorCoarse);
 
                     // extract the hierarchical level to level injectors, recursive function
                     AggregationGridCurvedInjector.ExtractInjectorCurved(agSeq, maxDgBasis, Injectors, InjectorCoarse, maxMGlevel);
+                    */
+
+                    // second approach by projecting a basis onto the aggregate cell
+                    AggregationGridCurvedInjector.ProjectBasis(agSeq, maxDgBasis, Injectors, InjectorCoarse, 0);
+
                     stop.Stop();
                     Console.WriteLine($"Construction of curved MG operators took: {stop.Elapsed}");
                 }
@@ -460,7 +468,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             // plot aggregation basis
-            //PlotAggregationBasis(agSeq, maxDgBasis, Injectors);
+            PlotAggregationBasis(agSeq, maxDgBasis, Injectors);
 
             // create basis sequence
             // ---------------------
@@ -1281,7 +1289,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private static void PlotAggregationBasis(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors)
         {
-            int cellCount = _agGrd[0].iGeomCells.Count;
+            int cellCount = _agGrd[0].iGeomCells.NoOfLocalUpdatedCells;
             int Np = _maxDgBasis.Length;
             MultidimensionalArray directInjector = MultidimensionalArray.Create(cellCount, Np, Np);
 
@@ -1292,14 +1300,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             {
                 if (ilevel == 0)
                 {
-                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.Count; cell++)
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.NoOfLocalUpdatedCells; cell++)
                     {
                         directInjector.ExtractSubArrayShallow(cell, -1, -1).AccEye(1.0);
                     }
                 }
                 else
                 {
-                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.Count; cell++)
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.NoOfLocalUpdatedCells; cell++)
                     {
                         int lCell = _agGrd[ilevel].iGeomCells.GeomCell2LogicalCell[cell];
                         int lCell_before = _agGrd[ilevel - 1].iGeomCells.GeomCell2LogicalCell[cell];
@@ -1318,7 +1326,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 {
                     iLevelBasis[k] = new SinglePhaseField(_maxDgBasis, $"ag{ilevel}_p{k}");
                     // iterate over all cells
-                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.Count; cell++)
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.NoOfLocalUpdatedCells; cell++)
                     {
                         // set the coordinates for cell and basisfunction k
                         iLevelBasis[k].Coordinates.SetRow(cell, directInjector.ExtractSubArrayShallow(cell, -1, k).To1DArray());

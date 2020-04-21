@@ -615,7 +615,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        static public IBM_Control PeriodicHill(int k = 2, double HillHeight = 28) {
+        static public IBM_Control PeriodicHill(int k = 4, double HillHeight = 28) {
             IBM_Control C = new IBM_Control();
 
             if (HillHeight != 28) {
@@ -676,8 +676,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.GridFunc = delegate {
 
 
-                var _rNodes = GenericBlas.Linspace(0, 1, 41);
-                var _sNodes = GenericBlas.Linspace(0, 1, 16);
+                var _rNodes = GenericBlas.Linspace(0, 1, 17);
+                var _sNodes = GenericBlas.Linspace(0, 1, 9);
 
                 var grd = Grid2D.CurvedSquareGridChannel(_rNodes, _sNodes, CellType.Square_9, true, (r, s) => HillTopology(r, s, HillHeight));
 
@@ -806,7 +806,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MaxSolverIterations = 20;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 2;
+            C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.TargetBlockSize = 1000;
 
@@ -818,7 +818,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 70;
-            C.NoOfTimesteps = 1;//100000;
+            C.NoOfTimesteps = 1000;//100000;
 
             return C;
         }
