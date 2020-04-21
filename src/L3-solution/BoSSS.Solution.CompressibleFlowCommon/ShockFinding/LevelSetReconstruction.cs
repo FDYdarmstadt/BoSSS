@@ -33,24 +33,81 @@ using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
     public class LevelSetReconstruction {
-
         private readonly string sessionPath;
         private readonly ISessionInfo session;
         private readonly MultidimensionalArray input;
+        private readonly int[] iterationsNeeded;
+        private readonly bool[] converged;
+        private readonly int[] jCell;
 
-        public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input) {
+        private readonly int firstPoint;
+        private readonly int lastPointPlusOne;
+
+        private readonly List<MultidimensionalArray> _clusterings = new List<MultidimensionalArray>();
+        public List<MultidimensionalArray> Clusterings {
+            get {
+                if (_clusterings == null) {
+                    throw new NotImplementedException("List of clusterings is empty.");
+                }
+                return _clusterings;
+            }
+        }
+
+        public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input, int[] iterationsNeeded, bool[] converged, int[] jCell, int firstPoint = 0, int lastPointPlusOne = int.MinValue) {
             this.sessionPath = sessionPath;
             this.session = session;
             this.input = input;
+            this.iterationsNeeded = iterationsNeeded;
+
+            this.converged = converged;
+            this.jCell = jCell;
+            this.firstPoint = firstPoint;
+            if (lastPointPlusOne < 0) {
+                this.lastPointPlusOne = input.Lengths[0];
+            } else {
+                this.lastPointPlusOne = lastPointPlusOne;
+            }
         }
 
-        public void Clustering(double[] data, int numOfClusters, double[] initialMeans) {
+        public MultidimensionalArray CreateClustering(int numOfClusters, double[] initialMeans, double[] data = null) {
             Console.WriteLine("CLUSTERING: START");
-
+            if (data == null) {
+                data = ShockFindingExtensions.GetFinalFunctionValues(input, iterationsNeeded, firstPoint, lastPointPlusOne);
+            }
             Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
             int[] cellToCluster = kmeans.Cluster();
 
+            MultidimensionalArray clustering = MultidimensionalArray.Create(lastPointPlusOne - firstPoint, 4);
+            for (int i = 0; i < clustering.Lengths[0]; i++) {
+                int iInput = i + firstPoint;
+                clustering[i, 0] = input[iInput, iterationsNeeded[iInput] - 1, 0];      // x
+                clustering[i, 1] = input[iInput, iterationsNeeded[iInput] - 1, 1];      // y
+                clustering[i, 2] = data[iInput];                                        // function value
+                clustering[i, 3] = cellToCluster[iInput];                               // cellToCluster (e.g. cell 0 is in cluster 1)
+            }
+            _clusterings.Add(clustering);
+
             Console.WriteLine("CLUSTERING: END");
+            return clustering;
+        }
+
+        public void SaveClusteringToTextFile(int whichClustering, string path = null) {
+            if (path == null) {
+                path = sessionPath;
+            }
+
+            MultidimensionalArray clustering = _clusterings[whichClustering];
+            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(path + "clustering_" + whichClustering + ".txt")) {
+                string resultLine;
+                for (int i = 0; i < clustering.Lengths[0]; i++) {
+                    resultLine = clustering[i, 0]
+                        + "\t" + clustering[i, 1]
+                        + "\t" + clustering[i, 2]
+                        + "\t" + clustering[i, 3];
+                    sw.WriteLine(resultLine);
+                }
+                sw.Flush();
+            }
         }
     }
 }

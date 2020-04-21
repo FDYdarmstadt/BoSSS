@@ -32,11 +32,20 @@ using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
-    /// <summary>
-    /// Static methods for locating the inflection points of a DG Field
-    /// in two dimensions. Can be used to find the shock location. 
-    /// </summary>
     public static class ShockFindingExtensions {
+        public static double[] GetFinalFunctionValues(MultidimensionalArray input, int[] iterationsNeeded, int firstPoint = 0, int lastPointPlusOne = int.MinValue) {
+            if (lastPointPlusOne < 0) {
+                lastPointPlusOne = input.Lengths[0];
+            }
+
+            double[] result = new double[input.Lengths[0]];
+            for (int i = firstPoint; i < lastPointPlusOne; i++) {
+                result[i] = input[i, iterationsNeeded[i] - 1, 2];
+            }
+
+            return result;
+        }
+
         public static string[] CreateDirectories(string mainPath, string directoryName, List<ISessionInfo> sessions) {
             // Create directories where the data will be stored
             if (!Directory.Exists(mainPath)) {

@@ -258,16 +258,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             Console.WriteLine("PLOTTING: END");
         }
 
-        public double[] GetDataForClustering() {
-            double[] result = new double[Results.Lengths[0]];
-
-            for (int i = firstPoint; i < lastPointPlusOne; i++) {
-                result[i] = Results[i, IterationsNeeded[i] - 1, 2];
-            }
-
-            return result;
-        }
-
         private double[] NormalizedGradientByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
             if (this.gradientX == null) {
                 // Evaluate gradient
