@@ -60,9 +60,20 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         private int firstPoint;
         private int lastPointPlusOne;
 
-        private int[] iterations;
-        private bool[] converged;
-        private int[] jCell;
+        public int[] IterationsNeeded {
+            get;
+            private set;
+        }
+
+        public bool[] Converged {
+            get;
+            private set;
+        }
+
+        public int[] jCell {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Main result data structure
@@ -87,7 +98,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             this.levelSetField = (SinglePhaseField)myTimestep.Fields.Find("levelSet");
         }
 
-        public MultidimensionalArray FindPoints(SeedingSetup testCase, bool patchRecoveryGradient, bool patchRecoveryHessian, int firstPoint = 0, int maxNumOfIterations = 100, double eps = 1e-12) {
+        public MultidimensionalArray FindPoints(SeedingSetup seeding = SeedingSetup.av, bool patchRecoveryGradient = true, bool patchRecoveryHessian = true, int firstPoint = 0, int maxNumOfIterations = 100, double eps = 1e-12) {
             this.patchRecoveryGradient = patchRecoveryGradient;
             this.patchRecoveryHessian = patchRecoveryHessian;
             this.firstPoint = firstPoint;
@@ -96,7 +107,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             MultidimensionalArray avValues = ShockFindingHelperFunctions.GetAVMeanValues(gridData, avField);
             int numOfPoints;
 
-            switch (testCase) {
+            switch (seeding) {
                 case SeedingSetup.av:
                     numOfPoints = avValues.Lengths[0];
                     Results = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 5);
@@ -133,8 +144,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             lastPointPlusOne = Results.Lengths[0];
 
-            iterations = new int[numOfPoints];
-            converged = new bool[numOfPoints];
+            IterationsNeeded = new int[numOfPoints];
+            Converged = new bool[numOfPoints];
             jCell = new int[numOfPoints];
 
             Console.WriteLine("Total number of seeding points: " + Results.Lengths[0]);
@@ -147,8 +158,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 WalkOnCurve(gridData, densityField, Results.ExtractSubArrayShallow(i, -1, -1), out int iter, out bool pointFound, out int jLocal);
 
                 // Save more stuff
-                iterations[i] = iter;
-                converged[i] = pointFound;
+                IterationsNeeded[i] = iter;
+                Converged[i] = pointFound;
                 jCell[i] = jLocal;
 
                 if (i == firstPoint) {
@@ -194,10 +205,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "inflectionPoints.txt")) {
                     string resultLine;
                     for (int j = firstPoint; j < lastPointPlusOne; j++) {
-                        int pointFound = converged[j] ? 1 : 0;
-                        resultLine = Results[j, iterations[j] - 1, 0] + "\t"
-                                   + Results[j, iterations[j] - 1, 1] + "\t"
-                                   + Results[j, iterations[j] - 1, 2] + "\t"
+                        int pointFound = Converged[j] ? 1 : 0;
+                        resultLine = Results[j, IterationsNeeded[j] - 1, 0] + "\t"
+                                   + Results[j, IterationsNeeded[j] - 1, 1] + "\t"
+                                   + Results[j, IterationsNeeded[j] - 1, 2] + "\t"
                                    + pointFound;
                         sw.WriteLine(resultLine);
                     }
@@ -210,7 +221,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 for (int i = firstPoint; i < lastPointPlusOne; i++) {
                     using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "curve_" + i + ".txt")) {
                         string resultLine;
-                        for (int j = 0; j < iterations[i]; j++) {
+                        for (int j = 0; j < IterationsNeeded[i]; j++) {
                             resultLine = Results[i, j, 0] + "\t" + Results[i, j, 1] + "\t" + Results[i, j, 2];
                             sw.WriteLine(resultLine);
                         }
@@ -223,7 +234,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 for (int j = firstPoint; j < lastPointPlusOne; j++) {
                     using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "startEndPairs_" + j + ".txt")) {
                         string resultLine;
-                        int pointFound = converged[j] ? 1 : 0;
+                        int pointFound = Converged[j] ? 1 : 0;
 
                         // Starting point
                         resultLine = Results[j, 0, 0] + "\t"
@@ -233,9 +244,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                         sw.WriteLine(resultLine);
 
                         // End point
-                        resultLine = Results[j, iterations[j] - 1, 0] + "\t"
-                                   + Results[j, iterations[j] - 1, 1] + "\t"
-                                   + Results[j, iterations[j] - 1, 2] + "\t"
+                        resultLine = Results[j, IterationsNeeded[j] - 1, 0] + "\t"
+                                   + Results[j, IterationsNeeded[j] - 1, 1] + "\t"
+                                   + Results[j, IterationsNeeded[j] - 1, 2] + "\t"
                                    + pointFound;
                         sw.WriteLine(resultLine);
 
@@ -245,6 +256,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
 
             Console.WriteLine("PLOTTING: END");
+        }
+
+        public double[] GetDataForClustering() {
+            double[] result = new double[Results.Lengths[0]];
+
+            for (int i = firstPoint; i < lastPointPlusOne; i++) {
+                result[i] = Results[i, IterationsNeeded[i] - 1, 2];
+            }
+
+            return result;
         }
 
         private double[] NormalizedGradientByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
@@ -480,13 +501,34 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
     }
 
+    public class LevelSetReconstruction {
+
+        private readonly string sessionPath;
+        private readonly ISessionInfo session;
+        private readonly MultidimensionalArray input;
+
+        public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input) {
+            this.sessionPath = sessionPath;
+            this.session = session;
+            this.input = input;
+        }
+
+        public void Clustering(double[] data, int numOfClusters, double[] initialMeans) {
+            Console.WriteLine("CLUSTERING: START");
+
+            Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
+            int[] cellToCluster = kmeans.Cluster();
+
+            Console.WriteLine("PLOTTING: END");
+        }
+    }
+
     /// <summary>
     /// Static methods for locating the inflection points of a DG Field
     /// in two dimensions. Can be used to find the shock location. 
     /// </summary>
     public static class ShockFindingHelperFunctions {
-        public static string[] CreateDirectories(string mainPath, List<ISessionInfo> sessions) {
-            mainPath = mainPath + @"\ShockFindingAlgorithms\";
+        public static string[] CreateDirectories(string mainPath, string directoryName, List<ISessionInfo> sessions) {
             // Create directories where the data will be stored
             if (!Directory.Exists(mainPath)) {
                 System.IO.Directory.CreateDirectory(mainPath);
@@ -494,18 +536,18 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             string[] sessionPaths = new string[sessions.Count()];
             for (int i = 0; i < sessions.Count(); i++) {
-                sessionPaths[i] = mainPath + sessions.ElementAt(i).Name + @"\InflectionPoints\";
+                sessionPaths[i] = mainPath + sessions.ElementAt(i).Name + @"\" + directoryName + @"\";
                 if (!Directory.Exists(sessionPaths[i])) {
                     System.IO.Directory.CreateDirectory(sessionPaths[i]);
                 } else {
                     DirectoryInfo sessionDirectory = new DirectoryInfo(sessionPaths[i]);
 
-                    // Delete all directories in the current session directory
+                    // Delete all directories in the current directory
                     foreach (DirectoryInfo dir in sessionDirectory.EnumerateDirectories()) {
                         dir.Delete();
                     }
 
-                    // Delete all files in the current session directory
+                    // Delete all files in the current directory
                     foreach (FileInfo file in sessionDirectory.EnumerateFiles()) {
                         file.Delete();
                     }
