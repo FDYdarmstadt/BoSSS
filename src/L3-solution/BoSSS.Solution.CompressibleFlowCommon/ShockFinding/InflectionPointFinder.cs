@@ -60,20 +60,20 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         private int firstPoint;
         private int lastPointPlusOne;
 
-        public int[] IterationsNeeded {
-            get;
-            private set;
-        }
+        //public int[] IterationsNeeded {
+        //    get;
+        //    private set;
+        //}
 
-        public bool[] Converged {
-            get;
-            private set;
-        }
+        //public bool[] Converged {
+        //    get;
+        //    private set;
+        //}
 
-        public int[] jCell {
-            get;
-            private set;
-        }
+        //public int[] jCell {
+        //    get;
+        //    private set;
+        //}
 
         /// <summary>
         /// Main result data structure
@@ -83,6 +83,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// [0]: x-coordinates, [1]: y-coordinates, [2]: field values, [3]: second derivative, [4]: step size
         /// </summary>
         public MultidimensionalArray Results {
+            get;
+            private set;
+        }
+
+        public MultidimensionalArray ResultsExtended {
             get;
             private set;
         }
@@ -144,9 +149,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             lastPointPlusOne = Results.Lengths[0];
 
-            IterationsNeeded = new int[numOfPoints];
-            Converged = new bool[numOfPoints];
-            jCell = new int[numOfPoints];
+            ResultsExtended = MultidimensionalArray.Create(numOfPoints, 3);
+
+            //IterationsNeeded = new int[numOfPoints];
+            //Converged = new bool[numOfPoints];
+            //jCell = new int[numOfPoints];
 
             Console.WriteLine("Total number of seeding points: " + Results.Lengths[0]);
             #endregion
@@ -158,9 +165,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 WalkOnCurve(gridData, densityField, Results.ExtractSubArrayShallow(i, -1, -1), out int iter, out bool pointFound, out int jLocal);
 
                 // Save more stuff
-                IterationsNeeded[i] = iter;
-                Converged[i] = pointFound;
-                jCell[i] = jLocal;
+                ResultsExtended[i, 0] = iter;
+                ResultsExtended[i, 1] = pointFound == true ? 1 : 0;
+                ResultsExtended[i, 2] = jLocal;
 
                 if (i == firstPoint) {
                     Console.WriteLine("Point " + i + " (first)");
@@ -205,10 +212,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "inflectionPoints.txt")) {
                     string resultLine;
                     for (int j = firstPoint; j < lastPointPlusOne; j++) {
-                        int pointFound = Converged[j] ? 1 : 0;
-                        resultLine = Results[j, IterationsNeeded[j] - 1, 0] + "\t"
-                                   + Results[j, IterationsNeeded[j] - 1, 1] + "\t"
-                                   + Results[j, IterationsNeeded[j] - 1, 2] + "\t"
+                        int pointFound = (int)ResultsExtended[j, 1];
+                        resultLine = Results[j, (int)ResultsExtended[j, 0] - 1, 0] + "\t"
+                                   + Results[j, (int)ResultsExtended[j, 0] - 1, 1] + "\t"
+                                   + Results[j, (int)ResultsExtended[j, 0] - 1, 2] + "\t"
                                    + pointFound;
                         sw.WriteLine(resultLine);
                     }
@@ -221,7 +228,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 for (int i = firstPoint; i < lastPointPlusOne; i++) {
                     using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "curve_" + i + ".txt")) {
                         string resultLine;
-                        for (int j = 0; j < IterationsNeeded[i]; j++) {
+                        for (int j = 0; j < (int)ResultsExtended[i, 0]; j++) {
                             resultLine = Results[i, j, 0] + "\t" + Results[i, j, 1] + "\t" + Results[i, j, 2];
                             sw.WriteLine(resultLine);
                         }
@@ -234,7 +241,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 for (int j = firstPoint; j < lastPointPlusOne; j++) {
                     using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "startEndPairs_" + j + ".txt")) {
                         string resultLine;
-                        int pointFound = Converged[j] ? 1 : 0;
+                        int pointFound = (int)ResultsExtended[j, 1];
 
                         // Starting point
                         resultLine = Results[j, 0, 0] + "\t"
@@ -244,9 +251,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                         sw.WriteLine(resultLine);
 
                         // End point
-                        resultLine = Results[j, IterationsNeeded[j] - 1, 0] + "\t"
-                                   + Results[j, IterationsNeeded[j] - 1, 1] + "\t"
-                                   + Results[j, IterationsNeeded[j] - 1, 2] + "\t"
+                        resultLine = Results[j, (int)ResultsExtended[j, 0] - 1, 0] + "\t"
+                                   + Results[j, (int)ResultsExtended[j, 0] - 1, 1] + "\t"
+                                   + Results[j, (int)ResultsExtended[j, 0] - 1, 2] + "\t"
                                    + pointFound;
                         sw.WriteLine(resultLine);
 

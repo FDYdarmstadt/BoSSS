@@ -36,9 +36,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         private readonly string sessionPath;
         private readonly ISessionInfo session;
         private readonly MultidimensionalArray input;
-        private readonly int[] iterationsNeeded;
-        private readonly bool[] converged;
-        private readonly int[] jCell;
+        private readonly MultidimensionalArray inputExtended;
 
         private readonly int firstPoint;
         private readonly int lastPointPlusOne;
@@ -53,14 +51,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
-        public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input, int[] iterationsNeeded, bool[] converged, int[] jCell, int firstPoint = 0, int lastPointPlusOne = int.MinValue) {
+        public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input, MultidimensionalArray inputExtended, int firstPoint = 0, int lastPointPlusOne = int.MinValue) {
             this.sessionPath = sessionPath;
             this.session = session;
             this.input = input;
-            this.iterationsNeeded = iterationsNeeded;
+            this.inputExtended = inputExtended;
 
-            this.converged = converged;
-            this.jCell = jCell;
             this.firstPoint = firstPoint;
             if (lastPointPlusOne < 0) {
                 this.lastPointPlusOne = input.Lengths[0];
@@ -72,7 +68,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         public MultidimensionalArray CreateClustering(int numOfClusters, double[] initialMeans, double[] data = null) {
             Console.WriteLine("CLUSTERING: START");
             if (data == null) {
-                data = ShockFindingExtensions.GetFinalFunctionValues(input, iterationsNeeded, firstPoint, lastPointPlusOne);
+                data = ShockFindingExtensions.GetFinalFunctionValues(input, inputExtended.ExtractSubArrayShallow(-1, 0), firstPoint, lastPointPlusOne);
             }
             Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
             int[] cellToCluster = kmeans.Cluster();
@@ -80,8 +76,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             MultidimensionalArray clustering = MultidimensionalArray.Create(lastPointPlusOne - firstPoint, 4);
             for (int i = 0; i < clustering.Lengths[0]; i++) {
                 int iInput = i + firstPoint;
-                clustering[i, 0] = input[iInput, iterationsNeeded[iInput] - 1, 0];      // x
-                clustering[i, 1] = input[iInput, iterationsNeeded[iInput] - 1, 1];      // y
+                clustering[i, 0] = input[iInput, (int)inputExtended[iInput, 0] -1, 0];      // x
+                clustering[i, 1] = input[iInput, (int)inputExtended[iInput, 0] -1, 1];      // y
                 clustering[i, 2] = data[iInput];                                        // function value
                 clustering[i, 3] = cellToCluster[iInput];                               // cellToCluster (e.g. cell 0 is in cluster 1)
             }
