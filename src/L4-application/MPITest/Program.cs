@@ -32,23 +32,13 @@ namespace MPITest {
     public class Program {
 
         public static void Main(string[] args) {
-            Init();
+            BoSSS.Solution.Application.InitMPI();
             TestAllreduce();
             TestLapack();
-            Cleanup();
+            MPI.Wrappers.csMPI.Raw.mpiFinalize(); 
         }
 
-        [OneTimeSetUp]
-        public static void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
-        }
-
+   
         [Test]
         public static void Test() {
             TestAllreduce();

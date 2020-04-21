@@ -44,112 +44,116 @@ namespace PublicTestRunner {
         }
     }
 
-
-    static class PublicTestRunnerMain {
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface ITestTypeProvider {
+        
+        /// <summary>
+        /// List of serial tests (one MPI core) that should be executed in DEBUG and RELEASE mode.
+        /// Referencing any type of the assembly will do.
+        /// </summary>
+        Type[] FullTest { get; }
 
         /// <summary>
-        /// List of tests that should be executed in DEBUG and RELEASE; referencing any type of the assembly will do.
+        /// List of serial tests (one MPI core) that should be executed only in RELEASE mode.
+        /// Referencing any type of the assembly will do.
         /// </summary>
-        static Type[] FullTest = new Type[] {
-            typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-            typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-            typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
-            typeof(BoSSS.Application.ElementTests.ElementTests),
-            typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
-            typeof(CutCellQuadrature.Program),
-            typeof(BoSSS.Application.XDGTest.UnitTest),
-            typeof(BoSSS.Application.SpecFEM.AllUpTest),
-            typeof(BoSSS.Application.ipViscosity.TestSolution),
-            typeof(BoSSS.Application.MultigridTest.MultigridMain),
-            typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-            //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
-            typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
-            //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
-            typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
-            typeof(BoSSS.Application.ExternalBinding.Initializer),
-            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
-            typeof(MPITest.Program)
-        };
+        Type[] ReleaseOnlyTests { get; }
 
-        static Type[] ReleaseOnlyTests = new Type[] {
-            typeof(CNS.Program),
-            typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
-            typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
-            typeof(LTSTests.Program),
-            //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
-            typeof(NSE_SIMPLE.SIMPLESolver),
-            typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
-            typeof(ALTSTests.Program),
-            typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
-        };
+        /// <summary>
+        /// List of parallel tests that should be executed in DEBUG and RELEASE mode.
+        /// Referencing any type of the assembly will do.
+        /// </summary>
+        (Type type, int NoOfProcs)[] MpiFullTests { get; }
 
-        static (Type type, int NoOfProcs)[] MpiFullTests = new (Type type, int NoOfProcs)[] {
-            (typeof(MPITest.Program), 4),
-            (typeof(MPITest.Program), 3),
-            (typeof(MPITest.Program), 2),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
-        };
+        /// <summary>
+        /// List of parallel tests that should be executed only in RELEASE mode.
+        /// Referencing any type of the assembly will do.
+        /// </summary>
+        (Type type, int NoOfProcs)[] MpiReleaseOnlyTests { get; }
 
-        static (Type type, int NoOfProcs)[] MpiReleaseOnlyTests = new (Type type, int NoOfProcs)[] {
-            (typeof(MPITest.Program), 4),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-            (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
-            (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
-            //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
-            //(typeof(ALTSTests.Program), 4),
-            //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
-            (typeof(HilbertTest.HilbertTest), 4),
-            (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
-        };
+        /// <summary>
+        /// Root for data searches
+        /// </summary>
+        DirectoryInfo GetRepositoryBaseDir();
+    }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class PublicTests : ITestTypeProvider {
 
-
-        static Assembly[] GetAllAssemblies() {
-            var R = new HashSet<Assembly>();
-
-            foreach(var t in FullTest) {
-                //Console.WriteLine("test type: " + t.FullName);
-                var a = t.Assembly;
-                //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
-                bool added = R.Add(a);
-                //Console.WriteLine("  added? " + added);
+        virtual public Type[] FullTest {
+            get {
+                return new Type[] {
+                        typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
+                        typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+                        typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
+                        typeof(BoSSS.Application.ElementTests.ElementTests),
+                        typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+                        typeof(CutCellQuadrature.Program),
+                        typeof(BoSSS.Application.XDGTest.UnitTest),
+                        typeof(BoSSS.Application.SpecFEM.AllUpTest),
+                        typeof(BoSSS.Application.ipViscosity.TestSolution),
+                        typeof(BoSSS.Application.MultigridTest.MultigridMain),
+                        //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+                        typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+                        //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+                        typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
+                        typeof(BoSSS.Application.ExternalBinding.Initializer),
+                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+                        typeof(MPITest.Program)
+                    };
             }
-#if !DEBUG
-            foreach (var t in ReleaseOnlyTests) {
-                R.Add(t.Assembly);
-            }
-#endif
-
-            
-
-            return R.ToArray();
         }
 
-        static (Assembly Asbly, int NoOfProcs)[] GetAllMpiAssemblies() {
-            var R = new List<(Assembly Asbly, int NoOfProcs)>();
-
-            foreach (var t in MpiFullTests) {
-                //Console.WriteLine("test type: " + t.type.FullName + " (" + t.NoOfProcs + " procs).");
-                //Console.WriteLine("  assembly: " + t.type.Assembly.FullName + " @ " + t.type.Assembly.Location);
-                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                if(!contains) {
-                    R.Add((t.type.Assembly, t.NoOfProcs));
-                }
-                //Console.WriteLine("  added? " + (!contains));
+        virtual public Type[] ReleaseOnlyTests {
+            get {
+                return new Type[] {
+                        typeof(CNS.Program),
+                        typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
+                        typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
+                        typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
+                        typeof(LTSTests.Program),
+                        //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
+                        typeof(NSE_SIMPLE.SIMPLESolver),
+                        typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
+                        typeof(ALTSTests.Program),
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
+                    };
             }
-#if !DEBUG
-            foreach (var t in MpiReleaseOnlyTests) {
-                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                if (!contains) {
-                    R.Add((t.type.Assembly, t.NoOfProcs));
-                }
-            }
-#endif
-            return R.ToArray();
         }
 
-        static string[] LocateFile(string PartialPath) {
+        virtual public (Type type, int NoOfProcs)[] MpiFullTests {
+            get {
+                return new (Type type, int NoOfProcs)[] {
+                        (typeof(MPITest.Program), 4),
+                        (typeof(MPITest.Program), 3),
+                        (typeof(MPITest.Program), 2),
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+                    };
+            }
+        }
+
+        virtual public (Type type, int NoOfProcs)[] MpiReleaseOnlyTests {
+            get {
+                return new (Type type, int NoOfProcs)[] {
+                        (typeof(MPITest.Program), 4),
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
+                        //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
+                        //(typeof(ALTSTests.Program), 4),
+                        //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
+                        (typeof(HilbertTest.HilbertTest), 4),
+                        (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
+                    };
+            }
+        }
+
+        virtual public DirectoryInfo GetRepositoryBaseDir() {
             DirectoryInfo repoRoot;
             try {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -161,25 +165,86 @@ namespace PublicTestRunner {
 
                 if (src == null || !src.Exists)
                     return null;
-                    //throw new Exception();
+                //throw new Exception();
                 if (libs == null || !libs.Exists)
                     return null;
-                    //throw new Exception();
+                //throw new Exception();
                 if (doc == null || !doc.Exists)
                     return null;
-                    //throw new Exception();
+                //throw new Exception();
 
             } catch (Exception) {
                 return null;
                 //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
             }
 
+            return repoRoot;
+        }
+    }
+
+    /// <summary>
+    /// Subroutines of the test runner
+    /// </summary>
+    public static class PublicTestRunnerMain {
+
+        static ITestTypeProvider TestTypeProvider;
+
+        static Assembly[] GetAllAssemblies() {
+            var R = new HashSet<Assembly>();
+
+            foreach (var t in TestTypeProvider.FullTest) {
+                //Console.WriteLine("test type: " + t.FullName);
+                var a = t.Assembly;
+                //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
+                bool added = R.Add(a);
+                //Console.WriteLine("  added? " + added);
+            }
+#if !DEBUG
+            foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
+                R.Add(t.Assembly);
+            }
+#endif
+
+
+
+            return R.ToArray();
+        }
+
+        static (Assembly Asbly, int NoOfProcs)[] GetAllMpiAssemblies() {
+            var R = new List<(Assembly Asbly, int NoOfProcs)>();
+
+            foreach (var t in TestTypeProvider.MpiFullTests) {
+                //Console.WriteLine("test type: " + t.type.FullName + " (" + t.NoOfProcs + " procs).");
+                //Console.WriteLine("  assembly: " + t.type.Assembly.FullName + " @ " + t.type.Assembly.Location);
+                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                if (!contains) {
+                    R.Add((t.type.Assembly, t.NoOfProcs));
+                }
+                //Console.WriteLine("  added? " + (!contains));
+            }
+#if !DEBUG
+            foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
+                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                if (!contains) {
+                    R.Add((t.type.Assembly, t.NoOfProcs));
+                }
+            }
+#endif
+            return R.ToArray();
+        }
+
+
+        static string[] LocateFile(string PartialPath) {
+            DirectoryInfo repoRoot = TestTypeProvider.GetRepositoryBaseDir();
+            if (repoRoot == null)
+                return null;
+
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);
-            if(r == null || r.Length <= 0) {
-                throw new IOException("unable to find file '" + PartialPath  + "'"); 
+            if (r == null || r.Length <= 0) {
+                throw new IOException("unable to find file '" + PartialPath + "'");
             }
-            
+
             return r;
         }
 
@@ -201,7 +266,7 @@ namespace PublicTestRunner {
 
             }
 
-            foreach(var d in absPath.GetDirectories()) {
+            foreach (var d in absPath.GetDirectories()) {
                 ret.AddRange(LocateFileRecursive(RelPath + d.Name + "/", d, SomeFileName));
             }
 
@@ -209,34 +274,32 @@ namespace PublicTestRunner {
             return ret.ToArray();
         }
 
-
-
         static (int NoOfTests, string[] tests, string[] shortnames, string[] RequiredFiles) GetTestsInAssembly(Assembly a) {
             var r = new List<string>(); // full test names
             var l = new List<string>(); // short names 
             var s = new HashSet<string>();
 
             var ttt = a.GetTypes();
-            foreach(var t in ttt) {
-                if(t.IsClass) {
+            foreach (var t in ttt) {
+                if (t.IsClass) {
                     var mmm = t.GetMethods();
 
-                    foreach(var m in mmm) {
+                    foreach (var m in mmm) {
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
-                        
-                        if(m.GetCustomAttribute(typeof(TestAttribute)) != null) {
-                            r.Add(t.FullName + "." +  m.Name);
+
+                        if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
+                            r.Add(t.FullName + "." + m.Name);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
                         }
 
-                        if(m.GetCustomAttribute(typeof(TestAttribute)) != null
+                        if (m.GetCustomAttribute(typeof(TestAttribute)) != null
                            || m.GetCustomAttribute(typeof(SetUpAttribute)) != null
                            || m.GetCustomAttribute(typeof(OneTimeSetUpAttribute)) != null) {
                             var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
 
-                            if(dc != null) {
-                                foreach(string someFile in dc.SomeFileNames) {
+                            if (dc != null) {
+                                foreach (string someFile in dc.SomeFileNames) {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
@@ -298,13 +361,23 @@ namespace PublicTestRunner {
                 tracerfile.Flush();
                 tracerfile.Close();
                 tracerfile.Dispose();
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Console.Error.WriteLine(e.GetType().Name + " during closing of tracing: " + e.Message);
             }
         }
 
+        static bool FilterAssembly(Assembly a, string AssemblyFilter) {
+            if (AssemblyFilter.IsEmptyOrWhite())
+                return true;
+            string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var filter in sFilters) {
+                if (filter.WildcardMatch(Path.GetFileName(a.Location)))
+                    return true;
+            }
+            return false;
+        }
 
-        static public int JobManagerRun(string AssemblyFilter) {
+        static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             if (MpiSize != 1) {
@@ -329,7 +402,7 @@ namespace PublicTestRunner {
                 InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
-                BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
+                BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
 
                 DirectoryInfo NativeOverride;
                 if (!bpc.DeployRuntime) {
@@ -344,31 +417,25 @@ namespace PublicTestRunner {
                 {
                     var assln = GetAllAssemblies();
                     foreach (var a in assln) {
-                        if (!AssemblyFilter.IsEmptyOrWhite()) {
-                            if (!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
-                                continue;
-                        }
-
-                        var allTst4Assi = GetTestsInAssembly(a);
-
-                        for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                            allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                        if (FilterAssembly(a, AssemblyFilter)) {
+                            var allTst4Assi = GetTestsInAssembly(a);
+                            for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                            }
                         }
                     }
                 }
                 {
                     var ParAssln = GetAllMpiAssemblies();
                     foreach (var TT in ParAssln) {
-                        if (!AssemblyFilter.IsEmptyOrWhite()) {
-                            if (!AssemblyFilter.WildcardMatch(Path.GetFileName(TT.Asbly.Location)))
-                                continue;
-                        }
+                        if (FilterAssembly(TT.Asbly, AssemblyFilter)) {
 
-                        var a = TT.Asbly;
-                        var allTst4Assi = GetTestsInAssembly(a);
+                            var a = TT.Asbly;
+                            var allTst4Assi = GetTestsInAssembly(a);
 
-                        for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                            allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                            for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                            }
                         }
                     }
                 }
@@ -660,7 +727,7 @@ namespace PublicTestRunner {
                 }
 
                 // create job
-                Job j = new Job(final_jName, typeof(PublicTestRunnerMain));
+                Job j = new Job(final_jName, TestTypeProvider.GetType());
                 string resultFile = $"result-{dor}-{TestName}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
@@ -716,7 +783,7 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
-            var assln = GetAllAssemblies();
+            Assembly[] assln = GetAllAssemblies();
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
@@ -734,18 +801,21 @@ namespace PublicTestRunner {
                 string resFileName = Path.GetFileNameWithoutExtension(arg_i.Replace("--result=", ""));
                 args[i] = "--result=" + MpiResFileNameMod( MpiRank, MpiSize, resFileName);
 
-            }
 
+                var parAssis = GetAllMpiAssemblies();
+                foreach(var t in parAssis) {
+                    t.Asbly.AddToArray(ref assln);
+                }
+            }
 
             int count = 0;
             bool ret = false;
             foreach(var a in assln) {
-                if(!AssemblyFilter.IsEmptyOrWhite()) {
-                    if(!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
-                        continue;
-
-                    Console.WriteLine("Matching assembly: " + a.Location);
+                if(!FilterAssembly(a, AssemblyFilter)) {
+                    continue;
                 }
+                Console.WriteLine("Matching assembly: " + a.Location);
+                
                 count++;
 
                 MegaMurxPlusPlus(a);
@@ -766,9 +836,10 @@ namespace PublicTestRunner {
                 ret = ret | (r != 0);
             }
 
-            if (!AssemblyFilter.IsEmptyOrWhite()) {
+            {
                 if(count <= 0) {
                     Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
+                    return -1;
                 }
             }
 
@@ -796,25 +867,23 @@ namespace PublicTestRunner {
             Console.WriteLine("         nunit3        : execute all tests in FILTER within this process.");
             Console.WriteLine("                         additional arguments are passed to NUnit.");
             Console.WriteLine("         runjobmanager : submit tests to the job manger.");
+            Console.WriteLine("         help          : prints this message.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
 
         }
 
 
-        static int Main(string[] args) {
-            /*
-            string targ = @"\\hpccluster\hpccluster-scratch\JenkinsCI\cluster\BoSSStstApr16_1446-PublicTestRunner2020Apr16_144921\ExternalBinding.CodeGen.exe";
-            Directory.GetCurrentDirectory();
-
-            var a = typeof(BoSSS.Application.ExternalBinding.CodeGen.Test).Assembly;
-            var origin = a.Location;
-
-            File.Copy(origin, targ);
-
-            return -1;
-            */
-            //Debugger.Launch();
+        /// <summary>
+        /// the real main-function
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="ttp">
+        /// A hook to find tests within the entire heap of assemblies.
+        /// </param>
+        /// <returns></returns>
+        public static int _Main(string[] args, ITestTypeProvider ttp) {
+            TestTypeProvider = ttp;
             Console.WriteLine("BoSSS NUnit test runner.");
 
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
@@ -833,16 +902,40 @@ namespace PublicTestRunner {
             BoSSS.Solution.Application.InitMPI();
 
 
-            int ret = -1; 
-            switch (args[0]) {
+            int ret = -1;
+            switch(args[0]) {
                 case "nunit3":
                 ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
                 break;
-                               
+
 
                 case "runjobmanager":
                 DeleteResultFiles();
-                ret = JobManagerRun(args[1]);
+                int iQueue = 1;
+                string filter = args[1];
+                if(args.Length == 3) {
+                    if(args[2].StartsWith("queue#")) {
+                        try {
+                            iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                        } catch(Exception) {
+                            ret = -1;
+                            Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
+                            PrintMainUsage();
+                            break;
+                        }
+                    } else {
+                        ret = -1;
+                        PrintMainUsage();
+                        break;
+                    }
+                }
+
+                ret = JobManagerRun(filter, iQueue);
+                break;
+
+                case "help":
+                PrintMainUsage();
+                ret = 0;
                 break;
 
                 default:
@@ -854,6 +947,10 @@ namespace PublicTestRunner {
 
             return ret;
             
+        }
+
+        static int Main(string[] args) {
+            return _Main(args, new PublicTests());
         }
     }
 }

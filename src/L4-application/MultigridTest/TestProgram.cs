@@ -45,8 +45,7 @@ namespace BoSSS.Application.MultigridTest {
 
         [OneTimeSetUp]
         public static void Init() {
-            BoSSS.Solution.Application.InitMPI();
-
+            
             //GridCommons grd = Grid2D.Cartesian2DGrid(RandomSpacing(), RandomSpacing());
             //grid = new GridData(Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-7, 7, 8), GenericBlas.Linspace(-1, 1, 2)));
             //grid = new GridData(Grid2D.Cartesian2DGrid(new double[] { -6, -4, -2, 2, 4, 6 }, GenericBlas.Linspace(-1, 1, 2)));
@@ -81,12 +80,6 @@ namespace BoSSS.Application.MultigridTest {
         /// value: sequence of multigrid mappings, corresponding with the grid sequence <see cref="MgSeq"/>.
         /// </summary>
         static Dictionary<int, MultigridMapping[]> MultigrigMap = new Dictionary<int, MultigridMapping[]>();
-
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            csMPI.Raw.mpiFinalize();
-        }
 
         
         static void SetTestValue(ConventionalDGField f) {

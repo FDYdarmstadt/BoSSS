@@ -19,7 +19,9 @@ using ilPSP.Connectors.Matlab;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace BoSSS.Application.TutorialTests {
@@ -34,8 +36,7 @@ namespace BoSSS.Application.TutorialTests {
         /// Finalization.
         /// </summary>
         static public void OneTimeTearDown(bool killBatch) {
-            //csMPI.Raw.mpiFinalize();
-
+            
             if (killBatch) {
                 Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
                 Console.Out.Flush();
@@ -60,144 +61,177 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// Init.
         /// </summary>
-        //[OneTimeSetUp]
         static public bool OneTimeSetUp() {
-            //BoSSS.Solution.Application.InitMPI(new string[0]);
-
             return MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false);
-
-            //string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
-            //if (Directory.Exists(preExistingDb)) {
-            //    //preExistingDb.Delete(true);
-            //    Directory.Delete(preExistingDb, true);
-            //}
         }
 
-        //static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
         internal static string DirectoryOffset = "";
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.tex")]
         [Test]
         static public void Run__IsentropicVortex() {
-            RunWorksheet("IsentropicVortex.tex");
+            RunWorksheet("quickStartCNS/IsentropicVortex.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
         [Test]
         static public void Run__MetaJobManager() {
-            RunWorksheet("MetaJobManager.tex");
+            RunWorksheet("MetaJobManager/MetaJobManager.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
         [Test]
         static public void Run__GridGeneration() {
-            RunWorksheet("GridGeneration.tex");
+            RunWorksheet("GridGeneration/GridGeneration.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("quickStartIBM/channel.tex")]
         [Test]
         static public void Run__channel() {
-            RunWorksheet("channel.tex");
+            RunWorksheet("quickStartIBM/channel.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.tex")]
         [Test]
         static public void Run__tutorialMatlab() {
-            RunWorksheet("tutorialMatlab.tex");
+            RunWorksheet("shortTutorialMatlab/tutorialMatlab.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial2/uebung2tutorial.tex")]
         [Test]
         static public void Run__uebung2tutorial() {
-            RunWorksheet("uebung2tutorial.tex");
+            RunWorksheet("tutorial2/uebung2tutorial.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial4/tutorial4.tex")]
         //[Test]
         static public void Run__tutorial4() {
-            RunWorksheet("tutorial4.tex");
+            RunWorksheet("tutorial4/tutorial4.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial5/uebung5tutorial.tex")]
         //[Test]
         static public void Run__uebung5tutorial() {
-            RunWorksheet("uebung5tutorial.tex");
+            RunWorksheet("tutorial5/uebung5tutorial.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial6/tutorial6.tex")]
         //[Test]
         static public void Run__tutorial6() {
-            RunWorksheet("tutorial6.tex");
+            RunWorksheet("tutorial6/tutorial6.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial9-SIP/sip.tex")]
         //[Test]
         static public void Run__sip() {
-            RunWorksheet("sip.tex");
+            RunWorksheet("tutorial9-SIP/sip.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.tex")]
         [Test]
         static public void Run__Poisson() {
-            RunWorksheet("Poisson.tex");
+            RunWorksheet("tutorial10-PoissonSystem/Poisson.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.tex")]
         [Test]
         static public void Run__StokesEq() {
-            RunWorksheet("StokesEq.tex");
+            RunWorksheet("tutorial11-Stokes/StokesEq.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack( "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex")]
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex")]
         [Test]
         static public void Run__CsharpAndBoSSSpad() {
-            RunWorksheet("CsharpAndBoSSSpad.tex");
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
-        //[Test]
+        [Test]
         static public void Run__convStudy() {
-            RunWorksheet("convStudy.tex");
+            RunWorksheet("convergenceStudyTutorial/convStudy.tex");
         }
 
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
-        static public void RunWorksheet(string TexFileName) {
+        static public void RunWorksheet(string TexPartialPath) {
 
-            // run test:
-            string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
+            // locate script
+            string TexFileName = TexPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
+            string FullTexName;
+            if (!File.Exists(TexFileName)) {
+                FullTexName = LocateFile(TexPartialPath).Single();
+            } else {
+                FullTexName = TexFileName;
+            }
+
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
 
+            // start the minibatchprocessor which is used internally
             bool iStartedThisShit = OneTimeSetUp();
 
+            // run test:
             int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
 
             Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
-
             Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
 
             // shutting down the local mini batch processor:
             OneTimeTearDown(iStartedThisShit);
+        }
 
-            //foreach(var db in BoSSS.Application.BoSSSpad.InteractiveShell.databases) {
-            //    db.
-            //}
+
+        static string[] LocateFile(string PartialPath) {
+            DirectoryInfo repoRoot = new DirectoryInfo(DirectoryOffset);
+
+            // if we get here, we probably have access to the repository root directory.
+            string[] r = LocateFileRecursive("", repoRoot, PartialPath);
+            if (r == null || r.Length <= 0) {
+                throw new IOException("unable to find file '" + PartialPath + "'");
+            }
+
+            return r;
+        }
+
+
+        static string[] LocateFileRecursive(string RelPath, DirectoryInfo absPath, string SomeFileName) {
+            List<string> ret = new List<string>();
+
+            string _SomeFileName = "*" + SomeFileName;
+            
+            foreach (var f in absPath.GetFiles()) {
+                string RelName = RelPath + f.Name;
+
+                if (RelName.EndsWith(SomeFileName))
+                    ret.Add(f.FullName);
+                else if (SomeFileName.WildcardMatch(RelName))
+                    ret.Add(f.FullName);
+                else if (_SomeFileName.WildcardMatch(RelName))
+                    ret.Add(f.FullName);
+
+            }
+
+            foreach (var d in absPath.GetDirectories()) {
+                ret.AddRange(LocateFileRecursive(RelPath + d.Name + "/", d, SomeFileName));
+            }
+
+
+            return ret.ToArray();
         }
 
     }

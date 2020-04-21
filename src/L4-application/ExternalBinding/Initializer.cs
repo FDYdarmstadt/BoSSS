@@ -48,7 +48,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         [CodeGenExport]
         public void BoSSSInitialize() {
-            BoSSS.Solution.Application.InitMPI();
+            mustFinalizeMPI |= BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>

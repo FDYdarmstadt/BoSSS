@@ -30,23 +30,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
     [TestFixture]
     class TestProgram {
 
-        /// <summary>
-        /// MPI startup.
-        /// </summary>
-        [OneTimeSetUp]
-        public static void Init() {
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        /// <summary>
-        /// MPI shutdown.
-        /// </summary>
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            csMPI.Raw.mpiFinalize();
-        }
-
+       
         /// <summary>
         /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping"/> time-stepper at 
         /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.

@@ -56,18 +56,9 @@ namespace BoSSS.Application.DerivativeTest {
         [OneTimeSetUp]
         public static void SetUp() {
             CHUNK_DATA_LIMIT_bkup = Quadrature_Bulksize.CHUNK_DATA_LIMIT;
-            BoSSS.Solution.Application.InitMPI();
         }
 
-        /// <summary>
-        /// MPI finalization.
-        /// </summary>
-        [OneTimeTearDown]
-        public static void Cleanup() {
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
-        }
-
-
+      
         /// <summary>
         /// Basic grid tests, tested in DEBUG and RELEASE configuration.
         /// </summary>
