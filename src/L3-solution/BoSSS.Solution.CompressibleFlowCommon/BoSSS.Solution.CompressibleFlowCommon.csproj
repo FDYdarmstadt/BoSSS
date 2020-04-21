@@ -71,7 +71,9 @@
     <Compile Include="Diffusion\INonlinear2ndOrderForm.cs" />
     <Compile Include="EquationSystem\CompressibleOperatorFactory.cs" />
     <Compile Include="ILimiter.cs" />
-    <Compile Include="ShockCapturing\ShockFindingAlgorithms.cs" />
+    <Compile Include="ShockFinding\ShockFindingExtensions.cs" />
+    <Compile Include="ShockFinding\LevelSetReconstruction.cs" />
+    <Compile Include="ShockFinding\InflectionPointFinder.cs" />
     <Compile Include="ShockCapturing\XOptimizedLaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\IShockSensor.cs" />
     <Compile Include="ISpeciesMap.cs" />
