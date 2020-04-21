@@ -27,19 +27,7 @@ namespace CutCellQuadrature {
     [TestFixture]
     public partial class Program : Application {
 
-        [TestFixtureSetUp]
-        public static void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-        }
-
-        [TestFixtureTearDown]
-        public static void TearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
+       
 
         [Test]
         public void Test2DSurfaceHighOrderRobustnessStructured() {

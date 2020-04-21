@@ -448,8 +448,6 @@ namespace BoSSS.Application.Rheology {
 
 
                         // viscous part:
-                        //Type GridType = GridData.iGeomCells.RefElements[0].GetType();
-
                         if (this.Control.beta < 0.0) {
                             throw new ArithmeticException("Illegal setting in control object: 'beta' is out of range, must be non-negative.");
                         }
@@ -502,12 +500,6 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
-
-                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0));
-                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
-                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
-
-
 
                     if (ConstitutiveEqs) {
                         Console.WriteLine($"configuring Weissenberg number: {this.Control.Weissenberg:#.##e+00}");
@@ -711,18 +703,6 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
-                /*
-                if (this.Control.OperatorMatrixAnalysis == true) {
-
-                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
-                    myAnalysis.VarGroup = new int[] { 0, 1, 2 };
-                    double[] cond = myAnalysis.CondNum();//Analyse();
-                    Console.WriteLine("Condition number for full matrix is " + cond[0] + ". Condition number for inner matrix is " + cond[1] + ".");
-                    base.QueryHandler.ValueQuery("condFull", cond[0], true);
-                    base.QueryHandler.ValueQuery("condInner", cond[1], true);
-                }
-                */
-
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 

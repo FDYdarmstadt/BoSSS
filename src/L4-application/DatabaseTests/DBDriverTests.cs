@@ -190,11 +190,11 @@ namespace BoSSS.Application.DatabaseTests  {
         }
 
         [Test]
-        [ExpectedException(
-            typeof(System.IO.IOException),
-            ExpectedMessage = "already exists",
-            MatchType = MessageMatch.Contains,
-            UserMessage = "Copying the same session twice should not succeed")]
+        //[ExpectedException(
+        //    typeof(System.IO.IOException),
+        //    ExpectedMessage = "already exists",
+        //    MatchType = MessageMatch.Contains,
+        //    UserMessage = "Copying the same session twice should not succeed")]
         public void TestCopyFail() {
             foreach (ISessionInfo session in databaseWithFiles.Controller.Sessions) {
                 databaseWithFiles.Controller.CopySession(session, emptyDatabase);
@@ -202,9 +202,15 @@ namespace BoSSS.Application.DatabaseTests  {
 
             Random rnd = new Random();
 
+            void FailingCopy() {
+                databaseWithFiles.Controller.CopySession(
+                    databaseWithFiles.Controller.Sessions.OrderBy((item) => rnd.Next()).First<ISessionInfo>(),
+                    emptyDatabase);
+            }
+
+
             // this should cause an IOException
-            databaseWithFiles.Controller.CopySession(databaseWithFiles.Controller.Sessions.OrderBy(
-                (item) => rnd.Next()).First<ISessionInfo>(), emptyDatabase);
+            Assert.That(FailingCopy, Throws.TypeOf<System.IO.IOException>());
         }
 
         [Test]

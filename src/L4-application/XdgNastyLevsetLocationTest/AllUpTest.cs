@@ -29,31 +29,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
     /// Nunit entry point
     /// </summary>
     [TestFixture]
-    public static class AllUpTest {
-
-        /// <summary>
-        /// MPI init
-        /// </summary>
-        [TestFixtureSetUp]
-        public static void SetUp() {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
-
-           
-        }
-
-        /// <summary>
-        /// MPI shutdown.
-        /// </summary>
-        [TestFixtureTearDown]
-        public static void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
-
-
+    public class AllUpTest { 
         /// <summary>
         /// not the smartest way to define such a test...
         /// </summary>
@@ -95,3 +71,4 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
     }
 }
+

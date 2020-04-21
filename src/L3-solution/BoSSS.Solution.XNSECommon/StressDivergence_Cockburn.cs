@@ -26,10 +26,10 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 
 namespace BoSSS.Solution.RheologyCommon {
+    
     /// <summary>
     /// Central difference scheme for divergence operator of the extra stress tensor.
     /// </summary>
-
     public class StressDivergence_Cockburn : LinearFlux {
 
         int Component;           // spatial dimension of momentum equation
@@ -104,7 +104,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Stress divergence inner edge term
         /// </summary>
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Tin, double[] Tout) {
-
+            
             double res = 0;
 
             int jIn = inp.jCellIn;

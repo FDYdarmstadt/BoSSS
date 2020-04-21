@@ -57,10 +57,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            BatchmodeConnector.MatlabExecuteable = "C:\\Octave\\Octave-4.4.1\\bin\\octave-cli.exe";
-            Tests.TestFixtureSetUp();
-            Tests.ScalingCircle2D(2);
+            //Tests.ScalingCircle2D(2);
             //throw new ApplicationException("remove me");
             
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
@@ -450,6 +447,10 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
             }
 
+            OperatorAnalysis();
+
+
+
             return dt;
         }
 
@@ -464,8 +465,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                 this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()), 
                 this.OpConfig);
 
+            Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV() }, "stencilCn", 0.0, 1);
+
             return ana.GetNamedProperties();
         }
+
+        
 
         MultigridOperator.ChangeOfBasisConfig[][] OpConfig {
             get {

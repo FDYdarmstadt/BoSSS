@@ -47,6 +47,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         private static int REBALANCING_PERIOD = 5;
 
         public static void Main(string[] args) {
+            Application.InitMPI();
 #if DEBUG
             System.Threading.Thread.Sleep(10000);
 #endif
@@ -70,7 +71,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn();   // ok
             TestRebalancingForDG0WithAB1();
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
-            TearDown();
+            Application.FinalizeMPI();
         }
 
         [Test]
@@ -778,9 +779,5 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             assertions.ForEach(a => a());
         }
 
-        [TestFixtureTearDown]
-        public static void TearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
     }
 }
