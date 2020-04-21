@@ -33,13 +33,9 @@ using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
     public static class ShockFindingExtensions {
-        public static double[] GetFinalFunctionValues(MultidimensionalArray input, MultidimensionalArray iterationsNeeded, int firstPoint = 0, int lastPointPlusOne = int.MinValue) {
-            if (lastPointPlusOne < 0) {
-                lastPointPlusOne = input.Lengths[0];
-            }
-
+        public static double[] GetFinalFunctionValues(MultidimensionalArray input, MultidimensionalArray iterationsNeeded) {
             double[] result = new double[input.Lengths[0]];
-            for (int i = firstPoint; i < lastPointPlusOne; i++) {
+            for (int i = 0; i < input.Lengths[0]; i++) {
                 result[i] = input[i, (int)iterationsNeeded[i] - 1, 2];
             }
 

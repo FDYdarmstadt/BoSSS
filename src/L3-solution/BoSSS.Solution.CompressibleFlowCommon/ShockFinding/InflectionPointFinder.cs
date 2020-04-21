@@ -57,23 +57,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
         private bool patchRecoveryGradient;
         private bool patchRecoveryHessian;
-        private int firstPoint;
-        private int lastPointPlusOne;
-
-        //public int[] IterationsNeeded {
-        //    get;
-        //    private set;
-        //}
-
-        //public bool[] Converged {
-        //    get;
-        //    private set;
-        //}
-
-        //public int[] jCell {
-        //    get;
-        //    private set;
-        //}
 
         /// <summary>
         /// Main result data structure
@@ -103,10 +86,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.levelSetField = (SinglePhaseField)myTimestep.Fields.Find("levelSet");
         }
 
-        public MultidimensionalArray FindPoints(SeedingSetup seeding = SeedingSetup.av, bool patchRecoveryGradient = true, bool patchRecoveryHessian = true, int firstPoint = 0, int maxNumOfIterations = 100, double eps = 1e-12) {
+        public MultidimensionalArray FindPoints(SeedingSetup seeding = SeedingSetup.av, bool patchRecoveryGradient = true, bool patchRecoveryHessian = true, int maxNumOfIterations = 100, double eps = 1e-12) {
             this.patchRecoveryGradient = patchRecoveryGradient;
             this.patchRecoveryHessian = patchRecoveryHessian;
-            this.firstPoint = firstPoint;
 
             #region Create seedings points based on artificial viscosity
             MultidimensionalArray avValues = ShockFindingExtensions.GetAVMeanValues(gridData, avField);
@@ -147,8 +129,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                     throw new NotSupportedException("This setting does not exist.");
             }
 
-            lastPointPlusOne = Results.Lengths[0];
-
             ResultsExtended = MultidimensionalArray.Create(numOfPoints, 3);
 
             //IterationsNeeded = new int[numOfPoints];
@@ -161,25 +141,26 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             #region Find inflection point for every seeding point
             Console.WriteLine("WALKING ON CURVES: START");
             Console.WriteLine("(Counting starts with 0)");
-            for (int i = firstPoint; i < lastPointPlusOne; i++) {
+            for (int i = 0; i < Results.Lengths[0]; i++) {
                 WalkOnCurve(gridData, densityField, Results.ExtractSubArrayShallow(i, -1, -1), out int iter, out bool pointFound, out int jLocal);
 
                 // Save more stuff
                 ResultsExtended[i, 0] = iter;
-                ResultsExtended[i, 1] = pointFound == true ? 1 : 0;
+                ResultsExtended[i, 1] = pointFound == true ? 1 : -1;
                 ResultsExtended[i, 2] = jLocal;
 
-                if (i == firstPoint) {
+                if (i == 0) {
                     Console.WriteLine("Point " + i + " (first)");
-                } else if (i == lastPointPlusOne - 1) {
+                } else if (i == Results.Lengths[0] - 1) {
                     Console.WriteLine("Point " + i + " (last)");
                 } else if (i % 100 == 0) {
                     Console.WriteLine("Point " + i);
                 }
-
+#if DEBUG
                 if (!pointFound) {
                     Console.WriteLine(String.Format("Point {0}: not converged", i));
                 }
+#endif
             }
             Console.WriteLine("WALKING ON CURVES: END");
             #endregion
@@ -198,7 +179,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             if (plotSeedingsPoints) {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "seedingPoints.txt")) {
                     string resultLine;
-                    for (int j = firstPoint; j < lastPointPlusOne; j++) {
+                    for (int j = 0; j < Results.Lengths[0]; j++) {
                         resultLine = Results[j, 0, 0] + "\t"
                                    + Results[j, 0, 1] + "\t"
                                    + Results[j, 0, 2];
@@ -211,7 +192,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             if (plotInflectionsPoints) {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "inflectionPoints.txt")) {
                     string resultLine;
-                    for (int j = firstPoint; j < lastPointPlusOne; j++) {
+                    for (int j = 0; j < Results.Lengths[0]; j++) {
                         int pointFound = (int)ResultsExtended[j, 1];
                         resultLine = Results[j, (int)ResultsExtended[j, 0] - 1, 0] + "\t"
                                    + Results[j, (int)ResultsExtended[j, 0] - 1, 1] + "\t"
@@ -225,7 +206,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
 
             if (plotCurves) {
-                for (int i = firstPoint; i < lastPointPlusOne; i++) {
+                for (int i = 0; i < Results.Lengths[0]; i++) {
                     using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "curve_" + i + ".txt")) {
                         string resultLine;
                         for (int j = 0; j < (int)ResultsExtended[i, 0]; j++) {
@@ -238,7 +219,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
 
             if (plotStartEndPairs) {
-                for (int j = firstPoint; j < lastPointPlusOne; j++) {
+                for (int j = 0; j < Results.Lengths[0]; j++) {
                     using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "startEndPairs_" + j + ".txt")) {
                         string resultLine;
                         int pointFound = (int)ResultsExtended[j, 1];

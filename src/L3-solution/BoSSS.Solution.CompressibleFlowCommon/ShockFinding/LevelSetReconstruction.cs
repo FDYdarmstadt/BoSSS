@@ -38,9 +38,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         private readonly MultidimensionalArray input;
         private readonly MultidimensionalArray inputExtended;
 
-        private readonly int firstPoint;
-        private readonly int lastPointPlusOne;
-
         private readonly List<MultidimensionalArray> _clusterings = new List<MultidimensionalArray>();
         public List<MultidimensionalArray> Clusterings {
             get {
@@ -51,35 +48,70 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
-        public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input, MultidimensionalArray inputExtended, int firstPoint = 0, int lastPointPlusOne = int.MinValue) {
+        public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input, MultidimensionalArray inputExtended) {
             this.sessionPath = sessionPath;
             this.session = session;
             this.input = input;
             this.inputExtended = inputExtended;
+        }
 
-            this.firstPoint = firstPoint;
-            if (lastPointPlusOne < 0) {
-                this.lastPointPlusOne = input.Lengths[0];
-            } else {
-                this.lastPointPlusOne = lastPointPlusOne;
+        private double[] SortOutNonConverged(double[] data) {
+            double[] result = new double[data.Length];
+
+            int count = 0;
+            for (int i = 0; i < input.Lengths[0]; i++) {
+                if (inputExtended[i, 1] > 0) {
+                    result[count] = data[i];
+                    count++;
+                }
             }
+
+            Array.Resize(ref result, count);
+            return result;
         }
 
         public MultidimensionalArray CreateClustering(int numOfClusters, double[] initialMeans, double[] data = null) {
             Console.WriteLine("CLUSTERING: START");
+
+            // Test
+            //MultidimensionalArray input = MultidimensionalArray.Create(2, 1, 5);
+            //input[0, 0, 0] = 0;
+            //input[0, 0, 1] = 0.1;
+            //input[0, 0, 2] = 0.2;
+            //input[0, 0, 3] = 0.3;
+            //input[0, 0, 4] = 0.4;
+            //input[1, 0, 0] = 1.0;
+            //input[1, 0, 1] = 1.1;
+            //input[1, 0, 2] = 1.2;
+            //input[1, 0, 3] = 1.3;
+            //input[1, 0, 4] = 1.4;
+
+            //MultidimensionalArray inputExtended = MultidimensionalArray.Create(2, 3);
+            //inputExtended[0, 0] = 1;
+            //inputExtended[0, 1] = 1;
+            //inputExtended[0, 2] = 0;
+            //inputExtended[1, 0] = 1;
+            //inputExtended[1, 1] = -1;
+            //inputExtended[1, 2] = 1;
+
             if (data == null) {
-                data = ShockFindingExtensions.GetFinalFunctionValues(input, inputExtended.ExtractSubArrayShallow(-1, 0), firstPoint, lastPointPlusOne);
+                data = ShockFindingExtensions.GetFinalFunctionValues(input, inputExtended.ExtractSubArrayShallow(-1, 0));
+                data = SortOutNonConverged(data);
             }
             Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
             int[] cellToCluster = kmeans.Cluster();
 
-            MultidimensionalArray clustering = MultidimensionalArray.Create(lastPointPlusOne - firstPoint, 4);
-            for (int i = 0; i < clustering.Lengths[0]; i++) {
-                int iInput = i + firstPoint;
-                clustering[i, 0] = input[iInput, (int)inputExtended[iInput, 0] -1, 0];      // x
-                clustering[i, 1] = input[iInput, (int)inputExtended[iInput, 0] -1, 1];      // y
-                clustering[i, 2] = data[iInput];                                        // function value
-                clustering[i, 3] = cellToCluster[iInput];                               // cellToCluster (e.g. cell 0 is in cluster 1)
+            MultidimensionalArray clustering = MultidimensionalArray.Create(data.Length, 4);
+            int count = 0;
+            for (int i = 0; i < input.Lengths[0]; i++) {
+                // if converged...
+                if (inputExtended[i, 1] > 0.0) {
+                    clustering[count, 0] = input[i, (int)inputExtended[i, 0] - 1, 0];      // x
+                    clustering[count, 1] = input[i, (int)inputExtended[i, 0] - 1, 1];      // y
+                    clustering[count, 2] = data[count];                                        // function value
+                    clustering[count, 3] = cellToCluster[count];                               // cellToCluster (e.g. cell 0 is in cluster 1)
+                    count++;
+                }
             }
             _clusterings.Add(clustering);
 
