@@ -97,7 +97,6 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.SpecFEM.AllUpTest),
                         typeof(BoSSS.Application.ipViscosity.TestSolution),
                         typeof(BoSSS.Application.MultigridTest.MultigridMain),
-                        typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
                         typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
@@ -115,6 +114,8 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(CNS.Program),
+                        typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
