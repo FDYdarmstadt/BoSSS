@@ -52,7 +52,7 @@ namespace BoSSS.Application.BoSSSpad {
                 numberOfBits,
                 System.Environment.OSVersion.Platform);
 
-            string installdir = BoSSS.Solution.Application.GetBoSSSInstallDir();
+            string installdir = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
             Console.WriteLine("Installation directory: " + installdir);
 
 

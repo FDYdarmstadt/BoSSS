@@ -30,7 +30,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 () => new AdaptiveMeshRefinementTestMain());
             //AllUpTest.SetUp();
             //AllUpTest.RuntimeCostDynamicBalanceTest(2);
-            //AllUpTest.TestFixtureTearDown();
+            //AllUpTest.OneTimeTearDown();
         }
 
         public int TestCase = 2;

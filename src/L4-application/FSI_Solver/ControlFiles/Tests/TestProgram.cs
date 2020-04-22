@@ -24,19 +24,6 @@ namespace BoSSS.Application.FSI_Solver {
     [TestFixture]
     static class TestProgram {
 
-        [TestFixtureSetUp]
-        public static void Init() {
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application<FSI_Control>.GetBoSSSInstallDir(),
-                out _);
-        }
-
-        [TestFixtureTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            csMPI.Raw.mpiFinalize();
-        }
 
         [Test]
         public static void TestParticleParameter()

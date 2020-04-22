@@ -36,26 +36,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
     [TestFixture]
     static class TestProgram {
 
-        /// <summary>
-        /// MPI init
-        /// </summary>
-        [TestFixtureSetUp]
-        public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application<SipControl>.GetBoSSSInstallDir(),
-                out dummy);
-        }
 
-        /// <summary>
-        /// MPI teardown
-        /// </summary>
-        [TestFixtureTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            csMPI.Raw.mpiFinalize();
-        }
 
         [Test]
         public static void TestCartesian() {
@@ -160,17 +141,35 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         }
 
+
+#if !DEBUG
+        /// <summary>
+        /// operator condition number scaling, 2D, for p=1 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling2D_p1() {
+            TestOperatorScaling2D(1);
+        }
+        /// <summary>
+        /// operator condition number scaling, 3D, for p=2 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling2D_p2() {
+            TestOperatorScaling2D(2);
+        }
+        /// <summary>
+        /// operator condition number scaling, 3D, for p=3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling2D_p3() {
+            TestOperatorScaling2D(3);
+        }
+#endif
+
         /// <summary>
         /// operator condition number scaling, 2D
         /// </summary>
-        [Test]
-        public static void TestOperatorScaling2D(
-#if DEBUG            
-            [Values(1)]int dgDeg
-#else
-            [Values(1,2,3,4)]int dgDeg
-#endif            
-            ) {
+        public static void TestOperatorScaling2D(int dgDeg) {
 
             
 
@@ -198,17 +197,34 @@ namespace BoSSS.Application.SipPoisson.Tests {
             ConditionNumberScalingTest.Perform(Controls);
         }
 
+#if !DEBUG
+        /// <summary>
+        /// operator condition number scaling, 3D, for p=1 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling3D_p1() {
+            TestOperatorScaling3D(1);
+        }
+        /// <summary>
+        /// operator condition number scaling, 3D, for p=2 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling3D_p2() {
+            TestOperatorScaling3D(1);
+        }
+        /// <summary>
+        /// operator condition number scaling, 3D, for p=3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling3D_p3() {
+            TestOperatorScaling3D(1);
+        }
+#endif
+
         /// <summary>
         /// operator condition number scaling
         /// </summary>
-        [Test]
-        public static void TestOperatorScaling3D(
-#if DEBUG            
-            [Values(1)]int dgDeg
-#else
-            [Values(1,2,3,4)]int dgDeg
-#endif            
-            ) {
+        public static void TestOperatorScaling3D(int dgDeg) {
 
   
             var Controls = new List<SipControl>();

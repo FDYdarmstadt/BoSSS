@@ -5,12 +5,12 @@ namespace VoronoiTests
     [TestFixture]
     public abstract class TestBench
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public abstract void SetUp();
 
         public abstract void Run();
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public abstract void TearDown();
     }
 }

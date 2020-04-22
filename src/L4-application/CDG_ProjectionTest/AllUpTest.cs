@@ -10,25 +10,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
     [TestFixture]
     public class AllUpTest {
 
-        /// <summary>
-        /// MPI finalization
-        /// </summary>
-        [TestFixtureTearDown]
-        public void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
-
-        /// <summary>
-        /// MPI init
-        /// </summary>
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp() {
-            bool MpiInit;
-            Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
-        }
+      
 
 
         [Test]
