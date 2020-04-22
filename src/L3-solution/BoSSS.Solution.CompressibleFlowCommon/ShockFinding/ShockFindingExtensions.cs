@@ -32,7 +32,35 @@ using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
+
     public static class ShockFindingExtensions {
+
+        public static void SortOutNonConverged(MultidimensionalArray input, MultidimensionalArray inputExtended, out MultidimensionalArray result, out MultidimensionalArray resultExtended) {
+            // input            [0]: x        [1]: y             [2]: f       [3] secondDerivative    [4] stepSize
+            // inputExtended    [0]: iter     [1]: converged     [2]: jCell
+
+            int numOfPoints = input.Lengths[0];
+            int[] convergedCells = new int[numOfPoints];
+            int count = 0;
+            for (int i = 0; i < numOfPoints; i++) {
+                if (inputExtended[i, 1] > 0.0) {
+                    convergedCells[count] = i;
+                    count++;
+                }
+            }
+            Array.Resize(ref convergedCells, count);
+
+            result = MultidimensionalArray.Create(count, input.Lengths[1], input.Lengths[2]);
+            resultExtended = MultidimensionalArray.Create(count, inputExtended.Lengths[1]);
+
+            for (int i = 0; i < convergedCells.Length; i++) {
+                // If point has converged, copy all info from input to output array
+                int cell = convergedCells[i];
+                result.ExtractSubArrayShallow(i, -1, -1).Acc(1.0, input.ExtractSubArrayShallow(cell, -1, -1));
+                resultExtended.ExtractSubArrayShallow(i, -1).Acc(1.0, inputExtended.ExtractSubArrayShallow(cell, -1));
+            }
+        }
+
         public static double[] GetFinalFunctionValues(MultidimensionalArray input, MultidimensionalArray iterationsNeeded) {
             double[] result = new double[input.Lengths[0]];
             for (int i = 0; i < input.Lengths[0]; i++) {

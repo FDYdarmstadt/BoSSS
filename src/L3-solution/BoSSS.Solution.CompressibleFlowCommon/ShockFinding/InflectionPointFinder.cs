@@ -75,6 +75,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             private set;
         }
 
+        public MultidimensionalArray Results_SO {
+            get;
+            private set;
+        }
+
+        public MultidimensionalArray ResultsExtended_SO {
+            get;
+            private set;
+        }
+
         public InflectionPointFinder(string sessionPath, ISessionInfo session) {
             this.sessionPath = sessionPath;
             this.session = session;
@@ -166,6 +176,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             #endregion
 
             return Results;
+        }
+
+        public void SortOutNonConverged() {
+            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: START");
+
+            ShockFindingExtensions.SortOutNonConverged(Results, ResultsExtended, out MultidimensionalArray Results_SO, out MultidimensionalArray ResultsExtended_SO);
+            //Results = Results_SO;
+            //ResultsExtended = ResultsExtended_SO;
+
+            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: END");
         }
 
         public void Plot(bool plotDGFields, bool plotSeedingsPoints, bool plotInflectionsPoints, bool plotCurves, bool plotStartEndPairs) {

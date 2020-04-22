@@ -70,7 +70,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return result;
         }
 
-        public MultidimensionalArray CreateClustering(int numOfClusters, double[] initialMeans, double[] data = null) {
+        public MultidimensionalArray CreateClustering(int numOfClusters, double[] initialMeans, double[] data = null, bool sortOutNonConverged = false) {
             Console.WriteLine("CLUSTERING: START");
 
             // Test
@@ -96,22 +96,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             if (data == null) {
                 data = ShockFindingExtensions.GetFinalFunctionValues(input, inputExtended.ExtractSubArrayShallow(-1, 0));
-                data = SortOutNonConverged(data);
             }
             Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
             int[] cellToCluster = kmeans.Cluster();
 
             MultidimensionalArray clustering = MultidimensionalArray.Create(data.Length, 4);
-            int count = 0;
             for (int i = 0; i < input.Lengths[0]; i++) {
-                // if converged...
-                if (inputExtended[i, 1] > 0.0) {
-                    clustering[count, 0] = input[i, (int)inputExtended[i, 0] - 1, 0];      // x
-                    clustering[count, 1] = input[i, (int)inputExtended[i, 0] - 1, 1];      // y
-                    clustering[count, 2] = data[count];                                        // function value
-                    clustering[count, 3] = cellToCluster[count];                               // cellToCluster (e.g. cell 0 is in cluster 1)
-                    count++;
-                }
+                clustering[i, 0] = input[i, (int)inputExtended[i, 0] - 1, 0];      // x
+                clustering[i, 1] = input[i, (int)inputExtended[i, 0] - 1, 1];      // y
+                clustering[i, 2] = data[i];                                        // function value
+                clustering[i, 3] = cellToCluster[i];                               // cellToCluster (e.g. cell 0 is in cluster 1)
             }
             _clusterings.Add(clustering);
 
