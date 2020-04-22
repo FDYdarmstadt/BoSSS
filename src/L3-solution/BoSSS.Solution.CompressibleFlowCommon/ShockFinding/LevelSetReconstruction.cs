@@ -38,6 +38,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         private readonly MultidimensionalArray input;
         private readonly MultidimensionalArray inputExtended;
 
+        private int clusteringCount = 0;
+
         private readonly List<MultidimensionalArray> _clusterings = new List<MultidimensionalArray>();
         public List<MultidimensionalArray> Clusterings {
             get {
@@ -55,72 +57,92 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.inputExtended = inputExtended;
         }
 
-        public MultidimensionalArray CreateClustering(int numOfClusters, double[] initialMeans, double[] data = null, bool sortOutNonConverged = false) {
-            Console.WriteLine("CLUSTERING: START");
+        public MultidimensionalArray CreateClustering_Density(int numOfClusters, double[] initialMeans) {
+            Console.WriteLine("CreateClustering_Density: START");
 
-            // Test
-            //MultidimensionalArray input = MultidimensionalArray.Create(2, 1, 5);
-            //input[0, 0, 0] = 0;
-            //input[0, 0, 1] = 0.1;
-            //input[0, 0, 2] = 0.2;
-            //input[0, 0, 3] = 0.3;
-            //input[0, 0, 4] = 0.4;
-            //input[1, 0, 0] = 1.0;
-            //input[1, 0, 1] = 1.1;
-            //input[1, 0, 2] = 1.2;
-            //input[1, 0, 3] = 1.3;
-            //input[1, 0, 4] = 1.4;
-
-            //MultidimensionalArray inputExtended = MultidimensionalArray.Create(2, 3);
-            //inputExtended[0, 0] = 1;
-            //inputExtended[0, 1] = 1;
-            //inputExtended[0, 2] = 0;
-            //inputExtended[1, 0] = 1;
-            //inputExtended[1, 1] = -1;
-            //inputExtended[1, 2] = 1;
-
-            if (data == null) {
-                data = ShockFindingExtensions.GetFinalFunctionValues(input, inputExtended.ExtractSubArrayShallow(-1, 0));
-            }
+            double[] data = ShockFindingExtensions.GetFinalFunctionValues(input, inputExtended.ExtractSubArrayShallow(-1, 0));
             Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
             int[] cellToCluster = kmeans.Cluster();
 
-            MultidimensionalArray clustering = MultidimensionalArray.Create(data.Length, 4);
+            MultidimensionalArray clustering = MultidimensionalArray.Create(data.Length, 5);
             for (int i = 0; i < input.Lengths[0]; i++) {
                 clustering[i, 0] = input[i, (int)inputExtended[i, 0] - 1, 0];      // x
                 clustering[i, 1] = input[i, (int)inputExtended[i, 0] - 1, 1];      // y
-                clustering[i, 2] = data[i];                                        // function value
+                clustering[i, 2] = data[i];                                        // data value
                 clustering[i, 3] = cellToCluster[i];                               // cellToCluster (e.g. cell 0 is in cluster 1)
+                clustering[i, 4] = inputExtended[i, 2];                            // local cell index
             }
             _clusterings.Add(clustering);
 
-            Console.WriteLine("CLUSTERING: END");
+            Console.WriteLine("CreateClustering_Density: END");
+
             return clustering;
         }
 
-        public MultidimensionalArray CreateClusteringNew(MultidimensionalArray inputClustering, int numOfClusters, double[] initialMeans) {
-            Console.WriteLine("CLUSTERING: START");
-            double[] data = inputClustering.ExtractSubArrayShallow(-1, 3).To1DArray();
+        public MultidimensionalArray CreateClustering_AV(MultidimensionalArray inputClustering, int numOfClusters, double[] initialMeans) {
+            Console.WriteLine("CreateClustering_AV: START");
+
+            // Get AV values
+            var avField = this.session.Timesteps.Last().Fields.Find("artificialViscosity");
+            int numOfPoints = inputClustering.Lengths[0];
+            double[] data = new double[numOfPoints];
+            for (int i = 0; i < data.Length; i++) {
+                data[i] = avField.GetMeanValue((int)inputClustering[i, 4]);
+            }
+
+            // Kmeans
             Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
             int[] cellToCluster = kmeans.Cluster();
 
-            MultidimensionalArray clustering = MultidimensionalArray.Create(data.Length, 4);
-            for (int i = 0; i < inputClustering.Lengths[0]; i++) {
+            // Store values
+            MultidimensionalArray clustering = MultidimensionalArray.Create(data.Length, inputClustering.Lengths[1]);
+            for (int i = 0; i < numOfPoints; i++) {
                 clustering[i, 0] = inputClustering[i, 0];      // x
                 clustering[i, 1] = inputClustering[i, 1];      // y
-                clustering[i, 2] = inputClustering[i, 1];      // function value
+                clustering[i, 2] = data[i];                    // data value
                 clustering[i, 3] = cellToCluster[i];           // cellToCluster (e.g. cell 0 is in cluster 1)
+                clustering[i, 4] = inputClustering[i, 4];      // local cell index 
             }
             _clusterings.Add(clustering);
 
-            Console.WriteLine("CLUSTERING: END");
+            Console.WriteLine("CreateClustering_AV: END");
+
             return clustering;
         }
 
+        public MultidimensionalArray CreateClustering_Boundary(MultidimensionalArray inputClustering) {
+            Console.WriteLine("CreateClustering_Boundary: START");
+
+            var gridData = (GridData)session.Timesteps.Last().Fields.First().GridDat;
+            BitArray isBoundaryCell = gridData.GetBoundaryCells().GetBitMask();
+
+            // Store values
+            int numOfPoints = inputClustering.Lengths[0];
+            int[] internalCells = new int[numOfPoints];
+            int count = 0;
+            for (int i = 0; i < numOfPoints; i++) {
+                if (!isBoundaryCell[(int)inputClustering[i, 4]]) {
+                    internalCells[count] = i;
+                    count++;
+                }
+            }
+            Array.Resize(ref internalCells, count);
+
+            MultidimensionalArray clustering = MultidimensionalArray.Create(count, inputClustering.Lengths[1]);
+            for (int i = 0; i < internalCells.Length; i++) {
+                int cell = internalCells[i];
+                clustering.ExtractSubArrayShallow(i, -1).Acc(1.0, inputClustering.ExtractSubArrayShallow(cell, -1));
+            }
+            _clusterings.Add(clustering);
+
+            Console.WriteLine("CreateClustering_Boundary: END");
+
+            return clustering;
+        }
 
         public MultidimensionalArray SelectCluster(MultidimensionalArray clustering, int clusterToSelect) {
             // clustering.Lengths -->  [0]: numOfPoints      [1]: 4
-            // clustering[1] -->       [0]: x                [1]: y          [2]: function value       [3]: cellToCluster
+            // clustering[1] -->       [0]: x                [1]: y          [2]: function value       [3]: cellToCluster       [4]: local cell index
 
             int numOfPoints = clustering.Lengths[0];
             int[] cellsInCluster = new int[numOfPoints];
@@ -141,8 +163,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             return result;
         }
-
-        private static int clusteringCount = 0;
 
         public void SaveClusteringToTextFile(MultidimensionalArray clustering, string path = null) {
             if (path == null) {
