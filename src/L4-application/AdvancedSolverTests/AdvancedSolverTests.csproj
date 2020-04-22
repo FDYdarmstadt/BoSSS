@@ -83,7 +83,6 @@
     <Compile Include="SubBlocking\Fluxes.cs" />
     <Compile Include="SubBlocking\TestSolver.cs" />
     <Compile Include="SubBlocking\Utils.cs" />
-    <Compile Include="TestBench.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

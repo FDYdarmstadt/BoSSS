@@ -50,6 +50,11 @@ namespace AdvancedSolverTests.SubBlocking
 
         public static void TestInit(params int[] Testparameters) {
             int L = Testparameters.Length;
+            int rank, size;
+            var com = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(com, out rank);
+            csMPI.Raw.Comm_Size(com, out size);
+
             unsafe {
                 int[] Params = new int[L * 2], ParamsGlob = new int[L * 2];
                 fixed (int* pParams = Params, pParamsGlob = ParamsGlob) {
@@ -57,7 +62,6 @@ namespace AdvancedSolverTests.SubBlocking
                         pParams[i] = (int)Testparameters[i];
                         pParams[i + L] = -pParams[i];
                     }
-
 
                     csMPI.Raw.Allreduce((IntPtr)pParams, (IntPtr)pParamsGlob, L * 2, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
                 }
@@ -229,6 +233,8 @@ namespace AdvancedSolverTests.SubBlocking
                     sbs.SpeciesSelector(SIdc[0]);
                 else
                     sbs.SpeciesSelector(OtherSpec);
+            } else {
+                throw new NotSupportedException();
             }
         }
 
@@ -265,9 +271,10 @@ namespace AdvancedSolverTests.SubBlocking
 
 
         public static void GetDefaultSelection(this SubBlockSelector sbs, SelectionType SType, int iCell) {
-            SpeciesId B = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[0];
-            SpeciesId A = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[1];
-            sbs.CellSelector(iCell);
+            SpeciesId A = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[0];
+            SpeciesId B = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[1];
+
+            sbs.CellSelector(iCell,false);
             //do not change this, selection corresponds to hardcoded masking
             //see GetSubIndices
             switch (SType) {
@@ -275,21 +282,20 @@ namespace AdvancedSolverTests.SubBlocking
                     sbs.ModeSelector(p => p == 1);
                     break;
                 case SelectionType.species:
-                    sbs.SpeciesSelector(B);
+                    sbs.SpeciesSelector(A);
                     break;
                 case SelectionType.variables:
                     sbs.VariableSelector(1);
                     break;
                 case SelectionType.all_combined:
                     sbs.ModeSelector(p => p == 1);
-                    sbs.SpeciesSelector(B);
+                    sbs.SpeciesSelector(A);
                     sbs.VariableSelector(1);
                     break;
             }
         }
 
         public static BlockMsrMatrix GetCellCompMatrix(SelectionType SType, MultigridOperator mop, int iB) {
-            int DGdegree = 2;
 
             int rank = mop.Mapping.MpiRank;
             int iBlock = mop.Mapping.AggGrid.CellPartitioning.i0 + iB;
@@ -299,10 +305,13 @@ namespace AdvancedSolverTests.SubBlocking
             int R = mop.Mapping.GetBlockLen(iBlock);
             //int C = mop.Mapping.GetBlockLen(jBlock);
 
-            bool ZwoSpecR = (mop.Mapping.AggBasis[0].GetMaximalLength(DGdegree) + mop.Mapping.AggBasis[0].GetMaximalLength(DGdegree - 1)) == R;
+            bool ZwoSpecR = Math.Max(mop.Mapping.GetSubblkLen(0)[0], mop.Mapping.GetSubblkLen(1)[0]) == R;
             //bool ZwoSpecC = (mop.Mapping.AggBasis[0].GetMaximalLength(DGdegree) + mop.Mapping.AggBasis[0].GetMaximalLength(DGdegree - 1)) == C;
 
-            int[] SubIdcR = GetSubIndices(SType, ZwoSpecR);
+            SpeciesId A = ((XdgAggregationBasis)mop.Mapping.AggBasis[0]).UsedSpecies[0];
+            int Specpos = ((XdgAggregationBasis)mop.Mapping.AggBasis[0]).GetSpeciesIndex(iB, A);
+
+            int[] SubIdcR = GetSubIndices(SType, ZwoSpecR, Specpos);
             //int[] SubIdcC = GetSubIndices(SType, ZwoSpecC);
 
             for (int i = 0; i < SubIdcR.Length; i++) {
@@ -314,10 +323,17 @@ namespace AdvancedSolverTests.SubBlocking
             //    SubIdcC[i] += i0;
             //}
             //return mop.OperatorMatrix.GetSubMatrix(SubIdcR, SubIdcC);
-            return mop.OperatorMatrix.GetSubMatrix(SubIdcR, SubIdcR);
+            var part = new BlockPartitioning(SubIdcR.Length, new int[]{0}, new int[] { SubIdcR.Length }, csMPI.Raw._COMM.SELF);
+
+            BlockMsrMatrix sub = new BlockMsrMatrix(part);
+
+            mop.OperatorMatrix.WriteSubMatrixTo(sub, SubIdcR, default(int[]), SubIdcR, default(int[]));
+            return sub;
+
+            //return mop.OperatorMatrix.GetSubMatrix(SubIdcR, SubIdcR);
         }
 
-        public static int[] GetSubIndices(SelectionType SType, bool ZwoSpec) {
+        public static int[] GetSubIndices(SelectionType SType, bool ZwoSpec, int lookatpos) {
             int[] SubIdc;
             switch (SType) {
                 case SelectionType.degrees:
@@ -329,11 +345,28 @@ namespace AdvancedSolverTests.SubBlocking
                     SubIdc = ZwoSpec ? new int[] { 12, 13, 14, 15, 16, 17 } : new int[] { 6, 7, 8 };
                     break;
                 case SelectionType.species:
-                    //spec==B
-                    SubIdc = ZwoSpec ? new int[] { 6, 7, 8, 9, 10, 11, 15, 16, 17 } : new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+                    switch (lookatpos) {
+                        case 0:
+                            SubIdc = ZwoSpec ? new int[] { 0, 1, 2, 3, 4, 5, 12, 13, 14 } : new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+                            break;
+                        case 1:
+                            SubIdc = ZwoSpec ? new int[] { 6, 7, 8, 9, 10, 11, 15, 16, 17 } : new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+                            break;
+                        default:
+                            throw new NotSupportedException("This selection type is not supported");
+                    }
                     break;
                 case SelectionType.all_combined:
-                    SubIdc = ZwoSpec ? new int[] { 16, 17 } : new int[] { 7, 8 };
+                    switch (lookatpos) {
+                        case 0:
+                            SubIdc = ZwoSpec ? new int[] { 13, 14 } : new int[] { 7, 8 };
+                            break;
+                        case 1:
+                            SubIdc = ZwoSpec ? new int[] { 16, 17 } : new int[] { 7, 8 };
+                            break;
+                        default:
+                            throw new NotSupportedException("This selection type is not supported");
+                    }
                     break;
                 default:
                     throw new NotSupportedException("This selection type is not supported");
@@ -426,7 +459,7 @@ namespace AdvancedSolverTests.SubBlocking
             return bla;
         }
 
-        public static BlockMsrMatrix ConvertToQuadraticBMsr(this BlockMsrMatrix M, int[] Colidx) {
+        public static BlockMsrMatrix ConvertToQuadraticBMsr(this BlockMsrMatrix M, int[] Colidx,bool isinternal) {
 
             Debug.Assert(M._RowPartitioning.LocalLength == Colidx.Length);
             
@@ -449,8 +482,12 @@ namespace AdvancedSolverTests.SubBlocking
             //    ExtISrc = (RowISrc.Length - ColISrc.Length).ForLoop(i => Colidx[i+ ColISrc.Length]);
             int[] ExtISrc = M._RowPartitioning.LocalLength.ForLoop(i => Colidx[i]);
             int[] ExtITrg = M._RowPartitioning.LocalLength.ForLoop(i => i);
-
-            M.AccSubMatrixTo(1.0,ret, RowISrc, default(int[]), new int[0], default(int[]), ExtISrc, ExtITrg);
+            if (isinternal) {
+                M.AccSubMatrixTo(1.0, ret, RowISrc, default(int[]), ExtISrc, default(int[]));
+            } else {
+                M.AccSubMatrixTo(1.0, ret, RowISrc, default(int[]), new int[0], default(int[]), ExtISrc, ExtITrg);
+            }
+            
             return ret;
         }
 
@@ -485,6 +522,16 @@ namespace AdvancedSolverTests.SubBlocking
                 idc.AddRange(GetIndcOfExtCell(map,c));
             return idc.ToArray();
         }
-           
+        public static int GetIdxOfFirstBlockWith(MultigridMapping map, bool ZwoSpec) {
+            int maxLen = Math.Max(map.GetSubblkLen(0)[0], map.GetSubblkLen(1)[0]);
+            int minLen = Math.Min(map.GetSubblkLen(0)[0], map.GetSubblkLen(1)[0]);
+            int crit = ZwoSpec ? maxLen : minLen;
+            for (int iCell = 0; iCell < map.LocalNoOfBlocks; iCell++) {
+                int iBlock = iCell + map.AggGrid.CellPartitioning.i0;
+                if(map.GetBlockLen(iBlock) == crit)
+                    return iCell;
+            }
+            return -1;
+        } 
     }
 }

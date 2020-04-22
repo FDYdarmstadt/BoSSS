@@ -49,7 +49,7 @@ namespace AdvancedSolverTests {
             //SubBlockTests.WriteOutTestMatrices();
             //SubBlockTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2,MatrixShape.diagonal_var_spec);
             //SubBlockTests.SplitVectorOperations(XDGusage.none, 2, MatrixShape.diagonal_var);
-            LocalTests.SubSelection(SelectionType.species);
+            //LocalTests.SubSelection(SelectionType.species);
             //LocalTests.CellwiseSubSelection(SelectionType.species);
             //ExternalTests.ExternalIndexTest(XDGusage.all,2);
             //ExternalTests.ExternalIndexTest(XDGusage.all, 2,4);
@@ -60,7 +60,13 @@ namespace AdvancedSolverTests {
             //ExternalTests.SubBlockExtraction(XDGusage.all, 2, MatrixShape.laplace, 4);
             //ExternalTests.VectorCellwiseOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
             //ExternalTests.SubSelection(XDGusage.all, 2, MatrixShape.full_var_spec, 4);
-            ExternalTests.VectorSplitOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
+            //ExternalTests.VectorSplitOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
+            //AdvancedSolverTests.SubBlocking.LocalTests.CellBlockVectorOperations(XDGusage.all, 2, MatrixShape.diagonal_var_spec);
+            //AdvancedSolverTests.SubBlocking.LocalTests.CellwiseSubSelection(SelectionType.all_combined);
+            //AdvancedSolverTests.SubBlocking.LocalTests.LocalIndexTest(XDGusage.all, 2);
+            //AdvancedSolverTests.SubBlocking.LocalTests.SplitVectorOperations(XDGusage.none, 2, MatrixShape.full_var);
+            //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2, MatrixShape.full);
+            AdvancedSolverTests.SubBlocking.ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
         }
     }
 }

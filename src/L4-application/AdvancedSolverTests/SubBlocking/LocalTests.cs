@@ -66,9 +66,9 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- do the masking to get index lists
             stw.Start();
-            var mask = new TestMask(selector,null);
+            var mask = new BlockMask(selector,null);
             stw.Stop();
-            int[] GlobalIdxMask_loc = mask.Global_IList_LocalCells;
+            int[] GlobalIdxMask_loc = mask.GlobalIList_Internal.ToArray();
 
             //Assert --- Idx lists are of same length
             Assert.IsTrue(GlobalIdxMap_loc.Length == GlobalIdxMask_loc.Length);
@@ -192,7 +192,7 @@ namespace AdvancedSolverTests.SubBlocking
         public static void SubMatrixExtractionWithCoupling(
         [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
         [Values(2)] int DGOrder,
-        [Values(MatrixShape.full, MatrixShape.full_var, MatrixShape.full_spec, MatrixShape.full_var_spec)] MatrixShape MShape
+        [Values(MatrixShape.diagonal, MatrixShape.diagonal_var, MatrixShape.full_spec, MatrixShape.full_var_spec)] MatrixShape MShape
         ) {
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape);
             Console.WriteLine("ExtractSubMatrixAndIgnoreCoupling({0},{1},{2})", UseXdg, DGOrder, MShape);
@@ -213,9 +213,14 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- establish submatrix
             stw.Start();
+            //var Ones = M.CloneAs();
+            //Ones.Clear();
+            //Ones.SetAll(1);
+            //var extractOnes = mask.GetSubBlockMatrix(Ones, false, coup[0], coup[1]);
             var Mext = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
             stw.Stop();
-            Mext.Acc(-1.0, M);
+            var Mquad=M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(),true);
+            Mext.Acc(-1.0, Mquad);
 
             //Assert --- Mext conains only diagonal blocks of M
             Assert.IsTrue(Mext.InfNorm() == 0);
@@ -248,7 +253,9 @@ namespace AdvancedSolverTests.SubBlocking
             stw.Start();
             var Mext = mask.GetSubBlockMatrix(M);
             stw.Stop();
-            Mext.Acc(-1.0, M);
+
+            var Mquad=M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(),true);
+            Mext.Acc(-1.0, Mquad);
 
             //Assert --- Mext conains only diagonal blocks of M
             Assert.IsTrue(Mext.InfNorm() == 0);
@@ -300,11 +307,15 @@ namespace AdvancedSolverTests.SubBlocking
 
         
 
-        [Test]
+        [TestCase(XDGusage.all,2, MatrixShape.full)]
+        [TestCase(XDGusage.all, 2, MatrixShape.full_spec)]
+        [TestCase(XDGusage.all, 2, MatrixShape.full_var)]
+        [TestCase(XDGusage.none, 2, MatrixShape.full)]
+        [TestCase(XDGusage.none, 2, MatrixShape.full_spec)]
         public static void SplitVectorOperations(
-        [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
-        [Values(2)] int DGOrder,
-        [Values(MatrixShape.full, MatrixShape.full_spec, MatrixShape.full_var)] MatrixShape MShape
+        XDGusage UseXdg,
+        int DGOrder,
+        MatrixShape MShape
         ) {
 
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape);
@@ -362,13 +373,18 @@ namespace AdvancedSolverTests.SubBlocking
             Console.WriteLine("SubSelection({0})", SType);
 
             //Arrange --- extracts entries of matrix according to hardcoded selection
-            int sampleCellA = 0;
-            int sampleCellB = 2;
             int DGdegree = 2;
             int GridResolution = 4;
             var mgo = Utils.CreateTestMGOperator(XDGusage.all, DGdegree, MatrixShape.full_var_spec, GridResolution);
+            int sampleCellA = Utils.GetIdxOfFirstBlockWith(mgo.Mapping, false); //1 species
+            int sampleCellB = Utils.GetIdxOfFirstBlockWith(mgo.Mapping, true); //2 species
             BlockMsrMatrix compA = Utils.GetCellCompMatrix(SType, mgo, sampleCellA);
             BlockMsrMatrix compB = Utils.GetCellCompMatrix(SType, mgo, sampleCellB);
+
+            int iBlock = sampleCellB + mgo.Mapping.AggGrid.CellPartitioning.i0;
+            int i0 = mgo.Mapping.GetBlockI0(iBlock);
+            var block = MultidimensionalArray.Create(mgo.Mapping.GetBlockLen(iBlock), mgo.Mapping.GetBlockLen(iBlock));
+            mgo.OperatorMatrix.ReadBlock(i0, i0, block);
 
             //Arrange --- setup masking, which correspond to hardcoded
             SubBlockSelector sbsA = new SubBlockSelector(mgo.Mapping);
@@ -391,6 +407,8 @@ namespace AdvancedSolverTests.SubBlocking
             //Assert --- 
             Assert.IsTrue(blocksA.Length==1);
             Assert.IsTrue(blocksB.Length==1);
+            Assert.IsTrue(compA.RowPartitioning.LocalLength == blocksA[0].GetLength(0));
+            Assert.IsTrue(compB.RowPartitioning.LocalLength == blocksB[0].GetLength(0));
 
             //Assert --- compare masking of single spec cell
             Debug.Assert(compA.InfNorm() != 0.0);
@@ -400,7 +418,7 @@ namespace AdvancedSolverTests.SubBlocking
             //Assert --- compare masking of double spec cell
             Debug.Assert(compB.InfNorm() != 0.0);
             compB.AccBlock(0, 0, -1.0, blocksB[0]);
-            Assert.IsTrue(compB.InfNorm() == 0.0);
+            Assert.IsTrue(compB.InfNorm() == 0.0,String.Format("proc{0}: not fulfilled at block {1}", mgo.Mapping.MpiRank, sampleCellB));
         }
 
         [Test]
@@ -412,11 +430,11 @@ namespace AdvancedSolverTests.SubBlocking
             Console.WriteLine("SubSelection({0})", SType);
 
             //Arrange --- extracts entries of matrix according to hardcoded selection
-            int sampleCellA = 0;
-            int sampleCellB = 2;
             int DGdegree = 2;
             int GridResolution = 4;
             var mgo = Utils.CreateTestMGOperator(XDGusage.all, DGdegree, MatrixShape.full_var_spec, GridResolution);
+            int sampleCellA = Utils.GetIdxOfFirstBlockWith(mgo.Mapping, false); //1 species
+            int sampleCellB = Utils.GetIdxOfFirstBlockWith(mgo.Mapping, true); //2 species
             BlockMsrMatrix compA = Utils.GetCellCompMatrix(SType, mgo, sampleCellA);
             BlockMsrMatrix compB = Utils.GetCellCompMatrix(SType, mgo, sampleCellB);
 

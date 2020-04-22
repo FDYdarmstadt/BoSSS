@@ -83,7 +83,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="CellIdx"></param>
         /// <param name="global"></param>
         /// <returns></returns>
-        public SubBlockSelectorBase CellSelector(int CellIdx, bool global = true) {
+        public SubBlockSelectorBase CellSelector(int CellIdx, bool global = false) {
 
             int LocNoOfBlocks = m_NoLocalCells;
             int GlobNoOfBlocks = m_NoTotalCells;
@@ -256,14 +256,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Species"></param>
         /// <returns></returns>
         public SubBlockSelectorBase SpeciesSelector(SpeciesId SId) {
-            //for (int v = 0; v < m_map.NoOfVariables; v++) {
-            //    if (this.m_map.AggBasis[v].GetType() == typeof(XdgAggregationBasis))
-            //        Console.WriteLine("WARNING: Variable {0} has no XdgBasis and thus may be not selected",v);
-            //}
+
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
+                if (this.m_map.AggBasis[iVar].GetType() != typeof(XdgAggregationBasis))
+                    throw new NotSupportedException("You tried to select a species within a non-xdg field!");
                 int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, SId);
-                return GetIntInstruction(SpcIdx)(iSpec);
+                if (SpcIdx < 0)
+                    return GetDoNothingInstruction()(iSpec);
+                else
+                    return GetIntInstruction(SpcIdx)(iSpec);
             };
+
+            return this;
+        }
+
+        /// <summary>
+        /// Selects Species by <see cref="SpeciesId"/>.
+        /// </summary>
+        /// <param name="Species"></param>
+        /// <returns></returns>
+        public SubBlockSelectorBase SpeciesSelector(string Species) {
+
+            this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
+                if (this.m_map.AggBasis[iVar].GetType() != typeof(XdgAggregationBasis))
+                    throw new NotSupportedException("You tried to select a species within a non-xdg field!");
+                SpeciesId SpecId =((XdgAggregationBasis)this.m_map.AggBasis[iVar]).XDGBasis.Tracker.GetSpeciesId(Species);
+                int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, SpecId);
+                if (SpcIdx < 0)
+                    return GetDoNothingInstruction()(iSpec);
+                else
+                    return GetIntInstruction(SpcIdx)(iSpec);
+            };
+
             return this;
         }
 
@@ -281,9 +305,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 List<int> SpcInt = new List<int>();
                 foreach(SpeciesId spi in SetOfSpecies) {
                     int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, spi);
+                    if (SpcIdx <0)
+                        continue;
                     SpcInt.Add(SpcIdx);
                 }
-                return GetListInstruction(SpcInt)(iSpec);
+                if (SpcInt.Count <= 0)
+                    return GetDoNothingInstruction()(iSpec);
+                else
+                    return GetListInstruction(SpcInt)(iSpec);
             };
             return this;
         }
@@ -566,9 +595,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             for (int iCell = 0; iCell < m_NoOfCells; iCell++) {
                 m_NoOfSpecies[iCell] = new int[m_NoOfVariables];
                 for (int iVar = 0; iVar < m_NoOfVariables; iVar++) {
-                    m_NoOfSpecies[iCell][iVar] = m_AggBS[iVar].GetNoOfSpecies(iCell+ m_CellOffset);
+                    m_NoOfSpecies[iCell][iVar] = m_AggBS[iVar].GetNoOfSpecies(iCell + m_CellOffset);
                 }
-            } 
+            }
         }
 
         // the subseqent members are different
@@ -605,7 +634,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         // internal set
         // ============
         #region internal set
-        
+
         /// <summary>
         /// global indices in this mask
         /// </summary>
@@ -768,11 +797,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(degree) - 1) == LocalModeOffset + ModeLength - 1);
                             }
                         }
-                        tmpSpc.Add(tmpMod.ToArray());
+                        if(tmpMod.Count>0)
+                            tmpSpc.Add(tmpMod.ToArray());
                     }
-                    tmpVar.Add(tmpSpc.ToArray());
+                    if (tmpSpc.Count > 0)
+                        tmpVar.Add(tmpSpc.ToArray());
                 }
-                tmpCell.Add(tmpVar.ToArray());
+                if (tmpVar.Count > 0)
+                    tmpCell.Add(tmpVar.ToArray());
             }
             var tmpStructNi0 = tmpCell.ToArray();
 
@@ -786,7 +818,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 #endif
-
+            // an empty selection is allowed,
+            // e.g. consider a combination of empty external and non empty local mask
             if (!emptysel) {
                 Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1));
                 Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1));
@@ -798,7 +831,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(SubBlockIdx.Count() == MaskLen);
                 Debug.Assert(SubBlockIdx.GroupBy(x => x).Any(g => g.Count() == 1));
             }
-
+            
             m_GlobalMask = Globalint;
             m_LocalMask = Localint;
             m_StructuredNi0 = tmpStructNi0;

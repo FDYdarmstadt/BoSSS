@@ -55,7 +55,7 @@ namespace AdvancedSolverTests {
         internal int m_DGorder = 1;
 
         protected override IGrid CreateOrLoadGrid() {
-            base.Control.ImmediatePlotPeriod = 1;
+            //base.Control.ImmediatePlotPeriod = 1;
             DeleteOldPlotFiles();
 
             //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
@@ -408,7 +408,9 @@ namespace AdvancedSolverTests {
             mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
 
-            
+
+            //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[1]);
+            //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[0]);
 
             int nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);

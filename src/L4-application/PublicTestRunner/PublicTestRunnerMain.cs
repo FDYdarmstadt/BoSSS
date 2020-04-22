@@ -105,7 +105,8 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
-                        typeof(MPITest.Program)
+                        typeof(MPITest.Program),
+                        typeof(AdvancedSolverTests.SubBlocking.LocalTests)
                     };
             }
         }

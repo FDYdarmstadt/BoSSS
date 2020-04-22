@@ -73,7 +73,7 @@ namespace AdvancedSolverTests.SubBlocking
             //}
             var selector = new SubBlockSelector(map);
             var dummy = new BlockMsrMatrix(map); // we are only interested in getting indices, so a dummy is sufficient
-            var mask = new TestMask(selector, dummy);
+            var mask = new BlockMask(selector, dummy);
 
             //Arrange --- get stuff to put into matlab
             int[] GlobalIdx_ext = Utils.GetAllExtCellIdc(map);
@@ -319,7 +319,7 @@ namespace AdvancedSolverTests.SubBlocking
             var sbs = new SubBlockSelector(map);
             sbs.AllExternalCellsSelection();
             var M_ext = BlockMask.GetAllExternalRows(map, M);
-            var mask = new TestMask(sbs, M_ext);
+            var mask = new BlockMask(sbs, M_ext);
             var eblocks = mask.GetDiagonalBlocks(M, false, false);
             //Dictionary<int, int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
 
@@ -345,11 +345,11 @@ namespace AdvancedSolverTests.SubBlocking
             double[] Res_ext = new double[Vec_ext.Length];
             stw.Start();
             for (int i=0; i < eblocks.Length; i++) {
-                int iBlock = i + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                double[] vec_i = mask.GetSubVecOfCell(Vec_ext, iBlock);
+                //int iBlock = i + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                double[] vec_i = mask.GetSubVecOfCell(Vec_ext, i);
                 double[] Res_i = new double[vec_i.Length];
                 eblocks[i].MatVecMul(1.0, vec_i, 0.0, Res_i);
-                mask.AccSubVecOfCell(Res_i, iBlock, Res_ext);
+                mask.AccSubVecOfCell(Res_i, i, Res_ext);
                 if (map.MpiRank == 0) {
                     eblocks[i].ConvertToMsr().SaveToTextFileSparseDebug(String.Format("block_{0}_{1}", i, map.MpiRank));
                     vec_i.SaveToTextFileDebug(String.Format("vec_{0}_{1}", i, map.MpiRank));
@@ -360,7 +360,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- project Res_i onto Res_g and Res_g=M_ext*vec_ext-Res_g
             double[] Res_g = mask.GetSubVec(Res_ext);
-            var qM_ext=M_ext.ConvertToQuadraticBMsr(mask.Global_IList_ExternalCells);
+            var qM_ext=M_ext.ConvertToQuadraticBMsr(mask.GlobalIList_External.ToArray(),false);
             qM_ext.SpMV(1.0, vec_ex.Vector_Ext, -1.0, Res_g);
 
             if (map.MpiRank == 0) {
@@ -501,9 +501,9 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- do the masking to get index lists
             stw.Start();
-            var mask = new TestMask(selector, dummy);
+            var mask = new BlockMask(selector, dummy);
             stw.Stop();
-            int[] GlobalIdxMask_ext = mask.Global_IList_ExternalCells;
+            int[] GlobalIdxMask_ext = mask.GlobalIList_External.ToArray();
 
             //Assert --- Idx lists are of same length
             Assert.IsTrue(GlobalIdxMap_ext.Length == GlobalIdxMask_ext.Length);
