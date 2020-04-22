@@ -52,7 +52,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         private readonly SinglePhaseField avField;
         private readonly SinglePhaseField levelSetField;
 
-        private readonly string sessionPath;
+        public string SessionPath {
+            get;
+            private set;
+        }
         private readonly ISessionInfo session;
 
         private bool patchRecoveryGradient;
@@ -86,7 +89,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         }
 
         public InflectionPointFinder(string sessionPath, ISessionInfo session) {
-            this.sessionPath = sessionPath;
+            this.SessionPath = sessionPath;
             this.session = session;
 
             ITimestepInfo myTimestep = session.Timesteps.Last();
@@ -193,11 +196,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             if (plotDGFields) {
                 Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: 2);
-                plotDriver.PlotFields(sessionPath + "Fields", 0.0, new DGField[] { densityField, avField, levelSetField });
+                plotDriver.PlotFields(SessionPath + "Fields", 0.0, new DGField[] { densityField, avField, levelSetField });
             }
 
             if (plotSeedingsPoints) {
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "seedingPoints.txt")) {
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(SessionPath + "seedingPoints.txt")) {
                     string resultLine;
                     for (int j = 0; j < Results.Lengths[0]; j++) {
                         resultLine = Results[j, 0, 0] + "\t"
@@ -210,7 +213,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
 
             if (plotInflectionsPoints) {
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "inflectionPoints.txt")) {
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(SessionPath + "inflectionPoints.txt")) {
                     string resultLine;
                     for (int j = 0; j < Results.Lengths[0]; j++) {
                         int pointFound = (int)ResultsExtended[j, 1];
@@ -227,7 +230,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             if (plotCurves) {
                 for (int i = 0; i < Results.Lengths[0]; i++) {
-                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "curve_" + i + ".txt")) {
+                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(SessionPath + "curve_" + i + ".txt")) {
                         string resultLine;
                         for (int j = 0; j < (int)ResultsExtended[i, 0]; j++) {
                             resultLine = Results[i, j, 0] + "\t" + Results[i, j, 1] + "\t" + Results[i, j, 2];
@@ -240,7 +243,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             if (plotStartEndPairs) {
                 for (int j = 0; j < Results.Lengths[0]; j++) {
-                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(sessionPath + "startEndPairs_" + j + ".txt")) {
+                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(SessionPath + "startEndPairs_" + j + ".txt")) {
                         string resultLine;
                         int pointFound = (int)ResultsExtended[j, 1];
 

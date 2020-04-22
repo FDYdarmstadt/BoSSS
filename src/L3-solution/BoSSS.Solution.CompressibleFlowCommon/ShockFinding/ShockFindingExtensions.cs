@@ -35,6 +35,36 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
     public static class ShockFindingExtensions {
 
+        public static MultidimensionalArray LoadResults(string path) {
+            MultidimensionalArray[] parts = new MultidimensionalArray[5];
+            for (int i = 0; i < 5; i++) {
+                parts[i] = IMatrixExtensions.LoadFromTextFile(path + "Results_" + i + ".txt");
+            }
+
+            MultidimensionalArray result = MultidimensionalArray.Create(parts[0].Lengths[0], parts[0].Lengths[1], 5);
+            for (int i = 0; i < result.Lengths[2]; i++) {
+                result.ExtractSubArrayShallow(-1, -1, i).Acc(1.0, parts[i]);
+            }
+            return result;
+        }
+
+        public static MultidimensionalArray LoadResultsExtended(string path) {
+            return IMatrixExtensions.LoadFromTextFile(path + "ResultsExtended.txt");
+        }
+
+        public static void SaveResults(this MultidimensionalArray input, string path) {
+            if (input.Dimension == 2) {
+                input.SaveToTextFile(path + "ResultsExtended.txt");
+            } else if (input.Dimension == 3) {
+                for (int i = 0; i < input.Lengths.Last(); i++) {
+                    input.ExtractSubArrayShallow(-1, -1, i).SaveToTextFile(path + "Results_" + i + ".txt");
+                }
+            } else {
+                throw new NotSupportedException("This MdA is cannot be saved.");
+            }
+        }
+
+
         public static void SortOutNonConverged(MultidimensionalArray input, MultidimensionalArray inputExtended, out MultidimensionalArray result, out MultidimensionalArray resultExtended) {
             // input            [0]: x        [1]: y             [2]: f       [3] secondDerivative    [4] stepSize
             // inputExtended    [0]: iter     [1]: converged     [2]: jCell
@@ -71,18 +101,24 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         }
 
         public static string[] CreateDirectories(string mainPath, string directoryName, List<ISessionInfo> sessions) {
-            // Create directories where the data will be stored
-            if (!Directory.Exists(mainPath)) {
-                System.IO.Directory.CreateDirectory(mainPath);
-            }
-
             string[] sessionPaths = new string[sessions.Count()];
             for (int i = 0; i < sessions.Count(); i++) {
                 sessionPaths[i] = mainPath + sessions.ElementAt(i).Name + @"\" + directoryName + @"\";
                 if (!Directory.Exists(sessionPaths[i])) {
                     System.IO.Directory.CreateDirectory(sessionPaths[i]);
+                }
+            }
+
+            return sessionPaths;
+        }
+
+        public static void EmptyDirectories(string mainPath, string directoryName, List<ISessionInfo> sessions) {
+            for (int i = 0; i < sessions.Count(); i++) {
+                string sessionPath = mainPath + sessions.ElementAt(i).Name + @"\" + directoryName + @"\";
+                if (!Directory.Exists(sessionPath)) {
+                    return;
                 } else {
-                    DirectoryInfo sessionDirectory = new DirectoryInfo(sessionPaths[i]);
+                    DirectoryInfo sessionDirectory = new DirectoryInfo(sessionPath);
 
                     // Delete all directories in the current directory
                     foreach (DirectoryInfo dir in sessionDirectory.EnumerateDirectories()) {
@@ -95,8 +131,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                     }
                 }
             }
-
-            return sessionPaths;
         }
 
         public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalCellIndex) {

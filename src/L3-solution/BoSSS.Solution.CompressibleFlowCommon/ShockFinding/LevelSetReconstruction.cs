@@ -55,21 +55,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.inputExtended = inputExtended;
         }
 
-        private double[] SortOutNonConverged(double[] data) {
-            double[] result = new double[data.Length];
-
-            int count = 0;
-            for (int i = 0; i < input.Lengths[0]; i++) {
-                if (inputExtended[i, 1] > 0) {
-                    result[count] = data[i];
-                    count++;
-                }
-            }
-
-            Array.Resize(ref result, count);
-            return result;
-        }
-
         public MultidimensionalArray CreateClustering(int numOfClusters, double[] initialMeans, double[] data = null, bool sortOutNonConverged = false) {
             Console.WriteLine("CLUSTERING: START");
 
@@ -113,13 +98,58 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return clustering;
         }
 
-        public void SaveClusteringToTextFile(int whichClustering, string path = null) {
+        public MultidimensionalArray CreateClusteringNew(MultidimensionalArray inputClustering, int numOfClusters, double[] initialMeans) {
+            Console.WriteLine("CLUSTERING: START");
+            double[] data = inputClustering.ExtractSubArrayShallow(-1, 3).To1DArray();
+            Kmeans kmeans = new Kmeans(data, numOfClusters, initialMeans);
+            int[] cellToCluster = kmeans.Cluster();
+
+            MultidimensionalArray clustering = MultidimensionalArray.Create(data.Length, 4);
+            for (int i = 0; i < inputClustering.Lengths[0]; i++) {
+                clustering[i, 0] = inputClustering[i, 0];      // x
+                clustering[i, 1] = inputClustering[i, 1];      // y
+                clustering[i, 2] = inputClustering[i, 1];      // function value
+                clustering[i, 3] = cellToCluster[i];           // cellToCluster (e.g. cell 0 is in cluster 1)
+            }
+            _clusterings.Add(clustering);
+
+            Console.WriteLine("CLUSTERING: END");
+            return clustering;
+        }
+
+
+        public MultidimensionalArray SelectCluster(MultidimensionalArray clustering, int clusterToSelect) {
+            // clustering.Lengths -->  [0]: numOfPoints      [1]: 4
+            // clustering[1] -->       [0]: x                [1]: y          [2]: function value       [3]: cellToCluster
+
+            int numOfPoints = clustering.Lengths[0];
+            int[] cellsInCluster = new int[numOfPoints];
+            int count = 0;
+            for (int i = 0; i < numOfPoints; i++) {
+                if (Math.Abs(clustering[i, 3] - clusterToSelect) < 0.1) {
+                    cellsInCluster[count] = i;
+                    count++;
+                }
+            }
+            Array.Resize(ref cellsInCluster, count);
+
+            MultidimensionalArray result = MultidimensionalArray.Create(count, clustering.Lengths[1]);
+            for (int i = 0; i < cellsInCluster.Length; i++) {
+                int cell = cellsInCluster[i];
+                result.ExtractSubArrayShallow(i, -1).Acc(1.0, clustering.ExtractSubArrayShallow(cell, -1));
+            }
+
+            return result;
+        }
+
+        private static int clusteringCount = 0;
+
+        public void SaveClusteringToTextFile(MultidimensionalArray clustering, string path = null) {
             if (path == null) {
                 path = sessionPath;
             }
 
-            MultidimensionalArray clustering = _clusterings[whichClustering];
-            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(path + "clustering_" + whichClustering + ".txt")) {
+            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(path + "clustering_" + clusteringCount + ".txt")) {
                 string resultLine;
                 for (int i = 0; i < clustering.Lengths[0]; i++) {
                     resultLine = clustering[i, 0]
@@ -130,6 +160,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 }
                 sw.Flush();
             }
+
+            clusteringCount++;
         }
     }
 }
