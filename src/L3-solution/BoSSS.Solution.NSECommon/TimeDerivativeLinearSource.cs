@@ -102,15 +102,7 @@ namespace BoSSS.Solution.NSECommon {
             rho = 1.0;
 
             if (EoS != null) {
-                rho = EoS.GetDensity(parameters);
-                //double T = parameters[0];
-                //if(m_energy == true) {
-                //    double gamma = EoS.GetHeatCapacityRatio(parameters[0]);
-                //    Debug.Assert(gamma > 0);
-                //    mult = 1; // 1/gamma;
-                //}
-                //if(m_conti == true)
-                //    mult = -1 / T;
+                rho = EoS.GetDensity(parameters); 
             }
 
             return mult * rho * U[0];

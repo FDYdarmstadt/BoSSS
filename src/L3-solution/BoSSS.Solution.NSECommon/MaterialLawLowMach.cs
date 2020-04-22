@@ -119,7 +119,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         public override double GetDensity(params double[] phi) {
             if(IsInitialized) {
-               Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
+               //Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
 
                 double rho;
                 if(ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found

@@ -135,9 +135,6 @@ namespace BoSSS.Solution.NSECommon {
         double[] StoichiometricCoefficients;
         double[] ReactionRateConstants;
         int SpeciesIndex; //Species index, not to be confused with alpha = SpeciesIndex + 1
-        int NumberOfReactants;
-        string[] MassFractionNames;
-        double OneOverMolarMass0MolarMass1;
         double[] MolarMasses;
         double rho;
         MaterialLaw EoS;
@@ -149,24 +146,20 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="ReactionRateConstants">constants[0]=PreExpFactor, constants[1]=ActivationTemperature, constants[2]=MassFraction0Exponent, constants[3]=MassFraction1Exponent</param>
         /// <param name="StoichiometricCoefficients"></param>        
-        /// <param name="OneOverMolarMass0MolarMass1"> 1/(M_infty^(a + b -1) * MolarMassFuel^a * MolarMassOxidizer^b). M_infty is the reference for the molar mass steming from non-dimensionalisation of the governing equations.</param>  
+     
         /// <param name="MolarMasses">Array of molar masses. 0 Fuel. 1 Oxidizer, 2 to ns products.</param>   
         /// <param name="EoS">MaterialLawCombustion</param>  
         /// <param name="NumberOfReactants">The number of reactants (i.e. ns)</param> 
         /// <param name="SpeciesIndex">Index of the species being balanced. (I.e. 0 for fuel, 1 for oxidizer, 2 for CO2, 3 for water)</param> 
-        public ReactionSpeciesSourceLinearizedJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients, double OneOverMolarMass0MolarMass1, double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex) {
-            //MassFractionNames = new string[] { VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
-            //m_ArgumentOrdering = new string[] { MassFractionNames[SpeciesIndex] };
-
-            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfReactants - 1));// Y3 is not a variable!!!!;
+        public ReactionSpeciesSourceLinearizedJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients , double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex) {
+            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfReactants - 1));// Y4 is not a variable!!!!;
             this.StoichiometricCoefficients = StoichiometricCoefficients;
             this.ReactionRateConstants = ReactionRateConstants;
             this.SpeciesIndex = SpeciesIndex;
-            this.NumberOfReactants = NumberOfReactants;
-            this.OneOverMolarMass0MolarMass1 = OneOverMolarMass0MolarMass1;
             this.MolarMasses = MolarMasses;
             this.EoS = EoS;
             this.m_Da = ReactionRateConstants[0];
+
         }
 
 
@@ -181,7 +174,9 @@ namespace BoSSS.Solution.NSECommon {
         /// Temperature, MassFraction0, MassFraction1, MassFraction 2, MassFraction 3 at the linearization point.
         /// </summary>
         public virtual IList<string> ParameterOrdering {
-            get { return new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; }
+            get {
+                return new List<string> { }; // no parameters
+            }
         }
 
         public virtual TermActivationFlags VolTerms {
@@ -210,21 +205,22 @@ namespace BoSSS.Solution.NSECommon {
             return this.Source(cpv.Xglobal, cpv.Parameters, U) * V;
         }
 
-        protected double Source(double[] x, double[] parameters, double[] U) {
-       
+        protected double Source(double[] x, double[] parameters, double[] U) {     
 
             double Temperature = U[0];
             double Y0 = U[1];
             double Y1 = U[2];
-            //double PM_CH4 = MolarMasses[0];
-            //double PM_O2 = MolarMasses[1];
-
-
+            double Ta = ReactionRateConstants[1];
+            double MM_F = MolarMasses[0];
+            double MM_O = MolarMasses[1];
+            //Temperature = Temperature < 1 ? 1 : Temperature;
+            
             double ReactionRate = 0.0;
-            double ExponentialPart = m_Da * Math.Exp(-ReactionRateConstants[1] / Temperature); // Da*exp(-Ta/T)
-            rho = EoS.GetDensity(U);
+             rho = EoS.GetDensity(U);
 
-           ReactionRate = ExponentialPart * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
+
+            ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
+
             Debug.Assert(!double.IsNaN(ReactionRate));
             Debug.Assert(!double.IsInfinity(ReactionRate));
             if (ReactionRate < 0)
@@ -232,7 +228,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
 
-            return -MolarMasses[SpeciesIndex] * StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
+            return -MolarMasses[SpeciesIndex] *  StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
         }
     }
 }

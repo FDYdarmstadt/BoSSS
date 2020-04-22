@@ -55,7 +55,7 @@ namespace BoSSS.Solution.NSECommon {
             this.EoS = EoS;
             m_Da = ReactionRateConstants[0]; // Damköhler number 
 
-         
+
         }
 
 
@@ -75,7 +75,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            if(cs.UserDefinedValues.Keys.Contains("Damkoehler"))
+            if (cs.UserDefinedValues.Keys.Contains("Damkoehler"))
                 m_Da = (double)cs.UserDefinedValues["Damkoehler"];
         }
 
@@ -86,11 +86,11 @@ namespace BoSSS.Solution.NSECommon {
             rho = EoS.GetDensity(parameters);
             Debug.Assert(!double.IsNaN(rho));
             Debug.Assert(!double.IsInfinity(rho));
-                      
-                ReactionRate = m_Da * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]); 
+
+            ReactionRate = m_Da * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
 
             return HeatReleaseFactor * U[0] * ReactionRate;
-            
+
         }
     }
 
@@ -170,27 +170,21 @@ namespace BoSSS.Solution.NSECommon {
         /// 
         /// </summary>
         protected double Source(double[] x, double[] parameters, double[] U) {
-            //rho = EoS.GetDensity(parameters);
             rho = EoS.GetDensity(U);
             Debug.Assert(!double.IsNaN(rho));
             Debug.Assert(!double.IsInfinity(rho));
-            //double Temperature = parameters[0];
-            //double Y0 = parameters[1];
-            //double Y1 = parameters[2];
-
             double Temperature = U[0];
-            double Y0 = U[1];
-            double Y1 = U[2];
+            double YF = U[1];
+            double YO = U[2];
             double Ta = ReactionRateConstants[1];
-            double a = ReactionRateConstants[2];
-            double b = ReactionRateConstants[3];
+
             double PM_CH4 = molarMasses[0];
             double PM_O2 = molarMasses[1];
 
-            ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * Math.Pow(rho * Y0, a) * Math.Pow(rho * Y1, b);
-            if (ReactionRate < 0)
-                ReactionRate = 0;
-            return -HeatReleaseFactor * ReactionRate;/*U[0] */
+
+            ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * rho * YF / PM_CH4 * rho / PM_O2 * YO;
+
+            return -HeatReleaseFactor * ReactionRate;
 
         }
     }
