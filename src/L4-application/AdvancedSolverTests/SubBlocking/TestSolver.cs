@@ -20,6 +20,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.XNSECommon;
 using System.Diagnostics;
+using MPI.Wrappers;
 
 namespace AdvancedSolverTests {
     /// <summary>
@@ -59,6 +60,10 @@ namespace AdvancedSolverTests {
             DeleteOldPlotFiles();
 
             //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
+            var comm = csMPI.Raw._COMM.WORLD;
+            int size;
+            csMPI.Raw.Comm_Size(comm,out size);
+
             base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
 
             base.Control.GridPartOptions = "hallo";
@@ -89,7 +94,12 @@ namespace AdvancedSolverTests {
             };
 
             m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res + 1), GenericBlas.Linspace(-1, 1, m_Res + 1));
-            ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);
+            if (size == 4) {
+                ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);
+            } else {
+                if (size != 1)
+                    throw new NotSupportedException("supported MPIsize is 1 or 4");
+            }
             return m_grid;
         }
 
