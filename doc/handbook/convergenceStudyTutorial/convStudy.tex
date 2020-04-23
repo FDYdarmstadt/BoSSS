@@ -241,9 +241,9 @@ foreach(var C in Runs)\newline
 \BoSSSexe
 \BoSSScmd{
 /// The following line ensures that all jobs are complete before 
-/// post-processing analysis is started, although, there is a 720-seconds
+/// post-processing analysis is started, although, there is a one-hour (3600-seconds )
 /// time-out.
-WorkflowMgm.BlockUntilAllJobsTerminate(720);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600);
  }
 \BoSSSexe
 \BoSSScmd{
