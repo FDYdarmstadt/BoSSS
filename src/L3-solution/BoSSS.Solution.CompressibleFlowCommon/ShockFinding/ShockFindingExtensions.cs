@@ -64,11 +64,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
-        public static void SortOutNonConverged(MultidimensionalArray input, MultidimensionalArray inputExtended, out MultidimensionalArray result, out MultidimensionalArray resultExtended) {
+        public static void EliminateNonConvergedPoints(MultidimensionalArray input, MultidimensionalArray inputExtended, out MultidimensionalArray result, out MultidimensionalArray resultExtended) {
             // input            [0]: x        [1]: y             [2]: f       [3] secondDerivative    [4] stepSize
             // inputExtended    [0]: iter     [1]: converged     [2]: jCell
 
-            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: START");
+            Console.WriteLine("EliminateNonConvergedPoints: START");
 
             int numOfPoints = input.Lengths[0];
             int[] convergedCells = new int[numOfPoints];
@@ -85,13 +85,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             resultExtended = MultidimensionalArray.Create(count, inputExtended.Lengths[1]);
 
             for (int i = 0; i < convergedCells.Length; i++) {
-                // If point has converged, copy all info from input to output array
+                // If converged, copy all info from input to output array
                 int cell = convergedCells[i];
                 result.ExtractSubArrayShallow(i, -1, -1).Acc(1.0, input.ExtractSubArrayShallow(cell, -1, -1));
                 resultExtended.ExtractSubArrayShallow(i, -1).Acc(1.0, inputExtended.ExtractSubArrayShallow(cell, -1));
             }
 
-            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: END");
+            Console.WriteLine("EliminateNonConvergedPoints: END");
         }
 
         public static double[] GetFinalFunctionValues(MultidimensionalArray input, MultidimensionalArray iterationsNeeded) {
