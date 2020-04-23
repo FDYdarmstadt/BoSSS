@@ -63,7 +63,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 throw new NotSupportedException("This MdA is cannot be saved.");
             }
         }
-        
+
         public static void SortOutNonConverged(MultidimensionalArray input, MultidimensionalArray inputExtended, out MultidimensionalArray result, out MultidimensionalArray resultExtended) {
             // input            [0]: x        [1]: y             [2]: f       [3] secondDerivative    [4] stepSize
             // inputExtended    [0]: iter     [1]: converged     [2]: jCell
@@ -340,6 +340,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return prcField;
         }
 
+        /// <summary>
+        /// Reconstructs a <see cref="BoSSS.Foundation.XDG.LevelSet"/> from a given set of points on a given DG field
+        /// </summary>
+        /// <param name="field">The DG field to work with</param>
+        /// <param name="points"> <see cref="MultidimensionalArray"/>
+        ///  Lengths --> [0]: numOfPoints, [1]: 2
+        ///  [1] --> [0]: x, [1]: y
+        /// </param>
         public static SinglePhaseField ReconstructLevelSetField(SinglePhaseField field, MultidimensionalArray points) {
             // Init
             IGridData gridData = field.GridDat;
@@ -356,7 +364,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             ev.Evaluate(1.0, new DGField[] { gradientX, gradientY }, points, 0.0, GradVals);
 
             // Level set reconstruction
-            Console.WriteLine(String.Format("Reconstruction of level set started...", field.Identification));
+            Console.WriteLine("Reconstruction of field levelSet started...");
             int count = 0;
             Func<double[], double> func = delegate (double[] X) {
                 double minDistSigned = double.MaxValue;
@@ -422,8 +430,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// Creates a continuous version of a DG level set field
         /// </summary>
         /// <param name="DGLevelSet">The input DG level set field</param>
+        /// <param name="points">The points used for reconstruction, needed for the creation of the narrow band</param>
         /// <returns>A continuous level set <see cref="SinglePhaseField"/> with one order higher than the input</returns>
         public static SinglePhaseField ContinuousLevelSet(SinglePhaseField DGLevelSet, MultidimensionalArray points) {
+            Console.WriteLine(String.Format("Continuity projection of field {0} started...", DGLevelSet.Identification));
+
             // Init
             IGridData gridData = DGLevelSet.GridDat;
             SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, DGLevelSet.Basis.Degree + 1), DGLevelSet.Identification + "_cont");
@@ -456,7 +467,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             ContinuityProjection continuityProjection = new ContinuityProjection(continuousLevelSet.Basis, DGLevelSet.Basis, gridData, ContinuityProjectionOption.ConstrainedDG);
             continuityProjection.MakeContinuous(DGLevelSet, continuousLevelSet, narrowBand, posMask);
 
-            Console.WriteLine(String.Format("Continuity projection of field {0} finished", DGLevelSet.Identification));
+            Console.WriteLine("finished");
 
             return continuousLevelSet;
         }

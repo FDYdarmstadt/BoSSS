@@ -423,7 +423,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             results[0, 2] = f[0, 0];
 
             // Set initial step size to 0.5 * h_minGlobal
-            // Set the search direction depending on the sign of the curvature
             results[0, 4] = 0.5 * gridData.Cells.h_minGlobal;
 
             int n = 1;
