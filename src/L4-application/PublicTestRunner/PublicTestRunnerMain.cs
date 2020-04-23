@@ -385,7 +385,7 @@ namespace PublicTestRunner {
             }
             string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
             Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
-
+            
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile(DateNtime);
 
@@ -403,6 +403,7 @@ namespace PublicTestRunner {
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
                 BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
+                Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
                 DirectoryInfo NativeOverride;
                 if (!bpc.DeployRuntime) {
@@ -457,11 +458,17 @@ namespace PublicTestRunner {
                 cnt = 0;
                 var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
                 using (new BlockTrace("DEPLOYMENT", tr)) {
+                    var checkResFileName = new HashSet<string>();
+
                     foreach (var t in allTests) {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride);
+                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, cnt);
+                            if(checkResFileName.Add(j.resultFile) == false) {
+                                throw new IOException($"Result file name {j.resultFile} is used multiple times.");
+                            }
+
                             Console.WriteLine($"Successfully submitted {j.j.Name}.");
                             AllOpenJobs.Add(j);
                         } catch (Exception e) {
@@ -596,8 +603,17 @@ namespace PublicTestRunner {
                 // very final message:
                 if (SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine("All tests/jobs finished successfully.");
+
+                    if(returnCode != 0) {
+                        Console.Error.WriteLine("Some other error occurred (maybe IO error after successful test run) -- check output log");
+                        Console.Error.WriteLine("FAILURE."); 
+                    } else {
+                        Console.WriteLine("SUCCESS."); 
+                    }
+
                 } else {
-                    Console.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
+                    Console.Error.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
+                    Console.Error.WriteLine("FAILURE."); 
                 }
                 Console.WriteLine($"{DateTime.Now}");
             }
@@ -695,7 +711,8 @@ namespace PublicTestRunner {
             string[] AdditionalFiles,
             string prefix,
             int NoOfMpiProcs,
-            DirectoryInfo nativeOverride) {
+            DirectoryInfo nativeOverride,
+            int cnt) {
             using (new FuncTrace()) {
 
                 // define unique name (not to long) for the job
@@ -728,7 +745,7 @@ namespace PublicTestRunner {
 
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
-                string resultFile = $"result-{dor}-{TestName}.xml";
+                string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
@@ -883,6 +900,19 @@ namespace PublicTestRunner {
         /// </param>
         /// <returns></returns>
         public static int _Main(string[] args, ITestTypeProvider ttp) {
+            if(args.Length > 5) {
+                Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
+                
+                Console.WriteLine("No of args: " + args.Length);
+                int i = 0;
+                foreach(string arg in args) {
+                    Console.WriteLine("    " + arg);
+                }
+
+                Console.WriteLine($"Remember: if you are using a bash shell, a wildcard * might get interpreted -- use quoted wildcard '*' !");
+                return -args.Length;
+            }
+
             TestTypeProvider = ttp;
             Console.WriteLine("BoSSS NUnit test runner.");
 
@@ -911,9 +941,12 @@ namespace PublicTestRunner {
 
                 case "runjobmanager":
                 DeleteResultFiles();
+
+
                 int iQueue = 1;
                 string filter = args[1];
                 if(args.Length == 3) {
+                    Console.WriteLine("arg 2 is:" + args[2]);
                     if(args[2].StartsWith("queue#")) {
                         try {
                             iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
@@ -928,6 +961,8 @@ namespace PublicTestRunner {
                         PrintMainUsage();
                         break;
                     }
+                } else {
+
                 }
 
                 ret = JobManagerRun(filter, iQueue);
