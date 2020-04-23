@@ -46,13 +46,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 16, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 17, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            int D = 2;
+
+            if (D == 3)
+                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             // basic database options
             // ======================
@@ -63,8 +66,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/Channel";
             C.ProjectDescription = "Channel flow with kinetic energy";
 
-            C.ContinueOnIoError = false;
-            C.LogValues = XNSE_Control.LoggingValues.ChannelFlow;
+            //C.ContinueOnIoError = false;
+            //C.LogValues = XNSE_Control.LoggingValues.ChannelFlow;
 
             #endregion
 
@@ -81,6 +84,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            if(D == 3) {
+                C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+                    Degree = p,
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+            }
             C.FieldOptions.Add("GravityY", new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -103,10 +112,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //    Degree = p,
             //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             //});
-            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
-                Degree = 2*p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+            //    Degree = 2*p,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
 
             #endregion
 
@@ -119,7 +128,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
-            double sigma = 0.1;
+            double sigma = 0.0;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.beta_S = 0.05;
@@ -138,52 +147,90 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double L = 4;
             double H = 1;
 
-            C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(0, L, 4 * kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
-                //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
+            if (D == 2) {
+                C.GridFunc = delegate () {
+                    double[] Xnodes = GenericBlas.Linspace(0, L, 4 * kelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
+                    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+                    //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
-                switch (wallBC) {
-                    case 0:
-                        goto default;
-                    case 1:
-                        grd.EdgeTagNames.Add(1, "velocity_inlet_lower");
-                        grd.EdgeTagNames.Add(2, "velocity_inlet_upper");
-                        break;
-                    case 2:
-                        grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
-                        grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
-                        break;
-                    default:
-                        grd.EdgeTagNames.Add(1, "wall_lower");
-                        grd.EdgeTagNames.Add(2, "wall_upper");
-                        break;
+                    switch (wallBC) {
+                        case 0:
+                            goto default;
+                        case 1:
+                            grd.EdgeTagNames.Add(1, "velocity_inlet_lower");
+                            grd.EdgeTagNames.Add(2, "velocity_inlet_upper");
+                            break;
+                        case 2:
+                            grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+                            grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+                            break;
+                        default:
+                            grd.EdgeTagNames.Add(1, "wall_lower");
+                            grd.EdgeTagNames.Add(2, "wall_upper");
+                            break;
 
-                }
-                //grd.EdgeTagNames.Add(3, "velocity_inlet_left");
-                ////grd.EdgeTagNames.Add(3, "pressure_outlet_left");
-                //grd.EdgeTagNames.Add(4, "pressure_outlet_right");
+                    }
+                    grd.EdgeTagNames.Add(3, "velocity_inlet_left");
+                    //grd.EdgeTagNames.Add(3, "pressure_outlet_left");
+                    grd.EdgeTagNames.Add(4, "pressure_outlet_right");
 
-                //grd.EdgeTagNames.Add(3, "freeslip_left");
-                //grd.EdgeTagNames.Add(4, "freeslip_right");
+                    //grd.EdgeTagNames.Add(3, "freeslip_left");
+                    //grd.EdgeTagNames.Add(4, "freeslip_right");
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if(Math.Abs(X[1]) <= 1.0e-8)
-                        et = 1;
-                    if(Math.Abs(X[1] - H) <= 1.0e-8)
-                        et = 2;
-                    //if (Math.Abs(X[0]) <= 1.0e-8)
-                    //    et = 3;
-                    //if (Math.Abs(X[0] - L) <= 1.0e-8)
-                    //    et = 4;
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1]) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[1] - H) <= 1.0e-8)
+                            et = 2;
+                        if (Math.Abs(X[0]) <= 1.0e-8)
+                            et = 3;
+                        if (Math.Abs(X[0] - L) <= 1.0e-8)
+                            et = 4;
 
-                    return et;
-                });
+                        return et;
+                    });
 
-                return grd;
-            };
+                    return grd;
+                };
+
+            } else {
+
+                C.GridFunc = delegate () {
+                    double[] Xnodes = GenericBlas.Linspace(0, H, kelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
+                    double[] Znodes = GenericBlas.Linspace(0, L, 4 * kelem + 1);
+                    var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+                    //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
+
+                    grd.EdgeTagNames.Add(1, "velocity_inlet");
+                    grd.EdgeTagNames.Add(2, "pressure_outlet");
+                    grd.EdgeTagNames.Add(3, "wall_mantle");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[0]) <= 1.0e-8)
+                            et = 3;
+                        if (Math.Abs(X[0] - H) <= 1.0e-8)
+                            et = 3;
+                        if (Math.Abs(X[1]) <= 1.0e-8)
+                            et = 3;
+                        if (Math.Abs(X[1] - H) <= 1.0e-8)
+                            et = 3;
+                        if (Math.Abs(X[2]) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - L) <= 1.0e-8)
+                            et = 2;
+
+                        return et;
+                    });
+
+                    return grd;
+                };
+
+
+            }
 
             #endregion
 
@@ -197,19 +244,32 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
-            double[] center = new double[] { H / 2.0, H / 2.0 };
+            double[] center = (D == 2) ? new double[] { H / 2.0, H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
             double radius = 0.2;
 
-            C.InitialValues_Evaluators.Add("Phi",
-                //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-                (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-                );
+            if (D == 2) {
+                C.InitialValues_Evaluators.Add("Phi",
+                    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                    );
+            } else {
+                C.InitialValues_Evaluators.Add("Phi",
+                    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
+                    );
+            }
+
 
 
             double U = 0.125;
 
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
+            if (D == 3) {
+                C.InitialValues_Evaluators.Add("VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+                C.InitialValues_Evaluators.Add("VelocityZ#B", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+            }
+
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
 
             //C.InitialValues_Evaluators.Add("Pressure#A", X => 2.0 - X[0]);
 
@@ -220,8 +280,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
             //C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
-            C.InitialValues_Evaluators.Add("GravityX#A", X => 5.0);
-            C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
+            //C.InitialValues_Evaluators.Add("GravityX#A", X => 5.0);
+            //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
 
 
             //C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
@@ -282,17 +342,26 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     break;
             }
 
+            
+
             double T = 10;
 
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U) * Math.Sin(2.0 * Math.PI * (t / T)));
+            if (D == 3) {
+                C.AddBoundaryValue("wall_mantle");
+                C.AddBoundaryValue("velocity_inlet", "VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+                C.AddBoundaryValue("velocity_inlet", "VelocityZ#B", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+                C.AddBoundaryValue("pressure_outlet");
+            }
+
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
 
             //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
             ////C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#B", X => U.Pow2() / 2); 
             ////C.AddBoundaryValue("pressure_outlet_left");
-            //C.AddBoundaryValue("pressure_outlet_right");
+            C.AddBoundaryValue("pressure_outlet_right");
 
 
             #endregion
@@ -327,8 +396,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.Phi = (X,t) => ((X[0] - (center[0]+U*t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.JumpGradJump2;
+            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+            C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            C.fullReInit = false;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
@@ -351,7 +424,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 1e-2;
+            double dt = 1e-1;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;

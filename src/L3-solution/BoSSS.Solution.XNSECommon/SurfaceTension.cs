@@ -990,8 +990,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         protected double penalty(int jCellIn, int jCellOut) {
 
-            double penaltySizeFactor_A = (this.m_InterLen[jCellIn] > 0) ? 1.0 / this.m_InterLen[jCellIn] : 0;
-            double penaltySizeFactor_B = (jCellOut >= 0 && this.m_InterLen[jCellOut] > 0) ? 1.0 / this.m_InterLen[jCellOut] : 0;
+            double penaltySizeFactor_A = (this.m_InterLen[jCellIn] > 0) ? this.m_InterLen[jCellIn] : 0;
+            double penaltySizeFactor_B = (jCellOut >= 0 && this.m_InterLen[jCellOut] > 0) ? this.m_InterLen[jCellOut] : 0;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
             Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
@@ -1590,7 +1590,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                     // symmetry term 
                     //acc += 0.5 * m_muI * (GradVTsurf_IN[d] * tauL_IN[m_comp] + GradVTsurf_OUT[d] * tauL_OUT[m_comp]) * (_uA[d] - _uB[d]);
                     //acc += 0.5 * m_muI * (Psurf_IN[d, dd] * _Grad_vA[dd] * tauL_IN[m_comp] + Psurf_OUT[d, dd] * _Grad_vB[dd] * tauL_OUT[m_comp]) * (_uA[d] - _uB[d]);
-                    acc += 0.5 * m_muI * (muI_IN * Psurf_IN[d, dd] * _Grad_vA[dd] * tauL_IN[m_comp] + muI_OUT * Psurf_OUT[d, dd] * _Grad_vB[dd] * tauL_OUT[m_comp]) * (_uA[d] - _uB[d]);
+                    acc += 0.5 * (muI_IN * Psurf_IN[d, dd] * _Grad_vA[dd] * tauL_IN[m_comp] + muI_OUT * Psurf_OUT[d, dd] * _Grad_vB[dd] * tauL_OUT[m_comp]) * (_uA[d] - _uB[d]);
                 }
             }
             // penalty
@@ -1625,6 +1625,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
 
     }
+
 
 
 

@@ -789,10 +789,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             bool FC72 = false;
             bool contactAngle90 = false;
 
-            bool startUp_Interface = false;
-            bool pressureCondition = true;
-            bool initmeniscus = true; 
-            bool startUp_Heat = true;
+            bool startUp_Interface = true;
+            bool pressureCondition = false;
+            bool initmeniscus = false; 
+            bool startUp_Heat = false;
             bool startUp_withEvap = false;
             bool run = false;
 
@@ -975,7 +975,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if (startUp_Interface || (startUp_Heat && !startUp_withEvap)) {
                 C.ThermalParameters.hVap = 0.0;
                 C.PhysicalParameters.Material = true;
-                C.PhysicalParameters.IncludeConvection = startUp_Interface;
+                C.PhysicalParameters.IncludeConvection = false;
                 C.ThermalParameters.IncludeConvection = false;
             } else {
                 C.PhysicalParameters.Material = false;
@@ -1194,7 +1194,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
@@ -1237,8 +1237,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.dtMax = 5e-2; // 5e-5;
-            C.dtMin = 5e-2; // 5e-5;
+            C.dtMax = 5e-5;
+            C.dtMin = 5e-5;
             C.Endtime = 10.0;
             C.NoOfTimesteps = 100000;
             C.saveperiod = 10;
@@ -1246,7 +1246,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #endregion
 
 
-            C.ClearVelocitiesOnRestart = true;
+            C.ClearVelocitiesOnRestart = false;
 
 
             // parameters

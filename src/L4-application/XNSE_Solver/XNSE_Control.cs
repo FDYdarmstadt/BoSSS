@@ -184,6 +184,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         // Extension Velocity with Laplace Beltrami without filtering
                         methodTagLS = "ExtVelLB";
                         Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+                        EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
                         break;
                     }
@@ -191,6 +192,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         // Extension Velocity with Curvature and default filtering 
                         methodTagLS = "ExtVelCurv";
                         Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+                        EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                         AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                         break;
@@ -214,6 +216,11 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// <summary>
+        /// switches off all plotCurrentState calls
+        /// </summary>
+        [DataMember]
+        public bool switchOffPlotting = false;
 
 
         /// <summary>
@@ -687,7 +694,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
 
-
+        /// <summary>
+        /// three-step reinitialization with preconditioning fast-marching
+        /// </summary>
+        [DataMember]
+        public bool fullReInit = true;
 
         /// <summary>
         /// switch for the computation of the coupled heat solver

@@ -180,12 +180,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // create Operator
             // ===============
-            Console.WriteLine("Creating Operator");
+
             m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
 
             // add Navier-Stokes components
             // ============================
-            Console.WriteLine("Setting NSE components");
+
             // species bulk components
             for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations

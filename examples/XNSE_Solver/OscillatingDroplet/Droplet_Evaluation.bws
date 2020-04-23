@@ -8,8 +8,8 @@ Databases loaded:
 List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 73; Grid Count = 766; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 41; Grid Count = 3339; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  2: { Session Count = 77; Grid Count = 769; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 342; Grid Count = 6424; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -18,16 +18,17 @@ List of 4 instances of IDatabaseInfo {
 using BoSSS.Application.XNSE_Solver;
 **************
 ==============
-WorkflowMgm.Init("Droplet")
+WorkflowMgm.Init("Droplet");
+//WorkflowMgm.Init("StaticDroplet");
 **************
 Project name is set to 'Droplet'.
 
 ==============
 var sess = WorkflowMgm.Sessions;
+**************
+==============
 sess
 **************
-Loading session cb067bc2-4304-471e-9406-a427736405ed failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\cb067bc2-4304-471e-9406-a427736405ed\Session.info'.'
-Loading session f5875fea-ef93-457f-a350-4e0f25851584 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\f5875fea-ef93-457f-a350-4e0f25851584\Session.info'.'
 List of 26 instances of ISessionInfo {
   0: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_implEuler	03/31/2020 10:58:52	d6323d5d...
   1: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_fastMarchCurv	03/31/2020 10:54:18	d821634c...
@@ -57,30 +58,39 @@ List of 26 instances of ISessionInfo {
   25: Droplet	Droplet_test_k2_mesh0	03/19/2020 16:58:46	08f185c3...
 }
 ==============
-int[] pltInd = new int[] {5,6,7,11};
-**************
-==============
-//*
-var sessPlt = new List<ISessionInfo>();
-for(int i = 0; i < pltInd.Length; i++) {
-    sessPlt.Add(sess.Pick(pltInd[i]));
+//string studyName = "ConvStudyHysing";
+string studyName = "setupStudy3_k2_mesh0";
+List<ISessionInfo> studySess = new List<ISessionInfo>();
+List<ISessionInfo> studySessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        //if(Convert.ToBoolean(sess.SuccessfulTermination))
+            studySess.Add(sess);  
+        //else 
+          //  studySessNT.Add(sess);
+    }        
 }
-//*/
-//var sessPlt = sess.Skip(4).Take(4);
-sessPlt
+studySessNT
 **************
-List of 4 instances of ISessionInfo {
-  0: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0_iterative*	03/31/2020 11:01:32	be9f613c...
-  1: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0_implEuler*	03/31/2020 10:58:07	cb22adc2...
-  2: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0_fastMarchCurv*	03/31/2020 10:53:07	b680bb0f...
-  3: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0*	03/30/2020 17:14:16	d327163d...
+List of 0 instances of ISessionInfo {
 }
 ==============
+studySess
 **************
+List of 8 instances of ISessionInfo {
+  0: Droplet	Droplet_setupStudy3_k2_mesh0_implEuler*	03/29/2020 20:37:41	112cc2cd...
+  1: Droplet	Droplet_setupStudy3_k2_mesh0_CN*	03/29/2020 20:36:55	3745462a...
+  2: Droplet	Droplet_setupStudy3_k2_mesh0_iterative*	03/29/2020 20:36:25	05db544e...
+  3: Droplet	Droplet_setupStudy3_k2_mesh0_splitting*	03/29/2020 20:35:38	7c911c39...
+  4: Droplet	Droplet_setupStudy3_k2_mesh0_fullBS*	03/29/2020 20:34:54	01eec4e1...
+  5: Droplet	Droplet_setupStudy3_k2_mesh0_semiImplicit*	03/29/2020 20:34:07	7ee525da...
+  6: Droplet	Droplet_setupStudy3_k2_mesh0_fastMarchCurv*	03/29/2020 20:33:03	624cdace...
+  7: Droplet	Droplet_setupStudy3_k2_mesh0*	03/29/2020 20:30:36	3e8493d7...
+}
 ==============
-sessPlt.CheckForEnergyLogging();
+studySess.CheckForEnergyLogging();
 **************
-Session: d6323d5d-7047-4b38-b177-6979afb06017
+Session: 112cc2cd-97de-4945-81ea-5ed4ecd30768
 Element at 0: #Line,#Time,#Iter
 Element at 1:  L2Norm PhysicalTime
 Element at 2:  L2Norm KineticEnergy
@@ -89,7 +99,7 @@ Element at 4:  L2Norm ChangerateKineticEnergy
 Element at 5:  L2Norm ChangerateSurfaceEnergy
 Element at 6:  L2Norm SurfaceDivergence
 Element at 7:  L2Norm KineticDissipationBulk
-Session: d821634c-bd55-425f-b4d6-ee37d8a2d37d
+Session: 3745462a-a30c-4f09-82f7-089390161031
 Element at 0: #Line,#Time,#Iter
 Element at 1:  L2Norm PhysicalTime
 Element at 2:  L2Norm KineticEnergy
@@ -98,7 +108,7 @@ Element at 4:  L2Norm ChangerateKineticEnergy
 Element at 5:  L2Norm ChangerateSurfaceEnergy
 Element at 6:  L2Norm SurfaceDivergence
 Element at 7:  L2Norm KineticDissipationBulk
-Session: efa11bc1-2867-4490-a78a-506f4eb9494b
+Session: 05db544e-4f39-4a62-a96f-14e2dd9620e6
 Element at 0: #Line,#Time,#Iter
 Element at 1:  L2Norm PhysicalTime
 Element at 2:  L2Norm KineticEnergy
@@ -107,7 +117,16 @@ Element at 4:  L2Norm ChangerateKineticEnergy
 Element at 5:  L2Norm ChangerateSurfaceEnergy
 Element at 6:  L2Norm SurfaceDivergence
 Element at 7:  L2Norm KineticDissipationBulk
-Session: a0190110-9abd-411b-8499-3a9fcf1e64bd
+Session: 7c911c39-21f6-4647-ac11-78d170741975
+Element at 0: #Line,#Time,#Iter
+Element at 1:  L2Norm PhysicalTime
+Element at 2:  L2Norm KineticEnergy
+Element at 3:  L2Norm SurfaceEnergy
+Element at 4:  L2Norm ChangerateKineticEnergy
+Element at 5:  L2Norm ChangerateSurfaceEnergy
+Element at 6:  L2Norm SurfaceDivergence
+Element at 7:  L2Norm KineticDissipationBulk
+Session: 01eec4e1-e9d2-44c9-8836-d480e67ad0a6
 Element at 0: #Line,#Time,#Iter
 Element at 1:  L2Norm PhysicalTime
 Element at 2:  L2Norm KineticEnergy
@@ -118,11 +137,40 @@ Element at 6:  L2Norm SurfaceDivergence
 Element at 7:  L2Norm KineticDissipationBulk
 Element at 8:  L2Norm ShearViscosityDR
 Element at 9:  L2Norm DilatationalViscosityDR
+Session: 7ee525da-d9b9-4ab1-92cc-96b9cee9ba76
+Element at 0: #Line,#Time,#Iter
+Element at 1:  L2Norm PhysicalTime
+Element at 2:  L2Norm KineticEnergy
+Element at 3:  L2Norm SurfaceEnergy
+Element at 4:  L2Norm ChangerateKineticEnergy
+Element at 5:  L2Norm ChangerateSurfaceEnergy
+Element at 6:  L2Norm SurfaceDivergence
+Element at 7:  L2Norm KineticDissipationBulk
+Element at 8:  L2Norm ShearViscosityDR
+Element at 9:  L2Norm DilatationalViscosityDR
+Session: 624cdace-6a62-4b0e-a9b4-45a12c45c202
+Element at 0: #Line,#Time,#Iter
+Element at 1:  L2Norm PhysicalTime
+Element at 2:  L2Norm KineticEnergy
+Element at 3:  L2Norm SurfaceEnergy
+Element at 4:  L2Norm ChangerateKineticEnergy
+Element at 5:  L2Norm ChangerateSurfaceEnergy
+Element at 6:  L2Norm SurfaceDivergence
+Element at 7:  L2Norm KineticDissipationBulk
+Session: 3e8493d7-787c-42cb-ba14-19b8aeda5305
+Element at 0: #Line,#Time,#Iter
+Element at 1:  L2Norm PhysicalTime
+Element at 2:  L2Norm KineticEnergy
+Element at 3:  L2Norm SurfaceEnergy
+Element at 4:  L2Norm ChangerateKineticEnergy
+Element at 5:  L2Norm ChangerateSurfaceEnergy
+Element at 6:  L2Norm SurfaceDivergence
+Element at 7:  L2Norm KineticDissipationBulk
 
 ==============
 **************
 ==============
-var data = sessPlt.ReadLogDataForXNSE(XNSE_Control.LoggingValues.Dropletlike);
+var data = studySess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.Dropletlike);
 **************
 Element at 0: time vs semi axis x
 Element at 1: time vs semi axis y
@@ -150,7 +198,7 @@ Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp5
 string[] energyEval = new string[] { "SurfaceEnergy", "KineticEnergy" };
 **************
 ==============
-sessPlt.EvalEnergy(energyEval, false)
+studySess.EvalEnergy(energyEval, false)
 **************
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
@@ -163,6 +211,14 @@ Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp5
 Starting export process... Data will be written to the following directory:
 C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\Droplet__Droplet_setupStudy3_muScl100_k2_mesh0__d327163d-00a5-458c-a200-9ee508799c43
 ==============
+**************
+==============
+//studySess.Pick(2).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\StaticDroplet__StaticDroplet_ConvStudyHysing_k2_mesh3__924579fe-9980-45df-88cd-84c6c5bbd506
+==============
+//studySess.Pick(3).OpenSessionDirectory()
 **************
 ==============
 **************

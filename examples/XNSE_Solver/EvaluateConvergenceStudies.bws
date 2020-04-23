@@ -8,8 +8,8 @@ Databases loaded:
 List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 77; Grid Count = 769; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 221; Grid Count = 3398; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  2: { Session Count = 79; Grid Count = 774; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 342; Grid Count = 6489; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -28,9 +28,9 @@ Project name is set to 'StaticDroplet'.
 //WorkflowMgm.Sessions;
 **************
 ==============
-string studyName = "StaticDroplet_ConvStudyKummerPhi2_k";
+string studyName = "StaticDroplet_ConvStudy5Kummer_k";
 //string studyName = "ConvStudy";
-string[] FieldsToCompare = new string[] {"VelocityX"}; //, "VelocityY", "Pressure"};
+string[] FieldsToCompare = new string[] {"VelocityX", "VelocityY", "Pressure"};
 int numFields = FieldsToCompare.Length;
 **************
 ==============
@@ -47,46 +47,34 @@ foreach(var sess in WorkflowMgm.Sessions) {
 studySessNT
 **************
 List of 1 instances of ISessionInfo {
-  0: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k4_mesh5*	04/06/2020 23:12:58	84d55c27...
+  0: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh5*	04/23/2020 11:22:24	2937e77d...
 }
 ==============
 studySess
 **************
-List of 23 instances of ISessionInfo {
-  0: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k4_mesh4	04/06/2020 23:12:52	4cd481e0...
-  1: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k1_mesh5	04/06/2020 23:11:57	c992d27d...
-  2: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k4_mesh3	04/06/2020 23:12:43	57a38dd6...
-  3: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k4_mesh2	04/06/2020 23:12:38	8a090c75...
-  4: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k1_mesh4	04/06/2020 23:11:50	f3ac31f7...
-  5: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k4_mesh1	04/06/2020 23:12:28	7c09b552...
-  6: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k4_mesh0	04/06/2020 23:12:19	917e301d...
-  7: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k1_mesh3	04/06/2020 23:11:41	d448930c...
-  8: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k1_mesh2	04/06/2020 23:11:36	6e583bd2...
-  9: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k1_mesh0	04/06/2020 23:11:19	12873e7b...
-  10: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k1_mesh1	04/06/2020 23:11:22	ba5362ad...
-  11: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k3_mesh5	04/06/2020 15:50:52	926c74bd...
-  12: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k2_mesh5	04/06/2020 15:50:31	65b04fbf...
-  13: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k3_mesh4	04/06/2020 15:50:50	87bf8fd4...
-  14: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k2_mesh4	04/06/2020 15:50:27	453fdad7...
-  15: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k3_mesh3	04/06/2020 15:50:46	918b4eae...
-  16: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k2_mesh3	04/06/2020 15:50:23	8bea158a...
-  17: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k3_mesh2	04/06/2020 15:50:42	1b4f3c71...
-  18: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k3_mesh1	04/06/2020 15:50:38	4c268d12...
-  19: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k3_mesh0	04/06/2020 15:50:34	d0222077...
-  20: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k2_mesh2	04/06/2020 15:50:20	6f2bf8c6...
-  21: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k2_mesh1	04/06/2020 15:50:16	9cc0fb90...
-  22: StaticDroplet	StaticDroplet_ConvStudyKummerPhi2_k2_mesh0	04/06/2020 15:50:13	a56470b4...
+List of 11 instances of ISessionInfo {
+  0: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh5	04/23/2020 11:21:49	83de4d93...
+  1: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh4	04/23/2020 11:23:08	67b828de...
+  2: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh4	04/23/2020 11:22:37	3a752f11...
+  3: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh3	04/23/2020 11:22:14	254c0d64...
+  4: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh2	04/23/2020 11:23:00	1b9887f5...
+  5: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh3	04/23/2020 11:21:36	c34213a7...
+  6: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh1	04/23/2020 11:22:02	92975442...
+  7: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh0	04/23/2020 11:21:58	092ec097...
+  8: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh2	04/23/2020 11:21:29	df930812...
+  9: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh1	04/23/2020 11:21:24	39656022...
+  10: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh0	04/23/2020 11:21:20	1b2b2395...
 }
 ==============
 var ConvPlts = new List<Plot2Ddata>[numFields];
 for(int i = 0; i < numFields; i++) {
     ConvPlts[i] = new List<Plot2Ddata>();
 }
-int[] pOrder = new int[] {1, 2, 3, 4};
+int[] pOrder = new int[] { 3, 4 };
 **************
 ==============
 foreach(int p in pOrder) {
-    var pDegSess = studySess.Where(s => Convert.ToInt32(s.KeysAndQueries["DGdegree:VelocityX"]) == p).ToArray();
+    var pDegSess = studySess.Where(s => Convert.ToInt32(s.KeysAndQueries["DGdegree:Velocity*"]) == p).ToArray();
     
     ITimestepInfo[] timesteps = pDegSess.Select(s => s.Timesteps.Newest()).ToArray();
       
@@ -97,9 +85,9 @@ foreach(int p in pOrder) {
     
     DGFieldComparison.ComputeErrors(FieldsToCompare, timesteps, out GridRes, out __DOFs,out L2Errors, out timestepIds);
     
-    Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
     int fI = 0;
     foreach(var fName in FieldsToCompare) {
+        Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
         dataGroups.Add("$k = "+p+"$", new double[2][] { GridRes, L2Errors[fName] });
         ConvPlts[fI].Add(new Plot2Ddata(dataGroups.ToArray()).WithLogX().WithLogY());
         fI++;
@@ -130,20 +118,68 @@ for(int i = 0; i < numFields; i++) {
 }
 **************
 ==============
-fConvDat[0].Regression();
+FieldsToCompare
 **************
-List of 4 instances of KeyValuePair{String,Double} {
-  0: [$k = 1$, 0.935073710888901]
-  1: [$k = 2$, 2.90470133848676]
-  2: [$k = 3$, 3.61363587182715]
-  3: [$k = 4$, 4.20250020847635]
+List of 3 instances of String {
+  0: VelocityX
+  1: VelocityY
+  2: Pressure
 }
 ==============
-fConvDat[0].PlotNow();
+int FldId = 2;
+**************
+==============
+fConvDat[FldId].Regression();
+**************
+List of 2 instances of KeyValuePair{String,Double} {
+  0: [$k = 3$, 2.67892610886952]
+  1: [$k = 4$, 2.67102010794659]
+}
+==============
+var fcDat = fConvDat[FldId].ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+fcDat.SaveTo(@"D:\BoSSS-experimental\public\examples\XNSE_Solver\ConvergencePlots\StaticDroplet_ConvStudy4Kummer.tex");
+fConvDat[FldId].PlotNow();
 **************
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",16"Left reverse 
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
 System.Drawing.Bitmap
+==============
+List<double[]> slopes = new List<double[]>();
+foreach (var p2d in ConvPlts[FldId]) {
+    double[] abs = p2d.dataGroups[0].Abscissas;
+    double[] val = p2d.dataGroups[0].Values;
+    int numdp = p2d.dataGroups[0].Abscissas.Length;
+    double[] slp = new double[numdp-1];
+    for (int i = 0; i < numdp-1; i++) {
+        double dV = val[i].Log() - val[i+1].Log();
+        double dA = abs[i].Log() - abs[i+1].Log();
+        slp[i] = dV / dA;
+    }
+    slopes.Add(slp);
+}
+**************
+==============
+slopes[1]
+**************
+List of 3 instances of Double {
+  0: 2.62994108141793
+  1: 2.36554959344416
+  2: 3.11939315381184
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

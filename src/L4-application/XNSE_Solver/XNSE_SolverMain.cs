@@ -82,9 +82,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
             }
 
+
+            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+            //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
+
             //Tests.UnitTest.TestFixtureSetUp();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
+            ////Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
+            //Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
             //Tests.UnitTest.TestFixtureTearDown();
             //return;
 
@@ -1377,12 +1383,52 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Postprocessing(TimestepInt, phystime, dt, TimestepNo);
 
-
+                //PlotCurrentState(phystime, TimestepNo, 2);
 
                 // ================
                 // Good bye
                 // ================
                 if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
+
+                    if (this.Control.fullReInit) {
+                        // 1. elliptic ReInit on cut-cells
+                        ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
+                        // 2. fast marching on non cut cells
+                        if (this.Control.AdaptiveMeshRefinement) {
+                            // in case of AMR fast marching on each refinement level separately 
+                            List<CellMask> fastMarchMasks = new List<CellMask>();
+                            var cDat = ((GridData)this.GridData).Cells;
+                            int nC = cDat.Count;
+                            BitArray[] fmBitA = new BitArray[this.Control.RefinementLevel + 1];
+                            for (int rl = 0; rl < this.Control.RefinementLevel + 1; rl++) {
+                                fmBitA[rl] = new BitArray(nC);
+                            }
+                            for (int cId = 0; cId < nC; nC++) {
+                                int refinelvl = cDat.GetCell(cId).RefinementLevel;
+                                fmBitA[refinelvl][cId] = true;
+                            }
+                            for (int rl = 0; rl < this.Control.RefinementLevel + 1; rl++) {
+                                CellMask cm = new CellMask(this.GridData, fmBitA[rl]);
+                                if (!cm.IsEmpty)
+                                    fastMarchMasks.Add(cm);
+                            }
+                            fastMarchMasks.Reverse();   // start with finest refinement level
+                            CellMask Accepeted = this.LsTrk.Regions.GetCutCellMask();
+                            CellMask neg = LsTrk.Regions.GetSpeciesMask("A");
+                            foreach (var cm in fastMarchMasks) {
+                                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepeted, neg, cm);
+                                Accepeted = Accepeted.Union(cm);
+                            }
+                        } else {
+                            CellMask CC = this.LsTrk.Regions.GetCutCellMask();
+                            CellMask neg = LsTrk.Regions.GetSpeciesMask("A");
+                            FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, CC, neg, CC.Complement());
+                        }
+                    }
+                    // 3. elliptic ReInit on whole domain
+                    ReInitPDE.ReInitialize();
+
+
                     ExtVelMover.FinishTimeStep();
                 }
 
@@ -1521,6 +1567,10 @@ namespace BoSSS.Application.XNSE_Solver {
             base.PostRestart(time, timestep);
 
             //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
+
+            // hack for restarting rising bubble
+            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("A").AccConstant(-9.81e-1);
+            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("B").AccConstant(-9.81e-1);
 
 
             if (this.Control.ClearVelocitiesOnRestart) {
@@ -2104,23 +2154,20 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-            Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
+            if(!this.Control.switchOffPlotting)
+                Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
             //Tecplot.PlotFields(new DGField[] { this.LevSet }, "grid" + timestepNo, physTime, 0);
         }
 
 
         protected void PlotOnIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, iterIndex }), 2);
+            if(!this.Control.switchOffPlotting)
+                PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, iterIndex }), 2);
         }
 
         #endregion
 
-        /// <summary>
-        /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis
-        /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
-            return this.m_BDF_Timestepper.OperatorAnalysis();
-        }
+
 
     }
 }

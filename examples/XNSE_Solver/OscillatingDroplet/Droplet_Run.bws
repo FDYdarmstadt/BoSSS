@@ -1,5 +1,6 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
@@ -7,8 +8,8 @@ Databases loaded:
 List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 72; Grid Count = 752; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 38; Grid Count = 3059; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  2: { Session Count = 78; Grid Count = 771; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 342; Grid Count = 6487; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -253,9 +254,9 @@ for(int iSet = iSet0; iSet < setupSeq.Length; iSet++) {
     //C.AdvancedDiscretizationOptions.FilterConfiguration = BoSSS.Solution.XNSECommon.CurvatureAlgorithms.FilterConfiguration.Default;
     //C.AdvancedDiscretizationOptions.SST_isotropicMode   = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
     
-    C.AdvancedDiscretizationOptions.SurfStressTensor = BoSSS.Solution.XNSECommon.SurfaceSressTensor.SemiImplicit;
-    //C.PhysicalParameters.mu_I                        = 1 * sigma;
-    //C.PhysicalParameters.lambda_I                    = 2 * sigma;
+    C.AdvancedDiscretizationOptions.SurfStressTensor = BoSSS.Solution.XNSECommon.SurfaceSressTensor.FullBoussinesqScriven;
+    C.PhysicalParameters.mu_I                        = 1 * sigma;
+    C.PhysicalParameters.lambda_I                    = 2 * sigma;
     
     //C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
     //C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.Coupled_Iterative;
@@ -263,7 +264,7 @@ for(int iSet = iSet0; iSet < setupSeq.Length; iSet++) {
     C.saveperiod = 10;
     C.LogPeriod  = 10;
     
-    C.SessionName = "Droplet_setupStudy"+setup+"_muScl"+muScale[iSet]+"_k" + pDeg + "_mesh" + iGrd + "_semiImplicit";
+    C.SessionName = "Droplet_setupStudy"+setup+"_muScl"+muScale[iSet]+"_k" + pDeg + "_mesh" + iGrd + "_fullBS2";
     
     //controls[iDeg,iGrd] = C;
     controls.Add(C);
@@ -275,11 +276,15 @@ for(int iSet = iSet0; iSet < setupSeq.Length; iSet++) {
 Info: setting database path to: \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB
 
 ==============
+controls.Count()
+**************
+1
+==============
 //Info(controls[0,0]);
 //controls[0,0].SessionName
 controls.ElementAt(0).SessionName
 **************
-Droplet_setupStudy3_muScl1000_k2_mesh0_semiImplicit
+Droplet_setupStudy3_muScl1000_k2_mesh0_fullBS2
 ==============
 **************
 ==============
@@ -305,13 +310,11 @@ foreach(var cntrl in controls) {
     job.Activate(myBatch);
 }
 **************
-Submitting Sessions: Droplet_setupStudy3_muScl1000_k2_mesh0_semiImplicit
-Loading session cb067bc2-4304-471e-9406-a427736405ed failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\cb067bc2-4304-471e-9406-a427736405ed\Session.info'.'
-Loading session f5875fea-ef93-457f-a350-4e0f25851584 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\f5875fea-ef93-457f-a350-4e0f25851584\Session.info'.'
+Submitting Sessions: Droplet_setupStudy3_muScl1000_k2_mesh0_fullBS2
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet-XNSE_Solver2020Mar31_110440
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet-XNSE_Solver2020Apr23_130021
 copied 32 files.
    writing file: control.obj
    copied 'amd64' runtime.
@@ -338,6 +341,10 @@ LastError
 **************
 ==============
 //WorkflowMgm.Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

@@ -987,7 +987,7 @@ namespace BoSSS.Solution.NSECommon {
 
             // penalty term
             double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax;
+            //Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax;
 
             return -Acc;
         }
@@ -1046,7 +1046,7 @@ namespace BoSSS.Solution.NSECommon {
                     Acc *= base.m_alpha;
 
                     // penalty
-                    Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
+                    //Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
 
                     break;
                 }
@@ -1073,7 +1073,7 @@ namespace BoSSS.Solution.NSECommon {
                         }
                         g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
                         // penalty
-                        Acc -= muA * ((_uA[dN] - g_D) * inp.Normal[dN]) * ((_vA - 0) * inp.Normal[m_iComp]) * pnlty;
+                        //Acc -= muA * ((_uA[dN] - g_D) * inp.Normal[dN]) * ((_vA - 0) * inp.Normal[m_iComp]) * pnlty;
                     }
 
                     break;

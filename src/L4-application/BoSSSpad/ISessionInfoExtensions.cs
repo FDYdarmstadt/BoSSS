@@ -30,6 +30,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
+using MathNet.Numerics.Interpolation.Algorithms;
+using static BoSSS.Application.BoSSSpad.Plot2Ddata;
 
 namespace BoSSS.Foundation.IO {
 
@@ -1901,7 +1903,8 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sess"> List of sessions to be evaluated </param>
         /// <param name="logVal"> which log values to be evaluated </param>
         /// <returns></returns>
-        public static List<Plot2Ddata> ReadLogDataForXNSE(this IEnumerable<ISessionInfo> sess, XNSE_Control.LoggingValues logVal) {
+        public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, XNSE_Control.LoggingValues logVal, 
+            string evalName = null, string keyName = null) {
 
             string logName;
             string[] values;
@@ -1934,7 +1937,7 @@ namespace BoSSS.Foundation.IO {
 
             int numberSessions = sess.Count();
             int numberValues = values.Count();      
-            for (int vIdx = 2; vIdx < numberValues; vIdx++) {       // considered are only the values over time
+            for (int vIdx = 2; vIdx < numberValues; vIdx++) {       
 
                 double[][] times = new double[numberSessions][];
                 double[][] valueDatas = new double[numberSessions][];
@@ -1957,7 +1960,13 @@ namespace BoSSS.Foundation.IO {
                 // Build DataSet
                 KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
                 for (int i = 0; i < numberSessions; i++) {
-                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], valueDatas[i] });
+                    string sessName;
+                    if (evalName == null || keyName == null)
+                        sessName = (sess.Pick(i).Name).Replace("_", "-");
+                    else
+                        sessName = evalName + (Convert.ToDouble(sess.Pick(i).KeysAndQueries[keyName])).ToString();
+
+                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i] });
                 }
                 Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
                 plotData.Add(new Plot2Ddata(dataRowsValue));
@@ -2029,6 +2038,117 @@ namespace BoSSS.Foundation.IO {
             }
 
             return plotDataCL;
+
+        }
+
+
+        public static List<Plot2Ddata> LogDataToConvergenceData(List<Plot2Ddata> LogData, double[] abscissas) {
+
+            List<Plot2Ddata> convData = new List<Plot2Ddata>();
+
+            foreach (var p2d in LogData) {
+
+                // set reference data [0] (log data in ascending order)
+                double[] refAbs = p2d.dataGroups[0].Abscissas;
+                double[] refVal = p2d.dataGroups[0].Values;
+                int numRefVal = refVal.Length;
+
+                int numSess = p2d.dataGroups.Length;
+                if (abscissas.Length != numSess - 1)
+                    throw new ArgumentException();
+
+                double[] l1Norm = new double[numSess - 1];
+                double[] l2Norm = new double[numSess - 1];
+                double[] linfNorm = new double[numSess - 1];
+                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[3];
+                //foreach (var datgrp in p2d.dataGroups.Skip(1)) {
+                for (int i = 0; i < numSess - 1; i++) {
+
+                    double[] abs = p2d.dataGroups[i + 1].Abscissas;
+                    double[] val = p2d.dataGroups[i + 1].Values;
+                    int numVal = val.Length;
+
+                    double[] diff = new double[numRefVal];
+                    if (numVal != numRefVal) {
+                        // interpolate solution
+                        LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
+                        LinSpline.Initialize(abs, val);
+
+                        val = new double[numRefVal];
+                        for (int p = 0; p < numRefVal; p++) {
+                            val[p] = LinSpline.Interpolate(refAbs[p]);
+                        }
+                    }
+
+                    diff = refVal.Zip(val, (r, v) => Math.Abs(v - r)).ToArray();
+
+                    l1Norm[i] = diff.Sum() / refVal.Sum();
+                    l2Norm[i] = (diff.L2NormPow2() / refVal.L2NormPow2()).Sqrt();
+                    linfNorm[i] = diff.Max() / refVal.Max();
+                }
+
+                dataRowsValue[0] = new KeyValuePair<string, double[][]>("l_1 error norm", new double[][] { abscissas, l1Norm });
+                dataRowsValue[1] = new KeyValuePair<string, double[][]>("l_2 error norm", new double[][] { abscissas, l2Norm });
+                dataRowsValue[2] = new KeyValuePair<string, double[][]>("l_{inf} error norm", new double[][] { abscissas, linfNorm });
+
+                convData.Add(new Plot2Ddata(dataRowsValue).WithLogX().WithLogY());
+            }
+
+            return convData;
+        }
+
+
+        public static Tuple<List<double>, List<double>> ComputeOscillationProperties(XYvalues waveData, bool twoPiPeriodic) {
+
+            List<double> maxValues = new List<double>();
+            List<double> periods = new List<double>();
+
+            double[] times = waveData.Abscissas;
+            double[] values = waveData.Values;
+
+            double max = values[0];
+            maxValues.Add(max);
+            periods.Add(times[0]);
+
+            double min = max;
+            bool searchMin = true;
+            for (int i = 0; i < times.Length; i++) {
+                double val = values[i];
+                if (searchMin) {
+                    if (val < min) {
+                        min = val;
+                    } else {
+                        max = min;
+                        searchMin = false;
+                    }
+                }
+                if (!searchMin) {
+                    if (val > max) {
+                        max = val;
+                    } else {
+                        maxValues.Add(max);
+                        periods.Add(times[i]);
+                        min = max;
+                        searchMin = true;
+                    }
+                }
+            }
+
+            //return new Tuple<List<double>, List<double>>(periods, maxValues);
+
+            List<double> frequencies = new List<double>();
+            List<double> dampingRates = new List<double>();
+            for (int i = 0; i < maxValues.Count()-1; i++) {
+                double period = periods[i + 1] - periods[i];
+                if (period <= 1.0e-8)
+                    continue;
+                double freq = twoPiPeriodic ? 1.0 / period : 1.0 / (2.0 * period);
+                double damp = Math.Log(maxValues[i + 1] / maxValues[i]) / period;
+                frequencies.Add(freq);
+                dampingRates.Add(damp);
+            }
+
+            return new Tuple<List<double>, List<double>>(frequencies, dampingRates);
 
         }
 
@@ -2147,7 +2267,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="pltDat"></param>
         /// <param name="xLabel"></param>
         /// <param name="yLabel"></param>
-        public static void PlotData(Plot2Ddata pltDat, string xLabel, string yLabel) {
+        public static void PlotData(Plot2Ddata pltDat, string xLabel, string yLabel, bool convData = false) {
 
             int lineColor = 0;
             PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
@@ -2156,8 +2276,13 @@ namespace BoSSS.Foundation.IO {
             gp.SetYLabel(yLabel);
             gp.Cmd("set grid xtics ytics");
             foreach (var group in pltDat.dataGroups) {
-                gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
-                    new PlotFormat(lineColor: ((LineColors)(++lineColor))));
+                if (convData) {
+                    gp.PlotXY(group.Abscissas, group.Values, group.Name,
+                        new PlotFormat(lineColor: ((LineColors)(++lineColor))), logX: true, logY: true);
+                } else {
+                    gp.PlotXY(group.Abscissas, group.Values, group.Name,
+                        new PlotFormat(lineColor: ((LineColors)(++lineColor))));
+                }
             }
             gp.WriteDeferredPlotCommands();
             gp.Execute();

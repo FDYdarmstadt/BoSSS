@@ -27,6 +27,7 @@ using System.Linq;
 using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -691,7 +692,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumV = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true);
 
             
@@ -711,6 +712,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Ret.Add(kv.Key, kv.Value);
                     }
                 }
+
+                if (plotStencilCondNumV) {
+                    var fullStencil = ana.StencilCondNumbersV();
+                    ana.VarGroup = new int[] { 0, 1 };
+                    var sipStencil = ana.StencilCondNumbersV();
+                    Tecplot.Tecplot.PlotFields(new DGField[] { fullStencil, sipStencil, (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCond", 0.0, 1);
+                    //ana.VarGroup = new int[] { 2 };
+                    //Tecplot.Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV(), (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCn_varGroup2", 0.0, 1);
+                }
+
             }
 
             return Ret;

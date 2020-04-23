@@ -123,6 +123,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         FastMarchReinit FastMarchReinitSolver;
 
+        FastMarchReinit ReInitGeometric;
+
         /// <summary>
         /// PDE based elliptic reInitialization by Thomas
         /// </summary>
@@ -287,18 +289,17 @@ namespace BoSSS.Application.XNSE_Solver {
                             //VectorField<SinglePhaseField> VectorExtVel = ExtensionVelocity.Current;
                             base.RegisterField(ExtensionVelocity.Current);
 
-                            //ReInitPDE = new EllipticReInit(this.LsTrk, this.Control.ReInitControl, DGLevSet.Current);
-                            FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
 
-                            // full initial reinitialization
-                            //ReInitPDE.ReInitialize(Restriction: LsTrk.Regions.GetNearFieldSubgrid(1));
+                            //Build FastMarching Solver
+                            //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
+                            // PDE Solver
+                            ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
 
                             CellMask Accepted = LsTrk.Regions.GetNearFieldMask(1);
                             CellMask ActiveField = Accepted.Complement();
                             CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                            FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
+                            //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
 
-                            //ReInitPDE.ReInitialize();
 
                             // setup extension velocity mover
                             switch (this.Control.Timestepper_Scheme) {
@@ -324,8 +325,11 @@ namespace BoSSS.Application.XNSE_Solver {
                                     }
                             }
 
-                            ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient, new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
-                                Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current, new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
+                            ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient,
+                                new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
+                                Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current,
+                                new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
+                                //subGrid: LsTrk.Regions.GetNearFieldSubgrid(1));
 
 
                             break;
@@ -705,9 +709,13 @@ namespace BoSSS.Application.XNSE_Solver {
                             DGLevSetGradient.Gradient(1.0, DGLevSet.Current);
 
                             ExtVelMover.Advect(dt);
+                            //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 14 }), 2);
 
                             // Fast Marching: Specify the Domains first
                             // Perform Fast Marching only on the Far Field
+                            CellMask Accepted;
+                            CellMask ActiveField;
+                            CellMask NegativeField;
                             if (this.Control.AdaptiveMeshRefinement) {
                                 int NoCells = ((GridData)this.GridData).Cells.Count;
                                 BitArray Refined = new BitArray(NoCells);
@@ -715,29 +723,29 @@ namespace BoSSS.Application.XNSE_Solver {
                                     if (((GridData)this.GridData).Cells.GetCell(j).RefinementLevel > 0)
                                         Refined[j] = true;
                                 }
-                                CellMask Accepted = new CellMask(this.GridData, Refined);
+                                Accepted = new CellMask(this.GridData, Refined);
                                 CellMask AcceptedNeigh = Accepted.AllNeighbourCells();
 
                                 Accepted = Accepted.Union(AcceptedNeigh);
-                                CellMask ActiveField = Accepted.Complement();
-                                CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                                ActiveField = Accepted.Complement();
+                                NegativeField = LsTrk.Regions.GetSpeciesMask("A");
                                 FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
 
                             } else {
-                                CellMask Accepted = LsTrk.Regions.GetCutCellMask(); // .GetNearFieldMask(1);
-                                CellMask ActiveField = Accepted.Complement();
-                                CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
+                                Accepted = LsTrk.Regions.GetCutCellMask(); // .GetNearFieldMask(1);
+                                //Accepted = LsTrk.Regions.GetNearFieldMask(1);
+                                ActiveField = Accepted.Complement();
+                                NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                                //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
 
                             }
+                            //Accepted = LsTrk.Regions.GetNearFieldMask(1);
                             //SubGrid AcceptedGrid = new SubGrid(Accepted);
                             //ReInitPDE.ReInitialize(Restriction: AcceptedGrid);
 
-                            //CellMask ActiveField = Accepted.Complement();
-                            //CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                            //ActiveField = Accepted.Complement();
+                            //NegativeField = LsTrk.Regions.GetSpeciesMask("A");
                             //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
-                            //ReInitPDE.ReInitialize();
 
                             break;
                         }

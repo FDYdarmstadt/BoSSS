@@ -117,6 +117,33 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 #endif
 
+#if !DEBUG
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest(
+
+            [Values(2, 3, 4)] int deg,
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+
+            double AgglomerationTreshold = 0.4;
+
+            var Tst = new StaticDropletTest();
+            var LaLa = new List<XNSE_Control>();
+            foreach (var Res in new[] { 4, 8, 12, 16 }) { 
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res, 
+                    SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine);
+                C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                LaLa.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingStaticDropletTest-p" + deg);
+        }
+#endif
+
 
 #if !DEBUG        
         /// <summary>

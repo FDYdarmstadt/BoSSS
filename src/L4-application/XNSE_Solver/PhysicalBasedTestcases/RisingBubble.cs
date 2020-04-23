@@ -68,7 +68,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.SessionName = "RisingBubbleHeimann";
             C.ProjectDescription = "rising bubble";
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
 
             #endregion
 
@@ -230,8 +230,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 return grd;
             };
 
-            C.GridPartType = GridPartType.Predefined;
-            C.GridPartOptions = "VierProcSplit";
+            //C.GridPartType = GridPartType.Predefined;
+            //C.GridPartOptions = "VierProcSplit";
 
 
             #endregion
@@ -305,10 +305,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+            C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            C.fullReInit = true;
+
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.RefinementLevel = 1;
+
             #endregion
 
 
@@ -322,8 +331,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.dtMax = dt;
-            C.dtMin = dt;
+            C.dtMax = dt/2.0;
+            C.dtMin = dt/2.0;
             C.Endtime = 3;
             C.NoOfTimesteps = 10000; // (int)(3 / dt);
             C.saveperiod = 10;
@@ -956,7 +965,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="setup"> physical setup </param>
         /// <param name="method"> method setup regarding the level set handling </param>
         /// <returns></returns>
-        public static XNSE_Control RB_forWorksheet(int setup) {
+        public static XNSE_Control RB_forWorksheet(int setup, bool restart = false) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1047,10 +1056,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            C.AddInitialValue("Phi", "X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - 0.25", false);
+            if (!restart) {
+                C.AddInitialValue("Phi", "X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - 0.25", false);
 
-            C.AddInitialValue("GravityY#A", "X => -9.81e-1", false);
-            C.AddInitialValue("GravityY#B", "X => -9.81e-1", false);
+                C.AddInitialValue("GravityY#A", "X => -9.81e-1", false);
+                C.AddInitialValue("GravityY#B", "X => -9.81e-1", false);
+            }
 
             #endregion
 

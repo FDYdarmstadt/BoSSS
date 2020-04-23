@@ -9,7 +9,7 @@ List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 77; Grid Count = 769; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 105; Grid Count = 3386; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  3: { Session Count = 292; Grid Count = 3405; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -25,63 +25,80 @@ Project name is set to 'RisingBubble'.
 ==============
 WorkflowMgm.Sessions;
 **************
-Loading session cb067bc2-4304-471e-9406-a427736405ed failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\cb067bc2-4304-471e-9406-a427736405ed\Session.info'.'
-Loading session f5875fea-ef93-457f-a350-4e0f25851584 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\f5875fea-ef93-457f-a350-4e0f25851584\Session.info'.'
-List of 29 instances of ISessionInfo {
+List of 31 instances of ISessionInfo {
   0: RisingBubble	RisingBubble_test5_k2_mesh0	03/20/2020 17:05:24	d42334d4...
   1: RisingBubble	RisingBubble_test3_k2_mesh0*	03/20/2020 11:32:38	93ed2247...
   2: RisingBubble	RisingBubble_test2_k2_mesh0*	03/19/2020 20:50:14	aed2439e...
   3: RisingBubble	RisingBubble_test_k2_mesh0*	03/19/2020 17:47:43	dc391866...
-  4: RisingBubble	RisingBubble_Fourier_k2_mesh1_VierProcTest*	04/02/2020 23:11:13	d5baf490...
-  5: RisingBubble	RisingBubble_Fourier_k2_mesh1_ZwoProcTest*	04/02/2020 23:09:26	00841606...
-  6: RisingBubble	RisingBubble_Fourier_k2_mesh1_parallelTest*	04/01/2020 18:45:35	ee80e51d...
-  7: RisingBubble	RisingBubble_ExtVelCurv2_k2_mesh1*	03/31/2020 10:23:09	84087e56...
-  8: RisingBubble	RisingBubble_ExtVelLB2_k2_mesh1*	03/31/2020 10:21:47	ab0a7316...
-  9: RisingBubble	RisingBubble_ConvStudy_k2_mesh12	03/26/2020 09:42:42	4510aed9...
-  10: RisingBubble	RisingBubble_ExtVelCurv_k2_mesh1*	03/30/2020 16:45:02	09f68852...
-  11: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1*	03/30/2020 16:43:52	cfbee3d5...
-  12: RisingBubble	RisingBubble_ConvStudy_k3_mesh1	03/23/2020 10:43:42	de42008a...
-  13: RisingBubble	RisingBubble_FastMarchCurv_k2_mesh1	03/26/2020 10:42:07	3226987a...
-  14: RisingBubble	RisingBubble_Fourier_k2_mesh1	03/26/2020 10:46:02	b760b42f...
-  15: RisingBubble	RisingBubble_tc2_FastMarchCurv_k2_mesh1*	03/26/2020 10:51:39	bf6a3d14...
-  16: RisingBubble	RisingBubble_ConvStudy_k3_mesh02	03/26/2020 09:42:48	c3be0727...
-  17: RisingBubble	RisingBubble_ConvStudy_k2_mesh02	03/26/2020 09:42:38	9b4dcbd7...
-  18: RisingBubble	RisingBubble_ConvStudy_k3_mesh12*	03/26/2020 09:43:00	f6cdd826...
-  19: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh1	03/23/2020 22:05:22	44504bf6...
-  20: RisingBubble	RisingBubble_ConvStudy_k2_mesh1	03/23/2020 10:43:12	97e8e806...
-  21: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh0	03/23/2020 22:05:20	d3c1cfe5...
-  22: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2*	03/23/2020 22:05:28	931391e0...
-  23: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
-  24: RisingBubble	RisingBubble_ConvStudy_k3_mesh3*	03/23/2020 11:06:25	7fe15c36...
-  25: RisingBubble	RisingBubble_ConvStudy_k3_mesh2*	03/23/2020 11:06:19	5a4ef53c...
-  26: RisingBubble	RisingBubble_ConvStudy_k2_mesh3*	03/23/2020 11:06:06	be84e68d...
-  27: RisingBubble	RisingBubble_ConvStudy_k2_mesh2*	03/23/2020 11:06:01	b74d773f...
-  28: RisingBubble	RisingBubble_ConvStudy_k3_mesh0*	03/23/2020 10:43:43	403366e9...
+  4: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1_restart*	04/17/2020 15:18:22	bc355a70...
+  5: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart*	04/17/2020 14:43:50	7a7385d1...
+  6: RisingBubble	RisingBubble_ConvStudy_k3_mesh12	03/26/2020 09:43:00	f6cdd826...
+  7: RisingBubble	RisingBubble_ConvStudy_k2_mesh2	03/23/2020 11:06:01	b74d773f...
+  8: RisingBubble	RisingBubble_Fourier_k2_mesh1_VierProcTest*	04/02/2020 23:11:13	d5baf490...
+  9: RisingBubble	RisingBubble_Fourier_k2_mesh1_ZwoProcTest*	04/02/2020 23:09:26	00841606...
+  10: RisingBubble	RisingBubble_Fourier_k2_mesh1_parallelTest*	04/01/2020 18:45:35	ee80e51d...
+  11: RisingBubble	RisingBubble_ExtVelCurv2_k2_mesh1*	03/31/2020 10:23:09	84087e56...
+  12: RisingBubble	RisingBubble_ExtVelLB2_k2_mesh1*	03/31/2020 10:21:47	ab0a7316...
+  13: RisingBubble	RisingBubble_ConvStudy_k2_mesh12	03/26/2020 09:42:42	4510aed9...
+  14: RisingBubble	RisingBubble_ExtVelCurv_k2_mesh1*	03/30/2020 16:45:02	09f68852...
+  15: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1*	03/30/2020 16:43:52	cfbee3d5...
+  16: RisingBubble	RisingBubble_ConvStudy_k3_mesh1	03/23/2020 10:43:42	de42008a...
+  17: RisingBubble	RisingBubble_FastMarchCurv_k2_mesh1	03/26/2020 10:42:07	3226987a...
+  18: RisingBubble	RisingBubble_Fourier_k2_mesh1	03/26/2020 10:46:02	b760b42f...
+  19: RisingBubble	RisingBubble_tc2_FastMarchCurv_k2_mesh1*	03/26/2020 10:51:39	bf6a3d14...
+  20: RisingBubble	RisingBubble_ConvStudy_k3_mesh02	03/26/2020 09:42:48	c3be0727...
+  21: RisingBubble	RisingBubble_ConvStudy_k2_mesh02	03/26/2020 09:42:38	9b4dcbd7...
+  22: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh1	03/23/2020 22:05:22	44504bf6...
+  23: RisingBubble	RisingBubble_ConvStudy_k2_mesh1	03/23/2020 10:43:12	97e8e806...
+  24: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh0	03/23/2020 22:05:20	d3c1cfe5...
+  25: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2*	03/23/2020 22:05:28	931391e0...
+  26: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
+  27: RisingBubble	RisingBubble_ConvStudy_k3_mesh3*	03/23/2020 11:06:25	7fe15c36...
+  28: RisingBubble	RisingBubble_ConvStudy_k3_mesh2*	03/23/2020 11:06:19	5a4ef53c...
+  29: RisingBubble	RisingBubble_ConvStudy_k2_mesh3*	03/23/2020 11:06:06	be84e68d...
+  30: RisingBubble	RisingBubble_ConvStudy_k3_mesh0*	03/23/2020 10:43:43	403366e9...
 }
 ==============
 var sess = WorkflowMgm.Sessions;
 **************
 ==============
-//int[] evalInd = new int[] { 15, 22, 19};    // tc1 conv study k=2
-//int[] evalInd = new int[] { 14, 27, 4};    // tc1 conv study k=3
-//int[] evalInd = new int[] { 20, 18};    // tc2 conv study k=2
-int[] evalInd = new int[] { 17, 5, 6, 10, 11};    // tc1 method study k=2 on mesh1
-List<ISessionInfo> sessEval = new List<ISessionInfo>();
-foreach(int eI in evalInd) {
-    sessEval.Add(sess.Pick(eI));
+string studyName = "RisingBubble_ConvStudy_k2";
+//string studyName = "_k2_mesh1";
+//string studyName = "_ExtVel";
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            evalSess.Add(sess);  
+        else 
+            evalSessNT.Add(sess);
+    }        
 }
-**************
-==============
-var sessEval = WorkflowMgm.Sessions.Skip(4).Take(1);
-sessEval
+evalSessNT
 **************
 List of 1 instances of ISessionInfo {
-  0: RisingBubble	RisingBubble_Fourier_k2_mesh1_VierProcTest*	04/02/2020 23:11:13	d5baf490...
+  0: RisingBubble	RisingBubble_ConvStudy_k2_mesh3*	03/23/2020 11:06:06	be84e68d...
 }
 ==============
+//var evalSess = WorkflowMgm.Sessions.Skip(4).Take(1);
+//evalSess.Add(evalSessNT.ElementAt(2));
+//evalSess.RemoveAt(4);
+evalSess
+**************
+List of 5 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_ConvStudy_k2_mesh2	03/23/2020 11:06:01	b74d773f...
+  1: RisingBubble	RisingBubble_ConvStudy_k2_mesh12	03/26/2020 09:42:42	4510aed9...
+  2: RisingBubble	RisingBubble_ConvStudy_k2_mesh02	03/26/2020 09:42:38	9b4dcbd7...
+  3: RisingBubble	RisingBubble_ConvStudy_k2_mesh1	03/23/2020 10:43:12	97e8e806...
+  4: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
+}
+==============
+evalSess = evalSess.OrderBy(s => s.KeysAndQueries["Grid:hMax"]).ToList();
+//evalSess = evalSess.OrderBy(s => s.KeysAndQueries["Grid:hMin"]).ToList();
 **************
 ==============
-var data = sessEval.ReadLogDataForXNSE(XNSE_Control.LoggingValues.RisingBubble);
+var data = evalSess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.RisingBubble); //, evalName: "NoCells-", keyName: "Grid:NoOfCells");
 **************
 Element at 0: time vs area
 Element at 1: time vs center of mass - x
@@ -90,17 +107,324 @@ Element at 3: time vs circularity
 Element at 4: time vs rise velocity
 
 ==============
-ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "circularity")
+//ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "circularity")
+**************
+==============
+//ISessionInfoExtensions.PlotData(data.ElementAt(4), "time", "rise velocity")
+**************
+==============
+//ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "area")
+**************
+==============
+**************
+==============
+// ===================
+// read reference data
+// ===================
+bool setup2 = false;
+**************
+==============
+using System.IO;
+**************
+==============
+// g1 TU Dortmund (TP2D); g2 EPFL Lausanne (FreeLIFE); g3 Uni Magdebug (MooNMD)
+string[] groups = new string[] {"TP2D", "FreeLIFE", "MooNMD"};
+int[,] datLvl = new int[,] {{4, 5, 6, 7}, {1, 2, 3, -1}, {1, 2, 3, 4}};    // testcase 1
+//int[,] datLvl = new int[,] {{4, 5, 6, 7, 8}, {1, 2, 3, -1, -1}, {2, 3, 4, -1, -1}};    // testcase 2
+List<Plot2Ddata>[,] dataRef = new List<Plot2Ddata>[4,3];
+for (int grp = 1; grp <= 3; grp++) {
+    List<Plot2Ddata>[] datSet = new List<Plot2Ddata>[4];
+    // 1: area 2: circularity 3: center y 4: rise velocity
+    for (int j = 0; j < 4; j++) {
+        datSet[j] = new List<Plot2Ddata>();
+    }
+
+    int numL = datLvl.GetLength(1);
+    for (int l = 0; l < numL; l++) {
+        if(datLvl[grp-1,l] == -1)
+            continue;
+        // Read all data
+        string dat  = "c1g"+grp+"l"+datLvl[grp - 1,l]+".txt";
+        string path = @"D:\BoSSS-experimental\public\examples\XNSE_Solver\RisingBubble\referenceData_Featflow\data_bench_quantities\"+dat;
+        string[] lines = File.ReadAllLines(path);
+        double[] time = new double[lines.Length];
+        double[][] valueDat = new double[4][];
+        for(int j = 0; j < 4; j++)
+            valueDat[j] = new double[lines.Length];
+
+        for (int i = 0; i < lines.Length; i++) {
+            //var datString = lines[i].Split(new string[] {" "}, StringSplitOptions.RemoveEmptyEntries);
+            //Console.WriteLine("num split strings at 0: {0}", datString[0]);
+            time[i] = Convert.ToDouble(lines[i].Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0]);            
+            for (int j = 0; j < 4; j++) {
+                valueDat[j][i] = Convert.ToDouble(lines[i].Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[j+1]);
+            }
+        }        
+        // Build DataSet
+        for (int j = 0; j < 4; j++) {
+            string datName = groups[grp-1]+"_l"+datLvl[grp - 1,l];
+            datSet[j].Add(new Plot2Ddata(new KeyValuePair<string, double[][]>(datName, new double[][] { time, valueDat[j] })));
+        }
+    }
+    
+    for (int j = 0; j < 4; j++) {
+        dataRef[j,grp-1] = datSet[j];
+    }
+}
+**************
+==============
+//ISessionInfoExtensions.PlotData(dataRef[1,0].Last(), "time", "circularity")
+**************
+==============
+List<Plot2Ddata> dataRefm = data;
+for (int i = 0; i < 3; i++) {
+    dataRefm[0] = dataRefm.ElementAt(0).Merge(dataRef[0,i].Last());
+    dataRefm[3] = dataRefm.ElementAt(3).Merge(dataRef[1,i].Last());
+    dataRefm[2] = dataRefm.ElementAt(2).Merge(dataRef[2,i].Last());
+    dataRefm[4] = dataRefm.ElementAt(4).Merge(dataRef[3,i].Last());
+}
+**************
+==============
+//ISessionInfoExtensions.PlotData(dataRefm.ElementAt(3), "time", "circularity")
 **************
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
-ISessionInfoExtensions.PlotData(data.ElementAt(4), "time", "rise velocity")
+//ISessionInfoExtensions.PlotData(dataRefm.ElementAt(4), "time", "rise velocity")
+**************
+==============
+//ISessionInfoExtensions.PlotData(dataRefm.ElementAt(0), "time", "area")
+**************
+==============
+**************
+==============
+// ======================================
+// check specific values against ref Data
+// ======================================
+int numDat = data.ElementAt(3).dataGroups.Length;
+**************
+==============
+// eval min circularity (0.9010 - 0.9013) at (1.875 - 1.9041)
+double[] circMin = new double[numDat];
+double[] circMinTime = new double[numDat];
+int nd = 0;
+foreach(var dgrp in data.ElementAt(3).dataGroups) {
+    double Min  = Double.MaxValue;
+    double time = 0.0;
+    for(int i = 0; i < dgrp.Values.Length; i++) {
+        if(dgrp.Values[i] < Min) {
+            Min  = dgrp.Values[i];
+            time = dgrp.Abscissas[i];
+        }
+    }
+    circMin[nd] = Min;
+    circMinTime[nd] = time;
+    nd++;
+    
+    double cMinErr = 0.0;
+    if(Min < 0.9010)
+        cMinErr = 100*(Min-0.9010)/0.9010;
+    if(Min > 0.9013)
+        cMinErr = 100*(Min-0.9013)/0.9013;
+    double tcMinErr = 0.0;
+    if(time < 1.875)
+        tcMinErr = 100*(time-1.875)/1.875;
+    if(time > 1.9041)
+        tcMinErr = 100*(time-1.9041)/1.9041;
+    Console.WriteLine("c_{min} = "+Min+" ("+cMinErr+") at t = "+time+" ("+tcMinErr+")");
+}
+**************
+c_{min} = 0.9025299283894 (0.136461598735167) at t = 1.88699999999993 (0)
+c_{min} = 0.902127081240987 (0.0917653656925508) at t = 1.88999999999993 (0)
+c_{min} = 0.902354728841088 (0.117023060145128) at t = 1.8869999999999 (0)
+c_{min} = 0.903072994645932 (0.196715260837907) at t = 1.8779999999999 (0)
+c_{min} = 0.90274570668586 (0.1604023838744) at t = 1.88100000000002 (0)
+c_{min} = 0.901646027025952 (0.0383919922281138) at t = 1.86999999999998 (-0.266666666667739)
+
+==============
+int lineColor     = 0;
+PlotFormat format = new PlotFormat(Style: Styles.Boxes);
+// min circularity (0.9010 - 0.9013)
+Gnuplot gp        = new Gnuplot(baseLineFormat: format);
+gp.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp.Cmd("set yrange [0.9007:0.9016]");
+gp.Cmd("set grid xtics ytics");
+double[] range = Enumerable.Range(0, numDat).Select(i => 1 + (numDat - 1) * ((double)i / (numDat - 1))).ToArray();
+gp.PlotXY(range, circMin, "test", format);
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9010, 0.9010 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9013, 0.9013 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp.WriteDeferredPlotCommands();
+gp.Execute();
+// at (1.875 - 1.9041)
+Gnuplot gp2 = new Gnuplot(baseLineFormat: format);
+gp2.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp2.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp2.Cmd("set yrange [1.7799:1.9332]");
+gp2.Cmd("set grid xtics ytics");
+gp2.PlotXY(range, circMinTime, "test", format);
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.875, 1.875 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.9041, 1.9041 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp2.WriteDeferredPlotCommands();
+gp2.Execute();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+// eval max rise velocity (0.2415 - 0.2421) at (0.9211 - 0.9313)
+double[] riseMax = new double[numDat];
+double[] riseMaxTime = new double[numDat];
+nd = 0;
+foreach(var dgrp in data.ElementAt(4).dataGroups) {
+    double Max  = Double.MinValue;
+    double time = 0.0;
+    for(int i = 0; i < dgrp.Values.Length; i++) {
+        if(dgrp.Values[i] > Max) {
+            Max  = dgrp.Values[i];
+            time = dgrp.Abscissas[i];
+        }
+    }
+    riseMax[nd] = Max;
+    riseMaxTime[nd] = time;
+    nd++;
+    
+    double vMaxErr = 0.0;
+    if(Max < 0.2415)
+        vMaxErr = 100*(Max-0.2415)/0.2415;
+    if(Max > 0.2421)
+        vMaxErr = 100*(Max-0.2421)/0.2421;
+    double tvMaxErr = 0.0;
+    if(time < 0.9211)
+        tvMaxErr = 100*(time-0.9211)/0.9211;
+    if(time > 0.9313)
+        tvMaxErr = 100*(time-0.9313)/0.9313;
+    Console.WriteLine("V_{max} = "+Max+" ("+vMaxErr+") at t = "+time+" ("+tvMaxErr+")");
+}
+**************
+V_{max} = 0.241201457700652 (-0.123619999730022) at t = 0.918000000000025 (-0.336554120071112)
+V_{max} = 0.241348635611234 (-0.0626767655345668) at t = 0.918000000000025 (-0.336554120071112)
+V_{max} = 0.241203908374263 (-0.122605228048442) at t = 0.918000000000001 (-0.336554120073715)
+V_{max} = 0.240916157035802 (-0.241756920992961) at t = 0.915000000000001 (-0.66225165562903)
+V_{max} = 0.240920459977498 (-0.239975164597097) at t = 0.914999999999985 (-0.662251655630766)
+V_{max} = 0.240213100903822 (-0.53287747253747) at t = 0.910000000000001 (-1.20508088155455)
+
+==============
+int lineColor     = 0;
+PlotFormat format = new PlotFormat(Style: Styles.Boxes);
+//
+// max rise velocity (0.2415 - 0.2421)
+//
+Gnuplot gp        = new Gnuplot(baseLineFormat: format);
+gp.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp.Cmd("set yrange [0.2409:0.2427]");
+gp.Cmd("set grid xtics ytics");
+gp.PlotXY(range, riseMax, "test", format);
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.2415, 0.2415 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.2421, 0.2421 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp.WriteDeferredPlotCommands();
+gp.Execute();
+//
+// at (0.9211 - 0.9313)
+//
+Gnuplot gp2 = new Gnuplot(baseLineFormat: format);
+gp2.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp2.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp2.Cmd("set yrange [0.9109:0.9415]");
+gp2.Cmd("set grid xtics ytics");
+gp2.PlotXY(range, riseMaxTime, "test", format);
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9211, 0.9211 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9313, 0.9313 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp2.WriteDeferredPlotCommands();
+gp2.Execute();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+// get terminal height (1.0799 - 1.081)
+double[] height = new double[numDat];
+nd = 0;
+List<double> terminalHeight = new List<double>();
+foreach(var dgrp in data.ElementAt(2).dataGroups) {
+    //terminalHeight.Add(dgrp.Values.Last());
+    double theight = dgrp.Values.Last();
+    height[nd] = theight;
+    nd++;
+    
+    double hErr = 0.0;
+    if(theight < 1.0799)
+        hErr = 100*(theight-1.0799)/1.0799;
+    if(theight > 1.081)
+        hErr = 100*(theight-1.081)/1.081;
+    Console.WriteLine("h_{end} = "+theight+" ("+hErr+")");
+}
+**************
+h_{end} = 1.08001207446236 (0)
+h_{end} = 1.0803628075547 (0)
+h_{end} = 1.07968526552569 (-0.0198846628678558)
+h_{end} = 1.07902120278965 (-0.0813776470367731)
+h_{end} = 1.07848129861909 (-0.131373403177161)
+h_{end} = 1.07315320519129 (-0.624761071276053)
+
+==============
+int lineColor     = 0;
+PlotFormat format = new PlotFormat(Style: Styles.Boxes);
+//
+// terminal height (1.0799 - 1.081)
+//
+Gnuplot gp        = new Gnuplot(baseLineFormat: format);
+gp.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp.Cmd("set yrange [1.079:1.082]");
+gp.Cmd("set grid xtics ytics");
+gp.PlotXY(range, height, "test", format);
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.0799, 1.0799 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.081, 1.081 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp.WriteDeferredPlotCommands();
+gp.Execute();
 **************
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
-ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "area")
+**************
+==============
+// ======================
+// convergence evaluation
+// ======================
+**************
+==============
+string keyName = "Grid:hMax";
+double[] abscissas = evalSess.Skip(1).Select(s => Convert.ToDouble(s.KeysAndQueries[keyName])).ToArray();
+var convData = ISessionInfoExtensions.LogDataToConvergenceData(data, abscissas);
+**************
+==============
+ISessionInfoExtensions.PlotData(convData.ElementAt(3), keyName, "circularity - norm", true)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(convData.ElementAt(4), keyName, "rise velocity - norm", true)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(convData.ElementAt(0), keyName, "area - norm", true)
 **************
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
@@ -109,15 +433,73 @@ Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp5
 ==============
 **************
 ==============
-//sess
+convData.ElementAt(0).Regression()
 **************
-Starting export process... Data will be written to the following directory:
-C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\RisingBubble__RisingBubble_ExtVelLB_k2_mesh1__cfbee3d5-8cd4-48ca-bc34-bcf271c0ab7c
+List of 1 instances of KeyValuePair{String,Double} {
+  0: [unnamed, 2.40217158567115]
+}
 ==============
-sess.Pick(4).Export().WithSupersampling(2).Do()
 **************
-Starting export process... Data will be written to the following directory:
-C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\RisingBubble__RisingBubble_Fourier_k2_mesh1_VierProcTest__d5baf490-6144-4cbe-ba31-f6e961a3891c
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

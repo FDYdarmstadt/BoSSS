@@ -388,14 +388,14 @@ namespace BoSSS.Solution.XNSECommon {
                     double lamI = physParams.lambda_I;
                     double lamI_t = (physParams.lambdaI_tilde < 0) ? (lamI - muI) : physParams.lambdaI_tilde;
 
-                    double penalty_base = (degU + 1) * (degU + D) / D;
+                    double penalty_base = (degU + 1) * (degU + (D-1)) / (D-1);
                     double penalty = penalty_base * dntParams.PenaltySafety;
 
                     // surface dilatational viscosity
                     if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceDivergence ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, D, lamI_t * 0.5, penalty, BcMap.EdgeTag2Type, true);
+                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, D, lamI_t * 0.5, penalty, BcMap.EdgeTag2Type, false);
                         XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDiv);
 
                     }
@@ -405,11 +405,11 @@ namespace BoSSS.Solution.XNSECommon {
                         dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, D, muI * 0.5, penalty, true, dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit);
+                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, D, muI * 0.5, penalty, false, dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit);
                         XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRate);
 
                         if (dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
-                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, D, muI * 0.5, penalty, true);
+                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, D, muI * 0.5, penalty, false);
                             XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRateT);
                         }
 

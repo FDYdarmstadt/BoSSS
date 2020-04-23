@@ -8,8 +8,8 @@ Databases loaded:
 List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 49; Grid Count = 621; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 33; Grid Count = 1234; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  2: { Session Count = 77; Grid Count = 769; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 299; Grid Count = 3418; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -53,8 +53,8 @@ Project name is set to 'CapillaryWave'.
 // ===========================
 **************
 ==============
-var GridSeq = new IGridInfo[3];
-int[] kelemSeq = new int[]{ 8, 16, 32 };
+var GridSeq = new IGridInfo[4];
+int[] kelemSeq = new int[]{ 8, 16, 32, 64 };
 **************
 ==============
 double L = 1;    // equals lambda
@@ -66,9 +66,27 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     
     GridCommons grd;
 
-    double[] xNodes = GenericBlas.Linspace(0, L, kelem + 1);
-    double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, (3.0/2.0)*L, (3 * kelem) * 1);    
-    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+    if(iGrid <= 2) {
+        double[] xNodes = GenericBlas.Linspace(0, L, kelem + 1);
+        double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, (3.0/2.0)*L, (3 * kelem) * 1); 
+        grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+    } else {
+        double[] xNodes = GenericBlas.Linspace(0, L, (kelem/2) + 1);
+        double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, -(1.0/2.0)*L, (1 * kelem) * 1); 
+        var grd_lower = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        xNodes        = GenericBlas.Linspace(0, L, (kelem/2) + 1);
+        yNodes        = GenericBlas.Linspace((1.0/2.0)*L, (3.0/2.0)*L, (1 * kelem) * 1); 
+        var grd_upper = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        xNodes         = GenericBlas.Linspace(0, L, kelem + 1);
+        yNodes         = GenericBlas.Linspace(-(1.0/2.0)*L, (1.0/2.0)*L, (1 * kelem) * 1); 
+        var grd_center = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        var grdMrgd = GridCommons.MergeLogically(new GridCommons[] {grd_lower, grd_center, grd_upper});
+        grd         = GridCommons.Seal(grdMrgd, 4);
+    }   
+
 
     grd.EdgeTagNames.Add(1, "wall");
  
@@ -93,6 +111,8 @@ Grid Edge Tags changed.
 An equivalent grid is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
 An equivalent grid is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid is already present in the database -- the grid will not be saved.
 
 ==============
 **************
@@ -105,7 +125,7 @@ An equivalent grid is already present in the database -- the grid will not be sa
 using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 **************
 ==============
-int[] degS = new int[] { 2 };
+int[] degS = new int[] { 2, 3 };
 **************
 ==============
 **************
@@ -116,8 +136,9 @@ double rho;
 double mu;
 double sigma;
 
-double[] dt;
+double[,] dts;
 double t_end;
+bool dt_fixed = true;    // smallest timestep is chosen for convergence study
  
 int setup = 0;
 switch(setup) {
@@ -126,7 +147,7 @@ switch(setup) {
         rho   = 1e-3;
         mu    = 1e-5;
         sigma = 3e-2;
-        dt    = new double[] {8e-4, 3e-4, 1e-4};
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
         t_end = 0.4;
         break;
     }
@@ -135,7 +156,7 @@ switch(setup) {
         rho   = 1e-3;
         mu    = 1e-4;
         sigma = 3e-2;
-        dt    = new double[] {8e-4, 3e-4, 1e-4};
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
         t_end = 0.4;
         break;
     }
@@ -144,7 +165,7 @@ switch(setup) {
         rho   = 1e-3;
         mu    = 5e-4;
         sigma = 3e-2;
-        dt    = new double[] {8e-4, 3e-4, 1e-4};
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
         t_end = 0.4;
         break;
     }
@@ -153,16 +174,41 @@ switch(setup) {
         rho   = 1e-3;
         mu    = 1e-3;
         sigma = 3e-3;
-        dt    = new double[] {2e-3, 1e-3, 3e-4};
+        dts   = new double[,] {{2e-3, 1e-3, 3e-4, 2e-4}, {1e-3, 6e-4, 2e-4, 8e-5}};
         t_end = 1.3;
         break;
     }
 }
 **************
 ==============
+string restartStudyName = "_Setup0_convStudy_k2";
+List<ISessionInfo> restartStudySess = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(restartStudyName)) {
+        if(!Convert.ToBoolean(sess.SuccessfulTermination))
+            restartStudySess.Add(sess);  
+    }        
+}
+restartStudySess
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+bool restart = false;
+Guid[] restartID = new Guid[4];
+restartID[1] = restartStudySess.ElementAt(2).ID;
+restartID[2] = restartStudySess.ElementAt(1).ID;
+restartID[3] = restartStudySess.ElementAt(0).ID;
+restartID
+**************
+System.ArgumentOutOfRangeException occurred: Index was out of range. Must be non-negative and less than the size of the collection.
+Parameter name: index. Type 'LastError' for details.
+
+==============
 int deg0 = 0;
-int grd0 = 2;
-XNSE_Control[,] controls = new XNSE_Control[degS.Length - deg0, GridSeq.Length - grd0];
+int grd0 = 1;
+//XNSE_Control[,] controls = new XNSE_Control[degS.Length - deg0, GridSeq.Length - grd0];
+List<XNSE_Control> controls = new List<XNSE_Control>();
 **************
 ==============
 for(int iDeg = deg0; iDeg < degS.Length; iDeg++) {
@@ -181,7 +227,14 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     string L_str  = L.ToString();
     double A0     = L/100;
     string A0_str = A0.ToString();
-    C.AddInitialValue("Phi", "X => X[1] - "+A0_str+" * Math.Sin(X[0] * 2.0 * Math.PI / "+L_str+")", false);
+    if(restart) {
+        if(restartID[iGrd] == Guid.Empty)
+            continue;
+        else
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restartID[iGrd], null);
+    } else {
+        C.AddInitialValue("Phi", "X => X[1] - "+A0_str+" * Math.Sin(X[0] * 2.0 * Math.PI / "+L_str+")", false);
+    }
     
     double[] param = new double[4];
     param[0] = 1;        // wavenumber;
@@ -196,51 +249,111 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     C.PhysicalParameters.mu_B  = mu;
     C.PhysicalParameters.Sigma = sigma;
     
-    C.dtMin         = dt[iGrd];
-    C.dtMax         = dt[iGrd];
-    C.NoOfTimesteps = (int)(t_end/dt[iGrd]); 
+    double dt       = (dt_fixed) ? dts[iDeg, GridSeq.Length-1] : dts[iDeg, iGrd];
+    C.dtMin         = dt;
+    C.dtMax         = dt;
+    C.NoOfTimesteps = (int)(t_end/dt); 
     
-    C.SessionName = "CapillaryWave_Setup"+setup+"_k" + pDeg + "_mesh" + iGrd;
+    C.saveperiod = 10;
+    C.LogPeriod  = 10;
     
-    controls[iDeg-deg0,iGrd-grd0] = C;
+    C.SessionName = "CapillaryWave_Setup"+setup+"_convStudy_k" + pDeg + "_mesh" + iGrd;
+    
+    //controls[iDeg-deg0,iGrd-grd0] = C;
+    controls.Add(C);
     C.CreateJob(); // job will be permanently linked to control object
 }
 }
 **************
 Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
 
 ==============
 //Info(controls[0,0]);
-controls[0,0].SessionName
+controls.ElementAt(0).SessionName
 **************
-CapillaryWave_Setup0_k2_mesh2
+CapillaryWave_Setup0_convStudy_k2_mesh1
 ==============
-var j00 = controls[0,0].GetJob();
+//var j00 = controls[0,0].GetJob();
 **************
 ==============
-j00.Activate(myBatch);
+//j00.Activate(myBatch);
 **************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
+    var job = cntrl.GetJob();
+    job.Activate(myBatch);
+}
+**************
+Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh1
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_124517
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh2
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_124531
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh3
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_125312
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh1
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132541
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh2
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132558
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh3
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Mar26_111021
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132603
 copied 32 files.
    writing file: control.obj
    copied 'amd64' runtime.
 deployment finished.
 
-==============
-j00.Status;
-**************
-InProgress
-==============
-//j00.Stdout;
-**************
-==============
-j00.Stderr;
-**************
-==============
-**************
 ==============
 **************
 ==============
@@ -255,11 +368,26 @@ j00.Stderr;
 ==============
 **************
 ==============
+//databases.Pick(3).Sessions
 **************
 ==============
 **************
 ==============
 //databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
