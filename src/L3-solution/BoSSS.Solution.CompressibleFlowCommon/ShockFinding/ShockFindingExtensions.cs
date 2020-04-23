@@ -63,11 +63,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 throw new NotSupportedException("This MdA is cannot be saved.");
             }
         }
-
-
+        
         public static void SortOutNonConverged(MultidimensionalArray input, MultidimensionalArray inputExtended, out MultidimensionalArray result, out MultidimensionalArray resultExtended) {
             // input            [0]: x        [1]: y             [2]: f       [3] secondDerivative    [4] stepSize
             // inputExtended    [0]: iter     [1]: converged     [2]: jCell
+
+            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: START");
 
             int numOfPoints = input.Lengths[0];
             int[] convergedCells = new int[numOfPoints];
@@ -89,6 +90,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 result.ExtractSubArrayShallow(i, -1, -1).Acc(1.0, input.ExtractSubArrayShallow(cell, -1, -1));
                 resultExtended.ExtractSubArrayShallow(i, -1).Acc(1.0, inputExtended.ExtractSubArrayShallow(cell, -1));
             }
+
+            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: END");
         }
 
         public static double[] GetFinalFunctionValues(MultidimensionalArray input, MultidimensionalArray iterationsNeeded) {
@@ -188,9 +191,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// Returns all cells with the respective artificial viscosity value
         /// if the value is larger than zero
         /// </summary>
-        /// <param name="gridData"></param>
-        /// <param name="avField"></param>
-        /// <returns><see cref="MultidimensionalArray"/>, first index: cellIndex, second index: artificial viscosity value</returns>
+        /// <param name="gridData">The needed <see cref="GridData"/></param>
+        /// <param name="avField">The artificial visocsity <see cref="SinglePhaseField"/></param>
+        /// <returns> <see cref="MultidimensionalArray"/>
+        /// Lenghts --> [0]: number of points (AV > 0), [1]: 2
+        /// [1] --> [0]: cellIndex, [2:] AV value
+        /// </returns>
         public static MultidimensionalArray GetAVMeanValues(GridData gridData, SinglePhaseField avField) {
             CellMask allCells = CellMask.GetFullMask(gridData);
             double[] cellIndices = new double[allCells.NoOfItemsLocally];
@@ -472,10 +478,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
 
             return result;
-        }
-
-        public static DGField Find(this IEnumerable<DGField> fields, string name) {
-            return fields.Where(f => f.Identification == name).SingleOrDefault();
         }
     }
 }

@@ -32,7 +32,9 @@ using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
+
     public class LevelSetReconstruction {
+
         private readonly string sessionPath;
         private readonly ISessionInfo session;
         private readonly MultidimensionalArray input;
@@ -41,6 +43,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         private int clusteringCount = 0;
 
         private readonly List<MultidimensionalArray> _clusterings = new List<MultidimensionalArray>();
+        /// <summary>
+        /// List of all clusterings in the order of their creation
+        /// </summary>
         public List<MultidimensionalArray> Clusterings {
             get {
                 if (_clusterings == null) {
@@ -50,6 +55,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="sessionPath">Path where everything is stored</param>
+        /// <param name="session">The session from the database</param>
+        /// <param name="input">
+        /// Lenghts --> [0]: numOfPoints, [1]: maxIterations + 1, [2]: 5
+        /// [2]: x | y | function values | second derivatives | step sizes
+        /// </param>
+        /// <param name="inputExtended">
+        /// Lenghts --> [0]: numOfPoints, [1]: 3
+        /// [1]: IterationsNeeded | Converged | jCell
+        /// </param>
         public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input, MultidimensionalArray inputExtended) {
             this.sessionPath = sessionPath;
             this.session = session;
@@ -57,6 +75,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.inputExtended = inputExtended;
         }
 
+        /// <summary>
+        /// Create clustering based on the density
+        /// </summary>
+        /// <param name="numOfClusters">Needed by <see cref="Kmeans"/></param>
+        /// <param name="initialMeans">Needed by <see cref="Kmeans"/></param>
+        /// <returns>
+        /// Clustering as <see cref="MultidimensionalArray"/>
+        /// [0]: x, [1]: y, [2]: data, [3]: cellToCluster (e.g. cell 0 is in cluster 1), [4]: local cell index
+        /// </returns>
         public MultidimensionalArray CreateClustering_Density(int numOfClusters, double[] initialMeans) {
             Console.WriteLine("CreateClustering_Density: START");
 
@@ -79,11 +106,21 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return clustering;
         }
 
+        /// <summary>
+        /// Create clustering based on the artificial viscosity (mean values)
+        /// </summary>
+        /// <param name="inputClustering">Input data which has to be a previous clustering</param>
+        /// <param name="numOfClusters">Needed by <see cref="Kmeans"/></param>
+        /// <param name="initialMeans">Needed by <see cref="Kmeans"/></param>
+        /// <returns>
+        /// Clustering as <see cref="MultidimensionalArray"/>
+        /// [0]: x, [1]: y, [2]: data, [3]: cellToCluster (e.g. cell 0 is in cluster 1), [4]: local cell index
+        /// </returns>
         public MultidimensionalArray CreateClustering_AV(MultidimensionalArray inputClustering, int numOfClusters, double[] initialMeans) {
             Console.WriteLine("CreateClustering_AV: START");
 
             // Get AV values
-            var avField = this.session.Timesteps.Last().Fields.Find("artificialViscosity");
+            var avField = this.session.Timesteps.Last().Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
             int numOfPoints = inputClustering.Lengths[0];
             double[] data = new double[numOfPoints];
             for (int i = 0; i < data.Length; i++) {
@@ -110,6 +147,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return clustering;
         }
 
+        /// <summary>
+        /// Create clustering without boundary cells
+        /// </summary>
+        /// <param name="inputClustering">Input data which has to be a previous clustering</param>
+        /// <returns>
+        /// Clustering as <see cref="MultidimensionalArray"/>
+        /// [0]: x, [1]: y, [2]: data, [3]: cellToCluster (e.g. cell 0 is in cluster 1), [4]: local cell index
         public MultidimensionalArray CreateClustering_Boundary(MultidimensionalArray inputClustering) {
             Console.WriteLine("CreateClustering_Boundary: START");
 
@@ -140,6 +184,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return clustering;
         }
 
+        /// <summary>
+        /// Select a specific cluster from a clustering and extract all data
+        /// </summary>
+        /// <param name="clustering">The underlying clustering</param>
+        /// <param name="clusterToSelect">The cluster to extract</param>
+        /// <returns>New clustering which contains only the data from the selected cluster</returns>
         public MultidimensionalArray SelectCluster(MultidimensionalArray clustering, int clusterToSelect) {
             // clustering.Lengths -->  [0]: numOfPoints      [1]: 4
             // clustering[1] -->       [0]: x                [1]: y          [2]: function value       [3]: cellToCluster       [4]: local cell index
@@ -164,6 +214,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return result;
         }
 
+        /// <summary>
+        /// Save a clustering to a text file
+        /// </summary>
+        /// <param name="clustering">[0]: x, [1]: y, [2]: data, [3]: cellToCluster (e.g. cell 0 is in cluster 1), [4]: local cell index</param>
+        /// <param name="path">Optional path</param>
         public void SaveClusteringToTextFile(MultidimensionalArray clustering, string path = null) {
             if (path == null) {
                 path = sessionPath;

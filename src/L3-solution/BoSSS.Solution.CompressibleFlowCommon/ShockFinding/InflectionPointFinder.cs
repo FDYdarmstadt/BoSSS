@@ -32,7 +32,9 @@ using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
+
     public class InflectionPointFinder {
+
         private SinglePhaseField gradientX;
         private SinglePhaseField gradientY;
         private SinglePhaseField hessianXX;
@@ -88,17 +90,31 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             private set;
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="sessionPath">Path where everything is stored</param>
+        /// <param name="session">The session from the database</param>
         public InflectionPointFinder(string sessionPath, ISessionInfo session) {
             this.SessionPath = sessionPath;
             this.session = session;
 
             ITimestepInfo myTimestep = session.Timesteps.Last();
             this.gridData = (GridData)myTimestep.Fields.First().GridDat;
-            this.densityField = (SinglePhaseField)myTimestep.Fields.Find("rho");
-            this.avField = (SinglePhaseField)myTimestep.Fields.Find("artificialViscosity");
-            this.levelSetField = (SinglePhaseField)myTimestep.Fields.Find("levelSet");
+            this.densityField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+            this.avField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
+            this.levelSetField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
         }
 
+        /// <summary>
+        /// Main method in order to find inflection points of a DG field
+        /// </summary>
+        /// <param name="seeding">Setup for seeding, <see cref="SeedingSetup"/>></param>
+        /// <param name="patchRecoveryGradient">Enable patch recovery for the gradient of the DG field</param>
+        /// <param name="patchRecoveryHessian">Enable patch recovery for the second derivatives of the DG field</param>
+        /// <param name="maxNumOfIterations">Maximum number of iterations when searching for the inflection point</param>
+        /// <param name="eps">Threshold (inflection point is reached)</param>
+        /// <returns></returns>
         public MultidimensionalArray FindPoints(SeedingSetup seeding = SeedingSetup.av, bool patchRecoveryGradient = true, bool patchRecoveryHessian = true, int maxNumOfIterations = 100, double eps = 1e-12) {
             this.patchRecoveryGradient = patchRecoveryGradient;
             this.patchRecoveryHessian = patchRecoveryHessian;
@@ -181,16 +197,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             return Results;
         }
 
-        public void SortOutNonConverged() {
-            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: START");
-
-            ShockFindingExtensions.SortOutNonConverged(Results, ResultsExtended, out MultidimensionalArray Results_SO, out MultidimensionalArray ResultsExtended_SO);
-            //Results = Results_SO;
-            //ResultsExtended = ResultsExtended_SO;
-
-            Console.WriteLine("SORTING OUT NON CONVERGED POINTS: END");
-        }
-
+        /// <summary>
+        /// Plot or save all data
+        /// </summary>
+        /// <param name="plotDGFields">PLT-File for several DG fields</param>
+        /// <param name="plotSeedingsPoints">Plot all seeding points</param>
+        /// <param name="plotInflectionsPoints">Plot all inflection points</param>
+        /// <param name="plotCurves">Plot the 'search path' (seeding point to inflection point)</param>
+        /// <param name="plotStartEndPairs">Plot seeding point and corresponding inflection point</param>
         public void Plot(bool plotDGFields, bool plotSeedingsPoints, bool plotInflectionsPoints, bool plotCurves, bool plotStartEndPairs) {
             Console.WriteLine("PLOTTING: START");
 
@@ -372,8 +386,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// </param>
         /// <param name="iterations">The amount of iterations needed in order to find the inflection point</param>
         /// <param name="converged">Has an inflection point been found?</param>
-        /// <param name = "jLocal" >Local cell index of the inflection point (if found)</ param >
-        /// < param name="byFlux">Calculation of the first and second order derivatives, default: true</param>
+        /// <param name = "jLocal" >Local cell index of the inflection point</ param >
+        /// <param name="byFlux">Option for the calculation of the first and second order derivatives, default: true</param>
         private void WalkOnCurve(GridData gridData, SinglePhaseField field, MultidimensionalArray results, out int iterations, out bool converged, out int jLocal, bool byFlux = true) {
             // Init
             converged = false;
@@ -502,8 +516,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         }
     }
 
+    /// <summary>
+    /// Seeding points
+    /// </summary>
     public enum SeedingSetup {
+
+        /// <summary>
+        /// One seeding point in every cell where AV > 0
+        /// </summary>
         av = 0,
+
+        /// <summary>
+        /// A 3x3-grid in every cell where AV > 0
+        /// </summary>
         av3x3
     }
 }
