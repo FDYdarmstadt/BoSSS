@@ -13,7 +13,7 @@ using AdvancedSolverTests.SubBlocking;
 
 namespace AdvancedSolverTests {
     
-    class AdvancedSolverMain {
+    public class AdvancedSolverMain {
 
         /// <summary>
         /// MPI init

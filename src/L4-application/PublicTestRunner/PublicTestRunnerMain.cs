@@ -105,7 +105,6 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(MPITest.Program),
-                        typeof(AdvancedSolverTests.SubBlocking.LocalTests)
                     };
             }
         }
@@ -135,8 +134,7 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-                        (typeof(AdvancedSolverTests.SubBlocking.LocalTests),4),
-                        (typeof(AdvancedSolverTests.SubBlocking.ExternalTests),4)
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }
