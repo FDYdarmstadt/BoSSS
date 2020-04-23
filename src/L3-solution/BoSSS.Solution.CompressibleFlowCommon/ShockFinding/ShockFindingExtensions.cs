@@ -430,9 +430,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// Creates a continuous version of a DG level set field
         /// </summary>
         /// <param name="DGLevelSet">The input DG level set field</param>
-        /// <param name="points">The points used for reconstruction, needed for the creation of the narrow band</param>
+        /// <param name="jCells">Local cell indices</param>      
         /// <returns>A continuous level set <see cref="SinglePhaseField"/> with one order higher than the input</returns>
-        public static SinglePhaseField ContinuousLevelSet(SinglePhaseField DGLevelSet, MultidimensionalArray points) {
+        public static SinglePhaseField ContinuousLevelSet(SinglePhaseField DGLevelSet, double[] jCells) {
             Console.WriteLine(String.Format("Continuity projection of field {0} started...", DGLevelSet.Identification));
 
             // Init
@@ -440,7 +440,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, DGLevelSet.Basis.Degree + 1), DGLevelSet.Identification + "_cont");
 
             // Create narrow band
-            double[] jCells = points.ExtractSubArrayShallow(-1, 3).To1DArray();
             List<int> allNeighbours = new List<int>();
             foreach (int cell in jCells) {
                 gridData.GetCellNeighbours(cell, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);

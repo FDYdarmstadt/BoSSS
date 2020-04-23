@@ -293,7 +293,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
 
             if (continuous) {
-                levelSetField = ShockFindingExtensions.ContinuousLevelSet(levelSetField, points);
+                levelSetField = ShockFindingExtensions.ContinuousLevelSet(levelSetField, clustering.ExtractSubArrayShallow(-1, 4).To1DArray());
                 _levelSetFields.Add(levelSetField);
             }
 
