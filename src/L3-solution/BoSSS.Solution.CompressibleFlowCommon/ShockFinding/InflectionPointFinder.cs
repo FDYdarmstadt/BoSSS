@@ -115,7 +115,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// <param name="maxNumOfIterations">Maximum number of iterations when searching for the inflection point</param>
         /// <param name="eps">Threshold (inflection point is reached)</param>
         /// <returns></returns>
-        public MultidimensionalArray FindPoints(SeedingSetup seeding = SeedingSetup.av, bool patchRecoveryGradient = true, bool patchRecoveryHessian = true, int maxNumOfIterations = 100, double eps = 1e-12) {
+        public MultidimensionalArray FindPoints(SeedingSetup seeding = SeedingSetup.av, bool patchRecoveryGradient = true, bool patchRecoveryHessian = true, bool eliminateNonConverged = false, int maxNumOfIterations = 100, double eps = 1e-12) {
             this.patchRecoveryGradient = patchRecoveryGradient;
             this.patchRecoveryHessian = patchRecoveryHessian;
 
@@ -191,6 +191,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 }
 #endif
             }
+
+            if (eliminateNonConverged) {
+                ShockFindingExtensions.EliminateNonConvergedPoints(Results, ResultsExtended, out MultidimensionalArray results_SO, out MultidimensionalArray resultsExtended_SO);
+                //Results_SO = results_SO;
+                //ResultsExtended_SO = resultsExtended_SO;
+                Results = results_SO;
+                ResultsExtended = resultsExtended_SO;
+            }
+
             Console.WriteLine("WALKING ON CURVES: END");
             #endregion
 
@@ -423,7 +432,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             results[0, 2] = f[0, 0];
 
             // Set initial step size to 0.5 * h_minGlobal
-            // Set the search direction depending on the sign of the curvature
             results[0, 4] = 0.5 * gridData.Cells.h_minGlobal;
 
             int n = 1;

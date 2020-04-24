@@ -39,6 +39,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         private readonly ISessionInfo session;
         private readonly MultidimensionalArray input;
         private readonly MultidimensionalArray inputExtended;
+        private readonly GridData gridData;
+        private readonly SinglePhaseField densityField;
 
         private int clusteringCount = 0;
 
@@ -48,7 +50,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// </summary>
         public List<MultidimensionalArray> Clusterings {
             get {
-                if (_clusterings == null) {
+                if (_clusterings.IsNullOrEmpty()) {
                     throw new NotImplementedException("List of clusterings is empty.");
                 }
                 return _clusterings;
@@ -73,6 +75,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.session = session;
             this.input = input;
             this.inputExtended = inputExtended;
+
+            ITimestepInfo myTimestep = session.Timesteps.Last();
+            this.gridData = (GridData)myTimestep.Fields.First().GridDat;
+            this.densityField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
         }
 
         /// <summary>
@@ -237,6 +243,76 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
 
             clusteringCount++;
+        }
+
+        private List<SinglePhaseField> _levelSetFields = new List<SinglePhaseField>();
+        public List<SinglePhaseField> LevelSetFields {
+            get {
+                if (_levelSetFields.IsNullOrEmpty()) {
+                    throw new NotImplementedException("List of reconstructed level set fields is empty.");
+                }
+                return _levelSetFields;
+            }
+        }
+
+        /// <summary>
+        /// Reconstructs a level set <see cref="SinglePhaseField"/> from a given set of points
+        /// </summary>
+        /// <param name="field">The DG field to work with</param>
+        /// <param name="clustering"> as <see cref="MultidimensionalArray"/>
+        /// Lenghts --> [0]: numOfPoints, [1]: 5
+        /// [1] --> [0]: x, [1]: y, [2]: data, [3]: cellToCluster (e.g. cell 0 is in cluster 1), [4]: local cell index
+        /// </param>
+        /// <param name="patchRecovery">Use <see cref="ShockFindingExtensions.PatchRecovery(SinglePhaseField)"/></param>
+        /// <param name="continuous">Use <see cref="ShockFindingExtensions.ContinuousLevelSet(SinglePhaseField, MultidimensionalArray)"/></param>
+        /// <returns>Returns the reconstructed level set as <see cref="SinglePhaseField"/></returns>
+        public SinglePhaseField ReconstructLevelSet(SinglePhaseField field = null, MultidimensionalArray clustering = null, bool patchRecovery = true, bool continuous = true) {
+            Console.WriteLine("ReconstructLevelSet: START");
+
+            if (field == null) {
+                field = this.densityField;
+            }
+            Console.WriteLine(string.Format("ReconstructLevelSet based on field {0}", field.Identification));
+
+            if (clustering == null) {
+                clustering = _clusterings.Last();
+                Console.WriteLine(string.Format("ReconstructLevelSet based on clustering {0}", _clusterings.Count() - 1));
+            } else {
+                Console.WriteLine("ReconstructLevelSet based on user-defined clustering");
+            }
+
+            // Extract points (x-coordinates, y-coordinates) for reconstruction from clustering
+            MultidimensionalArray points = clustering.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { clustering.Lengths[0] - 1, 1 });
+
+            SinglePhaseField levelSetField = ShockFindingExtensions.ReconstructLevelSetField(field, points);
+            _levelSetFields.Add(levelSetField);
+
+            if (patchRecovery) {
+                levelSetField = ShockFindingExtensions.PatchRecovery(levelSetField);
+                _levelSetFields.Add(levelSetField);
+            }
+
+            if (continuous) {
+                levelSetField = ShockFindingExtensions.ContinuousLevelSet(levelSetField, clustering.ExtractSubArrayShallow(-1, 4).To1DArray());
+                _levelSetFields.Add(levelSetField);
+            }
+
+            Console.WriteLine("ReconstructLevelSet: END");
+
+            return levelSetField;
+        }
+
+        /// <summary>
+        /// Plot all reconstructed level set fields
+        /// </summary>
+        /// <param name="superSampling">Output resolution</param>
+        public void PlotFields(uint superSampling = 2) {
+            Console.WriteLine("PlotFields: START");
+
+            Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: superSampling);
+            plotDriver.PlotFields(sessionPath + "levelSetFields", 0.0, _levelSetFields);
+
+            Console.WriteLine("PlotFields: END");
         }
     }
 }
