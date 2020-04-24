@@ -236,13 +236,14 @@ namespace BoSSS.Application.BoSSSpad {
                 MsHpcJob.Project = PrjName;
                 MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                MsHpcJob.SingleNode = true;
 
                 MsHpcJob.UserName = Username;
 
                 task = MsHpcJob.CreateTask();
                 task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
-
+                
                 task.WorkDirectory = myJob.DeploymentDirectory;
 
                 using (var str = new StringWriter()) {
