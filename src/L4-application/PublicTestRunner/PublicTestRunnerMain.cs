@@ -725,7 +725,7 @@ namespace PublicTestRunner {
                     if (NoOfMpiProcs <= 1)
                         jName = $"{prefix}-{dor}-{Shortname}";
                     else
-                        jName = $"{prefix}p{NoOfMpiProcs}-{dor}-{Shortname}";
+                        jName = $"{prefix}-{dor}-p{NoOfMpiProcs}-{Shortname}";
 
                     if (jName.Length > 127) {
                         // Name length limit set by MS HPC cluster

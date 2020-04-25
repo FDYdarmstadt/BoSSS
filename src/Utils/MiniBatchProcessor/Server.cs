@@ -43,8 +43,19 @@ namespace MiniBatchProcessor {
         /// </summary>
         public static bool IsRunning {
             get {
+                if(MiniBatchThreadIsMyChild) {
+                    if(ServerInternal != null) {
+                        return ServerInternal.IsAlive;
+                    }
+
+                    if(ServerExternal != null) {
+                        return !ServerExternal.HasExited;
+                    }
+                }
+
+
                 try {
-                    if (File.Exists(ServerMutexPath)) {
+                    if(File.Exists(ServerMutexPath)) {
                         // try to delete
 
                         File.Delete(ServerMutexPath);
@@ -55,7 +66,7 @@ namespace MiniBatchProcessor {
                         return false;
                     }
 
-                } catch (IOException) {
+                } catch(IOException) {
                     return true;
                 }
             }
@@ -88,27 +99,27 @@ namespace MiniBatchProcessor {
         /// - false: the server is already running
         /// </returns>
         public static bool StartIfNotRunning(bool RunExternal = true) {
-            if (ServerExternal != null && ServerExternal.HasExited) {
+            if(ServerExternal != null && ServerExternal.HasExited) {
                 ServerExternal.Dispose();
                 ServerExternal = null;
             }
 
-            if (ServerInternal != null && !ServerInternal.IsAlive) {
+            if(ServerInternal != null && !ServerInternal.IsAlive) {
                 ServerInternal = null;
             }
 
-            if (ServerExternal != null || ServerInternal != null || IsRunning) {
+            if(ServerExternal != null || ServerInternal != null || IsRunning) {
                 Console.WriteLine("Mini batch processor is already running.");
                 return false;
             }
             Random r = new Random();
             r.Next(100, 5000);
-            if (IsRunning) {
+            if(IsRunning) {
                 Console.WriteLine("Mini batch processor is already running.");
                 return false;
             }
 
-            if (RunExternal) {
+            if(RunExternal) {
                 Console.WriteLine("Starting mini batch processor in external process...");
 
                 ProcessStartInfo psi = new ProcessStartInfo();
@@ -119,6 +130,7 @@ namespace MiniBatchProcessor {
                 Console.WriteLine("Started mini batch processor on local machine, process id is " + p.Id + ".");
 
                 ServerExternal = p;
+                MiniBatchThreadIsMyChild = true;
             } else {
                 Console.WriteLine("Starting mini batch processor in background thread...");
 
@@ -128,16 +140,27 @@ namespace MiniBatchProcessor {
                 ServerThread.Start();
 
                 ServerInternal = ServerThread;
+                MiniBatchThreadIsMyChild = true;
             }
             return true;
+        }
+
+        /// <summary>
+        /// True, if the batch thread/process was started by this process;
+        /// </summary>
+        public static bool MiniBatchThreadIsMyChild {
+            get;
+            private set;
         }
 
         /// <summary>
         /// Sends a signal which should terminate a running server instance.
         /// </summary>
         public static void SendTerminationSignal(bool WaitForOtherJobstoFinish = true, int TimeOutInSeconds = 1800) {
+            DateTime st = DateTime.Now;
+            
             if (WaitForOtherJobstoFinish) {
-                DateTime st = DateTime.Now;
+                
 
                 Random rnd = new Random();
 
@@ -171,6 +194,15 @@ namespace MiniBatchProcessor {
                 s.Flush();
                 s.Close();
             }
+
+            if(MiniBatchThreadIsMyChild) {
+                while(Server.IsRunning) {
+                    Thread.Sleep(SERVER_POLLING_INTERVALL + SERVER_POLLING_INTERVALL / 2);
+                }
+
+                MiniBatchThreadIsMyChild = false;
+            }
+
         }
 
         static string TerminationSignalPath {
@@ -178,6 +210,8 @@ namespace MiniBatchProcessor {
                 return Path.Combine(ClientAndServer.config.BatchInstructionDir, "MiniBatchProcessor-TerminationSignal.txt");
             }
         }
+
+        static long InternalTeminationSignal;
 
         static string ServerMutexPath {
             get {
@@ -327,6 +361,8 @@ namespace MiniBatchProcessor {
             }
         }
 
+        const int SERVER_POLLING_INTERVALL = 10000;
+
         /// <summary>
         /// Main routine of the server; continuously checks the respective 
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
@@ -392,7 +428,7 @@ namespace MiniBatchProcessor {
 
                 // see if there are available processors
                 if (AvailableProcs <= 0 || ExclusiveUse) {
-                    Thread.Sleep(10000);
+                    Thread.Sleep(SERVER_POLLING_INTERVALL);
                     continue;
                 }
 

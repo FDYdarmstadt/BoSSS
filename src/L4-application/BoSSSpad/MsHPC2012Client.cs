@@ -34,7 +34,13 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     [Serializable]
     public class MsHPC2012Client : BatchProcessorClient {
-        
+
+        /// <summary>
+        /// Empty Constructor for de-serialization
+        /// </summary>
+        private MsHPC2012Client() {
+            //Console.WriteLine("MsHPC2012Client: empty ctor");
+        }
 
         /// <summary>
         /// Ctor.
@@ -89,6 +95,12 @@ namespace BoSSS.Application.BoSSSpad {
 
         [DataMember]
         string[] ComputeNodes;
+
+        /// <summary>
+        /// Jobs are forced to run on a single node.
+        /// </summary>
+        [DataMember]
+        public bool SingleNode = true;
 
         /// <summary>
         /// Access to the Microsoft HPC job scheduler interface.
@@ -236,13 +248,14 @@ namespace BoSSS.Application.BoSSSpad {
                 MsHpcJob.Project = PrjName;
                 MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                MsHpcJob.SingleNode = this.SingleNode;
 
                 MsHpcJob.UserName = Username;
 
                 task = MsHpcJob.CreateTask();
                 task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
-
+                
                 task.WorkDirectory = myJob.DeploymentDirectory;
 
                 using (var str = new StringWriter()) {

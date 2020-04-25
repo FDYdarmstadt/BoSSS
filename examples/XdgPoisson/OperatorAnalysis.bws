@@ -4,10 +4,10 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
+IOException caught while opening database at 'C:\Users\flori\default_bosss_db': Could not find or access a database located at 'C:\Users\flori\default_bosss_db'
 IOException caught while opening database at 'X:\bosss_db_lichtenberg': Could not find or access a database located at 'X:\bosss_db_lichtenberg'
 Databases loaded:
-List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 21; Grid Count = 10; Path = C:\Users\flori\default_bosss_db }
+List of 0 instances of IDatabaseInfo {
 }
 Setting Matlab Connector to Octave...
 
@@ -17,7 +17,14 @@ Setting Matlab Connector to Octave...
 using BoSSS.Application.XdgPoisson3;
 **************
 ==============
+ExecutionQueues;
 **************
+MsHPC2012Client: empty ctopr
+List of 3 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01217
+  2: BoSSS.Application.BoSSSpad.MsHPC2012Client
+}
 ==============
 **************
 ==============
@@ -359,6 +366,8 @@ set key font ",16"inside top left Left reverse
 System.Drawing.Bitmap
 ==============
 LastError;
+**************
+==============
 **************
 ==============
 **************
