@@ -37,7 +37,7 @@ namespace BoSSS.Application.TutorialTests {
         /// </summary>
         static public void OneTimeTearDown(bool killBatch) {
             
-            if (killBatch) {
+            if (killBatch || MiniBatchProcessor.Server.MiniBatchThreadIsMyChild) {
                 Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
                 Console.Out.Flush();
 
@@ -46,7 +46,8 @@ namespace BoSSS.Application.TutorialTests {
                 while (MiniBatchProcessor.Server.IsRunning) {
                     Console.WriteLine("Terminating MiniBatchProcessor...");
                     MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds: -1);
-                    Thread.Sleep(10000);
+                    if(timeoucount > 0)
+                        Thread.Sleep(10000);
 
                     timeoucount++;
                     if (timeoucount > 100) {
