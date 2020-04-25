@@ -36,6 +36,7 @@ namespace MiniBatchProcessor {
         /// </summary>
         static ClientAndServer() {
             config = new Configuration();
+            config.Load();
             rnd = new Random();
 
         }

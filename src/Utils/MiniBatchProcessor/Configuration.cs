@@ -27,7 +27,8 @@ namespace MiniBatchProcessor {
     /// <summary>
     /// Configuration (directories, file paths, etc.) of the job manager.
     /// </summary>
-    public class Configuration {
+    [Serializable]
+    public class Configuration : ilPSP.ConfigFileBase {
 
         /// <summary>
         /// ctor.
@@ -49,21 +50,39 @@ namespace MiniBatchProcessor {
         /// Directory for job queues (see <see cref="ClientAndServer.WORK_DIR"/>, <see cref="ClientAndServer.QUEUE_DIR"/>,
         /// <see cref="ClientAndServer.FINISHED_DIR"/>).
         /// </summary>
-        public string BatchInstructionDir;
+        public string BatchInstructionDir {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Maximum number of processors on this machine
         /// </summary>
-        public int MaxProcessors {
-            get {
-                //return 1;
-                return Math.Max(1, Environment.ProcessorCount - 2);  // most of our machines have hyper-threading
-            }
-        }
+        public int MaxProcessors = 4;
+
+
+        /// <summary>
+        /// Time interval in which the server checks the jobs.
+        /// </summary>
+        public int ServerPollingInSeconds = 15;
+              
 
         /// <summary>
         /// If true, small jobs are allowed to overtake - this may delay or even prevent the start of large jobs.
         /// </summary>
         public bool BackFilling = false;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        protected override string GetDefaultFilePath() {
+            return _GetDefaultFilePath();
+        }
+
+        static string _GetDefaultFilePath() {
+            string settingsDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            string filePath = Path.Combine(settingsDir, "etc", "MiniBatchProcessor.ServerConfig.json");
+            return filePath;
+        }
     }
 }

@@ -26,6 +26,9 @@ using System.Threading.Tasks;
 
 namespace MiniBatchProcessor {
 
+    
+
+
     /// <summary>
     /// Server functionality.
     /// </summary>
@@ -197,7 +200,8 @@ namespace MiniBatchProcessor {
 
             if(MiniBatchThreadIsMyChild) {
                 while(Server.IsRunning) {
-                    Thread.Sleep(SERVER_POLLING_INTERVALL + SERVER_POLLING_INTERVALL / 2);
+                    var c = ClientAndServer.config.ServerPollingInSeconds;
+                    Thread.Sleep(c*1000 + c*456);
                 }
 
                 MiniBatchThreadIsMyChild = false;
@@ -211,7 +215,6 @@ namespace MiniBatchProcessor {
             }
         }
 
-        static long InternalTeminationSignal;
 
         static string ServerMutexPath {
             get {
@@ -237,6 +240,7 @@ namespace MiniBatchProcessor {
                 // try to delete
                 File.Delete(TerminationSignalPath);
             }
+
             
             // create mutex file and share it with no one!
             ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -257,7 +261,13 @@ namespace MiniBatchProcessor {
                     File.WriteAllText(exitTokenPath, "-9876");
                 }
             }
+
+            // load configuration
+            Config = new Configuration();
+            Config.Load();
         }
+
+        static Configuration Config;
 
         /*
         static void MoveWorkingToFinished(JobData J) {
@@ -289,24 +299,25 @@ namespace MiniBatchProcessor {
 
         static void MoveQueueToWorking(JobData J) {
             string BaseDir = ClientAndServer.config.BatchInstructionDir;
-            foreach (string nmn in new string[] { J.ID.ToString() }) {
+            foreach(string nmn in new string[] { J.ID.ToString() }) {
                 var Src = Path.Combine(BaseDir, ClientAndServer.QUEUE_DIR, nmn);
                 var Dst = Path.Combine(BaseDir, ClientAndServer.WORK_FINISHED_DIR, nmn);
 
-                if (File.Exists(Src)) {
+                if(File.Exists(Src)) {
                     int ReTryCount = 0;
-                    while (true) {
+                    while(true) {
                         try {
                             File.Move(Src, Dst);
                             return;
-                        } catch (Exception e) {
-                            if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                        } catch(Exception e) {
+                            if(ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
                                 ReTryCount++;
                                 Thread.Sleep(ClientAndServer.IOwaitTime);
                             } else {
                                 Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
                                 return;
-                            }                        }
+                            }
+                        }
                     }
                 }
             }
@@ -361,8 +372,7 @@ namespace MiniBatchProcessor {
             }
         }
 
-        const int SERVER_POLLING_INTERVALL = 10000;
-
+       
         /// <summary>
         /// Main routine of the server; continuously checks the respective 
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
@@ -378,7 +388,7 @@ namespace MiniBatchProcessor {
             // infinity loop
             // =============
 
-            int AvailableProcs = ClientAndServer.config.MaxProcessors;
+            int AvailableProcs = Math.Min(Environment.ProcessorCount, ClientAndServer.config.MaxProcessors);
             bool ExclusiveUse = false;
 
             var Running = new List<Tuple<Thread, ProcessThread>>();
@@ -428,7 +438,7 @@ namespace MiniBatchProcessor {
 
                 // see if there are available processors
                 if (AvailableProcs <= 0 || ExclusiveUse) {
-                    Thread.Sleep(SERVER_POLLING_INTERVALL);
+                    Thread.Sleep(Config.ServerPollingInSeconds*1000);
                     continue;
                 }
 
