@@ -310,6 +310,11 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if(newDb != null) {
                     Console.WriteLine("Resetting database for control object to " + newDb.ToString());
+
+                    //newDb.AlternateDbPaths
+
+
+
                     m_ctrl.SetDatabase(newDb);
                     ctrl_db = newDb;
                 }

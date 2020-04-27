@@ -22,6 +22,7 @@ using ilPSP;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ilPSP.Tracing;
+using System.Linq;
 
 namespace BoSSS.Application.BoSSSpad
 {
@@ -288,11 +289,25 @@ namespace BoSSS.Application.BoSSSpad
             return fp;
         }
 
+
+        void VerifyDatabases() {
+            foreach(var db in this.AllowedDatabases) {
+                if(db.AlternateDbPaths.Length <= 0) {
+                    throw new IOException("Missing 'AlternatePaths.txt' in database -- required for sshfs-mounted remote databases.");
+                }
+            }
+        }
+
+
+
         /// <summary>
         /// 
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob) {
             using (new FuncTrace()) {
+                VerifyDatabases();
+
+
                 // load users .bashrc with all dependencies
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" });
 
