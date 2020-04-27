@@ -222,30 +222,20 @@ namespace BoSSS.Foundation.IO {
         /// Save a list of DG fields (all defined on the same grid) and the coressponding grid into a database.
         /// </summary>
         /// <param name="targetDb"></param>
-        /// <param name="tsi"></param>
         /// <param name="projectName"></param>
         /// <param name="sessionName"></param>
-        /// <param name="fieldNames"></param>
-        public static void SaveGridAndTimestep(this IDatabaseInfo targetDb, ITimestepInfo tsi, string projectName = null, string sessionName = null, params string[] fieldNames) {
-            if (string.IsNullOrEmpty(projectName)) {
-                throw new ArgumentException("You did not specify a project name.", nameof(projectName));
-            }
-
-            if (string.IsNullOrEmpty(sessionName)) {
-                throw new ArgumentException("You did not specify a session name.", nameof(sessionName));
+        /// <param name="fields"></param>
+        public static void SaveGridAndTimestep(this IDatabaseInfo targetDb, DGField[] fields, string projectName, string sessionName) {
+            if (fields == null) {
+                throw new ArgumentNullException(nameof(fields));
             }
 
             // Save grid
-            IDatabaseInfo sourceDb = tsi.Database;
-            IGrid grid = sourceDb.Controller.DBDriver.LoadGrid(tsi.GridID, sourceDb);
-            targetDb.SaveGrid(grid);
+            IGridData gridData = fields[0].GridDat;
+            targetDb.SaveGrid(gridData.Grid);
 
             // Save fields
-            List<DGField> fields = new List<DGField>();
-            foreach (string name in fieldNames) {
-                fields.Add(tsi.Fields.Find(name));
-            }
-            targetDb.SaveTimestep(projectName, sessionName, fields.ToArray());
+            targetDb.SaveTimestep(projectName, sessionName, fields);
         }
     }
 }
