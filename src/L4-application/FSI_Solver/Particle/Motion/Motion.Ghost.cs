@@ -17,12 +17,14 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using System.Runtime.Serialization;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class MotionGhost : Motion {
 
         /// <summary>
-        /// The dry description of motion without hydrodynamics.
+        /// The motion of a ghost particle, mirrored at periodic boundaries.
         /// </summary>
         /// <param name="gravity">
         /// The gravity (volume forces) acting on the particle.
@@ -32,12 +34,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         public MotionGhost(Vector gravity, double density) : base(gravity, density) { }
 
-        /// <summary>
-        /// I'm a ghost! Hui Buh!
-        /// </summary>
-        internal override bool IsGhost { get; } = true;
-
-        [DataMember]
+        //[DataMember]
         private Vector TranslationalVelocity;
         [DataMember]
         private double RotationalVelocity;
@@ -87,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override object Clone() {
             Motion clonedMotion = new MotionGhost(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }

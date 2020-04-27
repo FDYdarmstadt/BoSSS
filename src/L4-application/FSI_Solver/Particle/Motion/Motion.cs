@@ -27,6 +27,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class Motion : ICloneable {
 
         /// <summary>
@@ -57,7 +58,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         internal double omega = 1;
         [NonSerialized]
-        internal readonly FSI_Auxillary Aux = new FSI_Auxillary();
+        internal FSI_Auxillary Aux = new FSI_Auxillary();
         [DataMember]
         private const int m_HistoryLength = 3;
         [DataMember]
@@ -91,70 +92,30 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private readonly List<Vector> m_CollisionTangentialVector = new List<Vector>();
         [DataMember]
-        private double m_Density;
+        public readonly double Density;
         [DataMember]
-        private double m_Area;
+        public double ParticleArea;
         [DataMember]
-        private Vector m_Gravity = new Vector(0 , 0);
+        public Vector Gravity = new Vector(0 , 0);
         [DataMember]
-        private double m_MomentOfInertia;
+        public double MomentOfInertia;
         [DataMember]
-        private double m_LengthScaleMax;
+        public double MaxParticleLengthScale;
         [DataMember]
-        private bool HasGhost = false;
-        [DataMember]
-        private int GhostID;
+        internal double[,] AddedDampingTensor = new double[6, 6];
 
-        /// <summary>
-        /// Ghost particles are used to mirror a particle at a periodic boundary.
-        /// </summary>
-        internal void SetGhost(int ghostID) {
-            HasGhost = true;
-            GhostID = ghostID;
-        }
 
-        internal virtual int GetMasterID() => 0;
-
-        internal bool GetHasGhost() => HasGhost;
-
-        internal int GetGhostID() => GhostID;
-
-        internal int GetHistoryLength() => m_HistoryLength;
-
-        /// <summary>
-        /// Gravity (volume force) acting on the particle.
-        /// </summary>
-        [DataMember]
-        protected Vector Gravity {
-            get {
-                Aux.TestArithmeticException(m_Gravity, "particle density");
-                return m_Gravity;
+        public void CreateLists() {
+            for (int i = 0; i < m_HistoryLength; i++) {
+                m_Position.Add(new Vector(m_Dim));
+                m_Angle.Add(new double());
+                m_TranslationalVelocity.Add(new Vector(m_Dim));
+                m_RotationalVelocity.Add(new double());
+                m_TranslationalAcceleration.Add(new Vector(m_Dim));
+                m_RotationalAcceleration.Add(new double());
+                m_HydrodynamicForces.Add(new Vector(m_Dim));
+                m_HydrodynamicTorque.Add(new double());
             }
-            private set => m_Gravity = value;
-        }
-
-        /// <summary>
-        /// Density of the particle.
-        /// </summary>
-        [DataMember]
-        public double Density {
-            get {
-                Aux.TestArithmeticException(m_Density, "particle density");
-                return m_Density;
-            }
-            private set => m_Density = value;
-        }
-
-        /// <summary>
-        /// The area occupied by the particle. Calculated by <see cref="Particle"/>.
-        /// </summary>
-        [DataMember]
-        protected double ParticleArea {
-            get {
-                Aux.TestArithmeticException(m_Area, "particle area");
-                return m_Area;
-            }
-            private set => m_Area = value;
         }
 
         /// <summary>
@@ -162,37 +123,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public double Mass_P => ParticleArea * Density;
-
-        /// <summary>
-        /// The moment of inertia. Calculated by <see cref="Particle"/>.
-        /// </summary>
-        [DataMember]
-        protected double MomentOfInertia {
-            get {
-                Aux.TestArithmeticException(m_MomentOfInertia, "particle moment of inertia");
-                return m_MomentOfInertia;
-            }
-            private set => m_MomentOfInertia = value;
-        }
-
-        /// <summary>
-        /// The maximum lenghtscale of the particle. Calculated by <see cref="Particle"/>.
-        /// </summary>
-        [DataMember]
-        public double MaxParticleLengthScale {
-            get {
-                Aux.TestArithmeticException(m_LengthScaleMax, "particle lengthscale");
-                return m_LengthScaleMax;
-            }
-            private set => m_LengthScaleMax = value;
-        }
-
-        /// <summary>
-        /// Include rotation?
-        /// </summary>
-        [DataMember]
-        internal virtual bool IsGhost { get; } = false;
-
+        
         /// <summary>
         /// Include rotation?
         /// </summary>
@@ -210,12 +141,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         internal virtual bool UseAddedDamping { get; } = false;
-
-        /// <summary>
-        /// Complete added damping tensor, for reference: Banks et.al. 2017
-        /// </summary>
-        [DataMember]
-        internal virtual double[,] AddedDampingTensor { get; } = new double[6, 6];
 
         /// <summary>
         /// Returns the position of the particle.
@@ -365,6 +290,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The initial angle.
         /// </param>
         public void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle) {
+            Aux = new FSI_Auxillary();
             for (int i = 0; i < m_HistoryLength; i++) {
                 m_Position[i] = new Vector(initialPosition);
                 m_Angle[i] = initialAngle * 2 * Math.PI / 360;
@@ -414,6 +340,8 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private void AdaptNewTimestep(List<Vector> variable, double newTimestep, double oldTimestep) {
+            if (oldTimestep == 0)// for restart
+                oldTimestep = 1e-6;
             List<Vector> stuetzstelle = new List<Vector>();
             for (int h = 0; h <  m_HistoryLength; h++) {
                 stuetzstelle.Add(new Vector(variable[h]));
@@ -434,6 +362,8 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private void AdaptNewTimestep(List<double> variable, double newTimestep, double oldTimestep) {
+            if (oldTimestep == 0)// for restart
+                oldTimestep = 1e-6;
             List<double> stuetzstelle = new List<double>();
             for (int h = 0; h < m_HistoryLength; h++) {
                 stuetzstelle.Add(variable[h]);
@@ -474,7 +404,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Init of the particle area.
         /// </summary>
         /// <param name="area"></param>
-        public void GetParticleArea(double area) => ParticleArea = area;
+        public void SetParticleArea(double area) => ParticleArea = area;
 
         /// <summary>
         /// Init of the moment of inertia.
@@ -1089,7 +1019,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         public virtual object Clone() {
             Motion clonedMotion = new Motion(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }

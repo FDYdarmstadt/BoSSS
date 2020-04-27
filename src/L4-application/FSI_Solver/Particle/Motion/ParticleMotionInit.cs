@@ -17,8 +17,10 @@ limitations under the License.
 using FSI_Solver;
 using ilPSP;
 using System;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class ParticleMotionInit {
 
         /// <summary>
@@ -42,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The added damping coefficient is a scaling factor for the model. If the value is smaller than zero no added damping is applied. Otherwise it should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
         public ParticleMotionInit(Vector gravity, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0, bool withForces = false) {
-            m_Gravity = new Vector(gravity);
+            //m_Gravity = new Vector(gravity);
             m_Density = particleDensity == 0 ? 1 : particleDensity;
             m_IsDry = isDry;
             m_NoRotation = noRotation;
@@ -51,13 +53,21 @@ namespace BoSSS.Application.FSI_Solver {
             m_WithForces = withForces;
         }
 
+        [DataMember]
         private readonly FSI_Auxillary Aux = new FSI_Auxillary();
-        private readonly Vector m_Gravity;
+        [DataMember]
+        private readonly Vector m_Gravity = new Vector(0,0);
+        [DataMember]
         private readonly double m_Density;
+        [DataMember]
         private readonly bool m_IsDry;
+        [DataMember]
         private readonly bool m_NoRotation;
+        [DataMember]
         private readonly bool m_NoTranslation;
+        [DataMember]
         private readonly bool m_WithForces;
+        [DataMember]
         private readonly double m_AddedDampingCoefficient;
 
         /// <summary>

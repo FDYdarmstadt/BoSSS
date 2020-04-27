@@ -24,6 +24,7 @@ using System.Linq;
 using System.Text;
 
 namespace FSI_Solver {
+    [Serializable]
     public class FSI_Auxillary {
         /// <summary>
         /// This method saves the list value at list position "0" to the next position.

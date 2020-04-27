@@ -19,6 +19,8 @@ using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
 using ilPSP.Utils;
+using FSI_Solver;
+using System.Diagnostics;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -65,7 +67,7 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
             Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleArea(Area);
+            Motion.SetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }
 
@@ -153,6 +155,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// A vector. 
         /// </param>
         override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            Aux = new FSI_Auxillary();
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");

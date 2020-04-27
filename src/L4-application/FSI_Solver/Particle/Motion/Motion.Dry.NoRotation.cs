@@ -15,8 +15,10 @@ limitations under the License.
 */
 
 using ilPSP;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class Motion_Dry_NoRotation : MotionDry {
 
         /// <summary>
@@ -89,7 +91,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override object Clone() {
             Motion clonedMotion = new Motion_Dry_NoRotation(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }

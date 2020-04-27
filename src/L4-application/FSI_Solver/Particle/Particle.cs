@@ -73,10 +73,6 @@ namespace BoSSS.Application.FSI_Solver {
             MotionInitializer = motionInit;
         }
 
-        /// <summary>
-        /// rank in ghost hierachy; 0 = master, 1 = ghost mirrored in x-direction, 2 = ghost mirrored in y - direction, 3 = sub ghost of 1 mirrored in y - direction
-        /// </summary>
-        public int GhostRank { get; private set; }
         public bool IsMaster = true;
         public int[] MasterGhostIDs = new int[4];
 
@@ -88,7 +84,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public void SetGhost() {
             HiddenMotion = Motion;
-            Motion = new MotionGhost(new Vector(0, 0), 0);
+            Motion = new MotionGhost(new Vector(0, 0), HiddenMotion.Density);
+            Motion.SetParticleArea(HiddenMotion.ParticleArea);
             Motion.TransferPhysicalData(HiddenMotion);
             IsMaster = false;
         }
@@ -101,12 +98,12 @@ namespace BoSSS.Application.FSI_Solver {
         public Motion HiddenMotion { get; private set; }
 
         [NonSerialized]
-        protected readonly FSI_Auxillary Aux;
+        protected FSI_Auxillary Aux;
         [DataMember]
         private readonly double particleDensity;
 
         [DataMember]
-        protected int SpatialDim { get; }
+        protected int SpatialDim;
 
         /// <summary>
         /// Instantiate object for particle motion.
@@ -114,7 +111,8 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public Motion Motion { get; private set; }
 
-        public ParticleMotionInit MotionInitializer { get; private set; }
+        [DataMember]
+        public ParticleMotionInit MotionInitializer;
 
         /// <summary>
         /// Mass of the current particle.
@@ -229,6 +227,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="RadialLength">
         /// </param>
         internal void CalculateRadialVector(Vector SurfacePoint, out Vector RadialVector, out double RadialLength) {
+            Aux = new FSI_Auxillary();
             RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
                 throw new ArithmeticException("The radial vector has no length");

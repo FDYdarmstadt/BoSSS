@@ -782,6 +782,8 @@ namespace BoSSS.Application.IBM_Solver {
                 hCutCellMin = hCellMin;
 
             double µ = penalty_base / hCutCellMin;
+            if (double.IsNaN(µ) || double.IsInfinity(µ))
+                throw new ArgumentOutOfRangeException("Invalid penalty parameter");
             Debug.Assert(!(double.IsNaN(µ) || double.IsInfinity(µ)));
             return µ;
         }

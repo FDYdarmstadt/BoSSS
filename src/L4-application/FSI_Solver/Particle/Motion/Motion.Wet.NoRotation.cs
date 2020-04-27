@@ -17,8 +17,10 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using System.Collections.Generic;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class MotionWetNoRotation : Motion {
 
         /// <summary>
@@ -114,7 +116,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override object Clone() {
             Motion clonedMotion = new MotionWetNoRotation(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }

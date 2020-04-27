@@ -59,7 +59,7 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(radius, "Particle radius");
 
             Motion.GetParticleLengthscale(radius);
-            Motion.GetParticleArea(Area);
+            Motion.SetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
 
         }
@@ -134,6 +134,18 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         override public double[] GetLengthScales() {
             return new double[] { m_Radius, m_Radius };
+        }
+
+        public override object Clone() {
+            Particle clonedParticle = new Particle_Sphere(MotionInitializer,
+                                                             m_Radius,
+                                                             Motion.GetPosition(),
+                                                             Motion.GetAngle() * 360 / (2 * Math.PI),
+                                                             ActiveStress,
+                                                             Motion.GetTranslationalVelocity(),
+                                                             Motion.GetRotationalVelocity());
+            clonedParticle.IsMaster = IsMaster;
+            return clonedParticle;
         }
     }
 }

@@ -19,8 +19,10 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class MotionFixedWithForces : Motion {
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override object Clone() {
             Motion clonedMotion = new MotionFixedWithForces(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }

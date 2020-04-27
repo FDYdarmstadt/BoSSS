@@ -24,6 +24,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     internal class MotionHydrodynamics {
         internal MotionHydrodynamics(LevelSetTracker lsTrk) {
             m_LsTrk = lsTrk;
@@ -88,7 +89,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (m_ForcesAndTorquePreviousIteration.Count >= 4) {
                 relaxatedHydrodynamics = AitkenUnderrelaxation(hydrodynamics, ref omega);
             }
-            else if (m_ForcesAndTorquePreviousIteration.Count >= 1) {
+            else if (m_ForcesAndTorquePreviousIteration.Count > 1) {
                 relaxatedHydrodynamics = StaticUnderrelaxation(hydrodynamics);
             }
             else

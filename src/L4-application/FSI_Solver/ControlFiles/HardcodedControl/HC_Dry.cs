@@ -140,17 +140,13 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control ThreeParticleCollision(int k = 2, int amrLevel = 3) {
+        public static FSI_Control ThreeParticleCollision(int k = 2, int amrLevel = 0) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
             C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
             // Domain
             // =============================
-            List<string> boundaryValues = new List<string> {
-                "Wall"
-            };
-            C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 1, lengthY: 1, cellsPerUnitLength: 40, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
@@ -164,25 +160,24 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 1e-3;
             C.PhysicalParameters.IncludeConvection = false;
             double particleDensity = 1;
             C.pureDryCollisions = true;
 
             // Particle Properties
             // =============================   
-            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
-            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false);
             double particleRadius = 0.1;
-            C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion1, particleRadius, particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }),
-                new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {-0.13,0 },0, 0, new double[] {0,0}),
-                new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {0.13,0},0, 0, new double[] {0,0 }),
-                //new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {0.25, 0 },0, 0, new double[] {-0.1,0 }),
-                //new Particle_Ellipsoid(motion1, particleRadius, particleRadius, new double[] {-0.25,0},0, 0, new double[] {0.1,0 }),
-                //new Particle_Ellipsoid(motion1, particleRadius, particleRadius, new double[] {-0.25,0.215},0, 0, new double[] {0.1,-0.1}),
-                //new Particle_Ellipsoid(motion2, particleRadius, particleRadius, new double[] {0,0.5 },0, 0, new double[] {0,-0.1 })
-            };
+            C.Particles = new List<Particle>();
+            //for (int i = 0; i < 9; i++) {
+            //    for (int j = 0; j < 9; j++) {
+            //        C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { -2 + i * 0.5+0.1*Math.Pow(-1,j), 2 - j * 0.5 }, 0, 0, new double[] { 0.1 * Math.Pow(-1, i), -0.1 * Math.Pow(-1, j) }));
+            //    }
+            //}
+            C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { 0, 0 }, 0, 0));
+            C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { -0.36, 0 }, 0, 0, new double[] { 1, 0 }));
+            //C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { 0.36, 0 }, 180, 1));
 
             // misc. solver options
             // =============================  
@@ -198,7 +193,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 1000);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 5000);
 
             return C;
         }

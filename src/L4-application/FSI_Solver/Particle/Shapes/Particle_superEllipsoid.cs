@@ -70,7 +70,7 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(superEllipsoidExponent, "super ellipsoid exponent");
 
             Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleArea(Area);
+            Motion.SetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }
 

@@ -29,6 +29,8 @@ namespace ilPSP {
     /// <summary>
     /// A spatial coordinate or vector, in 1D, 2D, 3D
     /// </summary>
+    /// 
+    [Serializable]
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector : IList<double> {
 
