@@ -244,7 +244,7 @@ namespace MPI.Wrappers {
             // -----------------------------------------------------
             // 2nd phase: gather data 
             // -----------------------------------------------------
-            byte[] rcvBuffer = buffer.MPIGatherv(Sizes);
+            byte[] rcvBuffer = buffer.MPIAllGatherv(Sizes);
 
             // -----------------------------------------------------
             // 3rd phase: de-serialize
@@ -1112,6 +1112,51 @@ namespace MPI.Wrappers {
 
             return result;
         }
+
+        /// <summary>
+        /// Gathers all byte[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public byte[] MPIAllGatherv(this byte[] send, int[] recvcounts) {
+            return send.Byte_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// </summary>
+        static private byte[] Byte_MPIAllGatherv(this byte[] send, int[] m_recvcounts, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            int rcs = m_recvcounts.Sum();
+            if (rcs == 0)
+                return new byte[0];
+
+
+            byte[] result = new byte[rcs];
+            if (send.Length == 0)
+                send = new byte[1];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + m_recvcounts[i - 1];
+                }
+                fixed (byte* pResult = result, pSend = send) {
+                    fixed (int* pRcvcounts = m_recvcounts) {
+                        csMPI.Raw.Allgatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.BYTE,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.BYTE,
+                            comm);
+                    }
+                }
+            }
+
+            return result;
+        }
+
 
         /// <summary>
         /// Gathers all ulong[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.

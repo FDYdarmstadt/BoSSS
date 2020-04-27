@@ -321,8 +321,53 @@ namespace BoSSS.Solution {
                     Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
                     Console.WriteLine(@"                                                                      ");
 
+                    if(size <= 1)
+                        Console.WriteLine("Running with 1 MPI process (single core)");
+                    else
+                        Console.WriteLine("Running with " + size + " MPI processes ");
 
-                    Console.WriteLine("Running with " + size + " MPI process(es)");
+                    using(var stw = new StringWriter()) {
+                        var HostName = ilPSP.Environment.MPIEnv.AllHostNames;
+                        int I = HostName.Count;
+                        if(I > 1)
+                            stw.Write("Nodes: ");
+                        else
+                            stw.Write("Node: ");
+
+                        int i = 0;
+                        foreach(var kv in HostName) {
+                            stw.Write(kv.Key);
+                            if(kv.Value.Length == 1)
+                                stw.Write(" (rank ");
+                            else 
+                                stw.Write(" (ranks ");
+
+                            int J = kv.Value.Length;
+                            for(int j = 0; j < J; j++) {
+                                stw.Write(kv.Value[j]);
+                                if(j < J - 1)
+                                    stw.Write(", ");
+                            }
+                            stw.Write(")");
+
+                            int rest = I - i - 1;
+                            if(i >= 1023 && rest >= 1) {
+                                stw.Write($" ... and {rest} ,more ... ");
+                                break;
+                            }
+
+                            if(i < I - 1)
+                                stw.Write(", ");
+
+                            i++;
+
+                        }
+
+
+                        stw.Flush();
+                        Console.WriteLine(stw.ToString());
+                    }
+                    
                 }
             }
             ReadBatchModeConnectorConfig();
@@ -1280,42 +1325,11 @@ namespace BoSSS.Solution {
 
                 // set computeNode - names:
                 CurrentSessionInfo.ComputeNodeNames.Clear();
-                for (int r = MPISize - 1; r >= 0; r--)
-                    CurrentSessionInfo.ComputeNodeNames.Add("");
-
-                SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
-                sms.CommitCommPaths();
-
-                object o;
-                int rank;
-                do {
-                    sms.GetNext(out rank, out o);
-                    if (o != null)
-                        CurrentSessionInfo.ComputeNodeNames[rank] = (string)o;
-                } while (o != null);
-
-                sms.Dispose();
-
-                CurrentSessionInfo.ComputeNodeNames[0] = ilPSP.Environment.MPIEnv.Hostname;
+                CurrentSessionInfo.ComputeNodeNames.AddRange(ilPSP.Environment.MPIEnv.HostnameForRank); 
 
                 // save
                 this.CurrentSessionInfo.Save();
-            } else {
-                // send hostname to 0-th process
-                SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
-                sms.SetCommPath(0);
-                sms.CommitCommPaths();
-
-                sms.Transmit(0, ilPSP.Environment.MPIEnv.Hostname);
-
-                object o;
-                int rank;
-                do {
-                    sms.GetNext(out rank, out o);
-                } while (o != null);
-
-                sms.Dispose();
-            }
+            } 
         }
 
         /// <summary>
