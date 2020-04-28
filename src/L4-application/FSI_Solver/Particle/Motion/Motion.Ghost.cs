@@ -41,7 +41,9 @@ namespace BoSSS.Application.FSI_Solver {
         
 
         internal override void CopyNewVelocity(Vector translational, double rotational) {
+            Console.WriteLine("translational " + translational[0]);
             TranslationalVelocity = new Vector(translational);
+            Console.WriteLine("m_TranslationalAcceleration[0] " + TranslationalVelocity[0]);
             RotationalVelocity = rotational;
         }
 
@@ -50,6 +52,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override Vector CalculateTranslationalVelocity(double dt = 0) {
+            Console.WriteLine("1translational " + TranslationalVelocity[0]);
+            Aux.TestArithmeticException(TranslationalVelocity, "particle translational velocity");
+            return TranslationalVelocity;
+        }
+
+        /// <summary>
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
+        protected override Vector CalculateTranslationalVelocity(double dt, double collisionDt) {
+            Console.WriteLine("12translational " + TranslationalVelocity[0]);
             Aux.TestArithmeticException(TranslationalVelocity, "particle translational velocity");
             return TranslationalVelocity;
         }
@@ -68,6 +81,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double CalculateAngularVelocity(double dt = 0) {
+            Aux.TestArithmeticException(RotationalVelocity, "particle rotational velocity");
+            return RotationalVelocity;
+        }
+
+        /// <summary>
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt, double collisionDt) {
             Aux.TestArithmeticException(RotationalVelocity, "particle rotational velocity");
             return RotationalVelocity;
         }

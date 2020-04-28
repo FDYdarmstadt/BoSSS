@@ -1104,9 +1104,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// No of iterations
         /// </param>
         internal void CalculateParticleVelocity(List<Particle> Particles, double dt, int IterationCounter) {
+            int pID = 0;
             foreach (Particle p in Particles) {
-                if (!p.IsMaster)
+                if (!p.IsMaster) {
                     continue;
+                }
                 if (IterationCounter == 0) {
                     p.Motion.SaveVelocityOfPreviousTimestep();
                 }
@@ -1117,9 +1119,12 @@ namespace BoSSS.Application.FSI_Solver {
                     Particle ghost = Particles[p.MasterGhostIDs[g] - 1];
                     if (ghost.IsMaster)
                         throw new Exception("A ghost particle is considered to be a master, that can't be!");
+                    if (IterationCounter == 0) {
+                        ghost.Motion.SaveVelocityOfPreviousTimestep();
+                    }
                     ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
-                    ghost.Motion.UpdateParticleVelocity(dt);
                 }
+                pID += 1;
             }
         }
 
@@ -1271,7 +1276,7 @@ namespace BoSSS.Application.FSI_Solver {
                 double[] translationalVelocity = new double[2];
                 position[0] = Convert.ToDouble(currentLineFields[2]);
                 position[1] = Convert.ToDouble(currentLineFields[3]);
-                double angle = Convert.ToDouble(currentLineFields[4]);
+                double angle = Convert.ToDouble(currentLineFields[4]) * 360 / (2 * Math.PI);
                 translationalVelocity[0] = Convert.ToDouble(currentLineFields[5]);
                 translationalVelocity[1] = Convert.ToDouble(currentLineFields[6]);
                 double angularVelocity = Convert.ToDouble(currentLineFields[7]);

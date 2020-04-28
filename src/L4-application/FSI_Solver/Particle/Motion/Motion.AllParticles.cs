@@ -53,7 +53,7 @@ namespace BoSSS.Application.FSI_Solver {
                     continue;
                 CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
                 if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
-                    for (int g = 0; g < currentParticle.MasterGhostIDs.Length; g++) {
+                    for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
                         if (currentParticle.MasterGhostIDs[g] < 1)
                             continue;
                         CellMask ghostCells = AllParticles[currentParticle.MasterGhostIDs[g] - 1].CutCells_P(m_LsTrk);
@@ -140,6 +140,8 @@ namespace BoSSS.Application.FSI_Solver {
         private double[] StaticUnderrelaxation(double[] variable) {
             double[] returnVariable = variable.CloneAs();
             for (int d = 0; d < variable.Length; d++) {
+                if (variable[d] == 0)//ghost Particle
+                    continue;
                 returnVariable[d] = 0.1 * variable[d] + (1 - 0.1) * m_ForcesAndTorquePreviousIteration[1][d];
             }
             return returnVariable;
@@ -151,6 +153,10 @@ namespace BoSSS.Application.FSI_Solver {
             double residualScalar = 0;
             double sumVariable = 0;
             for (int i = 0; i < variable.Length; i++) {
+                if (variable[i] == 0) {// ghost particle
+                    residualDiff[i] = 0;
+                    continue;
+                }
                 residual[i] = new double[] { (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]), (m_ForcesAndTorqueWithoutRelaxation[1][i] - m_ForcesAndTorquePreviousIteration[1][i]) };
                 residualDiff[i] = residual[i][0] - residual[i][1];
                 residualScalar += residual[i][1] * residualDiff[i];
@@ -159,6 +165,8 @@ namespace BoSSS.Application.FSI_Solver {
             Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
             double[] outVar = variable.CloneAs();
             for (int i = 0; i < variable.Length; i++) {
+                if (variable[i] == 0)// ghost particle
+                    continue;
                 outVar[i] = Omega * (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]) + m_ForcesAndTorquePreviousIteration[0][i];
             }
             return outVar;

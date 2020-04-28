@@ -147,8 +147,6 @@ namespace FSI_Solver {
                                     SaveTimeStep = -Dt * 0.25; // reset time to find a particle state before they overlap.
                                     minimalDistance = double.MaxValue;
                                 }
-                                Console.WriteLine("Distance " + minimalDistance);
-                                Console.WriteLine("threshold " + distanceThreshold);
                                 if (MinDistance >= minimalDistance) {
                                     Console.WriteLine("reached distance threshold " + MinDistance + " actual distance: " + minimalDistance);
                                     Console.WriteLine("Distance Vector 0 " + temp_DistanceVector[0] + " 1 " + temp_DistanceVector[0]);
@@ -479,7 +477,6 @@ namespace FSI_Solver {
         /// </param>
         internal void CalculateMinimumDistance(Particle particle, out double Distance, out Vector DistanceVector, out Vector ClosestPoint, out bool Overlapping) {
             int spatialDim = particle.Motion.GetPosition(0).Dim;
-            Console.WriteLine("dim " + spatialDim);
             Distance = double.MaxValue;
             DistanceVector = new Vector(spatialDim);
             ClosestPoint = new Vector(spatialDim);
@@ -528,11 +525,9 @@ namespace FSI_Solver {
             // Initialize the algorithm with the particle position
             // =======================================================
             int spatialDim = Particle0.Motion.GetPosition(0).Dim;
-            Console.WriteLine("dim " + spatialDim);
             Vector[] positionVectors = new Vector[2];
             positionVectors[0] = new Vector(Particle0.Motion.GetPosition(0));
             positionVectors[1] = new Vector(Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis : Particle1.Motion.GetPosition(0));
-            Console.WriteLine("ClosestPointOnOtherObjectToThis " + Particle0.ClosestPointOnOtherObjectToThis.Count());
 
             Vector supportVector = positionVectors[0] - positionVectors[1];
             Aux.TestArithmeticException(supportVector, "support vector");
@@ -608,7 +603,6 @@ namespace FSI_Solver {
             // Return min distance and distance vector.
             // =======================================================
             DistanceVec = new Vector(supportVector);
-            Console.WriteLine("closestPoint00 " + closestPoints[0][0] + " 01 " + closestPoints[0][1]);
         }
 
         /// <summary>
