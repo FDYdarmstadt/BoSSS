@@ -49,17 +49,17 @@ namespace BoSSS.Application.FSI_Solver {
             double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
-                if (!currentParticle.IsMaster)
-                    continue;
+                //if (!currentParticle.IsMaster)
+                //    continue;
                 CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
-                if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
-                    for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
-                        if (currentParticle.MasterGhostIDs[g] < 1)
-                            continue;
-                        CellMask ghostCells = AllParticles[currentParticle.MasterGhostIDs[g] - 1].CutCells_P(m_LsTrk);
-                        cutCells = cutCells.Union(ghostCells);
-                    }
-                }
+                //if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
+                //    for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
+                //        if (currentParticle.MasterGhostIDs[g] < 1)
+                //            continue;
+                //        CellMask ghostCells = AllParticles[currentParticle.MasterGhostIDs[g] - 1].CutCells_P(m_LsTrk);
+                //        cutCells = cutCells.Union(ghostCells);
+                //    }
+                //}
                 int offset = p * (m_Dim + 1);
                 double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
                 double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
@@ -67,6 +67,25 @@ namespace BoSSS.Application.FSI_Solver {
                     hydrodynamics[offset + d] = tempForces[d];
                 }
                 hydrodynamics[offset + m_Dim] = tempTorque;
+            }
+            for (int p = 0; p < AllParticles.Count(); p++) {
+                Particle currentParticle = AllParticles[p];
+                int offset = p * (m_Dim + 1);
+                if (!currentParticle.IsMaster)
+                    continue;
+                if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
+                    for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
+                        int ghostOffset = (currentParticle.MasterGhostIDs[g] - 1) * (m_Dim + 1);
+                        if (currentParticle.MasterGhostIDs[g] < 1)
+                            continue;
+                        for (int d = 0; d < m_Dim; d++) {
+                            hydrodynamics[offset + d] += hydrodynamics[ghostOffset + d];
+                            hydrodynamics[ghostOffset + d] = 0;
+                        }
+                        hydrodynamics[offset + m_Dim] += hydrodynamics[ghostOffset + m_Dim];
+                        hydrodynamics[ghostOffset + m_Dim] = 0;
+                    }
+                }
             }
             double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
             double omega = AllParticles[0].Motion.omega;

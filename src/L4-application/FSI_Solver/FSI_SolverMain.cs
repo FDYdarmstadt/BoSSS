@@ -920,10 +920,6 @@ namespace BoSSS.Application.FSI_Solver {
                     if (dt < 1e-6)
                         dt = 1e-6;
                     foreach (Particle p in m_Particles) {
-                        //if (p.IsCollided) {
-                        //    dt = oldTimestep;
-                        //    postCollisionCounter = bdforder;
-                        //}
                         p.Motion.AdaptToNewTimestep(dt, oldTimestep);
                     }
                 }
