@@ -125,7 +125,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
                     // Delete all directories in the current directory
                     foreach (DirectoryInfo dir in sessionDirectory.EnumerateDirectories()) {
-                        dir.Delete();
+                        dir.Delete(true);
                     }
 
                     // Delete all files in the current directory
