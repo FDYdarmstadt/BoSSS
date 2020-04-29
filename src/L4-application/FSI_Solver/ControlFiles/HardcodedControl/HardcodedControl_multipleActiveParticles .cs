@@ -284,53 +284,56 @@ namespace BoSSS.Application.FSI_Solver {
         public static FSI_Control PackedParticles(int k = 2, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            C.SetGrid(lengthX: 5, lengthY: 5, cellsPerUnitLength: 15, periodicX: true, periodicY: true);
-            C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-1;
-            // Fluid Properties
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);// Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 10;
             C.PhysicalParameters.IncludeConvection = false;
             C.CoefficientOfRestitution = 1;
 
             // Particle Properties
             // =============================
             double particleDensity = 1.1;
-            double activeStress = 1;
-            double particleLength = 0.3;
+            double activeStress = 10;
+            double particleLength = 0.1;
+            double position = 2;
+            double distance = position / 2;
+
+            C.SetGrid(lengthX: 2 * position + distance, lengthY: 2 * position + distance, cellsPerUnitLength: 15, periodicX: true, periodicY: true);
+            C.SetAddaptiveMeshRefinement(0);
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1.5);
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -1, 2 }, startAngl: 94, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -1, 1 }, startAngl: 120, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -1, -1 }, startAngl: 140, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -1, -2 }, startAngl: 87, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -1, 0 }, startAngl: 47, activeStress));
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 1, 2 }, startAngl: 18, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 1, -2 }, startAngl: 110, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 1, -1 }, startAngl: 80, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 1, 1 }, startAngl: 52, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 1, 0 }, startAngl: 80, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position, position - 0 * distance }, startAngl: -181, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position, position - 1 * distance }, startAngl: 55, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position, position - 2 * distance }, startAngl: -168, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position, position - 3 * distance }, startAngl: 134, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position, position - 4 * distance }, startAngl: -14, activeStress));
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 0, -1 }, startAngl: 74, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 0, 1 }, startAngl: -64, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 0, 0 }, startAngl: -39, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 0, 2 }, startAngl: -7, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 0, -2 }, startAngl: -186, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 1 * distance, position - 0 * distance }, startAngl: 7, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 1 * distance, position - 1 * distance }, startAngl: 123, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 1 * distance, position - 2 * distance }, startAngl: -89, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 1 * distance, position - 3 * distance }, startAngl: 86, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 1 * distance, position - 4 * distance }, startAngl: -123, activeStress));
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 2, 1 }, startAngl: -12, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 2, 2 }, startAngl: -321, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 2, -2 }, startAngl: -123, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 2, -1 }, startAngl: -123, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 2, 0.005 }, startAngl: -141, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2 * distance, position - 0 * distance }, startAngl: 63, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2 * distance, position - 1 * distance }, startAngl: 145, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2 * distance, position - 2 * distance }, startAngl: -91, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2 * distance, position - 3 * distance }, startAngl: 12, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2 * distance, position - 4 * distance }, startAngl: -65, activeStress));
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -2, 1 }, startAngl: -8, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -2, 2 }, startAngl: -24, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -2, -2 }, startAngl: -87, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -2, -1 }, startAngl: -12, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -2, 0 }, startAngl: -29, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 3 * distance, position - 0 * distance }, startAngl: 321, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 3 * distance, position - 1 * distance }, startAngl: -4, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 3 * distance, position - 2 * distance }, startAngl: 78, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 3 * distance, position - 3 * distance }, startAngl: -41, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 3 * distance, position - 4 * distance }, startAngl: 5, activeStress));
 
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 4 * distance, position - 0 * distance }, startAngl: -156, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 4 * distance, position - 1 * distance }, startAngl: 184, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 4 * distance, position - 2 * distance }, startAngl: -274, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 4 * distance, position - 3 * distance }, startAngl: 364, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 4 * distance, position - 4 * distance }, startAngl: -45, activeStress));
 
             // misc. solver options
             // =============================  
@@ -354,8 +357,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
 
-            string ID = "a1c38cf4-4e8c-4b6d-a8f8-442194be29fb";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            //string ID = "8d097a35-311f-432b-9e58-3dd89c4e2b4f";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
 
 
             return C;

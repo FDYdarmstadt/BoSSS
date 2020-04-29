@@ -1281,6 +1281,8 @@ namespace BoSSS.Application.FSI_Solver {
             }
             cellColor = null;
             UpdateLevelSetParticles(time);
+            CreatePhysicalDataLogger();
+            CreateResidualLogger();
         }
 
         /// <summary>
