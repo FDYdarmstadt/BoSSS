@@ -78,6 +78,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns>dynamic viscosity</returns>
         public abstract double GetViscosity(double phi);
 
+  
         /// <summary>
         /// Returns dynamic viscosity dependent on one or more scalars,
         /// e.g. k and omega for use in turbulence model.
