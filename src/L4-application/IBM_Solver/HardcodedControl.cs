@@ -498,7 +498,7 @@ namespace BoSSS.Application.IBM_Solver {
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
                 C.LinearSolver.NoOfMultigridLevels = 1;
                 C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-                C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Schur;
 
                 // Timestepping
                 // ============

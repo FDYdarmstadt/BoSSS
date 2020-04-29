@@ -525,9 +525,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                 case 1:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
                     break;
-                case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap;
-                    break;
                 case 3:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
                     break;

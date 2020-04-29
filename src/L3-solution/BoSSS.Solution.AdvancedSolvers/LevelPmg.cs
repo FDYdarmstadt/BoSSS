@@ -26,7 +26,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ctor
         /// </summary>
         public LevelPmg() {
-            UseHiOrderSmoothing = false;
+            UseHiOrderSmoothing = true;
         }
 
         /// <summary>
