@@ -118,27 +118,47 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-            if(IsInitialized) {
-               //Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
-
+            if (IsInitialized) {
+                //Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
                 double rho;
-                if(ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found
-                    //rho = 1/ phi[0];
-                    rho = ThermodynamicPressureValue / phi[0];
-                } else {
-                    rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+
+                if (rhoOne) {
+                    rho = 1;
+                    return rho;
+                } else {              
+                    if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    
+                        rho = ThermodynamicPressureValue / phi[0];
+                    } else {
+                        rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                    }
                 }
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
 
-                if(rhoOne) 
-                    rho = 1.0;
-                
+
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
         }
+
+
+        /// <summary>
+        /// Sutherlands law for air. 
+        /// </summary>
+        /// <param name="T"></param>
+        /// <returns>
+        /// The viscosity of air at a given temperature in Kg/(m.s)
+        /// <see</returns>
+        public double SutherlandViscosityDimensional(double T) {
+
+            double S = 110.56;
+            double T0 = 273.15; // 
+            double viscosity0 = 1.716e-5; //kg/( m s) ==> viscosity at T = 273.15 for air
+            double viscosity = viscosity0 * Math.Pow(T / T0, 1.5) * (T0 + S) / (T + S);
+            return viscosity;
+        }
+
 
         /// <summary>
         /// Dimensionless Sutherland's law.
@@ -148,28 +168,28 @@ namespace BoSSS.Solution.NSECommon {
         /// Dynamic viscosity
         /// </returns>
         public override double GetViscosity(double phi) {
+            double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
-                case MaterialParamsMode.Constant:
-                    return 1.0;
+                case MaterialParamsMode.Constant: {
+                        visc = 1.0;
+                        break;
+                    }
                 case MaterialParamsMode.Sutherland: {
                         double S = 110.56;
-                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);                     
-                        Debug.Assert(!double.IsNaN(viscosity));
-                        Debug.Assert(!double.IsInfinity(viscosity));
-                        Debug.Assert(viscosity > 0);
-                        return viscosity;
+                        visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        break;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        double viscosity = Math.Pow(phi, 2.0 / 3.0);
-                    
-                        Debug.Assert(!double.IsNaN(viscosity));
-                        Debug.Assert(!double.IsInfinity(viscosity));
-                        Debug.Assert(viscosity > 0);
-                        return viscosity;
+                        visc = Math.Pow(phi, 2.0 / 3.0);
+                        break;
                     }
                 default:
                     throw new NotImplementedException();
             }
+            Debug.Assert(!double.IsNaN(visc));
+            Debug.Assert(!double.IsInfinity(visc));
+            Debug.Assert(visc > 0);
+            return visc;
         }
 
         /// <summary>
@@ -311,20 +331,6 @@ namespace BoSSS.Solution.NSECommon {
         public override double DiffRho_Temp(double phi) {
             throw new NotImplementedException();
         }
-        /// <summary>
-        /// Sutherlands law for air. 
-        /// </summary>
-        /// <param name="T"></param>
-        /// <returns>
-        /// The viscosity of air at a given temperature in Kg/(m.s)
-        /// <see</returns>
-        public double SutherlandViscosityDimensional(double T) {
-             
-            double S = 110.56;
-            double T0 = 273.15; // 
-            double viscosity0 = 1.716e-5; //kg/( m s) ==> viscosity at T = 273.15 for air
-            double viscosity = viscosity0 * Math.Pow(T / T0, 1.5) * (T0 + S) / (T + S);            
-            return viscosity;
-        }
+ 
     }
 }
