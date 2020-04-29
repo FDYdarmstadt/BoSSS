@@ -913,7 +913,7 @@ namespace BoSSS.Application.FSI_Solver {
                         double expectedRotation = (p.Motion.GetRotationalVelocity() + p.Motion.GetHydrodynamicTorque() * DtMax / p.MomentOfInertia) * p.GetLengthScales().Max();
                         maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity + 2 * Math.Abs(expectedRotation));
                     }
-                    dt = Math.Min(DtMax, MinGridLength / (10 * maxVelocityL2Norm));
+                    dt = Math.Min(DtMax, MinGridLength / (maxVelocityL2Norm));
                     if (dt / oldTimestep > 1.1)
                         dt = oldTimestep * 1.1;
                     dt = dt.MPIMin();

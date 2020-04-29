@@ -296,10 +296,10 @@ namespace BoSSS.Application.FSI_Solver {
             double particleDensity = 1.1;
             double activeStress = 10;
             double particleLength = 0.1;
-            double position = 2;
+            double position = 1;
             double distance = position / 2;
 
-            C.SetGrid(lengthX: 2 * position + distance, lengthY: 2 * position + distance, cellsPerUnitLength: 15, periodicX: true, periodicY: true);
+            C.SetGrid(lengthX: 2 * position + distance, lengthY: 2 * position + distance, cellsPerUnitLength: 30, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             
