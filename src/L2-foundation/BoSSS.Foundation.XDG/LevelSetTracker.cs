@@ -1153,31 +1153,38 @@ namespace BoSSS.Foundation.XDG {
         /// checks if the level set may has moved more than one cell
         /// </summary>
         int CheckLevelSetCFL(int LevSetIdx) {
-            ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
-            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            var msk = new BitArray(J);
+            using(new FuncTrace()) {
+                ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
+                int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                var msk = new BitArray(J);
            
-            // check for cell color, necessary to prevent failing on periodic boundaries
+                //
+                // @Markus: undid your changes, because they caused thest to fail:
+                //
+
+                // check for cell color, necessary to prevent failing on periodic boundaries
             //int[] coloredCells = Regions.ColorMap4Spc[GetSpeciesId("B")];
 
-            CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
-            int fail_count = 0;
+                CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
+                int fail_count = 0;
 
-            // for all cells that are cut by the levelset,
-            // check whether they are in Near - region of the previous state;
-            foreach (int j in newCut.ItemEnum) {
-                int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
+                // for all cells that are cut by the levelset,
+                // check whether they are in Near - region of the previous state;
+                foreach(int j in newCut.ItemEnum) {
+                    int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
                 if (Math.Abs(old_dist) > 1){// && coloredCells[j] < 1) {
-                    fail_count++;
-                    msk[j] = true;
+                        //if (Math.Abs(old_dist) > 1) {
+                        fail_count++;
+                        msk[j] = true;
+                    }
                 }
-            }
 
-            int failCountGlobal = fail_count.MPISum();
+                int failCountGlobal = fail_count.MPISum();
             if (failCountGlobal > 0 && GridDat.MpiRank == 0)
-                (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
+                    (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
 
-            return failCountGlobal;
+                return failCountGlobal;
+            }
         }
 
         
@@ -1611,13 +1618,38 @@ namespace BoSSS.Foundation.XDG {
                 // find near and far regions
                 // =========================
                 {
-                    ushort[] vtxMarkers = new ushort[NoOfSmplxVertice.Max()];
-                    int[] vtsInd = new int[NoOfSmplxVertice.Max()];
+                    
+                    int[][] Neighbours = m_gDat.iLogicalCells.CellNeighbours;
+                    
+                    for (int dist = 1; dist <= m_NearRegionWidth; dist++) { // loop over near region bands...
 
-                    for (int dist = 1; dist <= m_NearRegionWidth; dist++) {
+                        // Pre-sweep: ensure correct distance in the vertex markers
+                        // --------------------------------------------------------
 
-                        // For every cell
-                        for (int j = 0; j < J; j++) {
+                        // rem: this pre-sweep is only to handle periodic & MPI-parallel cases
+                        // there is certainly a smarter way to integrate the loops
+
+                        // ensures that the distance of each vertex is lower or equal to the cell distance
+                        for (int j = 0; j < J; j++) { // sweep over cells;
+                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
+                                int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
+                                if(dJ <= dist) {
+                                    foreach (int kk in VerticeInd[j]) {
+                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                        dVk = Math.Min(dVk, dJ);
+                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                    }
+                                }
+                            }
+                        }
+
+                        // MPI update
+                        // ----------
+                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets); 
+
+                        // Main sweep: set cells and neighbors
+                        // -----------------------------------
+                        for (int j = 0; j < J; j++) { // sweep over cells; in this sweep, we are setting band 'dist'
                             int[] _VerticeInd = VerticeInd[j];
                             int _NoOfSmplxVertice = _VerticeInd.Length;
                             Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
@@ -1628,11 +1660,15 @@ namespace BoSSS.Foundation.XDG {
                             if (incremental)
                                 __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
-                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
 
                                 int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
                                 if (dJ >= dist) {
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                    // cell has not been assigned to band 'dist' or closer yet
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                                    // vertex-to-cell propagation; find minimum of: { distance of all vertices, cell distance so far }
                                     int mindv = int.MaxValue;
                                     for (int k = 0; k < _NoOfSmplxVertice; k++)
                                         mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
@@ -1642,15 +1678,36 @@ namespace BoSSS.Foundation.XDG {
                                         int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
                                         mindv = Math.Min(mindv, prevDist);
                                     }
-                                    mindv++;
+                                    mindv++; // increase layer
 
                                     if (mindv == dist) {
                                         EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
-
+                                        
+                                        // propagate back form cells to vertices
                                         for (int k = 0; k < _NoOfSmplxVertice; k++) {
                                             int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
                                             dVk = Math.Min(dVk, mindv);
                                             EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
+                                        }
+
+                                        // treatment of neighbor cells: robustness against 
+                                        //  - hanging nodes (for e.g. 3:1 cell neighborship at an edge) and 
+                                        //  - periodic boundary conditions
+                                        int[] jNeighs = Neighbours[j];
+                                        foreach(int jN in jNeighs) {
+                                            int distN = DecodeLevelSetDist(LevSetRegionsUnsigned[jN], levSetInd);
+                                            if (distN > dist + 1) {
+                                                EncodeLevelSetDist(ref LevSetRegionsUnsigned[jN], dist + 1, levSetInd);
+
+                                                if(jN < J) {
+                                                    foreach(int kk in VerticeInd[jN]) {
+                                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                                        dVk = Math.Min(dVk, dist + 1);
+                                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                                    }
+                                                }
+
+                                            }
                                         }
                                     }
                                 }
@@ -1885,7 +1942,7 @@ namespace BoSSS.Foundation.XDG {
                             // build&fill send buffer
                             SendBuffers[i] = new ushort[Len, N];
                             var SendBuffer = SendBuffers[i];
-                            for (int l = 0; l < Len; l++) {
+                            for (int l = 0; l < Len; l++) { // loop over cells in send-buffer for 'pDest'...
                                 int[] cellVtx = VerticeInd[commList[l]];
                                 int _N = cellVtx.Length;
                                 for (int n = 0; n < _N; n++) {

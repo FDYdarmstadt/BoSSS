@@ -30,7 +30,9 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     
-
+    /// <summary>
+    /// Interface for tests (historical stuff). 
+    /// </summary>
     public interface ITest {
 
         /// <summary>
@@ -63,7 +65,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// Grid creation function.
         /// </summary>
-        GridCommons CreateGrid();
+        /// <param name="Resolution">1,2,3, etc</param>
+        GridCommons CreateGrid(int Resolution);
 
         /// <summary>
         /// Boundary conditions and values.

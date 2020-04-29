@@ -52,8 +52,8 @@ namespace BoSSS.Application.XRheology_Solver {
         string[] Params;
 
         int HMFDegree;
-        int compRow;
-        int compCol;
+        //int compRow;
+        //int compCol;
         int stressDegree;
 
         PhysicalParameters physParams;

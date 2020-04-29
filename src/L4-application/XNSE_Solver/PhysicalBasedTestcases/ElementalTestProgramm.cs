@@ -32,21 +32,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     public static class ElementalTestProgramm {
 
-        [TestFixtureSetUp]
-        public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-        }
-
-        [TestFixtureTearDown]
-        public static void Cleanup() {
-
-        }
-
-
+        
         // ==========================
         // Check boundary conditions
         // ==========================

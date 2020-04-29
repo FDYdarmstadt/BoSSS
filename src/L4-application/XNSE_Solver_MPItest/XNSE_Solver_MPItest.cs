@@ -42,20 +42,16 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// MPI initialization.
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [TestFixtureTearDown]
-        public static void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        public static void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
 
@@ -122,7 +118,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 //Debugger.Launch();
             }
             */
-            TestFixtureTearDown();
+            OneTimeTearDown();
         }
 
 
@@ -385,7 +381,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;

@@ -140,6 +140,7 @@ namespace BoSSS.Application.BoSSSpad {
             return CommonBaseClass(col.Where(o => o != null).Select(o => o.GetType()).ToArray());
         }
 
+        /*
         /// <summary>
         /// Converts a table which is stored as a dictionary into a <see cref="DataTable"/>-object.
         /// </summary>
@@ -148,25 +149,115 @@ namespace BoSSS.Application.BoSSSpad {
         ///  - keys: column names
         ///  - values: each column of the table; all column-arrays are expected to have the same length.
         /// </param>
-        public static DataTable ToDataTable(this IDictionary<string, object[]> t) {
+        public static DataTable ToDataTable(this System.Collections.IDictionary t) {
+            IDictionary<string, object[]> tt = new Dictionary<string, object[]>();
+
+            foreach(var key in t.Keys) {
+                string skey = key as string;
+                if(skey == null) {
+                    throw new ArgumentException($"Expecting the dictionary keys to be strings, but got {key.GetType().FullName}.");
+                }
+
+                object val = t[key];
+                System.Collections.IEnumerable Eval  = val as System.Collections.IEnumerable;
+                if(Eval == null) {
+                    throw new ArgumentException($"Expecting the values to be enumerable, but got {val.GetType().FullName} for key {skey}.");
+                }
+
+                var _col = new List<object>();
+                foreach(object o in Eval) {
+                    _col.Add(o);
+                }
+                var col = _col.ToArray();
+
+                tt.Add(skey, col);
+            }
+            
+            return tt.ToDataTable_();
+        }
+        */
+
+            /*
+        /// <summary>
+        /// Converts a table which is stored as a dictionary into a <see cref="DataTable"/>-object.
+        /// </summary>
+        /// <param name="t">
+        /// Input table:
+        ///  - keys: column names
+        ///  - values: each column of the table; all column-arrays are expected to have the same length.
+        /// </param>
+        public static DataTable ToDataTable<DT,T>(this DT t) 
+            where DT : IDictionary<string,T> //
+        {
+            IDictionary<string, object[]> tt = new Dictionary<string, object[]>();
+
+            foreach(string skey in t.Keys) {
+                //string skey = key as string;
+                //if(skey == null) {
+                //    throw new ArgumentException($"Expecting the dictionary keys to be strings, but got {key.GetType().FullName}.");
+                //}
+
+                object val = t[skey];
+                System.Collections.IEnumerable Eval = val as System.Collections.IEnumerable;
+                if(Eval == null) {
+                    throw new ArgumentException($"Expecting the values to be enumerable, but got {val.GetType().FullName} for key {skey}.");
+                }
+
+                var _col = new List<object>();
+                foreach(object o in Eval) {
+                    _col.Add(o);
+                }
+                var col = _col.ToArray();
+
+                tt.Add(skey, col);
+            }
+            
+            return tt.ToDataTable_();
+        }
+        */
+
+        /// <summary>
+        /// Converts a table which is stored as a dictionary into a <see cref="DataTable"/>-object.
+        /// </summary>
+        /// <param name="t">
+        /// Input table:
+        ///  - keys: column names
+        ///  - values: each column of the table; all column-arrays are expected to have the same length.
+        /// </param>
+        public static DataTable ToDataTable<V>(this IDictionary<string, V> t) {
             // check arguments
             // ===============
             if (t.Count <= 0)
                 return new DataTable();
-            int L = t.First().Value.Length;
+
+            object[] GetCol(V val) {
+                System.Collections.IEnumerable Eval = val as System.Collections.IEnumerable;
+                if(Eval == null) {
+                    throw new ArgumentException($"Expecting the values to be enumerable, but got {val.GetType().FullName}.");
+                }
+
+                var _col = new List<object>();
+                foreach(object o in Eval) {
+                    _col.Add(o);
+                }
+                return _col.ToArray();
+            }
+
+            int L = GetCol(t.First().Value).Length;
             foreach (var kv in t) {
-                if (kv.Value.Length != L)
+                if (GetCol(kv.Value).Length != L)
                     throw new ArgumentException(string.Format("Input dictionary does not represent a table: column \"{0}\" has a different lenght than column \"{1}\".", kv.Key, t.First().Key));
             }
 
 
             DataTable R = new DataTable();
 
-            foreach (KeyValuePair<string, object[]> col in t) {
+            foreach (KeyValuePair<string, V> col in t) {
+                object[] colD = GetCol(col.Value);
 
                 // Create first column and add to the DataTable.
                 DataColumn column = new DataColumn();
-                column.DataType = GetColType(col.Value);
+                column.DataType = GetColType(colD);
                 column.ColumnName = col.Key;
                 column.Caption = col.Key;
                 column.ReadOnly = false;
@@ -179,8 +270,10 @@ namespace BoSSS.Application.BoSSSpad {
             for (int i = 0; i < L; i++) {
                 DataRow row = R.NewRow();
 
-                foreach (KeyValuePair<string, object[]> col in t) {
-                    row[col.Key] = col.Value[i] != null ? col.Value[i] : DBNull.Value;
+                foreach (KeyValuePair<string, V> col in t) {
+                    object[] colD = GetCol(col.Value);
+
+                    row[col.Key] = colD[i] != null ? colD[i] : DBNull.Value;
                 }
 
                 R.Rows.Add(row);
@@ -859,9 +952,16 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="ColName_ForXValues">
         /// Column name, where the values for the x-axis are taken.
         /// </param>
-        /// <param name="ColName_ForYValues"></param>
+        /// <param name="ColName_ForYValues">
+        /// Column name, where the values for the y-axis are taken.
+        /// </param>
         /// <param name="ColName_GroupSelection">
         /// Selects, which table row will end up in which graph, resp. data group (<see cref="Plot2Ddata.dataGroups"/>).
+        /// 
+        /// E.g., assume that <paramref name="ColName_ForXValues"/> is 'Resolution' and <paramref name="ColName_ForYValues"/> is 'SolverIterations',
+        /// assumer further that the table contains two other columns named 'SolverName' and 'PolynomialDegree',
+        /// which are provided for <paramref name="ColName_GroupSelection"/>.
+        /// then the output will contain a separate plot for each combination of 'SolverName' and 'PolynomialDegree'.
         /// </param>
         /// <returns></returns>
         public static Plot2Ddata ToPlot(this DataTable Tab, 
@@ -876,17 +976,24 @@ namespace BoSSS.Application.BoSSSpad {
             string[] ColNames = Tab.GetColumnNames();
             int L = Tab.Rows.Count;
             int J = Tab.Columns.Count;
-            for (int i = 0; i < L; i++) {
+            for (int i = 0; i < L; i++) { // loop over table rows
+                
+                // select 'i'-th row
                 DataRow orgRow = Tab.Rows[i];
+                
+                // convert 'i'-th row into a dictionary
                 Dictionary<string, object> orgRowAsDict = new Dictionary<string, object>();
-                foreach (string ColName in ColNames) {
-                    object obj_ColName = orgRow[ColName];
-                    if (obj_ColName == DBNull.Value) {
-                        orgRowAsDict.Add(ColName, null);
-                    } else {
-                        orgRowAsDict.Add(ColName, obj_ColName);
+                {
+                    foreach(string ColName in ColNames) {
+                        object obj_ColName = orgRow[ColName];
+                        if(obj_ColName == DBNull.Value) {
+                            orgRowAsDict.Add(ColName, null);
+                        } else {
+                            orgRowAsDict.Add(ColName, obj_ColName);
+                        }
                     }
                 }
+
 
                 string groupName = "";
                 try {

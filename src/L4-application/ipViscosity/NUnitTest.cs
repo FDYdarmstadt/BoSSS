@@ -34,15 +34,7 @@ namespace BoSSS.Application.ipViscosity {
     [TestFixture]
     public class _Test {
 
-        [TestFixtureTearDown]
-        public void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
 
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp() {
-            BoSSS.Solution.Application.InitMPI(new string[0]);
-        }
 
         static TestSolution[] solutions = new TestSolution[] { new Polynomial2D_ConstantVisc(), new Polynomial2D_VariableVisc(), new Transcendent2D() };
 

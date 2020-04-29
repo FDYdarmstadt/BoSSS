@@ -18,38 +18,34 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using ilPSP;
+using ilPSP.Connectors.Matlab;
 using MPI.Wrappers;
 using NUnit.Framework;
 
 namespace MPITest {
 
+    /// <summary>
+    /// Testing if MPI and some other base routines are working
+    /// </summary>
     [TestFixture]
     public class Program {
 
         public static void Main(string[] args) {
-            Init();
-            Test();
-            Cleanup();
+            BoSSS.Solution.Application.InitMPI();
+            TestAllreduce();
+            TestLapack();
+            MPI.Wrappers.csMPI.Raw.mpiFinalize(); 
         }
 
-        [TestFixtureSetUp]
-        public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
-        }
-
-        [TestFixtureTearDown]
-        public static void Cleanup() {
-            //Console.Out.Dispose();
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
-        }
-
+   
         [Test]
         public static void Test() {
+            TestAllreduce();
+            TestLapack();
+        }
+
+        private static void TestAllreduce() {
             int rank;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
 
@@ -58,6 +54,7 @@ namespace MPITest {
 
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
             Console.WriteLine("Hello from " + rank + " of " + size + ".");
+
 
 
             int result = 0;
@@ -73,6 +70,38 @@ namespace MPITest {
 
             int expectedResult = Enumerable.Range(0, size).Sum();
             Assert.IsTrue(result == expectedResult);
+        }
+
+        public static void TestLapack() {
+
+
+            Random rnd = new Random();
+            for(int n = 2; n < 50; n++) {
+
+                var SomeMtx = MultidimensionalArray.Create(n, n);
+                for(int i = 0; i < n; i++) {
+                    for(int j = 0; j < n; j++) {
+                        double r = rnd.NextDouble();
+                        SomeMtx[i, j] += r;
+                        SomeMtx[j, i] += r;
+                    }
+                }
+
+
+                var eigs = SomeMtx.EigsSymm();
+
+                var (EigVal, EigVec) = SomeMtx.EigenspaceSymm();
+                
+                var D = MultidimensionalArray.CreateDiagMtx(EigVal);
+
+                var Test = EigVec.GEMM(D, EigVec.Transpose());
+                Test.Acc(-1.0, SomeMtx);
+                double err = Test.InfNorm();
+                Assert.LessOrEqual(err, 1e-8);
+            }
+
+            
+
         }
     }
 }

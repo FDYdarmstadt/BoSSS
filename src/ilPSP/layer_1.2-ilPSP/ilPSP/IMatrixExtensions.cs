@@ -911,6 +911,186 @@ namespace ilPSP {
             return result;
         }
 
+        /*
+        /// <summary>
+        /// Horizontal matrix concatenation
+        /// </summary>
+        static public MultidimensionalArray CatHoriz<TM1, TM2>(this TM1 LeftBlock, TM2 RightBlock)
+            where TM1 : IMatrix
+            where TM2 : IMatrix // 
+        {
+            var C = new IMatrix[] { LeftBlock, RightBlock };
+            return C.CatHoriz();
+        }
+        */
+
+        /// <summary>
+        /// Horizontal concatenation
+        /// </summary>
+        static public MultidimensionalArray CatHoriz<TM>(this IEnumerable<TM> Block) 
+            where TM : IMatrix // 
+        {
+            var C = new IMatrix[1, Block.Count()];
+            int i = 0;
+            foreach(var M in Block) {
+                C[0, i] = M;
+                i++;
+            }
+
+            return C.Cat();
+        }
+
+        /// <summary>
+        /// Horizontal concatenation
+        /// </summary>
+        static public MultidimensionalArray CatHoriz<TM1,TM2>(this TM1 LeftestBlock, params TM2[] otherBlocks) 
+            where TM1 : IMatrix
+            where TM2 : IMatrix // 
+        {
+            var C = new List<IMatrix>();
+            C.Add(LeftestBlock);
+            foreach(var M in otherBlocks)
+                C.Add(M);
+
+            return C.CatHoriz();
+        }
+
+        /// <summary>
+        /// Vertical concatenation
+        /// </summary>
+        static public MultidimensionalArray CatVert<TM>(this IEnumerable<TM> Block) 
+            where TM : IMatrix // 
+        {
+            var C = new IMatrix[Block.Count(), 1];
+            int i = 0;
+            foreach(var M in Block) {
+                C[i, 0] = M;
+                i++;
+            }
+
+            return C.Cat();
+        }
+
+        /// <summary>
+        /// Horizontal concatenation
+        /// </summary>
+        static public MultidimensionalArray CatVert<TM1,TM2>(this TM1 TopBlock, params TM2[] otherBlocks) 
+            where TM1 : IMatrix
+            where TM2 : IMatrix // 
+        {
+            var C = new List<IMatrix>();
+            C.Add(TopBlock);
+            foreach(var M in otherBlocks)
+                C.Add(M);
+
+            return C.CatVert();
+        }
+
+        /// <summary>
+        /// Concatenates a bloc of matrices
+        /// </summary>
+        static public MultidimensionalArray Cat<TM>(this TM[,] block) where TM : IMatrix {
+            int I = block.GetLength(0);
+            int J = block.GetLength(1);
+
+            // determine lengths of row and columns
+            // ====================================
+            int[] RowLengths = new int[I];
+            int[] ColLengths = new int[J];
+
+            RowLengths.SetAll(-1);
+            ColLengths.SetAll(-1);
+            for(int i = 0; i < block.GetLength(0); i++) { // loop over block rows...
+                for(int j = 0; j < block.GetLength(1); j++) { // loop over block columns...
+                    
+                    if(block[i, j] == null)
+                        continue;
+
+                    if(RowLengths[i] < 0) {
+                        int IB = block[i, j].NoOfRows;
+                        RowLengths[i] = IB;
+                    }
+
+                    if(ColLengths[j] < 0) {
+                        int JB = block[i, j].NoOfCols;
+                        ColLengths[j] = JB;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            for(int i = 0; i < I; i++) {
+                int IB = RowLengths[i];
+                if(IB < 0) {
+                    throw new ArgumentException($"Unable to determine width of block-row {i}; all entries in row are null.");
+                }
+            }
+            for(int j = 0; j < J; j++) {
+                int JB = ColLengths[j];
+                if(JB < 0) {
+                    throw new ArgumentException($"Unable to determine width of block-column {j}; all entries in column are null.");
+                }
+            }
+
+            int[] RowOffsets = new int[I];
+            int[] ColOffsets = new int[J];
+            for(int i = 1; i < I; i++) {
+                RowOffsets[i] = RowOffsets[i - 1] + RowLengths[i - 1];
+            }
+            for(int j = 1; j < J; j++) {
+                ColOffsets[j] = ColOffsets[j - 1] + ColLengths[j - 1];
+            }
+
+            // check
+            // =====
+            for(int i = 0; i < block.GetLength(0); i++) { // loop over block rows...
+                for(int j = 0; j < block.GetLength(1); j++) { // loop over block columns...
+                    int _IB, _JB;
+                    if(block[i, j] == null) {
+                        //_IB = 0;
+                        //_JB = 0;
+                        continue;
+                    } else {
+                        _IB = block[i, j].NoOfRows;
+                        _JB = block[i, j].NoOfCols;
+                    }
+
+                    int IB = RowLengths[i];
+                    int JB = ColLengths[j];
+
+                    if(_IB != IB) {
+                        throw new ArgumentException($"Mismatch in number of rows for block {i},{j}: this block has {_IB} rows, while other blocks in block-row {i} have {IB} rows.");
+                    }
+                    if(_JB != JB) {
+                        throw new ArgumentException($"Mismatch in number of columns for block {i},{j}: this block has {_JB} columns, while other blocks in block-column {j} have {JB} columns.");
+                    }
+                }
+            }
+
+            // copy data
+            // =========
+            int TotRows = RowOffsets[I - 1] + RowLengths[I - 1];
+            int TotCols = ColOffsets[I - 1] + ColLengths[I - 1];
+            var Ret = MultidimensionalArray.Create(TotRows, TotCols);
+            for(int i = 0; i < block.GetLength(0); i++) { // loop over block rows...
+                for(int j = 0; j < block.GetLength(1); j++) { // loop over block columns...
+                    if(block[i, j] == null)
+                        continue;
+
+                    int i0 = RowOffsets[i];
+                    int iE = i0 + RowLengths[i] - 1;
+                    int j0 = ColOffsets[j];
+                    int jE = j0 + ColLengths[j] - 1;
+
+                    Ret.ExtractSubArrayShallow(new[] { i0, j0 }, new[] { iE, jE }).AccMatrix(1.0, block[i, j]);
+                }
+            }
+
+            // return
+            // ======
+            return Ret;
+        }
+
         /// <summary>
         /// writes the transpose of matrix <paramref name="source"/> to <paramref name="target"/>;
         /// matrix <paramref name="source"/> is unchanged, if not reference-equal to <paramref name="target"/>
@@ -1765,6 +1945,24 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Accumulates some vector to the diagonal of the matrix.
+        /// </summary>
+        static public void AccDiag<T,V>(this T M, V diag) 
+            where T : IMatrix 
+            where V: IEnumerable<double> //
+        {
+            if (M.NoOfCols != M.NoOfRows)
+                throw new NotSupportedException("must be quadratic.");
+
+            int i = 0;
+            foreach(double d in diag) {
+                M[i, i] += d;
+                i++;
+            }
+        }
+
+
+        /// <summary>
         /// Least-squares-solve (LAPACK function DGELSY) with multiple right-hand-side vectors.
         /// </summary>
         /// <param name="Mtx">
@@ -1908,7 +2106,7 @@ namespace ilPSP {
             TempBuffer.FreeTempBuffer(i1);
         }
 
-        static public Stopwatch DGETRF_stopwatch;// = new Stopwatch();
+        //static public Stopwatch DGETRF_stopwatch;// = new Stopwatch();
 
         /// <summary>
         /// Solves the linear equation system:
@@ -1939,11 +2137,7 @@ namespace ilPSP {
                     CopyToUnsafeBuffer(M, this_Entries, true);
 
                     int info;
-                    if (DGETRF_stopwatch != null)
-                        DGETRF_stopwatch.Start();
                     LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
-                    if (DGETRF_stopwatch != null)
-                        DGETRF_stopwatch.Stop();
                     if (info != 0) {
                         TempBuffer.FreeTempBuffer(i0);
                         string infostring;
@@ -1992,11 +2186,8 @@ namespace ilPSP {
                         CopyToUnsafeBuffer(M, this_Entries, true);
 
                         int info;
-                        if (DGETRF_stopwatch != null)
-                            DGETRF_stopwatch.Start();
                         LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
-                        if (DGETRF_stopwatch != null)
-                            DGETRF_stopwatch.Stop();
+
 
                         if (info != 0) {
                             TempBuffer.FreeTempBuffer(i0);
@@ -2088,7 +2279,7 @@ namespace ilPSP {
         /// <param name="M">General quadratic, symmetric, positive definite matrix.</param>
         static public void SolveSymmetric<T>(this T M, double[] x, double[] b) where T : IMatrix {
             if (M.NoOfRows != M.NoOfCols)
-                throw new ApplicationException("Cannot solve nonquadratic matrix.");
+                throw new ArgumentException("Cannot solve nonquadratic matrix.");
             if (x.Length != M.NoOfCols)
                 throw new ArgumentException("length of x must be equal to number of columns");
             if (b.Length != M.NoOfRows)
@@ -2117,6 +2308,64 @@ namespace ilPSP {
                 TempBuffer.FreeTempBuffer(i0);
             }
         }
+
+        /// <summary>
+        /// Condition number of a quadratic matrix 
+        /// </summary>
+        /// <param name="M"></param>
+        /// <param name="NORM">
+        /// Switch between one and infinity norm
+        /// - char '1': the one norm
+        /// - char 'I': the infinity norm
+        /// </param>
+        static public double Cond<T>(this T M, int NORM = '1') where T : IMatrix {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ArgumentException("Only supported for quadratic matrix.");
+            int N = M.NoOfCols;
+
+            double RCOND = double.NaN;
+            int INFO = 0;
+
+            if(NORM != '1' && NORM != 'I')
+                throw new ArgumentException("Unknown norm specifier; expecting either '1' for one-norm or 'I' for infinity norm.");
+
+            unsafe {
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, N*N);
+                double[] _work = TempBuffer.GetTempBuffer(out int i1, 4*N);
+                int* Iwork = stackalloc int[N];
+                int* IPIV = stackalloc int[N];
+
+                fixed(double* A = _this_Entries, work = _work) {
+                    CopyToUnsafeBuffer(M, A, true);
+
+                    int LDA = N;
+                    double ANORM;
+
+                    if(NORM == '1' || NORM == 'O')
+                        ANORM = M.OneNorm();
+                    else if(NORM == 'I')
+                        ANORM = M.InfNorm();
+                    else
+                        throw new ArgumentException("Illegal Matrix Norm Specifier.");
+
+                    LAPACK.F77_LAPACK.DGETRF(ref N, ref N, A, ref LDA, IPIV, out INFO);
+                    if(INFO != 0)
+                        throw new ArithmeticException("LAPACK DGECON info is " + INFO);
+                    
+                    LAPACK.F77_LAPACK.DGECON_(ref NORM, ref N, A, ref LDA, ref ANORM, ref RCOND, work, Iwork, ref INFO);
+                    if(INFO != 0)
+                        throw new ArithmeticException("LAPACK DGECON info is " + INFO);
+                }
+
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+            }
+
+            
+
+            return 1.0 / RCOND;
+        }
+
 
         /// <summary>
         /// Computes the QR factorization of <paramref name="M"/> , i.e.

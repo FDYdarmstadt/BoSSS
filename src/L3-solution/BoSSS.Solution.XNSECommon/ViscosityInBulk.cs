@@ -28,6 +28,7 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     
+    /*
     
     public class ViscosityInBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1, IEquationComponentSpeciesNotification {
 
@@ -117,7 +118,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         //}
 
     }
+    */
 
+    /*
     public class ViscosityInBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2, IEquationComponentSpeciesNotification {
 
         public ViscosityInBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, 
@@ -207,6 +210,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         //}
     }
 
+    */
+
+    /*
     public class ViscosityInBulk_divTerm : BoSSS.Solution.NSECommon.swipViscosity_Term3, IEquationComponentSpeciesNotification {
 
         public ViscosityInBulk_divTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB)
@@ -275,6 +281,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             m_LenScales = cs.CellLengthScales;
         }
         */
-    }
+    //}
     
 }

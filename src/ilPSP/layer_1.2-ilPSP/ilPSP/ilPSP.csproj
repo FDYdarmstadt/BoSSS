@@ -65,6 +65,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ArrayTools.cs" />
+    <Compile Include="ConfigFileIOUtils.cs" />
     <Compile Include="BLAS.cs" />
     <Compile Include="BlockPartitioning.cs" />
     <Compile Include="CodeGenExportAttribute.cs" />
@@ -101,6 +102,7 @@
     <Compile Include="MultidimensionalArray_Tests.cs" />
     <Compile Include="NullLog.cs" />
     <Compile Include="METIS.cs" />
+    <Compile Include="NUnitFileToCopyHackAttribute.cs" />
     <Compile Include="Partitioning_Extensions.cs" />
     <Compile Include="SerialisationMessenger.cs" />
     <Compile Include="ISparseSolver.cs" />
@@ -128,7 +130,7 @@
       <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

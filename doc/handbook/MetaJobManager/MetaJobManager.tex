@@ -75,7 +75,7 @@ WorkflowMgm.AllJobs;
 \BoSSSexeSilent
 \BoSSScmd{
 /// and create, resp. open a \BoSSS database on a local drive.
-var myLocalDb = OpenOrCreateDefaultDatabase();
+var myLocalDb = CreateTempDatabase();
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -301,7 +301,7 @@ JobLocal.Status;
 \BoSSSexe
 \BoSSScmd{
 /// Here, we block until both of our jobs have finished:
-WorkflowMgm.BlockUntilAllJobsTerminate(360);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600);
  }
 \BoSSSexe
 \BoSSScmd{

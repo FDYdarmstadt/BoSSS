@@ -358,7 +358,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Blocks until all jobs in <see cref="AllJobs"/> ale either <see cref="JobStatus.Failed"/>
+        /// Blocks until all jobs in <see cref="AllJobs"/> are either <see cref="JobStatus.Failed"/>
         /// or <see cref="JobStatus.FinishedSuccessful"/>.
         /// </summary>
         /// <param name="TimeOutSeconds">
@@ -370,6 +370,8 @@ namespace BoSSS.Application.BoSSSpad {
         public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
             while(true) {
+                MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
+
                 Thread.Sleep((int)PollingIntervallSeconds);
 
                 if(TimeOutSeconds > 0) {
@@ -383,7 +385,7 @@ namespace BoSSS.Application.BoSSSpad {
                 bool terminate = true;
                 foreach(var J in this.AllJobs) {
                     var s = J.Value.Status;
-                    if(s!= JobStatus.Failed && s != JobStatus.FinishedSuccessful) {
+                    if(s!= JobStatus.Failed && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
                         terminate = false;
                         break;
                     }
@@ -395,12 +397,72 @@ namespace BoSSS.Application.BoSSSpad {
                     return;
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep((int)(1000.0*PollingIntervallSeconds));
             }
             
         }
 
         List<Tuple<AppControl, int>> RegisteredControls = new List<Tuple<AppControl, int>>();
+
+
+        /// <summary>
+        /// Blocks until any running or queued job in <see cref="AllJobs"/> reaches 
+        /// either <see cref="JobStatus.Failed"/>
+        /// or <see cref="JobStatus.FinishedSuccessful"/>.
+        /// </summary>
+        /// <param name="TimeOutSeconds">
+        /// If positive, this method should terminate at latest after approximately this time period.
+        /// </param>
+        /// <param name="PollingIntervallSeconds">
+        /// Seconds to wait before checking the jobs status again; should be in the order of seconds, not to overload the IO.
+        /// </param>
+        /// <param name="JustFinished">
+        /// On exit, the recently finished job
+        /// </param>
+        /// <returns>
+        /// Remaining number of queued/running jobs plus 1
+        /// </returns>
+        public int BlockUntilAnyJobTerminate(out Job JustFinished,  double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
+            DateTime start = DateTime.Now;
+
+            var QueueAndRun = this.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) {
+                var s = j.Status;
+                if (s == JobStatus.Failed)
+                    return false;
+                if (s == JobStatus.FinishedSuccessful)
+                    return false;
+                if (s == JobStatus.PreActivation)
+                    return false;
+                return true;
+            }).ToArray();
+            if(QueueAndRun.Length == 0) {
+                JustFinished = null;
+                return 0;
+            }
+
+            while(true) {
+                
+                if(TimeOutSeconds > 0) {
+                    double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
+                    if(RuntimeSoFar > TimeOutSeconds) {
+                        Console.WriteLine("Timeout.");
+                        JustFinished = null;
+                        return QueueAndRun.Length;
+                    }
+                }
+
+                foreach(var J in QueueAndRun) {
+                    var s = J.Status;
+                    if(s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
+                        JustFinished = J;
+                        return QueueAndRun.Length;
+                    }
+                }
+
+                Thread.Sleep((int)(1000*PollingIntervallSeconds));
+            }
+            
+        }
 
 
         /// <summary>

@@ -27,6 +27,7 @@ using System.Linq;
 using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -410,15 +411,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected void InitMultigrid(DGField[] Fields, bool useX) {
             Basis[] bs;
-            if(useX) {
-                bs = new Basis[Fields.Length];
-                for (int i = 0; i < bs.Length; i++)
-                    bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
-            } else {
-                bs = Fields.Select(f => f.Basis).ToArray();
-            }
+            using (new FuncTrace("Aggregation_basis_init")) {
+                if (useX) {
+                    bs = new Basis[Fields.Length];
+                    for (int i = 0; i < bs.Length; i++)
+                        bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
+                } else {
+                    bs = Fields.Select(f => f.Basis).ToArray();
+                }
 
-            this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
+                this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
+            }
         }
 
         /// <summary>
@@ -497,7 +500,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; // this.LogResis;
+                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; 
                 }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
@@ -511,7 +514,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             double resiNorm = currentRes.MPI_L2Norm();
-            Console.WriteLine("    " + iterIndex + "  "+ resiNorm);
+            Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
         }
 
 
@@ -683,5 +686,37 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </param>
         abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
 
+        /// <summary>
+        /// Unscaled, agglomerated mass matrix used by the preconditioner.
+        /// </summary>
+        protected BlockMsrMatrix m_PrecondMassMatrix;
+
+        /// <summary>
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability
+        /// </summary>
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
+            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true);
+
+            
+            if(VarGroups == null) {
+                int NoOfVar = this.CurrentStateMapping.Fields.Count;
+                VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
+            }
+
+            var Ret = new Dictionary<string, double>();
+            foreach(int[] varGroup in VarGroups) {
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+                ana.VarGroup = varGroup;
+                var Table = ana.GetNamedProperties();
+                
+                foreach(var kv in Table) {
+                    if(!Ret.ContainsKey(kv.Key)) {
+                        Ret.Add(kv.Key, kv.Value);
+                    }
+                }
+            }
+
+            return Ret;
+        }
     }
 }

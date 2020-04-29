@@ -293,7 +293,9 @@ namespace CNS {
                 //double[] OpAffine = new double[mapping.LocalLength];
                 //SpatialOperator spatialOperator = FullOperator.ToSpatialOperator(WorkingSet);
                 //IEvaluatorNonLin_ ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, null, mapping);
+                //IEvaluatorNonLin_ ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, WorkingSet.ParameterFields, mapping);
                 //ev.Evaluate(1.0, 0.0, OpAffine, null);
+                //OpAffine.SaveToTextFile(String.Format("ResidualVector_{0}.txt", TimestepNo));
                 //#endregion
 
                 //// Sample points
@@ -328,10 +330,10 @@ namespace CNS {
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
                     //Exception e = null;
                     //try {
-                        //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
-                        //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
-                        //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
-                        dt = TimeStepper.Perform(dt);
+                    //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
+                    //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
+                    //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
+                    dt = TimeStepper.Perform(dt);
                     //} catch (Exception ee) {
                     //    e = ee;
                     //}
@@ -357,6 +359,14 @@ namespace CNS {
                 }
                 //if (TimestepNo == 10)
                 //    ilPSP.Tracing.Tracer.Current.ResetRecursive();
+
+
+                //WorkingSet.ConservativeVariables[0].CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", TimestepNo));
+                //for (int d = 0; d < 2; d++) {
+                //    WorkingSet.ConservativeVariables[d + 1].CoordinateVector.SaveToTextFile(String.Format("Momentum[{0}]CoordVec_{1}.txt", d, TimestepNo));
+                //}
+                //WorkingSet.ConservativeVariables[3].CoordinateVector.SaveToTextFile(String.Format("EnergyCoordVec_{0}.txt", TimestepNo));
+
                 return dt;
             }
         }
@@ -429,6 +439,70 @@ namespace CNS {
 
                 WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
                 plotDriver.PlotFields("CNS-" + timestepNo, physTime, m_IOFields);
+
+                //#region Write residuals to text file
+                // Sample points
+                //int noOfPoints = 16;
+                //double[] nodes = GenericBlas.Linspace(-1.8, -0.3, noOfPoints);
+                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+                //for (int i = 0; i < noOfPoints; i++) {
+                //    points[i, 0] = nodes[i];
+                //    points[i, 1] = -0.65;
+                //}
+
+                ////// FieldEvaluation
+                ////MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, Residuals.Length);
+                ////for (int i = 0; i < Residuals.Length; i++) {
+                ////    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+                ////    fieldEvaluator.Evaluate(1.0, Residuals, points, 0.0, results);
+                ////}
+
+                ////// StreamWriter
+                ////using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", timestepNo))) {
+                ////    //Console.WriteLine("x \t y \t result");
+                ////    sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
+                ////    string resultLine;
+                ////    for (int i = 0; i < noOfPoints; i++) {
+                ////        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t";
+                ////        //Console.WriteLine(resultLine);
+                ////        sw.WriteLine(resultLine);
+                ////    }
+                ////    sw.Flush();
+                ////}
+                ////#endregion
+
+                #region Write DG fields to text file
+                // Sample points
+                //int noOfPoints = 16;
+                //double[] nodes = GenericBlas.Linspace(-1.8, -0.3, noOfPoints);
+                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+                //for (int i = 0; i < noOfPoints; i++) {
+                //    points[i, 0] = nodes[i];
+                //    points[i, 1] = -0.65;
+                //}
+
+                //// FieldEvaluation
+                //MultidimensionalArray resultsFields = MultidimensionalArray.Create(noOfPoints, m_IOFields.Count());
+                //for (int i = 0; i < m_IOFields.Count(); i++) {
+                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+                //    fieldEvaluator.Evaluate(1.0, m_IOFields, points, 0.0, resultsFields);
+                //}
+
+                //// StreamWriter
+                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("DGFields{0}.txt", timestepNo))) {
+                //    //Console.WriteLine("x \t y \t result");
+                //    //sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
+                //    string resultLine;
+                //    for (int i = 0; i < noOfPoints; i++) {
+                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + resultsFields[i, 0] + "\t" + resultsFields[i, 1] + "\t" + resultsFields[i, 2] + "\t" + resultsFields[i, 3] + "\t";
+                //        //Console.WriteLine(resultLine);
+                //        sw.WriteLine(resultLine);
+                //    }
+                //    sw.Flush();
+                //}
+                //WorkingSet.ConservativeVariables[0].CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", timestepNo));
+                //WorkingSet.ConservativeVariables[3].CoordinateVector.SaveToTextFile(String.Format("EnergyCoordVec_{0}.txt", timestepNo));
+                #endregion
             }
         }
 
@@ -523,7 +597,7 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected virtual CompressibleBoundaryCondMap GetBoundaryConditionMap() {
-            return new CompressibleBoundaryCondMap( this.GridData, Control, Control.GetMaterial());
+            return new CompressibleBoundaryCondMap(this.GridData, Control, Control.GetMaterial());
         }
 
         /// <summary>

@@ -450,8 +450,6 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        int DelComputeOperatorMatrix_CallCounter = 0;
-
 
         void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
             int D = this.LsTrk.GridDat.SpatialDimension;
@@ -477,12 +475,14 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
+        int DelComputeOperatorMatrix_CallCounter = 0;
+
         /// <summary>
         /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
         /// </summary>
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
-            DelComputeOperatorMatrix_CallCounter++;
             int D = this.LsTrk.GridDat.SpatialDimension;
+            
 
             // compute operator
             //Debug.Assert(OpMatrix.InfNorm() == 0.0);
@@ -508,7 +508,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
-
+                DelComputeOperatorMatrix_CallCounter++;
 
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
@@ -620,11 +620,12 @@ namespace BoSSS.Application.IBM_Solver {
         //SinglePhaseField blocking = null;
 
         /// <summary>
-        /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
+        /// Depending on settings <see cref="BoSSS.Solution.Control.AppControl.TimesteppingMode"/>, computes either one time-step or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
 
+                /*
                 //Es folgt: die Analyse des Operators
                 if (this.Control.OperatorMatrixAnalysis == true && AnalyseCounter!=0)
                 {
@@ -638,7 +639,7 @@ namespace BoSSS.Application.IBM_Solver {
                     myAnalysis.Analyse();
                     AnalyseCounter--;
                 }
-
+                */
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;

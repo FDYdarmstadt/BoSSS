@@ -23,22 +23,16 @@ namespace BoSSS.Application.ZwoLsTest {
     [TestFixture]
     static public class AllUpTest {
 
-        [TestFixtureSetUp]
-        public static void SetUp() {
-            bool MpiInit;
-            Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
-        }
-
-        [TestFixtureTearDown]
-        public static void Teardown() {
-            csMPI.Raw.mpiFinalize();
-        }
-
         [Test]
-        static public void AllUp([Values(0.0, 0.3)] double AggTresh, [Values(1, 2, 3)] int DGdegree, [Values(false, true)] bool DynamicBalance) {
+        static public void AllUp([Values(0.0, 0.3)] double AggTresh,
+#if DEBUG            
+            [Values(1)] int DGdegree,
+            [Values(false)] bool DynamicBalance)
+#else
+            [Values(1, 2, 3)] int DGdegree,
+            [Values(false, true)] bool DynamicBalance)            
+#endif
+         {
             ZwoLsTestMain p = null;
             if(AggTresh <= 0.001 && DGdegree > 1)
                 // this combination is not supposed to work

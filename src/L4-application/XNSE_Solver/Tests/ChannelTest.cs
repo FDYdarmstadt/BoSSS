@@ -198,7 +198,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
-        public GridCommons CreateGrid() {
+        public GridCommons CreateGrid(int Resolution) {
+            if (Resolution < 1)
+                throw new ArgumentException();
 
             //var yNodes = GenericBlas.Linspace(-1, 1, 9);
 
@@ -207,10 +209,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //var _yNodes = ArrayTools.Cat(yNodes1, yNodes2);
             //var _yNodes = yNodes;
 
-            var _yNodes = new double[] { -1, -0.8, -0.6, 0.6, 1.0 };
+            var __yNodes = new double[] { -1, -0.8, -0.6, 0.6, 1.0 };
+            var _yNodes = new double[(__yNodes.Length - 1) * Resolution + 1];
+            for(int i = 0; i < __yNodes.Length -1; i++) {
+                double[] part = GenericBlas.Linspace(__yNodes[i], __yNodes[i + 1], Resolution + 1);
+                _yNodes.SetSubVector(part, i * Resolution, part.Length);
+            }
+
             //var _yNodes = GenericBlas.Linspace(-1, 1, 6);
 
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 4), _yNodes, periodicX: periodic);
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3*Resolution + 1), _yNodes, periodicX: periodic);
             if (periodic) {
                 grd.EdgeTagNames.Add(1, "wall_top");
                 grd.EdgeTagNames.Add(2, "wall_bottom");

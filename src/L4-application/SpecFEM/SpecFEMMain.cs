@@ -39,10 +39,10 @@ namespace BoSSS.Application.SpecFEM {
             //BoSSS.Solution.Application._Main(args, true, null, delegate() {
             //    return new SpecFEMMain();
             //});
+            BoSSS.Solution.Application.InitMPI();
             var AUT = new BoSSS.Application.SpecFEM.AllUpTest();
-            AUT.TestFixtureSetUp();
             AUT.AllUp(false, false);
-            AUT.TestFixtureTearDown();
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
         internal bool m_periodicX = true;

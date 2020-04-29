@@ -883,7 +883,6 @@ namespace BoSSS.Application.XRheology_Solver {
                             case 1:
                                 {
                                     throw new ArgumentException("Fourier Level-Set not implemented in Line Movement Test");
-                                    break;
                                 }
                             case 2:
                                 {

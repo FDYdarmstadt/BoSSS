@@ -351,7 +351,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -692,7 +691,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
@@ -1031,7 +1029,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
