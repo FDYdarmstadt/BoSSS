@@ -52,14 +52,16 @@ namespace AdvancedSolverTests.SolverChooser
             AggregationGridData[] seq;
             var MGO = Utils.CreateTestMGOperator(out seq, Resolution: 10);
             var changeofbasisis = Utils.GetAllMGConfig(MGO);
+            var agggridbasisis = Utils.GetAllAggGridBasis(MGO);
 
             //Arrange --- get available lincodes
             var lincodes = (LinearSolverCode[])Enum.GetValues(typeof(LinearSolverCode));
             ISolverSmootherTemplate LinSolver = null;
-            TestDelegate lindlg = () => { SF.GenerateLinear(out LinSolver, seq, changeofbasisis); };
+            TestDelegate lindlg = () => SF.GenerateLinear(out LinSolver, agggridbasisis, changeofbasisis);
 
             //Act and Assert
             foreach (LinearSolverCode code in lincodes) {
+                SF.Clear();
                 lconfig.SolverCode = code;
                 if(code==LinearSolverCode.selfmade)
                     SF.Selfmade_linsolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.PARDISO };
@@ -93,15 +95,13 @@ namespace AdvancedSolverTests.SolverChooser
 
             //Arrange --- get test linear Solver to set in NLsolver
             ISolverSmootherTemplate LinSolver = null;
-            TestDelegate lindlg = () => { SF.GenerateLinear(out LinSolver, seq, changeofbasisis); };
             LinearSolverCode[] LinTestcandidates = { LinearSolverCode.classic_pardiso, LinearSolverCode.exp_gmres_levelpmg }; // in order to test the GMRES variants of the NL solver
 
             //Act and Assert
             foreach (var lincode in LinTestcandidates) {
                 lconfig.SolverCode = lincode;
-                lindlg.Invoke();
-                TestDelegate nldlg = () => { SF.GenerateNonLin(out NLsolver, out LinSolver, null, agggridbasisis, changeofbasisis, null, seq); };
-                
+                TestDelegate nldlg = () => SF.GenerateNonLin(out NLsolver, out LinSolver, null, agggridbasisis, changeofbasisis, null, seq);
+                SF.Clear();
                 foreach (NonLinearSolverCode nlcode in nonlincodes) {
                     nlconfig.SolverCode = nlcode;
                     if (nlconfig.SolverCode == NonLinearSolverCode.selfmade) {
@@ -110,6 +110,7 @@ namespace AdvancedSolverTests.SolverChooser
                     Assert.DoesNotThrow(nldlg, "", null);
                     Assert.IsNotNull(NLsolver);
                 }
+                Console.WriteLine("====");
             }
         }
 
