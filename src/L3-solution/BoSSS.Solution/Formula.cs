@@ -23,6 +23,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Linq;
+using BoSSS.Solution.Utils;
 
 namespace BoSSS.Solution.Control {
 
@@ -212,6 +213,13 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         public override int GetHashCode() {
             return m_Code.GetHashCode();
+        }
+
+        /// <summary>
+        /// Vectorized evaluation
+        /// </summary>
+        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
         }
     }
 }

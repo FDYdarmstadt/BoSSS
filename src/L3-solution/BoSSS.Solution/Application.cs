@@ -1652,10 +1652,12 @@ namespace BoSSS.Solution {
         protected virtual TimestepNumber RestartFromDatabase(out double time) {
             using (var tr = new FuncTrace()) {
                 
+                // obtain session timesteps:
                 var sessionToLoad = this.Control.RestartInfo.Item1;
                 ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
                 var all_ts = session.Timesteps;
                 
+                // find timestep to load
                 Guid tsi_toLoad_ID;
                 tsi_toLoad_ID = GetRestartTimestepID();
                 ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
@@ -1670,6 +1672,8 @@ namespace BoSSS.Solution {
                 }
                 
                 DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
+                
+                // return
                 return tsi_toLoad.TimeStepNumber;
             }
         }
@@ -1747,10 +1751,11 @@ namespace BoSSS.Solution {
                 // pass 1: single phase fields
                 // ===========================
 
-                var Pass2_Evaluators = new Dictionary<string, Func<double[], double>>();
-                foreach (var val in this.Control.InitialValues_Evaluators) {
+                var Pass2_Evaluators = new Dictionary<string, ScalarFunction>();
+                foreach (var val in this.Control.InitialValues_EvaluatorsVec) {
                     string DesiredFieldName = val.Key;
-                    ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                    //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                    ScalarFunction Function = val.Value;
 
                     bool found = false;
                     foreach (DGField f in relevantFields) {
@@ -1785,15 +1790,16 @@ namespace BoSSS.Solution {
                     }
                 }
 
-                // pass 2: XDG fields
-                // ===========================
+                // pass 2: XDG fields (after tracker update)
+                // =========================================
                 if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
 
                     foreach (var val in Pass2_Evaluators) {
                         string DesiredFieldName = val.Key;
-                        ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                        //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                        ScalarFunction Function = val.Value;
 
                         bool found = false;
                         foreach (DGField f in relevantFields) {
@@ -1825,6 +1831,9 @@ namespace BoSSS.Solution {
             }
         }
 
+        /// <summary>
+        /// Temporary hack which will be removed at some point;
+        /// </summary>
         protected virtual void ResetInitial() {
             // intended to be used user-specific but not necessary
         }
@@ -1988,14 +1997,15 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 int i = i0.MajorNumber;
+                bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                    this.MpiRedistributeAndMeshAdapt(i, physTime);
+                    initialRedist |= this.MpiRedistributeAndMeshAdapt(i, physTime);
                 }
                 { 
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
                         ResetInitial();
-                        if (this.Control.ImmediatePlotPeriod > 0)
+                        if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
                             PlotCurrentState(physTime, i0, this.Control.SuperSampling);
                     }
 
@@ -2093,7 +2103,11 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Main routine for dynamic load balancing and adaptive mesh refinement.
         /// </summary>
-        virtual protected void MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
+        /// <returns>
+        /// - true if the mesh is actually changed or re-distributed
+        /// - false if not
+        /// </returns>
+        virtual protected bool MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
             //if (this.MPISize <= 1)
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
@@ -2121,13 +2135,13 @@ namespace BoSSS.Solution {
 
                     if (NewPartition == null)
                         // nothing to do
-                        return;
+                        return false;
 
                     int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
 
                     if (NoOfRedistCells <= 0) {
-                        return;
+                        return false;
                     } else {
 #if DEBUG
                         Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
@@ -2379,9 +2393,11 @@ namespace BoSSS.Solution {
                         // re-create solvers, blablabla
                         CreateEquationsAndSolvers(remshDat);
                     }
-                }
+                } //end of adapt mesh branch
 
                 this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
+
+                return true;
             }
         }
 
