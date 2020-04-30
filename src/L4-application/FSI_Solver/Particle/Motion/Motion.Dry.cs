@@ -92,8 +92,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
         public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            Vector tempForces = new Vector(m_Dim);
-            tempForces = CalculateGravity(fluidDensity, tempForces);
+            Vector tempForces = new Vector(SpatialDim);
+            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
             return tempForces;
         }
 
@@ -113,7 +113,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override object Clone() {
             Motion clonedMotion = new MotionDry(Gravity, Density);
             clonedMotion.SetParticleArea(ParticleArea);
-            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

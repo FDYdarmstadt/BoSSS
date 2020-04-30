@@ -57,9 +57,9 @@ namespace BoSSS.Application.FSI_Solver {
         public Particle_TrapRight(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = width;
             Aux.TestArithmeticException(width, "Particle width");
-            Motion.GetParticleLengthscale(width);
+            Motion.SetParticleMaxLengthscale(width);
             Motion.SetParticleArea(Area);
-            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+            Motion.SetParticleMomentOfInertia(MomentOfInertia);
 
         }
 

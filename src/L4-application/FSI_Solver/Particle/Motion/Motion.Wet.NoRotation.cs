@@ -96,8 +96,8 @@ namespace BoSSS.Application.FSI_Solver {
             Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
             currentStress = TransformStressToPrint(stressToPrintOut);
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            tempForces = Force_MPISum(tempForces);
-            tempForces = CalculateGravity(fluidDensity, tempForces);
+            tempForces = ForcesMPISum(tempForces);
+            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
             return tempForces;
         }
 
@@ -117,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override object Clone() {
             Motion clonedMotion = new MotionWetNoRotation(Gravity, Density);
             clonedMotion.SetParticleArea(ParticleArea);
-            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

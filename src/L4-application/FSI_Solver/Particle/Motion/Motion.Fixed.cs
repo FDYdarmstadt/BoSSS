@@ -71,7 +71,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override Vector CalculateTranslationalVelocity(double dt) {
-            Vector l_TranslationalVelocity = new Vector(m_Dim);
+            Vector l_TranslationalVelocity = new Vector(SpatialDim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
         }
@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override Vector CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            Vector l_TranslationalVelocity = new Vector(m_Dim);
+            Vector l_TranslationalVelocity = new Vector(SpatialDim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
         }
@@ -113,7 +113,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected override Vector CalculateTranslationalAcceleration(double dt = 0) {
-            return new Vector(m_Dim);
+            return new Vector(SpatialDim);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
         public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            return new Vector(m_Dim);
+            return new Vector(SpatialDim);
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override object Clone() {
             Motion clonedMotion = new MotionFixed(Gravity, Density);
             clonedMotion.SetParticleArea(ParticleArea);
-            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

@@ -77,7 +77,7 @@ namespace BoSSS.Application.FSI_Solver {
         public int[] MasterGhostIDs = new int[4];
 
         public void SetMaster(Motion newMotionType) {
-            newMotionType.TransferPhysicalData(Motion);
+            newMotionType.TransferDataFromOtherParticle(Motion);
             Motion = newMotionType;
             IsMaster = true;
         }
@@ -86,7 +86,7 @@ namespace BoSSS.Application.FSI_Solver {
             HiddenMotion = Motion;
             Motion = new MotionGhost(new Vector(0, 0), HiddenMotion.Density);
             Motion.SetParticleArea(HiddenMotion.ParticleArea);
-            Motion.TransferPhysicalData(HiddenMotion);
+            Motion.TransferDataFromOtherParticle(HiddenMotion);
             IsMaster = false;
         }
 

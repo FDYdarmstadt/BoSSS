@@ -231,8 +231,8 @@ namespace FSI_Solver {
                 totalKE[0] += SingleParticleKineticEnergy[0];
                 totalKE[1] += SingleParticleKineticEnergy[1];
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
-                ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleRe(FluidViscosity);
-                ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleSt(FluidViscosity, FluidDensity);
+                ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleReynoldsNumber(FluidViscosity);
+                ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleStokesNumber(FluidViscosity, FluidDensity);
                 volumeFraction += CurrentParticle.Area;
             }
 
@@ -319,7 +319,7 @@ namespace FSI_Solver {
                     CheckSend[p * NoOfVars + 3] = P.Motion.GetRotationalVelocity(1);
                     CheckSend[p * NoOfVars + 4] = P.Motion.GetRotationalAcceleration(0);
                     CheckSend[p * NoOfVars + 5] = P.Motion.GetRotationalAcceleration(1);
-                    CheckSend[p * NoOfVars + 6] = P.Motion.Mass_P;
+                    CheckSend[p * NoOfVars + 6] = P.Motion.ParticleMass;
 
                     // vector values
                     int Offset = 7;

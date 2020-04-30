@@ -111,7 +111,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
             double denominator = CalculateDenominator(coefficientMatrix);
 
-            Vector l_Acceleration = new Vector(m_Dim);
+            Vector l_Acceleration = new Vector(SpatialDim);
             l_Acceleration[0] = GetHydrodynamicForces(0)[0] * (coefficientMatrix[1, 1] * coefficientMatrix[2, 2] - coefficientMatrix[1, 2] * coefficientMatrix[2, 1]);
             l_Acceleration[0] += GetHydrodynamicForces(0)[1] * (-coefficientMatrix[0, 1] * coefficientMatrix[2, 2] + coefficientMatrix[0, 2] * coefficientMatrix[2, 1]);
             l_Acceleration[0] += GetHydrodynamicTorque(0) * (coefficientMatrix[0, 1] * coefficientMatrix[1, 2] - coefficientMatrix[0, 2] * coefficientMatrix[1, 1]);
@@ -191,8 +191,8 @@ namespace BoSSS.Application.FSI_Solver {
             Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
             currentStress = TransformStressToPrint(stressToPrintOut);
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            tempForces = Force_MPISum(tempForces);
-            tempForces = CalculateGravity(fluidDensity, tempForces);
+            tempForces = ForcesMPISum(tempForces);
+            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
             tempForces = ForceAddedDamping(tempForces, dt);
             return tempForces;
         }
@@ -209,7 +209,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
             double tempTorque = hydrodynamicsIntegration.Torque(GetPosition(0), cutCells);
             Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
-            Torque_MPISum(ref tempTorque);
+            TorqueMPISum(ref tempTorque);
             TorqueAddedDamping(ref tempTorque, dt);
             return tempTorque;
         }
@@ -220,7 +220,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         /// <param name="forces"></param>
         private Vector ForceAddedDamping(Vector forces, double dt) {
-            for (int d = 0; d < m_Dim; d++) {
+            for (int d = 0; d < SpatialDim; d++) {
                 forces[d] += m_AddedDampingCoefficient * dt * (AddedDampingTensor[0, d] * GetTranslationalAcceleration(0)[0] + AddedDampingTensor[1, d] * GetTranslationalAcceleration(0)[1] + AddedDampingTensor[d, 2] * GetRotationalAcceleration(0));
             }
             return forces;
@@ -238,7 +238,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override object Clone() {
             Motion clonedMotion = new MotionAddedDamping(Gravity, Density, m_AddedDampingCoefficient);
             clonedMotion.SetParticleArea(ParticleArea);
-            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

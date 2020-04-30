@@ -39,7 +39,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 double p0_area = p.Particles[0].Area;
                 double p0_area_soll = Math.PI;
-                double p0_Mass = p.Particles[0].Motion.Mass_P;
+                double p0_Mass = p.Particles[0].Motion.ParticleMass;
                 double p1_area = p.Particles[1].Area;
 
 

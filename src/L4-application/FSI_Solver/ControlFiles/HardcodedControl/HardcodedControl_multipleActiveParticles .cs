@@ -295,7 +295,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = 1.1;
             double activeStress = 1;
-            double particleLength = 0.2;
+            double particleLength = 0.1;
             double position = 1;
             double distance = position / 2;
 
@@ -357,8 +357,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
 
-            //string ID = "3d636982-ce56-450c-ae4c-7f0cf94f276c";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 100);
+            //string ID = "02c723c1-6834-413b-9b1d-292453cf8eb1";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 250);
 
 
             return C;

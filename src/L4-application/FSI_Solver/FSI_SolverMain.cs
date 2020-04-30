@@ -916,7 +916,7 @@ namespace BoSSS.Application.FSI_Solver {
                     dt = StartDt;
                 else {
                     foreach (Particle p in m_Particles) {
-                        double expectedVelocity = p.Motion.GetTranslationalVelocity(0).L2Norm() + (p.Motion.GetHydrodynamicForces(0) * DtMax / p.Motion.Mass_P).L2Norm();
+                        double expectedVelocity = p.Motion.GetTranslationalVelocity(0).L2Norm() + (p.Motion.GetHydrodynamicForces(0) * DtMax / p.Motion.ParticleMass).L2Norm();
                         double expectedRotation = (p.Motion.GetRotationalVelocity() + p.Motion.GetHydrodynamicTorque() * DtMax / p.MomentOfInertia) * p.GetLengthScales().Max();
                         maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity + Math.Abs(expectedRotation));
                     }
@@ -927,7 +927,7 @@ namespace BoSSS.Application.FSI_Solver {
                     if (dt < 1e-6)
                         dt = 1e-6;
                     foreach (Particle p in m_Particles) {
-                        p.Motion.AdaptToNewTimestep(dt, oldTimestep);
+                        p.Motion.AdaptParticleHistoryToNewTimeStep(dt, oldTimestep);
                     }
                 }
                 oldTimestep = dt;
@@ -989,7 +989,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // print
                     // -------------------------------------------------
                     Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume);
-                    LogPhysicalData(phystime);
+                    LogPhysicalData(phystime, TimestepInt);
 
                 }
                 // particle motion & collisions plus flow solver
@@ -1049,7 +1049,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // print
                     // -------------------------------------------------
                     Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, FluidDomainVolume);
-                    LogPhysicalData(phystime);
+                    LogPhysicalData(phystime, TimestepInt);
 
                     // level set tracker 
                     // -------------------------------------------------
@@ -1170,7 +1170,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void CreatePhysicalDataLogger() {
             if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 logPhysicalDataParticles = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
+                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "timestep", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
             }
         }
 
@@ -1179,10 +1179,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name = phystime>
         /// </param>
-        private void LogPhysicalData(double phystime) {
+        private void LogPhysicalData(double phystime, int timestepNo) {
             if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
                 for (int p = 0; p < m_Particles.Count(); p++) {
-                    logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", p, phystime, m_Particles[p].Motion.GetPosition(0)[0], m_Particles[p].Motion.GetPosition(0)[1], m_Particles[p].Motion.GetAngle(0), m_Particles[p].Motion.GetTranslationalVelocity(0)[0], m_Particles[p].Motion.GetTranslationalVelocity(0)[1], m_Particles[p].Motion.GetRotationalVelocity(0), m_Particles[p].Motion.GetHydrodynamicForces(0)[0], m_Particles[p].Motion.GetHydrodynamicForces(0)[1], m_Particles[p].Motion.GetHydrodynamicTorque(0)));
+                    logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", timestepNo, p, phystime, m_Particles[p].Motion.GetPosition(0)[0], m_Particles[p].Motion.GetPosition(0)[1], m_Particles[p].Motion.GetAngle(0), m_Particles[p].Motion.GetTranslationalVelocity(0)[0], m_Particles[p].Motion.GetTranslationalVelocity(0)[1], m_Particles[p].Motion.GetRotationalVelocity(0), m_Particles[p].Motion.GetHydrodynamicForces(0)[0], m_Particles[p].Motion.GetHydrodynamicForces(0)[1], m_Particles[p].Motion.GetHydrodynamicTorque(0)));
                     logPhysicalDataParticles.Flush();
                 }
             }
@@ -1269,20 +1269,28 @@ namespace BoSSS.Application.FSI_Solver {
                 fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
             string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
             string[] records = File.ReadAllLines(pathToPhysicalData);
-            for (int p = m_Particles.Count() - 1; p >= 0; p--) {
+            int timestepIndexOffset = 0;
+            for (int r = 1; r < records.Length; r++) {
+                string currentLine = records[r];
+                string[] currentLineFields = currentLine.Split(',');
+                if(timestep.MajorNumber == Convert.ToInt32(currentLineFields[0])) {
+                    timestepIndexOffset = r;
+                    break;
+                }
+            }
+            for (int p = 0; p < m_Particles.Count(); p++) {
                 Particle currentParticle = m_Particles[p];
-                int index = records.Length - (m_Particles.Count() - p);
-                //string currentLine = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
+                int index = timestepIndexOffset + p;
                 string currentLine = records[index];
                 string[] currentLineFields = currentLine.Split(',');
                 double[] position = new double[2];
                 double[] translationalVelocity = new double[2];
-                position[0] = Convert.ToDouble(currentLineFields[2]);
-                position[1] = Convert.ToDouble(currentLineFields[3]);
-                double angle = Convert.ToDouble(currentLineFields[4]) * 360 / (2 * Math.PI);
-                translationalVelocity[0] = Convert.ToDouble(currentLineFields[5]);
-                translationalVelocity[1] = Convert.ToDouble(currentLineFields[6]);
-                double angularVelocity = Convert.ToDouble(currentLineFields[7]);
+                position[0] = Convert.ToDouble(currentLineFields[3]);
+                position[1] = Convert.ToDouble(currentLineFields[4]);
+                double angle = Convert.ToDouble(currentLineFields[5]) * 360 / (2 * Math.PI);
+                translationalVelocity[0] = Convert.ToDouble(currentLineFields[6]);
+                translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
+                double angularVelocity = Convert.ToDouble(currentLineFields[8]);
                 currentParticle.Motion.InitializeParticlePositionAndAngle(position, angle);
                 currentParticle.Motion.InitializeParticleVelocity(translationalVelocity, angularVelocity);
             }
