@@ -34,9 +34,13 @@ namespace BoSSS.Solution.NSECommon {
     [DataContract]
     [Serializable]
     public class MaterialLawLowMach : MaterialLaw {
+        [DataMember]
+        public double T_ref;
 
-       public double T_ref;
+        [DataMember]
         MaterialParamsMode MatParamsMode;
+
+        [DataMember]
         bool rhoOne;
         /// <summary>
         /// Ctor.
@@ -67,16 +71,18 @@ namespace BoSSS.Solution.NSECommon {
                 return ThermodynamicPressure != null;
             }
         }
-       
+
         /// <summary>
         /// 
         /// </summary>
-        [NonSerialized]
+        //[NonSerialized]
+        [DataMember]
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
         /// <summary>
         /// 
         /// </summary>
-        [NonSerialized]
+        //[NonSerialized]
+        [DataMember]
         public double ThermodynamicPressureValue = -1;
         
 
@@ -120,18 +126,19 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 //Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
-                double rho;
+                double rho = 1.0;
 
-                if (rhoOne) {
-                    rho = 1;
-                    return rho;
-                } else {              
-                    if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    
-                        rho = ThermodynamicPressureValue / phi[0];
-                    } else {
-                        rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-                    }
-                }
+                //if (rhoOne) {
+                //    rho = 1;
+                //    return rho;
+                //} else {              
+                //    if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    
+                //        rho = ThermodynamicPressureValue / phi[0];
+                //    } else {
+                //        rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                //    }
+                //}
+
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
 

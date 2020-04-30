@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Foundation;
 using System.Diagnostics;
 using ilPSP.Utils;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -30,9 +31,11 @@ namespace BoSSS.Solution.NSECommon {
     /// Material law for low Mach number flows with combustion number.
     /// </summary>
     public class MaterialLawCombustion : MaterialLawLowMach {
-
+        [DataMember]
         MaterialParamsMode MatParamsMode;
+        [DataMember]
         double[] MolarMasses;
+        [DataMember]
         bool rhoOne;
   
         /// <summary>

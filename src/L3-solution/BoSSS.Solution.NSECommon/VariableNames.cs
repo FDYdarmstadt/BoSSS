@@ -69,7 +69,16 @@ namespace BoSSS.Solution.NSECommon {
         /// solver.
         /// Different Turbulence models will be supported in the future.
         /// </summary>
-        RANS
+        RANS,
+
+
+        /// <summary>
+        ///  MixtureFracion solver.
+        /// Used as a pre-step for calculating reactive flows.
+        /// Equations for continuity, momentum and for a passive scalar Z are solved.
+        /// </summary>
+        MixtureFracion,
+
 
     }
 
