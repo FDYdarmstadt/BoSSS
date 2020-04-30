@@ -41,9 +41,7 @@ namespace BoSSS.Application.FSI_Solver {
         
 
         internal override void CopyNewVelocity(Vector translational, double rotational) {
-            Console.WriteLine("translational " + translational[0]);
             TranslationalVelocity = new Vector(translational);
-            Console.WriteLine("m_TranslationalAcceleration[0] " + TranslationalVelocity[0]);
             RotationalVelocity = rotational;
         }
 
@@ -52,7 +50,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override Vector CalculateTranslationalVelocity(double dt = 0) {
-            Console.WriteLine("1translational " + TranslationalVelocity[0]);
             Aux.TestArithmeticException(TranslationalVelocity, "particle translational velocity");
             return TranslationalVelocity;
         }
@@ -62,7 +59,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override Vector CalculateTranslationalVelocity(double dt, double collisionDt) {
-            Console.WriteLine("12translational " + TranslationalVelocity[0]);
             Aux.TestArithmeticException(TranslationalVelocity, "particle translational velocity");
             return TranslationalVelocity;
         }

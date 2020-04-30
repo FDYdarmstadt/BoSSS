@@ -918,9 +918,9 @@ namespace BoSSS.Application.FSI_Solver {
                     foreach (Particle p in m_Particles) {
                         double expectedVelocity = p.Motion.GetTranslationalVelocity(0).L2Norm() + (p.Motion.GetHydrodynamicForces(0) * DtMax / p.Motion.Mass_P).L2Norm();
                         double expectedRotation = (p.Motion.GetRotationalVelocity() + p.Motion.GetHydrodynamicTorque() * DtMax / p.MomentOfInertia) * p.GetLengthScales().Max();
-                        maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity + 2 * Math.Abs(expectedRotation));
+                        maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity + Math.Abs(expectedRotation));
                     }
-                    dt = Math.Min(DtMax, MinGridLength / (maxVelocityL2Norm));
+                    dt = Math.Min(DtMax, MinGridLength / (5 * maxVelocityL2Norm));
                     if (dt / oldTimestep > 1.1)
                         dt = oldTimestep * 1.1;
                     dt = dt.MPIMin();
