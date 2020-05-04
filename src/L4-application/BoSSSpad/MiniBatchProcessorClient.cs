@@ -33,40 +33,34 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     public class MiniBatchProcessorClient : BatchProcessorClient {
 
-        /*
-        /// <summary>
-        /// Configuration options specific to the <see cref="MiniBatchProcessorClient"/>
-        /// </summary>
-        [Serializable]
-        public new class Config : BatchProcessorClient.Config {
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public override BatchProcessorClient Instance() {
-                return new MiniBatchProcessorClient(base.DeploymentBaseDirectory) {
-                    DeployRuntime = base.DeployRuntime
-                };
-            }
-        }
-        
 
         /// <summary>
-        /// .
+        /// Optional override for <see cref="MiniBatchProcessor.Configuration.BatchInstructionDir"/>
         /// </summary>
-        public override BatchProcessorClient.Config GetConfig() {
-            return new MiniBatchProcessorClient.Config() {
-                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
-                DeployRuntime = this.DeployRuntime
-            };
-        }
-        */
+        [DataMember]
+        public string BatchInstructionDir;
 
         /// <summary>
         /// Empty constructor for de-serialization
         /// </summary>
         private MiniBatchProcessorClient() {
         }
+
+        [NonSerialized]
+        MiniBatchProcessor.Client m_Clint;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        MiniBatchProcessor.Client Clint {
+            get {
+                if(m_Clint == null) {
+                    m_Clint = new MiniBatchProcessor.Client(BatchInstructionDir);
+                }
+                return m_Clint;
+            }
+        }
+
 
         /// <summary>
         /// Path to standard output file, if present - otherwise null.
@@ -75,7 +69,7 @@ namespace BoSSS.Application.BoSSSpad {
             var Problem = FilterJobData(myJob);
 
             if (Problem != null) {
-                return MiniBatchProcessor.Client.GetStdoutFile(Problem.ID);
+                return Clint.GetStdoutFile(Problem.ID);
             } else {
                 return null;
             }
@@ -88,7 +82,7 @@ namespace BoSSS.Application.BoSSSpad {
             var Problem = FilterJobData(myJob);
 
             if (Problem != null) {
-                return MiniBatchProcessor.Client.GetStderrFile(Problem.ID);
+                return Clint.GetStderrFile(Problem.ID);
             } else {
                 return null;
             }
@@ -162,7 +156,7 @@ namespace BoSSS.Application.BoSSSpad {
                 //}
 
                 int ID = int.Parse(idToken);
-                var mbpStatus = MiniBatchProcessor.ClientAndServer.GetStatusFromID(ID, out ExitCode);
+                var mbpStatus = Clint.GetStatusFromID(ID, out ExitCode);
 
 
                 switch (mbpStatus) {
@@ -206,7 +200,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return null;
             }
 
-            return MiniBatchProcessor.ClientAndServer.AllJobs.FirstOrDefault(jd => jd.ID == idSearch);
+            return Clint.AllJobs.FirstOrDefault(jd => jd.ID == idSearch);
         }
 
 
@@ -230,7 +224,7 @@ namespace BoSSS.Application.BoSSSpad {
                 UseComputeNodesExclusive = myJob.UseComputeNodesExclusive
             };
 
-            int id = MiniBatchProcessor.Client.SubmitJob(JD);
+            int id = Clint.SubmitJob(JD);
             return (id.ToString(), JD);
         }
     }

@@ -24,7 +24,7 @@ namespace BoSSS.Solution.Statistic {
         /// Projects a DG field <paramref name="source"/>, which may be defined on some different mesh,
         /// onto the DG field <paramref name="target"/>.
         /// </summary>
-        static public void ProjectFromOtherGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
+        static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
             using(new FuncTrace()) {
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration

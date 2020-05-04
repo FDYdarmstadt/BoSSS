@@ -31,11 +31,32 @@ namespace MiniBatchProcessor {
     public class Configuration : ilPSP.ConfigFileBase {
 
         /// <summary>
+        /// 
+        /// </summary>
+        public static string GetDefaultBatchInstructionDir() {
+            string BoSSSuserDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            return Path.Combine(BoSSSuserDir, "batch");
+        }
+
+
+        /// <summary>
         /// ctor.
         /// </summary>
-        public Configuration() {
-            string BoSSSuserDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
-            BatchInstructionDir = Path.Combine(BoSSSuserDir, "batch");
+        public Configuration(string __BatchInstructionDir) {
+            if(__BatchInstructionDir == null) {
+                BatchInstructionDir = GetDefaultBatchInstructionDir();
+            } else {
+                OverrideBatchInstructionDir(__BatchInstructionDir);
+            }
+            
+        }
+
+
+        /// <summary>
+        /// Hack to redirect 
+        /// </summary>
+        void OverrideBatchInstructionDir(string __BatchInstructionDir) {
+            BatchInstructionDir = __BatchInstructionDir;
 
             foreach (var dir in new string[] {
                 Path.Combine(BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR),
@@ -45,6 +66,7 @@ namespace MiniBatchProcessor {
                     Directory.CreateDirectory(dir);
             }
         }
+
 
         /// <summary>
         /// Directory for job queues (see <see cref="ClientAndServer.WORK_DIR"/>, <see cref="ClientAndServer.QUEUE_DIR"/>,

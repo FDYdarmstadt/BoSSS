@@ -26,16 +26,17 @@ namespace MiniBatchProcessor {
     /// <summary>
     /// Functions which are used by both, server and client.
     /// </summary>
-    public static class ClientAndServer {
+    public abstract class ClientAndServer {
 
         static Random rnd;
 
+        
 
         /// <summary>
         /// ctor.
         /// </summary>
-        static ClientAndServer() {
-            config = new Configuration();
+        internal ClientAndServer(string BatchInstructionDir) {
+            config = new Configuration(BatchInstructionDir);
             config.Load();
             rnd = new Random();
 
@@ -44,7 +45,7 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// %.
         /// </summary>
-        public static Configuration config;
+        public Configuration config;
 
         /// <summary>
         /// If an IO operation fails, a randomized time, in milliseconds, within a certain range, before the operation should be tried again.
@@ -71,12 +72,9 @@ namespace MiniBatchProcessor {
         /// </summary>
         public const string WORK_FINISHED_DIR = "work";
 
-        ///// <summary>
-        ///// Directory for finished jobs.
-        ///// </summary>
-        //public const string FINISHED_DIR = "finished";
 
-        private static void ReadDir(string RelDir, List<Tuple<JobData, JobStatus>> R, JobStatus s0) {
+
+        private void ReadDir(string RelDir, List<Tuple<JobData, JobStatus>> R, JobStatus s0) {
             string dir = Path.Combine(config.BatchInstructionDir, RelDir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
@@ -104,7 +102,7 @@ namespace MiniBatchProcessor {
             }
         }
 
-        static void UpdateLists() {
+        void UpdateLists() {
             var AllJobsNew = new List<Tuple<JobData, JobStatus>>();
             ReadDir(QUEUE_DIR, AllJobsNew, JobStatus.Queued);
             //ReadDir(WORK_DIR, AllJobsNew, JobStatus.Working);
@@ -130,7 +128,7 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Returns a currently unused job id.
         /// </summary>
-        public static int GetNewId() {
+        public int GetNewId() {
             UpdateLists();
             if (m_AllJobs.Count <= 0) {
                 return 1;
@@ -148,7 +146,7 @@ namespace MiniBatchProcessor {
         /// The jobs id, see <see cref="JobData.ID"/>.
         /// </param>
         /// <returns></returns>
-        public static JobStatus GetStatusFromID(int JobId, out int ExitCode) {
+        public JobStatus GetStatusFromID(int JobId, out int ExitCode) {
             UpdateLists();
             foreach (var jd in m_AllJobs) {
                 if(jd.Item1.ID == JobId) {
@@ -156,7 +154,7 @@ namespace MiniBatchProcessor {
 
                     if(jd.Item2 == JobStatus.Finished) {
                         try {
-                            string ExitCodeFile = Path.Combine(ClientAndServer.config.BatchInstructionDir, WORK_FINISHED_DIR, JobId.ToString() + "_exit.txt");
+                            string ExitCodeFile = Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR, JobId.ToString() + "_exit.txt");
                             using (var exit = new StreamReader(ExitCodeFile)) {
                                 ExitCode = int.Parse(exit.ReadLine());
                             }
@@ -171,26 +169,22 @@ namespace MiniBatchProcessor {
             throw new ArgumentException("Unable to find job with id '" + JobId + "'.");
         }
 
-        
-
-
-        static List<Tuple<JobData, JobStatus>> m_AllJobs;
+        List<Tuple<JobData, JobStatus>> m_AllJobs;
 
         /// <summary>
         /// Exactly what it says.
         /// </summary>
-        public static IList<JobData> AllJobs {
+        public IList<JobData> AllJobs {
             get {
                 UpdateLists();
                 return m_AllJobs.Select(job => job.Item1).ToList().AsReadOnly();
             }
         }
 
-
         /// <summary>
         /// Jobs which are in the waiting queue.
         /// </summary>
-        public static IList<JobData> Queue {
+        public IList<JobData> Queue {
             get {
                 UpdateLists();
                 return m_AllJobs.Where(job => job.Item2 == JobStatus.Queued)
@@ -199,11 +193,10 @@ namespace MiniBatchProcessor {
             }
         }
 
-
         /// <summary>
         /// Jobs which are currently being executed.
         /// </summary>
-        public static IList<JobData> Working {
+        public IList<JobData> Working {
             get {
                 UpdateLists();
                 return m_AllJobs.Where(job => job.Item2 == JobStatus.Working)
@@ -212,11 +205,10 @@ namespace MiniBatchProcessor {
             }
         }
 
-        
         /// <summary>
-        /// Jobs which are Finnish.
+        /// Jobs which are Finished.
         /// </summary>
-        public static IList<JobData> Finished {
+        public IList<JobData> Finished {
             get {
                 UpdateLists();
                 return m_AllJobs.Where(job => job.Item2 == JobStatus.Finished)
