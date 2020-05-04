@@ -227,5 +227,13 @@ namespace BoSSS.Application.BoSSSpad {
             int id = Clint.SubmitJob(JD);
             return (id.ToString(), JD);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return $"MiniBatchProcessor client @{this.DeploymentBaseDirectory}";
+        }
+
     }
 }

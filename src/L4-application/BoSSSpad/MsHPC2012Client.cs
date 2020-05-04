@@ -291,5 +291,12 @@ namespace BoSSS.Application.BoSSSpad {
                 return (MsHpcJob.Id.ToString(), MsHpcJob);
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return $"MS HPC client {this.ServerName}, @{this.DeploymentBaseDirectory}";
+        }
     }
 }

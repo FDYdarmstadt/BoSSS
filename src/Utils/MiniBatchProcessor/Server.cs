@@ -51,8 +51,10 @@ namespace MiniBatchProcessor {
         /// This state is determined based upon the existence, resp. a lock on the file
         /// `MiniBatchProcessor-ServerMutex.txt`.
         /// </summary>
-        static public bool IsRunning {
-            get {
+        public static bool GetIsRunning(string __BatchInstructionDir) {
+            __BatchInstructionDir = __BatchInstructionDir != null ? __BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
+
+            {
                 if(MiniBatchThreadIsMyChild) {
                     if(ServerInternal != null) {
                         return ServerInternal.IsAlive;
@@ -65,10 +67,10 @@ namespace MiniBatchProcessor {
 
 
                 try {
-                    if(File.Exists(GetServerMutexPath(Config.BatchInstructionDir))) {
+                    if(File.Exists(GetServerMutexPath(__BatchInstructionDir))) {
                         // try to delete
 
-                        File.Delete(GetServerMutexPath(Config.BatchInstructionDir));
+                        File.Delete(GetServerMutexPath(__BatchInstructionDir));
 
 
                         return false;
@@ -109,7 +111,9 @@ namespace MiniBatchProcessor {
         /// - false: the server is already running
         /// </returns>
         public static bool StartIfNotRunning(bool RunExternal = true, string BatchInstructionDir = null) {
-            if(ServerExternal != null && ServerExternal.HasExited) {
+            BatchInstructionDir = BatchInstructionDir != null ? BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
+            
+            if (ServerExternal != null && ServerExternal.HasExited) {
                 ServerExternal.Dispose();
                 ServerExternal = null;
             }
@@ -118,13 +122,13 @@ namespace MiniBatchProcessor {
                 ServerInternal = null;
             }
 
-            if(ServerExternal != null || ServerInternal != null || IsRunning) {
+            if(ServerExternal != null || ServerInternal != null || GetIsRunning(BatchInstructionDir)) {
                 Console.WriteLine("Mini batch processor is already running.");
                 return false;
             }
             Random r = new Random();
             r.Next(100, 5000);
-            if(IsRunning) {
+            if(GetIsRunning(BatchInstructionDir)) {
                 Console.WriteLine("Mini batch processor is already running.");
                 return false;
             }
@@ -212,7 +216,7 @@ namespace MiniBatchProcessor {
             }
 
             if(MiniBatchThreadIsMyChild) {
-                while(Server.IsRunning) {
+                while(Server.GetIsRunning(BatchInstructionDir)) {
                     
                     Thread.Sleep(1000 + ClientAndServer.IOwaitTime);
                 }
@@ -223,11 +227,17 @@ namespace MiniBatchProcessor {
         }
 
         static string GetTerminationSignalPath(string BatchInstructionDir) {
+            if (BatchInstructionDir == null) {
+                BatchInstructionDir = Configuration.GetDefaultBatchInstructionDir();
+            }
             return (Path.Combine(BatchInstructionDir, "MiniBatchProcessor-TerminationSignal.txt"));
         }
 
 
         static string GetServerMutexPath(string BatchInstructionDir) {
+            if (BatchInstructionDir == null) {
+                BatchInstructionDir = Configuration.GetDefaultBatchInstructionDir();
+            }
             return (Path.Combine(BatchInstructionDir, "MiniBatchProcessor-ServerMutex.txt"));
         }
 
@@ -277,6 +287,7 @@ namespace MiniBatchProcessor {
             
         }
 
+        /*
         static Configuration Config;
 
         /*
@@ -402,7 +413,7 @@ namespace MiniBatchProcessor {
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
         /// </summary>
         void _Main(string[] args) {
-            if (IsRunning) {
+            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
                 Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
                 return;
             }
@@ -462,7 +473,7 @@ namespace MiniBatchProcessor {
 
                 // see if there are available processors
                 if (AvailableProcs <= 0 || ExclusiveUse) {
-                    Thread.Sleep(Config.ServerPollingInSeconds*1000);
+                    Thread.Sleep(config.ServerPollingInSeconds*1000);
                     continue;
                 }
 
