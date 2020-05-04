@@ -25,18 +25,14 @@ using BoSSS.Foundation.Grid.RefElements;
 namespace BoSSS.Application.ElementTests {
 
     [TestFixture]
-    class ElementTests {
+    public class ElementTests {
 
         /// <summary>
         /// Ensures bootstrapping has been conducted correctly.
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [Test]

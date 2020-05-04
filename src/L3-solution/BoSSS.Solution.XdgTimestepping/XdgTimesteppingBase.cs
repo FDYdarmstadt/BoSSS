@@ -27,7 +27,8 @@ using System.Linq;
 using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
-using BoSSS.Solution.Tecplot;
+using ilPSP.Tracing;
+
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -411,15 +412,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected void InitMultigrid(DGField[] Fields, bool useX) {
             Basis[] bs;
-            if(useX) {
-                bs = new Basis[Fields.Length];
-                for (int i = 0; i < bs.Length; i++)
-                    bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
-            } else {
-                bs = Fields.Select(f => f.Basis).ToArray();
-            }
+            using (new FuncTrace("Aggregation_basis_init")) {
+                if (useX) {
+                    bs = new Basis[Fields.Length];
+                    for (int i = 0; i < bs.Length; i++)
+                        bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
+                } else {
+                    bs = Fields.Select(f => f.Basis).ToArray();
+                }
 
-            this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
+                this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
+            }
         }
 
         /// <summary>

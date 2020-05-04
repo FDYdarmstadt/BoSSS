@@ -39,30 +39,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     static public partial class UnitTest {
 
         /// <summary>
-        /// MPI finalize.
-        /// </summary>
-        [TestFixtureTearDown]
-        static public void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
-
-        /// <summary>
         /// MPI init.
         /// </summary>
-        [TestFixtureSetUp]
-        static public void TestFixtureSetUp() {
-            // Tweaking to use OCTAVE instead of MATLAB
-            if(System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")) {
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
-            } else if(System.Environment.MachineName.ToLowerInvariant().Contains("stormbreaker")) {
-                // This is Florians Laptop;
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
-            }
-
-
-            BoSSS.Solution.Application.InitMPI(new string[0]);
+        [OneTimeSetUp]
+        static public void OneTimeSetUp() {
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 
@@ -88,19 +68,37 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
 
             GenericTest(Tst, C);
-            if(AgglomerationTreshold > 0.01 && deg > 1) {
-                ScalingTest(Tst, new[] { 4, 8, 16 }, vmode, deg);
-            }
+           
         }
 
 #if !DEBUG
+
+        /// <summary>
+        /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void ScalingViscosityJumpTest_p2(
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+            ScalingViscosityJumpTest(2, vmode);
+        }
+
+        /// <summary>
+        /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
+        /// </summary>
+        [Test]
+        public static void ScalingViscosityJumpTest_p3(
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+            ScalingViscosityJumpTest(3, vmode);
+        }
+
         /// <summary>
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
-        [Test]
         public static void ScalingViscosityJumpTest(
 
-            [Values(2, 3, 4)] int deg,
+            [Values(2, 3)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
             ) {
 

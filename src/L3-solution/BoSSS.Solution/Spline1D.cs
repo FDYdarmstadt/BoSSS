@@ -22,6 +22,7 @@ using System.Globalization;
 using System.Runtime.Serialization;
 using BoSSS.Solution.Control;
 using ilPSP;
+using BoSSS.Solution.Utils;
 
 namespace BoSSS.Solution.Control {
 
@@ -484,5 +485,12 @@ namespace BoSSS.Solution.Control {
                 isAscending = 0;
             }
         }*/
+
+        /// <summary>
+        /// Vectorized evaluation
+        /// </summary>
+        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
+        }
     }
 }

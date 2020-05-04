@@ -21,6 +21,8 @@ using System.Runtime.Serialization;
 using ilPSP;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using ilPSP.Tracing;
+using System.Linq;
 
 namespace BoSSS.Application.BoSSSpad
 {
@@ -183,90 +185,92 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// .
         /// </summary>
-        public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
-            //string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            //DeployDir = null;
-            //isRunning = false;
-            //wasSuccessful = false;
-            //isFailed = false;
-            //SubmitCount = 0;
+        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+            using (var tr = new FuncTrace()) {
+                //string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
+                //DeployDir = null;
+                //isRunning = false;
+                //wasSuccessful = false;
+                //isFailed = false;
+                //SubmitCount = 0;
 
+                using (new BlockTrace("FILE_CHECK", tr)) {
+                    string exitFile = Path.Combine(DeployDir, "exit.txt");
+                    if (File.Exists(exitFile)) {
+                        isTerminated = true;
+                        isRunning = false;
+                        try {
+                            ExitCode = int.Parse(File.ReadAllText(exitFile).Trim());
+                        } catch (Exception) {
+                            ExitCode = int.MinValue;
+                        }
+                        return;
+                    }
 
-            string exitFile = Path.Combine(DeployDir, "exit.txt");
-            if(File.Exists(exitFile)) {
-                isTerminated = true;
-                isRunning = false;
-                try {
-                    ExitCode = int.Parse(File.ReadAllText(exitFile).Trim());
-                } catch(Exception) {
-                    ExitCode = int.MinValue;
-                }
-                return;
-            }
+                    string runningFile = Path.Combine(DeployDir, "isrunning.txt");
+                    if (File.Exists(runningFile)) {
+                        // no decicion yet;
+                        // e.g. assume that slurm terminated the Job after 24 hours => maybe 'isrunning.txt' is not deleted and 'exit.txt' does not exist
 
-            string runningFile = Path.Combine(DeployDir, "isrunning.txt");
-            if(File.Exists(runningFile)) {
-                // no decicion yet;
-                // e.g. assume that slurm terminated the Job after 24 hours => maybe 'isrunning.txt' is not deleted and 'exit.txt' does not exist
-
-            } else {
-                // job may be pending in queue
-                isRunning = false;
-                isTerminated = false;
-                ExitCode = 0;
-                return;
-            }
-
-
-            string JobID = idToken;
-
-
-            using(var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
-                int startindex = output.Result.IndexOf("\n");
-                int endindex = output.Result.IndexOf("\n", startindex + 1);
-                string jobstatus;
-                if(startindex == -1 || endindex == -1) {
-                    jobstatus = "";
-                } else {
-                    jobstatus = output.Result.Substring(startindex + 1, (endindex - startindex) - 1);
+                    } else {
+                        // job may be pending in queue
+                        isRunning = false;
+                        isTerminated = false;
+                        ExitCode = 0;
+                        return;
+                    }
                 }
 
-                switch(jobstatus.ToUpperInvariant()) {
-                    case "PENDING":
-                    isRunning = false;
-                    isTerminated = false;
-                    ExitCode = 0;
-                    return;
-                    
-                    case "RUNNING":
-                    case "COMPLETING":
-                    isRunning = true;
-                    isTerminated = false;
-                    ExitCode = 0;
-                    break;
+                string JobID = idToken;
 
-                    case "SUSPENDED":
-                    case "STOPPED":
-                    case "PREEMPTED":
-                    case "FAILED":
-                    isTerminated = true;
-                    isRunning = false;
-                    ExitCode = int.MinValue;
-                    return;
+                using (new BlockTrace("SSH_SLURM_CHECK", tr)) {
+                    using (var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
+                        int startindex = output.Result.IndexOf("\n");
+                        int endindex = output.Result.IndexOf("\n", startindex + 1);
+                        string jobstatus;
+                        if (startindex == -1 || endindex == -1) {
+                            jobstatus = "";
+                        } else {
+                            jobstatus = output.Result.Substring(startindex + 1, (endindex - startindex) - 1);
+                        }
 
-                    case "":
-                    case "COMPLETED":
-                    isRunning = true;
-                    isTerminated = false;
-                    ExitCode = -1; // 'exit.txt' does not exist, something is shady here
-                    break;
+                        switch (jobstatus.ToUpperInvariant()) {
+                            case "PENDING":
+                                isRunning = false;
+                                isTerminated = false;
+                                ExitCode = 0;
+                                return;
 
-                    default:
-                    throw new NotImplementedException("Unknown job state: " + jobstatus);
+                            case "RUNNING":
+                            case "COMPLETING":
+                                isRunning = true;
+                                isTerminated = false;
+                                ExitCode = 0;
+                                break;
+
+                            case "SUSPENDED":
+                            case "STOPPED":
+                            case "PREEMPTED":
+                            case "FAILED":
+                                isTerminated = true;
+                                isRunning = false;
+                                ExitCode = int.MinValue;
+                                return;
+
+                            case "":
+                            case "COMPLETED":
+                                isRunning = true;
+                                isTerminated = false;
+                                ExitCode = -1; // 'exit.txt' does not exist, something is shady here
+                                break;
+
+                            default:
+                                throw new NotImplementedException("Unknown job state: " + jobstatus);
+                        }
+                    }
                 }
             }
         }
-
         
 
         /// <summary>
@@ -285,73 +289,86 @@ namespace BoSSS.Application.BoSSSpad
             return fp;
         }
 
+
+        void VerifyDatabases() {
+            foreach(var db in this.AllowedDatabases) {
+                if(db.AlternateDbPaths.Length <= 0) {
+                    throw new IOException("Missing 'AlternatePaths.txt' in database -- required for sshfs-mounted remote databases.");
+                }
+            }
+        }
+
+
+
         /// <summary>
         /// 
         /// </summary>
-        public override string Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob) {
+            using (new FuncTrace()) {
+                VerifyDatabases();
 
-            // load users .bashrc with all dependencies
-            buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" });
 
-            //string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
-            // Converting script to unix format
-            //string convertCmd = " dos2unix " + path + "\\batch.sh";
+                // load users .bashrc with all dependencies
+                buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" });
 
-            // Submitting script to sbatch system
-            string sbatchCmd = "sbatch " + DeploymentDirectoryAtRemote(myJob) + "/batch.sh";
+                //string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
+                // Converting script to unix format
+                //string convertCmd = " dos2unix " + path + "\\batch.sh";
 
-            
-            // Convert from Windows to Unix and submit job
-            Console.WriteLine();
-            String resultString;
-            PlatformID CurrentSys = System.Environment.OSVersion.Platform;
-            switch(CurrentSys){
-                case PlatformID.Unix:
-                    {
-                       Process cmd = new Process();
-                       cmd.StartInfo.FileName = "/bin/bash";
-                       cmd.StartInfo.RedirectStandardInput = true;
-                       cmd.StartInfo.RedirectStandardOutput = true;
-                       cmd.StartInfo.CreateNoWindow = true;
-                       cmd.StartInfo.UseShellExecute = false;
-                       cmd.Start();
-                       cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
-                       cmd.StandardInput.Flush();
-                       cmd.StandardInput.Close();
-                       cmd.WaitForExit();
-                       resultString = cmd.StandardOutput.ReadToEnd(); 
-                       break;
-                    }
-                case PlatformID.Win32S:
-                case PlatformID.Win32Windows:
-                default:
-                    {
-                        var result2 = SSHConnection.RunCommand(sbatchCmd);
-                        resultString = result2.Result;
-                        break;
-                    }
+                // Submitting script to sbatch system
+                string sbatchCmd = "sbatch " + DeploymentDirectoryAtRemote(myJob) + "/batch.sh";
+
+
+                // Convert from Windows to Unix and submit job
+                Console.WriteLine();
+                String resultString;
+                PlatformID CurrentSys = System.Environment.OSVersion.Platform;
+                switch (CurrentSys) {
+                    case PlatformID.Unix: {
+                            Process cmd = new Process();
+                            cmd.StartInfo.FileName = "/bin/bash";
+                            cmd.StartInfo.RedirectStandardInput = true;
+                            cmd.StartInfo.RedirectStandardOutput = true;
+                            cmd.StartInfo.CreateNoWindow = true;
+                            cmd.StartInfo.UseShellExecute = false;
+                            cmd.Start();
+                            cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
+                            cmd.StandardInput.Flush();
+                            cmd.StandardInput.Close();
+                            cmd.WaitForExit();
+                            resultString = cmd.StandardOutput.ReadToEnd();
+                            break;
+                        }
+                    case PlatformID.Win32S:
+                    case PlatformID.Win32Windows:
+                    default: {
+                            var result2 = SSHConnection.RunCommand(sbatchCmd);
+                            resultString = result2.Result;
+                            break;
+                        }
+                }
+
+                //// Otherwise it didn't work because uploading speed at some clusters is too slow
+                //if (result1.Error == "" || result2.Result == "") {
+                //    Console.Write("Waiting for file transfer to finish");
+                //    while (result1.Error == "" || result2.Result == "") {
+                //        Console.Write(".");
+                //        System.Threading.Thread.Sleep(10000);
+                //        result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
+                //        result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
+                //    }
+                //    Console.WriteLine();
+                //}
+
+                // extract JobID
+                String SearchString = "Submitted batch job ";
+                String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
+                    .ToString() // convert to string
+                    .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
+                Console.WriteLine(jobId);
+
+                return (jobId, null);
             }
-
-            //// Otherwise it didn't work because uploading speed at some clusters is too slow
-            //if (result1.Error == "" || result2.Result == "") {
-            //    Console.Write("Waiting for file transfer to finish");
-            //    while (result1.Error == "" || result2.Result == "") {
-            //        Console.Write(".");
-            //        System.Threading.Thread.Sleep(10000);
-            //        result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
-            //        result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
-            //    }
-            //    Console.WriteLine();
-            //}
-
-            // extract JobID
-            String SearchString = "Submitted batch job ";
-            String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
-                .ToString() // convert to string
-                .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
-            Console.WriteLine(jobId);
-
-            return jobId;
         }
 
         /// <summary>

@@ -142,5 +142,18 @@ namespace ilPSP {
 
             return ret;
         }
+
+        /// <summary>
+        /// returns true, if all entries are zero
+        /// </summary>
+        /// <param name="mda"></param>
+        /// <returns></returns>
+        static public bool IsZeroValued(this MultidimensionalArray mda) {
+            bool ret = true;
+            mda.ApplyAll(delegate (double entry) {
+                ret &= entry == 0;
+            });
+            return ret;
+        }
     }
 }

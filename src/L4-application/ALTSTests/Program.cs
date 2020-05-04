@@ -39,7 +39,7 @@ namespace ALTSTests {
     /// - 1 run with A-LTS featuring a change in the cell metric
     /// to trigger the dynamic (re-)clustering.
     /// </summary>
-    class Program : Application {
+    public class Program : Application {
         static void Main(string[] args) {
             Application._Main(args, true, delegate () {
                 Program p = new Program();

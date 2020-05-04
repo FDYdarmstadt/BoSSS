@@ -89,7 +89,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
 
                 if (vectorizer != null) {
                     if (optComp != null && vecComp == null)
-                        throw new ArgumentException("Error in vectorizer impementation.");
+                        throw new ArgumentException("Error in vectorizer implementation.");
                 }
 
                 // check the filter
@@ -134,41 +134,6 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                 else
                     AllComponentsofMyType.Add(vecComp);
 
-                /*
-                IEquationComponentChecking cc = eqComp as IEquationComponentChecking;
-
-                if(eqComp is T && !(cc != null && cc.IgnoreVectorizedImplementation)) {
-
-                    T _VeqComp;
-#if DEBUG
-                    if(vectorizer != null) {
-                        // in DEBUG mode, we always create a vectorizer (if supported)
-                        // because it implements a verification 
-                        _VeqComp = (T)vectorizer(eqComp);
-                        if(_VeqComp == null)
-                            _VeqComp = (T)eqComp;
-                    } else {
-                        _VeqComp = (T) eqComp;
-                    }
-#else
-                    _VeqComp = (T) eqComp;
-#endif
-
-                    if(F == null || F(_VeqComp)) {
-                        AllComponentsofMyType.Add(_VeqComp);
-                    }
-                } else if (vectorizer != null) {
-                    IEquationComponent VeqComp = vectorizer(eqComp);
-
-                    if (VeqComp != null && VeqComp is T) {
-                        T _VeqComp = (T)VeqComp;
-
-                        if (F == null || F(_VeqComp)) {
-                            AllComponentsofMyType.Add(_VeqComp);
-                        }
-                    }
-                }
-                */
             }
 
             m_AllComponentsOfMyType = AllComponentsofMyType.ToArray();

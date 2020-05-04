@@ -110,7 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.IO.Log" />

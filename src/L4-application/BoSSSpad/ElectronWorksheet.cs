@@ -24,14 +24,9 @@ namespace BoSSS.Application.BoSSSpad{
         /// Path to the ElectronWorksheet.dll, ElectronBoSSSpad.exe and affiliated DLLs
         /// </param>
         public ElectronWorksheet(string BoSSSpath) : base(BoSSSpath){
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-
+            
             //Setup Environment
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                Utils.GetBoSSSInstallDir(),
-                out bool mpiInitialized
-            );
+            BoSSS.Solution.Application.InitMPI();
         }
 
         public Tuple<string, string> RunCommand(string command) {
