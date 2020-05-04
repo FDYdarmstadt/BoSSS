@@ -41,7 +41,6 @@
     <Compile Include="SipControl.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipPoissonMain.cs" />
-    <Compile Include="SmoothIpFlux.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">

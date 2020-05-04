@@ -65,7 +65,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        static Vector CenterOf<T>(MeshCell<T> cell)
+        static Vector VertexMean<T>(MeshCell<T> cell)
         {
             Vector centerOfGravity = new Vector(0, 0);
             foreach (Vertex vertex in cell.Vertices)
@@ -74,6 +74,30 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             centerOfGravity.Scale(1.0 / cell.Vertices.Length);
             return centerOfGravity;
+        }
+
+        static Vector CenterOf<T>(MeshCell<T> cell)
+        {
+            Vector centerOfGravity = new Vector(0, 0);
+            Vector root = cell.Vertices[0].Position;
+            double cellArea = 0;
+
+            for (int i = 1; i < cell.Vertices.Length - 1; ++i)
+            {
+                Vector a = cell.Vertices[i].Position;
+                Vector b = cell.Vertices[i + 1].Position;
+                double area = AreaOfTriangle(root, a, b);
+                centerOfGravity += (root + a + b) / 3 * area;
+                cellArea += area;
+            }
+            centerOfGravity.Scale(1.0 / cellArea);
+            return centerOfGravity;
+        }
+
+        static double AreaOfTriangle(Vector a, Vector b, Vector c)
+        {
+            double area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+            return area / 2;
         }
 
         static bool InnerEdgesAlign<T>(Mesh<T> mesh)

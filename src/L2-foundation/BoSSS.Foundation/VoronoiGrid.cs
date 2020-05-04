@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
 
@@ -44,7 +45,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
 
         VoronoiGrid() { }
 
-        public VoronoiGrid(IGrid pGrid,
+        public VoronoiGrid(GridCommons pGrid,
             int[][] logialToGeometricalCellMap,
             VoronoiNodes nodes,
             VoronoiBoundary boundary)
@@ -67,6 +68,15 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             double[] posIn = positions.GetRow(jCell_in);
             double[] velOt = velocities.GetRow(jCell_ot);
             double[] velIn = velocities.GetRow(jCell_in);
+
+            //transform if Edge is periodic
+            if (this.iGridData.iGeomEdges.EdgeTags[jEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG) 
+            {
+                int periodicEdgeTag = this.iGridData.iGeomEdges.EdgeTags[jEdge] - GridCommons.FIRST_PERIODIC_BC_TAG;
+                AffineTrafo PerT = ((GridCommons)ParentGrid).PeriodicTrafo[periodicEdgeTag];
+                posIn = PerT.Transform(posIn);
+            };
+
             double result = VoronoiEdge.NormalVelocity(posOt, velOt, posIn, velIn, x, normal);
             return result;
         }
@@ -93,7 +103,5 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         {
             return EdgeTags[index];
         }
-
-        
     }
 }

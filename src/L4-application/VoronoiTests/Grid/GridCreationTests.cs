@@ -12,7 +12,16 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            OnlyEdgesOnBoundary();
+            Large();
+        }
+
+        [Test]
+        public void Large()
+        {
+            var rectangle = GridShapes.Rectangle(2, 2);
+
+            IGrid grid = VoronoiGrid2D.Polygonal(rectangle, 0, 10000);
+            Plotter.Plot(grid);
         }
 
         [Test]
@@ -27,6 +36,38 @@ namespace VoronoiTests.Grid
             nodes.SetRow(4, new double[] { 0.5, -0.5 });
 
             IGrid grid = VoronoiGrid2D.Polygonal( nodes,rectangle, 10, 0);
+        }
+
+        [Test]
+        public void EquidistandGrid()
+        {
+            var rectangle = GridShapes.Rectangle(2, 2);
+            MultidimensionalArray nodes = MultidimensionalArray.Create(4, 2);
+            nodes.SetRow(0, new double[] { -0.5, 0.5 });
+            nodes.SetRow(1, new double[] { -0.5, -0.5 });
+            nodes.SetRow(2, new double[] { 0.5, 0.5 });
+            nodes.SetRow(3, new double[] { 0.5, -0.5 });
+
+            IGrid grid = VoronoiGrid2D.Polygonal(nodes, rectangle, 0, 0);
+        }
+
+        [Test]
+        public void EquidistandGridLarge()
+        {
+            int nodesPerDimension = 100;
+            var rectangle = GridShapes.Rectangle(2, 2);
+            
+            MultidimensionalArray nodes = MultidimensionalArray.Create(nodesPerDimension * nodesPerDimension, 2);
+            for(int i = 0; i < nodesPerDimension; ++i)
+            {
+                for(int j = 0; j < nodesPerDimension; ++j)
+                {
+                    nodes[i * nodesPerDimension +j, 0] = 2.0/ (nodesPerDimension - 1) * i -1.0 ;
+                    nodes[i * nodesPerDimension +j, 1] = 2.0 / (nodesPerDimension - 1) * j -1.0;
+                }
+            }
+            IGrid grid = VoronoiGrid2D.Polygonal(nodes, rectangle, 0, 0);
+            //Plotter.Plot(grid);
         }
 
         [Test]
@@ -75,18 +116,6 @@ namespace VoronoiTests.Grid
             nodes1.SetRowPt(6, new Vector(-1.5, 0));
             nodes1.SetRowPt(7, new Vector(0, -1.5));
             VoronoiGrid grid1 = VoronoiGrid2D.Polygonal(nodes1, GridShapes.Rectangle(2, 2), 0, 1);
-        }
-
-        static Vector[] Rectangle(double width, double height)
-        {
-            Vector[] polygonBoundary = new Vector[]
-            {
-                new Vector(-width / 2, height / 2),
-                new Vector(width / 2, height / 2),
-                new Vector(width / 2, -height / 2),
-                new Vector(-width / 2, -height / 2)
-            };
-            return polygonBoundary;
         }
     }
 }

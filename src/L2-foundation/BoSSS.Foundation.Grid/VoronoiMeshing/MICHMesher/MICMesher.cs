@@ -12,17 +12,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher
 
         public static IDMesh<T> Create(IList<MICHVertex<T>> startNodes)
         {
-            var mICHMesh = CreateVoronoiMeshFromDLL(startNodes);
-            var delaunayCells = mICHMesh.Vertices;
-            var delaunayEdges = mICHMesh.Edges;
+            MIConvexHull.VoronoiMesh<MICHVertex<T>, MICHDelaunayCell<T>, MIConvexHull.VoronoiEdge<MICHVertex<T>, MICHDelaunayCell<T>>> mICHMesh = CreateDealaunayTriangulation(startNodes);
+            IEnumerable<MICHDelaunayCell<T>> delaunayVertices = mICHMesh.Vertices;
+            IEnumerable<MIConvexHull.VoronoiEdge<MICHVertex<T>, MICHDelaunayCell<T>>> delaunayEdges = mICHMesh.Edges;
 
-            IDMesh<T> mesh = MeshFromCellsAndEdges(delaunayCells, delaunayEdges, startNodes.Count);
+            IDMesh<T> mesh = MeshFromCellsAndEdges(delaunayVertices, delaunayEdges, startNodes.Count);
             return mesh;
         }
 
         static MIConvexHull.VoronoiMesh<MICHVertex<T>, MICHDelaunayCell<T>,
             MIConvexHull.VoronoiEdge<MICHVertex<T>, MICHDelaunayCell<T>>>
-            CreateVoronoiMeshFromDLL(IList<MICHVertex<T>> nodes)
+            CreateDealaunayTriangulation(IList<MICHVertex<T>> nodes)
         {
             var mICHMesh = MIConvexHull.VoronoiMesh.Create<
                     MICHVertex<T>,
@@ -34,12 +34,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher
         }
 
         static IDMesh<T> MeshFromCellsAndEdges(
-            IEnumerable<MICHDelaunayCell<T>> delaCells,
-            IEnumerable<MIConvexHull.VoronoiEdge<MICHVertex<T>, MICHDelaunayCell<T>>> delaEdges,
+            IEnumerable<MICHDelaunayCell<T>> delaunayCells,
+            IEnumerable<MIConvexHull.VoronoiEdge<MICHVertex<T>, MICHDelaunayCell<T>>> delaunayEdges,
             int numberOfVoronois)
         {
             (VariableCell<T>[] vCells, Vertex[] arrVertices) =
-                CreateMeshLists(delaCells, delaEdges, numberOfVoronois);
+                CreateMeshLists(delaunayCells, delaunayEdges, numberOfVoronois);
 
             for (int i = 0; i < vCells.Length; ++i)
             {
@@ -72,7 +72,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher
         }
 
         static (VariableCell<T>[] cells, Vertex[] vertices) CreateMeshLists(
-            IEnumerable<MICHDelaunayCell<T>> delaCells,
+            IEnumerable<MICHDelaunayCell<T>> delaunayCells,
             IEnumerable<MIConvexHull.VoronoiEdge
                 <MICHVertex<T>, MICHDelaunayCell<T>>> edges,
             int numberOfVoronois)
@@ -89,10 +89,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher
                 }
             }
 
-            Vertex[] vertices = new Vertex[delaCells.Count()];
+            Vertex[] vertices = new Vertex[delaunayCells.Count()];
             VariableCell<T>[] cells = new VariableCell<T>[numberOfVoronois];
 
-            foreach (MICHDelaunayCell<T> delaCell in delaCells)
+            foreach (MICHDelaunayCell<T> delaCell in delaunayCells)
             {
                 delaCell.done = true;
                 MICHDelaunayCell<T>[] neighbors = delaCell.Adjacency;
@@ -126,26 +126,29 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher
                     {
                         if (!neighbor.done)
                         {
-                            (int k, int j) = OpposingIndices(i);
-                            //Create Ridges
-                            Edge<T> ridgeOutwards = new Edge<T>
+                            if(delaCell.Circumcenter.ID != neighbor.Circumcenter.ID)
                             {
-                                Start = delaCell.Circumcenter,
-                                End = neighbor.Circumcenter,
-                                Cell = voronoiCells[k]
-                            };
-                            Edge<T> ridgeInwards = new Edge<T>
-                            {
-                                Start = neighbor.Circumcenter,
-                                End = delaCell.Circumcenter,
-                                Cell = voronoiCells[j]
-                            };
-                            ridgeInwards.Twin = ridgeOutwards;
-                            ridgeOutwards.Twin = ridgeInwards;
-                            //add to the two cells
+                                (int k, int j) = OpposingIndices(i);
+                                //Create Ridges
+                                Edge<T> ridgeOutwards = new Edge<T>
+                                {
+                                    Start = delaCell.Circumcenter,
+                                    End = neighbor.Circumcenter,
+                                    Cell = voronoiCells[k]
+                                };
+                                Edge<T> ridgeInwards = new Edge<T>
+                                {
+                                    Start = neighbor.Circumcenter,
+                                    End = delaCell.Circumcenter,
+                                    Cell = voronoiCells[j]
+                                };
+                                ridgeInwards.Twin = ridgeOutwards;
+                                ridgeOutwards.Twin = ridgeInwards;
+                                //add to the two cells
 
-                            voronoiCells[k].Insert(ridgeOutwards);
-                            voronoiCells[j].Insert(ridgeInwards);
+                                voronoiCells[k].Insert(ridgeOutwards);
+                                voronoiCells[j].Insert(ridgeInwards);
+                            }
                         }
                     }
                     else

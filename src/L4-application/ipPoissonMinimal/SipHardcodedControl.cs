@@ -121,7 +121,7 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-        public static SipControl JumpingSquare(int xRes = 3, int yRes = 3, int deg = 2)
+        public static SipControl JumpingSquare(int xRes = 5, int yRes = 5, int deg = 3)
         {
             var R = new SipControl();
             R.ProjectName = "ipPoison/square";
@@ -129,19 +129,19 @@ namespace BoSSS.Application.SipPoisson {
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
-            R.InitialValues_Evaluators.Add("RHS", X => 1.0);
-            R.InitialValues_Evaluators.Add("Tex", X => 1.0);
+            R.InitialValues_Evaluators.Add("RHS", X => 0.0);
+            R.InitialValues_Evaluators.Add("Tex", X => 0.1);
             R.ExactSolution_provided = true;
             R.SuppressExceptionPrompt = true;
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", 
                 X => { 
                     if (X[0] > 0.9999) 
                     {
-                        return 1;
+                        return 0.1;
                     } 
                     else 
                     { 
-                        return 1; 
+                        return 0.1; 
                     }
                 });
             R.NoOfSolverRuns = 1;

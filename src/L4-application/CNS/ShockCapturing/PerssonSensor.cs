@@ -23,6 +23,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -60,27 +61,15 @@ namespace CNS.ShockCapturing {
                 CellMask cellMask = CellMask.GetFullMask(fieldToTest.GridDat);
                 foreach (int cell in cellMask.ItemEnum)
                 {
-                    double numerator = 0.0;
+                    double variance = 0.0;
                     foreach (int coordinate in fieldToTest.Basis.GetPolynomialIndicesForDegree(cell, degree))
                     {
-                        numerator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
+                        variance += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
                     }
+                    double volume = fieldToTest.GridDat.iLogicalCells.GetCellVolume(cell);
 
-                    double denominator = 0.0;
-                    for (int coordinate = 0; coordinate < fieldToTest.Basis.Length; coordinate++)
-                    {
-                        denominator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
-                    }
-
-                    double result;
-                    if (denominator == 0.0)
-                    {
-                        result = 0.0;
-                    }
-                    else
-                    {
-                        result = numerator / denominator;
-                    }
+                    double result = variance / volume;
+                    
                     sensorValues[cell] = result;
                 }
             }

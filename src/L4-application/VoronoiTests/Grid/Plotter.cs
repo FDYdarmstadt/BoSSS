@@ -18,7 +18,7 @@ namespace VoronoiTests.Grid
                 "edges.txt",
                 false,
                 (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => grid.iGridData.iGeomEdges.EdgeTags[GeomItemIndex]);
-            Tecplot plt1 = new Tecplot(grid.iGridData, true, false, 2);
+            Tecplot plt1 = new Tecplot(grid.iGridData, true, false, 0);
             Basis b = new Basis(grid.iGridData, 0);
             SinglePhaseField field = new SinglePhaseField(b, "u");
             plt1.PlotFields("grid", 0, field);
