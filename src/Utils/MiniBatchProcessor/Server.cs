@@ -328,7 +328,7 @@ namespace MiniBatchProcessor {
                     int ReTryCount = 0;
                     while(true) {
                         try {
-                            File.Move(Src, Dst);
+                            File.Copy(Src, Dst);
                             return;
                         } catch(Exception e) {
                             if(ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {

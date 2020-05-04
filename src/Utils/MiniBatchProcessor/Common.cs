@@ -74,7 +74,7 @@ namespace MiniBatchProcessor {
 
 
 
-        private void ReadDir(string RelDir, List<Tuple<JobData, JobStatus>> R, JobStatus s0) {
+        private void ReadDir(string RelDir, Dictionary<int, Tuple<JobData, JobStatus>> R, JobStatus s0) {
             string dir = Path.Combine(config.BatchInstructionDir, RelDir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
@@ -97,32 +97,37 @@ namespace MiniBatchProcessor {
                 if (J == null)
                     continue;
 
+                if(s0 != JobStatus.Queued && R.ContainsKey(J.ID)) {
+                    if(R[J.ID].Item2 == JobStatus.Queued)
+                        R.Remove(J.ID);
+                }
                 
-                R.Add(new Tuple<JobData, JobStatus>(J, s));
+                R.Add(J.ID, new Tuple<JobData, JobStatus>(J, s));
             }
         }
 
         void UpdateLists() {
-            var AllJobsNew = new List<Tuple<JobData, JobStatus>>();
+            var AllJobsNew = new Dictionary<int, Tuple<JobData, JobStatus>>();
             ReadDir(QUEUE_DIR, AllJobsNew, JobStatus.Queued);
             //ReadDir(WORK_DIR, AllJobsNew, JobStatus.Working);
             //ReadDir(FINISHED_DIR, AllJobsNew, JobStatus.Finished);
             ReadDir(WORK_FINISHED_DIR, AllJobsNew, JobStatus.Working);
 
-            for(int i = 0; i < AllJobsNew.Count; i++) {
-                var Ja = AllJobsNew[i];
-                for (int j = i + 1; j < AllJobsNew.Count; j++) {
-                    var Jb = AllJobsNew[j];
+            //foreach (var kv in AllJobsNew.ToArray()) {
+            //    var Ja = AllJobsNew[i];
 
-                    if(Ja.Item1.ID == Jb.Item1.ID) {
-                        Console.WriteLine("Warning: found job ID {0} more than once - ignoring second occurrence (first in list {1}, second in list {2}).", Ja.Item1, Ja.Item2, Jb.Item2);
-                        AllJobsNew.RemoveAt(j);
-                        j--;
-                    }
-                }
-            }
+            //    for (int j = i + 1; j < AllJobsNew.Count; j++) {
+            //        var Jb = AllJobsNew[j];
 
-            m_AllJobs = AllJobsNew;
+            //        if(Ja.Item1.ID == Jb.Item1.ID) {
+            //            Console.WriteLine("Warning: found job ID {0} more than once - ignoring second occurrence (first in list {1}, second in list {2}).", Ja.Item1, Ja.Item2, Jb.Item2);
+            //            AllJobsNew.RemoveAt(j);
+            //            j--;
+            //        }
+            //    }
+            //}
+
+            m_AllJobs = AllJobsNew.Values.ToList();
         }
 
         /// <summary>
