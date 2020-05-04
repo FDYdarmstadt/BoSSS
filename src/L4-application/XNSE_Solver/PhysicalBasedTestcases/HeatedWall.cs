@@ -883,14 +883,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (Water) {
 
+                double mu_scl = 100;
+
                 //physical values for water(A: liquid and B: vapor state)
                 double rho_l = 997; // kg/m3     //9.97e-7;   // kg / mm3
                 C.PhysicalParameters.rho_A = rho_l;
                 double rho_v = 2.31e-2; //kg/m3      //2.31e-11;  // kg / mm3
                 C.PhysicalParameters.rho_B = rho_v;
-                double mu_l = 0.891e-3; // kg/m*sec    //8.91e-7;    // kg / mm*sec
+                double mu_l = mu_scl * 0.891e-3; // kg/m*sec    //8.91e-7;    // kg / mm*sec
                 C.PhysicalParameters.mu_A = mu_l;
-                double mu_v = 0.987e-5; //kg/m*sec      //9.87e-9;    // kg / mm*sec
+                double mu_v = mu_scl * 0.987e-5; //kg/m*sec      //9.87e-9;    // kg / mm*sec
                 C.PhysicalParameters.mu_B = mu_v;
                 double sigma = 71.97e-3; //N/m    //7.178;     // kg / sec^2
                 C.PhysicalParameters.Sigma = sigma;
@@ -992,7 +994,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double R = 15e-3;
+            double R = 60e-3;
             double H = 2 * R;
 
             if (startUp_Interface || startUp_Heat) {
@@ -1007,7 +1009,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         grd.EdgeTagNames.Add(3, "pressure_Dirichlet_ConstantTemperature_left");
                     } else {
                         grd.EdgeTagNames.Add(1, "wall_ZeroGradient_lower");
-                        grd.EdgeTagNames.Add(3, "slipsymmetry_ConstantTemperature_left");
+                        grd.EdgeTagNames.Add(3, "freeslip_ConstantTemperature_left");
                     }
 
                     grd.EdgeTagNames.Add(2, "pressure_Dirichlet_ZeroGradient_upper");
@@ -1037,11 +1039,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
             C.RefineNavierSlipBoundary = !startUp_Interface;
-            C.BaseRefinementLevel = 3;
-            C.RefinementLevel = 3;
-            C.AMR_startUpSweeps = 3;
+            C.BaseRefinementLevel = 4;
+            C.RefinementLevel = 4;
+            C.AMR_startUpSweeps = 4;
+            //C.ReInitPeriod = 10;
 
             double hmin = (R / Math.Pow(2.0, C.RefinementLevel + 1));
             double tscale_grid = 2e-6;
@@ -1102,8 +1105,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     C.AddBoundaryValue("pressure_Dirichlet_ConstantTemperature_left", "Pressure#B", (X, t) => C.ThermalParameters.p_sat);
                 } else {
                     C.AddBoundaryValue("wall_ZeroGradient_lower");
-                    C.AddBoundaryValue("slipsymmetry_ConstantTemperature_left", "Temperature#A", (X, t) => Tsat);
-                    C.AddBoundaryValue("slipsymmetry_ConstantTemperature_left", "Temperature#B", (X, t) => Tsat);
+                    C.AddBoundaryValue("freeslip_ConstantTemperature_left", "Temperature#A", (X, t) => Tsat);
+                    C.AddBoundaryValue("freeslip_ConstantTemperature_left", "Temperature#B", (X, t) => Tsat);
                 }
 
                 C.AddBoundaryValue("pressure_Dirichlet_ZeroGradient_upper", "Pressure#B", (X, t) => C.ThermalParameters.p_sat);
@@ -1165,9 +1168,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
             //C.PhysicalParameters.sliplength = hmin;
 
-            C.PhysicalParameters.betaS_A = C.PhysicalParameters.mu_A / hmin;
-            C.PhysicalParameters.betaS_B = C.PhysicalParameters.mu_B / (hmin / 100.0);
-            C.PhysicalParameters.betaL = 0.01;
+            C.PhysicalParameters.betaS_A = C.PhysicalParameters.mu_A / (hmin / 10.0);
+            C.PhysicalParameters.betaS_B = C.PhysicalParameters.mu_B / (hmin / 1000.0);
+            //C.PhysicalParameters.betaL = 0.01;
 
 
             #endregion
@@ -1177,7 +1180,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -1237,8 +1240,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.dtMax = 5e-5;
-            C.dtMin = 5e-5;
+            C.dtMax = 5e-4;
+            C.dtMin = 5e-4;
             C.Endtime = 10.0;
             C.NoOfTimesteps = 100000;
             C.saveperiod = 10;

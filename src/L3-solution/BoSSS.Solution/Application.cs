@@ -1947,7 +1947,7 @@ namespace BoSSS.Solution {
                 }
                 { 
 
-                    if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
+                    if (this.Control != null && this.Control.AdaptiveMeshRefinement && this.Control.RestartInfo == null) {
                         ResetInitial();
                         if (this.Control.ImmediatePlotPeriod > 0)
                             PlotCurrentState(physTime, i0, this.Control.SuperSampling);

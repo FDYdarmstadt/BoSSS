@@ -164,6 +164,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 OldResidual = Residual;
             }
             slv.Dispose();
+            if (Control.PrintIterations) Console.WriteLine("ReInit done");
             return new Tuple<int, double> (IterationCounter,Residual);
         }
 

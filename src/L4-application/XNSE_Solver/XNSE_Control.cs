@@ -528,14 +528,14 @@ namespace BoSSS.Application.XNSE_Solver {
         ///// <summary>
         ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         ///// </summary>
-        //[DataMember]
-        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+        [DataMember]
+        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
         /// <summary>
         /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
         /// </summary>
-        //[DataMember]
-        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
+        [DataMember]
+        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
 
 
         /// <summary>

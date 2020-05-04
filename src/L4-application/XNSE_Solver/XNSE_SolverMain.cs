@@ -90,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //DeleteOldPlotFiles();
             ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
             ////Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
-            //Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
+            //Tests.UnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric);
             //Tests.UnitTest.TestFixtureTearDown();
             //return;
 
@@ -391,14 +391,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
                             DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            mode = this.Control.VelocityBlockPrecondMode, // MultigridOperator.Mode.SymPart_DiagBlockEquilib,
                             VarIndex = new int[] { d }
                         };
                     }
-                    // configuration for pressure
-                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
+                // configuration for pressure
+                configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
+                    DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                    mode = this.Control.PressureBlockPrecondMode, // MultigridOperator.Mode.IdMass,
                         VarIndex = new int[] { D }
                     };                
 
@@ -525,8 +525,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
                     ReInitPDE = new EllipticReInit(this.LsTrk, this.Control.ReInitControl, DGLevSet.Current);
                     FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
-                    ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient, new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
-                    Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current, new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
+                    ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient,
+                        new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
+                        Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current,
+                        new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
                 }
 
             }
@@ -1392,22 +1394,27 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     if (this.Control.fullReInit) {
                         // 1. elliptic ReInit on cut-cells
+                        //Console.WriteLine("elliptic reinit on cut-cells");
                         ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
+                        //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 10 }), 2); 
                         // 2. fast marching on non cut cells
+                        //Console.WriteLine("fast march on non cut-cells");
                         if (this.Control.AdaptiveMeshRefinement) {
                             // in case of AMR fast marching on each refinement level separately 
                             List<CellMask> fastMarchMasks = new List<CellMask>();
                             var cDat = ((GridData)this.GridData).Cells;
                             int nC = cDat.Count;
                             BitArray[] fmBitA = new BitArray[this.Control.RefinementLevel + 1];
-                            for (int rl = 0; rl < this.Control.RefinementLevel + 1; rl++) {
+                            int[] cntCells = new int[this.Control.RefinementLevel + 1];
+                            for (int rl = 0; rl <= this.Control.RefinementLevel; rl++) {
                                 fmBitA[rl] = new BitArray(nC);
                             }
-                            for (int cId = 0; cId < nC; nC++) {
+                            for (int cId = 0; cId < nC; cId++) {
                                 int refinelvl = cDat.GetCell(cId).RefinementLevel;
                                 fmBitA[refinelvl][cId] = true;
+                                cntCells[refinelvl] = cntCells[refinelvl] + 1;
                             }
-                            for (int rl = 0; rl < this.Control.RefinementLevel + 1; rl++) {
+                            for (int rl = 0; rl <= this.Control.RefinementLevel; rl++) {
                                 CellMask cm = new CellMask(this.GridData, fmBitA[rl]);
                                 if (!cm.IsEmpty)
                                     fastMarchMasks.Add(cm);
@@ -1416,7 +1423,11 @@ namespace BoSSS.Application.XNSE_Solver {
                             CellMask Accepeted = this.LsTrk.Regions.GetCutCellMask();
                             CellMask neg = LsTrk.Regions.GetSpeciesMask("A");
                             foreach (var cm in fastMarchMasks) {
-                                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepeted, neg, cm);
+                                //Console.WriteLine("fast march on refinement level");
+                                try {
+                                    FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepeted, neg, cm);
+                                    //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 11 }), 2);
+                                } catch { }                    
                                 Accepeted = Accepeted.Union(cm);
                             }
                         } else {
@@ -1426,9 +1437,11 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                     }
                     // 3. elliptic ReInit on whole domain
+                    //Console.WriteLine("elliptic reinit on whole domain");
                     ReInitPDE.ReInitialize();
+                    //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 12 }), 2);
 
-
+                    //Console.WriteLine("finish time step");
                     ExtVelMover.FinishTimeStep();
                 }
 
@@ -1523,30 +1536,36 @@ namespace BoSSS.Application.XNSE_Solver {
             base.LoadRestart(out Time, out TimestepNo);
 
             //this.InitLevelSet();
-            if(this.Control.ReInitPeriod > 0) {
-                Console.WriteLine("FastMarchReInit performing FirstOrderReInit");
-                FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
-                CellMask Accepted = LsTrk.Regions.GetCutCellMask();
-                CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
-                CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-            }
+            //if(this.Control.ReInitPeriod > 0) {
+            //    Console.WriteLine("FastMarchReInit performing FirstOrderReInit");
+            //    FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
+            //    CellMask Accepted = LsTrk.Regions.GetCutCellMask();
+            //    CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
+            //    CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+            //    FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
+            //}
 
-            ContinuityEnforcer = new ContinuityProjection(
-                    ContBasis: this.LevSet.Basis,
-                    DGBasis: this.DGLevSet.Current.Basis,
-                    gridData: GridData,
-                    Option: Control.LSContiProjectionMethod
-                    );
-
-            if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
-                ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient, new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
-                    Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current, new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
-            }
 
             //this.LsTrk.UpdateTracker();
 
             this.CreateEquationsAndSolvers(null);
+
+
+            ContinuityEnforcer = new ContinuityProjection(
+                ContBasis: this.LevSet.Basis,
+                DGBasis: this.DGLevSet.Current.Basis,
+                gridData: GridData,
+                Option: Control.LSContiProjectionMethod);
+
+            if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
+                ReInitPDE = new EllipticReInit(this.LsTrk, this.Control.ReInitControl, DGLevSet.Current);
+                FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
+                ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient,
+                    new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
+                    Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current,
+                    new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
+            }
+
 
             // =========================================
             // XDG BDF Timestepper initialization
@@ -1719,6 +1738,8 @@ namespace BoSSS.Application.XNSE_Solver {
             CellMask nearBnd = near.AllNeighbourCells();
             CellMask buffer = nearBnd.AllNeighbourCells().Union(nearBnd).Except(near);
 
+            CellMask neg = this.LsTrk.Regions.GetSpeciesMask("A");
+            CellMask pos = this.LsTrk.Regions.GetSpeciesMask("B");
 
             int DesiredLevel_j = CurrentLevel;
 
@@ -1775,8 +1796,19 @@ namespace BoSSS.Application.XNSE_Solver {
                     DesiredLevel_j++;
 
             } else {
-                DesiredLevel_j = 0;
+                //if (!pos.Contains(j)) 
+                    DesiredLevel_j = 0;
             }
+
+            //if (neg.Contains(j) && CurrentLevel < this.Control.RefinementLevel)
+            //    DesiredLevel_j = CurrentLevel + 1;
+
+            //CellMask pos = this.LsTrk.Regions.GetSpeciesMask("B");
+            //if ((pos.Contains(j))) {
+            //    if (GradVelNorm.GetMeanValue(j) > 1000 && CurrentLevel < this.Control.RefinementLevel)
+            //        DesiredLevel_j = CurrentLevel + 1;
+            //}
+
 
             return DesiredLevel_j;
 
@@ -1875,11 +1907,12 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         //CellMask refinedInterfaceCells;
+        SinglePhaseField GradVelNorm;
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             using(new FuncTrace()) {
 
-                if(this.Control.AdaptiveMeshRefinement) {
+                if (this.Control.AdaptiveMeshRefinement) {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 0), 2);
 
@@ -1887,7 +1920,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // ==================
 
                     CellMask BlockedCells;
-                    if(this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Once
+                    if (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Once
                         || this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                         int prevInd = LsTrk.PopulatedHistoryLength;
                         CellMask prevNear = LsTrk.RegionsHistory[-prevInd + 1].GetNearFieldMask(1);
@@ -1898,7 +1931,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
                     // compute curvature for levelindicator 
-                    if(this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.CurvatureRefined) {
+                    if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.CurvatureRefined) {
                         CurvatureAlgorithms.CurvatureDriver(
                             SurfaceStressTensor_IsotropicMode.Curvature_Projected,
                             CurvatureAlgorithms.FilterConfiguration.NoFilter,
@@ -1906,6 +1939,24 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.m_HMForder, this.DGLevSet.Current);
                     }
 
+                    // compute gradient norm for levelindicator 
+                    if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.CurvatureRefined) {
+                        GradVelNorm = new SinglePhaseField(this.XDGvelocity.Velocity[0].Basis.NonX_Basis);
+                        int D = this.GridData.SpatialDimension;
+                        for (int d = 0; d < D; d++) {
+                            DGField f_Spc = this.XDGvelocity.Velocity[d].GetSpeciesShadowField("B");
+                            //SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid("B");
+                            for (int d2 = 0; d2 < D; d2++) {
+                                SinglePhaseField grad = new SinglePhaseField(this.XDGvelocity.Velocity[0].Basis.NonX_Basis);
+                                grad.Derivative(1.0, f_Spc, d);
+                                SinglePhaseField gradNorm = new SinglePhaseField(this.XDGvelocity.Velocity[0].Basis.NonX_Basis);
+                                gradNorm.ProjectPow(1.0, grad, 2);
+                                GradVelNorm.Acc(1.0, gradNorm);
+                            }
+                        }
+                        GradVelNorm.Scale(1.0 / (D * D));
+                    }
+                    //Tecplot.PlotFields(new DGField[] { GradVelNorm }, "GradVelNorm" + hack_TimestepIndex, hack_Phystime, 2);
 
                     // navier slip boundary cells
                     NScm = new CellMask(this.GridData);
@@ -2154,7 +2205,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-            if(!this.Control.switchOffPlotting)
+            if (!this.Control.switchOffPlotting)
                 Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
             //Tecplot.PlotFields(new DGField[] { this.LevSet }, "grid" + timestepNo, physTime, 0);
         }

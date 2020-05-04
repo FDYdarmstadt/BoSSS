@@ -5,11 +5,12 @@ restart
   _______________________
 
 Databases loaded:
-List of 4 instances of IDatabaseInfo {
+List of 5 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 342; Grid Count = 6519; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  3: { Session Count = 354; Grid Count = 8681; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 103; Grid Count = 7; Path = D:\local\local_XNSE_StudyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -19,21 +20,30 @@ using BoSSS.Application.XNSE_Solver;
 **************
 ==============
 //var myDb = OpenOrCreateDefaultDatabase();
-var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
 **************
 ==============
-ExecutionQueues;
-**************
-List of 1 instances of BatchProcessorClient {
-  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+bool local = true;
+IDatabaseInfo myDb;
+BatchProcessorClient myBatch;
+if(!local){
+    myDb    = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB");
+    myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+}else{ 
+    myDb    = OpenOrCreateDatabase(@"D:\local\local_XNSE_StudyDB");
+    myBatch = new MiniBatchProcessorClient(@"D:\local\binaries");
+    MiniBatchProcessor.Server.StartIfNotRunning(false);
 }
-==============
-ExecutionQueues[0].AllowedDatabases;
 **************
-List of 0 instances of IDatabaseInfo {
-}
+Starting mini batch processor in background thread...
+
 ==============
-var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+//ExecutionQueues;
+**************
+==============
+//ExecutionQueues[0].AllowedDatabases;
+**************
+==============
+//databases.Pick(4).Sessions.Take(2).DeleteAll()
 **************
 ==============
 **************
@@ -54,7 +64,8 @@ bool hysing = false;
 ==============
 // Testcase setup
 // ==============
-bool elliptic = true;
+bool elliptic  = true;
+bool quadratic = true;
 
 double radius      = 0.2;  
 double ellipsDelta = 0.1; 
@@ -86,8 +97,10 @@ double beta   = 10;
 ==============
 var GridSeq = new IGridInfo[6];
 int[] kelemSeq = new int[]{4, 8, 16, 32, 64, 128, 256};
+int[] NoProc;
 if(kummer) {
-    kelemSeq = new int[]{9, 18, 36, 72, 144, 288};
+    kelemSeq = new int[]{9, 18, 36, 72, 144, 288, 576};
+    NoProc   = new int[]{1, 1, 1, 2, 3, 3 };
 }
 if(hysing) {
     kelemSeq = new int[]{20, 40, 80, 160};
@@ -226,7 +239,7 @@ An equivalent grid is already present in the database -- the grid will not be sa
 using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 **************
 ==============
-int[] degS = new int[] { 3, 4 };
+int[] degS = new int[] { 2, 3, 4 };
 **************
 ==============
 int iDeg0 = 0;
@@ -235,6 +248,7 @@ int iGrd0 = 0;
 ==============
 //XNSE_Control[,] controls = new XNSE_Control[degS.Length - iDeg0, GridSeq.Length - iGrd0];
 List<XNSE_Control> controls = new List<XNSE_Control>();
+List<int> procPerCntrl = new List<int>();
 **************
 ==============
 for(int iDeg = iDeg0; iDeg < degS.Length; iDeg++) {
@@ -243,15 +257,16 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
     var C                   = Droplet.Droplet_forWorksheet(!hysing);
     C.LogValues             = XNSE_Control.LoggingValues.None;
     C.TimesteppingMode      = (hysing) ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;
-    //C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+    C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
     
-    C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
+    C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
     
     int pDeg = degS[iDeg];   
     var grd  = GridSeq[iGrd];
+    procPerCntrl.Add(NoProc[iGrd]);
 
-    C.SetDGdegree(pDeg);
-    //C.SetFieldOptions(pDeg,2);
+    //C.SetDGdegree(pDeg);
+    C.SetFieldOptions(pDeg,2);
     
     C.SetGrid(grd);
     
@@ -263,8 +278,8 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
         C.PhysicalParameters.Sigma             = 0.1;
         C.PhysicalParameters.IncludeConvection = false;
         
-        //C.LinearSolver.SolverCode           = LinearSolverCode.classic_pardiso;
-        C.LinearSolver.ConvergenceCriterion = 1e-12;
+        C.LinearSolver.SolverCode           = LinearSolverCode.classic_pardiso;
+        C.LinearSolver.ConvergenceCriterion = 1e-10;
         
     } else if(hysing) {
         C.PhysicalParameters.rho_A             = 1.0e4;
@@ -281,7 +296,10 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
         C.PhysicalParameters                   = BoSSS.Solution.XNSECommon.PhysicalParameters.AllOne;
         C.PhysicalParameters.IncludeConvection = true;
     }
-    C.PhysicalParameters.Material          = true;
+    C.PhysicalParameters.Material = true;
+    
+    C.VelocityBlockPrecondMode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+    C.PressureBlockPrecondMode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass;
     
     if(!onWall) {
         C.AddBoundaryValue("wall");
@@ -289,7 +307,11 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
         if(elliptic){
             string a_str = a.ToString();
             string b_str = b.ToString();
-            C.AddInitialValue("Phi", "X => ((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2()) - 1.0", false);  
+            if(quadratic) {
+                C.AddInitialValue("Phi", "X => ((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2()) - 1.0", false);
+            } else { 
+                C.AddInitialValue("Phi", "X => Math.Sqrt(((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2())) - 1.0", false);   
+            }
         } else {
             string r_str = radius.ToString();
             C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt() - "+r_str, false);
@@ -297,7 +319,7 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
         
         C.SessionName = "StaticDroplet_ConvStudyPhi8HMF_k" + pDeg + "_mesh" + iGrd;
         if(kummer) {
-            C.SessionName = "StaticDroplet_ConvStudy5Kummer2_k" + pDeg + "_mesh" + iGrd;
+            C.SessionName = "StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k" + pDeg + "_mesh" + iGrd;
         }
         if(hysing) {
             C.SessionName = "StaticDroplet_ConvStudyHysing_k" + pDeg + "_mesh" + iGrd;
@@ -322,7 +344,7 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
     
     //C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
     if(kummer) {
-        //C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+        C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
     }
     if(hysing) {
         C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
@@ -339,34 +361,40 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
 }
 }
 **************
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
 
 ==============
 controls.Count;
 **************
-12
+18
 ==============
 //Info(controls[0,0]);
 //controls[0,0].SessionName
 controls.ElementAt(0).SessionName
 **************
-StaticDroplet_ConvStudy5Kummer2_k3_mesh0
+StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh0
 ==============
 LastError
 **************
 ==============
-//var j00 = controls[0,0].GetJob();
+//var j00 = controls.ElementAt(0).GetJob();
 **************
 ==============
 //j00.Activate(myBatch);
@@ -385,125 +413,163 @@ using System.Threading;
 **************
 ==============
 bool sequential = false;
+int j           = 0;
 foreach(var cntrl in controls) {
     Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
     var job              = cntrl.GetJob();
-    //job.NumberOfMPIProcs = 4;
+    job.NumberOfMPIProcs = procPerCntrl.ElementAt(j);
     job.Activate(myBatch);
     if(sequential) {
-        while(job.Status == JobStatus.Failed || job.Status == JobStatus.FinishedSuccessful) {
+        while(job.Status != JobStatus.Failed && job.Status != JobStatus.FinishedSuccessful) {
             Thread.Sleep(30000);
         }
     }
+    j++;
 }
 **************
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k3_mesh0
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh0
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_140523
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190755
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k3_mesh1
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh1
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_140645
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190756
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k3_mesh2
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh2
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_140811
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190757
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k3_mesh3
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh3
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_140942
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190758
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k3_mesh4
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh4
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141038
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190759
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k3_mesh5
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh5
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141132
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190800
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k4_mesh0
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh0
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141239
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190801
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k4_mesh1
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh1
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141317
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190802
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k4_mesh2
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh2
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141322
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190804
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k4_mesh3
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh3
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141326
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190805
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k4_mesh4
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh4
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141331
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190806
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
-Submitting Sessions: StaticDroplet_ConvStudy5Kummer2_k4_mesh5
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh5
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Apr23_141335
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190808
 copied 32 files.
    writing file: control.obj
-   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh0
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190809
+copied 32 files.
+   writing file: control.obj
+deployment finished.
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh1
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190810
+copied 32 files.
+   writing file: control.obj
+deployment finished.
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh2
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190811
+copied 32 files.
+   writing file: control.obj
+deployment finished.
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh3
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190813
+copied 32 files.
+   writing file: control.obj
+deployment finished.
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh4
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190814
+copied 32 files.
+   writing file: control.obj
+deployment finished.
+Submitting Sessions: StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh5
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\StaticDroplet-XNSE_Solver2020May02_190815
+copied 32 files.
+   writing file: control.obj
 deployment finished.
 
 ==============
@@ -541,6 +607,42 @@ Incomplete statement - missing closing parentheses?.
 **************
 ==============
 //databases.Pick(3).Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

@@ -5,11 +5,12 @@ restart
   _______________________
 
 Databases loaded:
-List of 4 instances of IDatabaseInfo {
+List of 5 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 79; Grid Count = 774; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 342; Grid Count = 6489; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 354; Grid Count = 8681; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 121; Grid Count = 7; Path = D:\local\local_XNSE_StudyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -28,7 +29,7 @@ Project name is set to 'StaticDroplet'.
 //WorkflowMgm.Sessions;
 **************
 ==============
-string studyName = "StaticDroplet_ConvStudy5Kummer_k";
+string studyName = "StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k";
 //string studyName = "ConvStudy";
 string[] FieldsToCompare = new string[] {"VelocityX", "VelocityY", "Pressure"};
 int numFields = FieldsToCompare.Length;
@@ -46,31 +47,37 @@ foreach(var sess in WorkflowMgm.Sessions) {
 }
 studySessNT
 **************
-List of 1 instances of ISessionInfo {
-  0: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh5*	04/23/2020 11:22:24	2937e77d...
+List of 4 instances of ISessionInfo {
+  0: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh2*	05/02/2020 19:28:51	5fca7f7e...
+  1: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh5*	05/02/2020 19:19:07	b6ec987f...
+  2: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh4*	05/02/2020 19:17:57	5e4800a0...
+  3: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh5*	05/02/2020 19:14:56	49fe851e...
 }
 ==============
 studySess
 **************
-List of 11 instances of ISessionInfo {
-  0: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh5	04/23/2020 11:21:49	83de4d93...
-  1: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh4	04/23/2020 11:23:08	67b828de...
-  2: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh4	04/23/2020 11:22:37	3a752f11...
-  3: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh3	04/23/2020 11:22:14	254c0d64...
-  4: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh2	04/23/2020 11:23:00	1b9887f5...
-  5: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh3	04/23/2020 11:21:36	c34213a7...
-  6: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh1	04/23/2020 11:22:02	92975442...
-  7: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k4_mesh0	04/23/2020 11:21:58	092ec097...
-  8: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh2	04/23/2020 11:21:29	df930812...
-  9: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh1	04/23/2020 11:21:24	39656022...
-  10: StaticDroplet	StaticDroplet_ConvStudy5Kummer_k3_mesh0	04/23/2020 11:21:20	1b2b2395...
+List of 14 instances of ISessionInfo {
+  0: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh3	05/02/2020 19:16:57	69d04a07...
+  1: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh1	05/02/2020 19:15:26	c2a72dfa...
+  2: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k4_mesh0	05/02/2020 19:14:56	4c1e097e...
+  3: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh4	05/02/2020 19:13:26	0fcf7c08...
+  4: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh3	05/02/2020 19:12:46	5b1db949...
+  5: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh5	05/02/2020 19:09:44	cf996fdc...
+  6: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh2	05/02/2020 19:10:44	8c59390b...
+  7: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh1	05/02/2020 19:10:13	72b99275...
+  8: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k3_mesh0	05/02/2020 19:09:44	3e240da2...
+  9: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh4	05/02/2020 19:08:53	20b20406...
+  10: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh3	05/02/2020 19:08:23	64f8042a...
+  11: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh2	05/02/2020 19:08:03	18d770a5...
+  12: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh1	05/02/2020 19:08:03	f0098164...
+  13: StaticDroplet	StaticDroplet_ConvStudyKummer_noDropIndef_pIdMass_curv_k2_mesh0	05/02/2020 19:08:03	880926ff...
 }
 ==============
 var ConvPlts = new List<Plot2Ddata>[numFields];
 for(int i = 0; i < numFields; i++) {
     ConvPlts[i] = new List<Plot2Ddata>();
 }
-int[] pOrder = new int[] { 3, 4 };
+int[] pOrder = new int[] { 2, 3 };
 **************
 ==============
 foreach(int p in pOrder) {
@@ -83,7 +90,7 @@ foreach(int p in pOrder) {
     Dictionary<string, double[]> L2Errors;
     Guid[] timestepIds;
     
-    DGFieldComparison.ComputeErrors(FieldsToCompare, timesteps, out GridRes, out __DOFs,out L2Errors, out timestepIds);
+    DGFieldComparison.ComputeErrors(FieldsToCompare, timesteps, out GridRes, out __DOFs, out L2Errors, out timestepIds);
     
     int fI = 0;
     foreach(var fName in FieldsToCompare) {
@@ -94,6 +101,13 @@ foreach(int p in pOrder) {
     }
 }
 **************
+Warning: field marked as cut-cell but not sufficient data to load
+Warning: field marked as cut-cell but not sufficient data to load
+Warning: field marked as cut-cell but not sufficient data to load
+Warning: field marked as cut-cell but not sufficient data to load
+Warning: field marked as cut-cell but not sufficient data to load
+Warning: field marked as cut-cell but not sufficient data to load
+
 ==============
 LastError
 **************
@@ -132,16 +146,14 @@ int FldId = 2;
 fConvDat[FldId].Regression();
 **************
 List of 2 instances of KeyValuePair{String,Double} {
-  0: [$k = 3$, 2.67892610886952]
-  1: [$k = 4$, 2.67102010794659]
+  0: [$k = 2$, 0.657557704136063]
+  1: [$k = 3$, 0.0567170186823381]
 }
 ==============
-var fcDat = fConvDat[FldId].ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
-fcDat.SaveTo(@"D:\BoSSS-experimental\public\examples\XNSE_Solver\ConvergencePlots\StaticDroplet_ConvStudy4Kummer.tex");
+//var fcDat = fConvDat[FldId].ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+//fcDat.SaveTo(@"D:\BoSSS-experimental\public\examples\XNSE_Solver\ConvergencePlots\StaticDroplet_ConvStudy4Kummer.tex");
 fConvDat[FldId].PlotNow();
 **************
-Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key font ",16"Left reverse 
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",16"Left reverse 
 System.Drawing.Bitmap
@@ -164,10 +176,48 @@ foreach (var p2d in ConvPlts[FldId]) {
 slopes[1]
 **************
 List of 3 instances of Double {
-  0: 2.62994108141793
-  1: 2.36554959344416
-  2: 3.11939315381184
+  0: 0.174015335110065
+  1: 0.0118937331537318
+  2: -0.000816917040578229
 }
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

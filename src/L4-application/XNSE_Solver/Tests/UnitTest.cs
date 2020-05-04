@@ -128,15 +128,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
             ) {
 
-            double AgglomerationTreshold = 0.4;
+            double AgglomerationTreshold = 0.1;
 
             var Tst = new StaticDropletTest();
             var LaLa = new List<XNSE_Control>();
-            foreach (var Res in new[] { 4, 8, 12, 16 }) { 
+            foreach (var Res in new[] { 2, 4, 8, 16 }) { 
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res, 
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine);
                 C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
                 C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                //C.VelocityBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+                //C.PressureBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.Eye;
                 LaLa.Add(C);
             }
 
@@ -383,7 +385,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // DG degree
             // =========
 
-            C.SetFieldOptions(FlowSolverDegree, tst.LevelsetPolynomialDegree);
+            //C.SetFieldOptions(FlowSolverDegree, tst.LevelsetPolynomialDegree);
+            C.SetDGdegree(FlowSolverDegree);
 
             // grid
             // ====

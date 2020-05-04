@@ -34,10 +34,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Func<double[], double, double> GetPhi() {
-            if (elliptic)
-                return ((_3D)((time, x, y) => (x * x)/(0.816 * 0.816) + (y * y)/(0.784 * 0.784) - 1.0)).Convert_txy2Xt();
+            if (quadratic)
+                return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
             else
-                return ((_3D)((time, x, y) => x + y)).Convert_txy2Xt();
+                return ((_3D)((time, x, y) => Math.Sqrt((x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784)) - 1.0)).Convert_txy2Xt();
         }
 
         public int LevelsetPolynomialDegree {
@@ -109,6 +109,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        double rho_scl = 1.0;
+        double mu_scl = 1.0;
 
         /// <summary>
         /// the density has no effect in this test (steady-state, no convection terms => density does not appear in the eq.
@@ -116,7 +118,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         public double rho_A {
             get {
-                return 1.0;
+                return rho_scl * 1.0;
             }
         }
 
@@ -126,7 +128,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         public double rho_B {
             get {
-                return 1.0;
+                return rho_scl * 1.0;
             }
         }
 
@@ -135,7 +137,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         public double mu_A {
             get {
-                return 0.5;
+                return mu_scl * 0.5;
             }
         }
 
@@ -144,7 +146,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         public double mu_B {
             get {
-                return 0.05;
+                return mu_scl * 0.05;
             }
         }
 
@@ -166,7 +168,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
         
-        public bool elliptic {
+        public bool quadratic {
             get {
                 return true;
             }

@@ -55,7 +55,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\dc1\userspace\yotov\bosss-db\RisingBubble"";
 
 
@@ -175,6 +175,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //int kelem = 160;
 
+            /*
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, ySize, 2 * kelem + 1);
@@ -229,7 +230,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 return grd;
             };
-
+            */
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "VierProcSplit";
 
@@ -245,22 +246,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double radius = 0.25;
 
             //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
-            Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
+            //Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
 
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             Func<double, double> PeriodicFunc = x => radius;
 
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
+            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
+            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
 
-            C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
-            C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
+            //C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
+            //C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
 
 
-            //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid("58745416-3320-4e0c-a5fa-fc3a2c5203c7");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            var database = new DatabaseInfo(_DbPath);
+            Guid restartID = new Guid("322f07e1-2ac3-4ed4-af8b-1c46ab7e55a0");
+            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 986);
+            //C.ReInitControl.PrintIterations = true; 
 
             #endregion
 
@@ -335,7 +337,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMin = dt/2.0;
             C.Endtime = 3;
             C.NoOfTimesteps = 10000; // (int)(3 / dt);
-            C.saveperiod = 10;
+            C.saveperiod = 1;
 
             #endregion
 

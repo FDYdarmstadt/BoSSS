@@ -291,7 +291,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                             //Build FastMarching Solver
-                            //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
+                            FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
                             // PDE Solver
                             ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
 
@@ -732,8 +732,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
 
                             } else {
-                                Accepted = LsTrk.Regions.GetCutCellMask(); // .GetNearFieldMask(1);
-                                //Accepted = LsTrk.Regions.GetNearFieldMask(1);
+                                Accepted = LsTrk.Regions.GetCutCellMask(); 
                                 ActiveField = Accepted.Complement();
                                 NegativeField = LsTrk.Regions.GetSpeciesMask("A");
                                 //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
@@ -801,7 +800,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
                     CellMask Nearband = Near1.Union(CC);
                     this.DGLevSet.Current.Clear(Nearband);
-                    this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet, Nearband);
+                    this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet, Nearband); 
                     //ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
                 }
 
