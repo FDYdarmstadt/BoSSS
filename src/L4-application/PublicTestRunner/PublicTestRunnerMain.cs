@@ -112,6 +112,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(CNS.Program),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
@@ -132,7 +133,8 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
-                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }

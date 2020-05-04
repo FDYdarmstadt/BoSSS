@@ -113,7 +113,7 @@ namespace ilPSP {
                     B_sblk_i0 = B.GetSubblk_i0(CurrentBlockType);
                     B_sblkLen = B.GetSubblkLen(CurrentBlockType);
                     B_i0 = B.GetBlockI0(iBlock);
-                    BLen = B.GetBlockLen(BLen);
+                    BLen = B.GetBlockLen(iBlock);
                     if (SblkMarker == null || SblkMarker.Length < BLen)
                         SblkMarker = new bool[BLen];
                     else

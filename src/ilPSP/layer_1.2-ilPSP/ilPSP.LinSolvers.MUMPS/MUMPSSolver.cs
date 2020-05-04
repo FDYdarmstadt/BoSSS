@@ -87,8 +87,10 @@ namespace ilPSP.LinSolvers.MUMPS {
             //} else {
             //    this.m_MPI_Comm = csMPI.Raw._COMM.SELF;
             //}
-            
+            SingletonMumps.SetParallelism(this.SolverVersion.ToString());
         }
+
+        public Parallelism SolverVersion = Parallelism.SEQ;
 
         public void DefineMatrix(IMutableMatrixEx M) {
             m_MumpsMatrix = new Matrix(M);
