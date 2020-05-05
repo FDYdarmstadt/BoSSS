@@ -45,32 +45,11 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        protected override Vector CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            Vector l_TranslationalVelocity = GetTranslationalVelocity(1) + GetTranslationalAcceleration(0) * dt;
-            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
-            return l_TranslationalVelocity;
-        }
-
-        /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double CalculateAngularVelocity(double dt) {
-            double l_RotationalVelocity = GetRotationalVelocity(1);
-            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            return l_RotationalVelocity;
-        }
-
-        /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
             double l_RotationalVelocity = GetRotationalVelocity(1);
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
             return l_RotationalVelocity;

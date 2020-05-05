@@ -55,15 +55,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        protected override Vector CalculateTranslationalVelocity(double dt, double collisionDt) {
-            Aux.TestArithmeticException(TranslationalVelocity, "particle translational velocity");
-            return TranslationalVelocity;
-        }
-
-        /// <summary>
         /// Calculates the new translational acceleration.
         /// </summary>
         /// <param name="dt"></param>
@@ -77,16 +68,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double CalculateAngularVelocity(double dt = 0) {
-            Aux.TestArithmeticException(RotationalVelocity, "particle rotational velocity");
-            return RotationalVelocity;
-        }
-
-        /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt, double collisionDt) {
             Aux.TestArithmeticException(RotationalVelocity, "particle rotational velocity");
             return RotationalVelocity;
         }

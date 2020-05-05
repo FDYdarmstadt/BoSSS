@@ -920,7 +920,7 @@ namespace BoSSS.Application.FSI_Solver {
                         double expectedRotation = (p.Motion.GetRotationalVelocity() + p.Motion.GetHydrodynamicTorque() * DtMax / p.MomentOfInertia) * p.GetLengthScales().Max();
                         maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity + Math.Abs(expectedRotation));
                     }
-                    dt = Math.Min(DtMax, MinGridLength / (5 * maxVelocityL2Norm));
+                    dt = Math.Min(DtMax, MinGridLength / (10 * maxVelocityL2Norm));
                     if (dt / oldTimestep > 1.1)
                         dt = oldTimestep * 1.1;
                     dt = dt.MPIMin();
@@ -1273,7 +1273,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int r = 1; r < records.Length; r++) {
                 string currentLine = records[r];
                 string[] currentLineFields = currentLine.Split(',');
-                if(timestep.MajorNumber == Convert.ToInt32(currentLineFields[0])) {
+                if (timestep.MajorNumber == Convert.ToInt32(currentLineFields[0])) {
                     timestepIndexOffset = r;
                     break;
                 }

@@ -357,8 +357,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
 
-            //string ID = "02c723c1-6834-413b-9b1d-292453cf8eb1";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 250);
+            string ID = "449ee72f-19f8-4a9c-abc0-a8492c505c6c";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
 
 
             return C;

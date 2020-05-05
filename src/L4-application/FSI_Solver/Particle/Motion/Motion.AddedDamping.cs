@@ -69,7 +69,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="fluidViscosity"></param>
         /// <param name="fluidDensity"></param>
         /// <param name="dt"></param>
-        public override void CalculateDampingTensor(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt) {
+        internal override void CalculateDampingTensor(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt) {
             AddedDamping = new ParticleAddedDamping();
             Aux = new FSI_Auxillary();
             AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, levelSetTracker, fluidViscosity, fluidDensity, dt, GetPosition(0));
@@ -79,7 +79,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017).
         /// </summary>
-        public override void UpdateDampingTensors() {
+        internal override void UpdateDampingTensors() {
             AddedDampingTensor = AddedDamping.RotateTensor(GetAngle(0), m_StartingAngle, AddedDampingTensor);
             Aux.TestArithmeticException(AddedDampingTensor, "particle added damping tensor");
         }
@@ -87,7 +87,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// MPI exchange of the damping tensors
         /// </summary>
-        public override void ExchangeAddedDampingTensors() {
+        internal override void ExchangeAddedDampingTensors() {
             int NoOfVars = 3;
             double[] StateBuffer = new double[NoOfVars * NoOfVars];
             for (int i = 0; i < NoOfVars; i++) {

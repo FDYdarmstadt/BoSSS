@@ -259,9 +259,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="initialAngle">
         /// The initial angle.
         /// </param>
-        internal void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle) {
+        internal void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0) {
+            if (historyLength == 0)
+                historyLength = NumberOfHistoryEntries;
             Aux = new FSI_Auxillary();
-            for (int i = 0; i < NumberOfHistoryEntries; i++) {
+            for (int i = 0; i < historyLength; i++) {
                 Position[i] = new Vector(initialPosition);
                 Angle[i] = initialAngle * 2 * Math.PI / 360;
                 Aux.TestArithmeticException(Position[i], "initial particle position");
@@ -419,6 +421,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (CollisionTimestep < 0)
                 CollisionTimestep = 0;
             SavePositionAndAngleOfPreviousTimestep();
+            Console.WriteLine("dt: " + dt + " collDt: " + CollisionTimestep);
             Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
             Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
             if (CollisionTimestep > dt)
@@ -461,11 +464,12 @@ namespace BoSSS.Application.FSI_Solver {
         internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             double[] tempForces = new double[SpatialDim];
             for (int d = 0; d < SpatialDim; d++) {
-                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-8)
+                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-10)
                     tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
+                
             }
             HydrodynamicForces[0] = new Vector(tempForces);
-            if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-8)
+            if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-10)
                 HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
             Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");

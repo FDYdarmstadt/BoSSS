@@ -41,6 +41,7 @@ namespace FSI_Solver {
         private readonly double MinDistance;
         private readonly List<List<int>> ParticleCollidedWith = new List<List<int>>();
         private double[][] TemporaryVelocity;
+        private double[][] OldParticleState;
         private Particle[] Particles;
         private readonly List<List<int>> ParticleCluster = new List<List<int>>();
         private readonly List<int[]> ParticleClusterCollidedWithWall = new List<int[]>();
@@ -70,12 +71,14 @@ namespace FSI_Solver {
             DistanceVector = new Vector[noOfParticles][];
             ClosestPoints = new Vector[noOfParticles][];
             TemporaryVelocity = new double[noOfParticles][];
+            OldParticleState = new double[noOfParticles][];
             for (int p = 0; p < noOfParticles; p++) {
                 SaveTimeStepArray[p] = new double[noOfParticles + 4];
                 Distance[p] = new double[noOfParticles + 4];
                 DistanceVector[p] = new Vector[noOfParticles + 4];
                 ClosestPoints[p] = new Vector[noOfParticles + 4];
                 TemporaryVelocity[p] = new double[3];
+                OldParticleState[p] = new double[3];
                 TemporaryVelocity[p][0] = Particles[p].Motion.GetTranslationalVelocity()[0];
                 TemporaryVelocity[p][1] = Particles[p].Motion.GetTranslationalVelocity()[1];
                 TemporaryVelocity[p][2] = Particles[p].Motion.GetRotationalVelocity();
@@ -118,6 +121,8 @@ namespace FSI_Solver {
                         // Step 2.1.1
                         // Move the particle with the current save timestep.
                         // -------------------------------------------------------
+                        if (AccDynamicTimestep == 0)
+                            SaveOldParticleState(particles);
                         UpdateParticleState(particles, SaveTimeStep);
                         SaveTimeStep = double.MaxValue;
                         for (int p0 = 0; p0 < particles.Length; p0++) {
@@ -202,12 +207,6 @@ namespace FSI_Solver {
                         if (AccDynamicTimestep >= Dt) {
                             break;
                         }
-                    }
-                    if (AccDynamicTimestep >= Dt) {
-                        for (int p = 0; p < Particles.Length; p++) {
-                            particles[p].Motion.SetCollisionTimestep(AccDynamicTimestep);
-                        }
-                        break;
                     }
 
                     // Step 3
@@ -311,8 +310,13 @@ namespace FSI_Solver {
                     }
 
                     for (int p = 0; p < Particles.Length; p++) {
-                        particles[p].Motion.InitializeParticleVelocity(new double[] { TemporaryVelocity[p][0], TemporaryVelocity[p][1] }, TemporaryVelocity[p][2]);
-                        particles[p].Motion.SetCollisionTimestep(AccDynamicTimestep);
+                        if (particles[p].IsCollided) {
+                            particles[p].Motion.InitializeParticleVelocity(new double[] { TemporaryVelocity[p][0], TemporaryVelocity[p][1] }, TemporaryVelocity[p][2]);
+                            particles[p].Motion.SetCollisionTimestep(AccDynamicTimestep);
+                        }
+                        else {
+                            ResetOldParticleState(particles[p], p);
+                        }
                         ParticleCluster.Clear();
                         ParticleClusterCollidedWithWall.Clear();
                         PartOfCollisionCluster.Clear();
@@ -411,6 +415,25 @@ namespace FSI_Solver {
                     currentParticle.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
                 }
             }
+        }
+
+        /// <summary>
+        /// Updates the state of the current particles with the dynamic timestep
+        /// </summary>
+        /// <param name="particles"></param>
+        ///  <param name="dynamicTimestep"></param>
+        private void SaveOldParticleState(Particle[] particles) {
+            for (int p = 0; p < particles.Length; p++) {
+                Particle currentParticle = particles[p];
+                OldParticleState[p][0] = currentParticle.Motion.GetPosition()[0];
+                OldParticleState[p][1] = currentParticle.Motion.GetPosition()[1];
+                OldParticleState[p][2] = currentParticle.Motion.GetAngle();
+            }
+        }
+
+        private void ResetOldParticleState(Particle particle, int p) {
+            double[] tempPos = new double[] { OldParticleState[p][0], OldParticleState[p][1] };
+            particle.Motion.InitializeParticlePositionAndAngle(tempPos, OldParticleState[p][2] * 360 / (2 * Math.PI), 1);
         }
 
         /// <summary>
