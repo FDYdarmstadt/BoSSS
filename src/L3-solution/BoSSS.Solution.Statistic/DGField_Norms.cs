@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution.Statistic;
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,43 @@ namespace BoSSS.Solution.Statistic {
     /// L2 and H1 distances for DG fields on different meshes
     /// </summary>
     public static class DGField_Norms {
+
+        /// <summary>
+        /// Projects a DG field <paramref name="source"/>, which may be defined on some different mesh,
+        /// onto the DG field <paramref name="target"/>.
+        /// </summary>
+        static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
+            using(new FuncTrace()) {
+                int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
+                var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
+
+                if(object.ReferenceEquals(source.GridDat, target.GridDat)) {
+                    // +++++++++++++++++
+                    // equal grid branch
+                    // +++++++++++++++++
+
+                    target.ProjectField(alpha, source.Evaluate, CompQuadRule);
+
+                } else {
+                    // +++++++++++++++++++++
+                    // different grid branch
+                    // +++++++++++++++++++++
+
+                    var eval = new FieldEvaluation(GridHelper.ExtractGridData(source.GridDat));
+
+                    void SourceEval(MultidimensionalArray input, MultidimensionalArray output) {
+                        int L = input.GetLength(0);
+                        Debug.Assert(output.GetLength(0) == L);
+
+                        eval.Evaluate(1.0, new DGField[] { source }, input, 0.0, output.ResizeShallow(L, 1));
+
+                    }
+
+                    target.ProjectField(alpha, SourceEval, CompQuadRule);
+                }
+            }
+        }
+
 
 
         /// <summary>

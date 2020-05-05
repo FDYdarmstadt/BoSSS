@@ -141,6 +141,7 @@ namespace BoSSS.Application.BoSSSpad {
         static internal void Reset() {
             databases = new IDatabaseInfo[0];
             m_WorkflowMgm = null;
+            executionQueues = null;
         }
         
 
