@@ -62,7 +62,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-
         public object Clone() {
             throw new NotImplementedException();
         }
@@ -136,7 +135,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
                     }
                 } else {
-                    P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix, true, false, true);
+                    P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix);
 
                     hiSolver = new PARDISOSolver() {
                         CacheFactorization = true,
@@ -152,6 +151,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             intSolver = new PARDISOSolver() {
                 CacheFactorization = true,
                 UseDoublePrecision = false, // no difference towards =true observed for XDGPoisson
+                SolverVersion = Parallelism.OMP
             };
             intSolver.DefineMatrix(P01SubMatrix);
             

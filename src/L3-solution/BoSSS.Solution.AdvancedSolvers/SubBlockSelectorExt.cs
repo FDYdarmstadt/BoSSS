@@ -408,6 +408,9 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <returns>sub block matrix</returns>
         public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
 
+            if (ignoreCellCoupling && m_includeExternalCells)
+                throw new NotImplementedException("Coupling of internal and external block is not concidered");
+
             BlockMsrMatrix submatrix = null;
             if (m_includeExternalCells) {
                 BlockPartitioning extBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF);
@@ -421,13 +424,13 @@ namespace BoSSS.Solution.AdvancedSolvers
                 var tmpi0 = BMLoc.GetAllSubMatrixCellOffsets();
                 BlockPartitioning localBlocking = new BlockPartitioning(Loclength, tmpi0.ToArray(), tmpN.ToArray(), csMPI.Raw._COMM.SELF, i0isLocal: true);
                 submatrix = new BlockMsrMatrix(localBlocking);
-                AuxGetSubBlockMatrix(submatrix, source, BMLoc, ignoreCellCoupling,  ignoreVarCoupling,  ignoreSpecCoupling);
+                AuxGetSubBlockMatrix(submatrix, source, BMLoc, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling);
             }
-            Debug.Assert(submatrix!=null);
+            Debug.Assert(submatrix != null);
             return submatrix;
         }
 
-      
+
         private void AuxGetSubBlockMatrix(BlockMsrMatrix target, BlockMsrMatrix source, BlockMaskBase mask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
 
             bool IsLocalMask = mask.GetType() == typeof(BlockMaskLoc);
