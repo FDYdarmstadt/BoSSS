@@ -246,7 +246,8 @@ namespace BoSSS.Solution.NSECommon {
 
                 case ViscosityOption.VariableViscosity:
                 case ViscosityOption.VariableViscosityDimensionless:
-                    throw new NotImplementedException("Nonlinear dependence - todo.");
+                    //throw new NotImplementedException("Nonlinear dependence - todo.");
+                   return new IEquationComponent[] { this };
 
 
                 default:
@@ -305,15 +306,15 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double penalty(IGridData g, int jCellIn, int jCellOut, int iEdge) {
             /*
-            double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
-            double cVA = g.iGeomCells.GetCellVolume(jCellIn);
-            double penaltySizeFactor_A = eAr / cVA;
+              double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
+              double cVA = g.iGeomCells.GetCellVolume(jCellIn);
+              double penaltySizeFactor_A = eAr / cVA;
 
-            double penaltySizeFactor_B = 0;
-            if(jCellOut >= 0) {
-                double cVB = g.iGeomCells.GetCellVolume(jCellOut);
-                penaltySizeFactor_B = eAr / cVB;
-            }
+              double penaltySizeFactor_B = 0;
+              if(jCellOut >= 0) {
+              double cVB = g.iGeomCells.GetCellVolume(jCellOut);
+              penaltySizeFactor_B = eAr / cVB;
+              }
             */
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
@@ -458,13 +459,7 @@ namespace BoSSS.Solution.NSECommon {
             
         }
 
-        //public override IList<string> ArgumentOrdering
-        //{
-        //    get
-        //    {
-        //        return new string[] { VariableNames.Velocity_d(m_iComp) };
-        //    }
-        //}
+        
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;

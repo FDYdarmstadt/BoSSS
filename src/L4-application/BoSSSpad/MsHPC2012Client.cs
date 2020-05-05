@@ -22,7 +22,8 @@ using System.IO;
 using Microsoft.Hpc.Scheduler.Properties;
 using BoSSS.Platform;
 using ilPSP;
-
+using System.Runtime.Serialization;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -30,7 +31,16 @@ namespace BoSSS.Application.BoSSSpad {
     /// <summary>
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
     /// </summary>
+    [DataContract]
+    [Serializable]
     public class MsHPC2012Client : BatchProcessorClient {
+
+        /// <summary>
+        /// Empty Constructor for de-serialization
+        /// </summary>
+        private MsHPC2012Client() {
+            //Console.WriteLine("MsHPC2012Client: empty ctor");
+        }
 
         /// <summary>
         /// Ctor.
@@ -56,31 +66,52 @@ namespace BoSSS.Application.BoSSSpad {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             base.DeployRuntime = DeployRuntime;
 
+
+            this.Username = Username;
+            this.Password = Password;
+            this.ComputeNodes = ComputeNodes;
+            this.ServerName = ServerName;
+
             if (!Directory.Exists(base.DeploymentBaseDirectory))
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
 
-            m_Username = Username;
-            m_Password = Password;
-            m_ComputeNodes = ComputeNodes;
+            if (this.Username == null)
+                this.Username = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
 
-            if (m_Username == null)
-                m_Username = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-
-            m_scheduler = new Scheduler();
-            m_scheduler.Connect(ServerName);
+           
         }
 
-        IScheduler m_scheduler;
-        string m_Username;
-        string m_Password;
-        string[] m_ComputeNodes;
+        [NonSerialized]
+        IScheduler m__scheduler;
+
+        [DataMember]
+        string Username;
+
+        [DataMember]
+        string Password;
+
+        [DataMember]
+        string ServerName;
+
+        [DataMember]
+        string[] ComputeNodes;
+
+        /// <summary>
+        /// Jobs are forced to run on a single node.
+        /// </summary>
+        [DataMember]
+        public bool SingleNode = true;
 
         /// <summary>
         /// Access to the Microsoft HPC job scheduler interface.
         /// </summary>
         IScheduler Scheduler {
             get {
-                return m_scheduler;
+                if (m__scheduler == null) {
+                    m__scheduler = new Scheduler();
+                    m__scheduler.Connect(ServerName);
+                }
+                return m__scheduler;
             }
         }
 
@@ -88,86 +119,99 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Job status.
         /// </summary>
-        public override void EvaluateStatus(Job myJob, out int SubmitCount, out bool isRunning, out bool wasSuccessful, out bool isFailed, out string DeployDir) {
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            DeployDir = null;
+        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+            using (var tr = new FuncTrace()) {
+                int id = int.Parse(idToken);
 
-            List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
-            ISchedulerCollection allJobs = m_scheduler.GetJobList(null, null);
-            foreach (SchedulerJob sJob in allJobs) {
-                if (!sJob.Project.Equals(PrjName))
-                    continue;
-                if (!sJob.Name.Equals(myJob.Name))
-                    continue;
-                if (!sJob.UserName.Equals(m_Username, StringComparison.OrdinalIgnoreCase) && !sJob.Owner.Equals(m_Username, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (!sJob.UserName.Equals(sJob.Owner, StringComparison.OrdinalIgnoreCase))
-                    // ignore weird stuff
-                    continue;
 
-                allFoundJobs.Add(sJob);
-            }
 
-            SubmitCount = allFoundJobs.Count;
-
-            if (allFoundJobs.Count <= 0) {
+                ISchedulerJob JD;
+                //if (optInfo != null && optInfo is ISchedulerJob _JD) {
+                //    JD = _JD;
+                //} else {
+                using (new BlockTrace("Scheduler.OpenJob", tr)) {
+                    JD = Scheduler.OpenJob(id);
+                }
                 
-                isRunning = false;
-                wasSuccessful = false;
-                isFailed = false;
-                
-                return;
+                //}
+                /*
+                 * the following seems really slow:
+                 * 
+                 * 
+                List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
+                ISchedulerCollection allJobs;
+                using (new BlockTrace("Scheduler.GetJobList", tr)) {
+                    allJobs = Scheduler.Get
+                }
+                int cc = allJobs.Count;
+                Console.WriteLine("MsHpcClient: " + cc + " jobs.");
+                tr.Logger.Info("list of " + cc + " jobs.");
+                using (new BlockTrace("ID_FILTERING", tr)) {
+                    foreach (SchedulerJob sJob in allJobs) {
+                        if (sJob.Id != id)
+                            continue;
+                        allFoundJobs.Add(sJob);
+                    }
+
+                    if (allFoundJobs.Count <= 0) {
+                        // some weird state
+                        isRunning = false;
+                        isTerminated = false;
+                        ExitCode = int.MinValue;
+                        return;
+                    }
+                }
+
+                SchedulerJob JD;
+                using (new BlockTrace("SORTING", tr)) {
+                    JD = allFoundJobs.ElementAtMax(MsHpcJob => MsHpcJob.SubmitTime);
+                }
+                */
+
+
+                using (new BlockTrace("TASK_FILTERING", tr)) {
+                    ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
+                    ExitCode = int.MinValue;
+                    foreach (ISchedulerTask t in tasks) {
+                        DeployDir = t.WorkDirectory;
+                        ExitCode = t.ExitCode;
+                    }
+                }
+
+                using (new BlockTrace("STATE_EVAL", tr)) {
+                    switch (JD.State) {
+                        case JobState.Configuring:
+                        case JobState.Submitted:
+                        case JobState.Validating:
+                        case JobState.ExternalValidation:
+                        case JobState.Queued:
+                            isRunning = false;
+                            isTerminated = false;
+                            break;
+
+                        case JobState.Running:
+                        case JobState.Finishing:
+                            isRunning = true;
+                            isTerminated = false;
+                            break;
+
+                        case JobState.Finished:
+                            isRunning = false;
+                            isTerminated = true;
+                            break;
+
+                        case JobState.Failed:
+                        case JobState.Canceled:
+                        case JobState.Canceling:
+                            isRunning = false;
+                            isTerminated = true;
+                            break;
+
+                        default:
+                            throw new NotImplementedException("Unknown job state: " + JD.State);
+                    }
+                }
             }
-
-            //if (allFoundJobs.Count > 1) {
-            //    throw new ApplicationException(string.Format("Found {0} Microsoft-HPC-jobs with matching criteria (project is '{1}', name is '{2}', user name is '{3}'). Unable to determine which one correlates to given meta-schedule-job.",allFoundJobs.Count, PrjName, myJob.Name, m_Username));
-            //}
-
-            //allFoundJobs[0].SubmitTime 
-            SchedulerJob JD = allFoundJobs.ElementAtMax(MsHpcJob => MsHpcJob.SubmitTime);
-            
-            ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
-            foreach (ISchedulerTask t in tasks) {
-                DeployDir = t.WorkDirectory;
-            }
-
-            switch (JD.State) {
-                case JobState.Configuring:
-                case JobState.Submitted:
-                case JobState.Validating:
-                case JobState.ExternalValidation:
-                case JobState.Queued:
-                isRunning = false;
-                wasSuccessful = false;
-                isFailed = false;
-                break;
-
-                case JobState.Running:
-                case JobState.Finishing:
-                isRunning = true;
-                wasSuccessful = false;
-                isFailed = false;
-                break;
-
-                case JobState.Finished:
-                isRunning = false;
-                wasSuccessful = true;
-                isFailed = false;
-                break;
-
-                case JobState.Failed:
-                case JobState.Canceled:
-                case JobState.Canceling:
-                wasSuccessful = false;
-                isFailed = true;
-                isRunning = false;
-                break;
-
-                default:
-                throw new NotImplementedException("Unknown job state: " + JD.State);
-            }
-
-
         }
 
 
@@ -188,61 +232,71 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Submit the job to the Microsoft HPC server.
+        /// Submits the job to the Microsoft HPC server.
         /// </summary>
-        public override object Submit(Job myJob) {
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            
-            ISchedulerJob job = null;
-            ISchedulerTask task = null;
+        public override (string id, object optJobObj) Submit(Job myJob) {
+            using (new FuncTrace()) {
+                string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
 
-            // Create a job and add a task to the job.
-            job = m_scheduler.CreateJob();
-            job.Name = myJob.Name;
-            job.Project = PrjName;
-            job.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
-            job.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                ISchedulerJob MsHpcJob = null;
+                ISchedulerTask task = null;
 
-            job.UserName = m_Username;
-            
-            task = job.CreateTask();
-            task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
-            task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                // Create a job and add a task to the job.
+                MsHpcJob = Scheduler.CreateJob();
 
-            task.WorkDirectory = myJob.DeploymentDirectory;
+                MsHpcJob.Name = myJob.Name;
+                MsHpcJob.Project = PrjName;
+                MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
+                MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                MsHpcJob.SingleNode = this.SingleNode;
 
-            using(var str = new StringWriter()) {
-                str.Write("mpiexec ");
-                str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
-                foreach (string arg in myJob.CommandLineArguments) {
-                    str.Write(" ");
-                    str.Write(arg);
+                MsHpcJob.UserName = Username;
+
+                task = MsHpcJob.CreateTask();
+                task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
+                task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
+                
+                task.WorkDirectory = myJob.DeploymentDirectory;
+
+                using (var str = new StringWriter()) {
+                    str.Write("mpiexec ");
+                    str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
+                    foreach (string arg in myJob.CommandLineArguments) {
+                        str.Write(" ");
+                        str.Write(arg);
+                    }
+
+                    task.CommandLine = str.ToString();
+                }
+                foreach (var kv in myJob.EnvironmentVars) {
+                    string name = kv.Key;
+                    string valu = kv.Value;
+                    task.SetEnvironmentVariable(name, valu);
                 }
 
-                task.CommandLine = str.ToString();
+                task.StdOutFilePath = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
+                task.StdErrFilePath = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+
+                if (ComputeNodes != null) {
+                    foreach (string node in ComputeNodes)
+                        MsHpcJob.RequestedNodes.Add(node);
+                }
+
+
+                MsHpcJob.AddTask(task);
+
+                // Start the job.
+                Scheduler.SubmitJob(MsHpcJob, Username != null ? Username : null, Password);
+
+                return (MsHpcJob.Id.ToString(), MsHpcJob);
             }
-            foreach( var kv in myJob.EnvironmentVars) {
-                string name = kv.Key;
-                string valu = kv.Value;
-                task.SetEnvironmentVariable(name, valu);
-            }
+        }
 
-            task.StdOutFilePath = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
-            task.StdErrFilePath = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
-
-            if(m_ComputeNodes != null) {
-                foreach(string node in m_ComputeNodes)
-                    job.RequestedNodes.Add(node);
-            }
-
-
-            job.AddTask(task);
-
-
-            // Start the job.
-            m_scheduler.SubmitJob(job, m_Password != null ? m_Username : null, m_Password);
-
-            return job.Id;
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return $"MS HPC client {this.ServerName}, @{this.DeploymentBaseDirectory}";
         }
     }
 }

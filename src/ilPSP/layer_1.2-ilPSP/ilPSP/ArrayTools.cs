@@ -1081,9 +1081,7 @@ namespace ilPSP.Utils {
             return R;
         }
 
-        /// <summary>
-        /// implementation of <see cref="SetAll"/>
-        /// </summary>
+        
         static void SetRecursive(Array a, object val, int[] indices, int dim) {
             int rank = a.Rank;
 

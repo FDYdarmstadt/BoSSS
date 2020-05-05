@@ -75,7 +75,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -90,9 +90,9 @@
     <Compile Include="PhysicalBasedTestcases\RayleighTaylorInstability.cs" />
     <Compile Include="PhysicalBasedTestcases\RisingBubble.cs" />
     <Compile Include="PhysicalBasedTestcases\PhysicalTestProgram.cs" />
-    <Compile Include="PreCond\ApproxPredictor.cs" />
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
+    <Compile Include="Tests\SinglePhaseChannel.cs" />
     <Compile Include="XBase_Solver.cs" />
     <Compile Include="XBase_Control.cs" />
     <Compile Include="XNSE_Control.cs" />
@@ -206,45 +206,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="ControlFiles\control-Channel-fk.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\control-Channel.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\control-Channel_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\control-Droplet-fk.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\control-Droplet.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\control-OscDroplet-fk.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\control-SloshBox-fk.xml" />
-    <Content Include="ControlFiles\control-SloshingBox.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\mesh-Droplet-Reduced.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\mesh-Channel_minimal.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\mesh-Channel.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\mesh-Droplet.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="ControlFiles\mesh-SloshingBox.xml">
-      <SubType>Designer</SubType>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">

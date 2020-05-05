@@ -20,9 +20,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         static void Main(string[] args) {
             var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
-            AUT.TestFixtureSetUp();
+            InitMPI();
             AUT.AllUp();
-            AUT.TestFixtureTearDown();
+            FinalizeMPI();
         }
 
 

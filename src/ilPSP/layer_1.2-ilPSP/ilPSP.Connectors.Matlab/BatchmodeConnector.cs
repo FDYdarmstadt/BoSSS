@@ -427,6 +427,117 @@ namespace ilPSP.Connectors.Matlab {
             Cmd(MatlabName + " = dlmread('" + TranslatePath(filepath) + "');");
         }
 
+        /// <summary>
+        /// transfers multiple vectors <paramref name="vec"/> to MATLAB.
+        /// note: <paramref name="MatlabName"/>is extended with "_rank",
+        /// which is the MPIrank
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="vec"></param>
+        /// <param name="MatlabName"></param>
+        public void PutVectorRankExclusive<T>(T vec, string MatlabName) where T : IEnumerable<double> {
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
+            if (Executed == true)
+                throw new InvalidOperationException("No commands can be added after Execute() has been called.");
+
+            string Mname = String.Concat(MatlabName + "_" + rank);
+            string workdir;
+            if (Rank == 0)
+                workdir = WorkingDirectory.FullName;
+            else
+                workdir = null;
+            workdir = workdir.MPIBroadcast(0);
+            string filepath = Path.Combine(workdir, Mname);
+
+            if (vec != null)
+                VectorIO.SaveToTextFile(vec, filepath, csMPI.Raw._COMM.SELF);
+
+            string[] Mnames = Mname.MPIGatherO(0);
+            if (Rank == 0) {
+                foreach (string Mn in Mnames) {
+                    CreatedFiles.Add(Path.Combine(workdir, Mn));
+                }
+            }
+            Mnames = Mnames.MPIBroadcast(0);
+            foreach (string Mn in Mnames)
+                Cmd(Mn + " = dlmread('" + TranslatePath(Path.Combine(workdir, Mn)) + "');");
+        }
+
+
+        public void PutMatrixRankExclusive(IMatrix M, string MatlabName) {
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
+            if (Executed == true)
+                throw new InvalidOperationException("No commands can be added after Execute() has been called.");
+
+            string Mname = String.Concat(MatlabName + "_" + rank);
+            string workdir;
+            if (Rank == 0)
+                workdir = WorkingDirectory.FullName;
+            else
+                workdir = null;
+            workdir = workdir.MPIBroadcast(0);
+            string filepath = Path.Combine(workdir, Mname);
+
+            if (M != null)
+                M.SaveToTextFile(filepath, FileMode.Create);
+
+            string[] Mnames = Mname.MPIGatherO(0);
+            if (Rank == 0) {
+                foreach (string Mn in Mnames) {
+                    CreatedFiles.Add(Path.Combine(workdir, Mn));
+                }
+            }
+            Mnames = Mnames.MPIBroadcast(0);
+            foreach (string Mn in Mnames)
+                Cmd(Mn + " = dlmread('" + TranslatePath(Path.Combine(workdir, Mn)) + "');");
+        }
+
+
+        /// <summary>
+        /// transfers multiple matrices <paramref name="M"/> to MATLAB.
+        /// note: <paramref name="MatlabName"/>is extended with "_rank",
+        /// which is the MPIrank
+        /// </summary>
+        /// <param name="M"></param>
+        /// <param name="MatlabName"></param>
+        public void PutSparseMatrixRankExclusive(IMutableMatrixEx M, string MatlabName) {
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
+            if (Executed == true)
+                throw new InvalidOperationException("No Data can be put after Execute() has been called..");
+            if (comm == M.MPI_Comm || M == null)
+                throw new NotSupportedException("has to be on sub comm of world and not empty");
+
+            string Mname = String.Concat(MatlabName + "_" + rank);
+            string workdir;
+            if (Rank == 0)
+                workdir = WorkingDirectory.FullName;
+            else
+                workdir = null;
+            workdir = workdir.MPIBroadcast(0);
+            string filepath = Path.Combine(workdir, Mname);
+
+            if (M != null)
+                M.SaveToTextFileSparse(filepath);
+
+            string[] Mnames = Mname.MPIGatherO(0);
+            if (Rank == 0) {
+                foreach (string Mn in Mnames) {
+                    CreatedFiles.Add(Path.Combine(workdir, Mn));
+                }
+            }
+            Mnames = Mnames.MPIBroadcast(0);
+            foreach (string Mn in Mnames)
+                Cmd(Mn + " = ReadMsr('" + TranslatePath(Path.Combine(workdir, Mn)) + "');");
+        }
 
         /// <summary>
         /// Imports a matrix from MATLAB.
@@ -559,6 +670,8 @@ namespace ilPSP.Connectors.Matlab {
         ProcessStartInfo psi;
 
 
+        bool SuccessfulExe = false;
+
         /// <summary>
         /// executes all commands
         /// </summary>
@@ -566,6 +679,7 @@ namespace ilPSP.Connectors.Matlab {
         /// a reader to the standard output of the MATLAB process.
         /// </returns>
         public void Execute(bool PrintOutput = true) {
+            SuccessfulExe = false;
             ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true)
                 throw new InvalidOperationException("Execute can be called only once.");
@@ -670,6 +784,8 @@ namespace ilPSP.Connectors.Matlab {
                     throw new NotImplementedException("output object type not implemented.");
                 }
             }
+
+            SuccessfulExe = true;
         }
 
 
@@ -695,11 +811,15 @@ namespace ilPSP.Connectors.Matlab {
         /// Kills the MATLAB process
         /// </summary>
         public void Dispose() {
-            foreach (var f in CreatedFiles) {
-                File.Delete(f);
-            }
-            if (DelWorkingDir) {
-                Directory.Delete(WorkingDirectory.FullName, true);
+            if (SuccessfulExe) {
+                foreach (var f in CreatedFiles) {
+                    File.Delete(f);
+                }
+                if (DelWorkingDir) {
+                    Directory.Delete(WorkingDirectory.FullName, true);
+                }
+            } else {
+                // keeping files for diagnostic purposes
             }
         }
     }

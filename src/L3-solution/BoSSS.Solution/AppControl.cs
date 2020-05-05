@@ -32,6 +32,9 @@ using System.Runtime.Serialization;
 using MPI.Wrappers;
 using Mono.CSharp;
 using System.Diagnostics;
+using BoSSS.Foundation;
+using System.Collections;
+using BoSSS.Solution.Utils;
 
 namespace BoSSS.Solution.Control {
 
@@ -85,7 +88,7 @@ namespace BoSSS.Solution.Control {
             this.BoundaryValues = new Dictionary<string, BoundaryValueCollection>(new InvariantCultureIgnoreCase_Comparer());
             this.BoundaryValueChanges = new Dictionary<string, string>(new InvariantCultureIgnoreCase_Comparer());
             this.Tags = new List<string>();
-            this.m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
+            this.m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunction vec, Func<double[], double> scalar)>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
             this.NoOfMultigridLevels = 0;
         }
@@ -391,7 +394,137 @@ namespace BoSSS.Solution.Control {
         }
 
         [NonSerialized]
-        Dictionary<string, Func<double[], double>> m_InitialValues_Evaluators;
+        Dictionary<string, (ScalarFunction vec, Func<double[],double> scalar)> m_InitialValues_Evaluators;
+
+        abstract class ProxyDictBase<R> : IDictionary<string, R> {
+            internal Dictionary<string, (ScalarFunction vec, Func<double[], double> scalar)> home;
+
+            
+
+            abstract protected R Ex((ScalarFunction, Func<double[], double>) tt);
+            abstract protected (ScalarFunction, Func<double[], double>) Pk(R r);
+
+
+            public R this[string key] {
+                get {
+                    return Ex(home[key]);
+                }
+                set {
+                    home[key] = Pk(value);
+
+                }
+            }
+            public ICollection<string> Keys => home.Keys;
+
+            public ICollection<R> Values => home.Values.Select(tt => Ex(tt)).ToList();
+
+            public int Count => home.Count;
+
+            public bool IsReadOnly => ((IDictionary) home).IsReadOnly;
+
+            public void Add(string key, R value) {
+                home.Add(key, Pk(value));
+            }
+
+            public void Add(KeyValuePair<string, R> item) {
+                this.Add(item.Key, item.Value);
+            }
+
+            public void Clear() {
+                home.Clear();
+            }
+
+            public bool Contains(KeyValuePair<string, R> item) {
+                return home.ContainsKey(item.Key);
+            }
+
+            public bool ContainsKey(string key) {
+                return home.ContainsKey(key);
+            }
+
+            public void CopyTo(KeyValuePair<string, R>[] array, int arrayIndex) {
+                int c = 0;
+                foreach(var itm in home) {
+                    array[arrayIndex + c] = new KeyValuePair<string, R>(itm.Key, Ex(itm.Value));
+                    c++;
+                }
+            }
+
+            public IEnumerator<KeyValuePair<string, R>> GetEnumerator() {
+                return _GetEnumerator();
+            }
+
+            IEnumerator<KeyValuePair<string, R>> _GetEnumerator() {
+                return home.Select(kv => new KeyValuePair<string, R>(kv.Key, Ex(kv.Value))).GetEnumerator();
+            }
+
+            public bool Remove(string key) {
+                return home.Remove(key);
+            }
+
+            public bool Remove(KeyValuePair<string, R> item) {
+                return home.Remove(item.Key);
+            }
+
+            public bool TryGetValue(string key, out R value) {
+                var r = home.TryGetValue(key, out var tt);
+                value = Ex(tt);
+                return r;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() {
+                return this._GetEnumerator();
+            }
+        }
+
+
+        class ProxyDict_ScalarFunction : ProxyDictBase<ScalarFunction> {
+            protected override ScalarFunction Ex((ScalarFunction, Func<double[], double>) tt) {
+                return tt.Item1;
+            }
+
+            static Func<double[], double> Unvectorize(ScalarFunction v) {
+                Func<double[], double> f = delegate (double[] X) {
+                    MultidimensionalArray inp = MultidimensionalArray.CreateWrapper(X, 1, X.Length);
+                    MultidimensionalArray ret = MultidimensionalArray.Create(1);
+                    v(inp, ret);
+                    return ret[0];
+                };
+                return f;
+            }
+
+            protected override (ScalarFunction, Func<double[], double>) Pk(ScalarFunction r) {
+                return (r, Unvectorize(r));
+            }
+        }
+
+        class ProxyDict_Func : ProxyDictBase<Func<double[],double>> {
+            protected override Func<double[],double> Ex((ScalarFunction, Func<double[], double>) tt) {
+                return tt.Item2;
+            }
+
+
+            protected override (ScalarFunction, Func<double[], double>) Pk(Func<double[],double> r) {
+                return (r.Vectorize(), r);
+            }
+        }
+
+        void Sync__InitialValues_Evaluators() {
+            if(m_InitialValues_Evaluators == null)
+                m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunction vec, Func<double[], double> scalar)>();
+
+            foreach(string name in InitialValues.Keys) {
+                if(!m_InitialValues_Evaluators.ContainsKey(name)) {
+
+                    var vv = InitialValues[name];
+
+                    m_InitialValues_Evaluators.Add(name, new ValueTuple<ScalarFunction, Func<double[], double>>(
+                        (MultidimensionalArray X, MultidimensionalArray R) => vv.Evaluate(X, 0.0, R),
+                        (double[] X) => vv.Evaluate(X, 0.0)));
+                }
+            }
+        }
+
 
         /// <summary>
         /// Initial values which are set at the start of the simulation.
@@ -403,17 +536,27 @@ namespace BoSSS.Solution.Control {
         /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
         /// </remarks>
         [JsonIgnore]
-        public IDictionary<string, Func<double[], double>> InitialValues_Evaluators {
+        public IDictionary<string, ScalarFunction> InitialValues_EvaluatorsVec {
             get {
-                if(m_InitialValues_Evaluators == null)
-                    m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
+                Sync__InitialValues_Evaluators();
+                return new ProxyDict_ScalarFunction() { home = m_InitialValues_Evaluators };
+            }
+        }
 
-                foreach(string name in InitialValues.Keys) {
-                    if(!m_InitialValues_Evaluators.ContainsKey(name)) {
-                        m_InitialValues_Evaluators.Add(name, X => InitialValues[name].Evaluate(X, 0.0));
-                    }
-                }
-                return m_InitialValues_Evaluators;
+        /// <summary>
+        /// Initial values which are set at the start of the simulation.
+        /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
+        /// - value: data or mathematical expression which is projected at application startup.
+        /// </summary>
+        /// <remarks>
+        /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
+        /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
+        /// </remarks>
+        [JsonIgnore]
+        public IDictionary<string, Func<double[],double>> InitialValues_Evaluators {
+            get {
+                Sync__InitialValues_Evaluators();
+                return new ProxyDict_Func() { home = m_InitialValues_Evaluators };
             }
         }
 
@@ -441,7 +584,19 @@ namespace BoSSS.Solution.Control {
             InitialValues.Add(fieldname, value);
         }
 
-
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        public void AddInitialValue(string fieldname, string FormulaText, bool TimeDependent) {
+           InitialValues.Add(fieldname, new Formula(FormulaText, TimeDependent));
+        }
 
 
         ///// <summary>
@@ -528,7 +683,7 @@ namespace BoSSS.Solution.Control {
                     Console.WriteLine("Info: setting database path to: " + this.DbPath);
                 } else {
                     if(!this.DbPath.Equals(grd.Database.Path)) {
-                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {2})", grd.Database.Path, this.DbPath);
+                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
                     }
                 }
             }
@@ -692,7 +847,7 @@ namespace BoSSS.Solution.Control {
         /// A positive value indicates that
         /// <see cref="Application{T}.PlotCurrentState(double, TimestepNumber, int)"/>"/> will be called every
         /// <see cref="ImmediatePlotPeriod"/>-th time-step.
-        /// A negative value turns immediate plotting off;
+        /// A non-positive value turns immediate plotting off;
         /// </summary>
         [DataMember]
         public int ImmediatePlotPeriod = -1;
@@ -729,10 +884,20 @@ namespace BoSSS.Solution.Control {
         public string DbPath = null;
 
         /// <summary>
-        /// Sets <see cref="DbPath"/>.
+        /// Alternative paths to access the database, if <see cref="DbPath"/> is not present on a given machine.
+        /// This allows to use the same control file or object on different machines, where the database is located in a different path.
+        /// - 1st entry: path into the local file system
+        /// - 2nd entry: optional machine name filter
+        /// </summary>
+        [DataMember]
+        public ValueTuple<string, string>[] AlternateDbPaths = null;
+        
+        /// <summary>
+        /// Sets <see cref="DbPath"/>, <see cref="AlternateDbPaths"/>.
         /// </summary>
         public void SetDatabase(IDatabaseInfo dbi) {
             DbPath = dbi.Path;
+            AlternateDbPaths = dbi.AlternateDbPaths;
         }
         
 
@@ -1049,6 +1214,123 @@ namespace BoSSS.Solution.Control {
 
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return -1;
+        }
+
+
+        /// <summary>
+        /// Equality of control files - mostly relevant for the job manager
+        /// </summary>
+        public override bool Equals(object obj) {
+            // basic type comparison
+            // =====================
+            if(obj == null)
+                return false;
+            if(obj.GetType() != this.GetType())
+                return false;
+
+            AppControl oCtr = (AppControl)obj;
+
+            // compare grid
+            // ============
+            if(!ReferenceEquals(this.GridFunc, oCtr.GridFunc))
+                return false;
+
+            if((this.GridGuid != null) != (oCtr.GridGuid != null))
+                return false;
+
+            if(this.GridGuid != null) {
+                if(!this.GridGuid.Equals(oCtr.GridGuid))
+                    return false;
+            }
+
+            // restart info
+            // ============
+            if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
+                return false;
+            if(this.RestartInfo != null) {
+                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                    return false;
+                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                    return false;
+            }
+
+
+            // timestepping setting
+            // ====================
+            if(this.TimesteppingMode != oCtr.TimesteppingMode)
+                return false;
+
+            if(this.TimesteppingMode == _TimesteppingMode.Transient) {
+                if(this.dtMin != oCtr.dtMin)
+                   return false;
+                if(this.dtMax != oCtr.dtMax)
+                   return false;
+            }
+
+            // initial values
+            // ==============
+
+            if(!this.InitialValues.Keys.SetEquals(oCtr.InitialValues.Keys))
+                return false;
+
+            foreach(string ivk in this.InitialValues.Keys) {
+                var f1 = this.InitialValues[ivk];
+                var f2 = oCtr.InitialValues[ivk];
+
+                if(!f1.Equals(f2))
+                    return false;
+            }
+
+            // field options
+            // =============
+
+            if(!this.FieldOptions.Keys.SetEquals(oCtr.FieldOptions.Keys))
+                return false;
+            foreach(var fok in this.FieldOptions.Keys) {
+                var o1 = this.FieldOptions[fok];
+                var o2 = oCtr.FieldOptions[fok];
+
+                if(!o1.Equals(o2))
+                    return false;
+            }
+
+
+            // boundary values
+            // ===============
+
+            if(!this.BoundaryValues.Keys.SetEquals(oCtr.BoundaryValues.Keys))
+                return false;
+
+            foreach(var bvk in this.BoundaryValues.Keys) {
+                var bvc = this.BoundaryValues[bvk];
+                var bvd = oCtr.BoundaryValues[bvk];
+
+                if(!bvc.Evaluators.Keys.SetEquals(bvd.Evaluators.Keys))
+                    return false;
+
+                if(!bvc.Values.Keys.SetEquals(bvd.Values.Keys))
+                    return false;
+
+                foreach(string s in bvc.Values.Keys) {
+                    var f1 = bvc.Values[s];
+                    var f2 = bvd.Values[s];
+
+                    if(!f1.Equals(f2))
+                        return false;
+                }
+            }
+
+            // passed all the tests
+            // ====================
+
+            return true;
+        }
+
+
     }
 }

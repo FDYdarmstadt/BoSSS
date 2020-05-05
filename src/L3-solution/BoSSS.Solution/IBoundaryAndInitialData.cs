@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +36,20 @@ namespace BoSSS.Solution.Control {
         /// <param name="t">Physical time.</param>
         /// <returns>Function value.</returns>
         double Evaluate(double[] X, double t);
+
+
+        /// <summary>
+        /// Vectorized version of <see cref="Evaluate(double[], double)"/>
+        /// </summary>
+        /// <param name="input">positions in space at which the function should be evaluated;
+        ///  - 1st index: point index;
+        ///  - 2nd index: spatial coordinate vector (from 0 to D-1);
+        /// </param>
+        /// <param name="output">result of function evaluation;
+        ///  - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
+        /// </param>
+        void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output);
+        
     }
 
 }

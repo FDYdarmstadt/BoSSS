@@ -1153,33 +1153,38 @@ namespace BoSSS.Foundation.XDG {
         /// checks if the level set may has moved more than one cell
         /// </summary>
         int CheckLevelSetCFL(int LevSetIdx) {
-            ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
-            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            var msk = new BitArray(J);
+            using(new FuncTrace()) {
+                ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
+                int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                var msk = new BitArray(J);
 
-            CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
+                //
+                // @Markus: undid your changes, because they caused thest to fail:
+                //
 
-            int fail_count = 0;
+                // check for cell color, necessary to prevent failing on periodic boundaries
+                int[] coloredCells = Regions.ColorMap4Spc[GetSpeciesId("B")];
 
-            // for all cells that are cut by the levelset,
-            // check whether they are in Near - region of the previous state;
+                CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
+                int fail_count = 0;
 
-            foreach (int j in newCut.ItemEnum) {
-
-                int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
-                if (Math.Abs(old_dist) > 1) {
-                    fail_count++;
-                    msk[j] = true;
+                // for all cells that are cut by the levelset,
+                // check whether they are in Near - region of the previous state;
+                foreach(int j in newCut.ItemEnum) {
+                    int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
+                    if(Math.Abs(old_dist) > 1 && coloredCells[j] < 1) {
+                        //if (Math.Abs(old_dist) > 1) {
+                        fail_count++;
+                        msk[j] = true;
+                    }
                 }
+
+                int failCountGlobal = fail_count.MPISum();
+                if(failCountGlobal > 0)
+                    (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
+
+                return failCountGlobal;
             }
-
-
-            int failCountGlobal = fail_count.MPISum();
-
-            if (failCountGlobal > 0)
-                (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
-
-            return failCountGlobal;
         }
 
         
@@ -1300,17 +1305,14 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Must be called after changing the level-set;
-        /// Invoking this method 
-        /// updates the members <see cref="m_LevSetRegions"/>, <see cref="m_LevSetRegionsUnsigned"/>
-        /// and <see cref="m_LenToNextChange"/>; <br/>
-        /// After this update, for every <see cref="XDGField"/> the method
-        /// <see cref="XDGField.UpdateMemory"/> must be invoked;
+        /// Invoking this method updates the state of cells (e.g. cut, -near, +near, etc.), <see cref="Regions"/>.
+        /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.UpdateMemory"/> must be invoked;
         /// </summary>
         /// <param name="__NearRegionWith">
         /// new width of near region;
         /// </param>
         /// <param name="__LevSetAllowedMovement">
-        /// new values for the allowed level-set movement, see <see cref="GetLevSetAllowedMovement"/>;
+        /// new values for the allowed level-set movement.
         /// If this value is set to a number higher than the <see cref="NearRegionWidth"/>, the CFL test for the 
         /// corresponding 
         /// level set is omitted. 
@@ -1330,6 +1332,7 @@ namespace BoSSS.Foundation.XDG {
         public void UpdateTracker(int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
             using (var tr = new FuncTrace()) {
                 ilPSP.MPICollectiveWatchDog.Watch();
+               
 
                 if (this.NearRegionWidth <= 0 && incremental == true) {
                     throw new NotSupportedException("Incremental update requires a near-region width of at least 1.");
@@ -1616,13 +1619,38 @@ namespace BoSSS.Foundation.XDG {
                 // find near and far regions
                 // =========================
                 {
-                    ushort[] vtxMarkers = new ushort[NoOfSmplxVertice.Max()];
-                    int[] vtsInd = new int[NoOfSmplxVertice.Max()];
+                    
+                    int[][] Neighbours = m_gDat.iLogicalCells.CellNeighbours;
+                    
+                    for (int dist = 1; dist <= m_NearRegionWidth; dist++) { // loop over near region bands...
 
-                    for (int dist = 1; dist <= m_NearRegionWidth; dist++) {
+                        // Pre-sweep: ensure correct distance in the vertex markers
+                        // --------------------------------------------------------
 
-                        // For every cell
-                        for (int j = 0; j < J; j++) {
+                        // rem: this pre-sweep is only to handle periodic & MPI-parallel cases
+                        // there is certainly a smarter way to integrate the loops
+
+                        // ensures that the distance of each vertex is lower or equal to the cell distance
+                        for (int j = 0; j < J; j++) { // sweep over cells;
+                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
+                                int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
+                                if(dJ <= dist) {
+                                    foreach (int kk in VerticeInd[j]) {
+                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                        dVk = Math.Min(dVk, dJ);
+                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                    }
+                                }
+                            }
+                        }
+
+                        // MPI update
+                        // ----------
+                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets); 
+
+                        // Main sweep: set cells and neighbors
+                        // -----------------------------------
+                        for (int j = 0; j < J; j++) { // sweep over cells; in this sweep, we are setting band 'dist'
                             int[] _VerticeInd = VerticeInd[j];
                             int _NoOfSmplxVertice = _VerticeInd.Length;
                             Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
@@ -1633,11 +1661,15 @@ namespace BoSSS.Foundation.XDG {
                             if (incremental)
                                 __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
-                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
 
                                 int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
                                 if (dJ >= dist) {
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                    // cell has not been assigned to band 'dist' or closer yet
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                                    // vertex-to-cell propagation; find minimum of: { distance of all vertices, cell distance so far }
                                     int mindv = int.MaxValue;
                                     for (int k = 0; k < _NoOfSmplxVertice; k++)
                                         mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
@@ -1647,15 +1679,36 @@ namespace BoSSS.Foundation.XDG {
                                         int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
                                         mindv = Math.Min(mindv, prevDist);
                                     }
-                                    mindv++;
+                                    mindv++; // increase layer
 
                                     if (mindv == dist) {
                                         EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
-
+                                        
+                                        // propagate back form cells to vertices
                                         for (int k = 0; k < _NoOfSmplxVertice; k++) {
                                             int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
                                             dVk = Math.Min(dVk, mindv);
                                             EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
+                                        }
+
+                                        // treatment of neighbor cells: robustness against 
+                                        //  - hanging nodes (for e.g. 3:1 cell neighborship at an edge) and 
+                                        //  - periodic boundary conditions
+                                        int[] jNeighs = Neighbours[j];
+                                        foreach(int jN in jNeighs) {
+                                            int distN = DecodeLevelSetDist(LevSetRegionsUnsigned[jN], levSetInd);
+                                            if (distN > dist + 1) {
+                                                EncodeLevelSetDist(ref LevSetRegionsUnsigned[jN], dist + 1, levSetInd);
+
+                                                if(jN < J) {
+                                                    foreach(int kk in VerticeInd[jN]) {
+                                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                                        dVk = Math.Min(dVk, dist + 1);
+                                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                                    }
+                                                }
+
+                                            }
                                         }
                                     }
                                 }
@@ -1668,6 +1721,7 @@ namespace BoSSS.Foundation.XDG {
                         MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
                     }
                 }
+
 
                 // set the sign
                 // ============
@@ -1742,7 +1796,6 @@ namespace BoSSS.Foundation.XDG {
                             observer.OnError(exception);
                         }
                     }
-
                     throw exception;
                 }
             }
@@ -1779,16 +1832,42 @@ namespace BoSSS.Foundation.XDG {
         /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers.
         /// </summary>
         private void ObserverUpdate() {
-
+            int rnk = ilPSP.Environment.MPIEnv.MPI_Rank;
+            int sz = this.GridDat.MpiSize;
 
             // Remove obsolete observers from list...
             // ======================================
-            for (int i = 0; i < m_Observers.Count; i++) {
-                if (!m_Observers[i].IsAlive) {
-                    m_Observers.RemoveAt(i);
-                    i--;
+            var ObserversRefs = new List<IObserver<LevelSetRegions>>();
+            {
+                int NoObservers = m_Observers.Count;
+
+                int[] checkNoObservers = (new[] { NoObservers, -NoObservers }).MPIMax();
+                if (NoObservers != checkNoObservers[0] || NoObservers != -checkNoObservers[1])
+                    throw new ApplicationException("MPI parallelization bug: number of observers of LevelSetTracker is not equal among MPI processors.");
+
+                int[] AliveObservers = new int[NoObservers];
+                for (int i = 0; i < NoObservers; i++) {
+                    ObserversRefs.Add(m_Observers[i].Target); // having a local ref. prevents the GC of collecting the object while we do MPI sync.
+                    AliveObservers[i] = ObserversRefs[i] != null ? 0xff : 0;
                 }
-            }
+
+                // if observer was killed on any rank, we must also kill it locally!
+                int[] GlobalAliveObservers = AliveObservers.MPIMin();
+
+                // observed fields must be synchronized over MPI processors, otherwise deadlocks may occur
+
+                int ii = 0;
+                for (int i = 0; i < NoObservers; i++) {
+                    if (GlobalAliveObservers[ii] <= 0) {
+                        m_Observers.RemoveAt(i);
+                        ObserversRefs.RemoveAt(i);
+                        i--;
+                        NoObservers--;
+                    }
+                    ii++;
+                }
+            } //*/
+
 
             // update memory of all registered fields
             // =====================================
@@ -1800,13 +1879,11 @@ namespace BoSSS.Foundation.XDG {
 
 
             // call the update method of all active fields
-            foreach (var reference in m_Observers) {
-                IObserver<LevelSetRegions> observer = reference.Target;
-                if (observer != null) {
-                    reference.Target.OnNext(Regions);
-                }
+            foreach (var t in ObserversRefs) {
+                t.OnNext(Regions);
             }
-
+            
+            
         }
 
         /// <summary>
@@ -1815,36 +1892,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ObserverHack() {
             using (new FuncTrace()) {
-
-                // Remove obsolete observers from list...
-                // ======================================
-                for (int i = 0; i < m_Observers.Count; i++) {
-                    if (!m_Observers[i].IsAlive) {
-                        m_Observers.RemoveAt(i);
-                        i--;
-                    }
-                }
-
-                // update memory of all registered fields
-                // =====================================
-                // a disadvantage of this notification-by-weak-ref -- approach
-                // is that the 'UpdateMemory' may be called also for
-                // objects that are already unused but not yet collected...
-                // A solution would be to call GC.Collect(), but it is not known
-                // whether a GC run or update of unused memory is more expensive.
-
-                
-                // call the update method of all active fields
-                foreach (var reference in m_Observers) {
-                    IObserver<LevelSetRegions> observer = reference.Target;
-                    if (observer != null) {
-                        //if(observer is XDGField) {
-                        //    ((XDGField)observer).Override_TrackerVersionCnt(Regions.Version);
-                        //}
-
-                        reference.Target.OnNext(Regions);
-                    }
-                }
+                this.ObserverUpdate();
             }
         }
 
@@ -1895,7 +1943,7 @@ namespace BoSSS.Foundation.XDG {
                             // build&fill send buffer
                             SendBuffers[i] = new ushort[Len, N];
                             var SendBuffer = SendBuffers[i];
-                            for (int l = 0; l < Len; l++) {
+                            for (int l = 0; l < Len; l++) { // loop over cells in send-buffer for 'pDest'...
                                 int[] cellVtx = VerticeInd[commList[l]];
                                 int _N = cellVtx.Length;
                                 for (int n = 0; n < _N; n++) {
@@ -2000,6 +2048,7 @@ namespace BoSSS.Foundation.XDG {
         /// be affected by the subscription.
         /// </remarks>
         public IDisposable Subscribe(IObserver<LevelSetRegions> observer) {
+            MPICollectiveWatchDog.Watch();
             BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>> reference =
                 new BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>>(observer);
             m_Observers.Add(reference);

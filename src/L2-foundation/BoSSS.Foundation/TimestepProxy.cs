@@ -196,5 +196,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         #endregion
+
+        /// <summary>
+        /// Returns the object behind the proxy
+        /// </summary>
+        public ITimestepInfo GetInternal() {
+            return realTimestepInfo.Value;
+        }
+
     }
 }

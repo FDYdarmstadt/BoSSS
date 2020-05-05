@@ -228,15 +228,17 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // fix neighborship
                 // ================
-                byte[,] Edge2Face = this.Edges.FaceIndices;
-                int[,] Edge2Cell = this.Edges.CellIndices;
-                MultidimensionalArray[] VerticesFor_KrefEdge = this.Edges.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
+                byte[,] Edge2Face = Edges.FaceIndices;
+                int[,] Edge2Cell = Edges.CellIndices;
+                MultidimensionalArray[] VerticesFor_KrefEdge = Edges.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
 
                 int[] ONE_NULL = new int[] { 0 };
 
-                int NoOfEdges = this.Edges.Count;
-                Debug.Assert(Edge2Face.GetLength(0) == NoOfEdges);
-                Debug.Assert(Edge2Cell.GetLength(0) == NoOfEdges);
+                int NoOfEdges = Edges.Count;
+                if (Edge2Face.GetLength(0) != NoOfEdges)
+                    throw new Exception("Edge2Face to long");
+                if(Edge2Cell.GetLength(0) != NoOfEdges)
+                    throw new Exception("Edge2Cell to long");
 
                 List<Tuple<int, Cell[]>> cellsOnNeighbourProcess = SerialExchangeCellData(adaptedCells);
 
@@ -247,7 +249,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int iFace2 = Edge2Face[iEdge, 1];
 
                     if (localCellIndex2 < 0) {
-                        Debug.Assert((cellsToRefineBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex1]) == false);
                         if ((cellsToRefineBitmask[localCellIndex1] || cellsToCoarseBitmask[localCellIndex1]) == false)
                             continue;
                         AdaptBoundaryCellFaces(adaptedCells, Edge2Face, iEdge, localCellIndex1);
@@ -271,7 +272,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     Cell[] adaptedCells1 = new Cell[1];
                     Cell[] adaptedCells2 = new Cell[1];
-
+                    
                     int i0 = CellPartitioning.i0;
                     if (IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2)) {
                         adaptedCells1 = adaptedCells[localCellIndex1];
@@ -300,13 +301,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                     CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
 
                     if (cellsToCoarseBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex2]) {
-                        //continue;
                         Debug.Assert(adaptedCells1.Length == 1);
                         Debug.Assert(adaptedCells2.Length == 1);
                         if (adaptedCells1[0] == null)
                             throw new Exception("Cell is missing! Cell with global index " + (i0 + localCellIndex1));
                         if (adaptedCells2[0] == null)
-                            throw new Exception("Cell is missing! Cell with global index " + (i0 + localCellIndex1));
+                            throw new Exception("Cell is missing! Cell with global index " + (i0 + localCellIndex2));
                         if (adaptedCells1[0].GlobalID == adaptedCells2[0].GlobalID) {
                             // these two cells will be joint into one cell -> no new neighborship
                             Debug.Assert(ReferenceEquals(adaptedCells1[0], adaptedCells2[0]));
@@ -582,7 +582,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
             }
-
             GetAndExchangeExternalNeighbours(exchangeNeighbours, ref AdaptNeighborsBitmask);
         }
 
@@ -596,7 +595,6 @@ namespace BoSSS.Foundation.Grid.Classic {
             for (int i = 0; i < neighbourCellsVertices.Length; i++) {
                 neighbourCells[i + neighbourCellsEdges.Length] = neighbourCellsVertices[i];
             }
-
             return neighbourCells;
         }
 
@@ -782,7 +780,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="noOfVertices">
         /// </param>
         /// <param name="newCell"></param>
-        private static int[] GetNodeIndicesOfRefinedCells(int newVertexCounter, int noOfVertices, Cell newCell) {
+        private int[] GetNodeIndicesOfRefinedCells(int newVertexCounter, int noOfVertices, Cell newCell) {
             int[] tempNodeIndices = new int[noOfVertices];
             for (int i = 0; i < noOfVertices; i++) {
                 tempNodeIndices[i] = newVertexCounter + i + (int)newCell.GlobalID * noOfVertices;
@@ -1049,7 +1047,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             foreach (Cell cl in adaptedBCells1) {
                 if (cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0 && this.Edges.EdgeTags[iEdge] > 0) {
                     ArrayTools.AddToArray(new CellFaceTag() {
-                        EdgeTag = this.Edges.EdgeTags[iEdge],
+                        EdgeTag = Edges.EdgeTags[iEdge],
                         ConformalNeighborship = false,
                         NeighCell_GlobalID = long.MinValue,
                         FaceIndex = iBFace

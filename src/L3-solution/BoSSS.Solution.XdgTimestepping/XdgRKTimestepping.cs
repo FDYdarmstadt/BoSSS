@@ -426,6 +426,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             MassMatrix[0] = SM;
             m_PrecondMassMatrix = PM;
 
+
+            //SM.SaveToTextFileSparse("massMatrix.txt");
+
             // initial value
             CoordinateVector u0 = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
             foreach (var f in u0.Mapping.Fields) {
@@ -433,6 +436,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     ((XDGField)f).UpdateBehaviour = BehaveUnder_LevSetMoovement.PreserveMemory;
                 }
             }
+
+          
 
             // loop over Runge-Kutta stages...
             double[][] k = new double[m_RKscheme.Stages][];
@@ -782,12 +787,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        //protected override void TriggerLevelSetUpdate() {
-        //    throw new NotImplementedException();
-        //}
-
-
-
         private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s <= m_RKscheme.Stages);
             for (int i = 0; i < s; i++) {
@@ -888,6 +887,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotImplementedException();
                 }
 
+                // Inverse mass matrix * k: Zum Vergleich mit CNS IBMSplitRungeKutta
+                // BlockSolve(System bzw. mass matrix, double[], k[0])
+
+                //Console.WriteLine(String.Format("\nk[0]: L2-Norm of change rate = {0}", k[0].L2Norm()));
+                //k[0].SaveToTextFile(String.Format("k_CHANGERATE_{0}.txt", count));
+
+            
+
                 // solve system
                 if (System != null) {
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
@@ -923,66 +930,74 @@ namespace BoSSS.Solution.XdgTimestepping {
             where V1 : IList<double>
             where V2 : IList<double> //
         {
-            int i0 = M.RowPartitioning.i0;
-            int iE = M.RowPartitioning.iE;
+            Debug.Assert(X.Count == M.ColPartition.LocalLength);
+            Debug.Assert(B.Count == M.RowPartitioning.LocalLength);
 
             var Part = M.RowPartitioning;
             Debug.Assert(Part.EqualsPartition(this.CurrentStateMapping));
 
             int J = m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells;
+            Debug.Assert(J == M._RowPartitioning.LocalNoOfBlocks);
+            Debug.Assert(J == M._ColPartitioning.LocalNoOfBlocks);
 
-            double[] MtxVals = null;
-            int[] Indices = null;
+            var basisS = this.CurrentStateMapping.BasisS.ToArray();
+            int NoOfVars = basisS.Length;
 
             MultidimensionalArray Block = null;
             double[] x = null, b = null;
-            for (int j = 0; j < J; j++) {
-                int bS = this.CurrentStateMapping.LocalUniqueCoordinateIndex(0, j, 0);
-                int Nj = this.CurrentStateMapping.GetTotalNoOfCoordinatesPerCell(j);
+#if DEBUG
+            var unusedIndex = new System.Collections.BitArray(B.Count);
+#endif
 
-                if (Block == null || Block.NoOfRows != Nj) {
-                    Block = MultidimensionalArray.Create(Nj, Nj);
-                    x = new double[Nj];
-                    b = new double[Nj];
-                } else {
-                    Block.Clear();
-                }
+            for (int j = 0; j < J; j++) { // loop over cells...
 
+                for(int iVar = 0; iVar < NoOfVars; iVar++) {
+                    int bS = this.CurrentStateMapping.LocalUniqueCoordinateIndex(iVar, j, 0);
+                    int Nj = basisS[iVar].GetLength(j);
 
-                // extract block and part of RHS
-                for (int iRow = 0; iRow < Nj; iRow++) {
-                    bool ZeroRow = true;
-                    //MsrMatrix.MatrixEntry[] row = M.GetRow(iRow + bS + i0);
-                    int LR = M.GetRow(iRow + bS + i0, ref Indices, ref MtxVals);
+                    if(Block == null || Block.NoOfRows != Nj) {
 
-                    //foreach (var entry in row) {
-                    for (int lr = 0; lr < LR; lr++) {
-                        int ColIndex = Indices[lr];
-                        double Value = MtxVals[lr];
-
-                        Block[iRow, ColIndex - (bS + i0)] = Value;
-                        if (Value != 0.0)
-                            ZeroRow = false;
+                        Block = MultidimensionalArray.Create(Nj, Nj);
+                        x = new double[Nj];
+                        b = new double[Nj];
+                    } else {
+                        Block.Clear();
                     }
-                    b[iRow] = B[iRow + bS];
 
-                    if (ZeroRow) {
-                        if (b[iRow] != 0.0)
-                            throw new ArithmeticException();
-                        else
-                            Block[iRow, iRow] = 1.0;
+                    // extract block
+                    M.ReadBlock(bS + M._RowPartitioning.i0, bS + M._ColPartitioning.i0, Block);
+
+                    // extract part of RHS
+                    for(int iRow = 0; iRow < Nj; iRow++) {
+                        bool ZeroRow = Block.GetRow(iRow).L2NormPow2() == 0;
+                        b[iRow] = B[iRow + bS];
+
+                        if(ZeroRow) {
+                            if(b[iRow] != 0.0)
+                                throw new ArithmeticException();
+                            else
+                                Block[iRow, iRow] = 1.0;
+                        }
+#if DEBUG
+                        unusedIndex[iRow + bS] = true;
+#endif
                     }
-                }
 
-                // solve
-                Block.SolveSymmetric(x, b);
+                    // solve
+                    Block.SolveSymmetric(x, b);
 
-                // store solution
-                for (int iRow = 0; iRow < Nj; iRow++) {
-                    X[iRow + bS] = x[iRow];
+                    // store solution
+                    for(int iRow = 0; iRow < Nj; iRow++) {
+                        X[iRow + bS] = x[iRow];
+                    }
                 }
             }
-        }
+#if DEBUG
+            for(int i = 0; i < unusedIndex.Length; i++)
+                if(unusedIndex[i] == false && B[i] != 0.0)
+                    throw new ArithmeticException("Non-zero entry in void region.");
+#endif
 
+        }
     }
 }

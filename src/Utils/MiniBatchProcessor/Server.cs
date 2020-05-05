@@ -26,28 +26,51 @@ using System.Threading.Tasks;
 
 namespace MiniBatchProcessor {
 
+    
+
+
     /// <summary>
     /// Server functionality.
     /// </summary>
-    public static class Server {
+    public class Server : ClientAndServer {
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public Server(string BatchInstructionDir) : base(BatchInstructionDir) {
+
+        }
 
         //static List<int> CurrentlyRunning = new List<int>();
         //static object synclock = new Object();
 
-        static FileStream ServerMutex;
+        FileStream ServerMutex;
 
         /// <summary>
-        /// True, if the server is running, false if not; 
+        /// True, if the server is hosed by the current process and is running, false if not; 
         /// This state is determined based upon the existence, resp. a lock on the file
         /// `MiniBatchProcessor-ServerMutex.txt`.
         /// </summary>
-        public static bool IsRunning {
-            get {
+        public static bool GetIsRunning(string __BatchInstructionDir) {
+            __BatchInstructionDir = __BatchInstructionDir != null ? __BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
+
+            {
+                if(MiniBatchThreadIsMyChild) {
+                    if(ServerInternal != null) {
+                        return ServerInternal.IsAlive;
+                    }
+
+                    if(ServerExternal != null) {
+                        return !ServerExternal.HasExited;
+                    }
+                }
+
+
                 try {
-                    if (File.Exists(ServerMutexPath)) {
+                    if(File.Exists(GetServerMutexPath(__BatchInstructionDir))) {
                         // try to delete
 
-                        File.Delete(ServerMutexPath);
+                        File.Delete(GetServerMutexPath(__BatchInstructionDir));
 
 
                         return false;
@@ -55,7 +78,7 @@ namespace MiniBatchProcessor {
                         return false;
                     }
 
-                } catch (IOException) {
+                } catch(IOException) {
                     return true;
                 }
             }
@@ -83,28 +106,34 @@ namespace MiniBatchProcessor {
         /// <param name="RunExternal">
         /// If true, an external process is used.
         /// </param>
-        public static void StartIfNotRunning(bool RunExternal = true) {
+        /// <returns>
+        /// - true: the server was just started
+        /// - false: the server is already running
+        /// </returns>
+        public static bool StartIfNotRunning(bool RunExternal = true, string BatchInstructionDir = null) {
+            BatchInstructionDir = BatchInstructionDir != null ? BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
+            
             if (ServerExternal != null && ServerExternal.HasExited) {
                 ServerExternal.Dispose();
                 ServerExternal = null;
             }
 
-            if (ServerInternal != null && !ServerInternal.IsAlive) {
+            if(ServerInternal != null && !ServerInternal.IsAlive) {
                 ServerInternal = null;
             }
 
-            if (ServerExternal != null || ServerInternal != null || IsRunning) {
+            if(ServerExternal != null || ServerInternal != null || GetIsRunning(BatchInstructionDir)) {
                 Console.WriteLine("Mini batch processor is already running.");
-                return;
+                return false;
             }
             Random r = new Random();
             r.Next(100, 5000);
-            if (IsRunning) {
+            if(GetIsRunning(BatchInstructionDir)) {
                 Console.WriteLine("Mini batch processor is already running.");
-                return;
+                return false;
             }
 
-            if (RunExternal) {
+            if(RunExternal) {
                 Console.WriteLine("Starting mini batch processor in external process...");
 
                 ProcessStartInfo psi = new ProcessStartInfo();
@@ -115,6 +144,7 @@ namespace MiniBatchProcessor {
                 Console.WriteLine("Started mini batch processor on local machine, process id is " + p.Id + ".");
 
                 ServerExternal = p;
+                MiniBatchThreadIsMyChild = true;
             } else {
                 Console.WriteLine("Starting mini batch processor in background thread...");
 
@@ -124,49 +154,115 @@ namespace MiniBatchProcessor {
                 ServerThread.Start();
 
                 ServerInternal = ServerThread;
+                MiniBatchThreadIsMyChild = true;
             }
+            return true;
         }
 
         /// <summary>
-        /// Sends a signal which should terminate a running server instance.
+        /// True, if the batch thread/process was started by this process;
         /// </summary>
-        public static void SendTerminationSignal() {
-            using (var s = File.Create(TerminationSignalPath)) {
+        public static bool MiniBatchThreadIsMyChild {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Sends a signal which should terminate a running server instance linked to the directory <paramref name="BatchInstructionDir"/>.
+        /// </summary>
+        public static void SendTerminationSignal(bool WaitForOtherJobstoFinish = true, int TimeOutInSeconds = 1800, string BatchInstructionDir = null) {
+            DateTime st = DateTime.Now;
+
+            if(BatchInstructionDir == null) {
+                BatchInstructionDir = Configuration.GetDefaultBatchInstructionDir();
+            }
+            
+            if (WaitForOtherJobstoFinish) {
+
+                Client cln = new Client(BatchInstructionDir);
+
+
+                Random rnd = new Random();
+
+                JobData[] Q = cln.Queue.ToArray();
+                JobData[] W = cln.Working.ToArray();
+
+                while (Q.Length > 0 || W.Length > 0) {
+                    Console.WriteLine($"Waiting for other jobs to finish; in queue: {Q.Length}, working: {W.Length}.");
+                    foreach (var j in Q) {
+                        Console.WriteLine(j);
+                    }
+                    foreach (var j in W) {
+                        Console.WriteLine(j);
+                    }
+                    
+                    Thread.Sleep(rnd.Next(60001));
+                    if(TimeOutInSeconds > 0) {
+                        var dur = DateTime.Now - st;
+                        if(dur.TotalSeconds > TimeOutInSeconds) {
+                            Console.WriteLine($" Waiting for {dur.TotalSeconds}; timeout of {TimeOutInSeconds} reached.");
+                        }
+                    }
+
+                    Q = cln.Queue.ToArray();
+                    W = cln.Working.ToArray();
+                }
+            
+            }
+
+            using (var s = File.Create(GetTerminationSignalPath(BatchInstructionDir))) {
                 s.Flush();
                 s.Close();
             }
+
+            if(MiniBatchThreadIsMyChild) {
+                while(Server.GetIsRunning(BatchInstructionDir)) {
+                    
+                    Thread.Sleep(1000 + ClientAndServer.IOwaitTime);
+                }
+
+                MiniBatchThreadIsMyChild = false;
+            }
+
         }
 
-        static string TerminationSignalPath {
+        static string GetTerminationSignalPath(string BatchInstructionDir) {
+            if (BatchInstructionDir == null) {
+                BatchInstructionDir = Configuration.GetDefaultBatchInstructionDir();
+            }
+            return (Path.Combine(BatchInstructionDir, "MiniBatchProcessor-TerminationSignal.txt"));
+        }
+
+
+        static string GetServerMutexPath(string BatchInstructionDir) {
+            if (BatchInstructionDir == null) {
+                BatchInstructionDir = Configuration.GetDefaultBatchInstructionDir();
+            }
+            return (Path.Combine(BatchInstructionDir, "MiniBatchProcessor-ServerMutex.txt"));
+        }
+
+        string LogFilePath {
             get {
-                return Path.Combine(ClientAndServer.config.BatchInstructionDir, "MiniBatchProcessor-TerminationSignal.txt");
+                return (Path.Combine(config.BatchInstructionDir, "MiniBatchProcessor-Log.txt"));
             }
         }
 
-        static string ServerMutexPath {
-            get {
-                return Path.Combine(ClientAndServer.config.BatchInstructionDir, "MiniBatchProcessor-ServerMutex.txt");
-            }
-        }
+        void Init() {
 
-        static string LogFilePath {
-            get {
-                return Path.Combine(ClientAndServer.config.BatchInstructionDir, "MiniBatchProcessor-Log.txt");
-            }
-        }
 
-        static void Init() {
 
             // Check that we are the only instance:
-            string MutexFileName = Path.Combine(ServerMutexPath);
+            string MutexFileName = Path.Combine(GetServerMutexPath(config.BatchInstructionDir));
             if (File.Exists(MutexFileName)) {
                 // try to delete
                 File.Delete(MutexFileName);
             }
-            if(File.Exists(TerminationSignalPath)) {
+            if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
                 // try to delete
-                File.Delete(TerminationSignalPath);
+                File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
             }
+
+           
             
             // create mutex file and share it with no one!
             ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -177,17 +273,22 @@ namespace MiniBatchProcessor {
             ServerMutexS.Flush();
 
             // see if there are any zombies left in the 'working' directory
-            foreach (var J in ClientAndServer.Working) {
+            foreach (var J in Working) {
                 //MoveWorkingToFinished(J);
                 string exitTokenPath = Path.Combine(
-                    ClientAndServer.config.BatchInstructionDir,
+                    config.BatchInstructionDir,
                     ClientAndServer.WORK_FINISHED_DIR,
                     J.ID.ToString() + "_exit.txt");
                 if(!File.Exists(exitTokenPath)) {
                     File.WriteAllText(exitTokenPath, "-9876");
                 }
             }
+
+            
         }
+
+        /*
+        static Configuration Config;
 
         /*
         static void MoveWorkingToFinished(JobData J) {
@@ -217,26 +318,27 @@ namespace MiniBatchProcessor {
         }
         */
 
-        static void MoveQueueToWorking(JobData J) {
-            string BaseDir = ClientAndServer.config.BatchInstructionDir;
-            foreach (string nmn in new string[] { J.ID.ToString() }) {
+        void MoveQueueToWorking(JobData J) {
+            string BaseDir = config.BatchInstructionDir;
+            foreach(string nmn in new string[] { J.ID.ToString() }) {
                 var Src = Path.Combine(BaseDir, ClientAndServer.QUEUE_DIR, nmn);
                 var Dst = Path.Combine(BaseDir, ClientAndServer.WORK_FINISHED_DIR, nmn);
 
-                if (File.Exists(Src)) {
+                if(File.Exists(Src)) {
                     int ReTryCount = 0;
-                    while (true) {
+                    while(true) {
                         try {
-                            File.Move(Src, Dst);
+                            File.Copy(Src, Dst);
                             return;
-                        } catch (Exception e) {
-                            if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                        } catch(Exception e) {
+                            if(ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
                                 ReTryCount++;
                                 Thread.Sleep(ClientAndServer.IOwaitTime);
                             } else {
                                 Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
                                 return;
-                            }                        }
+                            }
+                        }
                     }
                 }
             }
@@ -249,10 +351,10 @@ namespace MiniBatchProcessor {
         /// <param name="WriteInfo">
         /// If true, error messages are written to stderr.
         /// </param>
-        static bool CheckJob(JobData J, bool WriteInfo) {
-            if (J.NoOfProcs > ClientAndServer.config.MaxProcessors) {
+        bool CheckJob(JobData J, bool WriteInfo) {
+            if (J.NoOfProcs > config.MaxProcessors) {
                 if (WriteInfo) {
-                    Console.Error.WriteLine("Job #{0} is to big for this machine: configured to use {1} processors, max. allowed is {2}.", J.ID, J.NoOfProcs, ClientAndServer.config.MaxProcessors);
+                    Console.Error.WriteLine("Job #{0} is to big for this machine: configured to use {1} processors, max. allowed is {2}.", J.ID, J.NoOfProcs, config.MaxProcessors);
                 }
                 return false;
             }
@@ -291,12 +393,27 @@ namespace MiniBatchProcessor {
             }
         }
 
+
+        static void Main(string[] args) {
+
+            string dir = null;
+            if(args.Length > 0) {
+                dir = args[0];
+                if(!Directory.Exists(dir)) {
+                    throw new IOException("specified batch directory '" + dir + "' does not exist.");
+                }
+            }
+
+            var s = new Server(dir);
+            s._Main(args);
+        }
+       
         /// <summary>
         /// Main routine of the server; continuously checks the respective 
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
         /// </summary>
-        static void Main(string[] args) {
-            if (IsRunning) {
+        void _Main(string[] args) {
+            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
                 Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
                 return;
             }
@@ -306,15 +423,16 @@ namespace MiniBatchProcessor {
             // infinity loop
             // =============
 
-            int AvailableProcs = ClientAndServer.config.MaxProcessors;
+            int AvailableProcs = Math.Min(Environment.ProcessorCount, config.MaxProcessors);
             bool ExclusiveUse = false;
 
             var Running = new List<Tuple<Thread, ProcessThread>>();
             bool keepRunning = true;
+            int PrevRunning = -1, PrevQueue = -1;
             while (keepRunning) {
-                if(File.Exists(TerminationSignalPath)) {
+                if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
                     // try to delete
-                    File.Delete(TerminationSignalPath);
+                    File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
                     LogMessage("Receives termination signal: server will be terminated, but jobs may continue.");
                     keepRunning = false;
                     ServerMutex.Close();
@@ -325,7 +443,7 @@ namespace MiniBatchProcessor {
                     LogFile.Dispose();
                     LogFile = null;
 
-                    File.Delete(ServerMutexPath);
+                    File.Delete(GetServerMutexPath(config.BatchInstructionDir));
                     return;
                 }
 
@@ -341,32 +459,43 @@ namespace MiniBatchProcessor {
                     }
                 }
 
+                var NextJobs = Queue.ToArray();
+
+                if(NextJobs.Count() > 0 && NextJobs.Count() != PrevQueue) {
+                    LogMessage("Number of jobs in queue: " + NextJobs.Count());
+                }
+                PrevQueue = NextJobs.Count();
+
+                if(Running.Count > 0 && Running.Count != PrevRunning) {
+                    LogMessage("Currently running " + Running.Count + " jobs.");
+                }
+                PrevRunning = Running.Count;
+
                 // see if there are available processors
                 if (AvailableProcs <= 0 || ExclusiveUse) {
-                    Thread.Sleep(10000);
+                    Thread.Sleep(config.ServerPollingInSeconds*1000);
                     continue;
                 }
 
-                var NextJobs = ClientAndServer.Queue.ToArray();
-
                 // sort out jobs which have problems
                 NextJobs = NextJobs.Where(job => CheckJob(job, true) == true).ToArray();
+
 
                 // sleep if there is nothing to do
                 if (NextJobs.Count() <= 0) {
                     LogMessage(string.Format("No more jobs in queue. Running: {0}, Avail. procs.: {1}.", Running.Count, AvailableProcs));
                     Thread.Sleep(10000);
                     continue;
-                }
+                } 
 
                 // priorize (at the moment, only by ID)
                 NextJobs = NextJobs.OrderBy(job => job.ID).ToArray();
 
-                if (ClientAndServer.config.BackFilling) {
+                if (config.BackFilling) {
                     throw new NotImplementedException("todo");
                 } else {
                     if ((NextJobs[0].NoOfProcs > AvailableProcs)
-                        || (NextJobs[0].UseComputeNodesExclusive && AvailableProcs < ClientAndServer.config.MaxProcessors)
+                        || (NextJobs[0].UseComputeNodesExclusive && AvailableProcs < config.MaxProcessors)
                         || (ExclusiveUse == true)) {
                         LogMessage(string.Format(": Not enough available processors for job #{0} - start is delayed.", NextJobs[0].ID));
                         Thread.Sleep(10000);
@@ -378,7 +507,8 @@ namespace MiniBatchProcessor {
                 {
                     ProcessThread task = new ProcessThread() {
                         data = NextJobs[0],
-                        WorkDir = Path.Combine(ClientAndServer.config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR)
+                        WorkDir = Path.Combine(config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR),
+                        BatchInstructionDir = config.BatchInstructionDir
                     };
                     Thread th = new Thread(task.Run);
                     th.Priority = ThreadPriority.Lowest;
@@ -406,6 +536,11 @@ namespace MiniBatchProcessor {
             /// 
             /// </summary>
             public string WorkDir;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string BatchInstructionDir;
 
             /// <summary>
             /// True if the process exited without errors.
@@ -490,10 +625,10 @@ namespace MiniBatchProcessor {
                             }
 
                             success = (p.ExitCode == 0);
-                            Server.LogMessage(string.Format("finished job #" + data.ID + ", exit code " + p.ExitCode + "."));
+                            Server.LogMessage(string.Format("finished job #" + data.ID + " (" + data.Name +"), exit code " + p.ExitCode + "."));
 
                             using (var exit = new StreamWriter(Path.Combine(
-                                ClientAndServer.config.BatchInstructionDir,
+                                BatchInstructionDir,
                                 ClientAndServer.WORK_FINISHED_DIR,
                                 data.ID.ToString() + "_exit.txt"))) {
                                 exit.WriteLine(p.ExitCode);

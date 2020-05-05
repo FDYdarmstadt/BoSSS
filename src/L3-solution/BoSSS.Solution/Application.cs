@@ -43,10 +43,107 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 
 namespace BoSSS.Solution {
+
+    /// <summary>
+    /// Configuration of <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>
+    /// </summary>
+    [DataContract]
+    public class MatlabConnectorConfig {
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable"/>
+        /// </summary>
+        [DataMember]
+        public string MatlabExecuteable;
+
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.Flav"/>
+        /// </summary>
+        [DataMember]
+        public string Flav = ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor.Matlab.ToString();
+
+
+        /// <summary>
+        /// Loads configuration from default location in user directory
+        /// </summary>
+        public static MatlabConnectorConfig LoadDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            if(!File.Exists(ConfigFile)) {
+                var r = new MatlabConnectorConfig();
+                r.SaveDefault(userDir);
+                return r;
+            }
+            string str = File.ReadAllText(ConfigFile);
+
+            return Deserialize(str);
+        }
+
+        /// <summary>
+        /// Saves configuration in default location in user directory
+        /// </summary>
+        public void SaveDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            var Str = this.Serialize();
+            File.WriteAllText(ConfigFile, Str);
+        }
+
+
+        /// <summary>
+        /// JSON deserialization
+        /// </summary>
+        public static MatlabConnectorConfig Deserialize(string Str) {
+
+
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
+            };
+
+
+            using(var tr = new StringReader(Str)) {
+                //string typeName = tr.ReadLine();
+                Type ControlObjectType = typeof(MatlabConnectorConfig); //Type.GetType(typeName);
+                using(JsonReader reader = new JsonTextReader(tr)) {
+                    var obj = formatter.Deserialize(reader, ControlObjectType);
+
+                    MatlabConnectorConfig ctrl = (MatlabConnectorConfig)obj;
+                    return ctrl;
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// JSON serialization
+        /// </summary>
+        public string Serialize() {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error,
+                Formatting = Newtonsoft.Json.Formatting.Indented
+            };
+
+            using(var tw = new StringWriter()) {
+                //tw.WriteLine(this.GetType().AssemblyQualifiedName);
+                using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
+                    formatter.Serialize(writer, this);
+                }
+
+                string Ret = tw.ToString();
+                return Ret;
+            }
+        }
+
+    }
+
 
     /// <summary>
     /// Non-generic version of the <see cref="Application{T}"/>-class for
@@ -93,10 +190,10 @@ namespace BoSSS.Solution {
         /// </summary>
         private static ILog m_Logger = LogManager.GetLogger(typeof(Application<T>));
 
-        /// <summary>
-        /// Indicates whether a running application must finalize MPI
-        /// </summary>
-        private static bool m_MustFinalizeMPI = false;
+        ///// <summary>
+        ///// Indicates whether a running application must finalize MPI
+        ///// </summary>
+        //private static bool m_MustFinalizeMPI = false;
 
         /// <summary>
         /// Set this variable to false if database IO is desired, but no
@@ -151,28 +248,61 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
-        /// and verifies the existence of this directory.
+        /// respective location of native libraries
         /// </summary>
-        /// <returns></returns>
-        public static string GetBoSSSInstallDir() {
-            return BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir(m_Logger);
+        public static string GetNativeLibraryDir() {
+            return BoSSS.Foundation.IO.Utils.GetNativeLibraryDir(m_Logger);
+        }
+
+
+        
+
+        /// <summary>
+        /// Re-loads optional user-configuration file for Matlab connector <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>.
+        /// </summary>
+        public static void ReadBatchModeConnectorConfig() {
+            string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            if(userDir.IsEmptyOrWhite())
+                return;
+
+            try {
+                var o = MatlabConnectorConfig.LoadDefault(userDir);
+
+                ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor) System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
+                ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+
+            } catch(Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}");
+            }
+            
         }
 
         /// <summary>
-        /// Application startup. Performs bootstrapping of unmanaged resources
-        /// and initializes MPI.
+        /// Application startup. Performs bootstrapping of unmanaged resources and initializes MPI.
+        /// This method may be called multiple times in an application lifetime -- the MPI init is only performed once.
         /// </summary>
         /// <param name="args">
         /// command line arguments
         /// </param>
-        public static void InitMPI(string[] args) {
-            // MPI Init
+        /// <returns>
+        /// Whether this call actually initialized MPI
+        /// - true, if this routine actually called <see cref="IMPIdriver.Init"/>; then, the call should be 
+        ///   an other call to <see cref="FinalizeMPI"/>.
+        /// - false, if not.
+        /// </returns>
+        public static bool InitMPI(string[] args = null) {
+            if (args == null)
+                args = new string[0];
+
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
             ilPSP.Environment.Bootstrap(
                 args,
-                GetBoSSSInstallDir(),
-                out m_MustFinalizeMPI);
-            if(m_MustFinalizeMPI) {
+                GetNativeLibraryDir(),
+                out bool _MustFinalizeMPI);
+
+            if(_MustFinalizeMPI) {
                 int rank, size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
@@ -191,10 +321,60 @@ namespace BoSSS.Solution {
                     Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
                     Console.WriteLine(@"                                                                      ");
 
+                    if(size <= 1)
+                        Console.WriteLine("Running with 1 MPI process (single core)");
+                    else
+                        Console.WriteLine("Running with " + size + " MPI processes ");
 
-                    Console.WriteLine("Running with " + size + " MPI process(es)");
+                    using(var stw = new StringWriter()) {
+                        var HostName = ilPSP.Environment.MPIEnv.AllHostNames;
+                        int I = HostName.Count;
+                        if(I > 1)
+                            stw.Write("Nodes: ");
+                        else
+                            stw.Write("Node: ");
+
+                        int i = 0;
+                        foreach(var kv in HostName) {
+                            stw.Write(kv.Key);
+                            if(kv.Value.Length == 1)
+                                stw.Write(" (rank ");
+                            else 
+                                stw.Write(" (ranks ");
+
+                            int J = kv.Value.Length;
+                            for(int j = 0; j < J; j++) {
+                                stw.Write(kv.Value[j]);
+                                if(j < J - 1)
+                                    stw.Write(", ");
+                            }
+                            stw.Write(")");
+
+                            int rest = I - i - 1;
+                            if(i >= 1023 && rest >= 1) {
+                                stw.Write($" ... and {rest} ,more ... ");
+                                break;
+                            }
+
+                            if(i < I - 1)
+                                stw.Write(", ");
+
+                            i++;
+
+                        }
+
+
+                        stw.Flush();
+                        Console.WriteLine(stw.ToString());
+                    }
+                    
                 }
             }
+            ReadBatchModeConnectorConfig();
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            return _MustFinalizeMPI;
         }
 
         /// <summary>
@@ -250,73 +430,6 @@ namespace BoSSS.Solution {
             }
         }
 
-        /// lets see if we have environment variables which override command line arguments
-        /// (environment variables are usually more robust w.r.t. e.g. escape characters)
-        static string[] CheckForEnvironmentVariableConflict(string[] args)
-        {
-            
-            List<string> _args = new List<string>(args);
-            int ArgCounter = 0;
-            while (true)
-            {
-                string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
-                string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
-                if (ArgValue == null)
-                    break;
-
-                if (ArgCounter < _args.Count)
-                {
-                    _args[ArgCounter] = ArgValue;
-                }
-                else
-                {
-                    _args.Add(ArgValue);
-                }
-
-                Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
-
-                ArgCounter++;
-            }
-
-            return _args.ToArray();
-        }
-
-        /// <summary>
-        /// Parse argument into CommandLineOptions
-        /// </summary>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        static CommandLineOptions ParseArguments(string[] args)
-        {
-            CommandLineOptions opt = new CommandLineOptions();
-            ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-            bool argsParseSuccess;
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0)
-            {
-                argsParseSuccess = parser.ParseArguments(args, opt);
-                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-            }
-            else
-            {
-                argsParseSuccess = false;
-                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-            }
-
-            if (!argsParseSuccess)
-            {
-                MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                m_MustFinalizeMPI = false;
-                System.Environment.Exit(-1);
-            }
-
-            if (opt.ControlfilePath != null)
-            {
-                opt.ControlfilePath = opt.ControlfilePath.Trim();
-            }
-            opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-            return opt;
-        }
-
         /// <summary>
         /// parses command line arguments, parses control file, runs the
         /// application
@@ -330,27 +443,56 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
-#if !DEBUG
+#if DEBUG
+            {
+#else
             try {
 #endif
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-                InitMPI(args);
+                bool _MustFinalizeMPI = InitMPI(args);
+                ReadBatchModeConnectorConfig();
 
-                args = CheckForEnvironmentVariableConflict(args);
-                
-                CommandLineOptions opt = ParseArguments(args);
+
+                // lets see if we have environment variables which override command line arguments
+                // (environment variables are usually more robust w.r.t. e.g. escape characters)
+                args = ArgsFromEnvironmentVars(args);
+
+
+                // parse arguments
+                CommandLineOptions opt = new CommandLineOptions();
+                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+                bool argsParseSuccess;
+                if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                    argsParseSuccess = parser.ParseArguments(args, opt);
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                } else {
+                    argsParseSuccess = false;
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                }
+
+                if(!argsParseSuccess) {
+                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                    _MustFinalizeMPI = false;
+                    System.Environment.Exit(-1);
+                }
+
+                if(opt.ControlfilePath != null) {
+                    opt.ControlfilePath = opt.ControlfilePath.Trim();
+                }
+                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
                 // Delete old plots if requested
-                if (opt.delPlt) {
+                if(opt.delPlt) {
                     DeleteOldPlotFiles();
                 }
+
 
                 // load control file
                 T ctrlV2 = null;
                 T[] ctrlV2_ParameterStudy = null;
-                if (!noControlFile) {
+                if(!noControlFile) {
                     LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
                 } else {
                     ctrlV2 = new T();
@@ -358,18 +500,60 @@ namespace BoSSS.Solution {
 
                 AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
-                FinalizeMPI();
-            
-#if !DEBUG
+                if(_MustFinalizeMPI)
+                    FinalizeMPI();
+
+#if DEBUG
+            }
+#else
             } catch(Exception e) {
                 Console.Error.WriteLine(e.StackTrace);
                 Console.Error.WriteLine();
-                Console.Error.WriteLine(e.GetType().Name);
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine(e.GetType().Name + ":");
                 Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine();
                 Console.Error.Flush();
                 System.Environment.Exit(-1);
             }
 #endif
+        }
+
+        /// <summary>
+        /// Appends specially named environment variables (BOSSS_ARG_n) as the n-th command line argument
+        /// </summary>
+        public static string[] ArgsFromEnvironmentVars(string[] args) {
+            {
+                List<string> _args = new List<string>(args);
+                int ArgCounter = 0;
+                while(true) {
+                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
+                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
+                    if(ArgValue == null)
+                        break;
+
+                    System.Environment.SetEnvironmentVariable(ArgOverrideName, null); // delete the envvar
+                    // many test internally call the _Main function with arguments;
+                    // this would be overridden (and thus not work properly) if we don't delete the variable here and now.
+
+                    if (ArgCounter < _args.Count) {
+                        _args[ArgCounter] = ArgValue;
+                    } else {
+                        _args.Add(ArgValue);
+                    }
+
+                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+
+                    ArgCounter++;
+                }
+                args = _args.ToArray();
+            }
+
+            return args;
         }
 
         /// <summary>
@@ -407,7 +591,7 @@ namespace BoSSS.Solution {
 
                 ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
-            } else if (ControlFilePath.ToLower().EndsWith(".cs")) {
+            } else if (ControlFilePath.ToLower().EndsWith(".cs") || ControlFilePath.ToLower().EndsWith(".bws")) {
                 // +++++++++
                 // C#-script
                 // +++++++++
@@ -572,10 +756,9 @@ namespace BoSSS.Solution {
         /// <summary>
         /// the very end of any BoSSS application.
         /// </summary>
-        protected static void FinalizeMPI() {
-            if (m_MustFinalizeMPI) {
-                MPI.Wrappers.csMPI.Raw.mpiFinalize();
-            }
+        public static void FinalizeMPI() {
+            MPI.Wrappers.csMPI.Raw.mpiFinalize();
+            
         }
 
         /// <summary>
@@ -591,6 +774,7 @@ namespace BoSSS.Solution {
                 this.Control = new T();
             }
 
+            ReadBatchModeConnectorConfig();
 
             // set . as decimal separator:
             // ===========================
@@ -941,6 +1125,8 @@ namespace BoSSS.Solution {
 
                     CurrentSessionInfo.Description = this.Control.ProjectDescription;
 
+                    if (this.Control.ProjectName != null)
+                        CurrentSessionInfo.KeysAndQueries.Add(PROJECTNAME_KEY, this.Control.ProjectName);
                     if (this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
@@ -1062,18 +1248,19 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                if (DoDbLogging) {
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
+                if(this.CurrentSessionInfo != null) {
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:SpatialDimension", GridData.SpatialDimension);
+
                     try //ToDo
-                    { 
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-                    }
-                    catch (InvalidCastException e)
                     {
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    } catch(InvalidCastException e) {
                         Console.WriteLine("Error: Could not log everything.\n {0}", e);
                     }
                 }
@@ -1138,42 +1325,11 @@ namespace BoSSS.Solution {
 
                 // set computeNode - names:
                 CurrentSessionInfo.ComputeNodeNames.Clear();
-                for (int r = MPISize - 1; r >= 0; r--)
-                    CurrentSessionInfo.ComputeNodeNames.Add("");
-
-                SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
-                sms.CommitCommPaths();
-
-                object o;
-                int rank;
-                do {
-                    sms.GetNext(out rank, out o);
-                    if (o != null)
-                        CurrentSessionInfo.ComputeNodeNames[rank] = (string)o;
-                } while (o != null);
-
-                sms.Dispose();
-
-                CurrentSessionInfo.ComputeNodeNames[0] = ilPSP.Environment.MPIEnv.Hostname;
+                CurrentSessionInfo.ComputeNodeNames.AddRange(ilPSP.Environment.MPIEnv.HostnameForRank); 
 
                 // save
                 this.CurrentSessionInfo.Save();
-            } else {
-                // send hostname to 0-th process
-                SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
-                sms.SetCommPath(0);
-                sms.CommitCommPaths();
-
-                sms.Transmit(0, ilPSP.Environment.MPIEnv.Hostname);
-
-                object o;
-                int rank;
-                do {
-                    sms.GetNext(out rank, out o);
-                } while (o != null);
-
-                sms.Dispose();
-            }
+            } 
         }
 
         /// <summary>
@@ -1185,10 +1341,41 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || this.Control.DbPath.IsNullOrEmpty()) {
+            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                return new DatabaseInfo(this.Control.DbPath);
+                List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+                if (!this.Control.DbPath.IsNullOrEmpty())
+                    allPaths.Add((this.Control.DbPath, null));
+                if (this.Control.AlternateDbPaths != null)
+                    allPaths.AddRange(this.Control.AlternateDbPaths);
+
+                string mName = System.Environment.MachineName.ToLowerInvariant();
+
+                string dbPath = null;
+                foreach(var t in allPaths) {
+                    string path = t.Item1;
+                    string filter = t.Item2;
+
+                    if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                        if (!mName.Contains(filter)) {
+                            continue;
+                        } 
+                    }
+
+                    if(Directory.Exists(path) || File.Exists(path)) { // th latter is for ZIP-file databases
+                        dbPath = path;
+                        break;
+                    }
+
+                }
+
+                if(dbPath == null) {
+                    throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
+                }
+
+
+                return new DatabaseInfo(dbPath);
             }
         }
 
@@ -1305,11 +1492,6 @@ namespace BoSSS.Solution {
             }
         }
 
-        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern) {
-            return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
-            Replace("\\*", ".*").
-            Replace("\\?", ".") + "$");
-        }
 
         /// <summary>
         /// Adds some DG field to <see cref="m_RegisteredFields"/> and, optionally, to <see cref="m_IOFields"/>.
@@ -1328,7 +1510,7 @@ namespace BoSSS.Solution {
 
             //FieldOpts fopts;
             //bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
-            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(f.Identification)).SingleOrDefault().Value;
+            FieldOpts fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(f.Identification)).SingleOrDefault().Value;
 
             if (fopts != null) {
                 if (ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
@@ -1470,19 +1652,37 @@ namespace BoSSS.Solution {
         protected virtual TimestepNumber RestartFromDatabase(out double time) {
             using (var tr = new FuncTrace()) {
                 
+                // obtain session timesteps:
                 var sessionToLoad = this.Control.RestartInfo.Item1;
                 ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
                 var all_ts = session.Timesteps;
                 
+                // find timestep to load
                 Guid tsi_toLoad_ID;
                 tsi_toLoad_ID = GetRestartTimestepID();
                 ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
                 time = tsi_toLoad.PhysicalTime;
 
+                if(tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
+                    var tsiI = tp.GetInternal() as TimestepInfo;
+                    if(tsiI != null) {
+                        OnRestartTimestepInfo(tsiI);
+                    }
+                }
+                
                 DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
+                
+                // return
                 return tsi_toLoad.TimeStepNumber;
             }
+        }
+
+        /// <summary>
+        /// called on a restart, after the <see cref="TimestepInfo"/> is loaded from database.
+        /// </summary>
+        protected virtual void OnRestartTimestepInfo(TimestepInfo tsi) {
+
         }
 
         /// <summary>
@@ -1551,10 +1751,11 @@ namespace BoSSS.Solution {
                 // pass 1: single phase fields
                 // ===========================
 
-                var Pass2_Evaluators = new Dictionary<string, Func<double[], double>>();
-                foreach (var val in this.Control.InitialValues_Evaluators) {
+                var Pass2_Evaluators = new Dictionary<string, ScalarFunction>();
+                foreach (var val in this.Control.InitialValues_EvaluatorsVec) {
                     string DesiredFieldName = val.Key;
-                    ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                    //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                    ScalarFunction Function = val.Value;
 
                     bool found = false;
                     foreach (DGField f in relevantFields) {
@@ -1589,16 +1790,16 @@ namespace BoSSS.Solution {
                     }
                 }
 
-                // pass 2: XDG fields
-                // ===========================
-
+                // pass 2: XDG fields (after tracker update)
+                // =========================================
                 if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
 
                     foreach (var val in Pass2_Evaluators) {
                         string DesiredFieldName = val.Key;
-                        ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                        //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+                        ScalarFunction Function = val.Value;
 
                         bool found = false;
                         foreach (DGField f in relevantFields) {
@@ -1630,6 +1831,9 @@ namespace BoSSS.Solution {
             }
         }
 
+        /// <summary>
+        /// Temporary hack which will be removed at some point;
+        /// </summary>
         protected virtual void ResetInitial() {
             // intended to be used user-specific but not necessary
         }
@@ -1793,13 +1997,15 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 int i = i0.MajorNumber;
+                bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                    this.MpiRedistributeAndMeshAdapt(i, physTime);
-
+                    initialRedist |= this.MpiRedistributeAndMeshAdapt(i, physTime);
+                }
+                { 
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
                         ResetInitial();
-                        if (this.Control.ImmediatePlotPeriod > 0)
+                        if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
                             PlotCurrentState(physTime, i0, this.Control.SuperSampling);
                     }
 
@@ -1897,7 +2103,11 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Main routine for dynamic load balancing and adaptive mesh refinement.
         /// </summary>
-        virtual protected void MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
+        /// <returns>
+        /// - true if the mesh is actually changed or re-distributed
+        /// - false if not
+        /// </returns>
+        virtual protected bool MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
             //if (this.MPISize <= 1)
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
@@ -1925,13 +2135,13 @@ namespace BoSSS.Solution {
 
                     if (NewPartition == null)
                         // nothing to do
-                        return;
+                        return false;
 
                     int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
 
                     if (NoOfRedistCells <= 0) {
-                        return;
+                        return false;
                     } else {
 #if DEBUG
                         Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
@@ -2183,9 +2393,11 @@ namespace BoSSS.Solution {
                         // re-create solvers, blablabla
                         CreateEquationsAndSolvers(remshDat);
                     }
-                }
+                } //end of adapt mesh branch
 
                 this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
+
+                return true;
             }
         }
 
@@ -2346,14 +2558,18 @@ namespace BoSSS.Solution {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
 
-
+        /// <summary>
+        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.SessionName"/>
+        /// </summary>
+        public const string SESSIONNAME_KEY = "SessionName";
 
 
         /// <summary>
-        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>
-        /// under this key.
+        /// The name of a specific project should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.ProjectName"/>
         /// </summary>
-        public const string SESSIONNAME_KEY = "SessionName";
+        public const string PROJECTNAME_KEY = "ProjectName";
 
         /// <summary>
         /// Called before application finishes (internal Bye)
@@ -2398,22 +2614,32 @@ namespace BoSSS.Solution {
             var R = Tracer.Root;
 
             if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
-                using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
-                    var str = R.Serialize();
-                    using (StreamWriter stw = new StreamWriter(stream)) {
-                        stw.Write(str);
-                        stw.Flush();
+                try {
+                    using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                        var str = R.Serialize();
+                        using (StreamWriter stw = new StreamWriter(stream)) {
+                            stw.Write(str);
+                            stw.Flush();
+                        }
+
                     }
+                } catch(Exception e) {
+                    Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_bin: " + e.Message);
                 }
 
-                using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
-                    using (StreamWriter stw = new StreamWriter(stream)) {
-                        WriteProfilingReport(stw, R);
-                        stw.Flush();
-                        stream.Flush();
-                        stw.Close();
+                try {
+                    using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                        using (StreamWriter stw = new StreamWriter(stream)) {
+                            WriteProfilingReport(stw, R);
+                            stw.Flush();
+                            stream.Flush();
+                            stw.Close();
+                        }
                     }
+                } catch (Exception e) {
+                    Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_summary: " + e.Message);
                 }
+
             }
         }
 
@@ -3121,6 +3347,17 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
+        /// </summary>
+        /// <returns>
+        /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
+        /// </returns>
+        virtual public IDictionary<string, double> OperatorAnalysis() {
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
         /// This method just forces the C# - compiler to integrate
         /// BoSSS.Foundation.Grid.dll into the manifest of BoSSS.Solution.dll;
         /// Otherwise, without this useless method BoSSS.Foundation.Grid.dll
@@ -3141,24 +3378,9 @@ namespace BoSSS.Solution {
         protected double[] Fake() {
             return GenericBlas.Linspace(-1, 1, 2);
         }
+
+        
     }
 
-    /*
-    /// <summary>
-    /// Application mode - solving, plotting, 
-    /// </summary>
-    public enum Mode {
-
-        /// <summary>
-        /// run in solver mode
-        /// </summary>
-        Solver,
-
-        /// <summary>
-        /// Do a parameter study
-        /// </summary>
-        ParameterStudy,
-    }
-    */
 }
 

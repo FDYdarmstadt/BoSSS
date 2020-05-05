@@ -51,16 +51,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
+
+            //TestProgram.Init();
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.RK1, 0.2d, 8);
+            //TestProgram.Cleanup();
+            //Assert.AreEqual(1, 2, "remove me");
+
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
                 return new XdgTimesteppingMain();
             });
-
-            //Console.WriteLine("Remember to remove me.");
-            //TestProgram.Init();
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.BDF2, 0.2d, 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(2, 0.08d, "bdf", 8);
-            //TestProgram.Cleanup();
         }
 #pragma warning disable 649
 

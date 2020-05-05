@@ -381,7 +381,14 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// Loads a vector from a text file.
+        /// Loads a vector from a text file, MPI parallel on world communicator.
+        /// </summary>
+        public static double[] LoadFromTextFile(string filename) {
+            return LoadFromTextFile<double>(filename, str => double.Parse(str, NumberFormatInfo.InvariantInfo), csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Loads a vector from a text file, MPI parallel on user-defined communicator.
         /// </summary>
         public static double[] LoadFromTextFile(string filename, MPI_Comm comm, Partitioning p = null) {
             return LoadFromTextFile<double>(filename, str => double.Parse(str, NumberFormatInfo.InvariantInfo), comm);

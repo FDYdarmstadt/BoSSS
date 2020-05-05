@@ -266,12 +266,7 @@ namespace ilPSP.Tracing {
         [DataMember]
         public int CallCount = 0;
 
-        private static Regex WildcardToRegex(string pattern) {
-            return new Regex("^" + Regex.Escape(pattern).
-            Replace("\\*", ".*").
-            Replace("\\?", ".") + "$");
-        }
-
+     
         /// <summary>
         /// root of the <see cref="MethodCallRecord"/>-tree, equal to <see cref="Tracer.Root"/>
         /// </summary>
@@ -368,7 +363,7 @@ namespace ilPSP.Tracing {
         /// similar to <see cref="FindChildren(string)"/>, but returns exactly on child or null;
         /// </summary>
         public MethodCallRecord FindChild(string wildcard) {
-            return FindChild(WildcardToRegex(wildcard));
+            return FindChild(wildcard.WildcardToRegex());
         }
 
         /// <summary>
@@ -390,7 +385,7 @@ namespace ilPSP.Tracing {
         /// <paramref name="wildcard"/>;
         /// </summary>
         public IEnumerable<MethodCallRecord> FindChildren(string wildcard) {
-            return FindChildren(WildcardToRegex(wildcard));
+            return FindChildren(wildcard.WildcardToRegex());
         }
 
         /// <summary>

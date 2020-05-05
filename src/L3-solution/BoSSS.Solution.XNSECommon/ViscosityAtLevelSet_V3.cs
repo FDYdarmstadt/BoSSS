@@ -74,7 +74,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             Debug.Assert(Grad_uA.GetLength(1) == D);
             Debug.Assert(Grad_uB.GetLength(1) == D);
 
-            double[] Grad_uA_xN = new double[2], Grad_uB_xN = new double[2];
+            double[] Grad_uA_xN = new double[D], Grad_uB_xN = new double[D];
             double Grad_vA_xN = 0, Grad_vB_xN = 0;
             for (int d = 0; d < D; d++) {
                 for(int dd = 0; dd < D; dd++) {

@@ -80,7 +80,24 @@ namespace ilPSP.Utils {
         _DORGQR dorgqr;
         _DPOSV  dposv;
         //_DSYTRF dsytrf;
+        _DGECON dgecon;
+        _DGEEV dgeev;
+        _DSYEV dsyev;
 #pragma warning restore 649
+
+        /// <summary>
+        /// Reciprocal condition number
+        /// </summary>
+        public unsafe delegate void _DGECON(ref int NORM, ref int N, double* A, ref int LDA, ref double ANORM, ref double RCOND, double* WORK, int* IWORK, ref int INFO);
+ 
+        /// <summary>
+        /// Reciprocal condition number
+        /// </summary>
+        public _DGECON DGECON_ {
+            get {
+                return dgecon;
+            }
+        }
 
         /// <summary>
         /// Solution by Cholesky factorization
@@ -413,19 +430,6 @@ namespace ilPSP.Utils {
         /// <summary>
         /// See http://www.netlib.org/lapack/double/dgelsy.f
         /// </summary>
-        /// <param name="M"></param>
-        /// <param name="N"></param>
-        /// <param name="NRHS"></param>
-        /// <param name="A"></param>
-        /// <param name="LDA"></param>
-        /// <param name="B"></param>
-        /// <param name="LDB"></param>
-        /// <param name="JPVT"></param>
-        /// <param name="RCOND"></param>
-        /// <param name="RANK"></param>
-        /// <param name="WORK"></param>
-        /// <param name="LWORK"></param>
-        /// <param name="INFO"></param>
         public void DGELSY(ref int M, ref int N, ref int NRHS, double[] A, ref int LDA, double[] B, ref int LDB, int[] JPVT, ref double RCOND, out int RANK, double[] WORK, ref int LWORK, out int INFO) {
             unsafe {
                 fixed (double* pA = &A[0], pB = &B[0], pWORK = &WORK[0]) {
@@ -439,19 +443,6 @@ namespace ilPSP.Utils {
         /// <summary>
         /// See http://www.netlib.org/lapack/double/dgelsy.f
         /// </summary>
-        /// <param name="M"></param>
-        /// <param name="N"></param>
-        /// <param name="NRHS"></param>
-        /// <param name="A"></param>
-        /// <param name="LDA"></param>
-        /// <param name="B"></param>
-        /// <param name="LDB"></param>
-        /// <param name="JPVT"></param>
-        /// <param name="RCOND"></param>
-        /// <param name="RANK"></param>
-        /// <param name="WORK"></param>
-        /// <param name="LWORK"></param>
-        /// <param name="INFO"></param>
         public unsafe delegate void _DGELSY(ref int M, ref int N, ref int NRHS, double* A, ref int LDA, double* B, ref int LDB, int* JPVT, ref double RCOND, out int RANK, double* WORK, ref int LWORK, out int INFO);
 
         /// <summary>
@@ -784,6 +775,36 @@ namespace ilPSP.Utils {
         public unsafe _DORGQR DORGQR_ {
             get {
                 return dorgqr;
+            }
+        }
+
+
+        /// <summary>
+        /// General matrix eigenvalues.
+        /// </summary>
+        public unsafe delegate void _DGEEV(ref int JOBVL, ref int JOBVR, ref int N, double* A, ref int LDA, double* WR, double* WI, double* VL, ref int LDVL, double* VR, ref int LDVR, double* WORK, ref int LWORK, out int INFO);
+
+        /// <summary>
+        /// <see cref="_DGEEV"/>
+        /// </summary>
+        public unsafe _DGEEV DGEEV_ {
+            get {
+                return dgeev;
+            }
+        }
+
+
+        /// <summary>
+        /// Symmetrical matrix eigenvalues.
+        /// </summary>
+        public unsafe delegate void _DSYEV(ref int JOBZ, ref int UPLO, ref int N, double* A, ref int LDA, double* W, double* WORK, ref int LWORK, out int INFO);
+
+        /// <summary>
+        /// <see cref="_DSYEV"/>
+        /// </summary>
+        public unsafe _DSYEV DSYEV_ {
+            get {
+                return dsyev;
             }
         }
     }

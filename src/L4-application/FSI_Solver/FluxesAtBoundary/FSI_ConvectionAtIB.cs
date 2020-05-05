@@ -16,18 +16,15 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
-using BoSSS.Platform;
-using System.Diagnostics;
 using BoSSS.Foundation;
+using FSI_Solver;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class FSI_ConvectionAtIB : ILevelSetForm {
-        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<double[], double[]> getParticleParams, bool useMovingMesh) {
+        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<Vector, FSI_ParameterAtIB> getParticleParams, bool useMovingMesh) {
             m_LsTrk = LsTrk;
             m_D = spatialDim;
             m_d = currentDim;
@@ -39,11 +36,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         private readonly LevelSetTracker m_LsTrk;
         private readonly int m_D;
         private readonly int m_d;
-
-        /// <summary>
-        /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particle radius, 4: scaling paramete for active particles 
-        /// </summary>
-        private readonly Func<double[], double[]> m_getParticleParams;
+        private readonly Func<Vector, FSI_ParameterAtIB> m_getParticleParams;
         private readonly bool m_UseMovingMesh;
 
         // Use Fluxes as in Bulk Convection
@@ -83,28 +76,25 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Particle parameters
             // =============================
-            double[] parameters_P = m_getParticleParams(inp.X);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
-            double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
-            double RadialLength = parameters_P[5];
-            double scale = parameters_P[7];
+            FSI_ParameterAtIB coupling = m_getParticleParams(inp.X);
+            Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
+            double scaleActiveBoundary = orientation * new Vector(inp.Normal) > 0 && coupling.ActiveStress() != 0 ? 1 : 0;
 
             // Level-set velocity
             // =============================
             double[] uLevSet_temp = new double[1];
             if (m_d == 0) {
-                uLevSet_temp[0] = (uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0]);
+                uLevSet_temp[0] = coupling.VelocityAtPointOnLevelSet()[0];
             }
             else {
-                uLevSet_temp[0] = (uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1]);
+                uLevSet_temp[0] = coupling.VelocityAtPointOnLevelSet()[1];
             }
 
             // Outer values for Velocity and VelocityMean
-            // =============================
+            // =============================            
             inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
-            inp.Parameters_OUT[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
-            inp.Parameters_OUT[1] = uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1];
+            inp.Parameters_OUT[0] = coupling.VelocityAtPointOnLevelSet()[0];
+            inp.Parameters_OUT[1] = coupling.VelocityAtPointOnLevelSet()[1];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
             inp.Parameters_OUT[2] = 0;
             inp.Parameters_OUT[3] = 0;
@@ -113,7 +103,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             // =============================
             double FlxNeg = m_UseMovingMesh == true
                 ? 0 // Moving mesh
-                : (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scale);// Splitting
+                : (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scaleActiveBoundary);// Splitting
             return FlxNeg;
         }
     }

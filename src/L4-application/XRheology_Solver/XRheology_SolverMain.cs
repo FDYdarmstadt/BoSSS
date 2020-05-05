@@ -72,7 +72,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
         static void Main(string[] args) {
 
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.OneTimeSetUp();
             ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
             ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
@@ -481,7 +481,11 @@ namespace BoSSS.Application.XRheology_Solver {
             //Quadrature Order
             //----------------
 
-            m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3);
+            if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                m_HMForder = 2 * degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3) + 1;
+            } else {
+                m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3);
+            }
 
 
             // Create Spatial Operator
@@ -819,7 +823,6 @@ namespace BoSSS.Application.XRheology_Solver {
             //OpMtx.SaveToTextFile("OpMatrix");
         }
 
-        int hack_TimestepIndex;
         double hack_Phystime;
 
 
@@ -2034,11 +2037,11 @@ namespace BoSSS.Application.XRheology_Solver {
         // =========
         #region level-set
 
-        /// <summary>
-        /// Information of the current Fourier Level-Set
-        /// DFT_coeff
-        /// </summary>
-        FourierLevSetBase Fourier_LevSet;
+        ///// <summary>
+        ///// Information of the current Fourier Level-Set
+        ///// DFT_coeff
+        ///// </summary>
+        //FourierLevSetBase Fourier_LevSet;
 
         FourierLevSetTimestepper Fourier_Timestepper;
 
@@ -2601,10 +2604,10 @@ namespace BoSSS.Application.XRheology_Solver {
 
         #region logging
 
-        /// <summary>
-        /// saves the vector Guid for the sample points 
-        /// </summary>
-        TextWriter Log_FourierLS;
+        ///// <summary>
+        ///// saves the vector Guid for the sample points 
+        ///// </summary>
+        //TextWriter Log_FourierLS;
 
 
         /// <summary>

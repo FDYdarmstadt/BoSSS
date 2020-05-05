@@ -110,6 +110,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.CompressibleFlowCommon.ShockCapturing.ShockFindingAlgorithms).Assembly);
             eval.ReferenceAssembly(typeof(BoSSSpad.BoSSSpadMain).Assembly);
             eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
             eval.ReferenceAssembly(typeof(MiniBatchProcessor.Client).Assembly);
@@ -125,13 +126,14 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Foundation.SpecFEM.SpecFemField).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main).Assembly);
-           // eval.ReferenceAssembly(typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE).Assembly);
-           // eval.ReferenceAssembly(typeof(NSE_SIMPLE.NSE_SIMPLEMain).Assembly);
+            //eval.ReferenceAssembly(typeof(XDGShock.Program).Assembly);
+            // eval.ReferenceAssembly(typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE).Assembly);
+            // eval.ReferenceAssembly(typeof(NSE_SIMPLE.NSE_SIMPLEMain).Assembly);
 
             //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);
             // Helical shit
-             //eval.ReferenceAssembly(typeof(StokesHelical.HelicalMain).Assembly);
+            //eval.ReferenceAssembly(typeof(StokesHelical.HelicalMain).Assembly);
             // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
             // eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
 
@@ -229,6 +231,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 eval.Run(@"Console.WriteLine(""\n Console ready for input. Type 'help' for help."");");
+
+                //MiniBatchProcessor.Server.StartIfNotRunning();
 
                 // Log results of startup
                 Console.Out.Flush();

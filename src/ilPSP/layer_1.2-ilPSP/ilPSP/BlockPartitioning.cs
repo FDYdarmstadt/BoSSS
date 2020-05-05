@@ -126,6 +126,7 @@ namespace ilPSP {
                 Debug.Assert(NE == _SubblkLen2[iBlockType]);
                 BlockType[iBlock] = iBlockType;
             }
+            int gFrameBlockSize = FrameBlockSize.MPIMin();
 
             //
 
@@ -133,7 +134,7 @@ namespace ilPSP {
             int NoOfBlockTypes = _SubblkLen1.Count;
             int[][] i0_Sblk = NoOfBlockTypes.ForLoop(iBlkType => new int[] { 0 });
             int[][] LenSblk = NoOfBlockTypes.ForLoop(iBlkType => new int[] { _SubblkLen1[iBlkType] });
-            ConstructorCommon(FrameBlockSize, i0_Sblk, LenSblk, BlockType, MpiComm);
+            ConstructorCommon(gFrameBlockSize, i0_Sblk, LenSblk, BlockType, MpiComm);
 
         }
 
@@ -170,6 +171,9 @@ namespace ilPSP {
         private void ConstructorCommon(int FrameBlockSize, int[][] _Subblk_i0, int[][] _SubblkLen, int[] _BlockType, MPI_Comm MpiComm) {
             MPICollectiveWatchDog.Watch(MpiComm);
             int LocalLength = base.LocalLength;
+
+            // If there are multiple blocktypes, but not on all proc
+            FrameBlockSize = (FrameBlockSize == -1).MPIOr() ? -1 : FrameBlockSize;
 
             // ===============
             // check arguments
@@ -246,15 +250,17 @@ namespace ilPSP {
                 this.m_BlockType = null;
             }
             int J = _BlockType.Length;
+
 #if DEBUG
             {
                 var fbMin = FrameBlockSize.MPIMin(MpiComm);
                 var fbMax = FrameBlockSize.MPIMax(MpiComm);
-                if(fbMin != FrameBlockSize || fbMin != FrameBlockSize) {
+                if((fbMax != FrameBlockSize) || (fbMin != FrameBlockSize)) {
                     throw new ApplicationException("MPI bug: different FrameBlockSize among processors.");
                 }
             }
 #endif
+
             if (FrameBlockSize == 0) {
                 throw new ArgumentException();
             } else if (FrameBlockSize < 0) {

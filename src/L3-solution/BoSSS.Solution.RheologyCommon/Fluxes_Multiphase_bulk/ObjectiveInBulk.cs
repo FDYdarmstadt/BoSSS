@@ -26,7 +26,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// Initialize objective term
         /// </summary>
-        public ObjectiveInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double Weissenberg, double Penalty, string spcName, SpeciesId spcId) : base(_Component, _BcMap, Weissenberg, Penalty) {
+        public ObjectiveInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double Weissenberg, double Penalty, string spcName, SpeciesId spcId) : base(_Component, _BcMap, Weissenberg, Penalty, true) {
             this.validSpeciesId = spcId;
         }
 

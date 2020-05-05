@@ -127,7 +127,7 @@ namespace BoSSS.Foundation {
         /// The number of cells (locally) for which the algorithm was not able to extrapolate a value
         /// </returns>
         virtual public int CellExtrapolation(CellMask ExtrapolateTo, CellMask ExtrapolateFrom) {
-            MPICollectiveWatchDog.Watch();
+            //MPICollectiveWatchDog.Watch();
             int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             int NoOfNeigh;
             int[] NeighIdx;

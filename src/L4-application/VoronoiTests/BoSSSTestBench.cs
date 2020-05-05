@@ -14,11 +14,7 @@ namespace VoronoiTests
         /// </summary>
         public override void SetUp()
         {
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                Application.GetBoSSSInstallDir(),
-                out bool dummy);
-            Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.CurrentCulture;
+            BoSSS.Solution.Application.InitMPI();
         }
 
         protected static void RunApplication(IApplication app, AppControl ctrl)

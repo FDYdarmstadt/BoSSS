@@ -27,6 +27,7 @@ using System.Linq;
 using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -49,7 +50,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     /// <param name="time"></param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
-    
+        
     /// <summary>
     /// Callback-Template for the mass matrix update.
     /// </summary>
@@ -149,6 +150,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
         /// </summary>
         FSI_LieSplittingFullyCoupled = 5,
+
+        /// <summary>
+        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
+        /// </summary>
+        FSI_Coupled_Iterative = 6,
     }
 
     public enum SpatialOperatorType {
@@ -174,8 +180,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             Control.NonLinearSolverConfig nonlinconfig,
             Control.LinearSolverConfig linearconfig) {
             XdgSolverFactory = new SolverFactory(nonlinconfig, linearconfig);
-            m_nonlinconfig = nonlinconfig;
-            m_linearconfig = linearconfig;
         }
 
         /// <summary>
@@ -407,15 +411,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected void InitMultigrid(DGField[] Fields, bool useX) {
             Basis[] bs;
-            if(useX) {
-                bs = new Basis[Fields.Length];
-                for (int i = 0; i < bs.Length; i++)
-                    bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
-            } else {
-                bs = Fields.Select(f => f.Basis).ToArray();
-            }
+            using (new FuncTrace("Aggregation_basis_init")) {
+                if (useX) {
+                    bs = new Basis[Fields.Length];
+                    for (int i = 0; i < bs.Length; i++)
+                        bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
+                } else {
+                    bs = Fields.Select(f => f.Basis).ToArray();
+                }
 
-            this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
+                this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
+            }
         }
 
         /// <summary>
@@ -447,9 +453,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         public SolverFactory XdgSolverFactory;
 
-        private Control.NonLinearSolverConfig m_nonlinconfig;
+        private Control.NonLinearSolverConfig m_nonlinconfig {
+            get {
+                return XdgSolverFactory.GetNonLinearConfig;
+            }
+        }
 
-        private Control.LinearSolverConfig m_linearconfig;
+        private Control.LinearSolverConfig m_linearconfig {
+            get {
+                return XdgSolverFactory.GetLinearConfig;
+            }
+        }
 
         //public delegate void DelGetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver);
 
@@ -472,7 +486,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
                 m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
 
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
             
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
@@ -486,7 +500,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; 
                 }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
@@ -495,6 +509,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);
+        }
+
+
+        void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+            double resiNorm = currentRes.MPI_L2Norm();
+            Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
         }
 
 
@@ -544,6 +564,31 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+
+                        /*
+                        if (iterIndex >= 49) {
+                            var Ri = R.Mapping.Fields[i];
+                            var C = Ri.Coordinates;
+                            Console.Write($"per deg: {Ri.Identification} : ");
+                            double accacc = 0;
+                            for (int p = 0; p <= Ri.Basis.Degree; p++) {
+                                int n0 = Ri.Basis.GetPolynomialIndicesForDegree(0, p).Min();
+                                int n1 = Ri.Basis.GetPolynomialIndicesForDegree(0, p).Max();
+                                Console.Write($"({n0}-{n1}) ");
+
+
+                                double acc = 0;
+                                for(int n = n0; n <= n1; n++) {
+                                    acc += C.GetColumn(n).L2NormPow2();
+                                }
+                                accacc += acc;
+
+                                double Norm = acc.Sqrt();
+                                Console.Write($"p{p}: {Norm}  ");
+                            }
+                            Console.WriteLine("  " + accacc.Sqrt());
+                        }
+                        */
                     }
                 } else {
 
@@ -641,5 +686,37 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </param>
         abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
 
+        /// <summary>
+        /// Unscaled, agglomerated mass matrix used by the preconditioner.
+        /// </summary>
+        protected BlockMsrMatrix m_PrecondMassMatrix;
+
+        /// <summary>
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability
+        /// </summary>
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
+            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true);
+
+            
+            if(VarGroups == null) {
+                int NoOfVar = this.CurrentStateMapping.Fields.Count;
+                VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
+            }
+
+            var Ret = new Dictionary<string, double>();
+            foreach(int[] varGroup in VarGroups) {
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+                ana.VarGroup = varGroup;
+                var Table = ana.GetNamedProperties();
+                
+                foreach(var kv in Table) {
+                    if(!Ret.ContainsKey(kv.Key)) {
+                        Ret.Add(kv.Key, kv.Value);
+                    }
+                }
+            }
+
+            return Ret;
+        }
     }
 }

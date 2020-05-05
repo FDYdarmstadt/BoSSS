@@ -18,7 +18,6 @@ using System;
 using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
-using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -66,7 +65,6 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
             Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleMinimalLengthscale(GetLengthScales().Max());
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }
@@ -137,28 +135,20 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
+        public override bool Contains(Vector point, double tolerance = 0) {
             double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
-            if (maxTolerance == 0)
-                maxTolerance = minTolerance;
-            double a = !WithoutTolerance ? (m_Length - 2 * m_Thickness) / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : (m_Length - 2 * m_Thickness) / 2;
-            double b = !WithoutTolerance ? m_Height / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Height / 2;
-            double c = !WithoutTolerance ? m_Thickness / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness / 2;
-            double[] tempX = point.CloneAs();
+            Vector position = Motion.GetPosition(0);
+            double a = (m_Length - 2 * m_Thickness) / 2 + tolerance;
+            double b = m_Height / 2 + tolerance;
+            double c = m_Thickness / 2 + tolerance;
+            Vector tempX = new Vector(point);
             tempX[0] = point[0] * Math.Cos(angle) - point[1] * Math.Sin(angle);
             tempX[1] = point[0] * Math.Sin(angle) + point[1] * Math.Cos(angle);
             // subparticle _
-            double[] subPosition = position.CloneAs();
+            Vector subPosition = new Vector(position);
             subPosition[0] = position[0] - (m_Height - m_Thickness) / 2 * Math.Sin(angle);
             subPosition[1] = position[1] - (m_Height - m_Thickness) / 2 * Math.Cos(angle);
             if (Math.Abs(tempX[0] - subPosition[0]) < a && Math.Abs(tempX[1] - subPosition[1]) < c)
@@ -183,9 +173,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
-            Aux.TestArithmeticException(vector, "vector in calc of support point");
-            if (vector.L2Norm() == 0)
+        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            Aux.TestArithmeticException(supportVector, "vector in calc of support point");
+            if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
             double[] position = Motion.GetPosition(0);
@@ -214,10 +204,10 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
             }
 
-            double[] supportPoint = vector.CloneAs();
-            double[] rotVector = vector.CloneAs();
-            rotVector[0] = vector[0] * Math.Cos(angle) - vector[1] * Math.Sin(angle);
-            rotVector[1] = vector[0] * Math.Sin(angle) + vector[1] * Math.Cos(angle);
+            Vector supportPoint = new Vector(supportVector);
+            Vector rotVector = new Vector(supportVector);
+            rotVector[0] = supportVector[0] * Math.Cos(angle) - supportVector[1] * Math.Sin(angle);
+            rotVector[1] = supportVector[0] * Math.Sin(angle) + supportVector[1] * Math.Cos(angle);
             for(int d = 0; d < position.Length; d++) {
                 supportPoint[d] = Math.Sign(rotVector[d]) * length[d] + subPosition[d];
             }

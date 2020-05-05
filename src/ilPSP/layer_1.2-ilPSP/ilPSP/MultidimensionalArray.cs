@@ -1187,6 +1187,28 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Creates a diagonal matrix with given diagonal values.
+        /// </summary>
+        public static MultidimensionalArray CreateDiagMtx<T>(T diag) where T : IEnumerable<double> {
+            var _diag = diag.ToArray();
+            var r = Create(_diag.Length, _diag.Length);
+            r.AccDiag(_diag);
+            return r;
+        }
+
+        /// <summary>
+        /// Creates a diagonal matrix with given diagonal values.
+        /// </summary>
+        public static MultidimensionalArray CreateEye(int n) {
+            var r = Create(n, n);
+            for(int i = 0; i < n; i++) {
+                r[i, i] += 1.0;
+            }
+            return r;
+        }
+
+
+        /// <summary>
         /// Creates a wrapper for the given one-dimensional array. That is,
         /// the result will be a shallow 'copy' of
         /// <paramref name="wrappedArray"/>.
