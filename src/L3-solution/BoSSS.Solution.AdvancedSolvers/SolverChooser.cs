@@ -1576,6 +1576,8 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_Kcycle_schwarz:
 
                     Schwarz kcycleSchwarz = null;
+                    if (solver.GetType() == typeof(SparseSolver))
+                        break; //we meet PARDISO here, because no MG descend
                     try {
                         kcycleSchwarz = (Schwarz)((OrthonormalizationMultigrid)solver).PreSmoother;
                     } catch (Exception e) {
