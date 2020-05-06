@@ -26,30 +26,40 @@ namespace MiniBatchProcessor {
     /// <summary>
     /// Client interface: submitting a job, etc.
     /// </summary>
-    public static class Client {
+    public class Client : ClientAndServer {
+
+        /// <summary>
+        /// %
+        /// </summary>
+        /// <param name="BatchInstructionDir">
+        /// if null, the default subdirectory within the user home (~/.BoSSS/batch)
+        /// </param>
+        public Client(string BatchInstructionDir = null) : base(BatchInstructionDir) {
+            
+        }
 
         /// <summary>
         /// Puts a job into the waiting queue.
         /// </summary>
-        static public int SubmitJob(JobData JD) {
-            JD.m_ID = ClientAndServer.GetNewId();
-            JD.Save();
+        public int SubmitJob(JobData JD) {
+            JD.m_ID = base.GetNewId();
+            JD.Save(config.BatchInstructionDir);
             return JD.ID;
         }
 
         /// <summary>
         /// Path to a jobs standard output file.
         /// </summary>
-        static public string GetStdoutFile(int JobId) {
-            string f = Path.Combine(ClientAndServer.config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_out.txt");
+        public string GetStdoutFile(int JobId) {
+            string f = Path.Combine(config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_out.txt");
             return f;
         }
 
         /// <summary>
         /// Path to a jobs standard error file.
         /// </summary>
-        static public string GetStderrFile(int JobId) {
-            string f = Path.Combine(ClientAndServer.config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_err.txt");
+        public string GetStderrFile(int JobId) {
+            string f = Path.Combine(config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_err.txt");
             return f;
         }
     }

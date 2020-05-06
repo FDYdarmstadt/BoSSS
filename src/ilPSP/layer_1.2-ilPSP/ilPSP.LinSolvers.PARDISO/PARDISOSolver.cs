@@ -42,7 +42,10 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor
         /// </summary>
         public PARDISOSolver() {
+            SingletonPARDISO.SetParallelism(this.SolverVersion.ToString());
         }
+
+        public Parallelism SolverVersion = Parallelism.SEQ;
 
         public static Stopwatch Phase_11 = new Stopwatch();
         public static Stopwatch Phase_22 = new Stopwatch();

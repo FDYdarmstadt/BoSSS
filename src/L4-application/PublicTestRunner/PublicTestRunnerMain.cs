@@ -87,6 +87,7 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
@@ -102,7 +103,6 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(MPITest.Program)
                     };
             }
@@ -112,6 +112,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(CNS.Program),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
@@ -132,7 +133,8 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
-                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }

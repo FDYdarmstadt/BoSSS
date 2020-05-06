@@ -50,9 +50,7 @@ namespace ilPSP {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out m_MPISize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out m_MPI_Rank);
             
-            //if (m_MPI_Rank == 1)
-            //    Debugger.Break();
-
+            
             m_hostname = Dns.GetHostName();
             IPHostEntry e = Dns.GetHostEntry(m_hostname);
             if (e != null) {
@@ -61,6 +59,26 @@ namespace ilPSP {
                     m_hostname = hostname;
             }
             m_hostname = m_hostname.ToLowerInvariant();
+
+            m_HostnameForRank = m_hostname.MPIAllGatherO(csMPI.Raw._COMM.WORLD);
+
+            {
+                
+
+                m_AllHostNames = new Dictionary<string, int[]>();
+                for(int iRnk = 0; iRnk < MPI_Size; iRnk++) {
+                    var hn = m_HostnameForRank[iRnk];
+                    
+                    int[] Ranks;
+                    if(!m_AllHostNames.TryGetValue(hn, out Ranks)) {
+                        Ranks = new int[0];
+                        m_AllHostNames.Add(hn, Ranks);
+                    }
+
+                    iRnk.AddToArray(ref Ranks);
+                    m_AllHostNames[hn] = Ranks;
+                }
+            }
 
             SMPEvaluation();
         }
@@ -186,6 +204,32 @@ namespace ilPSP {
         /// name of the compute node of the actual MPI process;
         /// </summary>
         public string Hostname { get { return m_hostname; } }
+
+
+        string[] m_HostnameForRank;
+
+        /// <summary>
+        /// Hostname for each MPI rank
+        /// - index: MPI rank within the world communicator
+        /// </summary>
+        public IReadOnlyList<string> HostnameForRank {
+            get {
+                return m_HostnameForRank.CloneAs();
+            }
+        }
+
+        Dictionary<string, int[]> m_AllHostNames;
+
+        /// <summary>
+        /// Hostnames and respective MPI ranks
+        /// </summary>
+        public IReadOnlyDictionary<string,int[]> AllHostNames {
+            get {
+                
+
+                return m_AllHostNames;
+            }
+        }
 
         /// <summary>
         /// rank of current MPI process, within the world communicator
