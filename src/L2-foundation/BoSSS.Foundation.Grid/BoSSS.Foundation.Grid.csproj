@@ -95,7 +95,7 @@
     <Compile Include="VoronoiMeshing\DataStructures\Convolution.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\ConvolutionEnumerator.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\CountingEnumerable.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\Pair.cs" />
+    <Compile Include="VoronoiMeshing\DataStructures\Pairr.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\ArrayMethods.cs" />
     <Compile Include="VoronoiMeshing\MeshElementCloner.cs" />
     <Compile Include="VoronoiMeshing\Cutter\BoundaryLineEnumerator.cs" />
