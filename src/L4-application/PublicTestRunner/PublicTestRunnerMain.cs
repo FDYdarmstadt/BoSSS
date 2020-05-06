@@ -945,7 +945,7 @@ namespace PublicTestRunner {
                 DeleteResultFiles();
 
 
-                int iQueue = 0;
+                int iQueue = 1;
                 string filter = args[1];
                 if(args.Length == 3) {
                     Console.WriteLine("arg 2 is:" + args[2]);
