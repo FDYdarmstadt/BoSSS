@@ -109,6 +109,11 @@ namespace BoSSS.Application.FSI_Solver {
         private SinglePhaseField LevelSetDistance;
 
         /// <summary>
+        /// Field to make the process partition visible in exported visit files
+        /// </summary>
+        private SinglePhaseField ProcessColor;
+
+        /// <summary>
         /// Sensor for shock capturing after Persson and Peraire (2006). Used for addaptive mesh refinement 
         /// </summary>
         private PerssonSensor perssonsensor;
@@ -126,6 +131,11 @@ namespace BoSSS.Application.FSI_Solver {
             LevelSetDistance = new SinglePhaseField(new Basis(GridData, 0), "LevelSetDistance");
             m_RegisteredFields.Add(LevelSetDistance);
             m_IOFields.Add(LevelSetDistance);
+
+
+            ProcessColor = new SinglePhaseField(new Basis(GridData, 0), "ProcessColor");
+            m_RegisteredFields.Add(ProcessColor);
+            m_IOFields.Add(ProcessColor);
 
             if (((FSI_Control)Control).UsePerssonSensor == true) {
                 perssonsensor = new PerssonSensor(Pressure);
@@ -569,6 +579,8 @@ namespace BoSSS.Application.FSI_Solver {
             DeleteParticlesOutsideOfDomain();
             CreateGhostParticleAtPeriodicBoundary();
             SwitchGhostAndMasterParticle();
+            ProcessColoring();
+
             // Step 1
             // Define an array with the respective cell colors
             // =======================================================
@@ -685,9 +697,20 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
             cellsExchange.MPIExchange(GridData);
-            levelSetUpdate.RecolorCellsOfNeighborParticles(coloredCells, cellsExchange, MPISize);
+            GridData gridData = (GridData)GridData;
+            levelSetUpdate.RecolorCellsOfNeighborParticles(coloredCells, gridData);
             SetColorDGField(coloredCells);
             return coloredCells;
+        }
+
+        /// <summary>
+        /// Initialization of <see cref="ParticleColor"/>  based on particle geometry
+        /// </summary>
+        private void ProcessColoring() {
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int j = 0; j < J; j++) {
+                ProcessColor.SetMeanValue(j, MPIRank);
+            }
         }
 
         /// <summary>
@@ -698,7 +721,8 @@ namespace BoSSS.Application.FSI_Solver {
             int[] coloredCellsExchange = coloredCells.CloneAs();
             coloredCellsExchange.MPIExchange(GridData);
             levelSetUpdate.ColorNeighborCells(coloredCells, coloredCellsExchange);
-            levelSetUpdate.RecolorCellsOfNeighborParticles(coloredCells, coloredCellsExchange, MPISize);
+            GridData gridData = (GridData)GridData;
+            levelSetUpdate.RecolorCellsOfNeighborParticles(coloredCells, gridData);
             SetColorDGField(coloredCells);
             return coloredCells;
         }
@@ -1298,6 +1322,7 @@ namespace BoSSS.Application.FSI_Solver {
             UpdateLevelSetParticles(time);
             CreatePhysicalDataLogger();
             CreateResidualLogger();
+            ProcessColoring();
         }
 
         /// <summary>

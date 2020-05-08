@@ -1158,13 +1158,6 @@ namespace BoSSS.Foundation.XDG {
                 int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 var msk = new BitArray(J);
            
-                //
-                // @Markus: undid your changes, because they caused thest to fail:
-                //
-
-                // check for cell color, necessary to prevent failing on periodic boundaries
-            //int[] coloredCells = Regions.ColorMap4Spc[GetSpeciesId("B")];
-
                 CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
                 int fail_count = 0;
 
@@ -1172,8 +1165,7 @@ namespace BoSSS.Foundation.XDG {
                 // check whether they are in Near - region of the previous state;
                 foreach(int j in newCut.ItemEnum) {
                     int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
-                if (Math.Abs(old_dist) > 1){// && coloredCells[j] < 1) {
-                        //if (Math.Abs(old_dist) > 1) {
+                if (Math.Abs(old_dist) > 1) {
                         fail_count++;
                         msk[j] = true;
                     }
