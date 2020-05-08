@@ -8,10 +8,76 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ilPSP {
+
+    /// <summary>
+    /// Base-class for JSON-based configuration files 
+    /// </summary>
+    [Serializable]
+    public abstract class ConfigFileBase {
+
+        /// <summary>
+        /// The default JSON text serializer 
+        /// </summary>
+        protected virtual JsonSerializer GetFormatter() {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error,
+                Formatting = Formatting.Indented
+//                ObjectCreationHandling = ObjectCreationHandling.
+            };
+            return formatter;
+        }
+
+        /// <summary>
+        /// Loading of control file in default location (<see cref="GetDefaultFilePath"/>);
+        /// if file is not present, the current status will be saved.
+        /// </summary>
+        virtual public void Load() {
+            string p = GetDefaultFilePath();
+            if(File.Exists(p)) {
+                string text = File.ReadAllText(p);
+
+                using(var tr = new StringReader(text)) {
+                    //string typeName = tr.ReadLine();
+                    using(JsonReader reader = new JsonTextReader(tr)) {
+                        GetFormatter().Populate(reader, this);
+                    }
+
+                }
+                
+                
+            } else {
+                Save();
+            }
+        }
+
+        /// <summary>
+        /// Saving of control file in default location (<see cref="GetDefaultFilePath"/>)
+        /// </summary>
+        public void Save() {
+            string p = GetDefaultFilePath();
+            string text;
+            using(var tw = new StringWriter()) {
+                //tw.WriteLine(this.GetType().AssemblyQualifiedName);
+                using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
+                    GetFormatter().Serialize(writer, this);
+                }
+
+                text = tw.ToString();
+            }
+            File.WriteAllText(p, text);
+        }
+
+
+        protected abstract string GetDefaultFilePath();
+    }
+
     
 
     /// <summary>
-    /// Savind and loading for configuration files/objects
+    /// Saving and loading for configuration files/objects
     /// </summary>
     static public class ConfigFileIOUtils {
 
@@ -46,14 +112,6 @@ namespace ilPSP {
             File.WriteAllText(p, text);
         }
 
-        ///// <summary>
-        ///// Serializing this object into a string.
-        ///// </summary>
-        //public string Serialize() {
-        //    return Serialize(this);
-        //}
-
-
         /// <summary>
         /// Serializing object <paramref name="dis"/> into a string.
         /// </summary>
@@ -83,6 +141,13 @@ namespace ilPSP {
         /// De-serializing from a JSON string.
         /// </summary>
         public static T Deserialize<T>(string Str) {
+            return ((T)Deserialize(Str, typeof(T)));
+        }
+
+        /// <summary>
+        /// De-serializing from a JSON string.
+        /// </summary>
+        public static object Deserialize(string Str, Type ObjectType) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -93,12 +158,31 @@ namespace ilPSP {
             
             using(var tr = new StringReader(Str)) {
                 //string typeName = tr.ReadLine();
-                Type ControlObjectType = typeof(T); //Type.GetType(typeName);
                 using(JsonReader reader = new JsonTextReader(tr)) {
-                    var obj = formatter.Deserialize(reader, ControlObjectType);
+                    var obj = formatter.Deserialize(reader, ObjectType);
 
-                    T ctrl = (T)obj;
-                    return ctrl;
+                    return obj;
+                }
+              
+            }
+        }
+
+        /// <summary>
+        /// Loading into an existing object
+        /// </summary>
+        public static void Populate(string Str, object o) {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
+            };
+
+            
+            using(var tr = new StringReader(Str)) {
+                //string typeName = tr.ReadLine();
+                using(JsonReader reader = new JsonTextReader(tr)) {
+                    formatter.Populate(reader, o);
                 }
               
             }

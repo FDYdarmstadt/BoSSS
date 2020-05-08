@@ -87,7 +87,6 @@ namespace MiniBatchProcessor {
             private set;
         }
 
-
         /// <summary>
         /// Loads the job from some text file
         /// </summary>
@@ -139,16 +138,13 @@ namespace MiniBatchProcessor {
             }
         }
 
-        
-
-
         /// <summary>
         /// Saves job data in queue-directory.
         /// </summary>
-        internal void Save() {
+        internal void Save(string BatchInstructionDir) {
             
             string RelDir = ClientAndServer.QUEUE_DIR;
-            string f = Path.Combine(ClientAndServer.config.BatchInstructionDir, RelDir, this.ID.ToString());
+            string f = Path.Combine(BatchInstructionDir, RelDir, this.ID.ToString());
 
             int ReTryCount = 0;
             while (true) {

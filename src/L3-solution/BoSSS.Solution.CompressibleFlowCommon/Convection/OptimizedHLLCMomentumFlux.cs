@@ -32,7 +32,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="OptimizedHLLCMomentumFlux.OptimizedHLLCMomentumFlux"/>
         /// </summary>
-        private int component;
+        protected int component;
 
         /// <summary>
         /// Constructs a new flux

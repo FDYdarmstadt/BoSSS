@@ -105,8 +105,14 @@ namespace BoSSS.Solution.Statistic {
                 throw new ArgumentException("mismatch in 1st dimension", "Points,Result");
             DGField[] Fields = Flds.ToArray();
             int M = Fields.Length;
+            for(int m = 0; m < M; m++) {
+                if(!object.ReferenceEquals(this.m_Context, Fields[m].GridDat))
+                    throw new ArgumentException($"Mismatch in grid: field #{m} is defined on a different grid.");
+            }
+
             if (Result.GetLength(1) != Fields.Length)
                 throw new ArgumentException("2nd dimension of 'Result' and length of 'Flds' must be equal");
+
 
             if (UnlocatedPoints == null)
                 UnlocatedPoints = new BitArray(N, false);
