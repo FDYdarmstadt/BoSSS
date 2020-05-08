@@ -38,7 +38,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
         protected readonly Material material;
 
-        private string speciesName;
+        protected string speciesName;
 
         /// <summary>
         /// Constructs a new flux
@@ -60,7 +60,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="INonlinearFlux.BorderEdgeFlux"/>
         /// </summary>
-        public void BorderEdgeFlux(
+        public virtual void BorderEdgeFlux(
             double time,
             int jEdge,
             MultidimensionalArray x,
@@ -84,8 +84,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             var boundaryMap = this.boundaryMap as CompressibleBoundaryCondMap;
             if (xdgBoudaryMap == null && boundaryMap == null)
                 throw new NotSupportedException("This type of boundary condition map is not supported.");
-            Vector xLocal = new Vector(D);
-            Vector normalLocal = new Vector(D);
 
             //bool isWall = false;
 

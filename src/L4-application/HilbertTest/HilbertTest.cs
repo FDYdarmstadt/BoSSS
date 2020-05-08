@@ -43,13 +43,9 @@ namespace HilbertTest {
     public class HilbertTest : TestProgram<CNSControl> {
 
         public static void Main(string[] args) {
-#if Debug
-            System.Threading.Thread.Sleep(5000);
-#endif
             BoSSS.Solution.Application.InitMPI();
             Test();
             BoSSS.Solution.Application.FinalizeMPI();
-
         }
 
    

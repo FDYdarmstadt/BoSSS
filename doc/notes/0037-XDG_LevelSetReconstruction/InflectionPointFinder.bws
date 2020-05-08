@@ -1,0 +1,141 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 5 instances of IDatabaseInfo {
+  0: { Session Count = 11; Grid Count = 14; Path = C:\bosss_db }
+  1: { Session Count = 1; Grid Count = 1; Path = C:\Users\marku\HESSENBOX-DA\temp\ShockFinding\bosss_db_shockFinding }
+  2: { Session Count = 1; Grid Count = 1; Path = C:\bosss_db_test }
+  3: { Session Count = 1; Grid Count = 1; Path = C:\bosss_db_ts }
+  4: { Session Count = 1; Grid Count = 1; Path = C:\tmp\ShockFindingAlgorithms\IBMBowShock_p2_xCells40_yCells160_CFLFrac0.1_RK1_s0=1.0E-03_lambdaMax15\LevelSetReconstruction\bosss_db_levelSets }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Solution.Tecplot;
+using ilPSP.Connectors.Matlab;
+using static ilPSP.IMatrixExtensions;
+using System.IO;
+using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution.CompressibleFlowCommon.ShockFinding;
+using System.Collections;
+**************
+==============
+**************
+==============
+// Select database
+var database = databases.Pick(3);
+database.Sessions
+**************
+List of 1 instances of ISessionInfo {
+  0: IBMBowShock_P2	IBMBowShock_p2_xCells40_yCells160_CFLFrac0.1_RK1_s0=1.0E-03_lambdaMax15	04/28/2020 12:20:49	485c5bf2...
+}
+==============
+**************
+==============
+// Select sessions
+List<ISessionInfo> sessions = new List<ISessionInfo>();
+sessions.Add(database.Sessions.Pick(0));
+**************
+==============
+**************
+==============
+// Create Direcotories
+string mainPath      = @"C:\tmp\ShockFindingAlgorithms\"; 
+string directoryName = @"InflectionPoints";
+string[] sessionPathsInflec = ShockFindingExtensions.CreateDirectories(mainPath, directoryName, sessions);
+ShockFindingExtensions.EmptyDirectories(mainPath, directoryName, sessions);
+**************
+==============
+**************
+==============
+// Select seeding setup
+SeedingSetup seeding = SeedingSetup.av;
+
+// Find the inflection points
+InflectionPointFinder[] finders = new InflectionPointFinder[sessions.Count];
+
+foreach(ISessionInfo session in sessions){
+    int count                    = 0;
+    
+    InflectionPointFinder finder = new InflectionPointFinder(sessionPathsInflec[count], session.Timesteps.Last());
+    
+    finder.FindPoints(seeding: seeding, patchRecoveryGradient: true, patchRecoveryHessian: true, eliminateNonConverged: true);
+    finder.Plot(plotDGFields: true, plotSeedingsPoints: true, plotInflectionsPoints: true, plotCurves: true, plotStartEndPairs: true);
+    finder.Results.SaveResults(finder.SessionPath);
+    finder.ResultsExtended.SaveResults(finder.SessionPath);
+    
+    finders[count] = finder;
+    
+    count++;
+}
+**************
+Total number of seeding points: 1412
+WALKING ON CURVES: START
+(Counting starts with 0)
+Patch recovery of field gradientX started...
+finished
+Patch recovery of field gradientY started...
+finished
+Patch recovery of field hessianXX started...
+finished
+Patch recovery of field hessianXY started...
+finished
+Patch recovery of field hessianYX started...
+finished
+Patch recovery of field hessianYY started...
+finished
+Point 0 (first)
+Point 100
+Point 200
+Point 300
+Point 400
+Point 500
+Point 600
+Point 700
+Point 800
+Point 900
+Point 1000
+Point 1100
+Point 1200
+Point 1300
+Point 1400
+Point 1411 (last)
+EliminateNonConvergedPoints: START
+EliminateNonConvergedPoints: END
+WALKING ON CURVES: END
+PLOTTING: START
+PLOTTING: END
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
