@@ -31,9 +31,12 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Writes a 'table' in a csv format to a file named <paramref name="filename"/>.
         /// </summary>
-        public static void SaveToCSVFile(this IDictionary<string, object[]> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true) {
-            using(var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
-                WriteCSVToStream(table, txt, ColSep, writeHeader);
+        //public static void SaveToCSVFile(this IDictionary<string, object[]> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true) {
+        public static void SaveToCSVFile<T, V>(this IDictionary<string, T> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true)
+            where T : IEnumerable<V> //
+        {
+            using (var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
+                WriteCSVToStream<T, V>(table, txt, ColSep, writeHeader);
                 txt.Flush();
             }
         }
@@ -142,7 +145,10 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Writes a 'table' in a csv format to a stream <paramref name="txt"/>.
         /// </summary>
-        public static void WriteCSVToStream(this IDictionary<string, object[]> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true) {
+        //public static void WriteCSVToStream(this IDictionary<string, object[]> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true) {
+        public static void WriteCSVToStream<T, V>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
+            where T : IEnumerable<V> //
+        { 
             string[] cols = table.Keys.ToArray();
             if(cols.Length <= 0)
                 return;

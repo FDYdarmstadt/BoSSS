@@ -54,6 +54,11 @@ namespace BoSSS.Application.XNSE_Solver {
         Prescribed,
 
         /// <summary>
+        /// Prescribed level-set (wave-like) projecetd from imported amplitude values.
+        /// </summary>
+        PrescribedLSwave,
+
+        /// <summary>
         /// evolution is described by an explicit Fourier representation
         /// </summary>
         Fourier,

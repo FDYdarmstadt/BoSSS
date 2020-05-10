@@ -336,6 +336,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Prescribed:
+                    case LevelSetEvolution.PrescribedLSwave:
                     case LevelSetEvolution.ScalarConvection:
                     default:
                         // evolution algorithms need a signed-distance level-set:
@@ -344,7 +345,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         // apply only the minimal necessary change
                         this.DGLevSet.Current.Clear();
                         this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-
+                   
                         //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
 
                         break;
@@ -681,6 +682,15 @@ namespace BoSSS.Application.XNSE_Solver {
                             break;
                         }
 
+                    case LevelSetEvolution.PrescribedLSwave: {
+                            this.DGLevSet.Current.Clear();
+                            double amplitude = this.Control.prescribedLSwaveData[hack_TimestepIndex];
+                            double wavelength = this.Control.AdditionalParameters[1];
+                            Func<double[], double> PhiWaveFunc = X => X[1] - amplitude * Math.Sin(X[0] * 2.0 * Math.PI / wavelength);
+                            this.DGLevSet.Current.ProjectField(1.0, PhiWaveFunc);
+                            break;
+                        }
+
                     case LevelSetEvolution.ScalarConvection: {
                             var LSM = new LevelSetMover(EvoVelocity,
                                 this.ExtensionVelocity,
@@ -1003,7 +1013,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             return meanVelocity;
         }
-
 
 
     }

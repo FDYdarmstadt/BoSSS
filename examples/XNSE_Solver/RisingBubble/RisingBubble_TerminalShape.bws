@@ -1,0 +1,93 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 5 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 412; Grid Count = 8955; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 125; Grid Count = 13; Path = D:\local\local_XNSE_StudyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Application.XNSE_Solver;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Foundation' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+WorkflowMgm.Init("RisingBubble")
+**************
+Project name is set to 'RisingBubble'.
+
+==============
+var sess = WorkflowMgm.Sessions.Pick(8);
+**************
+==============
+sess
+**************
+RisingBubble	RisingBubble_ConvStudy2_k2_mesh2	04/18/2020 11:55:54	a10b325a...
+==============
+var terminalStep = sess.Timesteps.Last()
+**************
+==============
+DGField phi = terminalStep.Fields.ElementAt(0);
+**************
+==============
+**************
+==============
+**************
+==============
+LevelSet LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+LevSet.Acc(1.0, phi);           
+**************
+==============
+LevelSetTracker LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+LsTrk.UpdateTracker();
+**************
+==============
+MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, quadRuleOrderForNodeSet:10);
+**************
+==============
+MultidimensionalArray interPcontour = MultidimensionalArray.Create(interP.Lengths);
+**************
+==============
+**************
+==============
+**************
+==============
+double[] x = interP.ExtractSubArrayShallow(new int[] { -1, 0 }).To1DArray();
+double[] y = interP.ExtractSubArrayShallow(new int[] { -1, 1 }).To1DArray();
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+PlotFormat pltForm = new PlotFormat();
+pltForm.LineColor  = LineColors.Red;
+pltForm.Style      = Styles.Points;
+pltForm.PointType  = PointTypes.Dot;
+**************
+==============
+plt.PlotXY(x, y, format: pltForm);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+**************
+==============
+**************
+==============

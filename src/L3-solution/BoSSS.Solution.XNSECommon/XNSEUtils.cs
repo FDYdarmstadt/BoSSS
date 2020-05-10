@@ -1352,14 +1352,15 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet, SubGrid sgrd = null) {
+        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet, SubGrid sgrd = null, int quadRuleOrderForNodeSet = -1) {
 
             int D = LsTrk.GridDat.SpatialDimension;
             int p = LevSet.Basis.Degree;
             if (sgrd == null)
                 sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
 
-            NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
+            int quadRule = (quadRuleOrderForNodeSet < 0) ? p * 2 : quadRuleOrderForNodeSet;
+            NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(quadRule).Nodes).ToArray();
             int Jsub = sgrd.LocalNoOfCells;
             int K = Nodes.Max(nds => nds.NoOfNodes);
             int numP = Jsub * K;

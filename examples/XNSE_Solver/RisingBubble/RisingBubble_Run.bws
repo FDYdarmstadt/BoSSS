@@ -5,11 +5,12 @@ restart
   _______________________
 
 Databases loaded:
-List of 4 instances of IDatabaseInfo {
+List of 5 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 77; Grid Count = 769; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 305; Grid Count = 3687; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 408; Grid Count = 8681; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 121; Grid Count = 9; Path = D:\local\local_XNSE_StudyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -20,24 +21,33 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 **************
 ==============
 //var myDb = OpenOrCreateDefaultDatabase();
-var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+//var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
 **************
 ==============
 ExecutionQueues;
 **************
-List of 1 instances of BatchProcessorClient {
-  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+List of 2 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @D:\local\binaries
+  1: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
 }
 ==============
 ExecutionQueues[0].AllowedDatabases;
 **************
-List of 0 instances of IDatabaseInfo {
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 121; Grid Count = 9; Path = D:\local\local_XNSE_StudyDB }
 }
 ==============
-var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+var myBatch = ExecutionQueues[0];
 **************
 ==============
+var myDb = ExecutionQueues[0].AllowedDatabases[0];
 **************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning(false);
+**************
+Starting mini batch processor in background thread...
+True
 ==============
 **************
 ==============
@@ -49,6 +59,7 @@ Project name is set to 'RisingBubble'.
 //WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 **************
 ==============
+//databases.Pick(3).Sessions.Pick(407).KeysAndQueries
 **************
 ==============
 **************
@@ -133,9 +144,9 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 Grid Edge Tags changed.
-An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid (6e139417-6764-4c95-98d0-bcbaf731013c) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid (99561ff6-3923-4249-977a-95523e30baac) is already present in the database -- the grid will not be saved.
 
 ==============
 /*
@@ -205,7 +216,7 @@ FLSCSeq[iGrid] = new BoSSS.Solution.LevelSetTools.FourierLevelSet.FourierLevSetC
 using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 **************
 ==============
-int[] degS = new int[] { 2 };
+int[] degS = new int[] { 3 };
 **************
 ==============
 bool dt_min = false;
@@ -233,22 +244,24 @@ foreach(var sess in WorkflowMgm.Sessions) {
 }
 restartStudySess
 **************
-List of 5 instances of ISessionInfo {
-  0: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1_restart*	04/17/2020 15:18:22	bc355a70...
-  1: RisingBubble	RisingBubble_ExtVelCurv2_k2_mesh1*	03/31/2020 10:23:09	84087e56...
-  2: RisingBubble	RisingBubble_ExtVelLB2_k2_mesh1*	03/31/2020 10:21:47	ab0a7316...
-  3: RisingBubble	RisingBubble_ExtVelCurv_k2_mesh1*	03/30/2020 16:45:02	09f68852...
-  4: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1*	03/30/2020 16:43:52	cfbee3d5...
+List of 6 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_ExtVelLB3_k2_mesh1*	04/19/2020 20:11:05	27695456...
+  1: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1_restart*	04/17/2020 15:18:22	bc355a70...
+  2: RisingBubble	RisingBubble_ExtVelCurv2_k2_mesh1*	03/31/2020 10:23:09	84087e56...
+  3: RisingBubble	RisingBubble_ExtVelLB2_k2_mesh1*	03/31/2020 10:21:47	ab0a7316...
+  4: RisingBubble	RisingBubble_ExtVelCurv_k2_mesh1*	03/30/2020 16:45:02	09f68852...
+  5: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1*	03/30/2020 16:43:52	cfbee3d5...
 }
 ==============
 bool restart = false;
 Guid[] restartID = new Guid[2];
 restartID[1] = restartStudySess.ElementAt(2).ID;
+//restartID[1] = databases.Pick(3).Sessions.Pick(407);
 restartID
 **************
 List of 2 instances of Guid {
   0: 00000000-0000-0000-0000-000000000000
-  1: ab0a7316-dd4c-48b8-ac33-5aa809057bba
+  1: 84087e56-31e3-4c80-a0e7-36b7052092f9
 }
 ==============
 bool withAMR = false;
@@ -289,7 +302,7 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     C.AddBoundaryValue("freeslip_left");
     C.AddBoundaryValue("freeslip_right");
     
-    C.SetLevelSetMethod(2, FLSCSeq[iGrd]);
+    C.SetLevelSetMethod(0, FLSCSeq[iGrd]);
     if(setup == 1 || withAMR) {
         C.AdaptiveMeshRefinement = true;
         C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
@@ -307,7 +320,8 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     C.saveperiod = 10*logP;   
     
     //C.SessionName = "RisingBubble_tc2_ConvStudy2_k" + pDeg + "_mesh" + iGrd;
-    C.SessionName = "RisingBubble_"+C.methodTagLS+"3_k" + pDeg + "_mesh" + iGrd;
+    C.SessionName = "RisingBubble_ConvStudy_k" + pDeg + "_mesh0_rerun";
+    //C.SessionName = "RisingBubble_"+C.methodTagLS+"3_k" + pDeg + "_mesh" + iGrd;
     
     //controls[iDeg-deg0,iGrd-grd0] = C;
     controls.Add(C);
@@ -315,7 +329,7 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
 }
 }
 **************
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: D:\local\local_XNSE_StudyDB
 
 ==============
 controls.Count()
@@ -326,7 +340,7 @@ controls.Count()
 //controls[0,0].SessionName
 controls.ElementAt(0).SessionName
 **************
-RisingBubble_ExtVelLB3_k2_mesh1
+RisingBubble_ConvStudy_k3_mesh0_rerun
 ==============
 **************
 ==============
@@ -346,24 +360,25 @@ RisingBubble_ExtVelLB3_k2_mesh1
 **************
 ==============
 foreach(var cntrl in controls) {
-    Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
+    Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
     var job              = cntrl.GetJob();
     //job.NumberOfMPIProcs = 4;
     job.Activate(myBatch);
 }
 **************
-Submitting Sessions: RisingBubble_ExtVelLB3_k2_mesh1
-Job not submitted yet, or no result session is known - starting submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Apr19_201058
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
+Submitting Session: RisingBubble_ConvStudy_k3_mesh0_rerun
+System.NotSupportedException occurred: Job can only be activated once.. Type 'LastError' for details.
 
 ==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Status Session: {0}", cntrl.SessionName);
+    var job              = cntrl.GetJob();
+    Console.WriteLine(job.Status);
+}
 **************
+Status Session: RisingBubble_ConvStudy_k3_mesh0_rerun
+PendingInExecutionQueue
+
 ==============
 **************
 ==============
@@ -388,6 +403,14 @@ deployment finished.
 **************
 ==============
 //databases.Pick(3).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

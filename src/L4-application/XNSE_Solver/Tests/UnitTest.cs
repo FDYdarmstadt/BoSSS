@@ -38,11 +38,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class UnitTest {
 
+
+        /// <summary>
+        /// MPI finalize.
+        /// </summary>
+        [OneTimeTearDown]
+        static public void OneTimeTearDown() {
+            csMPI.Raw.mpiFinalize();
+        }
+
         /// <summary>
         /// MPI init.
         /// </summary>
         [OneTimeSetUp]
         static public void OneTimeSetUp() {
+
+            BoSSS.Solution.Application.InitMPI(new string[0]);
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 
@@ -137,6 +148,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
                 //C.VelocityBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib;
                 //C.PressureBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.Eye;
+                //C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+                //C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
+                //C.PhysicalParameters.betaS_B = 0.25;
+                //C.PhysicalParameters.theta_e = Math.PI / 3.0;
                 LaLa.Add(C);
             }
 

@@ -34,9 +34,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Func<double[], double, double> GetPhi() {
-            if (quadratic)
-                return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
-            else
+            if (quadratic) {
+                //return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
+                return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + ((y + (3.0/2.0)) * (y + (3.0 / 2.0))) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
+            } else
                 return ((_3D)((time, x, y) => Math.Sqrt((x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784)) - 1.0)).Convert_txy2Xt();
         }
 
@@ -70,7 +71,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //var grd = Grid2D.UnstructuredTriangleGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 5));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3), GenericBlas.Linspace(-2, 2, 3));
 
-            grd.EdgeTagNames.Add(1, "Wall");
+            //grd.EdgeTagNames.Add(1, "wall");
+            //grd.EdgeTagNames.Add(1, "freeslip");
+            grd.EdgeTagNames.Add(1, "navierslip_linear");
             grd.DefineEdgeTags(delegate (double[] _X) {
                 return 1;
             });
@@ -81,7 +84,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
-            config.Add("Wall", new AppControl.BoundaryValueCollection());
+            //config.Add("wall", new AppControl.BoundaryValueCollection());
+            //config.Add("freeslip", new AppControl.BoundaryValueCollection());
+            config.Add("navierslip_linear", new AppControl.BoundaryValueCollection());
+
             //config["Velocity_Inlet"].Evaluators.Add(
             //    VariableNames.Velocity_d(0) + "#A",
             //    (X, t) => X[1]);

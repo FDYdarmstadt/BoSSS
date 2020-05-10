@@ -883,7 +883,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (Water) {
 
-                double mu_scl = 100;
+                double mu_scl = 1;
 
                 //physical values for water(A: liquid and B: vapor state)
                 double rho_l = 997; // kg/m3     //9.97e-7;   // kg / mm3
@@ -994,7 +994,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double R = 60e-3;
+            double R = 30e-3;
             double H = 2 * R;
 
             if (startUp_Interface || startUp_Heat) {
@@ -1044,7 +1044,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.BaseRefinementLevel = 4;
             C.RefinementLevel = 4;
             C.AMR_startUpSweeps = 4;
-            //C.ReInitPeriod = 10;
+            C.ReInitPeriod = 1;
 
             double hmin = (R / Math.Pow(2.0, C.RefinementLevel + 1));
             double tscale_grid = 2e-6;
@@ -1079,8 +1079,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 }
                 C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-                //C.InitialValues_Evaluators.Add("GravityY#A", X => -g);
-                //C.InitialValues_Evaluators.Add("GravityY#B", X => -g);
+                C.InitialValues_Evaluators.Add("GravityY#A", X => -g);
+                C.InitialValues_Evaluators.Add("GravityY#B", X => -g);
                 C.InitialValues_Evaluators.Add("Temperature#A", X => Tsat);
                 C.InitialValues_Evaluators.Add("Temperature#B", X => Tsat);
                 C.InitialValues_Evaluators.Add("Pressure#A", X => C.ThermalParameters.p_sat); // -C.PhysicalParameters.rho_A * g * (X[1] - h0) + C.ThermalParameters.p_sat);
@@ -1168,8 +1168,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
             //C.PhysicalParameters.sliplength = hmin;
 
-            C.PhysicalParameters.betaS_A = C.PhysicalParameters.mu_A / (hmin / 10.0);
-            C.PhysicalParameters.betaS_B = C.PhysicalParameters.mu_B / (hmin / 1000.0);
+            double beta_scl = 100;
+            C.PhysicalParameters.betaS_A = beta_scl * C.PhysicalParameters.mu_A / (hmin / 10.0);
+            C.PhysicalParameters.betaS_B = beta_scl * C.PhysicalParameters.mu_B / (hmin / 1000.0);
             //C.PhysicalParameters.betaL = 0.01;
 
 
@@ -1221,7 +1222,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (startUp_Interface || run || (startUp_Heat && startUp_withEvap)) {
                 C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-                //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+                C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
                 C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             } else {
                 C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -1240,8 +1241,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.dtMax = 5e-4;
-            C.dtMin = 5e-4;
+            C.dtMax = 1e-4;
+            C.dtMin = 1e-4;
             C.Endtime = 10.0;
             C.NoOfTimesteps = 100000;
             C.saveperiod = 10;

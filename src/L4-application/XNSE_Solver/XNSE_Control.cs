@@ -359,6 +359,11 @@ namespace BoSSS.Application.XNSE_Solver {
             MovingContactLine,
 
             /// <summary>
+            /// contact points and corresponding contact angle, wetting length and height of the droplet
+            /// </summary>
+            DropletOnWall,
+
+            /// <summary>
             /// height of a rising capillary in a tube
             /// </summary>
             CapillaryHeight,
@@ -494,6 +499,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public double[] AdditionalParameters;
+
+        /// <summary>
+        /// amplitude values for wave-like interfaces
+        /// </summary>
+        [DataMember]
+        public double[] prescribedLSwaveData;
 
         ///// <summary>
         ///// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
