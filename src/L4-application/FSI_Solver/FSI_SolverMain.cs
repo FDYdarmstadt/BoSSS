@@ -215,8 +215,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// FluidDensity
         /// </summary>
-        [DataMember]
-        private double MinGridLength => MaxGridLength / Math.Pow(2, RefinementLevel);
+        private double GetMinGridLength() {
+            if (RefinementLevel == 0)
+                return MaxGridLength;
+            else
+                return MaxGridLength / Math.Pow(2, RefinementLevel);
+        }
 
         /// <summary>
         /// Volume of the fluid domain
@@ -241,7 +245,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// FluidDensity
         /// </summary>
         [DataMember]
-        private double MinimalDistanceForCollision => ((FSI_Control)Control).minDistanceThreshold;
+        private double MinimalDistanceForCollision => GetMinGridLength() / 3;
 
         /// <summary>
         /// HydrodynConvergenceCriterion
@@ -509,7 +513,7 @@ namespace BoSSS.Application.FSI_Solver {
         private FSI_ParameterAtIB CreateCouplingAtParticleBoundary(Vector X) {
             FSI_ParameterAtIB couplingParameters = null;
             foreach (Particle p in m_Particles) {
-                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, MaxGridLength);
+                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, 2 * MaxGridLength);
                 if (containsParticle) {
                     couplingParameters = new FSI_ParameterAtIB(p, X);
                 }
@@ -569,7 +573,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The current time.
         /// </param>
         private void UpdateLevelSetParticles(double phystime) {
-            levelSetUpdate = new FSI_LevelSetUpdate(GridData, MinGridLength);
+            levelSetUpdate = new FSI_LevelSetUpdate(GridData, GetMinGridLength());
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             // Step 0
             // Check for periodic boundaries and create/delete
@@ -882,7 +886,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
                 else
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
-                FSI_Collision periodicCollision = new FSI_Collision(MinGridLength, 0, 0);
+                FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
                 periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
             }
@@ -897,7 +901,7 @@ namespace BoSSS.Application.FSI_Solver {
                         currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID], particlePosition[1]);
                     else
                         currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID]);
-                    FSI_Collision periodicCollision = new FSI_Collision(MinGridLength, 0, 0);
+                    FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
                     periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
                         return true;    
@@ -944,7 +948,7 @@ namespace BoSSS.Application.FSI_Solver {
                         double expectedRotation = (p.Motion.GetRotationalVelocity() + p.Motion.GetHydrodynamicTorque() * DtMax / p.MomentOfInertia) * p.GetLengthScales().Max();
                         maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity + Math.Abs(expectedRotation));
                     }
-                    dt = Math.Min(DtMax, MinGridLength / (10 * maxVelocityL2Norm));
+                    dt = Math.Min(DtMax, GetMinGridLength() / (10 * maxVelocityL2Norm));
                     if (dt / oldTimestep > 1.1)
                         dt = oldTimestep * 1.1;
                     dt = dt.MPIMin();
@@ -1361,7 +1365,7 @@ namespace BoSSS.Application.FSI_Solver {
                     for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
                         currentParticles[j] = m_Particles[ParticlesOfCurrentColor[j]];
                     }
-                    FSI_Collision _Collision = new FSI_Collision(MinGridLength, ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
+                    FSI_Collision _Collision = new FSI_Collision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
                     _Collision.CalculateCollision(currentParticles);
                 }
                 // Remove already investigated particles/colours from array
@@ -1493,7 +1497,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         else if (!perssonCells[j]) {
                             Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                            perssonCells[j] = m_Particles[p].Contains(cellCenter, MinGridLength * 4);
+                            perssonCells[j] = m_Particles[p].Contains(cellCenter, GetMinGridLength() * 4);
                         }
                     }
                     if (!perssonCells[j] && ((FSI_Control)Control).pureDryCollisions) {

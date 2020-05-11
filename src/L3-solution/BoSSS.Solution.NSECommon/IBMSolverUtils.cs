@@ -56,12 +56,17 @@ namespace BoSSS.Solution.NSECommon {
                 Basis PressureBasis = (Basis)map.BasisS[iVar];
                 int D = GridDat.SpatialDimension;
 
-                long GlobalID, GlobalCellIndex;
+                long GlobalID;
+                long GlobalCellIndex = 0;
                 bool IsInside, onthisProc;
-                double[] pt = new double[] { double.MaxValue, double.MaxValue };
-                GridDat.LocatePoint(pt, out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, 
-                    LsTrk != null ? LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement() : null);
-                
+                double[] pt = new double[] { 0, 0 };
+                //GridDat.LocatePoint(pt, out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk != null ? LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement() : null);
+
+                GlobalCellIndex = GridDat.CellPartitioning.GetI0s()[0];
+                int currentProc = 0;
+
+                onthisProc = currentProc == GridDat.MpiRank;
+
                 int iRowGl = -111;
                 if (onthisProc) {
                     //int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
