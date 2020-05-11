@@ -323,6 +323,6 @@ namespace BoSSS.Application.FSI_Solver {
             return typeof(FSI_SolverMain);
         }
 
-        public bool UsePerssonSensor = true;
+        public bool UsePerssonSensor = false;
     }
 }

@@ -1025,7 +1025,7 @@ namespace BoSSS.Application.FSI_Solver {
                 else {
                     int iterationCounter = 0;
                     double hydroDynForceTorqueResidual = double.MaxValue;
-                    int minimumNumberOfIterations = 5;
+                    int minimumNumberOfIterations = 3;
                     MotionHydrodynamics AllParticleHydrodynamics = new MotionHydrodynamics(LsTrk);
                     while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minimumNumberOfIterations) {
                         if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)

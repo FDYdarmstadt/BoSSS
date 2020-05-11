@@ -49,17 +49,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
-                //if (!currentParticle.IsMaster)
-                //    continue;
                 CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
-                //if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
-                //    for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
-                //        if (currentParticle.MasterGhostIDs[g] < 1)
-                //            continue;
-                //        CellMask ghostCells = AllParticles[currentParticle.MasterGhostIDs[g] - 1].CutCells_P(m_LsTrk);
-                //        cutCells = cutCells.Union(ghostCells);
-                //    }
-                //}
                 int offset = p * (m_Dim + 1);
                 double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
                 double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
@@ -105,14 +95,14 @@ namespace BoSSS.Application.FSI_Solver {
         private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega) {
             double[] relaxatedHydrodynamics;
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            if (m_ForcesAndTorquePreviousIteration.Count >= 4) {
+            if (m_ForcesAndTorquePreviousIteration.Count > 2) {
+                Console.WriteLine("Aitken");
                 relaxatedHydrodynamics = AitkenUnderrelaxation(hydrodynamics, ref omega);
             }
-            else if (m_ForcesAndTorquePreviousIteration.Count > 1) {
+            else {
                 relaxatedHydrodynamics = StaticUnderrelaxation(hydrodynamics);
+                Console.WriteLine("Static");
             }
-            else
-                relaxatedHydrodynamics = hydrodynamics.CloneAs();
             return relaxatedHydrodynamics;
         }
 
@@ -140,10 +130,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="iterationCounter"></param>
         internal double CalculateParticleResidual(ref int iterationCounter) {
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             double residual = 0;
             double denom = 0;
-            if (iterationCounter <= 2)
+            if (iterationCounter < 1)
                 residual = double.MaxValue;
             else {
                 for (int i = 0; i < m_ForcesAndTorquePreviousIteration[0].Length; i++) {

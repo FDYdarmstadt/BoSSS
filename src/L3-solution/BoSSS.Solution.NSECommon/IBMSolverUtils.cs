@@ -56,55 +56,22 @@ namespace BoSSS.Solution.NSECommon {
                 Basis PressureBasis = (Basis)map.BasisS[iVar];
                 int D = GridDat.SpatialDimension;
 
-                long GlobalID;
                 long GlobalCellIndex = 0;
-                bool IsInside, onthisProc;
-                double[] pt = new double[] { 0, 0 };
-                //GridDat.LocatePoint(pt, out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk != null ? LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement() : null);
-
-                GlobalCellIndex = GridDat.CellPartitioning.GetI0s()[0];
                 int currentProc = 0;
-
-                onthisProc = currentProc == GridDat.MpiRank;
-
+                bool onthisProc = currentProc == GridDat.MpiRank;
                 int iRowGl = -111;
                 if (onthisProc) {
-                    //int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
-
-
-                    //NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
-                    //MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
-
-
-                    //MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
-                    //GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
-                    //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0,0], CenterNodeGlobal[0,1]);
-
-
-                    //LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
-                    //ReducedRegionCode rrc;
-                    //int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
-                    //int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
-
+                    GlobalCellIndex = GridDat.CellPartitioning.i0;
                     iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
-
                 }
-                iRowGl = iRowGl.MPIMax();
-
+                iRowGl = iRowGl.MPIBroadcast(currentProc);
 
                 // clear row
                 // ---------
                 if (onthisProc) {
-                    // ref. cell is on local MPI process
-                    int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
-
-                    //ReducedRegionCode rrc;
-                    //int NoOfSpc = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
-
                     // set matrix row to identity
                     Mtx.ClearRow(iRowGl);
                     Mtx.SetDiagonalElement(iRowGl, 1.0);
-
 
                     // clear RHS
                     int iRow = iRowGl - Mtx.RowPartitioning.i0;
