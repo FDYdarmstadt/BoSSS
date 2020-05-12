@@ -149,7 +149,8 @@ namespace MiniBatchProcessor {
                 Console.WriteLine("Starting mini batch processor in background thread...");
 
                 Thread ServerThread = (new Thread(delegate () {
-                    Main(new string[0]);
+                    var s = new Server(null);
+                    s._Main(new string[0]);
                 }));
                 ServerThread.Start();
 
@@ -406,6 +407,11 @@ namespace MiniBatchProcessor {
                 }
             }
 
+            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
+                Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
+                return;
+            }
+
             var s = new Server(dir);
             s._Main(args);
         }
@@ -415,10 +421,7 @@ namespace MiniBatchProcessor {
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
         /// </summary>
         void _Main(string[] args) {
-            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
-                Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
-                return;
-            }
+            
             Init();
             LogMessage("server started.");
 
