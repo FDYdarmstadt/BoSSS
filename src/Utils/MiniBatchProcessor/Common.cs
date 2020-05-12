@@ -207,30 +207,32 @@ namespace MiniBatchProcessor {
 
         void UpdateLists() {
             using(new FuncTrace()) {
-                var AllJobsNew = new Dictionary<int, Tuple<JobData, JobStatus>>();
-                AllJobsNew.AddRange(m_AllJobs);
+                lock(padlock_AllJobs) {
+                    var AllJobsNew = new Dictionary<int, Tuple<JobData, JobStatus>>();
+                    AllJobsNew.AddRange(m_AllJobs);
 
-                ReadQueueDir(AllJobsNew);
-                ReadWorkDir(AllJobsNew);
+                    ReadQueueDir(AllJobsNew);
+                    ReadWorkDir(AllJobsNew);
 
-                //ReadDir(QUEUE_DIR, AllJobsNew, JobStatus.Queued);
-                //ReadDir(WORK_FINISHED_DIR, AllJobsNew, JobStatus.Working);
+                    //ReadDir(QUEUE_DIR, AllJobsNew, JobStatus.Queued);
+                    //ReadDir(WORK_FINISHED_DIR, AllJobsNew, JobStatus.Working);
 
-                //foreach (var kv in AllJobsNew.ToArray()) {
-                //    var Ja = AllJobsNew[i];
+                    //foreach (var kv in AllJobsNew.ToArray()) {
+                    //    var Ja = AllJobsNew[i];
 
-                //    for (int j = i + 1; j < AllJobsNew.Count; j++) {
-                //        var Jb = AllJobsNew[j];
+                    //    for (int j = i + 1; j < AllJobsNew.Count; j++) {
+                    //        var Jb = AllJobsNew[j];
 
-                //        if(Ja.Item1.ID == Jb.Item1.ID) {
-                //            Console.WriteLine("Warning: found job ID {0} more than once - ignoring second occurrence (first in list {1}, second in list {2}).", Ja.Item1, Ja.Item2, Jb.Item2);
-                //            AllJobsNew.RemoveAt(j);
-                //            j--;
-                //        }
-                //    }
-                //}
+                    //        if(Ja.Item1.ID == Jb.Item1.ID) {
+                    //            Console.WriteLine("Warning: found job ID {0} more than once - ignoring second occurrence (first in list {1}, second in list {2}).", Ja.Item1, Ja.Item2, Jb.Item2);
+                    //            AllJobsNew.RemoveAt(j);
+                    //            j--;
+                    //        }
+                    //    }
+                    //}
 
-                m_AllJobs = AllJobsNew;
+                    m_AllJobs = AllJobsNew;
+                }
             }
         }
 
@@ -259,7 +261,11 @@ namespace MiniBatchProcessor {
         public JobStatus GetStatusFromID(int JobId, out int ExitCode) {
             using(new FuncTrace()) {
                 UpdateLists();
-                var jd = m_AllJobs[JobId];
+                Tuple<JobData, JobStatus> jd = null;
+                lock(padlock_AllJobs) {
+                    jd = m_AllJobs[JobId];
+                }
+
                 {
                     if(jd.Item1.ID == JobId) {
                         ExitCode = 0;
@@ -290,7 +296,9 @@ namespace MiniBatchProcessor {
         public IList<JobData> AllJobs {
             get {
                 UpdateLists();
-                return m_AllJobs.Values.Select(job => job.Item1).ToList().AsReadOnly();
+                lock(padlock_AllJobs) {
+                    return m_AllJobs.Values.Select(job => job.Item1).ToList().AsReadOnly();
+                }
             }
         }
 
@@ -310,9 +318,11 @@ namespace MiniBatchProcessor {
         public IList<JobData> Queue {
             get {
                 UpdateLists();
-                return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Queued)
-                    .Select(job => job.Item1)
-                    .ToList().AsReadOnly();
+                lock(padlock_AllJobs) {
+                    return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Queued)
+                        .Select(job => job.Item1)
+                        .ToList().AsReadOnly();
+                }
             }
         }
 
@@ -322,9 +332,11 @@ namespace MiniBatchProcessor {
         public IList<JobData> Working {
             get {
                 UpdateLists();
-                return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Working)
-                    .Select(job => job.Item1)
-                    .ToList().AsReadOnly();
+                lock(padlock_AllJobs) {
+                    return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Working)
+                        .Select(job => job.Item1)
+                        .ToList().AsReadOnly();
+                }
             }
         }
 
@@ -334,9 +346,11 @@ namespace MiniBatchProcessor {
         public IList<JobData> Finished {
             get {
                 UpdateLists();
-                return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Finished)
-                    .Select(job => job.Item1)
-                    .ToList().AsReadOnly();
+                lock(padlock_AllJobs) {
+                    return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Finished)
+                        .Select(job => job.Item1)
+                        .ToList().AsReadOnly();
+                }
             }
         }
     }
