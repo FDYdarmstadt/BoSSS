@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -107,27 +109,27 @@ namespace MiniBatchProcessor {
         }
 
         void UpdateLists() {
-            var AllJobsNew = new Dictionary<int, Tuple<JobData, JobStatus>>();
-            ReadDir(QUEUE_DIR, AllJobsNew, JobStatus.Queued);
-            //ReadDir(WORK_DIR, AllJobsNew, JobStatus.Working);
-            //ReadDir(FINISHED_DIR, AllJobsNew, JobStatus.Finished);
-            ReadDir(WORK_FINISHED_DIR, AllJobsNew, JobStatus.Working);
+            using(new FuncTrace()) {
+                var AllJobsNew = new Dictionary<int, Tuple<JobData, JobStatus>>();
+                ReadDir(QUEUE_DIR, AllJobsNew, JobStatus.Queued);
+                ReadDir(WORK_FINISHED_DIR, AllJobsNew, JobStatus.Working);
 
-            //foreach (var kv in AllJobsNew.ToArray()) {
-            //    var Ja = AllJobsNew[i];
+                //foreach (var kv in AllJobsNew.ToArray()) {
+                //    var Ja = AllJobsNew[i];
 
-            //    for (int j = i + 1; j < AllJobsNew.Count; j++) {
-            //        var Jb = AllJobsNew[j];
+                //    for (int j = i + 1; j < AllJobsNew.Count; j++) {
+                //        var Jb = AllJobsNew[j];
 
-            //        if(Ja.Item1.ID == Jb.Item1.ID) {
-            //            Console.WriteLine("Warning: found job ID {0} more than once - ignoring second occurrence (first in list {1}, second in list {2}).", Ja.Item1, Ja.Item2, Jb.Item2);
-            //            AllJobsNew.RemoveAt(j);
-            //            j--;
-            //        }
-            //    }
-            //}
+                //        if(Ja.Item1.ID == Jb.Item1.ID) {
+                //            Console.WriteLine("Warning: found job ID {0} more than once - ignoring second occurrence (first in list {1}, second in list {2}).", Ja.Item1, Ja.Item2, Jb.Item2);
+                //            AllJobsNew.RemoveAt(j);
+                //            j--;
+                //        }
+                //    }
+                //}
 
-            m_AllJobs = AllJobsNew.Values.ToList();
+                m_AllJobs = AllJobsNew.Values.ToList();
+            }
         }
 
         /// <summary>
@@ -152,26 +154,28 @@ namespace MiniBatchProcessor {
         /// </param>
         /// <returns></returns>
         public JobStatus GetStatusFromID(int JobId, out int ExitCode) {
-            UpdateLists();
-            foreach (var jd in m_AllJobs) {
-                if(jd.Item1.ID == JobId) {
-                    ExitCode = 0;
+            using(new FuncTrace()) {
+                UpdateLists();
+                foreach(var jd in m_AllJobs) {
+                    if(jd.Item1.ID == JobId) {
+                        ExitCode = 0;
 
-                    if(jd.Item2 == JobStatus.Finished) {
-                        try {
-                            string ExitCodeFile = Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR, JobId.ToString() + "_exit.txt");
-                            using (var exit = new StreamReader(ExitCodeFile)) {
-                                ExitCode = int.Parse(exit.ReadLine());
+                        if(jd.Item2 == JobStatus.Finished) {
+                            try {
+                                string ExitCodeFile = Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR, JobId.ToString() + "_exit.txt");
+                                using(var exit = new StreamReader(ExitCodeFile)) {
+                                    ExitCode = int.Parse(exit.ReadLine());
+                                }
+                            } catch(Exception) {
+                                ExitCode = -1;
                             }
-                        } catch (Exception) {
-                            ExitCode = -1;
                         }
-                    }
 
-                    return jd.Item2;
+                        return jd.Item2;
+                    }
                 }
+                throw new ArgumentException("Unable to find job with id '" + JobId + "'.");
             }
-            throw new ArgumentException("Unable to find job with id '" + JobId + "'.");
         }
 
         List<Tuple<JobData, JobStatus>> m_AllJobs;
