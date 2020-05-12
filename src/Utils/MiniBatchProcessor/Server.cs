@@ -480,7 +480,6 @@ namespace MiniBatchProcessor {
                 // sort out jobs which have problems
                 NextJobs = NextJobs.Where(job => CheckJob(job, true) == true).ToArray();
 
-
                 // sleep if there is nothing to do
                 if (NextJobs.Count() <= 0) {
                     LogMessage(string.Format("No more jobs in queue. Running: {0}, Avail. procs.: {1}.", Running.Count, AvailableProcs));
@@ -497,7 +496,7 @@ namespace MiniBatchProcessor {
                     if ((NextJobs[0].NoOfProcs > AvailableProcs)
                         || (NextJobs[0].UseComputeNodesExclusive && AvailableProcs < config.MaxProcessors)
                         || (ExclusiveUse == true)) {
-                        LogMessage(string.Format(": Not enough available processors for job #{0} - start is delayed.", NextJobs[0].ID));
+                        LogMessage($"Not enough available processors for job #{NextJobs[0].ID} - start is delayed; {NextJobs.Length} jobs are pending.");
                         Thread.Sleep(10000);
                         continue;
                     }
