@@ -81,6 +81,10 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+
+        public string WorkingDirectory;
+
+
         [DataMember]
         private string m_ProjectName;
 
