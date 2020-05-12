@@ -844,7 +844,7 @@ namespace PublicTestRunner {
 
                 int i = args.IndexWhere(a => a.StartsWith("--result="));
                 string arg_i = args[i];
-                string resFileName = Path.GetFileNameWithoutExtension(arg_i.Replace("--result=", ""));
+                string resFileName = arg_i.Replace("--result=", "");
                 args[i] = "--result=" + MpiResFileNameMod( MpiRank, MpiSize, resFileName);
 
 
@@ -899,6 +899,8 @@ namespace PublicTestRunner {
 
             if (MpiSize == 1)
                 return resFileName;
+
+            resFileName = Path.GetFileNameWithoutExtension(resFileName);
 
             string newResFileName = resFileName + "." + MpiRank + "of" + MpiSize + ".xml";
             return newResFileName;
