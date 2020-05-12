@@ -248,30 +248,44 @@ namespace MiniBatchProcessor {
             }
         }
 
-        void Init() {
+        bool Init() {
 
 
-
-            // Check that we are the only instance:
             string MutexFileName = Path.Combine(GetServerMutexPath(config.BatchInstructionDir));
-            if (File.Exists(MutexFileName)) {
-                // try to delete
-                File.Delete(MutexFileName);
-            }
-            if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
-                // try to delete
-                File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
+            try {
+                // Check that we are the only instance:
+                if(File.Exists(MutexFileName)) {
+                    // try to delete
+                    File.Delete(MutexFileName);
+                }
+            } catch(IOException) {
+                Console.WriteLine("Unable to obtain server mutex.");
+                return false;
             }
 
-           
-            
+            try { 
+                if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
+                    // try to delete
+                    File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
+                }
+            } catch (IOException) {
+                Console.WriteLine("Unable to delete termination signal");
+                return false;
+            }
+
+
             // create mutex file and share it with no one!
-            ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-            LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
-            var ServerMutexS = new StreamWriter(ServerMutex);
-            ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
-            ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
-            ServerMutexS.Flush();
+            try {
+                ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
+                LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
+                var ServerMutexS = new StreamWriter(ServerMutex);
+                ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
+                ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
+                ServerMutexS.Flush();
+            } catch(IOException) {
+                Console.WriteLine("Unable to obtain server mutex (2).");
+                return false;
+            }
 
             // see if there are any zombies left in the 'working' directory
             foreach (var J in Working) {
@@ -285,7 +299,7 @@ namespace MiniBatchProcessor {
                 }
             }
 
-            
+            return true;
         }
 
         /*
@@ -422,7 +436,10 @@ namespace MiniBatchProcessor {
         /// </summary>
         void _Main(string[] args) {
             
-            Init();
+            if(!Init()) {
+                Console.WriteLine("Terminating server init.");
+                return;
+            }
             LogMessage("server started.");
 
             // infinity loop
