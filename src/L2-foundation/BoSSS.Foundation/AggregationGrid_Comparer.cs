@@ -31,7 +31,7 @@ namespace BoSSS.Foundation.Grid.Aggregation
         static bool AreReferencesEqual(AggregationGrid A, AggregationGrid B)
         {
             //To do: Compare aggregation grid
-            IEqualityComparer<IGrid> parentReferenceComparer = A.ParentGrid.GridSerializationHandler.ReferenceComparer;
+            IEqualityComparer<IGrid> parentReferenceComparer = A.ParentGrid.GridSerializationHandler.BasePropertiesComparer;
             bool parentReferencesAreEqual = parentReferenceComparer.Equals(A.ParentGrid, B.ParentGrid);
             return parentReferencesAreEqual;
         }

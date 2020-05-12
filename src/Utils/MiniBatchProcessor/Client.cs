@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MiniBatchProcessor {
@@ -42,25 +43,40 @@ namespace MiniBatchProcessor {
         /// Puts a job into the waiting queue.
         /// </summary>
         public int SubmitJob(JobData JD) {
-            JD.m_ID = base.GetNewId();
-            JD.Save(config.BatchInstructionDir);
-            return JD.ID;
+            //JD.m_ID = base.GetNewId();
+            //JD.Save(config.BatchInstructionDir);
+            //return JD.ID;
+
+            Exception lastExc = null; ;
+            int Retry = 0;
+            while (Retry < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                Retry++;
+                try {
+                    var newID = base.AllJobs.Select(j => j.ID).Max() + 1;
+                    JD.m_ID = newID;
+                    string f = Path.Combine(config.BatchInstructionDir, ClientAndServer.QUEUE_DIR, newID.ToString());
+
+                    if(File.Exists(f)) {
+                        // to slow -- race condition
+                        Retry--;
+                        Thread.Sleep(ClientAndServer.IOwaitTime);
+                        continue;
+                    }
+
+                    using(var fStr = new StreamWriter(new FileStream(f, FileMode.CreateNew, FileAccess.Write, FileShare.None))) {
+
+                        JD.Write(fStr);
+
+                    }
+
+                    return newID;
+                } catch (Exception e) {
+                    lastExc = e;
+                }
+            }
+
+            throw lastExc;
         }
 
-        /// <summary>
-        /// Path to a jobs standard output file.
-        /// </summary>
-        public string GetStdoutFile(int JobId) {
-            string f = Path.Combine(config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_out.txt");
-            return f;
-        }
-
-        /// <summary>
-        /// Path to a jobs standard error file.
-        /// </summary>
-        public string GetStderrFile(int JobId) {
-            string f = Path.Combine(config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_err.txt");
-            return f;
-        }
     }
 }
