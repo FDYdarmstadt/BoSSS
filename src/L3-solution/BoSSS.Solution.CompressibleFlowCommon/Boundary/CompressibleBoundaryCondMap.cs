@@ -85,9 +85,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             private set;
         }
 
+        /// <summary>
+        /// This calls for a better solution - sorry!
+        /// </summary>
         static string[] bndFuncNames = new[] { "u0", "u1", "u2", "p", "T", "rho", "p0", "T0", "ringleb",
-            "u0#A", "u0#B", "u1#A", "u1#B", "u2#A", "u2#B", "p#A", "p#B", "T#A", "T#B", "rho#A", "rho#B",
-            "p0#A", "p0#B", "T0#A", "T0#B", "ringleb#A", "ringleb#B" };
+            "u0#A", "u1#A", "u2#A", "p#A", "T#A", "rho#A", "p0#A", "T0#A", "ringleb#A",
+            "u0#B", "u1#B", "u2#B", "p#B", "T#B", "rho#B", "p0#B", "T0#B", "ringleb#B",            
+            "u0#L", "u1#L", "u2#L", "p#L", "T#L", "rho#L", "p0#L", "T0#L", "ringleb#L",
+            "u0#R", "u1#R", "u2#R", "p#R", "T#R", "rho#R", "p0#R", "T0#R", "ringleb#R"};
 
         /// <summary>
         /// Constructs a new map by searching through all the edge tags

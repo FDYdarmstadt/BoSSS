@@ -185,6 +185,22 @@ namespace ilPSP.LinSolvers {
             where Trhs : IList<double>;
     }
 
+    public enum Parallelism
+    {
+        /// <summary>
+        /// This wrapper will use the sequential version of the third party library
+        /// </summary>
+        SEQ,
+        /// <summary>
+        /// This wrapper will use the MPI parallel version of the third party library
+        /// </summary>
+        MPI,
+        /// <summary>
+        /// This wrapper will use the OMP parallel version of the third party library
+        /// </summary>
+        OMP
+    }
+
     /// <summary>
     /// Extended interface for sparse solvers, where the matrix values (not the occupation)
     /// can be altered after matrix assembly (i.e. after calling <see cref="ISparseSolver.DefineMatrix"/>);<br/>
