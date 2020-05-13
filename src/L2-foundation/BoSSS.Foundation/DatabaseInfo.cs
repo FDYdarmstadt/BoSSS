@@ -209,7 +209,7 @@ namespace BoSSS.Foundation.IO {
         /// - 1st entry: path into the local file system
         /// - 2nd entry: optional machine name filter
         /// </summary>
-        public (string, string)[] AlternateDbPaths {
+        public (string DbPath, string MachineFilter)[] AlternateDbPaths {
             get {
                 string p = System.IO.Path.Combine(this.Path, "AlternatePaths.txt");
                 

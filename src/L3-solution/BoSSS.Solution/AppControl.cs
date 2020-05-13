@@ -890,7 +890,7 @@ namespace BoSSS.Solution.Control {
         /// - 2nd entry: optional machine name filter
         /// </summary>
         [DataMember]
-        public ValueTuple<string, string>[] AlternateDbPaths = null;
+        public (string DbPath, string MachineFilter)[] AlternateDbPaths = null;
         
         /// <summary>
         /// Sets <see cref="DbPath"/>, <see cref="AlternateDbPaths"/>.
