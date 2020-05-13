@@ -149,7 +149,8 @@ namespace MiniBatchProcessor {
                 Console.WriteLine("Starting mini batch processor in background thread...");
 
                 Thread ServerThread = (new Thread(delegate () {
-                    Main(new string[0]);
+                    var s = new Server(null);
+                    s._Main(new string[0]);
                 }));
                 ServerThread.Start();
 
@@ -247,30 +248,44 @@ namespace MiniBatchProcessor {
             }
         }
 
-        void Init() {
+        bool Init() {
 
 
-
-            // Check that we are the only instance:
             string MutexFileName = Path.Combine(GetServerMutexPath(config.BatchInstructionDir));
-            if (File.Exists(MutexFileName)) {
-                // try to delete
-                File.Delete(MutexFileName);
-            }
-            if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
-                // try to delete
-                File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
+            try {
+                // Check that we are the only instance:
+                if(File.Exists(MutexFileName)) {
+                    // try to delete
+                    File.Delete(MutexFileName);
+                }
+            } catch(IOException) {
+                Console.WriteLine("Unable to obtain server mutex.");
+                return false;
             }
 
-           
-            
+            try { 
+                if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
+                    // try to delete
+                    File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
+                }
+            } catch (IOException) {
+                Console.WriteLine("Unable to delete termination signal");
+                return false;
+            }
+
+
             // create mutex file and share it with no one!
-            ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-            LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
-            var ServerMutexS = new StreamWriter(ServerMutex);
-            ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
-            ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
-            ServerMutexS.Flush();
+            try {
+                ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
+                LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
+                var ServerMutexS = new StreamWriter(ServerMutex);
+                ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
+                ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
+                ServerMutexS.Flush();
+            } catch(IOException) {
+                Console.WriteLine("Unable to obtain server mutex (2).");
+                return false;
+            }
 
             // see if there are any zombies left in the 'working' directory
             foreach (var J in Working) {
@@ -284,7 +299,7 @@ namespace MiniBatchProcessor {
                 }
             }
 
-            
+            return true;
         }
 
         /*
@@ -406,6 +421,11 @@ namespace MiniBatchProcessor {
                 }
             }
 
+            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
+                Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
+                return;
+            }
+
             var s = new Server(dir);
             s._Main(args);
         }
@@ -415,11 +435,11 @@ namespace MiniBatchProcessor {
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
         /// </summary>
         void _Main(string[] args) {
-            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
-                Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
+            
+            if(!Init()) {
+                Console.WriteLine("Terminating server init.");
                 return;
             }
-            Init();
             LogMessage("server started.");
 
             // infinity loop
