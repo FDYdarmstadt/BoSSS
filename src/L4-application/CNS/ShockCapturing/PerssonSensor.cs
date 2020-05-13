@@ -23,6 +23,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -40,6 +41,38 @@ namespace CNS.ShockCapturing {
         public PerssonSensor(string sensorVariableName, double sensorLimit) {
             this.m_sensorVariableName = sensorVariableName;
             this.sensorLimit = sensorLimit;
+        }
+
+        public void UpdateSensorValues(IEnumerable<DGField> fieldSet)
+        {
+            using (new FuncTrace())
+            {
+                DGField fieldToTest = fieldSet.
+                    Where(f => f.Identification == m_sensorVariableName).
+                    Single();
+                int degree = fieldToTest.Basis.Degree;
+                int noOfCells = fieldToTest.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+
+                if (sensorValues == null || sensorValues.Length != noOfCells)
+                {
+                    sensorValues = new double[noOfCells];
+                }
+
+                CellMask cellMask = CellMask.GetFullMask(fieldToTest.GridDat);
+                foreach (int cell in cellMask.ItemEnum)
+                {
+                    double variance = 0.0;
+                    foreach (int coordinate in fieldToTest.Basis.GetPolynomialIndicesForDegree(cell, degree))
+                    {
+                        variance += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
+                    }
+                    double volume = fieldToTest.GridDat.iLogicalCells.GetCellVolume(cell);
+
+                    double result = variance / volume;
+                    
+                    sensorValues[cell] = result;
+                }
+            }
         }
 
         public void UpdateSensorValues(IEnumerable<DGField> fieldSet, ISpeciesMap speciesMap, CellMask cellMask) {

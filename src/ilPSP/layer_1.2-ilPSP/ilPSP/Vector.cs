@@ -483,6 +483,25 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// multiplication by a matrix
+        /// </summary>
+        /// <param name="s">the scalar</param>
+        /// <param name="v">the vector</param>
+        /// <returns>clear;</returns>
+        public static Vector operator *(MultidimensionalArray m, Vector s)
+        {
+            Vector result = new Vector(s.Dim);
+            for (int i = 0; i < s.Dim; ++i)
+            {
+                for(int j = 0; j < s.Dim; ++j)
+                {
+                    result[i] += m[i, j] * s[j];
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Division by a scalar
         /// </summary>
         /// <param name="v">The vector</param>
@@ -575,7 +594,7 @@ namespace ilPSP {
         /// <returns>
         /// a two-dimensional vector with <paramref name="d"/>-th coordinate equal to 1.0.
         /// </returns>
-        public static Vector StdBasis2D(int d, int D) {
+        public static Vector StdBasis2D(int d) {
             return StdBasis(d, 2);
         }
 
@@ -586,7 +605,7 @@ namespace ilPSP {
         /// <returns>
         /// a three-dimensional vector with <paramref name="d"/>-th coordinate equal to 1.0.
         /// </returns>
-        public static Vector StdBasis3D(int d, int D) {
+        public static Vector StdBasis3D(int d) {
             return StdBasis(d, 3);
         }
 
