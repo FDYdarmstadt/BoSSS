@@ -242,7 +242,6 @@ namespace BoSSS.Application.IBM_Solver {
             // =================================
             // create operator
             // =================================
-
             if (IBM_Op == null) {
 
                 string[] CodNameSelected = new string[0];
@@ -251,7 +250,7 @@ namespace BoSSS.Application.IBM_Solver {
                 int D = this.GridData.SpatialDimension;
                 boundaryCondMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
 
-                int degU = this.Velocity[0].Basis.Degree;
+                
                 var IBM_Op_config = new NSEOperatorConfiguration {
                     convection = this.Control.PhysicalParameters.IncludeConvection,
                     continuity = true,
@@ -285,94 +284,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // Momentum equation
                 // =================
-
-                // convective part:
-                if (IBM_Op_config.convection) {
-                    for (int d = 0; d < D; d++) {
-
-                        var comps = IBM_Op.EquationComponents[CodName[d]];
-                       
-                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
-                        //var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d, Control.PhysicalParameters.rho_A);
-                        comps.Add(ConvBulk); // bulk component
-
-                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
-                            d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
-                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
-                        //var ConvIB = new ConvectionAtIB(LsTrk, d, D, Control.PhysicalParameters.rho_A, false);
-                        
-                        comps.Add(ConvIB); // immersed boundary component
-
-                    }
-                }
-                
-                // pressure part:
-                if (IBM_Op_config.PressureGradient) {
-                    for (int d = 0; d < D; d++) {
-                        var comps = IBM_Op.EquationComponents[CodName[d]];
-                        var pres = new PressureGradientLin_d(d, boundaryCondMap);
-                        comps.Add(pres); // bulk component
-
-                        var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk);
-                        comps.Add(presLs); // immersed boundary component
-
-                        // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
-                        if (this.Control.FixedStreamwisePeriodicBC) {
-                            var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
-                            comps.Add(presSource);
-                            // Jacobian operator: not required; reason: Source-Term with no dependence on domain variables
-                        }
-
-                    }
-                }
-
-                // viscous part:
-                if (IBM_Op_config.Viscous) {
-                    for (int d = 0; d < D; d++) {
-                        var comps = IBM_Op.EquationComponents[CodName[d]];
-                        double _D = D;
-                        double penalty_mul = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
-                        double _p = degU;
-                        double penalty_base = (_p + 1) * (_p + _D) / D;
-                        double penalty = penalty_base * penalty_mul;
-                        double penalty_bulk = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
-
-
-                        //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                        var Visc = new swipViscosity_Term1(penalty_bulk, d, D, boundaryCondMap,
-                            ViscosityOption.ConstantViscosity,
-                            this.Control.PhysicalParameters.mu_A ,// / this.Control.PhysicalParameters.rho_A
-                            double.NaN, null);
-                        comps.Add(Visc); // bulk component GradUTerm 
-                        var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
-                            penalty, this.ComputePenaltyIB,
-                            this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
-                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
-                        comps.Add(ViscLs); // immersed boundary component
-                    }
-                }
-
-                // Continuum equation
-                // ==================
-                if (IBM_Op_config.continuity) {
-                    for (int d = 0; d < D; d++) {
-
-                        var src = new Divergence_DerivativeSource(d, D);
-                        var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
-                        IBM_Op.EquationComponents["div"].Add(src);
-                        IBM_Op.EquationComponents["div"].Add(flx);
-
-                       
-                        //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
-                        //IBM_Op.EquationComponents["div"].Add(presStab);
-                    }
-
-                    var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                        delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
-                    IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
-                   
-                    //IBM_Op.EquationComponents["div"].Add(new PressureStabilization(1, 1.0 / this.Control.PhysicalParameters.mu_A));
-                }
+                AddBulkEquationComponentsToIBMOp(IBM_Op_config, CodName);
+                AddInterfaceEquationComponentsToIBMOp(IBM_Op_config, CodName);
                 
                 IBM_Op.Commit();
 
@@ -383,63 +296,210 @@ namespace BoSSS.Application.IBM_Solver {
             // ==========================
             // create timestepper
             // ==========================
-
             var Unknowns = ArrayTools.Cat(this.Velocity, this.Pressure);
             var Residual = ArrayTools.Cat(this.ResidualMomentum, this.ResidualContinuity);
-
-            if (L == null) {
+            if (L == null)
+            {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Creation of time-integrator (initial, no balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                if (m_BDF_Timestepper == null) {
-                    LevelSetHandling lsh = LevelSetHandling.None;
-                    SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
-
-                    if (this.Control.PhysicalParameters.IncludeConvection) {
-                        SpatialOp = SpatialOperatorType.Nonlinear;
-                    }
-
-                    int bdfOrder;
-                    if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.CrankNicolson)
-                        bdfOrder = -1;
-                    else if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.ImplicitEuler)
-                        bdfOrder = 1;
-                    else if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF"))
-                        bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
-                    else
-                        throw new NotImplementedException("todo");
-
-                    m_BDF_Timestepper = new XdgBDFTimestepping(
-                        Unknowns, Residual,
-                        LsTrk, true,
-                        DelComputeOperatorMatrix, null, DelUpdateLevelset,
-                        bdfOrder,
-                        lsh,
-                        MassMatrixShapeandDependence.IsTimeDependent,
-                        SpatialOp,
-                        MassScale,
-                        this.MultigridOperatorConfig, base.MultigridSequence,
-                        this.FluidSpecies, this.HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                        false, this.Control.NonLinearSolver, this.Control.LinearSolver
-                        ) {
-                        m_ResLogger = base.ResLogger,
-                        m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification),
-
-                        SessionPath = SessionPath,
-                        Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
-                    };
+                if (m_BDF_Timestepper == null)
+                {
+                    m_BDF_Timestepper = CreateTimeStepper(Unknowns, Residual);
                 }
-
-            } else {
+            }
+            else
+            {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, Unknowns, Residual, this.LsTrk, base.MultigridSequence);
             }
-
             Debug.Assert(m_BDF_Timestepper != null);
+        }
+
+        /// <summary>
+        /// Ti
+        /// </summary>
+        /// <param name="Unknowns"></param>
+        /// <param name="Residual"></param>
+        protected virtual XdgBDFTimestepping CreateTimeStepper(IEnumerable<DGField> Unknowns, IEnumerable<DGField> Residual)
+        {
+            LevelSetHandling lsh = LevelSetHandling.None;
+            SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
+
+            if (this.Control.PhysicalParameters.IncludeConvection)
+            {
+                SpatialOp = SpatialOperatorType.Nonlinear;
+            }
+
+            int bdfOrder;
+            if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.CrankNicolson)
+                bdfOrder = -1;
+            else if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.ImplicitEuler)
+                bdfOrder = 1;
+            else if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF"))
+                bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+            else
+                throw new NotImplementedException("todo");
+
+            XdgBDFTimestepping m_BDF_Timestepper = new XdgBDFTimestepping(
+                Unknowns,
+                Residual,
+                LsTrk,
+                true,
+                DelComputeOperatorMatrix,
+                null,
+                DelUpdateLevelset,
+                bdfOrder,
+                lsh,
+                MassMatrixShapeandDependence.IsTimeDependent,
+                SpatialOp,
+                MassScale,
+                this.MultigridOperatorConfig,
+                base.MultigridSequence,
+                this.FluidSpecies,
+                this.HMForder,
+                this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                false, this.Control.NonLinearSolver,
+                this.Control.LinearSolver
+                )
+            {
+                m_ResLogger = base.ResLogger,
+                m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(
+                    f => f.Identification), this.ResidualContinuity.Identification),
+                SessionPath = SessionPath,
+                Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
+            };
+            return m_BDF_Timestepper;
+        }
+
+        void AddBulkEquationComponentsToIBMOp(NSEOperatorConfiguration IBM_Op_config, string[] CodName)
+        {
+            int D = this.GridData.SpatialDimension;
+            // convective part:
+            if (IBM_Op_config.convection)
+            {
+                for (int d = 0; d < D; d++)
+                {
+
+                    var comps = IBM_Op.EquationComponents[CodName[d]];
+
+                    var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
+                    //var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d, Control.PhysicalParameters.rho_A);
+                    comps.Add(ConvBulk); // bulk component
+                }
+            }
+
+            // pressure part:
+            if (IBM_Op_config.PressureGradient)
+            {
+                for (int d = 0; d < D; d++)
+                {
+                    var comps = IBM_Op.EquationComponents[CodName[d]];
+                    var pres = new PressureGradientLin_d(d, boundaryCondMap);
+                    comps.Add(pres); // bulk component
+
+                    // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
+                    if (this.Control.FixedStreamwisePeriodicBC)
+                    {
+                        var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
+                        comps.Add(presSource);
+                        // Jacobian operator: not required; reason: Source-Term with no dependence on domain variables
+                    }
+                }
+            }
+
+            // viscous part:
+            if (IBM_Op_config.Viscous)
+            {
+                for (int d = 0; d < D; d++)
+                {
+                    var comps = IBM_Op.EquationComponents[CodName[d]];
+
+                    double penalty_bulk = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
+
+
+                    //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
+                    var Visc = new swipViscosity_Term1(penalty_bulk, d, D, boundaryCondMap,
+                        ViscosityOption.ConstantViscosity,
+                        this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A
+                        double.NaN, null);
+                    comps.Add(Visc); // bulk component GradUTerm 
+                }
+            }
+
+            // Continuum equation
+            // ==================
+            if (IBM_Op_config.continuity)
+            {
+                for (int d = 0; d < D; d++)
+                {
+
+                    var src = new Divergence_DerivativeSource(d, D);
+                    var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
+                    IBM_Op.EquationComponents["div"].Add(src);
+                    IBM_Op.EquationComponents["div"].Add(flx);
+
+
+                    //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
+                    //IBM_Op.EquationComponents["div"].Add(presStab);
+                }
+
+
+                //IBM_Op.EquationComponents["div"].Add(new PressureStabilization(1, 1.0 / this.Control.PhysicalParameters.mu_A));
+            }
+        }
+
+        /// <summary>
+        /// Setup for equations on interface
+        /// </summary>
+        /// <param name="IBM_Op_config">
+        /// User settings
+        /// </param>
+        /// <param name="CodName">
+        /// Domainnames of IBM solver
+        /// </param>
+        protected virtual void AddInterfaceEquationComponentsToIBMOp(NSEOperatorConfiguration IBM_Op_config, string[] CodName)
+        {
+            int D = this.GridData.SpatialDimension;
+            for (int d = 0; d < D; d++){
+                var comps = IBM_Op.EquationComponents[CodName[d]];
+
+                if (IBM_Op_config.convection){
+                    var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
+                            d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
+                    //var ConvIB = new ConvectionAtIB(LsTrk, d, D, Control.PhysicalParameters.rho_A, false);
+
+                    comps.Add(ConvIB); // immersed boundary component
+                }
+
+                if (IBM_Op_config.PressureGradient){
+                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk);
+                    comps.Add(presLs); // immersed boundary component
+                }
+
+                if (IBM_Op_config.Viscous){
+                    double _D = D;
+                    double penalty_mul = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
+                    int degU = this.Velocity[0].Basis.Degree;
+                    double _p = degU;
+                    double penalty_base = (_p + 1) * (_p + _D) / D;
+                    double penalty = penalty_base * penalty_mul;
+                    var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
+                            penalty, this.ComputePenaltyIB,
+                            this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
+                    comps.Add(ViscLs); // immersed boundary component
+                }
+            }
+
+            if (IBM_Op_config.continuity){
+                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
+                    delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
+                IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
+            }
         }
 
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
@@ -448,8 +508,6 @@ namespace BoSSS.Application.IBM_Solver {
             m_CurrentSolution = null;
             IBM_Op = null;
         }
-
-
 
         void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
             int D = this.LsTrk.GridDat.SpatialDimension;
@@ -481,8 +539,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
         /// </summary>
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+            DelComputeOperatorMatrix_CallCounter++;
             int D = this.LsTrk.GridDat.SpatialDimension;
-            
 
             // compute operator
             //Debug.Assert(OpMatrix.InfNorm() == 0.0);
@@ -492,13 +550,11 @@ namespace BoSSS.Application.IBM_Solver {
             {
                 var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
                 SinglePhaseField[] U0_U0mean;
-                if (this.U0MeanRequired) 
-                    {
+                if (this.U0MeanRequired) {
                     Basis U0meanBasis = new Basis(GridData, 0);
                     VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
                     U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
-                }
-                else {
+                } else {
                     U0_U0mean = new SinglePhaseField[2 * D];
                 }
                 Params = ArrayTools.Cat<DGField>(U0_U0mean);
@@ -508,7 +564,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
-                DelComputeOperatorMatrix_CallCounter++;
+                
 
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
@@ -620,7 +676,7 @@ namespace BoSSS.Application.IBM_Solver {
         //SinglePhaseField blocking = null;
 
         /// <summary>
-        /// Depending on settings <see cref="BoSSS.Solution.Control.AppControl.TimesteppingMode"/>, computes either one time-step or a steady-state solution.
+        /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
