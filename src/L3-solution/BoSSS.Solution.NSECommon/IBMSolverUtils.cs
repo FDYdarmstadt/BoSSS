@@ -47,21 +47,17 @@ namespace BoSSS.Solution.NSECommon {
             where T : IList<double> {
             using (new FuncTrace()) {
                 var GridDat = map.GridDat;
-                
+
                 if (rhs.Count != map.LocalLength)
                     throw new ArgumentException();
                 if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
                     throw new ArgumentException();
 
-                Basis PressureBasis = (Basis)map.BasisS[iVar];
-                int D = GridDat.SpatialDimension;
-
-                long GlobalCellIndex = 0;
-                int currentProc = 0;
+                int currentProc = GridDat.MpiSize -1;
                 bool onthisProc = currentProc == GridDat.MpiRank;
                 int iRowGl = -111;
                 if (onthisProc) {
-                    GlobalCellIndex = GridDat.CellPartitioning.i0;
+                    long GlobalCellIndex = GridDat.CellPartitioning.iE - 1;
                     iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
                 }
                 iRowGl = iRowGl.MPIBroadcast(currentProc);

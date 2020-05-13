@@ -421,7 +421,6 @@ namespace BoSSS.Application.FSI_Solver {
             if (CollisionTimestep < 0)
                 CollisionTimestep = 0;
             SavePositionAndAngleOfPreviousTimestep();
-            Console.WriteLine("dt: " + dt + " collDt: " + CollisionTimestep);
             Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
             Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
             if (CollisionTimestep > dt)

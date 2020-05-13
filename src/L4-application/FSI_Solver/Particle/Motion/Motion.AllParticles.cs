@@ -95,14 +95,9 @@ namespace BoSSS.Application.FSI_Solver {
         private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega) {
             double[] relaxatedHydrodynamics;
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            if (m_ForcesAndTorquePreviousIteration.Count > 2) {
-                Console.WriteLine("Aitken");
-                relaxatedHydrodynamics = AitkenUnderrelaxation(hydrodynamics, ref omega);
-            }
-            else {
-                relaxatedHydrodynamics = StaticUnderrelaxation(hydrodynamics);
-                Console.WriteLine("Static");
-            }
+            relaxatedHydrodynamics = m_ForcesAndTorquePreviousIteration.Count > 2
+                ? AitkenUnderrelaxation(hydrodynamics, ref omega)
+                : StaticUnderrelaxation(hydrodynamics);
             return relaxatedHydrodynamics;
         }
 

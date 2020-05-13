@@ -245,7 +245,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// FluidDensity
         /// </summary>
         [DataMember]
-        private double MinimalDistanceForCollision => GetMinGridLength() / 3;
+        private double MinimalDistanceForCollision => GetMinGridLength() / 2;
 
         /// <summary>
         /// HydrodynConvergenceCriterion
@@ -948,7 +948,7 @@ namespace BoSSS.Application.FSI_Solver {
                         double expectedRotation = (p.Motion.GetRotationalVelocity() + p.Motion.GetHydrodynamicTorque() * DtMax / p.MomentOfInertia) * p.GetLengthScales().Max();
                         maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity + Math.Abs(expectedRotation));
                     }
-                    dt = Math.Min(DtMax, GetMinGridLength() / (10 * maxVelocityL2Norm));
+                    dt = Math.Min(DtMax, GetMinGridLength() / (2 * maxVelocityL2Norm));
                     if (dt / oldTimestep > 1.1)
                         dt = oldTimestep * 1.1;
                     dt = dt.MPIMin();

@@ -152,10 +152,6 @@ namespace FSI_Solver {
                                     SaveTimeStep = -Dt * 0.25; // reset time to find a particle state before they overlap.
                                     minimalDistance = double.MaxValue;
                                 }
-                                if (MinDistance >= minimalDistance) {
-                                    Console.WriteLine("reached distance threshold " + MinDistance + " actual distance: " + minimalDistance);
-                                    Console.WriteLine("Distance Vector 0 " + temp_DistanceVector[0] + " 1 " + temp_DistanceVector[0]);
-                                }
                             }
 
                             // Step 2.1.3
