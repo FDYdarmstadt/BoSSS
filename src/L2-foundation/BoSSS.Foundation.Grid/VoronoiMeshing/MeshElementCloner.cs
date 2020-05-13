@@ -39,8 +39,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 Node = Clone(cell.Node),
                 Type = cell.Type,
                 ID = cell.ID,
-                Vertices = Clone(cell.Vertices),
-                Edges = Clone(cell.Edges)
+                Vertices = Clone((IList<Vertex>)cell.Vertices),
+                Edges = Clone<T>(cell.Edges)
             };
             FuseEdgeVertices(clone.Edges, clone.Vertices);
             return clone;
