@@ -1130,6 +1130,10 @@ namespace BoSSS.Solution {
                     if (this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
+
+                //System.Environment.CurrentDirectory
+                //this.GetType().Assembly.Location
+
                 //TODO: tags, projectname, ...
             } else {
                 CurrentSessionInfo = new SessionInfo(Guid.Empty, this.m_Database);
