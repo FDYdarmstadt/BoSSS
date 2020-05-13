@@ -24,9 +24,21 @@ namespace BoSSS.Foundation.Grid
         Type[] GetVectorTypes();
     }
 
+    /// <summary>
+    /// Grid comparison, divided into two parts:
+    /// - basic properties: <see cref="BasePropertiesComparer"/>, which is cheap
+    /// - individual cells: <see cref="CellComparer"/>, expensive to run
+    /// </summary>
     public interface IComparableGrid
     {
+        /// <summary>
+        /// Comparison of all cells
+        /// </summary>
         IEqualityComparer<IGrid> CellComparer { get; }
-        IEqualityComparer<IGrid> ReferenceComparer { get; }
+
+        /// <summary>
+        /// Comparison of spatial dimension, cell types, number of cells, etc.
+        /// </summary>
+        IEqualityComparer<IGrid> BasePropertiesComparer { get; }
     }
 }

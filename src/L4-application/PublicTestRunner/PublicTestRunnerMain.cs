@@ -87,6 +87,7 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
@@ -102,7 +103,6 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(MPITest.Program)
                     };
             }
@@ -112,6 +112,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(CNS.Program),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
@@ -132,7 +133,8 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
-                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }
@@ -362,7 +364,7 @@ namespace PublicTestRunner {
                 tracerfile.Close();
                 tracerfile.Dispose();
             } catch (Exception e) {
-                Console.Error.WriteLine(e.GetType().Name + " during closing of tracing: " + e.Message);
+                //Console.Error.WriteLine(e.GetType().Name + " during closing of tracing: " + e.Message);
             }
         }
 
@@ -489,6 +491,7 @@ namespace PublicTestRunner {
 
 
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
+                
 
                 const double TimeOutSec = 200 * 60;
                 using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
@@ -502,6 +505,16 @@ namespace PublicTestRunner {
                             for (int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
                                 var s = jj.job.Status;
+
+                                {
+                                    string resultArg = "--result=";
+                                    string resArg = jj.job.EnvironmentVars.Values.Single(arg => arg.StartsWith(resultArg));
+                                    string _resFile = resArg.Replace(resultArg, "");
+                                    if(_resFile != jj.ResFile) {
+                                        throw new ApplicationException("internal mismatch in result file name");
+                                    }
+                                }
+
 
                                 if (s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
                                     // message:
@@ -559,7 +572,7 @@ namespace PublicTestRunner {
                         using (new BlockTrace("Sleeping", tr)) {
                             Thread.Sleep(2 * 60 * 1000); // sleep for 2 minutes
                         }
-                        UpdateFinishedJobs();
+                        var ll = UpdateFinishedJobs();
                         RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
                         Console.WriteLine("Remaining minutes until timeout: " + Math.Round(RestTime/60.0));
                     }
@@ -661,13 +674,29 @@ namespace PublicTestRunner {
                 ot.WriteLine("########################################################################");
 
                 ot.WriteLine("[[[Stdout: ");
+                string stdout = null;
                 try {
+                    stdout = j.Stdout;
                     ot.WriteLine(j.Stdout);
                 } catch (Exception e) {
                     ot.WriteLine($"{e.GetType().Name} during reading of stdout stream: {e.Message}");
                     ot.WriteLine(e.StackTrace);
                 }
                 ot.WriteLine("]]]");
+
+                using(var str = new StringReader(stdout)) {
+                    string magic = "arg #3 override from environment variable 'BOSSS_ARG_3': --result=";
+                    for(string line = str.ReadLine(); line != null; line = str.ReadLine()) {
+                        if(line.StartsWith(magic)) {
+                            string file = line.Replace(magic, "");
+                            if(file != ResFile) {
+                                throw new ArgumentException("Internal result file mismatch: " + file + " vs. " + ResFile + " on job " + j.BatchProcessorIdentifierToken);
+                            }
+
+                            break;
+                        }
+                    }
+                }
 
                 try {
                     string stderr = j.Stderr;
@@ -815,7 +844,7 @@ namespace PublicTestRunner {
 
                 int i = args.IndexWhere(a => a.StartsWith("--result="));
                 string arg_i = args[i];
-                string resFileName = Path.GetFileNameWithoutExtension(arg_i.Replace("--result=", ""));
+                string resFileName = arg_i.Replace("--result=", "");
                 args[i] = "--result=" + MpiResFileNameMod( MpiRank, MpiSize, resFileName);
 
 
@@ -870,6 +899,8 @@ namespace PublicTestRunner {
 
             if (MpiSize == 1)
                 return resFileName;
+
+            resFileName = Path.GetFileNameWithoutExtension(resFileName);
 
             string newResFileName = resFileName + "." + MpiRank + "of" + MpiSize + ".xml";
             return newResFileName;

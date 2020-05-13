@@ -76,11 +76,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             PCG
         }
 
+   
+
+        /// <summary>
+        /// Set the type of Parallelism to be used for the linear Solver.
+        /// You may define a comma seperated list out of the following: "SEQ","MPI","OMP"
+        /// </summary>
+        public Parallelism SolverVersion = Parallelism.SEQ;
+
         /// <summary>
         /// Switch between PARDISO and MUMPS.
         /// </summary>
         public _whichSolver WhichSolver = _whichSolver.PARDISO;
-
 
         public void Init(MultigridOperator op) {
             var Mtx = op.OperatorMatrix;
@@ -174,15 +181,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             switch (WhichSolver) {
                 case _whichSolver.PARDISO:
-                    if (LinConfig != null) { SingletonPARDISO.SetParallelism(LinConfig.Parallelism); }
-                    solver = new PARDISOSolver();
-                    ((PARDISOSolver)solver).CacheFactorization = true;
-                    ((PARDISOSolver)solver).UseDoublePrecision = true;
+                    solver = new PARDISOSolver() {
+                        CacheFactorization = true,
+                        UseDoublePrecision = true,
+                        SolverVersion = this.SolverVersion
+                    };
                     break;
 
                 case _whichSolver.MUMPS:
-                    if (LinConfig != null) { SingletonMumps.SetParallelism(LinConfig.Parallelism); }
-                    solver = new MUMPSSolver();
+                    solver = new MUMPSSolver() {
+                        SolverVersion=this.SolverVersion
+                    };
                     break;
 
                 case _whichSolver.Matlab:
@@ -256,11 +265,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (RelResidualNorm > 1.0e-10) {
 
                         //Console.WriteLine("High residual from direct solver: abs {0}, rel {1}", ResidualNorm , ResidualNorm / SolutionNorm);
-
+#if TEST
                         m_Mtx.SaveToTextFileSparse("Mtx.txt");
                         X.SaveToTextFile("X.txt");
                         B.SaveToTextFile("B.txt");
-
+#endif
                         string ErrMsg;
                         using (var stw = new StringWriter()) {
                             stw.WriteLine("High residual from direct solver (using {0}).", SolverName);

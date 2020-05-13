@@ -243,15 +243,6 @@ namespace BoSSS.Solution.Control {
         [BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]
         public int TargetBlockSize = 10000;
 
-        //public Tuple<LinearSolverCode, Precond> SolverCode = new Tuple<LinearSolverCode, Precond>(LinearSolverCode.GMRES,Precond.none);
-
-        /// <summary>
-        /// Set the type of Parallelism to be used for the linear Solver.
-        /// You may define a comma seperated list out of the following: "SEQ","MPI","OMP"
-        /// </summary>
-        [DataMember]
-        public string Parallelism = "SEQ";
-
         /// <summary>
         /// Clones the NonLinearConfig
         /// </summary>
@@ -263,7 +254,6 @@ namespace BoSSS.Solution.Control {
                 MaxSolverIterations = this.MaxSolverIterations,
                 MinSolverIterations = this.MinSolverIterations,
                 NoOfMultigridLevels = this.NoOfMultigridLevels,
-                Parallelism = this.Parallelism,
                 SolverCode = this.SolverCode,
                 TargetBlockSize = this.TargetBlockSize
             };
@@ -281,7 +271,6 @@ namespace BoSSS.Solution.Control {
                 this.MaxSolverIterations == compareto.MaxSolverIterations &&
                 this.MinSolverIterations == compareto.MinSolverIterations &&
                 this.NoOfMultigridLevels == compareto.NoOfMultigridLevels &&
-                this.Parallelism == compareto.Parallelism &&
                 this.SolverCode == compareto.SolverCode &&
                 this.TargetBlockSize == compareto.TargetBlockSize;
         }

@@ -48,9 +48,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         public static void Main(string[] args) {
             Application.InitMPI();
-#if DEBUG
-            System.Threading.Thread.Sleep(10000);
-#endif
+
             SetUp();
             //TestRebalancingForDG0WithRK1();
             //TestRebalancingForDG0WithAB1();
@@ -69,7 +67,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff();    // ok
             //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn();   // ok
-            TestRebalancingForDG0WithAB1();
+            //TestRebalancingForDG0WithAB1();
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
             Application.FinalizeMPI();
         }
