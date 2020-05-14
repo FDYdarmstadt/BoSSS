@@ -765,7 +765,7 @@ namespace BoSSS.Solution {
 
             //This workaround takes into account, the wierd structure of the ChangeOfBasis-thing
             //prohibits out of bounds exception
-            Func<int,int, int[]> getDGs =  delegate (int iUnknown, int iLevel) {
+            Func<int, int, int[]> getDGs = delegate (int iUnknown, int iLevel) {
                 int tmpUnknown = iUnknown < MGChangeOfBasis.Length ? iUnknown : MGChangeOfBasis.Length - 1;
                 int tmpLevel = iLevel < MGChangeOfBasis[tmpUnknown].Length ? iLevel : MGChangeOfBasis[tmpUnknown].Length - 1;
                 return MGChangeOfBasis[tmpUnknown][tmpLevel].DegreeS;
@@ -774,20 +774,60 @@ namespace BoSSS.Solution {
             var MGBasis = MultigridBasis.ToArray();
             int MGDepth = MGBasis.Length;
             int[] LocalDOF = new int[MGDepth];
-            
+
             for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
                 LocalDOF[iLevel] = 0;
                 int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                int[] p_at_lvl = getDGs(0,iLevel);
-                for (int iCell=0; iCell < NoOfCells; iCell++) {
+                int[] p_at_lvl = getDGs(0, iLevel);
+                for (int iCell = 0; iCell < NoOfCells; iCell++) {
                     for (int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
                         int pmax = p_at_lvl[iVar];
-                        LocalDOF[iLevel]+=MGBasis[iLevel][iVar].GetLength(iCell, pmax);
+                        try {
+                            LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
+                        } catch (Exception e) {
+                            Console.WriteLine("WARNING: internal error occured during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
+                            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
+                        }
                     }
                 }
             }
 
 
+            return LocalDOF;
+        }
+
+        private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
+            int NoOfLevels = MultigridBasis.Count();
+            int[] DOFperCell = new int[NoOfLevels];
+            int[] LocalDOF = new int[NoOfLevels];
+            int counter = 0;
+            
+
+            for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
+                counter = iLevel;
+                if (iLevel > NoOfLevels - 1)
+                    counter = NoOfLevels - 1;
+                foreach (var cob in MGChangeOfBasis[counter]) {
+                    for (int iVar = 0; iVar < cob.VarIndex.Length; iVar++) {
+                        int d = ((AggregationGridBasis)MultigridBasis.First()[iVar]).AggGrid.ParentGrid.SpatialDimension;
+                        int p = cob.DegreeS[iVar];
+                        switch (d) {
+                            case 1:
+                                DOFperCell[iLevel] += p + 1 + p + 1;
+                                break;
+                            case 2:
+                                DOFperCell[iLevel] += (p * p + 3 * p + 2) / 2;
+                                break;
+                            case 3:
+                                DOFperCell[iLevel] += (p * p * p + 6 * p * p + 11 * p + 6) / 6;
+                                break;
+                            default:
+                                throw new Exception("wtf?Spacialdim=1,2,3 expected");
+                        }
+                    }
+                }
+                LocalDOF[iLevel] = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.iLogicalCells.NoOfLocalUpdatedCells* DOFperCell[iLevel];
+            }
             return LocalDOF;
         }
 
@@ -1613,7 +1653,7 @@ namespace BoSSS.Solution {
 
                     if (sparsesolver.WhichSolver != SparseSolver._whichSolver.PARDISO)
                         throw new ApplicationException("someone messed up classic pardiso settings");
-                    CompareAttributes("SolverVersion", Parallelism.SEQ.ToString(), sparsesolver.SolverVersion.ToString());
+                    CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
                     break;
             }
 
