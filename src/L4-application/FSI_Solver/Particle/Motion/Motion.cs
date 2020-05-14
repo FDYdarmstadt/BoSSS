@@ -423,10 +423,7 @@ namespace BoSSS.Application.FSI_Solver {
             SavePositionAndAngleOfPreviousTimestep();
             Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
             Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
-            if (CollisionTimestep > dt)
-                CollisionTimestep -= dt;
-            else
-                CollisionTimestep = 0;
+            CollisionTimestep = 0;
         }
 
         /// <summary>
@@ -434,8 +431,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         internal void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
-            Position[0] = CalculateParticlePosition(collisionDynamicTimestep);
-            Angle[0] = CalculateParticleAngle(collisionDynamicTimestep);
+            Position[0] = CalculateParticlePositionDuringCollision(collisionDynamicTimestep);
+            Angle[0] = CalculateParticleAngleDuringCollision(collisionDynamicTimestep);
         }
 
         /// <summary>
@@ -535,6 +532,26 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// Calculate the new particle position
+        /// </summary>
+        /// <param name="dt"></param>
+        protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
+            Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 6;
+            Aux.TestArithmeticException(position, "particle position");
+            return position;
+        }
+
+        /// <summary>
+        /// Calculate the new particle angle
+        /// </summary>
+        /// <param name="dt"></param>
+        protected virtual double CalculateParticleAngleDuringCollision(double dt) {
+            double angle = Angle[0] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 6;
+            Aux.TestArithmeticException(angle, "particle angle");
+            return angle;
+        }
+
+        /// <summary>
         /// Calculate the new translational velocity of the particle.
         /// </summary>
         /// <param name="dt">Timestep</param>
@@ -598,6 +615,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual double CalculateRotationalAcceleration(double dt) {
             double l_Acceleration = HydrodynamicTorque[0] / MomentOfInertia;
+            Console.WriteLine("Acc Rrot" + l_Acceleration);
             Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
             return l_Acceleration;
         }

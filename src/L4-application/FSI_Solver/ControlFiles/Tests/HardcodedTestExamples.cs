@@ -97,41 +97,11 @@ namespace BoSSS.Application.FSI_Solver {
             List<string> boundaryValues = new List<string> {
                 "Velocity_Inlet_left",
                 "Velocity_Inlet_right",
-                "Wall_upper",
-                "Wall_lower"
             };
-            C.GridFunc = delegate {
-                double[] Xnodes = GenericBlas.Linspace(-2, 2, 21);
-                double[] Ynodes = GenericBlas.Linspace(-3, 3, 31);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: true);
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
+            C.SetAddaptiveMeshRefinement(amrLevel: 1);
 
-                grd.EdgeTagNames.Add(1, "Velocity_Inlet_left");
-                grd.EdgeTagNames.Add(2, "Velocity_Inlet_right");
-
-
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[0] - (-2)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] + (-2)) <= 1.0e-8)
-                        et = 2;
-
-                    Debug.Assert(et != 0);
-                    return et;
-                });
-
-                return grd;
-            };
-            C.BoundaryPositionPerDimension = new double[2][];
-            C.BoundaryIsPeriodic = new bool[2];
-            C.BoundaryPositionPerDimension[0] = new double[] { -2, 2 };
-            C.BoundaryPositionPerDimension[1] = new double[] { -3, 3 };
-            C.WallPositionPerDimension = new double[2][];
-            C.WallPositionPerDimension[0] = new double[2];
-            C.WallPositionPerDimension[1] = new double[] { -3, 3 };
-            C.FluidDomainVolume = 6;
-            //C.SetBoundaries(boundaryValues);
-            //C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -166,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 120;
-            C.NoOfTimesteps = 100;
+            C.NoOfTimesteps = 25;
 
            
 
@@ -179,14 +149,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control TestSingleDryParticleAgainstWall(bool meshRefine = true) {
+        public static FSI_Control TestSingleDryParticleAgainstWall(bool meshRefine = false) {
             FSI_Control C = new FSI_Control(degree: 2, projectName: "DryParticleWallCollision");
 
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 6, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(meshRefine ? 1 : 0);
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.PhysicalParameters.rho_A = 1;
@@ -211,9 +181,8 @@ namespace BoSSS.Application.FSI_Solver {
             double dt = (1 / (14 * V)) * (meshRefine ? 0.5 * 0.5 * 0.5 * 0.2 : 0.1);
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 100.0 / V;
+            C.Endtime = 5;
             C.NoOfTimesteps = 500;
-            C.NoOfTimesteps = int.MaxValue;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -316,7 +285,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 8, lengthY: 6, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 1);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityX", X => 1.0);
 
             // Fluid Properties

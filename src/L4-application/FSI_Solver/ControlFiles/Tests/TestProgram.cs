@@ -61,7 +61,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.00307062397584702;// 0.00487; needs investigation!
+                double angularVelocitySol = -0.012242156816534;
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
@@ -86,9 +86,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.129894946699224, -0.665600182135642); 
+                    Dest_Should = new Vector(0.131345340345127, -0.666402224072296); 
                 else
-                    Dest_Should = new Vector(-0.219276785595999, 0.569191702686835); 
+                    Dest_Should = new Vector(-0.227966686971282, 0.570983623897469); 
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
 
@@ -109,7 +109,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.07631);
+                Dest_Should = new Vector(0.0, 0.0761905722784231);
                 double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
@@ -136,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 6.72757830665097;
+                double ForcesSoll = 2.86834994106668;
 
                 double Forces = p.Particles[0].Motion.GetHydrodynamicForces(0)[0];
 

@@ -68,17 +68,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt) {
-            double l_RotationalVelocity = GetRotationalVelocity(0) + (GetRotationalAcceleration(0) + GetRotationalAcceleration(1)) * dt / 2;
-            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            return l_RotationalVelocity;
-        }
-
-        /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>

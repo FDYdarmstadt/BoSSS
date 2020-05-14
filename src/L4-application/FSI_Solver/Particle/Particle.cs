@@ -187,7 +187,7 @@ namespace BoSSS.Application.FSI_Solver {
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             var h_min = LsTrk.Regions.GetCutCellSubGrid().h_minSubGrd;
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), 1.5 * h_min);
+                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), 2 * h_min);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
             CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());

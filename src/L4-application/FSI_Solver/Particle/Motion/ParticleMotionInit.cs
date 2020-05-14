@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The added damping coefficient is a scaling factor for the model. If the value is smaller than zero no added damping is applied. Otherwise it should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
         public ParticleMotionInit(Vector gravity, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0, bool withForces = false) {
-            //m_Gravity = new Vector(gravity);
+            m_Gravity = new Vector(gravity);
             m_Density = particleDensity == 0 ? 1 : particleDensity;
             m_IsDry = isDry;
             m_NoRotation = noRotation;
