@@ -146,9 +146,9 @@ namespace PublicTestRunner {
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
                         (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
-                        //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
-                        //(typeof(ALTSTests.Program), 4),
-                        //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
+                        (typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
+                        (typeof(ALTSTests.Program), 4),
+                        (typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
                         (typeof(HilbertTest.HilbertTest), 4),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
                     };
