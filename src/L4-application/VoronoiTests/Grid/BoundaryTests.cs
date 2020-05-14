@@ -167,7 +167,7 @@ namespace VoronoiTests.Grid
             };
 
             Random random = new Random(10);
-            MultidimensionalArray nodes = default;
+            MultidimensionalArray nodes = default(MultidimensionalArray);
             for (int i = 0; i < 1000; i += 1)
             {
                 Console.WriteLine($"Roll number{i}");
@@ -260,7 +260,7 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
             Random random = new Random(1);
-            MultidimensionalArray nodes = default;
+            MultidimensionalArray nodes = default(MultidimensionalArray);
             for (int i = 0; i < 48; ++i)
             {
                 Console.WriteLine($"Roll number {i}");

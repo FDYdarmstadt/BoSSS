@@ -91,8 +91,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             Edge<T> firstEdge = GetFirstEdgeOfBoundary(cornerCell);
             Crossing firstCrossing = FindFirstCrossing(firstEdge);
 
-            Stack<Edge<T>> edges = default;
-            Corner corner = default;
+            Stack<Edge<T>> edges = default(Stack<Edge<T>>);
+            Corner corner = default(Corner);
             bool stop = false;
             CrossingFinder first = new CrossingFinder(firstCrossing.First);
             CrossingFinder second = new CrossingFinder(firstCrossing.Second);
