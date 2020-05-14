@@ -44,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [OneTimeTearDown]
         public static void OneTimeTearDown() {
-            csMPI.Raw.mpiFinalize();
+            //csMPI.Raw.mpiFinalize();
         }
 
 

@@ -22,36 +22,36 @@ using MPI.Wrappers.Utils;
 
 namespace ilPSP.LinSolvers.PARDISO {
 
-    
-//    /// <summary>
-//    /// experimental stuff
-//    /// </summary>
-//    class MKL_threadCtrl : DynLibLoader {
 
-//        public MKL_threadCtrl()
-//            : base(
-//                new string[] { "mkl_intel_thread.dll", "libmkl_intel_thread.so" },
-//                new GetNameMangling[] { DynLibLoader.Identity, LinuxMapping },
-//                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-//                new int[] { -1, -1 }) { }
+    //    /// <summary>
+    //    /// experimental stuff
+    //    /// </summary>
+    //    class MKL_threadCtrl : DynLibLoader {
 
-
-//        public delegate void _set_num_threads(int n);
-
-//#pragma warning disable        649
-//        public _set_num_threads mkl_serv_mkl_set_num_threads;
-//#pragma warning restore        649
-
-//        public override void Dispose() {
-//            //base.Dispose();
-//        }
+    //        public MKL_threadCtrl()
+    //            : base(
+    //                new string[] { "mkl_intel_thread.dll", "libmkl_intel_thread.so" },
+    //                new GetNameMangling[] { DynLibLoader.Identity, LinuxMapping },
+    //                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
+    //                new int[] { -1, -1 }) { }
 
 
-//        static string LinuxMapping(string s) {
-//            return ("mkl_serv" + s);
-//        }
-//    }
-    
+    //        public delegate void _set_num_threads(int n);
+
+    //#pragma warning disable        649
+    //        public _set_num_threads mkl_serv_mkl_set_num_threads;
+    //#pragma warning restore        649
+
+    //        public override void Dispose() {
+    //            //base.Dispose();
+    //        }
+
+
+    //        static string LinuxMapping(string s) {
+    //            return ("mkl_serv" + s);
+    //        }
+    //    }
+
 
     /// <summary>
     /// wrapper for loading the PARDISO solver from the Intel MKL libraries
@@ -65,11 +65,9 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// Read from Environment which type of parallel library should be used.
         /// Returns a list of libraries in specific order to search for.
         /// </summary>
-        static string[] SelectLibrary(string si)
-        {
+        static string[] SelectLibrary(string si) {
             string[] liborder;
-            switch (si)
-            {
+            switch (si) {
                 case "OMP":
                 case "OMP,MPI":
                 case "MPI,OMP":
@@ -92,13 +90,16 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <summary>
         /// ctor
         /// </summary>
-        public Wrapper_MKL(string si = "SEQ")
-            : base(                
-                SelectLibrary(si),
-                new string[3][][],
-                new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
-                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
-                new int[] { -1, -1, -1 }) { Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si); }
+        public Wrapper_MKL(string si = "SEQ") : base(
+            SelectLibrary(si),
+            new string[3][][],
+            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
+            new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+            new int[] { -1, -1, -1 }) {
+#if DEBUG
+            Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si);
+#endif
+        }
 
         /// <summary>
         /// PARDISO interface, see PARDISO documentation
@@ -115,10 +116,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                                             int* msglvl, double* b, double* x,
                                             int* error);
 
-#pragma warning disable        649
+#pragma warning disable 649
         _pardisoinit pardisoinit;
         _pardiso pardiso;
-#pragma warning restore        649
+#pragma warning restore 649
 
 
         /// <summary>

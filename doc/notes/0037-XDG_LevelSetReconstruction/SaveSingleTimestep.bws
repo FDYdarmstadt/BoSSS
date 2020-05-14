@@ -1,0 +1,59 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 5 instances of IDatabaseInfo {
+  0: { Session Count = 11; Grid Count = 14; Path = C:\bosss_db }
+  1: { Session Count = 1; Grid Count = 1; Path = C:\Users\marku\HESSENBOX-DA\temp\ShockFinding\bosss_db_shockFinding }
+  2: { Session Count = 1; Grid Count = 1; Path = C:\bosss_db_test }
+  3: { Session Count = 0; Grid Count = 0; Path = C:\bosss_db_ts }
+  4: { Session Count = 1; Grid Count = 1; Path = C:\tmp\ShockFindingAlgorithms\IBMBowShock_p2_xCells40_yCells160_CFLFrac0.1_RK1_s0=1.0E-03_lambdaMax15\LevelSetReconstruction\bosss_db_levelSets }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Solution.Tecplot;
+using ilPSP.Connectors.Matlab;
+using static ilPSP.IMatrixExtensions;
+using System.IO;
+using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution.CompressibleFlowCommon.ShockFinding;
+using System.Collections;
+//using static BoSSS.Foundation.IO.IDatabaseInfoExtensions;
+**************
+==============
+// Select database
+IDatabaseInfo dbi = databases.Pick(2);
+dbi.Sessions
+**************
+List of 1 instances of ISessionInfo {
+  0: IBMBowShock_P2	IBMBowShock_p2_xCells40_yCells160_CFLFrac0.1_RK1_s0=1.0E-03_lambdaMax15	01/14/2020 17:45:38	895907a0...
+}
+==============
+ISessionInfo si = dbi.Sessions.Pick(0);
+si
+**************
+IBMBowShock_P2	IBMBowShock_p2_xCells40_yCells160_CFLFrac0.1_RK1_s0=1.0E-03_lambdaMax15	01/14/2020 17:45:38	895907a0...
+==============
+ITimestepInfo tsi = si.Timesteps.Last();
+**************
+==============
+List<DGField> fields = new List<DGField>();
+fields.Add(tsi.Fields.Find("rho"));
+fields.Add(tsi.Fields.Find("artificialViscosity"));
+fields.Add(tsi.Fields.Find("levelSet"));
+**************
+==============
+**************
+==============
+databases.Pick(3).SaveGridAndTimestep(fields.ToArray(), si.ProjectName, si.Name);
+**************
+==============
+**************
+==============
+**************
+==============

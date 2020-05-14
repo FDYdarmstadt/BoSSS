@@ -30,7 +30,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
     [TestFixture]
     class TestProgram {
 
-       
         /// <summary>
         /// Tests the <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping"/> time-stepper at 
         /// polynomial order 0 with single-value init, see <see cref="BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.SingleInit"/>.

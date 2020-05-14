@@ -150,7 +150,7 @@ namespace BoSSS.Foundation.IO {
                     databases.Add(new DatabaseInfo(dbpath));
                 } catch( Exception e) {
                     Console.Error.WriteLine($"{e.GetType().Name} caught while opening database #{cnt} at '{dbpath}': {e.Message}");
-                    databases.Add(null);
+                    //databases.Add(null);
                 }
                 cnt++;
             }

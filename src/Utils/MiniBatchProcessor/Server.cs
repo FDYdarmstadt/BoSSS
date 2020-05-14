@@ -149,7 +149,8 @@ namespace MiniBatchProcessor {
                 Console.WriteLine("Starting mini batch processor in background thread...");
 
                 Thread ServerThread = (new Thread(delegate () {
-                    Main(new string[0]);
+                    var s = new Server(null);
+                    s._Main(new string[0]);
                 }));
                 ServerThread.Start();
 
@@ -247,30 +248,44 @@ namespace MiniBatchProcessor {
             }
         }
 
-        void Init() {
+        bool Init() {
 
 
-
-            // Check that we are the only instance:
             string MutexFileName = Path.Combine(GetServerMutexPath(config.BatchInstructionDir));
-            if (File.Exists(MutexFileName)) {
-                // try to delete
-                File.Delete(MutexFileName);
-            }
-            if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
-                // try to delete
-                File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
+            try {
+                // Check that we are the only instance:
+                if(File.Exists(MutexFileName)) {
+                    // try to delete
+                    File.Delete(MutexFileName);
+                }
+            } catch(IOException) {
+                Console.WriteLine("Unable to obtain server mutex.");
+                return false;
             }
 
-           
-            
+            try { 
+                if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
+                    // try to delete
+                    File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
+                }
+            } catch (IOException) {
+                Console.WriteLine("Unable to delete termination signal");
+                return false;
+            }
+
+
             // create mutex file and share it with no one!
-            ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-            LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
-            var ServerMutexS = new StreamWriter(ServerMutex);
-            ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
-            ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
-            ServerMutexS.Flush();
+            try {
+                ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
+                LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
+                var ServerMutexS = new StreamWriter(ServerMutex);
+                ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
+                ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
+                ServerMutexS.Flush();
+            } catch(IOException) {
+                Console.WriteLine("Unable to obtain server mutex (2).");
+                return false;
+            }
 
             // see if there are any zombies left in the 'working' directory
             foreach (var J in Working) {
@@ -284,7 +299,7 @@ namespace MiniBatchProcessor {
                 }
             }
 
-            
+            return true;
         }
 
         /*
@@ -324,11 +339,13 @@ namespace MiniBatchProcessor {
                 var Src = Path.Combine(BaseDir, ClientAndServer.QUEUE_DIR, nmn);
                 var Dst = Path.Combine(BaseDir, ClientAndServer.WORK_FINISHED_DIR, nmn);
 
+
                 if(File.Exists(Src)) {
                     int ReTryCount = 0;
                     while(true) {
                         try {
                             File.Copy(Src, Dst);
+                            base.UpdateStatus(J.ID, JobStatus.Working);
                             return;
                         } catch(Exception e) {
                             if(ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
@@ -404,6 +421,11 @@ namespace MiniBatchProcessor {
                 }
             }
 
+            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
+                Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
+                return;
+            }
+
             var s = new Server(dir);
             s._Main(args);
         }
@@ -413,11 +435,11 @@ namespace MiniBatchProcessor {
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
         /// </summary>
         void _Main(string[] args) {
-            if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
-                Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
+            
+            if(!Init()) {
+                Console.WriteLine("Terminating server init.");
                 return;
             }
-            Init();
             LogMessage("server started.");
 
             // infinity loop
@@ -480,7 +502,6 @@ namespace MiniBatchProcessor {
                 // sort out jobs which have problems
                 NextJobs = NextJobs.Where(job => CheckJob(job, true) == true).ToArray();
 
-
                 // sleep if there is nothing to do
                 if (NextJobs.Count() <= 0) {
                     LogMessage(string.Format("No more jobs in queue. Running: {0}, Avail. procs.: {1}.", Running.Count, AvailableProcs));
@@ -497,7 +518,7 @@ namespace MiniBatchProcessor {
                     if ((NextJobs[0].NoOfProcs > AvailableProcs)
                         || (NextJobs[0].UseComputeNodesExclusive && AvailableProcs < config.MaxProcessors)
                         || (ExclusiveUse == true)) {
-                        LogMessage(string.Format(": Not enough available processors for job #{0} - start is delayed.", NextJobs[0].ID));
+                        LogMessage($"Not enough available processors for job #{NextJobs[0].ID} - start is delayed; {NextJobs.Length} jobs are pending.");
                         Thread.Sleep(10000);
                         continue;
                     }
@@ -508,7 +529,8 @@ namespace MiniBatchProcessor {
                     ProcessThread task = new ProcessThread() {
                         data = NextJobs[0],
                         WorkDir = Path.Combine(config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR),
-                        BatchInstructionDir = config.BatchInstructionDir
+                        BatchInstructionDir = config.BatchInstructionDir,
+                        TermAct = delegate() { base.UpdateStatus(NextJobs[0].ID, JobStatus.Finished);  }
                     };
                     Thread th = new Thread(task.Run);
                     th.Priority = ThreadPriority.Lowest;
@@ -548,6 +570,11 @@ namespace MiniBatchProcessor {
             public bool success = false;
 
             /// <summary>
+            /// Executed on termination
+            /// </summary>
+            public Action TermAct = null;
+
+            /// <summary>
             /// Starts job in some external process and waits until it terminates.
             /// </summary>
             public void Run() {
@@ -578,77 +605,82 @@ namespace MiniBatchProcessor {
 
                 Server.LogMessage(string.Format("starting job #{2}, '{3}': {0} {1}", psi.FileName, psi.Arguments, data.ID, data.Name));
 
-
-
                 // note: we create the stdout and stderr file on the output-directory to have a 
                 //       constant path of these files for all times.
                 string stdout_file = Path.Combine(WorkDir, "..", ClientAndServer.WORK_FINISHED_DIR, data.ID.ToString() + "_out.txt");
                 string stderr_file = Path.Combine(WorkDir, "..", ClientAndServer.WORK_FINISHED_DIR, data.ID.ToString() + "_err.txt");
 
+                try {
+                    using(FileStream stdoutStream = new FileStream(stdout_file, FileMode.Create, FileAccess.Write, FileShare.Read),
+                        stderrStream = new FileStream(stderr_file, FileMode.Create, FileAccess.Write, FileShare.Read)) {
+                        using(StreamWriter stdout = new StreamWriter(stdoutStream),
+                            stderr = new StreamWriter(stderrStream)) {
+                            try {
 
-                using (FileStream stdoutStream = new FileStream(stdout_file, FileMode.Create, FileAccess.Write, FileShare.Read),
-                    stderrStream = new FileStream(stderr_file, FileMode.Create, FileAccess.Write, FileShare.Read)) {
-                    using (StreamWriter stdout = new StreamWriter(stdoutStream),
-                        stderr = new StreamWriter(stderrStream)) {
-                        try {
-                            
-                            var p = new Process();
-                            p.StartInfo = psi;
+                                var p = new Process();
+                                p.StartInfo = psi;
 
-                            p.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) {
-                                try {
-                                    stdout.WriteLine(e.Data);
-                                    stdout.Flush();
-                                    return;
-                                } catch (Exception ex) {
-                                    Server.LogMessage(string.Format("STDOUT file exception, unable to write " + e.Data + "; (job " + this.data.Name + ", " + ex.Message + ", " + ex.GetType().FullName + ")"));
-                                    return;
+                                p.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) {
+                                    try {
+                                        stdout.WriteLine(e.Data);
+                                        stdout.Flush();
+                                        return;
+                                    } catch(Exception ex) {
+                                        Server.LogMessage(string.Format("STDOUT file exception, unable to write " + e.Data + "; (job " + this.data.Name + ", " + ex.Message + ", " + ex.GetType().FullName + ")"));
+                                        return;
+                                    }
+                                };
+                                p.ErrorDataReceived += delegate (object sender, DataReceivedEventArgs e) {
+                                    try {
+                                        stdout.WriteLine(e.Data);
+                                        stdout.Flush();
+                                        return;
+                                    } catch(Exception ex) {
+                                        Server.LogMessage(string.Format("STDERR file exception, unable to write " + e.Data + "; (job " + this.data.Name + ", " + ex.Message + ", " + ex.GetType().FullName + ")"));
+                                        return;
+                                    }
+                                };
+
+                                p.Start();
+                                p.BeginErrorReadLine();
+                                p.BeginOutputReadLine();
+
+                                while(!p.HasExited) {
+                                    Thread.Sleep(5000);
                                 }
-                            };
-                            p.ErrorDataReceived += delegate (object sender, DataReceivedEventArgs e) {
-                                try {
-                                    stdout.WriteLine(e.Data);
-                                    stdout.Flush();
-                                    return;
-                                } catch (Exception ex) {
-                                    Server.LogMessage(string.Format("STDERR file exception, unable to write " + e.Data + "; (job " + this.data.Name + ", " + ex.Message + ", " + ex.GetType().FullName + ")"));
-                                    return;
+
+                                success = (p.ExitCode == 0);
+                                Server.LogMessage(string.Format("finished job #" + data.ID + " (" + data.Name + "), exit code " + p.ExitCode + "."));
+
+                                using(var exit = new StreamWriter(Path.Combine(
+                                    BatchInstructionDir,
+                                    ClientAndServer.WORK_FINISHED_DIR,
+                                    data.ID.ToString() + "_exit.txt"))) {
+                                    exit.WriteLine(p.ExitCode);
+                                    exit.Flush();
                                 }
-                            };
 
-                            p.Start();
-                            p.BeginErrorReadLine();
-                            p.BeginOutputReadLine();
-
-                            while (!p.HasExited) {
+                                // wait a little bit longer before streams get closed - sometimes it seems
+                                // stdout and stderr send data after process has exited.
                                 Thread.Sleep(5000);
+
+                            } catch(Exception e) {
+                                Server.LogMessage(string.Format("FAILED " + psi.FileName + " " + psi.Arguments + ": " + e.Message + " (" + e.GetType().FullName + ")"));
+                                stdout.WriteLine(DateTime.Now + ": FAILED " + psi.FileName + " " + psi.Arguments + ": " + e.Message + " (" + e.GetType().FullName + ")");
+                                success = false;
                             }
+                            stdout.Flush();
+                            stderr.Flush();
+                        } // writers
+                    } // streams 
 
-                            success = (p.ExitCode == 0);
-                            Server.LogMessage(string.Format("finished job #" + data.ID + " (" + data.Name +"), exit code " + p.ExitCode + "."));
+                    TermAct?.Invoke();
 
-                            using (var exit = new StreamWriter(Path.Combine(
-                                BatchInstructionDir,
-                                ClientAndServer.WORK_FINISHED_DIR,
-                                data.ID.ToString() + "_exit.txt"))) {
-                                exit.WriteLine(p.ExitCode);
-                                exit.Flush();
-                            }
+                } catch (Exception e) {
 
-                            // wait a little bit longer before streams get closed - sometimes it seems
-                            // stdout and stderr send data after process has exited.
-                            Thread.Sleep(5000);
-
-                        } catch (Exception e) {
-                            Server.LogMessage(string.Format("FAILED " + psi.FileName + " " + psi.Arguments + ": " + e.Message + " (" + e.GetType().FullName + ")"));
-                            stdout.WriteLine(DateTime.Now + ": FAILED " + psi.FileName + " " + psi.Arguments + ": " + e.Message + " (" + e.GetType().FullName + ")");
-                            success = false;
-                        }
-                        stdout.Flush();
-                        stderr.Flush();
-                    } // writers
-                } // streams 
-
+                    Console.WriteLine(e.GetType().Name + " in runner thread: " + e.Message);
+                    Console.WriteLine(e.StackTrace);
+                }
 
                 Console.Out.Flush();
             } // Run() -- method

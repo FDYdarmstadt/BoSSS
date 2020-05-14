@@ -186,7 +186,7 @@ namespace BoSSS.Platform
         }
 
         /// <summary>
-        /// 
+        /// Includes points on edge of polygon.
         /// </summary>
         /// <param name="_Polygon">
         /// A positively oriented polygon
@@ -196,6 +196,7 @@ namespace BoSSS.Platform
         public static bool PointInConvexPolygon(IEnumerable<Vector> _Polygon, Vector point)
         {
             //http://demonstrations.wolfram.com/AnEfficientTestForAPointToBeInAConvexPolygon/
+            const double accuracy = 1e-12;
             //Shift
             Vector[] shiftedPoly = new Vector[_Polygon.Count()];
             int i = 0;
@@ -209,11 +210,11 @@ namespace BoSSS.Platform
             for(i = 0; i < shiftedPoly.Length - 1; ++i)
             {
                 double a_i = shiftedPoly[i + 1].x * shiftedPoly[i].y - shiftedPoly[i].x * shiftedPoly[i + 1].y;
-                inside &= a_i <= 0;
+                inside &= a_i <= accuracy;
             }
             double a = shiftedPoly[0].x * shiftedPoly[shiftedPoly.Length-1].y 
                 - shiftedPoly[shiftedPoly.Length-1].x * shiftedPoly[0].y;
-            inside &= a <= 0;
+            inside &= a <= accuracy;
             return inside;
 
         }

@@ -92,18 +92,18 @@ namespace MiniBatchProcessor {
         /// </summary>
         internal static JobData FromFile(string f) {
             int ReTryCount = 0;
-            while (true) {
+            while(true) {
                 try {
                     int id = int.Parse(Path.GetFileNameWithoutExtension(f));
 
-                    using (var fStr = new StreamReader(new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.None))) {
+                    using(var fStr = new StreamReader(new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.None))) {
                         JobData J = new JobData();
 
                         J.m_ID = id;
 
                         J.Name = fStr.ReadLine();
                         J.ExeDir = fStr.ReadLine();
-                        if (string.IsNullOrWhiteSpace(J.ExeDir)) {
+                        if(string.IsNullOrWhiteSpace(J.ExeDir)) {
                             J.ExeDir = null;
                         }
                         J.NoOfProcs = Convert.ToInt32(fStr.ReadLine());
@@ -112,13 +112,13 @@ namespace MiniBatchProcessor {
 
                         int NoOfArgs = int.Parse(fStr.ReadLine());
                         J.Arguments = new string[NoOfArgs];
-                        for (int j = 0; j < NoOfArgs; j++) {
+                        for(int j = 0; j < NoOfArgs; j++) {
                             J.Arguments[j] = fStr.ReadLine();
                         }
 
                         int NoOfEnvVars = int.Parse(fStr.ReadLine());
                         J.EnvVars = new Tuple<string, string>[NoOfEnvVars];
-                        for (int j = 0; j < NoOfEnvVars; j++) {
+                        for(int j = 0; j < NoOfEnvVars; j++) {
                             J.EnvVars[j] = new Tuple<string, string>(fStr.ReadLine(), fStr.ReadLine());
                         }
 
@@ -126,8 +126,8 @@ namespace MiniBatchProcessor {
 
                         return J;
                     }
-                } catch (Exception E) {
-                    if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                } catch(Exception E) {
+                    if(ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
                         ReTryCount++;
                         Thread.Sleep(ClientAndServer.IOwaitTime);
                     } else {
@@ -141,53 +141,31 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Saves job data in queue-directory.
         /// </summary>
-        internal void Save(string BatchInstructionDir) {
-            
-            string RelDir = ClientAndServer.QUEUE_DIR;
-            string f = Path.Combine(BatchInstructionDir, RelDir, this.ID.ToString());
+        internal void Write(TextWriter fStr) {
 
-            int ReTryCount = 0;
-            while (true) {
 
-                try {
-                    using (var fStr = new StreamWriter(new FileStream(f, FileMode.CreateNew, FileAccess.Write, FileShare.None))) {
 
-                        fStr.WriteLine(Name);
-                        fStr.WriteLine(ExeDir != null ? ExeDir : "");
-                        fStr.WriteLine(NoOfProcs);
-                        fStr.WriteLine(UseComputeNodesExclusive);
-                        fStr.WriteLine(exefile);
 
-                        fStr.WriteLine(this.Arguments.Length);
-                        for (int i = 0; i < this.Arguments.Length; i++) {
-                            fStr.WriteLine(Arguments[i]);
-                        }
 
-                        fStr.WriteLine(this.EnvVars.Length);
-                        for (int i = 0; i < this.EnvVars.Length; i++) {
-                            fStr.WriteLine(this.EnvVars[i].Item1);
-                            fStr.WriteLine(this.EnvVars[i].Item2);
-                        }
+            fStr.WriteLine(Name);
+            fStr.WriteLine(ExeDir != null ? ExeDir : "");
+            fStr.WriteLine(NoOfProcs);
+            fStr.WriteLine(UseComputeNodesExclusive);
+            fStr.WriteLine(exefile);
 
-                        return;
-                    }
-                } catch (Exception e) {
-                    try {
-                        if (File.Exists(f))
-                            // try to avoid invalid files
-                            File.Delete(f);
-                    } catch (Exception) {
-
-                    }
-                    
-                    if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
-                        ReTryCount++;
-                        Thread.Sleep(ClientAndServer.IOwaitTime);
-                    } else {
-                        throw e;
-                    }
-                }
+            fStr.WriteLine(this.Arguments.Length);
+            for(int i = 0; i < this.Arguments.Length; i++) {
+                fStr.WriteLine(Arguments[i]);
             }
+
+            fStr.WriteLine(this.EnvVars.Length);
+            for(int i = 0; i < this.EnvVars.Length; i++) {
+                fStr.WriteLine(this.EnvVars[i].Item1);
+                fStr.WriteLine(this.EnvVars[i].Item2);
+            }
+
+            return;
         }
-    }
+
+    }    
 }
