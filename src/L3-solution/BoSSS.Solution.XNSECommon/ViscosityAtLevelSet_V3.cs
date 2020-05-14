@@ -66,7 +66,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
+            //double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -301,7 +301,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         /// <param name="csB"></param>
         /// <param name="DomainDGdeg"></param>
         /// <param name="TestDGdeg"></param>
-        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {       
 
             double _D = m_D;
             double _p = DomainDGdeg.Max();

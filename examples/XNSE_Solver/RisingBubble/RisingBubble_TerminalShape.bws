@@ -5,18 +5,20 @@ restart
   _______________________
 
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
+List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 412; Grid Count = 8955; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 125; Grid Count = 13; Path = D:\local\local_XNSE_StudyDB }
+  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 21; Grid Count = 21; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
 using BoSSS.Foundation;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Application.XNSE_Solver;
@@ -81,9 +83,257 @@ pltForm.PointType  = PointTypes.Dot;
 **************
 ==============
 plt.PlotXY(x, y, format: pltForm);
-plt.PlotNow();
+//plt.PlotNow();
 **************
-System.Drawing.Bitmap
+==============
+**************
+==============
+// ======================================
+// check circularity with mass correction
+// ====================================== 
+**************
+==============
+WorkflowMgm.Sessions
+**************
+List of 72 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_test5_k2_mesh0	03/20/2020 17:05:24	d42334d4...
+  1: RisingBubble	RisingBubble_test3_k2_mesh0*	03/20/2020 11:32:38	93ed2247...
+  2: RisingBubble	RisingBubble_test2_k2_mesh0*	03/19/2020 20:50:14	aed2439e...
+  3: RisingBubble	RisingBubble_test_k2_mesh0*	03/19/2020 17:47:43	dc391866...
+  4: RisingBubble	RisingBubble_ConvStudy2_k2_mesh2_AMR1_restart	05/08/2020 19:00:01	8eddbff6...
+  5: RisingBubble	RisingBubble_ConvStudy_k3_mesh0_rerun*	05/09/2020 19:14:08	d42767d7...
+  6: RisingBubble	RisingBubble_ConvStudy2_k2_mesh2_AMR1_restart*	05/08/2020 18:57:22	eab5f1a4...
+  7: RisingBubble	RisingBubble_ConvStudy2_k2_mesh2_AMR1_restart*	05/08/2020 18:55:44	725f9ba6...
+  8: RisingBubble	RisingBubble_ConvStudy2_k2_mesh2	04/18/2020 11:55:54	a10b325a...
+  9: RisingBubble	RisingBubble_tc2_ConvStudy2_k2_mesh2	04/18/2020 12:08:38	30ceac81...
+  10: RisingBubble	RisingBubble_tc2_ConvStudy2_k2_mesh1	04/18/2020 12:08:37	4711d0de...
+  11: RisingBubble	RisingBubble_ConvStudy2_k2_mesh1	04/18/2020 11:55:51	b222efe0...
+  12: RisingBubble	RisingBubble_ExtVelLB3_k2_mesh1*	04/19/2020 20:11:05	27695456...
+  13: RisingBubble	RisingBubble_ConvStudy2_k2_mesh0	04/18/2020 11:55:48	cec115b7...
+  14: RisingBubble	RisingBubble_tc2_ConvStudy2_k3_mesh4*	04/18/2020 12:09:28	1bdcbf9e...
+  15: RisingBubble	RisingBubble_tc2_ConvStudy2_k4_mesh2*	04/18/2020 12:09:31	5c84a9a4...
+  16: RisingBubble	RisingBubble_tc2_ConvStudy2_k4_mesh3*	04/18/2020 12:09:27	b043b2c9...
+  17: RisingBubble	RisingBubble_tc2_ConvStudy2_k3_mesh2*	04/18/2020 12:09:18	9fbae8ce...
+  18: RisingBubble	RisingBubble_tc2_ConvStudy2_k4_mesh1*	04/18/2020 12:09:15	2d89fe1c...
+  19: RisingBubble	RisingBubble_tc2_ConvStudy2_k2_mesh4*	04/18/2020 12:09:00	b2d5114c...
+  20: RisingBubble	RisingBubble_tc2_ConvStudy2_k3_mesh3*	04/18/2020 12:09:03	93a0c852...
+  21: RisingBubble	RisingBubble_tc2_ConvStudy2_k3_mesh1*	04/18/2020 12:08:51	0b53b932...
+  22: RisingBubble	RisingBubble_tc2_ConvStudy2_k2_mesh3*	04/18/2020 12:08:43	1f40ddde...
+  23: RisingBubble	RisingBubble_ConvStudy2_k2_mesh2_AMR1*	04/18/2020 11:58:24	c620be9f...
+  24: RisingBubble	RisingBubble_ConvStudy2_k3_mesh2_AMR1*	04/18/2020 11:58:27	f6084112...
+  25: RisingBubble	RisingBubble_ConvStudy2_k4_mesh2*	04/18/2020 11:56:16	0425fb79...
+  26: RisingBubble	RisingBubble_ConvStudy2_k4_mesh1*	04/18/2020 11:56:13	0c6dfbf2...
+  27: RisingBubble	RisingBubble_ConvStudy2_k4_mesh0*	04/18/2020 11:56:10	709b89e9...
+  28: RisingBubble	RisingBubble_ConvStudy2_k3_mesh2*	04/18/2020 11:56:07	860c8824...
+  29: RisingBubble	RisingBubble_ConvStudy2_k3_mesh1*	04/18/2020 11:56:02	d6eda6d3...
+  30: RisingBubble	RisingBubble_ConvStudy2_k3_mesh0*	04/18/2020 11:55:59	cd40b071...
+  31: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1_restart*	04/17/2020 15:18:22	bc355a70...
+  32: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart*	04/17/2020 14:43:50	7a7385d1...
+  33: RisingBubble	RisingBubble_ConvStudy_k3_mesh12	03/26/2020 09:43:00	f6cdd826...
+  34: RisingBubble	RisingBubble_ConvStudy_k2_mesh2	03/23/2020 11:06:01	b74d773f...
+  35: RisingBubble	RisingBubble_Fourier_k2_mesh1_VierProcTest*	04/02/2020 23:11:13	d5baf490...
+  36: RisingBubble	RisingBubble_Fourier_k2_mesh1_ZwoProcTest*	04/02/2020 23:09:26	00841606...
+  37: RisingBubble	RisingBubble_Fourier_k2_mesh1_parallelTest*	04/01/2020 18:45:35	ee80e51d...
+  38: RisingBubble	RisingBubble_ExtVelCurv2_k2_mesh1*	03/31/2020 10:23:09	84087e56...
+  39: RisingBubble	RisingBubble_ExtVelLB2_k2_mesh1*	03/31/2020 10:21:47	ab0a7316...
+  40: RisingBubble	RisingBubble_ConvStudy_k2_mesh12	03/26/2020 09:42:42	4510aed9...
+  41: RisingBubble	RisingBubble_ExtVelCurv_k2_mesh1*	03/30/2020 16:45:02	09f68852...
+  42: RisingBubble	RisingBubble_ExtVelLB_k2_mesh1*	03/30/2020 16:43:52	cfbee3d5...
+  43: RisingBubble	RisingBubble_ConvStudy_k3_mesh1	03/23/2020 10:43:42	de42008a...
+  44: RisingBubble	RisingBubble_FastMarchCurv_k2_mesh1	03/26/2020 10:42:07	3226987a...
+  45: RisingBubble	RisingBubble_Fourier_k2_mesh1	03/26/2020 10:46:02	b760b42f...
+  46: RisingBubble	RisingBubble_tc2_FastMarchCurv_k2_mesh1*	03/26/2020 10:51:39	bf6a3d14...
+  47: RisingBubble	RisingBubble_ConvStudy_k3_mesh02	03/26/2020 09:42:48	c3be0727...
+  48: RisingBubble	RisingBubble_ConvStudy_k2_mesh02	03/26/2020 09:42:38	9b4dcbd7...
+  49: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh1	03/23/2020 22:05:22	44504bf6...
+  50: RisingBubble	RisingBubble_ConvStudy_k2_mesh1	03/23/2020 10:43:12	97e8e806...
+  51: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh0	03/23/2020 22:05:20	d3c1cfe5...
+  52: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2*	03/23/2020 22:05:28	931391e0...
+  53: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
+  54: RisingBubble	RisingBubble_ConvStudy_k3_mesh3*	03/23/2020 11:06:25	7fe15c36...
+  55: RisingBubble	RisingBubble_ConvStudy_k3_mesh2*	03/23/2020 11:06:19	5a4ef53c...
+  56: RisingBubble	RisingBubble_ConvStudy_k2_mesh3*	03/23/2020 11:06:06	be84e68d...
+  57: RisingBubble	RisingBubble_ConvStudy_k3_mesh0*	03/23/2020 10:43:43	403366e9...
+  58: RisingBubble	RisingBubble_ConvStudy_k3_mesh0_rerun*	05/12/2020 10:14:17	1cb27342...
+  59: RisingBubble	RisingBubble_ConvStudy_k3_mesh0_restart	05/09/2020 08:49:47	4c450744...
+  60: RisingBubble	RisingBubble_ConvStudy_k3_mesh0_rerun*	05/08/2020 18:45:50	8351c0ba...
+  61: RisingBubble	RisingBubble_methodStudy_k2_Fourier_rerun*	05/13/2020 11:08:59	11e26d91...
+  62: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_isoVisc1e-1*	05/13/2020 10:55:50	a1473653...
+  63: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_nofullReinit	05/12/2020 09:29:40	d5b0db0c...
+  64: RisingBubble	RisingBubble_methodStudy_k2_Fourier*	05/12/2020 09:47:09	747456a3...
+  65: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_defaultFilter*	05/12/2020 09:30:05	d3792020...
+  66: RisingBubble	RisingBubble_methodStudy_k2_Fourier*	05/11/2020 13:45:14	cc5da5b4...
+  67: RisingBubble	RisingBubble_methodStudy_k2_ExtVelCurv*	05/11/2020 13:44:27	9b3e12c5...
+  68: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB*	05/11/2020 13:43:21	c2ffe833...
+  69: RisingBubble	RisingBubble_methodStudy_k2_FastMarchCurv*	05/11/2020 13:41:59	8854c134...
+  70: RisingBubble	RisingBubble_methodStudy_k2_FastMarchLB*	05/11/2020 13:40:08	c7166386...
+  71: RisingBubble	RisingBubble_methodStudy_k2_FastMarchLB*	05/11/2020 13:33:02	ddeb14e7...
+}
+==============
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+evalSess.Add(WorkflowMgm.Sessions.Pick(23));
+**************
+==============
+var data = evalSess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.RisingBubble);
+**************
+Element at 0: time vs area
+Element at 1: time vs center of mass - x
+Element at 2: time vs center of mass - y
+Element at 3: time vs circularity
+Element at 4: time vs rise velocity
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "circularity")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+var dgrp    = data.ElementAt(3).dataGroups[0];
+double Min  = Double.MaxValue;
+double time = 0.0;
+for(int i = 0; i < dgrp.Values.Length; i++) {
+    if(dgrp.Values[i] < Min) {
+        Min  = dgrp.Values[i];
+        time = dgrp.Abscissas[i];
+    }
+}
+**************
+==============
+**************
+==============
+**************
+==============
+var minCircStep = sess.Timesteps.ElementAt(188);
+minCircStep
+**************
+ { Time-step: 3760; Physical time: 1.87999999999985s; Fields: Phi, PhiDG, Pressure, VelocityX, VelocityY, GravityY; Name:  }
+==============
+phi    = minCircStep.Fields.ElementAt(0);
+LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+LevSet.Acc(1.0, phi);
+LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+LsTrk.UpdateTracker();
+**************
+==============
+**************
+==============
+double areaRef = Math.PI * 0.25 * 0.25;
+areaRef
+**************
+0.196349540849362
+==============
+int order        = 6;
+var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
+// area of bubble
+double area     = 0.0;
+SpeciesId spcId = LsTrk.SpeciesIdS[0];
+var vqs         = SchemeHelper.GetVolumeQuadScheme(spcId);
+CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+    vqs.Compile(LsTrk.GridDat, order),
+    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+         EvalResult.SetAll(1.0);
+    },
+    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        for (int i = 0; i < Length; i++)
+            area += ResultsOfIntegration[i, 0];
+    }
+).Execute();
+**************
+==============
+area
+**************
+0.19646276332869
+==============
+// perimeter of bubble
+double perimtr_b         = 0.0;
+CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+    cqs.Compile(LsTrk.GridDat, order),
+    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+        EvalResult.SetAll(1.0);
+    },
+    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        for (int i = 0; i < Length; i++)
+            perimtr_b += ResultsOfIntegration[i, 0];
+    }
+).Execute();
+**************
+==============
+perimtr_b
+**************
+1.73965035923588
+==============
+double circ = Math.Sqrt(4*Math.PI*area)/perimtr_b;
+circ
+**************
+0.903198245038658
+==============
+double LSconservationTerm = (areaRef - area)/perimtr_b;
+LSconservationTerm
+**************
+-6.50834684836229E-05
+==============
+**************
+==============
+LevelSet LevSetC = new LevelSet(phi.Basis, "LevelSet"); 
+LevSetC.Acc(1.0, phi);
+LevSetC.AccConstant(-LSconservationTerm);  
+**************
+==============
+LevelSetTracker LsTrkC = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, 
+    XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSetC);
+LsTrkC.UpdateTracker();
+**************
+==============
+**************
+==============
+int order        = 6;
+var SchemeHelper = LsTrkC.GetXDGSpaceMetrics(LsTrkC.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
+// area of bubble
+double areaC    = 0.0;
+SpeciesId spcId = LsTrkC.SpeciesIdS[0];
+var vqs         = SchemeHelper.GetVolumeQuadScheme(spcId);
+CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrkC.GridDat,
+    vqs.Compile(LsTrkC.GridDat, order),
+    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+         EvalResult.SetAll(1.0);
+    },
+    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        for (int i = 0; i < Length; i++)
+            areaC += ResultsOfIntegration[i, 0];
+    }
+).Execute();
+**************
+==============
+areaC
+**************
+0.196349362364163
+==============
+// perimeter of bubble
+double perimtr_bC        = 0.0;
+CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrkC.Regions.GetCutCellMask());
+CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrkC.GridDat,
+    cqs.Compile(LsTrkC.GridDat, order),
+    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+        EvalResult.SetAll(1.0);
+    },
+    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        for (int i = 0; i < Length; i++)
+            perimtr_bC += ResultsOfIntegration[i, 0];
+    }
+).Execute();
+**************
+==============
+perimtr_bC
+**************
+1.73924008729579
+==============
+double circC = Math.Sqrt(4*Math.PI*areaC)/perimtr_bC;
+circC
+**************
+0.903150533573688
 ==============
 **************
 ==============

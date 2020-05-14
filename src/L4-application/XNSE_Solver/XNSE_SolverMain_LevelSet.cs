@@ -223,20 +223,20 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             Fourier_LevSet.ProjectToDGLevelSet(this.DGLevSet.Current, this.LsTrk);
 
-            //if (this.CurrentSessionInfo.ID != Guid.Empty) {
-            //    Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
-            //    if (base.MPIRank == 0) {
-            //        // restart information for Fourier LS
-            //        Log_FourierLS = base.DatabaseDriver.FsDriver.GetNewLog("Log_FourierLS", this.CurrentSessionInfo.ID);
-            //        Log_FourierLS.WriteLine(vecSamplP_id);
-            //        Log_FourierLS.Flush();
+            if (this.CurrentSessionInfo.ID != Guid.Empty) {
+                Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
+                if (base.MPIRank == 0) {
+                    // restart information for Fourier LS
+                    Log_FourierLS = base.DatabaseDriver.FsDriver.GetNewLog("Log_FourierLS", this.CurrentSessionInfo.ID);
+                    Log_FourierLS.WriteLine(vecSamplP_id);
+                    Log_FourierLS.Flush();
 
-            //        //if(this.Control.FourierLevSetControl.WriteFLSdata)
-            //        //    Fourier_LevSet.setUpLogFiles(base.DatabaseDriver, this.CurrentSessionInfo, TimestepNo, PhysTime);
+                    //if(this.Control.FourierLevSetControl.WriteFLSdata)
+                    //    Fourier_LevSet.setUpLogFiles(base.DatabaseDriver, this.CurrentSessionInfo, TimestepNo, PhysTime);
 
-            //    }
-            //}
-            //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                }
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
             //create specialized fourier timestepper
             Fourier_Timestepper = FourierLevelSetFactory.Build_Timestepper(this.Control.FourierLevSetControl, Fourier_LevSet.GetFLSproperty(),
@@ -295,9 +295,9 @@ namespace BoSSS.Application.XNSE_Solver {
                             // PDE Solver
                             ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
 
-                            CellMask Accepted = LsTrk.Regions.GetNearFieldMask(1);
-                            CellMask ActiveField = Accepted.Complement();
-                            CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                            //CellMask Accepted = LsTrk.Regions.GetNearFieldMask(1);
+                            //CellMask ActiveField = Accepted.Complement();
+                            //CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
                             //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
 
 
@@ -347,6 +347,10 @@ namespace BoSSS.Application.XNSE_Solver {
                         this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
                    
                         //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
+                        //CellMask Accepted = LsTrk.Regions.GetNearFieldMask(1);
+                        //CellMask ActiveField = Accepted.Complement();
+                        //CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                        //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
 
                         break;
                 }
@@ -467,6 +471,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     double rhoA = this.Control.ThermalParameters.rho_A;
                     double rhoB = this.Control.ThermalParameters.rho_B;
 
+                    //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
 
                     for (int d = 0; d < D; d++) {
                         evapVelocity[d] = new SinglePhaseField(meanVelocity[d].Basis, "evapVelocity_d" + d);
@@ -562,7 +567,9 @@ namespace BoSSS.Application.XNSE_Solver {
                                        //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
 
                                        double sNeg = VelA[j, k, d] + mEvap * (1 / rhoA) * Normals[j, k, d];
+                                       //Console.WriteLine("sNeg = {0}", sNeg);
                                        double sPos = VelB[j, k, d] + mEvap * (1 / rhoB) * Normals[j, k, d];
+                                       //Console.WriteLine("sPos = {0}", sNeg);
 
                                        result[j, k] = (rhoA * sNeg + rhoB * sPos) / (rhoA + rhoB);   // density averaged evap velocity 
                                    }
@@ -600,11 +607,11 @@ namespace BoSSS.Application.XNSE_Solver {
                         EvapVelocMean /= nNodes;
                     }
 
-                    //Console.WriteLine("meanEvapVelocity = {0}", EvapVelocMean);
+                    Console.WriteLine("meanEvapVelocity = {0}", EvapVelocMean);
 
                     // plot
                     //Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
-                    //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+
                 }
 
                 //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
@@ -726,27 +733,29 @@ namespace BoSSS.Application.XNSE_Solver {
                             CellMask Accepted;
                             CellMask ActiveField;
                             CellMask NegativeField;
-                            if (this.Control.AdaptiveMeshRefinement) {
-                                int NoCells = ((GridData)this.GridData).Cells.Count;
-                                BitArray Refined = new BitArray(NoCells);
-                                for (int j = 0; j < NoCells; j++) {
-                                    if (((GridData)this.GridData).Cells.GetCell(j).RefinementLevel > 0)
-                                        Refined[j] = true;
+                            if (!this.Control.fullReInit) {
+                                if (this.Control.AdaptiveMeshRefinement) {
+                                    int NoCells = ((GridData)this.GridData).Cells.Count;
+                                    BitArray Refined = new BitArray(NoCells);
+                                    for (int j = 0; j < NoCells; j++) {
+                                        if (((GridData)this.GridData).Cells.GetCell(j).RefinementLevel > 0)
+                                            Refined[j] = true;
+                                    }
+                                    Accepted = new CellMask(this.GridData, Refined);
+                                    CellMask AcceptedNeigh = Accepted.AllNeighbourCells();
+
+                                    Accepted = Accepted.Union(AcceptedNeigh);
+                                    ActiveField = Accepted.Complement();
+                                    NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                                    FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
+
+                                } else {
+                                    Accepted = LsTrk.Regions.GetCutCellMask();
+                                    ActiveField = Accepted.Complement();
+                                    NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                                    FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
+
                                 }
-                                Accepted = new CellMask(this.GridData, Refined);
-                                CellMask AcceptedNeigh = Accepted.AllNeighbourCells();
-
-                                Accepted = Accepted.Union(AcceptedNeigh);
-                                ActiveField = Accepted.Complement();
-                                NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
-                            } else {
-                                Accepted = LsTrk.Regions.GetCutCellMask(); 
-                                ActiveField = Accepted.Complement();
-                                NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                                //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
                             }
                             //Accepted = LsTrk.Regions.GetNearFieldMask(1);
                             //SubGrid AcceptedGrid = new SubGrid(Accepted);
@@ -904,16 +913,16 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        private void EnforceVolumeConservation() {
-            double spcArea = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[0]);
-            Console.WriteLine("area = {0}", spcArea);
-            double InterLength = XNSEUtils.GetInterfaceLength(LsTrk);
+        //private void EnforceVolumeConservation() {
+        //    double spcArea = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[0]);
+        //    Console.WriteLine("area = {0}", spcArea);
+        //    double InterLength = XNSEUtils.GetInterfaceLength(LsTrk);
 
-            //double cmc = (consvRefArea - spcArea) / InterLength;
-            //Console.WriteLine("add constant: {0}", -cmc);
-            //this.DGLevSet.Current.AccConstant(-cmc);
-            //this.LevSet.AccConstant(-cmc);
-        }
+        //    double cmc = (consvRefArea - spcArea) / InterLength;
+        //    Console.WriteLine("add constant: {0}", -cmc);
+        //    this.DGLevSet.Current.AccConstant(-cmc);
+        //    this.LevSet.AccConstant(-cmc);
+        //}
 
 
         private void Filter(SinglePhaseField FiltrdField, int NoOfSweeps, CellMask CC) {

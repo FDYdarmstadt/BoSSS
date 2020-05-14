@@ -1,6 +1,5 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
@@ -16,7 +15,7 @@ List of 4 instances of IDatabaseInfo {
 
 ==============
 //var myDb = OpenOrCreateDefaultDatabase();
-var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB")
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
 **************
 ==============
 ExecutionQueues;
@@ -341,6 +340,8 @@ LastError
 **************
 ==============
 //WorkflowMgm.Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+==============
 **************
 ==============
 **************

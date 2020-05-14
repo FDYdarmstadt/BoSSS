@@ -610,7 +610,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="xkelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control CW_Test(int p = 2, int xkelem = 32, string _DbPath = null) {
+        public static XNSE_Control CW_Test(int p = 2, int xkelem = 32, int method = 0) {
 
             //int p = 2;
             //int xkelem = 32;
@@ -623,14 +623,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CWp3_spatialConv";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
+            //string _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB";
+            string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
-            C.ProjectName = "XNSE/CapillaryWave";
-            C.Tags.Add("Popinet");
-            C.Tags.Add("Testcase1");
+            C.ProjectName = "CapillaryWave";
+            C.SessionName = "CapillaryWave_Setup0_methodStudy_k2_method" + method;
+            //C.SessionName = "CapillaryWave_Setup0_convStudy_k2_mesh3_restart"; //"6f816774-8c9c-44f6-afe3-98f77d1764f6"
+            //Guid restart = new Guid("6f816774-8c9c-44f6-afe3-98f77d1764f6");
+            //C.SessionName = "CapillaryWave_Setup0_convStudy_k3_mesh2_restart"; //"7f9130d3-eaab-4ac2-9844-fd91be6f1edf"
+            //Guid restart = new Guid("7f9130d3-eaab-4ac2-9844-fd91be6f1edf");
 
             C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            C.LogPeriod = 4;
 
             #endregion
 
@@ -676,8 +682,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // Testcase1:
             double rho_l = 1e-3;
             double rho_h = 1e-3;
-            double mu_l = 1e-4;
-            double mu_h = 1e-4;
+            double mu_l = 1e-5;
+            double mu_h = 1e-5;
             double sigma = 3e-2;
 
             // for spatial convergence
@@ -721,10 +727,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, xkelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(-3.0 * L / 2.0, 3.0 * L / 2.0, (3 * xkelem) + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: !(method == 2 || method == 3));
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
                 grd.EdgeTagNames.Add(2, "wall_upper");
+                if (method == 2 || method == 3) {
+                    grd.EdgeTagNames.Add(3, "freeslip");
+                }
 
 
                 grd.DefineEdgeTags(delegate (double[] X) {
@@ -736,7 +745,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     if (Math.Abs(X[0]) <= 1.0e-8)
                         et = 3;
                     if (Math.Abs(X[0] - L) <= 1.0e-8)
-                        et = 4;
+                        et = 3;
 
                     return et;
                 });
@@ -754,6 +763,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AddBoundaryValue("wall_lower", "VelocityX#A", X => 0.0);
             C.AddBoundaryValue("wall_upper", "VelocityX#B", X => 0.0);
+            if (method == 2 || method == 3) {
+                C.AddBoundaryValue("freeslip");
+            }
 
             #endregion
 
@@ -769,18 +781,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid(restartSession);
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            ////Guid restartID = new Guid(restartSession);
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restart, null);
 
             #endregion
 
             // additional parameters
             // =====================
 
-            double[] param = new double[3];
-            param[0] = lambda;  // wavelength
-            param[1] = A0;      // initial disturbance
-            param[2] = 0.0;      // y-gravity
+            double[] param = new double[4];
+            param[0] = 1;        // wavenumber;
+            param[1] = L;        // wavelength
+            param[2] = A0;       // initial disturbance
+            param[3] = 0.0;      // y-gravity
             C.AdditionalParameters = param;
 
             // misc. solver options
@@ -788,25 +801,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
 
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
-            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
-
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            //C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-            //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
-
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
 
@@ -816,11 +819,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             int numSp = 640;
-            C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
+            var FourierContrl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
                 FourierEvolve = Fourier_Evolution.MaterialPoints,
-                Timestepper = FourierLevelSet_Timestepper.ExplicitEuler,
-                InterpolationType = Interpolationtype.CubicSplineInterpolation,
             };
+
+            C.SetLevelSetMethod(method, FourierContrl);
+            C.SessionName = "RisingBubble_methodStudy_k2_" + C.methodTagLS;
 
 
             // Timestepping
@@ -829,21 +833,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
-            double rho = rho_l;         // Testcase1
-            double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma));             // !!!
+            //double rho = rho_l;         // Testcase1
+            //double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma));             // !!!
+            double dt = 1e-4;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1000;
-            double omega0 = Math.Sqrt(sigma * Math.Pow((2 * Math.PI / lambda), 3) / (2.0 * rho));
-            C.NoOfTimesteps = 10; // (int)Math.Ceiling((25 / omega0) / dt);                                        // !!!
-            //C.NoOfTimesteps = (int)Math.Ceiling(t_end / dt);                                     // !!!
+            C.Endtime = 0.4;
+            //double omega0 = Math.Sqrt(sigma * Math.Pow((2 * Math.PI / lambda), 3) / (2.0 * rho));
+            //C.NoOfTimesteps = 10; // (int)Math.Ceiling((25 / omega0) / dt);                                        // !!!
+            C.NoOfTimesteps = (int)Math.Ceiling(0.4 / dt);                                     // !!!
 
-            C.saveperiod = 1;
+            C.saveperiod = 10;
 
             #endregion
 

@@ -186,6 +186,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
                         EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+                        EllipticExtVelAlgoControl.IsotropicViscosity = 1e-1;
+                        fullReInit = true;
                         break;
                     }
                 case 3: {
@@ -195,6 +197,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                         AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                        EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+                        fullReInit = true;
                         break;
                     }
                 case 4: {
@@ -357,11 +361,6 @@ namespace BoSSS.Application.XNSE_Solver {
             /// contact points and corresponding contact angle
             /// </summary>
             MovingContactLine,
-
-            /// <summary>
-            /// contact points and corresponding contact angle, wetting length and height of the droplet
-            /// </summary>
-            DropletOnWall,
 
             /// <summary>
             /// height of a rising capillary in a tube

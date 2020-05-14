@@ -9,8 +9,8 @@ List of 5 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 411; Grid Count = 8933; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 125; Grid Count = 13; Path = D:\local\local_XNSE_StudyDB }
+  3: { Session Count = 412; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 130; Grid Count = 108; Path = D:\local\local_XNSE_StudyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -33,18 +33,27 @@ List of 2 instances of BatchProcessorClient {
 ExecutionQueues[0].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 125; Grid Count = 13; Path = D:\local\local_XNSE_StudyDB }
+  0: { Session Count = 130; Grid Count = 108; Path = D:\local\local_XNSE_StudyDB }
 }
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
 **************
 ==============
-var myBatch = ExecutionQueues[0];
+bool local = false;
+int eqI    = (local) ? 0 : 1;
 **************
 ==============
-var myDb = ExecutionQueues[0].AllowedDatabases[0];
+var myBatch = ExecutionQueues[eqI];
 **************
 ==============
+var myDb = ExecutionQueues[eqI].AllowedDatabases[0];
+**************
+==============
+if(local) {
+    myDb    = OpenOrCreateDatabase(@"D:\local\local_XNSE_StudyDB");
+    myBatch = new MiniBatchProcessorClient(@"D:\local\binaries");
+    MiniBatchProcessor.Server.StartIfNotRunning(false);
+}
 **************
 ==============
 **************
@@ -70,7 +79,6 @@ int kelem = 32;
 double L = 1;    // equals lambda
 **************
 ==============
-
     GridCommons grd;
 
 
@@ -110,8 +118,8 @@ double L = 1;    // equals lambda
     
 **************
 Grid Edge Tags changed.
-An equivalent grid (43cf0303-c6de-401d-8eb7-662a92dd1041) is already present in the database -- the grid will not be saved.
-43cf0303-c6de-401d-8eb7-662a92dd1041
+An equivalent grid (4aa84e5e-dc52-42e5-bd84-98bebba6f277) is already present in the database -- the grid will not be saved.
+4aa84e5e-dc52-42e5-bd84-98bebba6f277
 ==============
 **************
 ==============
@@ -251,27 +259,27 @@ for(int iTstep = Tstep0; iTstep < timestepSeq.Length; iTstep++) {
     C.saveperiod = 1;
     C.LogPeriod  = 1;
     
-    C.SessionName = "CapillaryWave_Setup"+setup+"_tempConvStudy_k" + pDeg + "_timesteps" + iTstep;
+    C.SessionName = "CapillaryWave_Setup"+setup+"_tempConvStudy01_k" + pDeg + "_timesteps" + iTstep;
     
     controls.Add(C);
     C.CreateJob(); // job will be permanently linked to control object
 }
 }
 **************
-Info: setting database path to: D:\local\local_XNSE_StudyDB
-Info: setting database path to: D:\local\local_XNSE_StudyDB
-Info: setting database path to: D:\local\local_XNSE_StudyDB
-Info: setting database path to: D:\local\local_XNSE_StudyDB
-Info: setting database path to: D:\local\local_XNSE_StudyDB
-Info: setting database path to: D:\local\local_XNSE_StudyDB
-Info: setting database path to: D:\local\local_XNSE_StudyDB
-Info: setting database path to: D:\local\local_XNSE_StudyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
 
 ==============
 //Info(controls[0,0]);
 controls.ElementAt(0).SessionName
 **************
-CapillaryWave_Setup0_tempConvStudy_k2_timesteps0
+CapillaryWave_Setup0_tempConvStudy01_k2_timesteps0
 ==============
 //var j00 = controls[0,0].GetJob();
 **************
@@ -294,66 +302,141 @@ foreach(var cntrl in controls) {
     job.Activate(myBatch);
 }
 **************
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh1
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_124517
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh2
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_124531
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh3
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_125312
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh1
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132541
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh2
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132558
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh3
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps0
 Job not submitted yet, or no result session is known - starting submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132603
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_114746
 copied 32 files.
-   writing file: control.obj
+   written file: control.obj
    copied 'amd64' runtime.
 deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps1
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_114805
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps2
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_114831
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps3
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_114847
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps4
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_114903
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps5
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_114933
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps6
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_115004
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps7
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May11_115034
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
 
 ==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Session: {0}", cntrl.SessionName);
+    var job    = cntrl.GetJob();
+    var status = job.Status;
+    Console.WriteLine(status);
+}
 **************
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps0
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps1
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps2
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps3
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps4
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps5
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps6
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+Session: CapillaryWave_Setup0_tempConvStudy01_k2_timesteps7
+Exception IOException reading job file '\\hpccluster\MiniBatchProcessor\queue\189': The process cannot access the file '\\hpccluster\MiniBatchProcessor\queue\189' because it is being used by another process.
+PendingInExecutionQueue
+
 ==============
-//WorkflowMgm.Sessions
+WorkflowMgm.Sessions
 **************
+List of 0 instances of ISessionInfo {
+}
 ==============
 **************
 ==============
@@ -369,6 +452,10 @@ deployment finished.
 **************
 ==============
 //databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

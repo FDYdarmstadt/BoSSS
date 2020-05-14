@@ -179,8 +179,8 @@ namespace BoSSS.Solution.XheatCommon {
                 var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
                 comps.Add(Visc);
 
-                var qJump = new HeatFluxAtLevelSet(D, LsTrk, thermParams, config.getPhysParams.Sigma);
-                comps.Add(qJump);
+                //var qJump = new HeatFluxAtLevelSet(D, LsTrk, thermParams, config.getPhysParams.Sigma);
+                //comps.Add(qJump);
 
             } else {
 

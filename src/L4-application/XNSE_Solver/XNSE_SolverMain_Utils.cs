@@ -491,19 +491,19 @@ namespace BoSSS.Application.XNSE_Solver {
             // IO related to Fourier level set
             // ====================================
 
-            //if (Log_FourierLS != null) {
-            //    // save restart infos for FLS
-            //    Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
-            //    if (base.MPIRank == 0) {
-            //        Log_FourierLS.WriteLine(vecSamplP_id);
-            //        Log_FourierLS.Flush();
-            //    }
-            //    // Log_files for FLS
-            //    //if (this.Control.FourierLevSetControl.WriteFLSdata) {
-            //    //    Fourier_LevSet.saveToLogFiles(TimestepNo.MajorNumber, phystime + dt);
-            //    //}
-            //    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            //}
+            if (Log_FourierLS != null) {
+                // save restart infos for FLS
+                Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
+                if (base.MPIRank == 0) {
+                    Log_FourierLS.WriteLine(vecSamplP_id);
+                    Log_FourierLS.Flush();
+                }
+                // Log_files for FLS
+                //if (this.Control.FourierLevSetControl.WriteFLSdata) {
+                //    Fourier_LevSet.saveToLogFiles(TimestepNo.MajorNumber, phystime + dt);
+                //}
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            }
 
 
             // ====================================================================== 
@@ -1010,14 +1010,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         break;
                     }
-                case XNSE_Control.LoggingValues.DropletOnWall: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("DropletOnWall", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", 
-                            "contact-angle", "droplet-height");
-
-                        break;
-                    }
                 case XNSE_Control.LoggingValues.CapillaryHeight: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("CapillaryHeight", sessionID);
@@ -1029,7 +1021,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 case XNSE_Control.LoggingValues.EvaporationC: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("Evaporation", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "'#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux", "Temperatureprofile");
+                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "'#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux"); //, "Temperatureprofile");
 
                         break;
                     }
@@ -1191,80 +1183,6 @@ namespace BoSSS.Application.XNSE_Solver {
                             contactPointsRef = contactPointsSorted;
                         }
 
-                        MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                        double[] height = interP.ExtractSubArrayShallow(new int[] { -1, 1 }).To1DArray();
-                        //Console.WriteLine("Droplet height: {0}", height.Max());
-
-                        for (int p = 0; p < contactAnglesSorted.Count; p++) {
-                            string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", TimestepNo, phystime,
-                                contactPointsSorted.ElementAt(p)[0], contactPointsSorted.ElementAt(p)[1],
-                                contactVelocitiesSorted.ElementAt(p)[0], contactVelocitiesSorted.ElementAt(p)[1], contactAnglesSorted.ElementAt(p), height.Max());
-                            Log.WriteLine(line);
-                        }
-                        Log.Flush();
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.DropletOnWall: {
-
-                        // contact angles at contact points
-                        //=================================
-
-                        List<double[]> contactPoints = new List<double[]>();
-                        List<double[]> contactVelocities = new List<double[]>();
-                        List<double> contactAngles = new List<double>();
-
-                        var returnValues = this.ComputeContactLineQuantities();
-                        contactPoints = returnValues.Item1;
-                        contactVelocities = returnValues.Item2;
-                        contactAngles = returnValues.Item3;
-
-
-                        List<double[]> contactPointsSorted = new List<double[]>();
-                        List<double[]> contactVelocitiesSorted = new List<double[]>();
-                        List<double> contactAnglesSorted = new List<double>();
-
-                        if (contactPointsRef == null) {
-                            contactPointsRef = contactPoints;
-                            contactPointsSorted = contactPoints;
-                            contactVelocitiesSorted = contactVelocities; ;
-                            contactAnglesSorted = contactAngles;
-                        } else {
-                            // sort
-                            double eps = 1e-7;
-
-                            do {
-                                contactPointsSorted.Clear();
-                                contactVelocitiesSorted.Clear();
-                                contactAnglesSorted.Clear();
-
-                                eps *= 10;
-                                //Console.WriteLine("sorting contact line points");
-                                foreach (var ptR in contactPointsRef) {
-                                    //Console.WriteLine("ref point: ({0}, {1})", ptR[0], ptR[1]);
-                                    for (int i = 0; i < contactAngles.Count(); i++) {
-                                        double[] pt = contactPoints.ElementAt(i);
-                                        //Console.WriteLine("sorting point: ({0}, {1})", pt[0], pt[1]);
-                                        double xDiff = Math.Abs(pt[0] - ptR[0]);
-                                        //Console.WriteLine("x diff = {0}", xDiff);
-                                        double yDiff = Math.Abs(pt[1] - ptR[1]);
-                                        //Console.WriteLine("y diff = {0}", yDiff);
-                                        if (xDiff < eps && yDiff < eps) {
-                                            //Console.WriteLine("sorted");
-                                            contactPointsSorted.Add(pt.CloneAs());
-                                            contactVelocitiesSorted.Add(contactVelocities.ElementAt(i).CloneAs());
-                                            contactAnglesSorted.Add(contactAngles.ElementAt(i));
-                                            break;
-                                        }
-                                    }
-                                }
-
-                            } while (contactPointsSorted.Count != contactPointsRef.Count && eps < 1.0);
-
-                            contactPointsRef = contactPointsSorted;
-                        }
-
-
                         for (int p = 0; p < contactAnglesSorted.Count; p++) {
                             string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime,
                                 contactPointsSorted.ElementAt(p)[0], contactPointsSorted.ElementAt(p)[1],
@@ -1275,6 +1193,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         return;
                     }
+
                 case XNSE_Control.LoggingValues.CapillaryHeight: {
 
                         MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
@@ -1308,25 +1227,25 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, posI, EvapVelocMean, MassFlux);
 
-                        // temperature profile
-                        int N = 100;
-                        double[] tempP = new double[N + 1];
+                        //// temperature profile
+                        //int N = 100;
+                        //double[] tempP = new double[N + 1];
 
-                        double[] probe = new double[N + 1];
-                        //if (this.Control.LogValues == XNSE_Control.LoggingValues.EvaporationL) {
-                        double L = this.Control.AdditionalParameters[0];
-                        double x_probe = this.Control.AdditionalParameters[1];
-                        for (int i = 0; i <= N; i++) {
-                            probe = new double[] { x_probe, i * (L / (double)N) };
-                            try {
-                                tempP[i] = this.Temperature.ProbeAt(probe);
-                            } catch {
-                                tempP[i] = 0.0;
-                            }
-                        }
+                        //double[] probe = new double[N + 1];
+                        ////if (this.Control.LogValues == XNSE_Control.LoggingValues.EvaporationL) {
+                        //double L = this.Control.AdditionalParameters[0];
+                        //double x_probe = this.Control.AdditionalParameters[1];
+                        //for (int i = 0; i <= N; i++) {
+                        //    probe = new double[] { x_probe, i * (L / (double)N) };
+                        //    try {
+                        //        tempP[i] = this.Temperature.ProbeAt(probe);
+                        //    } catch {
+                        //        tempP[i] = 0.0;
+                        //    }
                         //}
+                        ////}
 
-                        line = line + "\t" + String.Join("\t", tempP.Select(ip => ip.ToString()).ToArray());
+                        //line = line + "\t" + String.Join("\t", tempP.Select(ip => ip.ToString()).ToArray());
 
                         Log.WriteLine(line);
                         Log.Flush();

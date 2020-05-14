@@ -733,7 +733,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //_DbPath = @"D:\local\local_XNSE_StudyDB";
+            _DbPath = @"D:\local\local_XNSE_StudyDB";
 
 
             // basic database options
@@ -800,7 +800,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double mu_scl = 1.0;
             C.PhysicalParameters.mu_A = mu_scl * 1e-2;
             C.PhysicalParameters.mu_B = mu_scl * 1e-5;
-            double sigma = 0.5;
+            double sigma = 0.072;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.betaS_A = 0.05;
@@ -937,6 +937,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.RefineNavierSlipBoundary = true;
             C.RefinementLevel = 1;
+            C.ReInitPeriod = 100;
 
             #endregion
 
@@ -947,7 +948,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-4;
@@ -955,7 +956,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMin = dt;
             C.Endtime = 1000;
             C.NoOfTimesteps = 5000;
-            C.saveperiod = 1;
+            C.saveperiod = 10;
+            C.LogPeriod = 10;
 
             #endregion
 

@@ -5,35 +5,43 @@ restart
   _______________________
 
 Databases loaded:
-List of 4 instances of IDatabaseInfo {
+List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 77; Grid Count = 769; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 299; Grid Count = 3418; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 21; Grid Count = 21; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
 //var myDb = OpenOrCreateDefaultDatabase();
-var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+//var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
 **************
 ==============
 ExecutionQueues;
 **************
-List of 1 instances of BatchProcessorClient {
-  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+List of 2 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @D:\local\binaries
+  1: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
 }
 ==============
 ExecutionQueues[0].AllowedDatabases;
 **************
-List of 0 instances of IDatabaseInfo {
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
 }
 ==============
-var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+var myBatch = ExecutionQueues[1];
 **************
 ==============
-using BoSSS.Application.XNSE_Solver;
+var myDb = ExecutionQueues[1].AllowedDatabases[0];
 **************
 ==============
 **************
@@ -43,9 +51,10 @@ WorkflowMgm.Init("CapillaryWave");   // set project name
 Project name is set to 'CapillaryWave'.
 
 ==============
-//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+//WorkflowMgm.Sessions.Pick(1).OpenSessionDirectory()
 **************
 ==============
+//databases.Pick(3).Sessions.Pick(0).Delete()
 **************
 ==============
 // ===========================
@@ -53,7 +62,7 @@ Project name is set to 'CapillaryWave'.
 // ===========================
 **************
 ==============
-var GridSeq = new IGridInfo[4];
+var GridSeq = new IGridInfo[3];
 int[] kelemSeq = new int[]{ 8, 16, 32, 64 };
 **************
 ==============
@@ -106,13 +115,11 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 Grid Edge Tags changed.
-An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid (052b658a-8c52-4239-9c05-e7e3c3bc8c35) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid (ba7ff02e-2525-46e7-8bfc-807b5ebeda2a) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Grid Edge Tags changed.
-An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid (4aa84e5e-dc52-42e5-bd84-98bebba6f277) is already present in the database -- the grid will not be saved.
 
 ==============
 **************
@@ -181,7 +188,7 @@ switch(setup) {
 }
 **************
 ==============
-string restartStudyName = "_Setup0_convStudy_k2";
+string restartStudyName = "_Setup0_convStudy_k3";
 List<ISessionInfo> restartStudySess = new List<ISessionInfo>();
 foreach(var sess in WorkflowMgm.Sessions) {
     if(sess.Name.Contains(restartStudyName)) {
@@ -191,22 +198,27 @@ foreach(var sess in WorkflowMgm.Sessions) {
 }
 restartStudySess
 **************
-List of 0 instances of ISessionInfo {
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 2 instances of ISessionInfo {
+  0: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh3*	04/18/2020 13:26:29	d3a3171d...
+  1: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2*	04/18/2020 13:26:07	7f9130d3...
 }
 ==============
 bool restart = false;
-Guid[] restartID = new Guid[4];
-restartID[1] = restartStudySess.ElementAt(2).ID;
+Guid[] restartID = new Guid[3];
+//restartID[1] = restartStudySess.ElementAt(2).ID;
 restartID[2] = restartStudySess.ElementAt(1).ID;
-restartID[3] = restartStudySess.ElementAt(0).ID;
+//restartID[3] = restartStudySess.ElementAt(0).ID;
 restartID
 **************
-System.ArgumentOutOfRangeException occurred: Index was out of range. Must be non-negative and less than the size of the collection.
-Parameter name: index. Type 'LastError' for details.
-
+List of 3 instances of Guid {
+  0: 00000000-0000-0000-0000-000000000000
+  1: 00000000-0000-0000-0000-000000000000
+  2: 7f9130d3-eaab-4ac2-9844-fd91be6f1edf
+}
 ==============
-int deg0 = 0;
-int grd0 = 1;
+int deg0 = 1;
+int grd0 = 2;
 //XNSE_Control[,] controls = new XNSE_Control[degS.Length - deg0, GridSeq.Length - grd0];
 List<XNSE_Control> controls = new List<XNSE_Control>();
 **************
@@ -257,7 +269,7 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     C.saveperiod = 10;
     C.LogPeriod  = 10;
     
-    C.SessionName = "CapillaryWave_Setup"+setup+"_convStudy_k" + pDeg + "_mesh" + iGrd;
+    C.SessionName = "CapillaryWave_Setup"+setup+"_convStudy_k" + pDeg + "_mesh" + iGrd + "_restart";
     
     //controls[iDeg-deg0,iGrd-grd0] = C;
     controls.Add(C);
@@ -266,17 +278,12 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
 }
 **************
 Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
 
 ==============
 //Info(controls[0,0]);
 controls.ElementAt(0).SessionName
 **************
-CapillaryWave_Setup0_convStudy_k2_mesh1
+CapillaryWave_Setup0_convStudy_k3_mesh2_restart
 ==============
 //var j00 = controls[0,0].GetJob();
 **************
@@ -299,63 +306,20 @@ foreach(var cntrl in controls) {
     job.Activate(myBatch);
 }
 **************
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh1
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_124517
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh2
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_124531
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k2_mesh3
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_125312
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh1
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132541
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh2
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132558
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh3
-Job not submitted yet, or no result session is known - starting submission.
-Warning: no database is set for the job to submit; nothing ma be saved.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave-XNSE_Solver2020Apr18_132603
-copied 32 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
+Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh2_restart
+System.ArgumentException occurred: Unable to find job with id '24038'.. Type 'LastError' for details.
 
 ==============
+LastError
 **************
+System.ArgumentException: Unable to find job with id '24038'.
+   at MiniBatchProcessor.ClientAndServer.GetStatusFromID(Int32 JobId, Int32& ExitCode) in D:\BoSSS-experimental\public\src\Utils\MiniBatchProcessor\Common.cs:line 175
+   at BoSSS.Application.BoSSSpad.MiniBatchProcessorClient.EvaluateStatus(String idToken, Object optInfo, String DeployDir, Boolean& isRunning, Boolean& isTerminated, Int32& ExitCode) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\MiniBatchProcessorClient.cs:line 159
+   at BoSSS.Application.BoSSSpad.Job.GetStatus(Int32& SubmitCount, String& DD) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\Job.cs:line 823
+   at BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\Job.cs:line 869
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
 ==============
 //WorkflowMgm.Sessions
 **************
@@ -374,6 +338,8 @@ deployment finished.
 **************
 ==============
 //databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
 **************
 ==============
 **************

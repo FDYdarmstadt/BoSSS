@@ -646,7 +646,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_Test(int p = 2, int kelem = 20, string _DbPath = null) {
+        public static XNSE_Control RB_Test(int p = 2, int kelem = 30, int method = 4) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -654,9 +654,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            _DbPath = @"D:\local\local_XNSE_StudyDB";
+            //_DbPath = @"D:\local\local_XNSE_StudyDB";
             //_DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
-
+            string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
 
             // basic database options
             // ======================
@@ -666,9 +666,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = C.DbPath != null;
             C.ProjectName = "RisingBubble";
             //C.SessionName = "RisingBubble_ConvStudy2_k2_mesh2_AMR1_restart";
-            C.SessionName = "RisingBubble_ConvStudy_k3_mesh0_restart";
+            //C.SessionName = "RisingBubble_ConvStudy_k3_mesh0_restart";
+            C.SessionName = "RisingBubble_methodStudy_k2_method"+method;
 
             C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.LogPeriod = 3;
 
             #endregion
             
@@ -699,10 +701,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            //C.FieldOptions.Add("Curvature", new FieldOpts() {
-            //    Degree = p,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
             //C.FieldOptions.Add("DivergenceVelocity", new FieldOpts() {
             //    Degree = p,
             //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -846,20 +848,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
             Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
 
-            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             Func<double, double> PeriodicFunc = x => radius;
 
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
 
-            //C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
-            //C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
+            C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
+            C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
 
 
-            var database = new DatabaseInfo(_DbPath);
-            Guid restartID = new Guid("8351c0ba-a604-479c-97b7-5c7496680bad");
-            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            //var database = new DatabaseInfo(_DbPath);
+            //Guid restartID = new Guid("747456a3-d5bc-4d03-a8e3-03d2785dcccf");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
 
             #endregion
 
@@ -888,21 +890,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 samplP[sp] = radius;
             }
 
-            //double circum = 2.0 * Math.PI * radius;
-            //double filter = (circum * 20.0) / ((double)numSp / 2.0);
-            //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelem) {
-            //    //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2.0*Math.PI, PeriodicFunc, radius, 1.0/(double)kelem) { 
-            //    center = center,
-            //    FourierEvolve = Fourier_Evolution.MaterialPoints,
-            //    centerMove = CenterMovement.Reconstructed,
-            //    //curvComp_extended = false
-            //};
+            double circum = 2.0 * Math.PI * radius;
+            double filter = (circum * 20.0) / ((double)numSp / 2.0);
+            var Fouriercontrl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelem) {
+                //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2.0*Math.PI, PeriodicFunc, radius, 1.0/(double)kelem) { 
+                center = center,
+                FourierEvolve = Fourier_Evolution.MaterialPoints,
+                centerMove = CenterMovement.Reconstructed,
+                //curvComp_extended = false
+            };
 
-            //C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-            //C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
-            //C.FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.TVD3;
 
-            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+            C.SetLevelSetMethod(method, Fouriercontrl);
+            C.SessionName = "RisingBubble_methodStudy_k2_" + C.methodTagLS + "_rerun";
 
             #endregion
 
@@ -910,11 +910,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // misc. solver options
             // ====================
             #region solver
-
-
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            //C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -929,19 +924,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            //C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-            //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
-
             //C.AdaptiveMeshRefinement = true;
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //C.RefinementLevel = 1;
 
-            C.ReInitPeriod = 10;
+            //C.ReInitPeriod = 10;
 
             #endregion
 
@@ -957,7 +944,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
-            double dt = 3e-3; // (1.0 / (double)kelem) / 16.0;
+            double dt = 2e-3; // (1.0 / (double)kelem) / 16.0;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 3;

@@ -86,13 +86,13 @@ namespace BoSSS.Application.XNSE_Solver {
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
 
-            Tests.UnitTest.OneTimeSetUp();
-            DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
-            //Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
-            Tests.UnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric);
-            Tests.UnitTest.OneTimeTearDown();
-            return;
+            //Tests.UnitTest.OneTimeSetUp();
+            //DeleteOldPlotFiles();
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
+            ////Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
+            //Tests.UnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric);
+            //Tests.UnitTest.OneTimeTearDown();
+            //return;
 
 
             _Main(args, false, delegate () {

@@ -1279,6 +1279,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             bool steady = false;
             bool separated = false;
 
+            _DbPath = @"D:\local\local_XNSE_StudyDB";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
 
             // basic database options
@@ -1485,7 +1486,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -1523,6 +1524,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region levelset
 
             C.Option_LevelSetEvolution = steady? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
             #endregion
 
@@ -1564,7 +1566,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ThermodynamicEquilibrium_unsteadyTest(int p = 3, int kelemR = 17, string _DbPath = null, int setUp = 3) {
+        public static XNSE_Control ThermodynamicEquilibrium_unsteadyTest(int p = 3, int kelemR = 17, string _DbPath = null, int setUp = 1) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1576,6 +1578,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             bool radial = false;
 
+            _DbPath = @"D:\local\local_XNSE_StudyDB";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
             //_DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB";
 
@@ -1588,8 +1591,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/ThermodynamEquilib_unsteady";
             //C.ProjectDescription = "Leikonfiguration for SFB 1194";
 
-            //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
-            //C.LogPeriod = 10;
+            C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
+            C.LogPeriod = 10;
             C.ContinueOnIoError = false;
 
             #endregion
@@ -1956,7 +1959,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -1993,6 +1996,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region levelset
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
+            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
             #endregion
 
@@ -2011,7 +2016,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMin = (setUp == 1) ? 1e-2 : 1e-3;
             C.Endtime = 5;
             C.NoOfTimesteps = (setUp == 1) ? 1000 : 2000;
-            C.saveperiod = 1;
+            C.saveperiod = 10;
 
             #endregion
 

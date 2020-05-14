@@ -1929,6 +1929,12 @@ namespace BoSSS.Foundation.IO {
                         values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
                         break;
                     }
+                case XNSE_Control.LoggingValues.EvaporationC:
+                case XNSE_Control.LoggingValues.EvaporationL: {
+                        logName = "\\Evaporation.txt";
+                        values = new string[] { "#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux" };
+                        break;
+                    }
                 default:
                     throw new ArgumentException("No specified LogFormat");
             }
@@ -1946,15 +1952,42 @@ namespace BoSSS.Foundation.IO {
                 for (int j = 0; j < numberSessions; j++) {
                     string path = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).ID + logName;
                     string[] lines = File.ReadAllLines(path);
-                    double[] time = new double[lines.Length - 1];
-                    double[] valueData = new double[lines.Length - 1];
 
-                    for (int i = 0; i < lines.Length - 1; i++) {
-                        time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                        valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                    if (sess.Pick(j).RestartedFrom == Guid.Empty) { 
+                   
+                        double[] time = new double[lines.Length - 1];
+                        double[] valueData = new double[lines.Length - 1];
+
+                        for (int i = 0; i < lines.Length - 1; i++) {
+                            time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                        }
+                        times[j] = time;
+                        valueDatas[j] = valueData;
+
+                    } else {
+
+                        string pathR = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).RestartedFrom + logName;
+                        string[] linesR = File.ReadAllLines(pathR);
+
+                        int len = (lines.Length - 1) + (linesR.Length - 1);
+                        double[] time = new double[len];
+                        double[] valueData = new double[len];
+                        int iL = 0;
+                        for (int i = 0; i < linesR.Length - 1; i++) {
+                            time[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                            iL++;
+                        }
+                        for (int i = 0; i < lines.Length - 1; i++) {
+                            time[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                            iL++;
+                        }
+                        times[j] = time;
+                        valueDatas[j] = valueData;
+
                     }
-                    times[j] = time;
-                    valueDatas[j] = valueData;
                 }
 
                 // Build DataSet
@@ -1986,7 +2019,7 @@ namespace BoSSS.Foundation.IO {
             string[] lines = File.ReadAllLines(path);
             int numCL = 0;
             for (int i = 1; i <= 4; i++) {       // max number of contact lines should be 4
-                int ts = Convert.ToInt32(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
+                int ts = (int)Convert.ToDouble(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
                 if (ts == 0)
                     numCL++;
             }
@@ -2383,53 +2416,53 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Plots the temperature profile if a  "Evaporation.txt" exists.
         /// </summary>
-        public static void PlotTemperatureProfileAt(this ISessionInfo pSession, int[] timestepIndex) {
+        //public static void PlotTemperatureProfileAt(this ISessionInfo pSession, int[] timestepIndex) {
 
-            int numberTimesteps = timestepIndex.Count();
-            double[][] tsTemperatureP = new double[numberTimesteps][];
+        //    int numberTimesteps = timestepIndex.Count();
+        //    double[][] tsTemperatureP = new double[numberTimesteps][];
 
-            double L = (double)pSession.KeysAndQueries["AdditionalParameters[0]"];
-            int len = 0;
+        //    double L = (double)pSession.KeysAndQueries["AdditionalParameters[0]"];
+        //    int len = 0;
 
-            // Read all data
-            string path = pSession.Database.Path + "\\sessions\\" + pSession.ID + "\\Evaporation.txt";
-            string[] lines = File.ReadAllLines(path);
-            for (int j = 0; j < numberTimesteps; j++) {
+        //    // Read all data
+        //    string path = pSession.Database.Path + "\\sessions\\" + pSession.ID + "\\Evaporation.txt";
+        //    string[] lines = File.ReadAllLines(path);
+        //    for (int j = 0; j < numberTimesteps; j++) {
 
-                string[] tsData = lines[timestepIndex[j]].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
-                len = tsData.Count();
+        //        string[] tsData = lines[timestepIndex[j]].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
+        //        len = tsData.Count();
 
-                double[] TemperatureP = new double[len - 5];
-                for (int i = 5; i < len; i++) {
-                    TemperatureP[i - 5] = Convert.ToDouble(tsData[i]);
-                }
-                tsTemperatureP[j] = TemperatureP;
-            }
+        //        double[] TemperatureP = new double[len - 5];
+        //        for (int i = 5; i < len; i++) {
+        //            TemperatureP[i - 5] = Convert.ToDouble(tsData[i]);
+        //        }
+        //        tsTemperatureP[j] = TemperatureP;
+        //    }
 
-            double[] profile = GenericBlas.Linspace(0, L, len - 5);
+        //    double[] profile = GenericBlas.Linspace(0, L, len - 5);
 
-            // Build DataSets
-            KeyValuePair<string, double[][]>[] dataRowsTemperatureP = new KeyValuePair<string, double[][]>[numberTimesteps];
-            for (int i = 0; i < numberTimesteps; i++) {
-                dataRowsTemperatureP[i] = new KeyValuePair<string, double[][]>(pSession.Name, new double[][] { profile, tsTemperatureP[i] });
-            }
-            Plot2Ddata Profile_Temperature = new Plot2Ddata(dataRowsTemperatureP);
+        //    // Build DataSets
+        //    KeyValuePair<string, double[][]>[] dataRowsTemperatureP = new KeyValuePair<string, double[][]>[numberTimesteps];
+        //    for (int i = 0; i < numberTimesteps; i++) {
+        //        dataRowsTemperatureP[i] = new KeyValuePair<string, double[][]>(pSession.Name, new double[][] { profile, tsTemperatureP[i] });
+        //    }
+        //    Plot2Ddata Profile_Temperature = new Plot2Ddata(dataRowsTemperatureP);
 
-            // Plot interface position
-            int lineColor = 0;
-            PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
-            Gnuplot gp = new Gnuplot(baseLineFormat: format);
-            gp.SetXLabel("profile");
-            gp.SetYLabel("temperature");
-            gp.Cmd("set grid xtics ytics");
-            foreach (var group in Profile_Temperature.dataGroups) {
-                gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
-                    new PlotFormat(lineColor: ((LineColors)(++lineColor))));
-            }
-            gp.WriteDeferredPlotCommands();
-            gp.Execute();
+        //    // Plot interface position
+        //    int lineColor = 0;
+        //    PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
+        //    Gnuplot gp = new Gnuplot(baseLineFormat: format);
+        //    gp.SetXLabel("profile");
+        //    gp.SetYLabel("temperature");
+        //    gp.Cmd("set grid xtics ytics");
+        //    foreach (var group in Profile_Temperature.dataGroups) {
+        //        gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
+        //            new PlotFormat(lineColor: ((LineColors)(++lineColor))));
+        //    }
+        //    gp.WriteDeferredPlotCommands();
+        //    gp.Execute();
 
-        }
+        //}
 
 
 
