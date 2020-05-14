@@ -24,7 +24,6 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
-using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
@@ -1292,6 +1291,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="time"></param>
         /// <param name="timestep"></param>
         public override void PostRestart(double time, TimestepNumber timestep) {
+            if (!((FSI_Control)Control).IsRestart)
+                return;
             var fsDriver = this.DatabaseDriver.FsDriver;
             string pathToOldSessionDir = System.IO.Path.Combine(
                 fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());

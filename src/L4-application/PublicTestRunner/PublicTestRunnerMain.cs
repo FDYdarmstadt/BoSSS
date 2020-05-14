@@ -122,7 +122,8 @@ namespace PublicTestRunner {
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
                         typeof(ALTSTests.Program),
-                        typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
+                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
                     };
             }
         }
@@ -164,7 +165,6 @@ namespace PublicTestRunner {
                 var src = repoRoot.GetDirectories("src").SingleOrDefault();
                 var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
                 var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
-
                 if (src == null || !src.Exists)
                     return null;
                 //throw new Exception();

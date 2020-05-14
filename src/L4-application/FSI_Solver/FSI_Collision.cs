@@ -160,13 +160,14 @@ namespace FSI_Solver {
                             // -------------------------------------------------------
                             for (int p1 = p0 + 1; p1 < particles.Length; p1++) {
                                 Particle[] currentParticles = new Particle[] { particles[p0], particles[p1] };
-                                Console.WriteLine("Particle " + p0 + " Particle " + p1);
                                 CalculateMinimumDistance(currentParticles, out double temp_Distance,
                                                          out Vector temp_DistanceVector,
                                                          out Vector[] temp_ClosestPoints,
                                                          out bool temp_Overlapping);
                                 Distance[p0][p1] = temp_Distance;
                                 Distance[p1][p0] = temp_Distance;
+                                if (temp_Distance < distanceThreshold)
+                                    Console.WriteLine("sodfghüiadfhgadf");
                                 Vector normalVector;
                                 if (temp_DistanceVector.Abs() < 1e-12)  // too small to given reliable directions
                                     normalVector = currentParticles[0].Motion.GetPosition() - currentParticles[1].Motion.GetPosition();
@@ -186,13 +187,12 @@ namespace FSI_Solver {
                                     minimalDistance = Distance[p0][p1];
                                 }
                                 if (temp_Overlapping) {
-                                    SaveTimeStep = -Dt * 0.01; // reset time to find a particle state before they overlap.
+                                    SaveTimeStep = -Dt * 0.25; // reset time to find a particle state before they overlap.
                                     minimalDistance = double.MaxValue;
                                 }
-                                Console.WriteLine("Distance " + minimalDistance);
                             }
                         }
-
+                        Console.WriteLine("Minimal distance " + minimalDistance + ", threshold " + distanceThreshold + ", current save time+step " + SaveTimeStep);
                         // Step 2.1.2
                         // Accumulate the current save timestep.
                         // -------------------------------------------------------

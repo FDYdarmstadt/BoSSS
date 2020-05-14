@@ -55,6 +55,8 @@ namespace BoSSS.Application.FSI_Solver {
             SetDGdegree(degree);
         }
 
+        public bool IsRestart = false;
+
         /// <summary>
         /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
         /// </summary>
