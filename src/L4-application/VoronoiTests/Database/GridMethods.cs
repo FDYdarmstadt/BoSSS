@@ -48,7 +48,7 @@ namespace VoronoiTests.Database
         public bool AreEqual(IGrid gridA, IGrid gridB)
         {
             IEqualityComparer<IGrid> cellComparer = gridA.GridSerializationHandler.CellComparer;
-            IEqualityComparer<IGrid> referenceComparer = gridA.GridSerializationHandler.ReferenceComparer;
+            IEqualityComparer<IGrid> referenceComparer = gridA.GridSerializationHandler.BasePropertiesComparer;
             bool areEqual = cellComparer.Equals(gridA, gridB);
             areEqual = areEqual && referenceComparer.Equals(gridA, gridB);
             return areEqual;

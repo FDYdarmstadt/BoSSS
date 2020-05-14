@@ -454,7 +454,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             d2 = 1; // set test function
             double a1 = this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source/affine part
-            Debug.Assert((this.InnerEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
+            //Debug.Assert((this.InnerEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
             d1 = 1; // set trial function
             double a = this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the bilinear+affine part
             d1 = 0; // reset
@@ -467,7 +467,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             d2 = 1;
             double a = this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
-            Debug.Assert((this.InnerEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a == 0);
+            //Debug.Assert((this.InnerEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a == 0);
 
             d2 = 0;
             return a;
@@ -478,7 +478,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             d2 = 1;
             double a1 = this.edgeForm.BoundaryEdgeForm(ref inp, uA, Grad_uA, vA, Grad_vA);
-            Debug.Assert((this.BoundaryEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
+            //Debug.Assert((this.BoundaryEdgeTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
 
             d1 = 1;
             double a = this.edgeForm.BoundaryEdgeForm(ref inp, uA, Grad_uA, vA, Grad_vA);
