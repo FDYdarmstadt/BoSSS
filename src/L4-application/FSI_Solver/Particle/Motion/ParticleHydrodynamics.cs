@@ -25,8 +25,8 @@ using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
     [Serializable]
-    internal class MotionHydrodynamics {
-        internal MotionHydrodynamics(LevelSetTracker lsTrk) {
+    internal class ParticleHydrodynamics {
+        internal ParticleHydrodynamics(LevelSetTracker lsTrk) {
             m_LsTrk = lsTrk;
         }
         [DataMember]

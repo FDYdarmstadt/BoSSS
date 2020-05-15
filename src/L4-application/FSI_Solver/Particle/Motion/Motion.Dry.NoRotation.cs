@@ -19,7 +19,7 @@ using System;
 
 namespace BoSSS.Application.FSI_Solver {
     [Serializable]
-    public class Motion_Dry_NoRotation : MotionDry {
+    public class MotionDryNoRotation : MotionDry {
 
         /// <summary>
         /// The dry description of motion without hydrodynamics and rotation.
@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoRotation(Vector gravity, double density) : base(gravity, density) {
+        public MotionDryNoRotation(Vector gravity, double density) : base(gravity, density) {
             IncludeRotation = false;
         }
 
@@ -69,7 +69,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override object Clone() {
-            Motion clonedMotion = new Motion_Dry_NoRotation(Gravity, Density);
+            Motion clonedMotion = new MotionDryNoRotation(Gravity, Density);
             clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;

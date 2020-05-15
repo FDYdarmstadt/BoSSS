@@ -554,7 +554,7 @@ namespace BoSSS.Application.FSI_Solver {
             double forces_PResidual;
             if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                 int iterationCounter = 0;
-                MotionHydrodynamics AllParticleHydrodynamics = new MotionHydrodynamics(LsTrk);
+                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
                 forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter); ;
                 Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
             }
@@ -1011,7 +1011,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // physics
                     // -------------------------------------------------
-                    MotionHydrodynamics AllParticleHydrodynamics = new MotionHydrodynamics(LsTrk);
+                    ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
                     CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                     CalculateParticleVelocity(m_Particles, dt, 0);
                     CalculateCollision(m_Particles, dt);
@@ -1030,7 +1030,7 @@ namespace BoSSS.Application.FSI_Solver {
                     int iterationCounter = 0;
                     double hydroDynForceTorqueResidual = double.MaxValue;
                     int minimumNumberOfIterations = 4;
-                    MotionHydrodynamics AllParticleHydrodynamics = new MotionHydrodynamics(LsTrk);
+                    ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
                     while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minimumNumberOfIterations) {
                         if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)
                             throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
@@ -1101,7 +1101,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private void CalculateParticleForcesAndTorque(MotionHydrodynamics AllParticleHydrodynamics) {
+        private void CalculateParticleForcesAndTorque(ParticleHydrodynamics AllParticleHydrodynamics) {
             ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
             AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
         }

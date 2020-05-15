@@ -21,7 +21,7 @@ using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
     [Serializable]
-    public class ParticleMotionInit {
+    public class InitializeMotion {
 
         /// <summary>
         /// The initialization of the particle motion. Depending on the given parameters the correct model is chosen.
@@ -43,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="addedDampingCoefficient">
         /// The added damping coefficient is a scaling factor for the model. If the value is smaller than zero no added damping is applied. Otherwise it should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
-        public ParticleMotionInit(Vector gravity, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0, bool withForces = false) {
+        public InitializeMotion(Vector gravity, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0, bool withForces = false) {
             if (gravity.IsNullOrEmpty())
                 gravity = new Vector(0, 0);
             m_Gravity = new Vector(gravity);
@@ -97,8 +97,8 @@ namespace BoSSS.Application.FSI_Solver {
                         return new MotionFixed(m_Gravity);
                 }
                 if (m_IsDry) {
-                    return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity, m_Density)
-                        : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity, m_Density)
+                    return m_NoRotation ? new MotionDryNoRotation(m_Gravity, m_Density)
+                        : m_NoTranslation ? new MotionDryNoTranslation(m_Gravity, m_Density)
                         : new MotionDry(m_Gravity, m_Density);
                 }
                 if (m_AddedDampingCoefficient != 0)

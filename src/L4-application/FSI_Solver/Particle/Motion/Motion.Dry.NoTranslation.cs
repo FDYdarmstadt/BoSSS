@@ -20,7 +20,7 @@ using System;
 
 namespace BoSSS.Application.FSI_Solver {
     [Serializable]
-    public class Motion_Dry_NoTranslation : MotionDry {
+    public class MotionDryNoTranslation : MotionDry {
 
         /// <summary>
         /// The dry description of motion without hydrodynamics and translation.
@@ -31,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoTranslation(Vector gravity, double density) : base(gravity, density) {
+        public MotionDryNoTranslation(Vector gravity, double density) : base(gravity, density) {
             IncludeTranslation = false;
         }
 
@@ -90,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override object Clone() {
-            Motion clonedMotion = new Motion_Dry_NoTranslation(Gravity, Density);
+            Motion clonedMotion = new MotionDryNoTranslation(Gravity, Density);
             clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;

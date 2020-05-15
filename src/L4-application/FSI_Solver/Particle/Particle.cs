@@ -60,7 +60,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle(ParticleMotionInit motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
+        public Particle(InitializeMotion motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
             Aux = new FSI_Auxillary();
@@ -112,7 +112,7 @@ namespace BoSSS.Application.FSI_Solver {
         public Motion Motion { get; private set; }
 
         [DataMember]
-        public ParticleMotionInit MotionInitializer;
+        public InitializeMotion MotionInitializer;
 
         /// <summary>
         /// Mass of the current particle.

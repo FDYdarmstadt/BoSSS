@@ -42,7 +42,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 2;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -1, 0 }, startAngl: 12, activeStress: 10));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 1, 0 }, startAngl: 39, activeStress: 10));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -2, 2 }, startAngl: -1, activeStress: 10));
@@ -139,7 +139,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 10000;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1.5);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2, 0 }, startAngl: 6, activeStress: 10000));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2, 0 }, startAngl: 178, activeStress: 10000));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0, 1.8 }, startAngl: 96, activeStress: 10000));
@@ -196,7 +196,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 2;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
             C.fixPosition = true;
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.5, 0.25, new double[] { 0.5 + distance / 2, 0 }, startAngl: 180 + angle, activeStress: 1));
 
@@ -249,7 +249,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 2;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
             C.fixPosition = true;
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.5, 0.25, new double[] { -0.5 - distance / 2, 0 }, startAngl: 30, activeStress: 1));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.5, 0.25, new double[] { 0.5 + distance / 2, 0 }, startAngl: 180 + angle, activeStress: 1));
@@ -303,7 +303,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
             
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1.5);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
 
             C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position, position - 0 * distance }, -181, activeStress));
             C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position, position - 0.5 * distance }, 55, activeStress));
@@ -385,7 +385,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 1;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
             C.Particles.Add(new Particle_Ellipsoid(motion, 1, 1 * aspectRatio, new double[] { 0, 0 }, startAngl: 0, activeStress: 1));
 
             // misc. solver options

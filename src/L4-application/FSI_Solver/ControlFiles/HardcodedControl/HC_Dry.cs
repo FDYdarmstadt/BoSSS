@@ -59,7 +59,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, true, false, false);
             double particleRadius = 0.1;
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0 },0, 0, new double[] {0,-0.1 })
@@ -114,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, true, false, false);
             double particleRadius = 0.1;
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }),
@@ -167,7 +167,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false);
+            InitializeMotion motion1 = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, false, false);
             double particleRadius = 0.1;
             C.Particles = new List<Particle>();
             //for (int i = 0; i < 9; i++) {
