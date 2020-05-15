@@ -53,11 +53,11 @@ namespace BoSSS.Solution.NSECommon {
                 if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
                     throw new ArgumentException();
 
-                int currentProc = GridDat.MpiSize -1;
+                int currentProc = GridDat.MpiSize - 1;// choose last proc
                 bool onthisProc = currentProc == GridDat.MpiRank;
                 int iRowGl = -111;
                 if (onthisProc) {
-                    long GlobalCellIndex = GridDat.CellPartitioning.iE - 1;
+                    long GlobalCellIndex = GridDat.CellPartitioning.iE - 1; // last cell
                     iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
                 }
                 iRowGl = iRowGl.MPIBroadcast(currentProc);

@@ -615,7 +615,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual double CalculateRotationalAcceleration(double dt) {
             double l_Acceleration = HydrodynamicTorque[0] / MomentOfInertia;
-            Console.WriteLine("Acc Rrot" + l_Acceleration);
             Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
             return l_Acceleration;
         }
