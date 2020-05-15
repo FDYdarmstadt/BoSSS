@@ -297,12 +297,10 @@ namespace BoSSS.Solution {
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            Console.WriteLine("Test1");
             ilPSP.Environment.Bootstrap(
                 args,
                 GetNativeLibraryDir(),
                 out bool _MustFinalizeMPI);
-            Console.WriteLine("Test2");
 
             if(_MustFinalizeMPI) {
                 int rank, size;
