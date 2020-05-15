@@ -657,8 +657,12 @@ namespace BoSSS.Application.FSI_Solver {
             try {
                 LsTrk.UpdateTracker(__NearRegionWith: 2);
             }
-            catch(LevelSetCFLException e) {
-                Console.WriteLine(e);
+            catch(LevelSetCFLException e) {//hacky workaround
+                if (AddedGhostParticle)
+                    Console.WriteLine("Ghost particle added, exception thrown: " + e);
+                else
+                    throw e;
+                AddedGhostParticle = false;
             }
         }
 
@@ -792,6 +796,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
                 if(ghostParticles.Count >= 1) {
+                    AddedGhostParticle = true;
                     currentParticle.SetGhostHierachy(ghostHierachy);
                     for (int p2 = 0; p2 < ghostParticles.Count(); p2++) {
                         ghostParticles[p2].SetGhostHierachy(ghostHierachy);
@@ -801,7 +806,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-
+        bool AddedGhostParticle = false;
         private void SwitchGhostAndMasterParticle() {
             for (int p = 0; p < m_Particles.Count(); p++) {
                 Particle currentParticle = m_Particles[p];
