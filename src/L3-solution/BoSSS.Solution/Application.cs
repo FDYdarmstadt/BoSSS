@@ -297,7 +297,6 @@ namespace BoSSS.Solution {
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            Console.WriteLine(GetNativeLibraryDir());
             ilPSP.Environment.Bootstrap(
                 args,
                 GetNativeLibraryDir(),
