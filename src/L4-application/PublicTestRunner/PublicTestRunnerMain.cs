@@ -972,7 +972,9 @@ namespace PublicTestRunner {
                 return -7777;
             }
 
+            Console.WriteLine("Test1");
             BoSSS.Solution.Application.InitMPI();
+            Console.WriteLine("Test2");
 
 
             int ret = -1;
