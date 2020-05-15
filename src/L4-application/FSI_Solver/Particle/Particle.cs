@@ -83,20 +83,13 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public void SetGhost() {
-            HiddenMotion = Motion;
-            Motion = new MotionGhost(new Vector(0, 0), HiddenMotion.Density);
-            Motion.SetParticleArea(HiddenMotion.ParticleArea);
-            Motion.TransferDataFromOtherParticle(HiddenMotion);
             IsMaster = false;
         }
 
         public void SetGhostHierachy(int[] hierachy) {
             MasterGhostIDs = hierachy.CloneAs();
         }
-
-        [DataMember]
-        public Motion HiddenMotion { get; private set; }
-
+        
         [NonSerialized]
         protected FSI_Auxillary Aux;
         [DataMember]

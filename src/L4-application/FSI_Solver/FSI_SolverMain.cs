@@ -587,7 +587,10 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 1
             // Define an array with the respective cell colors
             // =======================================================
-            cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
+            cellColor = cellColor == null 
+                ? levelSetUpdate.InitializeColoring(GridData, LsTrk, m_Particles.ToArray(), MaxGridLength) 
+                : levelSetUpdate.UpdateColoring(GridData, LsTrk);
+            SetColorDGField(cellColor);
 
             // Step 2
             // Delete the old level set
@@ -683,55 +686,15 @@ namespace BoSSS.Application.FSI_Solver {
             DGLevSet.Current.Clear(currentCells);
             DGLevSet.Current.ProjectField(1.0, Function, new CellQuadratureScheme(UseDefaultFactories: true, domain: currentCells));
         }
-
+        
         /// <summary>
-        /// Initialization of <see cref="ParticleColor"/>  based on particle geometry
-        /// </summary>
-        private int[] InitializeColoring() {
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            int JE = GridData.iLogicalCells.NoOfExternalCells + J;
-            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            int[] coloredCells = new int[J];
-            int[] cellsExchange = new int[JE];
-            for (int p = 0; p < m_Particles.Count; p++) {
-                Particle currentParticle = m_Particles[p];
-                for (int j = 0; j < J; j++) {
-                    if (currentParticle.Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength)) {
-                        ParticleColor.SetMeanValue(j, p + 1);
-                        coloredCells[j] = p + 1;
-                        cellsExchange[j] = coloredCells[j];
-                    }
-                }
-            }
-            cellsExchange.MPIExchange(GridData);
-            GridData gridData = (GridData)GridData;
-            levelSetUpdate.RecolorCellsOfNeighborParticles(coloredCells, gridData);
-            SetColorDGField(coloredCells);
-            return coloredCells;
-        }
-
-        /// <summary>
-        /// Initialization of <see cref="ParticleColor"/>  based on particle geometry
+        /// Color each process. To see the partitoning in exported sessions.
         /// </summary>
         private void ProcessColoring() {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < J; j++) {
                 ProcessColor.SetMeanValue(j, MPIRank);
             }
-        }
-
-        /// <summary>
-        /// Update of <see cref="ParticleColor"/> and <see cref="LevelSetDistance"/>
-        /// </summary>
-        private int[] UpdateColoring() {
-            int[] coloredCells = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
-            int[] coloredCellsExchange = coloredCells.CloneAs();
-            coloredCellsExchange.MPIExchange(GridData);
-            levelSetUpdate.ColorNeighborCells(coloredCells, coloredCellsExchange);
-            GridData gridData = (GridData)GridData;
-            levelSetUpdate.RecolorCellsOfNeighborParticles(coloredCells, gridData);
-            SetColorDGField(coloredCells);
-            return coloredCells;
         }
 
         private void SetColorDGField(int[] coloredCells) {
@@ -831,7 +794,6 @@ namespace BoSSS.Application.FSI_Solver {
                                     continue;
                                 m_Particles[ghostHierachy[i] - 1].MasterGhostIDs = newGhostHierachy.CloneAs();
                             }
-                            return;
                         }
                     }
                 }
@@ -1139,7 +1101,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// No of iterations
         /// </param>
         internal void CalculateParticleVelocity(List<Particle> Particles, double dt, int IterationCounter) {
-            int pID = 0;
             foreach (Particle p in Particles) {
                 if (!p.IsMaster) {
                     continue;
@@ -1159,7 +1120,6 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
                 }
-                pID += 1;
             }
         }
 
