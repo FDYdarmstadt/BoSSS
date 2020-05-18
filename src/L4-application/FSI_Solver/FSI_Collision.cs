@@ -139,8 +139,6 @@ namespace FSI_Solver {
                                     particles[p0].ClosestPointOnOtherObjectToThis = new Vector(nearFieldWallPoints[w]);
                                 CalculateMinimumDistance(particles[p0], out double temp_Distance, out Vector temp_DistanceVector, out Vector temp_ClosestPoint_p0, out bool temp_Overlapping);
                                 Distance[p0][ParticleOffset + w] = temp_Distance;
-                                if (temp_Distance < distanceThreshold)
-                                    Console.WriteLine("sodfghüiadfhgadf");
                                 Vector normalVector = new Vector(temp_DistanceVector) / temp_DistanceVector.Abs();
                                 double temp_SaveTimeStep = DynamicTimestep(particles[p0], temp_ClosestPoint_p0, normalVector, Distance[p0][ParticleOffset + w]);
                                 SaveTimeStepArray[p0][ParticleOffset + w] += temp_SaveTimeStep;
@@ -198,13 +196,12 @@ namespace FSI_Solver {
                         // Step 2.1.2
                         // Accumulate the current save timestep.
                         // -------------------------------------------------------
-                        if (SaveTimeStep >= 0)
+                        if ((AccDynamicTimestep + SaveTimeStep) >= 0)
                             AccDynamicTimestep += SaveTimeStep;
-                        else
+                        else 
                             AccDynamicTimestep = 0;
-                        if (AccDynamicTimestep >= Dt) {
+                        if (AccDynamicTimestep >= Dt) 
                             break;
-                        }
                     }
 
                     // Step 3
@@ -362,7 +359,7 @@ namespace FSI_Solver {
         private double DynamicTimestep(Particle particle, Vector closestPoint, Vector normalVector, double distance) {
             CalculatePointVelocity(particle, closestPoint, out Vector pointVelocity0);
             double detectCollisionVn_P0 = normalVector * pointVelocity0;
-            return detectCollisionVn_P0 == 0 ? double.MaxValue : 0.5 * distance / (-detectCollisionVn_P0);
+            return detectCollisionVn_P0 == 0 ? double.MaxValue : 0.1 * distance / (-detectCollisionVn_P0);
         }
 
         /// <summary>

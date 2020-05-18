@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using BoSSS.Solution.Control;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleStokesFlow : IBM_Solver.HardcodedTestExamples {
@@ -86,7 +87,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(double DensityFactor = 500) {
+        public static FSI_Control WetParticleWallCollision(double DensityFactor = 250) {
             FSI_Control C = new FSI_Control(degree: 3, projectName: "wetParticleWallCollision");
             C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
             //C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision", 1);
@@ -146,11 +147,11 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 2000;
 
-
+            
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-3, 10000, false);
+            C.SetTimesteps(1e-3, 2000, false);
 
             // haben fertig...
             // ===============
