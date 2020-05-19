@@ -320,12 +320,12 @@ namespace BoSSS.Foundation.XDG {
                             break;
                         }
                         case MomentFittingVariants.Saye:
-                        var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
-                            this.m_LevelSetDatas[levSetIndex],
-                            new LineSegment.SafeGuardedNewtonMethod(1e-14));
-                        m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
-                        m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
-                        break;
+                            var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
+                                this.m_LevelSetDatas[levSetIndex],
+                                new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                            m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
+                            m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
+                            break;
                         default:
                         throw new NotSupportedException(String.Format(
                             "Variant {0} not implemented.", CutCellQuadratureType));
