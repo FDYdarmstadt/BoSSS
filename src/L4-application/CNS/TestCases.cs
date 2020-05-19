@@ -4283,6 +4283,8 @@ namespace CNS {
 
             IBMControl c = IBMBowShock(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, numOfCellsX, numOfCellsY, lambdaMax);
 
+            //c.AlternateDbPaths = new ValueTuple<string, string>[] { (@"S:\work\scratch\yp19ysog\bosss_db_bowShock", "pcmit33"), (dbPath, "") };
+
             //c.TracingNamespaces = "BoSSS.Solution";
 
             c.ProjectName = "IBMBowShock_P3";
