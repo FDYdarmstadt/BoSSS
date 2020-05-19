@@ -8,7 +8,7 @@ application of numerical discretization schemes based on the Discontinuous Galer
 
 Its development has been initiated at the Chair of Fluid Dynamics in 2008 in order to establish a general foundation for the
 development of higher order discretizations for challenging physical problems. Over the years, BoSSS developed
-into fully-featured library for discontinuous Galerkin methods, including facilities for worflow management and
+into a fully-featured library for discontinuous Galerkin methods, including facilities for workflow management and
 the rapid prototyping discretization of partial differential equations.
 
 
