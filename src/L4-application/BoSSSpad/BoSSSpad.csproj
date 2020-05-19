@@ -171,6 +171,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\private-mag\XDGShock\XDGShock.csproj">
+      <Project>{9b96b6a7-5326-437e-8404-04a43b26303f}</Project>
+      <Name>XDGShock</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
       <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
       <Name>ilPSP.LinSolvers.MUMPS</Name>
