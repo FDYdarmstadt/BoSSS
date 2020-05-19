@@ -1,0 +1,1342 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+//var DB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_Cube_4");
+//var DB = OpenOrCreateDatabase(@"V:\SyncHHLR\DB_Cube_3");
+var DB = OpenOrCreateDatabase(@"V:\SyncHHLR\DB_Cube_4");
+**************
+==============
+using ilPSP.Tracing;
+using System.IO;
+**************
+(1,2): warning CS0105: The using directive for `ilPSP.Tracing' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
+==============
+DB.Sessions
+**************
+List of 108 instances of ISessionInfo {
+  0: dmr_cube_preopt_test	DMR_p2_xCells320_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/13/2020 23:17:52	5bcd6093...
+  1: dmr_cube_preopt_test	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/13/2020 23:17:52	0ceea46f...
+  2: dmr_cube_preopt_test	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/13/2020 23:17:52	ebaeb6d4...
+  3: dmr_cube_preopt_test	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/13/2020 23:23:21	5b4aef9f...
+  4: dmr_cube_preopt_test	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/13/2020 23:17:50	6443305c...
+  5: dmr_cube_preopt_test	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/13/2020 23:17:52	b1ce1b65...
+  6: dmr_cube_preopt_1	DMR_p2_xCells320_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 19:27:15	3c78504e...
+  7: dmr_cube_preopt_1	DMR_p2_xCells640_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 19:27:18	5028b9e4...
+  8: dmr_cube_preopt_1	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 19:27:13	05272503...
+  9: dmr_cube_preopt_1	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 19:27:20	5a045c08...
+  10: dmr_cube_preopt_1	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 19:32:49	bc41a7f3...
+  11: dmr_cube_preopt_1	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 19:27:14	c8f7535d...
+  12: dmr_cube_preopt_1	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 19:37:58	63a94d84...
+  13: dmr_cube_preopt_1	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 19:32:45	b8055afb...
+  14: dmr_cube_preopt_1	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 19:32:45	9bee05b5...
+  15: dmr_cube_preopt_1	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 19:27:19	9dda54be...
+  16: dmr_cube_preopt_1	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 19:27:12	a8296ed3...
+  17: dmr_cube_preopt_1	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 19:32:44	5f3b13fa...
+  18: dmr_cube_preopt_1	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 21:10:05	28aed733...
+  19: dmr_cube_preopt_2	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:26:58	86b5a610...
+  20: dmr_cube_preopt_1	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:16:00	df73a9b7...
+  21: dmr_cube_preopt_3	DMR_p2_xCells320_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:37:42	5941d37b...
+  22: dmr_cube_preopt_2	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:26:51	458d7331...
+  23: dmr_cube_preopt_2	DMR_p2_xCells640_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:43:10	b485a530...
+  24: dmr_cube_preopt_3	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:43:07	e6a5c6bc...
+  25: dmr_cube_preopt_2	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:43:08	4678898f...
+  26: dmr_cube_preopt_2	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:48:41	8a0f0887...
+  27: dmr_cube_preopt_2	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:48:48	323994fd...
+  28: dmr_cube_preopt_2	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:32:13	c1167d0d...
+  29: dmr_cube_preopt_3	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:54:10	6f08ea7c...
+  30: dmr_cube_preopt_3	DMR_p2_xCells640_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:54:15	9cc4c3a2...
+  31: dmr_cube_preopt_4	DMR_p2_xCells320_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:54:17	9d0da78b...
+  32: dmr_cube_preopt_3	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:54:09	08b21abd...
+  33: dmr_cube_preopt_4	DMR_p2_xCells640_yCells80_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:59:46	8b1d2a04...
+  34: dmr_cube_preopt_4	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:47	644cd441...
+  35: dmr_cube_preopt_3	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:48:42	bff1a8e4...
+  36: dmr_cube_preopt_2	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:48:41	0097de9c...
+  37: dmr_cube_preopt_2	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:48:41	c89fa52d...
+  38: dmr_cube_preopt_4	DMR_p2_xCells640_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:59:40	d6e1e659...
+  39: dmr_cube_preopt_3	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:39	a4e01a90...
+  40: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:59:40	948f82bc...
+  41: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:47	04af2fc1...
+  42: dmr_cube_preopt_2	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:48:43	3ecc4a9b...
+  43: dmr_cube_preopt_2	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:48:42	5db9eecb...
+  44: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:54:14	cb1acfb6...
+  45: dmr_cube_preopt_3	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:54:08	73976b06...
+  46: dmr_cube_preopt_3	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:54:15	b980aa84...
+  47: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:42	0cb76a84...
+  48: dmr_cube_preopt_3	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:46	681e57f0...
+  49: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:59:40	558f4abc...
+  50: dmr_cube_preopt_3	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:48:43	4dbb99d9...
+  51: dmr_cube_preopt_3	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:39	418395ba...
+  52: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:59:47	78479cd4...
+  53: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:54:17	f39a0405...
+  54: dmr_cube_preopt_1	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:27:00	ed1d7d64...
+  55: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 23:05:00	7e73127f...
+  56: dmr_cube_preopt_2	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:32:07	81eed8b4...
+  57: dmr_cube_preopt_2	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:48:48	374a3242...
+  58: dmr_cube_preopt_3	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:48:40	74400553...
+  59: dmr_cube_preopt_2	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:54:12	f2b5f476...
+  60: dmr_cube_preopt_3	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:54:12	cac91a4e...
+  61: dmr_cube_preopt_3	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:43	d4575b59...
+  62: dmr_cube_preopt_4	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:59:40	fb559ef0...
+  63: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:59:37	ca32242d...
+  64: dmr_cube_preopt_4	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 23:05:01	c74b67fe...
+  65: dmr_cube_preopt_2	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 11:26:57	1cac1027...
+  66: dmr_cube_preopt_2	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 11:32:27	245e7ce1...
+  67: dmr_cube_preopt_2	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 11:37:59	408ea8de...
+  68: dmr_cube_preopt_2	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 11:54:27	ff9b5561...
+  69: dmr_cube_preopt_3	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 12:21:55	47329542...
+  70: dmr_cube_preopt_3	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 12:27:27	b700fb81...
+  71: dmr_cube_preopt_1	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 12:32:47	0f82ca52...
+  72: dmr_cube_preopt_1	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 12:38:36	d7c92f83...
+  73: dmr_cube_preopt_1	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 12:38:36	97fbb8bb...
+  74: dmr_cube_preopt_1	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 12:44:05	25a25f1f...
+  75: dmr_cube_preopt_3	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 13:00:21	64c4fff9...
+  76: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells160_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 13:22:30	1291e307...
+  77: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 13:22:26	0567124c...
+  78: dmr_cube_preopt_3	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 13:05:52	91ce3da2...
+  79: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 13:27:49	c3d4a69c...
+  80: dmr_cube_preopt_4	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_128cores	05/15/2020 13:27:57	556de65d...
+  81: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:36:28	3f1ac196...
+  82: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:38:29	e8da4b50...
+  83: dmr_cube_backup	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:47:56	890eb5e1...
+  84: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:50:31	e7945041...
+  85: dmr_cube_backup	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:53:16	754e5c1b...
+  86: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:52:29	42ef86f1...
+  87: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:43:29	3a1b249c...
+  88: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:59:30	127ccbfc...
+  89: dmr_cube_backup	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:58:51	3008eb04...
+  90: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 07:01:29	36a4929d...
+  91: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 06:57:30	4a5c11b5...
+  92: dmr_cube_backup	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 07:04:22	7397da23...
+  93: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 07:06:32	78b6c8f4...
+  94: dmr_cube_backup	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 07:26:18	888279ea...
+  95: dmr_cube_backup	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 07:31:53	9a0d76ab...
+  96: dmr_cube_backup	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 07:53:52	a84eabfa...
+  97: dmr_cube_backup	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 07:59:16	6acbaa8e...
+  98: dmr_cube_backup	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 08:04:46	330b1da6...
+  99: dmr_cube_backup	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 08:26:47	c777cbad...
+  100: dmr_cube_backup	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 08:32:19	4a16f6ae...
+  101: dmr_cube_backup	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 08:37:46	4020ff56...
+  102: dmr_cube_backup_1	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 08:59:50	3405515c...
+  103: dmr_cube_backup_1	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 09:21:46	2276909d...
+  104: dmr_cube_preopt_4	DMR_p2_xCells1280_yCells320_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 09:44:02	ca04d9e2...
+  105: dmr_cube_preopt_4	DMR_p2_xCells2560_yCells640_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 09:44:01	fec99e71...
+  106: dmr_cube_backup_1	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 09:43:52	541b2701...
+  107: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_256cores	05/16/2020 09:45:45	b7d2ec30...
+}
+==============
+LastError
+**************
+==============
+DB.Sessions.Where(s=>s.Timesteps.Count()==0)
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+var sess = DB.Sessions.Where(s=>s.Timesteps.Count()!=0).Where(s=>s.ComputeNodeNames.Count()==128).OrderBy(s=>Convert.ToInt32(s.KeysAndQueries["Grid:NoOfCells"])/s.ComputeNodeNames.Count());
+**************
+==============
+sess.ForEach(s=>Console.WriteLine("{0} : {1} : {2}",Convert.ToInt32(s.KeysAndQueries["Grid:NoOfCells"])/s.ComputeNodeNames.Count(),s.GetApproximateRunTime(),s.ComputeNodeNames.Count()));
+**************
+1600 : 00:00:30.5920000 : 128
+1600 : 00:00:31.0760000 : 128
+1600 : 00:00:30.7660000 : 128
+1600 : 00:00:30.6640000 : 128
+6400 : 00:03:03.9130000 : 128
+6400 : 00:03:06.1510000 : 128
+6400 : 00:03:05.9990000 : 128
+6400 : 00:03:04.6840000 : 128
+25600 : 00:11:44.3590000 : 128
+25600 : 00:11:42.3230000 : 128
+25600 : 00:11:43.7930000 : 128
+25600 : 00:11:44.2280000 : 128
+102400 : 00:19:02.2880000 : 128
+102400 : 00:18:00.0440000 : 128
+102400 : 00:19:08.6000000 : 128
+102400 : 00:17:48.8940000 : 128
+
+==============
+DB.Sessions.Where(s=>Convert.ToInt32(s.KeysAndQueries["Grid:NoOfCells"])/s.ComputeNodeNames.Count()==409600).OrderBy(s=>s.ComputeNodeNames.Count())
+**************
+List of 13 instances of ISessionInfo {
+  0: dmr_cube_preopt_test	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/13/2020 23:17:52	b1ce1b65...
+  1: dmr_cube_preopt_1	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 19:27:12	a8296ed3...
+  2: dmr_cube_preopt_2	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:32:07	81eed8b4...
+  3: dmr_cube_preopt_3	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:48:40	74400553...
+  4: dmr_cube_preopt_4	DMR_p2_xCells5120_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_16cores	05/14/2020 22:59:37	ca32242d...
+  5: dmr_cube_preopt_1	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 19:32:44	5f3b13fa...
+  6: dmr_cube_preopt_2	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:48:48	374a3242...
+  7: dmr_cube_preopt_3	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:54:12	cac91a4e...
+  8: dmr_cube_preopt_4	DMR_p2_xCells10240_yCells1280_s0=1.0E-03_CFLFrac0.1_RK1_32cores	05/14/2020 22:59:40	fb559ef0...
+  9: dmr_cube_preopt_1	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:27:00	ed1d7d64...
+  10: dmr_cube_preopt_2	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:54:12	f2b5f476...
+  11: dmr_cube_preopt_3	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 22:59:43	d4575b59...
+  12: dmr_cube_preopt_4	DMR_p2_xCells10240_yCells2560_s0=1.0E-03_CFLFrac0.1_RK1_64cores	05/14/2020 23:05:01	c74b67fe...
+}
+==============
+**************
+==============
+//=========================================
+//preparation of some auxiliary datastructs
+//=========================================
+//execute this once ...
+**************
+==============
+//Used to apply filter
+Dictionary<int,System.Guid> SessId = new Dictionary<int,System.Guid>();
+int cnt = 0;
+foreach(var sess in DB.Sessions){
+    SessId.Add(cnt,sess.ID);
+    cnt++;
+}
+SessId;
+**************
+List of 108 instances of KeyValuePair{Int32,Guid} {
+  0: [0, 5bcd6093-5117-49f0-9aab-be700d337c21]
+  1: [1, 0ceea46f-77dc-43b6-bfb3-5a29991831bb]
+  2: [2, ebaeb6d4-366e-447c-bd00-62eeed130484]
+  3: [3, 5b4aef9f-86db-4adb-9603-00d19fcb6a37]
+  4: [4, 6443305c-ba48-4534-b34a-9ac0f5a21450]
+  5: [5, b1ce1b65-398b-4651-9ca9-48feb7fae5de]
+  6: [6, 3c78504e-53b0-431c-89d8-67e2676f8ed0]
+  7: [7, 5028b9e4-95f9-4dc3-9525-bba4f07c02ff]
+  8: [8, 05272503-c10a-4d1b-9253-4a3ac4e8b561]
+  9: [9, 5a045c08-0f8d-4cf8-8228-037a57b565ec]
+  10: [10, bc41a7f3-0d75-4eb9-b6b3-cf09ffe7edad]
+  11: [11, c8f7535d-1325-4b05-9355-2ba57acf064d]
+  12: [12, 63a94d84-0999-40bd-8426-a103da093222]
+  13: [13, b8055afb-8f9e-4123-81a7-e872d607496a]
+  14: [14, 9bee05b5-e018-4b98-8b35-16eb79c2a399]
+  15: [15, 9dda54be-3790-49d2-868a-c212bfb5fead]
+  16: [16, a8296ed3-2340-4375-8bc3-9c79f4018664]
+  17: [17, 5f3b13fa-a5ee-408e-b51e-0065bc606f13]
+  18: [18, 28aed733-e755-4565-a432-55509ab28928]
+  19: [19, 86b5a610-69b4-48be-bbb0-917e39b960b2]
+  20: [20, df73a9b7-2ad2-41b1-9415-6bdebcb1c74f]
+  21: [21, 5941d37b-7253-4b03-9073-1f18eb0789c6]
+  22: [22, 458d7331-004b-4c3f-86a7-36c19b7c1c7e]
+  23: [23, b485a530-cfd6-4d3c-8969-7f6033088b6f]
+  24: [24, e6a5c6bc-4cc3-49a2-9a88-11ef95476bf7]
+  25: [25, 4678898f-27e2-4716-95e6-e61d6c72eb45]
+  26: [26, 8a0f0887-34a8-4c28-a41b-907ea2c1a850]
+  27: [27, 323994fd-3beb-4567-97f8-fb5cf2c8eda6]
+  28: [28, c1167d0d-d7a7-4722-adfe-61815d0738d4]
+  29: [29, 6f08ea7c-4f2d-47ae-8592-cd2aff77a7cc]
+  30: [30, 9cc4c3a2-b4ad-478e-aa7a-bef9c41971bb]
+  31: [31, 9d0da78b-6ae9-43dc-ba49-cc4da96b4ce2]
+  32: [32, 08b21abd-dc32-4bd5-92e2-091b20b769d1]
+  33: [33, 8b1d2a04-7698-4e75-b095-ede966f9a117]
+  34: [34, 644cd441-043f-48a2-aab0-47e5b381ba5b]
+  35: [35, bff1a8e4-22d1-4098-8530-e2cfd92204f9]
+  36: [36, 0097de9c-d001-435b-9133-ff287afb972e]
+  37: [37, c89fa52d-903e-4215-b1f0-611fcbc00fe6]
+  38: [38, d6e1e659-b305-421d-a810-f0e13ce69444]
+  39: [39, a4e01a90-c9d5-499c-a1fb-793cbba3c57f]
+  40: [40, 948f82bc-98e6-46b9-9a89-d54e6248f4e9]
+  41: [41, 04af2fc1-e01e-4af7-bec9-9a4f06ca8025]
+  42: [42, 3ecc4a9b-8a33-4d60-8b08-0127255c9b11]
+  43: [43, 5db9eecb-ba42-4198-a3b6-f2dfda31e59d]
+  44: [44, cb1acfb6-e31e-4085-853d-44b8c925be70]
+  45: [45, 73976b06-e159-4be6-ba6b-e597a1049528]
+  46: [46, b980aa84-0b6f-485d-a415-8b0c189d4e94]
+  47: [47, 0cb76a84-3343-451a-b4a2-b6e1013071bb]
+  48: [48, 681e57f0-99f3-45a1-9065-5aa734f94a04]
+  49: [49, 558f4abc-e540-4ed1-9376-3397bcebbf22]
+  50: [50, 4dbb99d9-4d3c-4dbe-8401-857fa41a6c3f]
+  51: [51, 418395ba-2e9a-4d39-95a8-46fc46f69764]
+  52: [52, 78479cd4-a3e3-41d2-83f4-9f895c877fc3]
+  53: [53, f39a0405-9f43-46e3-9aa4-8f56e96ccd20]
+  54: [54, ed1d7d64-ba5d-4fb5-94eb-5c4cafa3bbae]
+  55: [55, 7e73127f-d386-4544-9699-adbd7012b0f2]
+  56: [56, 81eed8b4-2c6d-415f-83db-dff961e8ea53]
+  57: [57, 374a3242-3240-4787-b879-040ec9c12f98]
+  58: [58, 74400553-a316-4b40-a56b-e23079f5d33d]
+  59: [59, f2b5f476-c1c5-4b50-acbe-490c7362d8f0]
+  60: [60, cac91a4e-343d-412e-a18e-5675ac5ca17a]
+  61: [61, d4575b59-a396-446c-8ac9-dbc58afba42d]
+  62: [62, fb559ef0-f3a1-4844-adc2-6b20f379627b]
+  63: [63, ca32242d-9760-47f7-ac31-0b1359d79e88]
+  64: [64, c74b67fe-d8ff-479b-9645-62262d8dd02d]
+  65: [65, 1cac1027-0958-4239-8fb7-7b6ae11e7214]
+  66: [66, 245e7ce1-bf2e-451d-82c9-b6face70e13f]
+  67: [67, 408ea8de-a2c3-4c6e-a871-1cf7a58ca6f9]
+  68: [68, ff9b5561-3f78-4ad3-b5d1-175a149e3737]
+  69: [69, 47329542-d561-4048-bb2e-63f11eafcbcc]
+  70: [70, b700fb81-ed41-41e7-9e67-f0d54eee1345]
+  71: [71, 0f82ca52-f70e-4689-b5cb-0c7e0e63eb0d]
+  72: [72, d7c92f83-4632-460c-9917-80d250670834]
+  73: [73, 97fbb8bb-fe3d-4b73-833d-8b8ea2108942]
+  74: [74, 25a25f1f-2bfe-47eb-802e-52f94b0746ea]
+  75: [75, 64c4fff9-891d-4a81-a33c-bc0816c00feb]
+  76: [76, 1291e307-eb0c-41bf-a6dd-174e4afe6ad7]
+  77: [77, 0567124c-54e9-46b2-8e2a-5f5c1f4a65d1]
+  78: [78, 91ce3da2-02dd-40df-a21a-add1bdecedec]
+  79: [79, c3d4a69c-8a39-4e34-b12d-3ca2ad71143a]
+  80: [80, 556de65d-7da9-43aa-b0de-ce6aec90312c]
+  81: [81, 3f1ac196-a739-46e3-87c3-71f4ad26a427]
+  82: [82, e8da4b50-de8b-4c43-adc9-0d32c1f6dffe]
+  83: [83, 890eb5e1-180f-42a4-b2e5-1a581f50a053]
+  84: [84, e7945041-41ff-4694-9855-de5fdaf54488]
+  85: [85, 754e5c1b-b85c-4d79-a80c-7f28c2729af1]
+  86: [86, 42ef86f1-fb6f-4a24-ab5c-065ea53cdb22]
+  87: [87, 3a1b249c-da25-482b-8903-190b907e4a79]
+  88: [88, 127ccbfc-ce74-4fc3-856b-bc18cf980fc2]
+  89: [89, 3008eb04-3a38-412f-aea9-7c2727958aa0]
+  90: [90, 36a4929d-b705-4340-8387-dcf482df28c7]
+  91: [91, 4a5c11b5-f9b7-43ca-b144-c04e949954fa]
+  92: [92, 7397da23-70a5-4b94-a1a2-93945a8169f3]
+  93: [93, 78b6c8f4-d82e-48a2-b0ff-448a3b7f4391]
+  94: [94, 888279ea-cc38-4966-82d2-62f56409be9f]
+  95: [95, 9a0d76ab-1bc0-4d81-9ed6-9680fade2884]
+  96: [96, a84eabfa-a2f7-4b57-a428-32d3a30474c1]
+  97: [97, 6acbaa8e-ea6c-4d98-ade4-ffa045333a66]
+  98: [98, 330b1da6-6c64-4def-a287-9b378a56e373]
+  99: [99, c777cbad-fdf7-42c8-852d-3879e4652061]
+  100: [100, 4a16f6ae-3a6a-473b-8aaf-59551ba080cc]
+  101: [101, 4020ff56-b63c-43ff-961a-18c151fdd4d8]
+  102: [102, 3405515c-033b-4b8a-a419-fe4cd6ae1eb2]
+  103: [103, 2276909d-faa7-48da-b875-580a110d9095]
+  104: [104, ca04d9e2-aca1-449c-a8eb-b96142bb599c]
+  105: [105, fec99e71-8e1e-4c4e-8eb5-b00e96833d26]
+  106: [106, 541b2701-6f08-409b-99ee-c09f242caded]
+  107: [107, b7d2ec30-9ce4-4659-8517-dceba438d14c]
+}
+==============
+**************
+==============
+static class AddCols {
+
+    static public object NoOfCores(ISessionInfo SI){
+        return (int)SI.GetProfiling().Count();
+    }
+    static public object CellsPerCore(ISessionInfo SI){
+        return (int)(Convert.ToInt32(SI.KeysAndQueries["Grid:NoOfCells"])/SI.GetProfiling().Count());
+    }
+    static public bool FindMatches(ISessionInfo SI, int cores, int cellspercore){
+        return
+        Convert.ToInt32(SI.KeysAndQueries["NoOfCores"])==cores &&
+        Convert.ToInt32(SI.KeysAndQueries["CellsPerCore"])==cellspercore;
+    }
+}
+**************
+==============
+//Add Keys NoOfCores and CellsPerCore
+foreach(var session in DB.Sessions){
+    try{
+        int cores   = Convert.ToInt32(AddCols.NoOfCores(session));
+        int cellspc = Convert.ToInt32(AddCols.CellsPerCore(session));
+        session.KeysAndQueries.Add("NoOfCores",cores);
+        session.KeysAndQueries.Add("CellsPerCore",cellspc);
+    }catch (Exception e){
+        //Console.WriteLine("error at: {0}",session.Name);
+        //Console.WriteLine(e);
+    }
+}
+**************
+(8,23): warning CS0168: The variable `e' is declared but never used
+No. of errors|warnings: 0|1.
+
+==============
+//Get All Core DOFperCore combinations
+Dictionary<Tuple<int,int>,int> dummy = new Dictionary<Tuple<int,int>,int>();
+List<Tuple<int,int>> combis = new List<Tuple<int,int>>();
+foreach(var session in DB.Sessions){
+    int cores   = Convert.ToInt32(AddCols.NoOfCores(session));
+    int cellspc = Convert.ToInt32(AddCols.CellsPerCore(session));
+    Tuple<int, int> canidate = Tuple.Create( cores, cellspc );
+    try{
+        dummy.Add(canidate,cellspc+cores);
+    }catch {
+        continue;
+    }
+}
+foreach(var entry in dummy.OrderBy(s=>s.Value))
+combis.Add(entry.Key);
+**************
+==============
+combis
+**************
+List of 22 instances of Tuple{Int32,Int32} {
+  0: (16, 1600)
+  1: (32, 1600)
+  2: (64, 1600)
+  3: (128, 1600)
+  4: (256, 1600)
+  5: (16, 6400)
+  6: (32, 6400)
+  7: (64, 6400)
+  8: (128, 6400)
+  9: (256, 6400)
+  10: (16, 25600)
+  11: (32, 25600)
+  12: (64, 25600)
+  13: (128, 25600)
+  14: (256, 25600)
+  15: (16, 102400)
+  16: (32, 102400)
+  17: (64, 102400)
+  18: (128, 102400)
+  19: (16, 409600)
+  20: (32, 409600)
+  21: (64, 409600)
+}
+==============
+//=================
+// ClusterAlgorithm
+//=================
+**************
+==============
+static class Baemsen {
+   public static IEnumerable<ISessionInfo> FilterSessions(IEnumerable<ISessionInfo> input, int[] filter) {
+            List<ISessionInfo> output = new List<ISessionInfo>();
+
+            //translate number to SessId
+            Dictionary<int, System.Guid> filteredID = new Dictionary<int, System.Guid>();
+            foreach (int f in filter) {
+                System.Guid ID;
+                if (SessId.TryGetValue(f, out ID))
+                    filteredID.Add(f, ID);
+                else
+                    throw new Exception("Filter not applicable");
+            }
+
+            foreach (var SI in input) {
+                if (!filteredID.Values.Contains(SI.ID))
+                    output.Add(SI);
+            }
+            return output;
+        }
+    
+    public static double[] GetRuntimes(IEnumerable<ISessionInfo> SIs, string method, bool exclusive){
+        List<double> tmp = new List<double>();
+        foreach(var SI in SIs){
+        var mcr = SI.GetProfiling();
+            double[] runtimes = new double[mcr.Count()];
+
+            for (int j = 0; j < mcr.Count(); j++) {
+                try {
+                    if (exclusive) {
+                        mcr[j].FindChildren(method).ForEach(s => runtimes[j] += s.TimeExclusive.TotalSeconds);
+                    } else {
+                        mcr[j].FindChildren(method).ForEach(s => runtimes[j] += s.TimeSpentInMethod.TotalSeconds);
+                    }
+                } catch (Exception e) {
+                    Console.WriteLine(SI.Name);
+                    Console.WriteLine(SI.ID);
+                    Console.WriteLine(e.Message);
+                }
+                //Console.WriteLine(runtimes[j]);
+            }
+            tmp.AddRange(runtimes);
+        }
+        return tmp.ToArray();
+    }
+    
+    public static double[] GetPreProcessedRunTimes(IEnumerable<ISessionInfo> SIs, string method, bool exclusive, int MaxNoOfclusters, double trashold){
+        var tmp = new List<double>(); 
+        foreach(ISessionInfo SI in SIs){
+            var singleSI = new ISessionInfo[]{SI};
+            double[] rt = GetRuntimes(singleSI, method, exclusive);
+            double[][] cluster = BigestRelGap(rt,MaxNoOfclusters,trashold);
+            
+            int cnt = 0;
+            while (cluster.Any(s => s.Length <= 2) && cnt < 4) {
+                rt      = Baemsen.DismissOutliners(cluster,1);
+                cluster = Baemsen.BigestRelGap(rt, MaxNoOfclusters, trashold);
+                cnt++;
+            }
+            tmp.AddRange(rt);
+         }
+        return tmp.ToArray();
+    }
+    public static double[] DismissOutliners(double[][] clusters,int OutlineSize){
+        var tmp = new List<double>(); 
+        for(int icluster=0;icluster<clusters.Length;icluster++){
+                double[] cluster = clusters[icluster];
+                bool outliner = cluster.Length<=OutlineSize;
+                if(outliner)
+                    continue;
+                else
+                    tmp.AddRange(cluster);
+        }
+        return tmp.ToArray();
+    }
+    
+    
+        public static double[][] PreDefCluster(IEnumerable<ISessionInfo> SIs, string method, bool exclusive, int MaxNoOfclusters) {
+            double[] runtimes = GetRuntimes(SIs, method, exclusive);
+            double[][] ret = new double[MaxNoOfclusters][];
+            int cores = Convert.ToInt32(SIs.First().KeysAndQueries["NoOfCores"]);
+            int[] Idxgap = GetCluster(cores, SIs.Count());
+
+            Array.Sort(runtimes);
+            Array.Sort(Idxgap);
+            int cnt = Idxgap.Length - 1;
+            var Ids = new int[runtimes.Length];
+            for (int t = runtimes.Length - 1; t >= 0; t--) {
+                if (t <= Idxgap[cnt])
+                    cnt--;
+                Ids[t] = cnt + (MaxNoOfclusters - Idxgap.Length);
+            }
+
+            //generate output
+            int k = 0;
+            for (int i = 0; i < MaxNoOfclusters; i++) {
+
+                int no = Ids.Where(e => e == i).Count();
+                ret[i] = new double[no];
+                for (int j = 0; j < no; j++) {
+                    ret[i][j] = runtimes[k];
+                    k++;
+                }
+            }
+            return ret;
+
+
+        }
+
+        private static int[] GetCluster(int cores, int SessionCnt) {
+            int sx = 1;
+            int sy = 1;
+            int[] ret = new int[4];
+            for (int i = 0; i < Math.Log(cores, 2); i++) {
+                if (i % 2 == 0)
+                    sx*= 2;
+                else
+                    sy*=2;
+            }
+            //Console.WriteLine("x:{0}, y:{1}",sx,sy);
+            sx-=2; //get rid of corners
+            sy-=2;
+            ret[0] = -1; // inner cells
+            ret[1] = (cores - sy * 2 - sx * 2 - 4) * SessionCnt-1; // right left bnd
+            ret[2] = (cores - sx * 2 - 4) * SessionCnt-1; //upper lower bnd
+            ret[3] = (cores - 4) * SessionCnt-1; //corners
+            return ret;
+        }
+        
+        public static int[] GetSize(double[][] bla){
+            var ret = new int[bla.Length];
+            for(int i=0;i<bla.Length;i++)
+                ret[i]=bla[i].Length;
+            return ret;
+            }
+
+ public static double[][] BigestRelGap(double[] runtimes, int MaxNoOfclusters, double trashold) {
+            
+            
+
+            //initial gaps
+            int[] Idxgap = GetIdxs(runtimes, MaxNoOfclusters, trashold);
+            
+            //generate masking
+            Array.Sort(Idxgap);
+            int cnt = Idxgap.Length-1;
+            var Ids = new int[runtimes.Length];
+            for (int t = runtimes.Length-1; t >= 0; t--) {
+                if (t <= Idxgap[cnt])
+                    cnt--;
+                Ids[t] = cnt+(MaxNoOfclusters-Idxgap.Length);
+            }
+            //Console.WriteLine("[{0}]", string.Join(", ", Ids));
+            //Console.WriteLine("[{0}]", string.Join(", ", Idxgap));
+
+            //generate output
+            double[][] ret = new double[MaxNoOfclusters][];
+            int k = 0;
+            for (int i = 0; i < MaxNoOfclusters; i++) {
+
+                int no = Ids.Where(e => e == i).Count();
+                ret[i] = new double[no];
+                for (int j = 0; j < no; j++) {
+                    ret[i][j] = runtimes[k];
+                    k++;
+                }
+            }
+            return ret;
+        }
+        
+
+        private static int[] GetIdxs(double[] data, int maxgaps, double relthrash) {
+            List<int> Idxgap = new List<int>();
+
+            double[] reldist = new double[data.Length];
+            var dict = new Dictionary<int, double>();
+            Array.Sort(data);
+            
+            //double sum     = 0;
+            //double sumdist = 0;
+
+            for (int itimes = 0; itimes < data.Length - 1; itimes++) {
+                reldist[itimes] = (data[itimes + 1] - data[itimes]) / data[itimes];
+                //reldist[itimes] = (data[itimes + 1] - data[itimes]);
+                dict.Add(itimes, reldist[itimes]);
+                //sum+=data[itimes];
+                //sumdist+=reldist[itimes];
+            }
+            //sum+=data.Last();
+            //double diff = sumdist/(data.Length-1);
+            //double avrg = sum/data.Length;
+            //double avrg = data.First();
+            double diff = data.Last()-data.First();
+            double avrg = data.First();
+            //Console.WriteLine("diff {0} avrg {1}",diff,avrg);
+            //Console.WriteLine("diff / avrg = {0}",diff/avrg);
+
+            int cnt        = 0;
+            var orderedict = dict.OrderByDescending(s => s.Value);
+            
+            //Console.WriteLine("diff/avrg = {0}",orderedict.First().Value/diff*avrg);
+
+            foreach (var dist in orderedict) {
+                if (dist.Value > relthrash && cnt < maxgaps-1) {
+                    Idxgap.Add(dist.Key);
+                } else {
+                    //break;
+                    
+                }
+                //Console.WriteLine("key:{0}, val:{1}",dist.Key,dist.Value);
+                cnt++;
+            }
+            //Idxgap.Add(data.Length - 1);
+            Idxgap.Add(-1);
+            return Idxgap.ToArray();
+        }
+}
+**************
+(193,20): warning CS0219: The variable `diff' is assigned but its value is never used
+(194,20): warning CS0219: The variable `avrg' is assigned but its value is never used
+No. of errors|warnings: 0|2.
+
+==============
+//=======================
+// Set parameters
+//=======================
+int NoOfClusters = 4;
+//int[] filter =  new int[]{81,37,54,40,59,43,44,66};
+//int[] filter =  new int[]{2,11,44,4,50,63,58,52,18,47,43,55,78,87,92,93,102,103,106};
+//int[] filter =  new int[]{92,93,101,102,103,106};
+//int[] filter =  new int[]{40,7,76,95,62};
+int[] filter = null;
+double trash = 1e-2;
+**************
+==============
+//=======================
+// Choose Method
+//=======================
+Dictionary<string,string> methods = new Dictionary<string,string>();
+methods.Add("viscosity", "Flux-Eval:OptimizedLaplacianArtificialViscosityFlux:BoSSS.Solution.CompressibleFlowCommon.ShockCapturing.OptimizedLaplacianArtificialViscosityFlux");
+methods.Add("density","Flux-Eval:OptimizedHLLCDensityFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCDensityFlux");
+methods.Add("momentum","Flux-Eval:OptimizedHLLCMomentumFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCMomentumFlux");
+methods.Add("energy","Flux-Eval:OptimizedHLLCEnergyFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCEnergyFlux");
+string method = methods["density"];
+**************
+==============
+//Alg A: clustering according to relative gap
+Func<ISessionInfo[],string, bool, double[][]> ClusteringAlg = delegate(ISessionInfo[] SIs, string method, bool filterON){
+    bool exclusive      = false;
+    int MaxNoOfclusters = NoOfClusters;
+    ISessionInfo[] filteredSI      = (filter!=null&&filterON)? Baemsen.FilterSessions(SIs,filter).ToArray():SIs;
+    var runtimes = Baemsen.GetRuntimes(filteredSI,method,exclusive);
+    var cluster  = Baemsen.BigestRelGap(runtimes,MaxNoOfclusters,trash);
+    return cluster;
+}
+**************
+==============
+//Alg B: clustering according to relative gap with outliner elimination
+Func<ISessionInfo[], string, bool, double[][]> ClusteringAlg = delegate (ISessionInfo[] SIs, string method, bool filterON) {
+    bool exclusive = false;
+    int MaxNoOfclusters = NoOfClusters;
+    ISessionInfo[] filteredSI = (filter != null && filterON) ? Baemsen.FilterSessions(SIs, filter).ToArray() : SIs;
+    var runtimes = Baemsen.GetPreProcessedRunTimes(filteredSI, method, exclusive, MaxNoOfclusters, trash);
+    double[][] cluster = Baemsen.BigestRelGap(runtimes, MaxNoOfclusters, trash);
+    int cnt = 0;
+    while (cluster.Any(s => s.Length < 3) && cnt < 0) {
+        var tmpruntimes = Baemsen.DismissOutliners(cluster,SIs.Length);
+        cluster         = Baemsen.BigestRelGap(tmpruntimes, MaxNoOfclusters, trash);
+        int[] size = Baemsen.GetSize(cluster);
+        Console.WriteLine("({0},{1}):\t{2}", SIs.First().KeysAndQueries["NoOfCores"], SIs.First().KeysAndQueries["CellsPerCore"], String.Join(",", size));
+        cnt++;
+    }
+    return cluster;
+}
+**************
+==============
+//Alg C: predefined clustering according to "GetCluster"
+Func<ISessionInfo[],string, bool, double[][]> ClusteringAlg = delegate(ISessionInfo[] SIs, string method, bool filterON){
+    bool exclusive      = false;
+    int MaxNoOfclusters = NoOfClusters;
+    ISessionInfo[] filteredSI      = (filter!=null&&filterON)? Baemsen.FilterSessions(SIs,filter).ToArray():SIs;
+    var cluster = Baemsen.PreDefCluster(filteredSI, method, exclusive, MaxNoOfclusters);
+    return cluster;
+}
+**************
+==============
+//=======================
+// clustering of individual sessions
+//=======================
+**************
+==============
+var session = DB.Sessions.Pick(57);
+var bla     = ClusteringAlg(new ISessionInfo[]{session},method,false);
+**************
+x:8, y:4
+
+==============
+Convert.ToDouble(session.KeysAndQueries["Grid:NoOfCells"])/session.ComputeNodeNames.Count();
+//DB.Sessions.ForEach(s=>Console.WriteLine(s.KeysAndQueries["Grid:NoOfCells"]/s.ComputeNodeNames.Count()));
+//DB.Sessions.ForEach(s=>Console.WriteLine(Convert.ToDouble(s.KeysAndQueries["Grid:NoOfCells"])/s.ComputeNodeNames.Count()));
+**************
+409600
+==============
+var ret = new List<double>();
+bla.ForEach(b=>ret.AddRange(b));
+var gp        = new Gnuplot();
+var Fmt       = new PlotFormat();
+Fmt.PointSize = 0.5;
+Fmt.LineWidth = 3;
+Fmt.Style     = Styles.LinesPoints;
+Fmt.DashType  = DashTypes.Solid;
+gp.PlotY(ret.ToArray(),"bla",Fmt);
+//gp.PlotY(means,"blub",Fmt);
+gp.PlotNow();
+**************
+Using gnuplot: V:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+**************
+==============
+bla.Length.ForLoop(i=>bla[i].Length);
+**************
+List of 4 instances of Int32 {
+  0: 12
+  1: 4
+  2: 12
+  3: 4
+}
+==============
+var gp        = new Gnuplot();
+var Fmt       = new PlotFormat();
+Fmt.PointSize = 0.5;
+Fmt.LineWidth = 3;
+Fmt.Style     = Styles.LinesPoints;
+Fmt.DashType  = DashTypes.Solid;
+double offset = 0;
+for(int i=0;i<bla.Length;i++){
+Fmt.LineColor = (LineColors)i;
+double[] xdummy    = bla[i].Length.ForLoop<double>(s=>s+offset);
+offset += bla[i].Length;
+gp.PlotXY(xdummy,bla[i].ToArray(),String.Format("{0}",i),Fmt);
+}
+gp.SetYLabel("corewise runtime [s]");
+gp.SetXLabel("cores (ascending runtime)");
+gp.SetXRange(0,offset+10);
+gp.PlotNow();
+**************
+Using gnuplot: V:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+//int cpc = (int)AddCols.CellsPerCore(session);
+//int nc  = (int)AddCols.NoOfCores(session);
+//var CL  = gp.PlotCairolatex(xSize:16,ySize:12);
+//CL.WriteMinimalCompileableExample(Path.Combine(@"T:\Performance_CNS_Koop_Informatik\study_6","Color"+cpc+"_"+nc+"_"+NoOfClusters+".tex"),"_"+cpc+"_"+nc+"_"+NoOfClusters+".tex");
+**************
+==============
+//DB.Sessions.Pick(0).KeysAndQueries
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+var tmp = new System.Data.DataTable();
+
+tmp.Columns.Add("NoOfCores", typeof(Int32));
+tmp.Columns.Add("CellsPerCore", typeof(Int32));
+for(int icluster=0;icluster<NoOfClusters;icluster++){
+    string colname = String.Format("Cluster{0}",icluster);
+    tmp.Columns.Add(colname, typeof(Int32));
+}
+tmp.Columns.Add("smallest", typeof(double));
+tmp.Columns.Add("biggest", typeof(double));
+tmp.Columns.Add("NR", typeof(Int32));
+int cnt = 0;
+foreach(var sess in DB.Sessions){
+    int cores        = Convert.ToInt32(AddCols.NoOfCores(sess));
+    int cellspercore = Convert.ToInt32(AddCols.CellsPerCore(sess));
+    var sessions     = new ISessionInfo[]{sess};
+    var newrow       = tmp.NewRow();
+    var baem         = ClusteringAlg(sessions,method,false);
+    newrow["NoOfCores"]=cores;
+    newrow["CellsPerCore"]=cellspercore;
+    int firstcluster = -1;
+    for(int icluster=0;icluster<NoOfClusters;icluster++){
+        string colname = String.Format("Cluster{0}",icluster);
+        newrow[colname]=baem[icluster].Length;
+        if(baem[icluster].Length>0&&firstcluster==-1)
+            firstcluster = icluster;
+    }
+    newrow["NR"]=cnt;
+    newrow["smallest"]=baem[firstcluster].First();
+    newrow["biggest"]=baem.Last().Last();
+    tmp.Rows.Add(newrow);
+    cnt++;
+}
+System.Data.DataView dv        = tmp.DefaultView;
+dv.Sort                        = "NoOfCores,CellsPerCore";
+System.Data.DataTable sortedDT = dv.ToTable();
+sortedDT.Print();
+**************
+     NoOfCores CellsPerCore Cluster0 Cluster1 Cluster2 Cluster3 smallest    biggest     NR  
+0:   4         1600         0        0        0        4        1.2893782   1.3013592   1   
+1:   4         1600         0        0        0        4        1.2846476   1.3205123   25  
+2:   4         1600         0        0        0        4        1.281853    1.2958316   37  
+3:   4         1600         0        0        0        4        1.2794001   1.3067087   72  
+4:   4         6400         0        0        0        4        5.3345984   5.5680637   2   
+5:   4         6400         0        0        0        4        5.343286    5.9944617   26  
+6:   4         6400         0        0        0        4        5.3468852   5.7239797   38  
+7:   4         6400         0        0        0        4        5.456123    5.7047556   73  
+8:   4         25600        0        0        0        4        21.2782899  21.8786349  5   
+9:   4         25600        0        0        0        4        21.2472697  21.5526847  30  
+10:  4         25600        0        0        0        4        21.3188558  21.5725976  41  
+11:  4         25600        0        0        0        4        21.1778805  21.5662001  74  
+12:  4         102400       0        0        0        4        82.7849009  85.5184422  10  
+13:  4         102400       0        0        0        4        83.081203   83.8635377  34  
+14:  4         102400       0        0        0        4        83.2036703  83.6541619  48  
+15:  4         102400       0        0        0        4        83.5208292  83.7141867  78  
+16:  4         409600       0        0        0        4        331.8731889 340.8265905 21  
+17:  4         409600       0        0        0        4        335.2855366 352.8657164 45  
+18:  4         409600       0        0        0        4        333.796691  341.7409059 60  
+19:  4         409600       0        0        0        4        337.3278297 344.4803972 90  
+20:  8         1600         0        0        0        8        1.2864541   1.3089548   3   
+21:  8         1600         0        0        0        8        1.2867425   1.3058108   27  
+22:  8         1600         0        0        0        8        1.2824573   1.3093234   39  
+23:  8         1600         0        0        0        8        1.3728399   1.4496986   82  
+24:  8         6400         0        0        0        8        5.3870456   6.2208333   4   
+25:  8         6400         0        0        0        8        5.3504057   5.6545349   28  
+26:  8         6400         0        0        0        8        5.6737854   6.3165207   40  
+27:  8         6400         0        0        0        8        5.6971471   6.3338627   75  
+28:  8         25600        0        0        0        8        21.2720367  21.7006283  0   
+29:  8         25600        0        0        0        8        22.752823   23.269458   6   
+30:  8         25600        0        0        0        8        21.2350009  21.6791005  31  
+31:  8         25600        0        0        0        8        22.7952862  23.5391133  42  
+32:  8         25600        0        0        0        8        22.6108405  23.0161747  81  
+33:  8         102400       0        0        0        8        82.856939   84.7735646  11  
+34:  8         102400       0        0        0        8        83.0581098  84.4885461  35  
+35:  8         102400       0        0        0        8        88.0029909  90.2800769  49  
+36:  8         102400       0        0        0        8        82.9887876  83.8974451  87  
+37:  8         409600       0        0        0        8        331.7139969 344.6851454 22  
+38:  8         409600       0        0        0        8        334.5195264 340.0177794 46  
+39:  8         409600       0        0        0        8        334.4129258 349.5259659 59  
+40:  8         409600       0        0        0        8        336.121243  340.4863267 91  
+41:  16        1600         0        0        0        16       1.3683837   1.4202397   7   
+42:  16        1600         0        0        0        16       1.2781132   1.3309071   29  
+43:  16        1600         0        0        0        16       1.2826872   1.3256539   50  
+44:  16        1600         0        0        0        16       1.286553    1.3210625   76  
+45:  16        6400         0        0        0        16       5.8038601   6.4662796   8   
+46:  16        6400         0        0        0        16       5.3492367   6.2030957   32  
+47:  16        6400         0        0        0        16       5.4823804   6.4318369   47  
+48:  16        6400         0        0        0        16       5.3703451   6.3704592   79  
+49:  16        25600        0        0        0        16       22.0806799  23.1417056  9   
+50:  16        25600        0        0        0        16       20.797884   22.0867042  33  
+51:  16        25600        0        0        0        16       20.6788474  21.9783826  52  
+52:  16        25600        0        0        0        16       20.7804937  22.2039033  84  
+53:  16        102400       0        0        0        16       88.0752382  90.2632066  14  
+54:  16        102400       0        0        0        16       82.1699399  84.8708051  36  
+55:  16        102400       0        0        0        16       82.3675224  85.4870321  88  
+56:  16        102400       0        0        0        16       82.7416404  85.7681913  98  
+57:  16        409600       0        0        0        16       332.3533318 344.6394604 23  
+58:  16        409600       0        0        0        16       331.5679305 341.9058563 51  
+59:  16        409600       0        0        0        16       332.6825414 342.4313746 66  
+60:  16        409600       0        0        0        16       352.002881  363.47305   94  
+61:  32        1600         0        0        0        32       1.2397485   1.4221447   12  
+62:  32        1600         0        0        0        32       1.2859967   1.4749439   43  
+63:  32        1600         0        0        0        32       1.2867798   1.3712383   56  
+64:  32        1600         0        0        0        32       1.2876364   1.3529526   86  
+65:  32        6400         0        0        31       1        5.3001985   7.1824997   13  
+66:  32        6400         0        0        0        32       5.3978592   6.5706026   44  
+67:  32        6400         0        0        0        32       5.4389949   5.9021049   77  
+68:  32        6400         0        0        0        32       5.5006864   6.4443801   96  
+69:  32        25600        0        0        0        32       20.4213201  23.0562594  15  
+70:  32        25600        0        0        0        32       20.9009737  24.7640807  57  
+71:  32        25600        0        0        0        32       20.6887157  22.773262   80  
+72:  32        25600        0        0        0        32       20.5734933  22.4455414  97  
+73:  32        102400       0        0        0        32       82.9980349  86.4886043  19  
+74:  32        102400       0        0        0        32       83.2555901  87.4804504  53  
+75:  32        102400       0        0        0        32       82.8030447  87.0883847  61  
+76:  32        102400       0        0        0        32       82.729513   86.6358198  99  
+77:  32        409600       0        0        0        32       330.4921724 350.1123427 63  
+78:  32        409600       0        0        0        32       331.84271   353.3572308 69  
+79:  32        409600       0        0        0        32       331.2271378 347.3581137 93  
+80:  32        409600       0        0        0        32       331.1476665 353.9567049 100 
+81:  64        1600         0        0        0        64       1.2453177   1.4124122   16  
+82:  64        1600         0        0        0        64       1.2872511   1.3961314   54  
+83:  64        1600         0        0        0        64       1.2821259   1.3524223   64  
+84:  64        1600         0        0        0        64       1.2867604   1.47473     83  
+85:  64        6400         0        0        0        64       5.2706173   6.8920627   17  
+86:  64        6400         0        0        0        64       5.4552096   6.4990805   55  
+87:  64        6400         0        0        0        64       5.495932    6.5956467   65  
+88:  64        6400         0        0        0        64       5.5053352   6.9917944   95  
+89:  64        25600        0        0        0        64       19.8946992  23.1515464  18  
+90:  64        25600        0        0        0        64       21.0316354  22.2712318  58  
+91:  64        25600        0        0        0        64       21.0049398  22.5121765  67  
+92:  64        25600        0        0        0        64       21.2077372  22.3310214  85  
+93:  64        102400       0        0        0        64       80.1097945  91.3610681  20  
+94:  64        102400       0        0        0        64       82.8710124  90.8855118  62  
+95:  64        102400       0        0        0        64       83.052182   87.2694072  68  
+96:  64        102400       0        0        0        64       83.5809557  88.3435309  89  
+97:  64        409600       0        0        0        64       332.6938407 358.9759973 24  
+98:  64        409600       0        0        0        64       330.4604186 379.2151735 70  
+99:  64        409600       0        0        0        64       330.8679168 360.6633931 71  
+100: 64        409600       0        0        0        64       332.8212699 352.8879398 92  NR
+==============
+//=======================
+// clustering of datasets
+//=======================
+**************
+==============
+var tmp = new System.Data.DataTable();
+
+tmp.Columns.Add("NoOfCores", typeof(Int32));
+tmp.Columns.Add("CellsPerCore", typeof(Int32));
+for(int icluster=0;icluster<NoOfClusters;icluster++){
+    string colname = String.Format("Cluster{0}",icluster);
+    tmp.Columns.Add(colname, typeof(Int32));
+}
+//tmp.Columns.Add("NR", typeof(Int32));
+foreach(Tuple<int,int> combi in combis){
+    int cores        = combi.Item1;
+    int cellspercore = combi.Item2;
+    var sessions     = DB.Sessions.Where(s=>AddCols.FindMatches(s,cores,cellspercore)).ToArray();
+    var newrow       = tmp.NewRow();
+    var baem         = ClusteringAlg(sessions,method,true);
+    newrow["NoOfCores"]=cores;
+    newrow["CellsPerCore"]=cellspercore;
+    for(int icluster=0;icluster<NoOfClusters;icluster++){
+        string colname = String.Format("Cluster{0}",icluster);
+        newrow[colname]=baem[icluster].Length;
+    }
+    //newrow["NR"]=cnt;
+    tmp.Rows.Add(newrow);
+}
+System.Data.DataView dv        = tmp.DefaultView;
+dv.Sort                        = "NoOfCores,CellsPerCore";
+System.Data.DataTable sortedDT = dv.ToTable();
+sortedDT.Print();
+**************
+    NoOfCores CellsPerCore Cluster0 Cluster1 Cluster2 Cluster3 
+0:  16        1600         16       16       16       16       
+1:  16        6400         20       20       20       20       
+2:  16        25600        20       20       35       5        
+3:  16        102400       20       45       5        10       
+4:  16        409600       20       20       38       2        
+5:  32        1600         48       16       48       16       
+6:  32        6400         48       16       48       16       
+7:  32        25600        48       4        29       47       
+8:  32        102400       48       2        54       24       
+9:  32        409600       48       8        8        64       
+10: 64        1600         144      48       48       16       
+11: 64        6400         144      48       48       16       
+12: 64        25600        180      60       1        79       
+13: 64        102400       144      110      1        1        
+14: 64        409600       144      48       48       16       
+15: 128       1600         336      48       112      16       
+16: 128       6400         336      48       112      16       
+17: 128       25600        336      6        42       128      
+18: 128       102400       336      27       141      8        
+19: 256       1600         1568     224      224      32       
+20: 256       6400         1568     224      224      32       
+21: 256       25600        2156     3        311      346      CellsPerCore
+==============
+**************
+==============
+var sessions = DB.Sessions.Where(s=>AddCols.FindMatches(s,32,409600)).ToArray();
+var baem     = ClusteringAlg(sessions,method,true);
+
+var gp        = new Gnuplot();
+var Fmt       = new PlotFormat();
+Fmt.PointSize = 0.5;
+Fmt.LineWidth = 3;
+Fmt.Style     = Styles.LinesPoints;
+Fmt.DashType  = DashTypes.Solid;
+
+double offset = 0;
+for(int i=0;i<baem.Length;i++){
+Fmt.LineColor = (LineColors)i;
+double[] xdummy    = baem[i].Length.ForLoop<double>(s=>s+offset);
+offset += baem[i].Length;
+gp.PlotXY(xdummy,baem[i].ToArray(),String.Format("{0}",i),Fmt);
+}
+gp.SetYLabel("corewise runtime [s]");
+gp.SetXLabel("cores (ascending runtime)");
+gp.SetXRange(0,offset+10);
+gp.PlotNow();
+**************
+Using gnuplot: V:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+int cpc = (int)AddCols.CellsPerCore(sessions[0]);
+int nc  = (int)AddCols.NoOfCores(sessions[0]);
+var CL  = gp.PlotCairolatex(xSize:16,ySize:12);
+CL.WriteMinimalCompileableExample(Path.Combine(@"T:\Performance_CNS_Koop_Informatik\study_6","Color"+cpc+"_"+nc+"_"+NoOfClusters+".tex"),"_"+cpc+"_"+nc+"_"+NoOfClusters+".tex");
+**************
+==============
+//Collect results for a specific point (combination of cellspercore and noofcores)
+Func<string,int,Dictionary<int[],double[][]>> whatever = delegate(string method,int NoOfClusters){
+    Dictionary<int[],double[][]> points = new Dictionary<int[],double[][]>();
+    Console.WriteLine("producing clusters (cellspercore, core):");
+    foreach(var combi in combis){
+        int cores        = combi.Item1;
+        int cellspercore = combi.Item2;
+        Console.WriteLine("{0}, {1}",cellspercore,cores);
+        var sessions = DB.Sessions.Where(s=>AddCols.FindMatches(s,cores,cellspercore)).ToArray();
+        var bla      = ClusteringAlg(sessions,method,true);
+        points.Add(new int[]{cellspercore, cores},bla);
+    }
+    return points;
+};
+**************
+==============
+**************
+==============
+var ViscosityFlux = whatever(methods["viscosity"],NoOfClusters);
+**************
+producing clusters (cellspercore, core):
+1600, 4
+1600, 8
+1600, 16
+1600, 32
+1600, 64
+6400, 4
+6400, 8
+6400, 16
+6400, 32
+6400, 64
+25600, 4
+25600, 8
+25600, 16
+25600, 32
+25600, 64
+102400, 4
+102400, 8
+102400, 16
+102400, 32
+102400, 64
+409600, 4
+409600, 8
+409600, 16
+409600, 32
+409600, 64
+
+==============
+var DensityFlux = whatever(methods["density"],NoOfClusters);
+**************
+producing clusters (cellspercore, core):
+1600, 4
+1600, 8
+1600, 16
+1600, 32
+1600, 64
+6400, 4
+6400, 8
+6400, 16
+6400, 32
+6400, 64
+25600, 4
+25600, 8
+25600, 16
+25600, 32
+25600, 64
+102400, 4
+102400, 8
+102400, 16
+102400, 32
+102400, 64
+409600, 4
+409600, 8
+409600, 16
+409600, 32
+409600, 64
+
+==============
+var MomentumFlux = whatever(methods["momentum"],NoOfClusters);
+**************
+producing clusters (cellspercore, core):
+1600, 4
+1600, 8
+1600, 16
+1600, 32
+1600, 64
+6400, 4
+6400, 8
+6400, 16
+6400, 32
+6400, 64
+25600, 4
+25600, 8
+25600, 16
+25600, 32
+25600, 64
+102400, 4
+102400, 8
+102400, 16
+102400, 32
+102400, 64
+409600, 4
+409600, 8
+409600, 16
+409600, 32
+409600, 64
+
+==============
+var EnergyFlux = whatever(methods["energy"],NoOfClusters);
+**************
+producing clusters (cellspercore, core):
+1600, 4
+1600, 8
+1600, 16
+1600, 32
+1600, 64
+6400, 4
+6400, 8
+6400, 16
+6400, 32
+6400, 64
+25600, 4
+25600, 8
+25600, 16
+25600, 32
+25600, 64
+102400, 4
+102400, 8
+102400, 16
+102400, 32
+102400, 64
+409600, 4
+409600, 8
+409600, 16
+409600, 32
+409600, 64
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+int cluster = 0;
+foreach(var datapoint in DensityFlux){
+    string keys  = String.Join(",",datapoint.Key);
+    double first = datapoint.Value[cluster].First();
+    double last  = datapoint.Value[cluster].Last();
+    Console.WriteLine(keys+" : "+String.Concat(first,"\t",last));
+    }
+**************
+1600,16 : 0.2483791	0.267338
+1600,32 : 0.2410985	0.2694749
+1600,64 : 0.2387623	0.2851122
+1600,128 : 0.2401249	0.284892
+1600,256 : 0.2377481	0.2898143
+6400,16 : 0.9488394	1.0602089
+6400,32 : 0.9408716	1.0298632
+6400,64 : 0.9492037	1.0540671
+6400,128 : 0.9231941	1.0844957
+6400,256 : 0.9380697	1.1228631
+25600,16 : 3.7514215	3.8707457
+25600,32 : 3.6357461	3.995129
+25600,64 : 3.6796078	4.0457129
+25600,128 : 3.6355492	4.1914374
+25600,256 : 3.3039604	4.3059226
+102400,16 : 14.7847348	15.5871279
+102400,32 : 14.596787	15.9029999
+102400,64 : 14.7599273	16.4740968
+102400,128 : 14.7863604	16.7067094
+409600,16 : 59.288316	65.5599822
+409600,32 : 59.8634291	63.3261866
+409600,64 : 59.5651698	65.6864686
+
+==============
+//int cluster = 0;
+//foreach(var datapoint in EnergyFlux){
+//    string keys   = String.Join(",",datapoint.Key);
+//    string values = String.Join(",",datapoint.Value[cluster]);
+//    Console.WriteLine(keys+" : "+values);
+//    Console.WriteLine("\n");
+//    }
+**************
+==============
+using System.IO;
+**************
+(1,2): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+using (StreamWriter sw = new StreamWriter(String.Format("clustering_preopt_forced.txt")))
+{ 
+    sw.WriteLine("PARAMETER cores cells");
+    sw.WriteLine("POINTS (16 1600) (32 1600)  (64 1600) (128 1600) (256 1600)");
+    sw.WriteLine("POINTS (16 6400) (32 6400)  (64 6400) (128 6400) (256 6400)");
+    sw.WriteLine("POINTS (16 25600) (32 25600)  (64 25600) (128 25600) (256 25600)");
+    sw.WriteLine("POINTS (16 102400) (32 102400)  (64 102400) (128 102400) ");
+    sw.WriteLine("POINTS (16 409600) (32 409600)  (64 409600)");
+    sw.WriteLine();
+    
+    for(int icluster=0;icluster<ViscosityFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION viscosity_flux_cluster_{0}",icluster));
+        sw.WriteLine("#DATA <data for 16, 1600, repetition 1-4> ...");
+        sw.WriteLine("#DATA <data for 16, 1600, repetition 1-4> ...");
+        sw.WriteLine("#...");
+        sw.WriteLine("#DATA <data for 32, 6400, repetition 1-4> ...");
+        sw.WriteLine("#...");
+        foreach(var datapoint in ViscosityFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<DensityFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION density_flux_cluster_{0}",icluster));
+        foreach(var datapoint in DensityFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<MomentumFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION momentum_flux_cluster_{0}",icluster));
+        foreach(var datapoint in MomentumFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<EnergyFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION energy_flux_cluster_{0}",icluster));
+        foreach(var datapoint in EnergyFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+}
+**************
+==============
+using (StreamWriter sw = new StreamWriter(String.Format("clustering64_postopt_default.txt")))
+{ 
+    sw.WriteLine("PARAMETER cores cells");
+    sw.WriteLine("POINTS (4 1600) (8 1600)  (16 1600) (32 1600) (64 1600)");
+    sw.WriteLine("POINTS (4 6400) (8 6400)  (16 6400) (32 6400) (64 6400)");
+    sw.WriteLine("POINTS (4 25600) (8 25600)  (16 25600) (32 25600) (64 25600)");
+    sw.WriteLine("POINTS (4 102400) (8 102400)  (16 102400) (32 102400) (64 102400)");
+    sw.WriteLine("POINTS (4 409600) (8 409600)  (16 409600) (32 409600) (64 409600)");
+    sw.WriteLine();
+    
+    for(int icluster=0;icluster<ViscosityFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION viscosity_flux_cluster_{0}",icluster));
+        sw.WriteLine("#DATA <data for 4, 1600, repetition 1-4> ...");
+        sw.WriteLine("#DATA <data for 8, 1600, repetition 1-4> ...");
+        sw.WriteLine("#...");
+        sw.WriteLine("#DATA <data for 4, 6400, repetition 1-4> ...");
+        sw.WriteLine("#...");
+        foreach(var datapoint in ViscosityFlux){
+            try{
+                string values = String.Join("\t",datapoint.Value[icluster]);
+                sw.WriteLine("DATA\t"+values);
+            }
+            catch(Exception e){
+                Console.WriteLine(e.Message);
+            }
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<DensityFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION density_flux_cluster_{0}",icluster));
+        foreach(var datapoint in DensityFlux){
+            try{
+                string values = String.Join("\t",datapoint.Value[icluster]);
+                sw.WriteLine("DATA\t"+values);
+            }
+            catch(Exception e){
+                Console.WriteLine(e.Message);
+            }
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<MomentumFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION momentum_flux_cluster_{0}",icluster));
+        foreach(var datapoint in MomentumFlux){
+            try{
+                string values = String.Join("\t",datapoint.Value[icluster]);
+                sw.WriteLine("DATA\t"+values);
+            }
+            catch(Exception e){
+                Console.WriteLine(e.Message);
+            }
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<EnergyFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION energy_flux_cluster_{0}",icluster));
+        foreach(var datapoint in EnergyFlux){
+            try{
+                string values = String.Join("\t",datapoint.Value[icluster]);
+                sw.WriteLine("DATA\t"+values);
+            }
+            catch(Exception e){
+                Console.WriteLine(e.Message);
+            }
+        }
+        sw.WriteLine();
+    }
+}
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

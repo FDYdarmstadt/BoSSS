@@ -765,10 +765,10 @@ namespace BoSSS.Solution {
 
             //This workaround takes into account, the wierd structure of the ChangeOfBasis-thing
             //prohibits out of bounds exception
-            Func<int, int, int[]> getDGs = delegate (int iUnknown, int iLevel) {
-                int tmpUnknown = iUnknown < MGChangeOfBasis.Length ? iUnknown : MGChangeOfBasis.Length - 1;
-                int tmpLevel = iLevel < MGChangeOfBasis[tmpUnknown].Length ? iLevel : MGChangeOfBasis[tmpUnknown].Length - 1;
-                return MGChangeOfBasis[tmpUnknown][tmpLevel].DegreeS;
+            Func<int, int, int[]> getDGs = delegate (int iLevel, int iVar) {
+                int tLevel = iLevel < MGChangeOfBasis.Length ? iLevel : MGChangeOfBasis.Length - 1;
+                int tVar = iVar < MGChangeOfBasis[tLevel].Length ? iVar : MGChangeOfBasis[tLevel].Length - 1;
+                return MGChangeOfBasis[tLevel][tVar].DegreeS;
             };
 
             var MGBasis = MultigridBasis.ToArray();
@@ -778,10 +778,10 @@ namespace BoSSS.Solution {
             for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
                 LocalDOF[iLevel] = 0;
                 int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                int[] p_at_lvl = getDGs(0, iLevel);
+                
                 for (int iCell = 0; iCell < NoOfCells; iCell++) {
                     for (int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
-                        int pmax = p_at_lvl[iVar];
+                        int pmax = getDGs(iLevel, iVar)[0];
                         try {
                             LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
                         } catch (Exception e) {

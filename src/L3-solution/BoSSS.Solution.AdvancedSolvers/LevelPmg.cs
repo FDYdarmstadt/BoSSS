@@ -135,7 +135,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
                     }
                 } else {
-                    P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix);
+                    P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.SELF);
 
                     hiSolver = new PARDISOSolver() {
                         CacheFactorization = true,
@@ -146,7 +146,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix);
+            var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.WORLD);
 
             intSolver = new PARDISOSolver() {
                 CacheFactorization = true,

@@ -251,12 +251,22 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
+
         /// <summary>
         /// If you just want to get the <see cref="BlockMsrMatrix"/>, which corresponds to this <see cref="BlockMask"/>.
         /// This is the method to choose!
         /// </summary>
-        /// <returns></returns>
+        /// <returns>submatrix on MPI_Comm.SELF</returns>
         public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source) {
+            return GetSubBlockMatrix(source, csMPI.Raw._COMM.SELF);
+        }
+
+        /// <summary>
+        /// If you just want to get the <see cref="BlockMsrMatrix"/>, which corresponds to this <see cref="BlockMask"/>.
+        /// This is the method to choose! In addition, MPI communicator can be defined via <paramref name="comm"/>.
+        /// </summary>
+        /// <returns>submatrix on <paramref name="comm"/></returns>
+        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, MPI_Comm comm) {
             if (source == null)
                 throw new ArgumentNullException();
             if (source.NoOfRows < BMLoc.LocalDOF)
@@ -265,7 +275,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             BlockMsrMatrix target;
             if (m_includeExternalCells) {
 
-                BlockPartitioning targetBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF);
+               BlockPartitioning targetBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, comm);
 
                 //make an extended block dummy to fit local and external blocks
                 target = new BlockMsrMatrix(targetBlocking, targetBlocking);
