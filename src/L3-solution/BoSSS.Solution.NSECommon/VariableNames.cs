@@ -73,11 +73,12 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
-        ///  MixtureFracion solver.
+        ///  MixtureFraction solver.
         /// Used as a pre-step for calculating reactive flows.
-        /// Equations for continuity, momentum and for a passive scalar Z are solved.
+        /// Equations for continuity, momentum and for a passive scalar Z are solved,
+        /// while the Temperature and mass fraction fields are approximated by the Burke-Schumann limit
         /// </summary>
-        MixtureFracion,
+        MixtureFraction,
 
 
     }
@@ -926,6 +927,10 @@ namespace BoSSS.Solution.NSECommon {
         /// variable name for the MassFraction of component 0
         /// </summary>
         public const string MassFraction0 = "MassFraction0";
+        /// <summary>
+        /// variable name for the mixture fraction (z) 
+        /// </summary>
+        public const string MixtureFraction = "MixtureFraction";
 
         /// <summary>
         /// variable name for the MassFraction of component 0 at linearization point

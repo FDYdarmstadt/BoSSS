@@ -128,16 +128,16 @@ namespace BoSSS.Solution.NSECommon {
                 //Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
                 double rho = 1.0;
 
-                //if (rhoOne) {
-                //    rho = 1;
-                //    return rho;
-                //} else {              
-                //    if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    
-                //        rho = ThermodynamicPressureValue / phi[0];
-                //    } else {
-                //        rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-                //    }
-                //}
+                if (rhoOne) {
+                    rho = 1;
+                    return rho;
+                } else {
+                    if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    
+                        rho = ThermodynamicPressureValue / phi[0];
+                    } else {
+                        rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                    }
+                }
 
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
@@ -157,7 +157,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns>
         /// The viscosity of air at a given temperature in Kg/(m.s)
         /// <see</returns>
-        public double SutherlandViscosityDimensional(double T) {
+        public double getViscosityDim(double T) {
 
             double S = 110.56;
             double T0 = 273.15; // 
@@ -318,6 +318,25 @@ namespace BoSSS.Solution.NSECommon {
                     }
                 }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
             return (InitialMass / omega.IntegralOver(null));
+        }
+
+
+
+
+
+
+
+        /// <summary>
+        /// Returns value of the parameter Lambda/cp
+        /// Can be used for calculating the viscosity if the Prandtl number is known (visc = Pr*(lambda/cp))
+        /// and also for calculating (rho*Diff_i = 1/Le*(lambda/cp)) if the lewis number is constant.
+        /// </summary>
+        /// <param name="Temperature"></param>
+        /// <returns></returns>
+        public double get_LambdaCp_Term(double Temperature) {          
+            double TREF = 298;
+            double res = 2.58e-5 * (Temperature / TREF); // in Kg/(m.s)
+            return res;
         }
 
         /// <summary>

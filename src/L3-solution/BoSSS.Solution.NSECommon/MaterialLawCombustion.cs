@@ -103,12 +103,13 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// Calculates heat capacity of air for a given temperature and composition.
+        /// Constant pressure heat capacity (c_p), in [KJ/Kg K] 
         /// </summary>
         /// <param name="T">Temperature, in Kelvin</param>
         /// <param name="Y_N2_air">Mass fraction of nitrogen in air</param>
         /// <param name="Y_O2_air">Mass fraction of oxygen in air</param>
-        /// <returns>Constant pressure heat capacity (c_p), in [KJ/mol K] </returns>
-         public double get_cp_air(double T, double Y_N2_air, double Y_O2_air) {
+        /// <returns>Constant pressure heat capacity (c_p), in [KJ/Kmol K] </returns>
+        public double get_cp_air(double T, double Y_N2_air, double Y_O2_air) {
             double cp = 0;
             double R = 8.314; // Gas constant, J/mol K 
             // Cp correlations for O2 and N2. The polynomials used are the NASA Polynomials for cp. http://combustion.berkeley.edu/gri-mech/version30/files30/thermo30.dat
@@ -137,9 +138,13 @@ namespace BoSSS.Solution.NSECommon {
             } else {
                 throw new Exception("äh?");
             }
-            cp *= R / 1000; // cp in KJ/mol K
+            double MW_O2 = 32;
+            double MW_N2 = 28;
+            double avgMW = 1 / (Y_O2_air / MW_O2 + Y_N2_air/MW_N2);
+            cp *= R / avgMW; // cp in KJ/Kg K
             return cp; // 
         }
+
 
 
     }

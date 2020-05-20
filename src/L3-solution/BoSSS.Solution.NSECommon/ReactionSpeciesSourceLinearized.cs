@@ -129,7 +129,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Reaction species source in mass transport equation
     /// </summary>
-    public class ReactionSpeciesSourceLinearizedJacobi : IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
+    public class ReactionSpeciesSourceJacobi : IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
         string[] m_ArgumentOrdering;
 
         double[] StoichiometricCoefficients;
@@ -151,7 +151,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="EoS">MaterialLawCombustion</param>  
         /// <param name="NumberOfReactants">The number of reactants (i.e. ns)</param> 
         /// <param name="SpeciesIndex">Index of the species being balanced. (I.e. 0 for fuel, 1 for oxidizer, 2 for CO2, 3 for water)</param> 
-        public ReactionSpeciesSourceLinearizedJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients , double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex) {
+        public ReactionSpeciesSourceJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients , double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex) {
             m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfReactants - 1));// Y4 is not a variable!!!!;
             this.StoichiometricCoefficients = StoichiometricCoefficients;
             this.ReactionRateConstants = ReactionRateConstants;
@@ -218,15 +218,16 @@ namespace BoSSS.Solution.NSECommon {
             double ReactionRate = 0.0;
              rho = EoS.GetDensity(U);
 
-
-            ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
+            double Tb = 2300/300; 
+            //ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
+            ReactionRate = m_Da * Math.Exp(Ta / Tb*0 - Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
 
             Debug.Assert(!double.IsNaN(ReactionRate));
             Debug.Assert(!double.IsInfinity(ReactionRate));
             if (ReactionRate < 0)
                 ReactionRate = 0;
 
-
+ 
 
             return -MolarMasses[SpeciesIndex] *  StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
         }
