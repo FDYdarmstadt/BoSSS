@@ -43,36 +43,48 @@ namespace CNS.ShockCapturing {
             this.sensorLimit = sensorLimit;
         }
 
-        public void UpdateSensorValues(IEnumerable<DGField> fieldSet)
+        public void UpdateSensorValues(DGField fieldToTest)
         {
-            using (new FuncTrace())
+            int degree = fieldToTest.Basis.Degree;
+            int noOfCells = fieldToTest.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+
+            if (sensorValues == null || sensorValues.Length != noOfCells)
             {
-                DGField fieldToTest = fieldSet.
-                    Where(f => f.Identification == m_sensorVariableName).
-                    Single();
-                int degree = fieldToTest.Basis.Degree;
-                int noOfCells = fieldToTest.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-
-                if (sensorValues == null || sensorValues.Length != noOfCells)
-                {
-                    sensorValues = new double[noOfCells];
-                }
-
-                CellMask cellMask = CellMask.GetFullMask(fieldToTest.GridDat);
-                foreach (int cell in cellMask.ItemEnum)
-                {
-                    double variance = 0.0;
-                    foreach (int coordinate in fieldToTest.Basis.GetPolynomialIndicesForDegree(cell, degree))
-                    {
-                        variance += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
-                    }
-                    double volume = fieldToTest.GridDat.iLogicalCells.GetCellVolume(cell);
-
-                    double result = variance / volume;
-                    
-                    sensorValues[cell] = result;
-                }
+                sensorValues = new double[noOfCells];
             }
+
+            CellMask cellMask = CellMask.GetFullMask(fieldToTest.GridDat);
+            foreach (int cell in cellMask.ItemEnum)
+            {
+                double numerator = 0.0;
+                foreach (int coordinate in fieldToTest.Basis.GetPolynomialIndicesForDegree(cell, degree))
+                {
+                    numerator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
+                }
+
+                double denominator = 0.0;
+                for (int coordinate = 0; coordinate < fieldToTest.Basis.Length; coordinate++)
+                {
+                    denominator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
+                }
+
+                double result;
+                if (denominator == 0.0) //say what?!
+                {
+                    result = 0.0;
+                }
+                else
+                {
+                    result = numerator / denominator;
+                }
+
+                //Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
+                //Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
+                //Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
+
+                sensorValues[cell] = result;
+            }
+
         }
 
         public void UpdateSensorValues(IEnumerable<DGField> fieldSet, ISpeciesMap speciesMap, CellMask cellMask) {
