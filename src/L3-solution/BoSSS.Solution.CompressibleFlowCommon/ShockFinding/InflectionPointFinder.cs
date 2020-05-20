@@ -58,7 +58,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             get;
             private set;
         }
-        private readonly ISessionInfo session;
+        private readonly ITimestepInfo tsi;
 
         private bool patchRecoveryGradient;
         private bool patchRecoveryHessian;
@@ -94,16 +94,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// Constructor
         /// </summary>
         /// <param name="sessionPath">Path where everything is stored</param>
-        /// <param name="session">The session from the database</param>
-        public InflectionPointFinder(string sessionPath, ISessionInfo session) {
+        /// <param name="tsi">A time step from the database</param>
+        public InflectionPointFinder(string sessionPath, ITimestepInfo tsi) {
             this.SessionPath = sessionPath;
-            this.session = session;
+            this.tsi = tsi;
 
-            ITimestepInfo myTimestep = session.Timesteps.Last();
-            this.gridData = (GridData)myTimestep.Fields.First().GridDat;
-            this.densityField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
-            this.avField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
-            this.levelSetField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
+            this.gridData = (GridData)tsi.Fields.First().GridDat;
+            this.densityField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+            this.avField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
+            this.levelSetField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
         }
 
         /// <summary>

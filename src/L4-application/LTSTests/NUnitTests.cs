@@ -60,7 +60,7 @@ namespace LTSTests {
                 //maxL2error = 1.94E-05;   // old (Stephan)
                 //maxL2error = 1.72669556339186E-05 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input 
                 //maxL2error = 1.7285117532218E-05 + 1e-14; // dt=dt_input
-                maxL2error = 1.7285117532218E-05 + 1e-16; // dt=dt_input
+                maxL2error = 1.72851175323E-05 + 1e-16; // dt=dt_input
             else if (ALTS)
                 //maxL2error = 1.8958107158594E-05 + 1e-14; //if (TimestepNo < 3) dt = dt_input / 3, else dt = dt_input
                 //maxL2error = 1.89762864341145E-05 + 1e-14; // dt=dt_input

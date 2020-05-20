@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -84,6 +84,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
       <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AdvancedSolverTests\AdvancedSolverTests.csproj">
+      <Project>{196f67af-062f-45eb-8598-3bc442c971e9}</Project>
+      <Name>AdvancedSolverTests</Name>
     </ProjectReference>
     <ProjectReference Include="..\ALTSTests\ALTSTests.csproj">
       <Project>{76ef162b-6f5f-48b7-8c24-40fb80d9c8c1}</Project>

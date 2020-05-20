@@ -87,6 +87,7 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
@@ -102,7 +103,6 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(MPITest.Program)
                     };
             }
@@ -112,6 +112,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(CNS.Program),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
@@ -132,7 +133,8 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
-                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }
@@ -144,9 +146,9 @@ namespace PublicTestRunner {
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
                         (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
-                        //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
-                        //(typeof(ALTSTests.Program), 4),
-                        //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
+                        (typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
+                        (typeof(ALTSTests.Program), 4),
+                        (typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
                         (typeof(HilbertTest.HilbertTest), 4),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
                     };
@@ -192,16 +194,20 @@ namespace PublicTestRunner {
         static Assembly[] GetAllAssemblies() {
             var R = new HashSet<Assembly>();
 
-            foreach (var t in TestTypeProvider.FullTest) {
-                //Console.WriteLine("test type: " + t.FullName);
-                var a = t.Assembly;
-                //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
-                bool added = R.Add(a);
-                //Console.WriteLine("  added? " + added);
+            if (TestTypeProvider.FullTest != null) {
+                foreach (var t in TestTypeProvider.FullTest) {
+                    //Console.WriteLine("test type: " + t.FullName);
+                    var a = t.Assembly;
+                    //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
+                    bool added = R.Add(a);
+                    //Console.WriteLine("  added? " + added);
+                }
             }
 #if !DEBUG
-            foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
-                R.Add(t.Assembly);
+            if (TestTypeProvider.ReleaseOnlyTests != null) {
+                foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
+                    R.Add(t.Assembly);
+                }
             }
 #endif
 
@@ -213,20 +219,24 @@ namespace PublicTestRunner {
         static (Assembly Asbly, int NoOfProcs)[] GetAllMpiAssemblies() {
             var R = new List<(Assembly Asbly, int NoOfProcs)>();
 
-            foreach (var t in TestTypeProvider.MpiFullTests) {
-                //Console.WriteLine("test type: " + t.type.FullName + " (" + t.NoOfProcs + " procs).");
-                //Console.WriteLine("  assembly: " + t.type.Assembly.FullName + " @ " + t.type.Assembly.Location);
-                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                if (!contains) {
-                    R.Add((t.type.Assembly, t.NoOfProcs));
+            if (TestTypeProvider.MpiFullTests != null) {
+                foreach (var t in TestTypeProvider.MpiFullTests) {
+                    //Console.WriteLine("test type: " + t.type.FullName + " (" + t.NoOfProcs + " procs).");
+                    //Console.WriteLine("  assembly: " + t.type.Assembly.FullName + " @ " + t.type.Assembly.Location);
+                    bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                    if (!contains) {
+                        R.Add((t.type.Assembly, t.NoOfProcs));
+                    }
+                    //Console.WriteLine("  added? " + (!contains));
                 }
-                //Console.WriteLine("  added? " + (!contains));
             }
 #if !DEBUG
-            foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
-                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                if (!contains) {
-                    R.Add((t.type.Assembly, t.NoOfProcs));
+            if (TestTypeProvider.MpiReleaseOnlyTests != null){
+                foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
+                    bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                    if (!contains) {
+                        R.Add((t.type.Assembly, t.NoOfProcs));
+                    }
                 }
             }
 #endif
@@ -362,7 +372,7 @@ namespace PublicTestRunner {
                 tracerfile.Close();
                 tracerfile.Dispose();
             } catch (Exception e) {
-                Console.Error.WriteLine(e.GetType().Name + " during closing of tracing: " + e.Message);
+                //Console.Error.WriteLine(e.GetType().Name + " during closing of tracing: " + e.Message);
             }
         }
 
@@ -417,25 +427,29 @@ namespace PublicTestRunner {
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 {
                     var assln = GetAllAssemblies();
-                    foreach (var a in assln) {
-                        if (FilterAssembly(a, AssemblyFilter)) {
-                            var allTst4Assi = GetTestsInAssembly(a);
-                            for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                    if (assln != null){
+                        foreach (var a in assln) {
+                            if (FilterAssembly(a, AssemblyFilter)) {
+                                var allTst4Assi = GetTestsInAssembly(a);
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                                }
                             }
                         }
                     }
                 }
                 {
                     var ParAssln = GetAllMpiAssemblies();
-                    foreach (var TT in ParAssln) {
-                        if (FilterAssembly(TT.Asbly, AssemblyFilter)) {
+                    if (ParAssln != null){
+                        foreach (var TT in ParAssln) {
+                            if (FilterAssembly(TT.Asbly, AssemblyFilter)) {
 
-                            var a = TT.Asbly;
-                            var allTst4Assi = GetTestsInAssembly(a);
+                                var a = TT.Asbly;
+                                var allTst4Assi = GetTestsInAssembly(a);
 
-                            for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                                }
                             }
                         }
                     }
@@ -489,6 +503,7 @@ namespace PublicTestRunner {
 
 
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
+                
 
                 const double TimeOutSec = 200 * 60;
                 using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
@@ -502,6 +517,16 @@ namespace PublicTestRunner {
                             for (int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
                                 var s = jj.job.Status;
+
+                                {
+                                    string resultArg = "--result=";
+                                    string resArg = jj.job.EnvironmentVars.Values.Single(arg => arg.StartsWith(resultArg));
+                                    string _resFile = resArg.Replace(resultArg, "");
+                                    if(_resFile != jj.ResFile) {
+                                        throw new ApplicationException("internal mismatch in result file name");
+                                    }
+                                }
+
 
                                 if (s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
                                     // message:
@@ -559,7 +584,7 @@ namespace PublicTestRunner {
                         using (new BlockTrace("Sleeping", tr)) {
                             Thread.Sleep(2 * 60 * 1000); // sleep for 2 minutes
                         }
-                        UpdateFinishedJobs();
+                        var ll = UpdateFinishedJobs();
                         RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
                         Console.WriteLine("Remaining minutes until timeout: " + Math.Round(RestTime/60.0));
                     }
@@ -661,13 +686,29 @@ namespace PublicTestRunner {
                 ot.WriteLine("########################################################################");
 
                 ot.WriteLine("[[[Stdout: ");
+                string stdout = null;
                 try {
+                    stdout = j.Stdout;
                     ot.WriteLine(j.Stdout);
                 } catch (Exception e) {
                     ot.WriteLine($"{e.GetType().Name} during reading of stdout stream: {e.Message}");
                     ot.WriteLine(e.StackTrace);
                 }
                 ot.WriteLine("]]]");
+
+                using(var str = new StringReader(stdout)) {
+                    string magic = "arg #3 override from environment variable 'BOSSS_ARG_3': --result=";
+                    for(string line = str.ReadLine(); line != null; line = str.ReadLine()) {
+                        if(line.StartsWith(magic)) {
+                            string file = line.Replace(magic, "");
+                            if(file != ResFile) {
+                                throw new ArgumentException("Internal result file mismatch: " + file + " vs. " + ResFile + " on job " + j.BatchProcessorIdentifierToken);
+                            }
+
+                            break;
+                        }
+                    }
+                }
 
                 try {
                     string stderr = j.Stderr;
@@ -815,7 +856,7 @@ namespace PublicTestRunner {
 
                 int i = args.IndexWhere(a => a.StartsWith("--result="));
                 string arg_i = args[i];
-                string resFileName = Path.GetFileNameWithoutExtension(arg_i.Replace("--result=", ""));
+                string resFileName = arg_i.Replace("--result=", "");
                 args[i] = "--result=" + MpiResFileNameMod( MpiRank, MpiSize, resFileName);
 
 
@@ -870,6 +911,8 @@ namespace PublicTestRunner {
 
             if (MpiSize == 1)
                 return resFileName;
+
+            resFileName = Path.GetFileNameWithoutExtension(resFileName);
 
             string newResFileName = resFileName + "." + MpiRank + "of" + MpiSize + ".xml";
             return newResFileName;

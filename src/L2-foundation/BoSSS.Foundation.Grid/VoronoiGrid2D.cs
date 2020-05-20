@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Diagnostics;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Aggregation;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Foundation.Grid.Voronoi.Meshing;
-using BoSSS.Platform;
+using System;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi
 {
@@ -40,10 +33,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// <summary>
         /// Creates a random voronoi mesh inside a polygon.
         /// </summary>
-        /// <param name="PolygonBoundary">
+        /// <param name="polygonBoundary">
         /// Outer boundary of mesh. Is expected to be closed and must be non-overlapping.
         /// </param>
-        /// <param name="NoOfLyyodsIter">
+        /// <param name="noOfLyyodsIter">
         /// Number of smoothing iterations.
         /// </param>
         /// <param name="noOfNodeSeed">
@@ -51,69 +44,137 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// </param>
         /// <returns></returns>
         public static VoronoiGrid Polygonal(
-            Vector[] PolygonBoundary,
-            int NoOfLyyodsIter,
+            Vector[] polygonBoundary,
+            int noOfLyyodsIter,
             int noOfNodeSeed)
         {
-            //creates random nodes in bounding box of PolygonBoundary, first node ist first entry of polygon boundary
-            Vector[] boundingBox = BoundingBox(PolygonBoundary);
-            MultidimensionalArray nodePositions = RandomVoronoiNodesInBoundingBox(boundingBox, noOfNodeSeed);
-            nodePositions.SetRowPt(0, PolygonBoundary[0]);
-            VoronoiNodes nodes = new VoronoiNodes(nodePositions);
-
+            Vector[] boundingBox = BoundingBox(polygonBoundary);
             VoronoiMesher.Settings mesherSettings = new VoronoiMesher.Settings
             {
-                GridInfo = new VoronoiInfo
+                Boundary = new VoronoiBoundary()
                 {
                     BoundingBox = boundingBox,
-                    Boundary = PolygonBoundary
+                    Polygon = polygonBoundary,
+                    EdgeTags = DefaultEdgeTags(polygonBoundary.Length),
                 },
-                NumberOfLloydIterations = NoOfLyyodsIter
+                NumberOfLloydIterations = noOfLyyodsIter
             };
 
-            VoronoiMesher mesher = new VoronoiMesher();
-            return mesher.CreateGrid(nodes, mesherSettings);
+            VoronoiNodes nodes = GetVoronoiNodesIn(mesherSettings.Boundary, noOfNodeSeed);
+            VoronoiMesher mesher = new VoronoiMesher(mesherSettings);
+
+            return mesher.CreateGrid(nodes, 0);
+        }
+
+        //creates random nodes in bounding box of PolygonBoundary, 
+        //first node coincides with first corner of polygon boundary
+        static VoronoiNodes GetVoronoiNodesIn(VoronoiBoundary boundary, int amount)
+        {
+            MultidimensionalArray nodePositions = RandomVoronoiNodesInBoundingBox(boundary.BoundingBox, amount);
+            nodePositions.SetRowPt(0, boundary.Polygon[0] + new Vector(0.01, - 0.01));
+            VoronoiNodes nodes = new VoronoiNodes(nodePositions);
+            return nodes;
         }
 
         /// <summary>
         /// Creates a voronoi mesh inside a polygon.
         /// </summary>
-        /// <param name="Nodes">
-        /// Voronoi nodes: Center of each agglomerated cell. Will not be considered if outside of PolygonBoundary.
+        /// <param name="boundary">
+        /// Specifies polygonal boundary, edgetags, bounding box, ...
         /// </param>
-        /// <param name="PolygonBoundary">
-        /// Outer boundary of mesh. Is expected to be closed and must be non-overlapping.
-        /// </param>
-        /// <param name="NoOfLyyodsIter">
+        /// <param name="noOfLyyodsIter">
         /// Number of smoothing iterations.
         /// </param>
-        /// <param name="FirstCellNode_Indice">
+        /// <param name="noOfNodeSeed">
+        /// Number of random nodes that are placed in the bounding box of the PolygonBoundary.
+        /// </param>
+        /// <returns></returns>
+        public static VoronoiGrid Polygonal(
+            VoronoiBoundary boundary, 
+            int noOfLyyodsIter,
+            int noOfNodeSeed)
+        {
+            if (boundary.BoundingBox == null)
+            {
+                boundary.BoundingBox = BoundingBox(boundary.Polygon);
+            }
+            VoronoiMesher.Settings mesherSettings = new VoronoiMesher.Settings
+            {
+                Boundary = boundary,
+                NumberOfLloydIterations = noOfLyyodsIter,
+            };
+
+            VoronoiNodes nodes = GetVoronoiNodesIn(mesherSettings.Boundary, noOfNodeSeed);
+            VoronoiMesher mesher = new VoronoiMesher(mesherSettings);
+            return mesher.CreateGrid(nodes, 0);
+        }
+
+        static byte[] DefaultEdgeTags(int count)
+        {
+            byte[] edgetag = new byte[count];
+            edgetag.SetAll((byte)1);
+            return edgetag;
+        }
+
+        /// <summary>
+        /// Creates a voronoi mesh inside a polygon.
+        /// </summary>
+        /// <param name="nodePositions">
+        /// Voronoi nodes: Center of each agglomerated cell. Will not be considered if outside of PolygonBoundary.
+        /// </param>
+        /// <param name="polygonBoundary">
+        /// Outer boundary of mesh. Is expected to be closed and must be non-overlapping.
+        /// </param>
+        /// <param name="noOfLyyodsIter">
+        /// Number of smoothing iterations.
+        /// </param>
+        /// <param name="FirstCellNodeIndice">
         /// Indice of node where the algorithm will start looking for the first Vector of PolygonBoundary.
         /// </param>
         /// <returns></returns>
         public static VoronoiGrid Polygonal(
             MultidimensionalArray nodePositions,
-            Vector[] PolygonBoundary,
-            int NoOfLyyodsIter,
-            int FirstCellNode_Indice)
+            Vector[] polygonBoundary,
+            int noOfLyyodsIter,
+            int firstCellNodeIndice)
         {
             //Short hack
             VoronoiNodes nodes = new VoronoiNodes(nodePositions);
-            Vector[] boundingBox = BoundingBox(PolygonBoundary);
+            Vector[] boundingBox = BoundingBox(polygonBoundary);
 
             VoronoiMesher.Settings settings = new VoronoiMesher.Settings
             {
-                GridInfo = new VoronoiInfo
+                Boundary = new VoronoiBoundary()
                 {
                     BoundingBox = boundingBox,
-                    Boundary = PolygonBoundary
+                    Polygon = polygonBoundary,
+                    EdgeTags = DefaultEdgeTags(polygonBoundary.Length),
                 },
-                NumberOfLloydIterations = NoOfLyyodsIter,
-                FirstCellNode_indice = FirstCellNode_Indice
+                NumberOfLloydIterations = noOfLyyodsIter,
             };
 
-            VoronoiMesher mesher = new VoronoiMesher();
-            return mesher.CreateGrid(nodes, settings);
+            VoronoiMesher mesher = new VoronoiMesher(settings);
+            return mesher.CreateGrid(nodes, firstCellNodeIndice);
+        }
+
+        public static VoronoiGrid Polygonal(
+            MultidimensionalArray nodePositions, 
+            VoronoiBoundary boundary, 
+            int noOfLyyodsIter,
+            int firstCellNodeIndice)
+        {
+            VoronoiNodes nodes = new VoronoiNodes(nodePositions);
+            if(boundary.BoundingBox == null)
+            {
+                boundary.BoundingBox = BoundingBox(boundary.Polygon);
+            }
+            VoronoiMesher.Settings settings = new VoronoiMesher.Settings
+            {
+                Boundary = boundary,
+                NumberOfLloydIterations = noOfLyyodsIter,
+            };
+            VoronoiMesher mesher = new VoronoiMesher(settings);
+            return mesher.CreateGrid(nodes, firstCellNodeIndice);
         }
 
         static Vector[] BoundingBox(Vector[] polygon)
@@ -181,7 +242,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             Debug.Assert(boundingBox.Length > 0);
             int dim = boundingBox[0].Dim;
             MultidimensionalArray positions = MultidimensionalArray.Create(nSeedVoronois, dim);
-            Random rnd = new Random();
+            Random rnd = new Random(0);
 
             double[] scales = ScalesFromRandomIntervalToBoundingBox(boundingBox);
             Vector center = CenterOfBoundingBox(boundingBox);

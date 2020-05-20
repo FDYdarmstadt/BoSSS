@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution.Statistic;
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,44 @@ namespace BoSSS.Solution.Statistic {
     /// L2 and H1 distances for DG fields on different meshes
     /// </summary>
     public static class DGField_Norms {
+
+        /// <summary>
+        /// Projects a DG field <paramref name="source"/>, which may be defined on some different mesh,
+        /// onto the DG field <paramref name="target"/>.
+        /// </summary>
+        static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
+            using (new FuncTrace()) {
+                Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
+                int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
+                var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
+
+                if (object.ReferenceEquals(source.GridDat, target.GridDat)) {
+                    // +++++++++++++++++
+                    // equal grid branch
+                    // +++++++++++++++++
+
+                    target.ProjectField(alpha, source.Evaluate, CompQuadRule);
+
+                } else {
+                    // +++++++++++++++++++++
+                    // different grid branch
+                    // +++++++++++++++++++++
+
+                    var eval = new FieldEvaluation(GridHelper.ExtractGridData(source.GridDat));
+
+                    void SourceEval(MultidimensionalArray input, MultidimensionalArray output) {
+                        int L = input.GetLength(0);
+                        Debug.Assert(output.GetLength(0) == L);
+
+                        eval.Evaluate(1.0, new DGField[] { source }, input, 0.0, output.ResizeShallow(L, 1));
+
+                    }
+
+                    target.ProjectField(alpha, SourceEval, CompQuadRule);
+                }
+            }
+        }
+
 
 
         /// <summary>
@@ -40,7 +79,7 @@ namespace BoSSS.Solution.Statistic {
             if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                 throw new ArgumentException("Both fields must have the same spatial dimension.");
 
-            if(object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
+            if (object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
                 // ++++++++++++++
                 // equal meshes
                 // ++++++++++++++
@@ -52,11 +91,11 @@ namespace BoSSS.Solution.Statistic {
                     // domain volume
                     double Vol = 0;
                     int J = A.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for(int j = 0; j < J; j++) {
+                    for (int j = 0; j < J; j++) {
                         Vol += A.GridDat.iGeomCells.GetCellVolume(j);
                     }
                     Vol = Vol.MPISum();
-                    
+
                     // mean value
                     double mean = A.GetMeanValueTotal(domain) - B.GetMeanValueTotal(domain);
 
@@ -64,7 +103,7 @@ namespace BoSSS.Solution.Statistic {
                     // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
                     return Math.Sqrt(errPow2 - mean * mean * Vol);
                 } else {
-                     return Math.Sqrt(errPow2);
+                    return Math.Sqrt(errPow2);
                 }
 
             } else {
@@ -74,14 +113,14 @@ namespace BoSSS.Solution.Statistic {
 
 
                 DGField fine, coarse;
-                if(A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+                if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
                     fine = A;
                     coarse = B;
                 } else {
                     fine = B;
                     coarse = A;
                 }
-                
+
                 var CompQuadRule = scheme.SaveCompile(coarse.GridDat, maxDeg * 3 + 3); // use over-integration
 
                 var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
@@ -91,25 +130,25 @@ namespace BoSSS.Solution.Statistic {
                     Debug.Assert(output.GetLength(0) == L);
 
                     eval.Evaluate(1.0, new DGField[] { fine }, input, 0.0, output.ResizeShallow(L, 1));
-                   
+
                 }
 
 
-                double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride:int.MaxValue);
+                double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
 
-                if(IgnoreMeanValue == true) {
-                    
+                if (IgnoreMeanValue == true) {
+
                     // domain volume
                     double Vol = 0;
                     int J = coarse.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for(int j = 0; j < J; j++) {
+                    for (int j = 0; j < J; j++) {
                         Vol += coarse.GridDat.iGeomCells.GetCellVolume(j);
                     }
                     Vol = Vol.MPISum();
 
                     // mean value times domain volume 
-                    double meanVol = coarse.LxError(FineEval, (double[] X, double fC, double fF) => fC - fF, CompQuadRule, Quadrature_ChunkDataLimitOverride:int.MaxValue);
-                    
+                    double meanVol = coarse.LxError(FineEval, (double[] X, double fC, double fF) => fC - fF, CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
+
 
                     // Note: for a field p, we have 
                     // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
@@ -139,7 +178,7 @@ namespace BoSSS.Solution.Statistic {
 
             double Acc = 0.0;
             Acc += L2Distance(A, B, false, scheme).Pow2();
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 ConventionalDGField dA_dd = new SinglePhaseField(A.Basis);
                 dA_dd.Derivative(1.0, A, d, scheme != null ? scheme.Domain : null);
 

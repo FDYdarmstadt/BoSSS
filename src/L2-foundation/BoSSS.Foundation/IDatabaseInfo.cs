@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.IO {
         /// - 1st entry: path into the local file system
         /// - 2nd entry: optional machine name filter
         /// </summary>
-        ValueTuple<string, string>[] AlternateDbPaths {
+        (string DbPath, string MachineFilter)[] AlternateDbPaths {
             get;
         }
 

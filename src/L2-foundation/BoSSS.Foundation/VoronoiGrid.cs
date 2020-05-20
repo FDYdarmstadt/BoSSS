@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
 
@@ -28,7 +29,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
     [Serializable]
     public class VoronoiGrid : Aggregation.AggregationGrid
     {
-        VoronoiInfo info;
+        VoronoiBoundary boundary;
 
         VoronoiNodes nodes;
 
@@ -36,26 +37,71 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             get { return nodes; }
         }
 
-        public VoronoiInfo Info {
-            get { return info; }
+        public VoronoiBoundary Boundary {
+            get { return boundary; }
         }
 
-        public VoronoiGrid(IGrid pGrid,
+        public int FirstCornerNodeIndice;
+
+        VoronoiGrid() { }
+
+        public VoronoiGrid(GridCommons pGrid,
             int[][] logialToGeometricalCellMap,
             VoronoiNodes nodes,
-            VoronoiInfo voronoiInfo)
+            VoronoiBoundary boundary)
             : base(pGrid, logialToGeometricalCellMap)
         {
             this.nodes = nodes;
-            info = voronoiInfo;
+            this.boundary = boundary;
         }
 
-        VoronoiGrid() { }
+        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal)
+        {
+            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
+            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
+            int jCell_in = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellIn];
+            int jCell_ot = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellOut];
+            MultidimensionalArray positions = Nodes.Positions;
+            MultidimensionalArray velocities = Nodes.Velocity;
+
+            double[] posOt = positions.GetRow(jCell_ot);
+            double[] posIn = positions.GetRow(jCell_in);
+            double[] velOt = velocities.GetRow(jCell_ot);
+            double[] velIn = velocities.GetRow(jCell_in);
+
+            //transform if Edge is periodic
+            if (this.iGridData.iGeomEdges.EdgeTags[jEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG) 
+            {
+                int periodicEdgeTag = this.iGridData.iGeomEdges.EdgeTags[jEdge] - GridCommons.FIRST_PERIODIC_BC_TAG;
+                AffineTrafo PerT = ((GridCommons)ParentGrid).PeriodicTrafo[periodicEdgeTag];
+                posIn = PerT.Transform(posIn);
+            };
+
+            double result = VoronoiEdge.NormalVelocity(posOt, velOt, posIn, velIn, x, normal);
+            return result;
+        }
+
+        public Vector CellVelocity(int jCell)
+        {
+            int jCellIn = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCell];
+            var velocity = new Vector(Nodes.Velocity[jCellIn, 0], Nodes.Velocity[jCellIn, 1]);
+            return velocity;
+        }
     }
 
-    public class VoronoiInfo
+    public class VoronoiBoundary
     {
         public Vector[] BoundingBox;
-        public Vector[] Boundary;
+
+        public Vector[] Polygon;
+
+        public byte[] EdgeTags;
+
+        public IDictionary<byte, string> EdgeTagNames;
+
+        public byte GetEdgeTagOfPolygonEdge(int index)
+        {
+            return EdgeTags[index];
+        }
     }
 }

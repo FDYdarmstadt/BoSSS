@@ -555,212 +555,214 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+            using (var tr = new FuncTrace()) {
+                int D = this.GridData.SpatialDimension;
 
-            int D = this.GridData.SpatialDimension;
+                // ============================
+                // treatment of surface tension
+                // ============================
 
-            // ============================
-            // treatment of surface tension
-            // ============================
-
-            VectorField<SinglePhaseField> filtLevSetGradient;
-            switch (this.Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine: {
-                        CurvatureAlgorithms.LaplaceBeltramiDriver(
+                VectorField<SinglePhaseField> filtLevSetGradient;
+                switch (this.Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
+                    case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
+                    case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
+                    case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine: {
+                            CurvatureAlgorithms.LaplaceBeltramiDriver(
+                                this.Control.AdvancedDiscretizationOptions.SST_isotropicMode,
+                                this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
+                                out filtLevSetGradient, this.LsTrk,
+                                this.DGLevSet.Current);
+                            if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmpty) || XOpConfig.isEvaporation) {
+                                VectorField<SinglePhaseField> filtLevSetGradient_dummy;
+                                CurvatureAlgorithms.CurvatureDriver(
+                                    SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                                    CurvatureAlgorithms.FilterConfiguration.Default,
+                                    this.Curvature, out filtLevSetGradient_dummy, this.LsTrk,
+                                    this.m_HMForder,
+                                    this.DGLevSet.Current);
+                            }
+                            break;
+                        }
+                    case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
+                    case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
+                    case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
+                        CurvatureAlgorithms.CurvatureDriver(
                             this.Control.AdvancedDiscretizationOptions.SST_isotropicMode,
                             this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
-                            out filtLevSetGradient, this.LsTrk,
+                            this.Curvature, out filtLevSetGradient, this.LsTrk,
+                            this.m_HMForder,
                             this.DGLevSet.Current);
-                        if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmpty) || XOpConfig.isEvaporation) {
-                            VectorField<SinglePhaseField> filtLevSetGradient_dummy;
-                            CurvatureAlgorithms.CurvatureDriver(
-                                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                                CurvatureAlgorithms.FilterConfiguration.Default,
-                                this.Curvature, out filtLevSetGradient_dummy, this.LsTrk,
-                                this.m_HMForder,
-                                this.DGLevSet.Current);
+                        //CurvatureAlgorithms.MakeItConservative(LsTrk, this.Curvature, this.Control.PhysicalParameters.Sigma, this.SurfaceForce, filtLevSetGradient, MomentFittingVariant, this.m_HMForder);
+                        break;
+
+                    case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
+                        if (Fourier_LevSet != null) {
+                            Fourier_LevSet.ProjectToDGCurvature(this.Curvature, out filtLevSetGradient, this.LsTrk.Regions.GetCutCellMask());
+                        } else {
+                            throw new NotImplementedException("Curvature_Fourier needs an instance of Fourier_LevSet");
                         }
                         break;
-                    }
-                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
-                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
-                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    CurvatureAlgorithms.CurvatureDriver(
-                        this.Control.AdvancedDiscretizationOptions.SST_isotropicMode,
-                        this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
-                        this.Curvature, out filtLevSetGradient, this.LsTrk,
-                        this.m_HMForder,
-                        this.DGLevSet.Current);
-                    //CurvatureAlgorithms.MakeItConservative(LsTrk, this.Curvature, this.Control.PhysicalParameters.Sigma, this.SurfaceForce, filtLevSetGradient, MomentFittingVariant, this.m_HMForder);
-                    break;
 
-                case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                    if (Fourier_LevSet != null) {
-                        Fourier_LevSet.ProjectToDGCurvature(this.Curvature, out filtLevSetGradient, this.LsTrk.Regions.GetCutCellMask());
-                    } else {
-                        throw new NotImplementedException("Curvature_Fourier needs an instance of Fourier_LevSet");
-                    }
-                    break;
-
-                default: throw new NotImplementedException("Unknown SurfaceTensionMode");
-            }
-
-            if (filtLevSetGradient != null) {
-                if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
-                    //this.LevSetGradient.Clear();
-                    //this.LevSetGradient.Acc(1.0, filtLevSetGradient);
-                    this.LevSetGradient = filtLevSetGradient;
-                } else {
-                    //this.DGLevSetGradient.Clear();
-                    //this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
-                    this.DGLevSetGradient = filtLevSetGradient;
+                    default: throw new NotImplementedException("Unknown SurfaceTensionMode");
                 }
-            }
 
-            // =================================================
-            // Construct evaporative mass flux (extension field) 
-            // =================================================
+                if (filtLevSetGradient != null) {
+                    if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
+                        //this.LevSetGradient.Clear();
+                        //this.LevSetGradient.Acc(1.0, filtLevSetGradient);
+                        this.LevSetGradient = filtLevSetGradient;
+                    } else {
+                        //this.DGLevSetGradient.Clear();
+                        //this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
+                        this.DGLevSetGradient = filtLevSetGradient;
+                    }
+                }
 
-            // heat flux for evaporation
-            //DGField[] HeatFluxParam = new DGField[D];
-            //if (XOpConfig.solveHeat) {
-            //    if (XOpConfig.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-            //        HeatFluxParam = new VectorField<XDGField>(D, CurrentState.ToArray()[D + 1].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
-            //        Dictionary<string, double> kSpc = new Dictionary<string, double>();
-            //        kSpc.Add("A", -this.Control.ThermalParameters.k_A);
-            //        kSpc.Add("B", -this.Control.ThermalParameters.k_B);
-            //        XNSEUtils.ComputeGradientForParam(CurrentState.ToArray()[D + 1], HeatFluxParam, this.LsTrk, kSpc, this.LsTrk.Regions.GetNearFieldSubgrid(1));
-            //    } else {
-            //        var HeatFluxMap = new CoordinateMapping(CurrentState.ToArray().GetSubVector(D + 2, D));
-            //        HeatFluxParam = HeatFluxMap.Fields.ToArray();
-            //    }
-            //}
-            //ConventionalDGField[] HeatFluxAParam = new VectorField<ConventionalDGField>(D.ForLoop(d => (HeatFluxParam[d] as XDGField).GetSpeciesShadowField("A"))).ToArray();
-            //ConventionalDGField[] HeatFluxBParam = new VectorField<ConventionalDGField>(D.ForLoop(d => (HeatFluxParam[d] as XDGField).GetSpeciesShadowField("B"))).ToArray();
+                // =================================================
+                // Construct evaporative mass flux (extension field) 
+                // =================================================
 
-            //SinglePhaseField[] HeatFluxAExt = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(new Basis(this.GridData, HeatFluxParam[d].Basis.Degree), "HeatFluxExt" + d))).ToArray();
-            //SinglePhaseField[] HeatFluxBExt = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(new Basis(this.GridData, HeatFluxParam[d].Basis.Degree), "HeatFluxExt" + d))).ToArray();
-            //double[][] ExtVelMin = new double[HeatFluxAExt.Length][];
-            //double[][] ExtVelMax = new double[HeatFluxAExt.Length][];
-            //int J = this.LsTrk.GridDat.Cells.NoOfLocalUpdatedCells;
-            //for (int i = 0; i < HeatFluxAExt.Length; i++) {
-            //    ExtVelMin[i] = new double[J];
-            //    ExtVelMax[i] = new double[J];
-            //}
-            //NarrowMarchingBand.ConstructExtVel_PDE(this.LsTrk, this.LsTrk.Regions.GetCutCellSubGrid(), HeatFluxAExt, HeatFluxAParam, this.LevSet, this.LevSetGradient, ExtVelMin, ExtVelMax, m_HMForder);
-            //NarrowMarchingBand.ConstructExtVel_PDE(this.LsTrk, this.LsTrk.Regions.GetCutCellSubGrid(), HeatFluxBExt, HeatFluxBParam, this.LevSet, this.LevSetGradient, ExtVelMin, ExtVelMax, m_HMForder);
-
-            //DGField[] HeatFluxExtParam = new VectorField<XDGField>(D, CurrentState.ToArray()[D + 1].Basis, "HeatFluxExt_", XDGField.Factory).ToArray();
-            //for (int d = 0; d < D; d++) {
-            //    (HeatFluxExtParam[d] as XDGField).GetSpeciesShadowField("A").Acc(1.0, HeatFluxAExt[d]);
-            //    (HeatFluxExtParam[d] as XDGField).GetSpeciesShadowField("B").Acc(1.0, HeatFluxBExt[d]);
-            //}
-
-            //Tecplot.PlotFields(HeatFluxParam, "HeatFluxParam" + hack_TimestepIndex, hack_Phystime, 2);
-            //Tecplot.PlotFields(HeatFluxExtParam, "HeatFluxExtParam" + hack_TimestepIndex, hack_Phystime, 2);
-
-            // ============================
-            // matrix assembly
-            // ============================
-
-            var codMap = Mapping;
-            var domMap = Mapping;
-
-            this.XNSFE_Operator.AssembleMatrix(
-               OpMtx, OpAffine, codMap, domMap,
-               CurrentState, AgglomeratedCellLengthScales, phystime,
-               this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
-               updateSolutionParams, this.XDGvelocity.Gravity.ToArray()); //, HeatFluxExtParam);
-                                      //(this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
-                                      //(this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));                     
-
-
-            // ====================================
-            // something with surface tension ?????
-            // ====================================
-
-            {
-                if (this.Control.PhysicalParameters.useArtificialSurfaceForce == true)
-                    throw new NotSupportedException("Not supported for this hack.");
-
-
-                var TmpRhs = new CoordinateVector(CurrentState.Select(f => (DGField)f.Clone()).ToArray());
-                TmpRhs.Clear();
-
-                var VelA = new CoordinateVector(TmpRhs.Mapping.Fields.Take(D).Select(f => (DGField)(((XDGField)f).GetSpeciesShadowField("A"))).ToArray());
-                var VelB = new CoordinateVector(TmpRhs.Mapping.Fields.Take(D).Select(f => (DGField)(((XDGField)f).GetSpeciesShadowField("B"))).ToArray());
-
-                int N = ((XDGBasis)(CurrentState[0].Basis)).NonX_Basis.Length;
-
-                //foreach (int jCell in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
-                //    for (int d = 0; d < D; d++) {
-                //        for (int n = 0; n < N; n++) {
-                //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("A").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
-                //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("B").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
-                //        }
+                // heat flux for evaporation
+                //DGField[] HeatFluxParam = new DGField[D];
+                //if (XOpConfig.solveHeat) {
+                //    if (XOpConfig.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                //        HeatFluxParam = new VectorField<XDGField>(D, CurrentState.ToArray()[D + 1].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
+                //        Dictionary<string, double> kSpc = new Dictionary<string, double>();
+                //        kSpc.Add("A", -this.Control.ThermalParameters.k_A);
+                //        kSpc.Add("B", -this.Control.ThermalParameters.k_B);
+                //        XNSEUtils.ComputeGradientForParam(CurrentState.ToArray()[D + 1], HeatFluxParam, this.LsTrk, kSpc, this.LsTrk.Regions.GetNearFieldSubgrid(1));
+                //    } else {
+                //        var HeatFluxMap = new CoordinateMapping(CurrentState.ToArray().GetSubVector(D + 2, D));
+                //        HeatFluxParam = HeatFluxMap.Fields.ToArray();
                 //    }
                 //}
+                //ConventionalDGField[] HeatFluxAParam = new VectorField<ConventionalDGField>(D.ForLoop(d => (HeatFluxParam[d] as XDGField).GetSpeciesShadowField("A"))).ToArray();
+                //ConventionalDGField[] HeatFluxBParam = new VectorField<ConventionalDGField>(D.ForLoop(d => (HeatFluxParam[d] as XDGField).GetSpeciesShadowField("B"))).ToArray();
 
-                OpAffine.AccV(1.0, TmpRhs);
-            }
+                //SinglePhaseField[] HeatFluxAExt = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(new Basis(this.GridData, HeatFluxParam[d].Basis.Degree), "HeatFluxExt" + d))).ToArray();
+                //SinglePhaseField[] HeatFluxBExt = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(new Basis(this.GridData, HeatFluxParam[d].Basis.Degree), "HeatFluxExt" + d))).ToArray();
+                //double[][] ExtVelMin = new double[HeatFluxAExt.Length][];
+                //double[][] ExtVelMax = new double[HeatFluxAExt.Length][];
+                //int J = this.LsTrk.GridDat.Cells.NoOfLocalUpdatedCells;
+                //for (int i = 0; i < HeatFluxAExt.Length; i++) {
+                //    ExtVelMin[i] = new double[J];
+                //    ExtVelMax[i] = new double[J];
+                //}
+                //NarrowMarchingBand.ConstructExtVel_PDE(this.LsTrk, this.LsTrk.Regions.GetCutCellSubGrid(), HeatFluxAExt, HeatFluxAParam, this.LevSet, this.LevSetGradient, ExtVelMin, ExtVelMax, m_HMForder);
+                //NarrowMarchingBand.ConstructExtVel_PDE(this.LsTrk, this.LsTrk.Regions.GetCutCellSubGrid(), HeatFluxBExt, HeatFluxBParam, this.LevSet, this.LevSetGradient, ExtVelMin, ExtVelMax, m_HMForder);
 
-            // so far, 'SaddlePointRHS' is on the left-hand-side, since it is the output of ComputeMatrix
-            // multiply by -1 to make it RHS
-            OpAffine.ScaleV(-1.0);
+                //DGField[] HeatFluxExtParam = new VectorField<XDGField>(D, CurrentState.ToArray()[D + 1].Basis, "HeatFluxExt_", XDGField.Factory).ToArray();
+                //for (int d = 0; d < D; d++) {
+                //    (HeatFluxExtParam[d] as XDGField).GetSpeciesShadowField("A").Acc(1.0, HeatFluxAExt[d]);
+                //    (HeatFluxExtParam[d] as XDGField).GetSpeciesShadowField("B").Acc(1.0, HeatFluxBExt[d]);
+                //}
 
+                //Tecplot.PlotFields(HeatFluxParam, "HeatFluxParam" + hack_TimestepIndex, hack_Phystime, 2);
+                //Tecplot.PlotFields(HeatFluxExtParam, "HeatFluxExtParam" + hack_TimestepIndex, hack_Phystime, 2);
 
-            // ============================
-            // Generate MassMatrix
-            // ============================
+                // ============================
+                // matrix assembly
+                // ============================
 
-            // mass matrix factory
-            MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
-            var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
+                var codMap = Mapping;
+                var domMap = Mapping;
 
-
-            // ============================
-            //  Add Gravity
-            // ============================
-            // Dimension: [ rho * G ] = mass / time^2 / len^2 == [ d/dt rho U ]
-            var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
-            if (this.Control.solveKineticEnergyEquation) {
-                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.KineticEnergy.Basis)));
-            }
-            if (this.Control.solveCoupledHeatEquation) {
-                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.Temperature.Basis)));
-                if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                    WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields,
-                        new XDGField(this.Temperature.Basis), new VectorField<XDGField>(D, this.HeatFlux[0].Basis, XDGField.Factory)));
-            }
-            WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
-
-
-            // ============================
-            // Set Pressure Reference Point
-            // ============================
-
-            if (OpMtx != null) {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePoint(
-                        Mapping,
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpMtx, OpAffine);
+                using (new BlockTrace("XdgMatrixAssembly",tr)) {
+                    this.XNSFE_Operator.AssembleMatrix(
+                       OpMtx, OpAffine, codMap, domMap,
+                       CurrentState, AgglomeratedCellLengthScales, phystime,
+                       this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
+                       updateSolutionParams, this.XDGvelocity.Gravity.ToArray()); //, HeatFluxExtParam);
+                                                                                  //(this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
+                                                                                  //(this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));                   
                 }
-            } else {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePointResidual(
-                        new CoordinateVector(CurrentState),
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpAffine);
+
+
+                // ====================================
+                // something with surface tension ?????
+                // ====================================
+
+                {
+                    if (this.Control.PhysicalParameters.useArtificialSurfaceForce == true)
+                        throw new NotSupportedException("Not supported for this hack.");
+
+
+                    var TmpRhs = new CoordinateVector(CurrentState.Select(f => (DGField)f.Clone()).ToArray());
+                    TmpRhs.Clear();
+
+                    var VelA = new CoordinateVector(TmpRhs.Mapping.Fields.Take(D).Select(f => (DGField)(((XDGField)f).GetSpeciesShadowField("A"))).ToArray());
+                    var VelB = new CoordinateVector(TmpRhs.Mapping.Fields.Take(D).Select(f => (DGField)(((XDGField)f).GetSpeciesShadowField("B"))).ToArray());
+
+                    int N = ((XDGBasis)(CurrentState[0].Basis)).NonX_Basis.Length;
+
+                    //foreach (int jCell in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
+                    //    for (int d = 0; d < D; d++) {
+                    //        for (int n = 0; n < N; n++) {
+                    //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("A").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
+                    //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("B").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
+                    //        }
+                    //    }
+                    //}
+
+                    OpAffine.AccV(1.0, TmpRhs);
                 }
+
+                // so far, 'SaddlePointRHS' is on the left-hand-side, since it is the output of ComputeMatrix
+                // multiply by -1 to make it RHS
+                OpAffine.ScaleV(-1.0);
+
+
+                // ============================
+                // Generate MassMatrix
+                // ============================
+
+                // mass matrix factory
+                MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
+                var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
+
+
+                // ============================
+                //  Add Gravity
+                // ============================
+                // Dimension: [ rho * G ] = mass / time^2 / len^2 == [ d/dt rho U ]
+                var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
+                if (this.Control.solveKineticEnergyEquation) {
+                    WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.KineticEnergy.Basis)));
+                }
+                if (this.Control.solveCoupledHeatEquation) {
+                    WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.Temperature.Basis)));
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                        WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields,
+                            new XDGField(this.Temperature.Basis), new VectorField<XDGField>(D, this.HeatFlux[0].Basis, XDGField.Factory)));
+                }
+                WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
+
+
+                // ============================
+                // Set Pressure Reference Point
+                // ============================
+
+                if (OpMtx != null) {
+                    if (!this.BcMap.DirichletPressureBoundary) {
+                        XNSEUtils.SetPressureReferencePoint(
+                            Mapping,
+                            this.GridData.SpatialDimension,
+                            this.LsTrk, OpMtx, OpAffine);
+                    }
+                } else {
+                    if (!this.BcMap.DirichletPressureBoundary) {
+                        XNSEUtils.SetPressureReferencePointResidual(
+                            new CoordinateVector(CurrentState),
+                            this.GridData.SpatialDimension,
+                            this.LsTrk, OpAffine);
+                    }
+                }
+
+                // transform from RHS to Affine
+                OpAffine.ScaleV(-1.0);
+
             }
-
-            // transform from RHS to Affine
-            OpAffine.ScaleV(-1.0);
-
         }
-
         
         bool[] updateSolutionParams;
 

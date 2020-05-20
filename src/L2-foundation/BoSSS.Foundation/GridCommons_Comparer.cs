@@ -14,7 +14,7 @@ namespace BoSSS.Foundation.Grid.Classic
     {
         public static IEqualityComparer<IGrid> ReferenceComparer {
             get {
-                return new GridComparer<GridCommons>(AreReferencesEqual);
+                return new GridComparer<GridCommons>(AreBasicPropertiesEqual);
             }
         }
 
@@ -286,7 +286,7 @@ namespace BoSSS.Foundation.Grid.Classic
             return (match > 0);
         }
 
-        static bool AreReferencesEqual(GridCommons A, GridCommons B)
+        static bool AreBasicPropertiesEqual(GridCommons A, GridCommons B)
         {
 
             if (object.ReferenceEquals(A, B))

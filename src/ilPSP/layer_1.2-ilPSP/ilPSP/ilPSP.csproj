@@ -65,6 +65,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ArrayTools.cs" />
+    <Compile Include="ConfigFileIOUtils.cs" />
     <Compile Include="BLAS.cs" />
     <Compile Include="BlockPartitioning.cs" />
     <Compile Include="CodeGenExportAttribute.cs" />

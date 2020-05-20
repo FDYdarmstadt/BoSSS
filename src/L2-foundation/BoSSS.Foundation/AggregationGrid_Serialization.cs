@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Grid.Aggregation
 
         public IEqualityComparer<IGrid> CellComparer => AggregationGridComparer.ReferenceComparer;
 
-        public IEqualityComparer<IGrid> ReferenceComparer => AggregationGridComparer.ReferenceComparer;
+        public IEqualityComparer<IGrid> BasePropertiesComparer => AggregationGridComparer.ReferenceComparer;
 
         [JsonIgnore]
         object[][] data;

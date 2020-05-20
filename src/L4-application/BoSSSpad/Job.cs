@@ -310,8 +310,25 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if(newDb != null) {
                     Console.WriteLine("Resetting database for control object to " + newDb.ToString());
+
+                    //newDb.AlternateDbPaths
+
+
+
                     m_ctrl.SetDatabase(newDb);
                     ctrl_db = newDb;
+                }
+
+                Console.WriteLine("Submitting job with the following database info: ");
+                Console.WriteLine("Primary: " + m_ctrl.DbPath);
+                if(ctrl_db.AlternateDbPaths != null && ctrl_db.AlternateDbPaths.Length > 0) {
+                    int cnt = 0;
+                    foreach (var t in ctrl_db.AlternateDbPaths) {
+                        Console.WriteLine($" Alternative[{cnt}]: {t.DbPath}, MachineFilter: '{t.MachineFilter}'");
+                        cnt++;
+                    }
+                } else {
+                    Console.WriteLine("No alternative paths specified.");
                 }
             } 
 

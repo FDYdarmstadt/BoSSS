@@ -98,7 +98,7 @@ namespace BoSSS.Application.BoSSSpad {
                                     m_AllowedDatabases[i] = new DatabaseInfo(AllowedDatabasesPaths[i]);
                                 } catch (Exception e) {
                                     Console.Error.WriteLine($"Unable to open 'allowed database' for {this.ToString()} at path {AllowedDatabasesPaths[i]}. Check configuration file 'BatchProcessorConfig.json'. ({e.GetType().Name} : {e.Message})");
-                                    Console.Error.WriteLine($"{this.ToString()} will continue to work, but database syncronization on job submission might not work correctly.");
+                                    Console.Error.WriteLine($"{this.ToString()} will continue to work, but database synchronization on job submission might not work correctly.");
                                 }
                             }
                         }

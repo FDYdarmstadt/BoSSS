@@ -59,19 +59,22 @@ namespace BoSSS.Solution.NSECommon
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
+                // return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
+                return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags InnerEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
+                // return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
+                return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV; // should be changed. The term UxGradV is not allways needed
+                return TermActivationFlags.AllOn;
+                // return TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV; // should be changed. The term UxGradV is not allways needed
             }
         }
 

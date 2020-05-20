@@ -35,8 +35,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
     public class LevelSetReconstruction {
 
-        private readonly string sessionPath;
-        private readonly ISessionInfo session;
+        public string SessionPath {
+            get;
+            private set;
+        }
+
+        public ISessionInfo Session {
+            get;
+            private set;
+        }
+
         private readonly MultidimensionalArray input;
         private readonly MultidimensionalArray inputExtended;
         private readonly GridData gridData;
@@ -71,8 +79,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// [1]: IterationsNeeded | Converged | jCell
         /// </param>
         public LevelSetReconstruction(string sessionPath, ISessionInfo session, MultidimensionalArray input, MultidimensionalArray inputExtended) {
-            this.sessionPath = sessionPath;
-            this.session = session;
+            this.SessionPath = sessionPath;
+            this.Session = session;
             this.input = input;
             this.inputExtended = inputExtended;
 
@@ -126,7 +134,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             Console.WriteLine("CreateClustering_AV: START");
 
             // Get AV values
-            var avField = this.session.Timesteps.Last().Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
+            var avField = this.Session.Timesteps.Last().Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
             int numOfPoints = inputClustering.Lengths[0];
             double[] data = new double[numOfPoints];
             for (int i = 0; i < data.Length; i++) {
@@ -163,7 +171,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         public MultidimensionalArray CreateClustering_Boundary(MultidimensionalArray inputClustering) {
             Console.WriteLine("CreateClustering_Boundary: START");
 
-            var gridData = (GridData)session.Timesteps.Last().Fields.First().GridDat;
+            var gridData = (GridData)Session.Timesteps.Last().Fields.First().GridDat;
             BitArray isBoundaryCell = gridData.GetBoundaryCells().GetBitMask();
 
             // Store values
@@ -186,6 +194,44 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             _clusterings.Add(clustering);
 
             Console.WriteLine("CreateClustering_Boundary: END");
+
+            return clustering;
+        }
+
+        /// <summary>
+        /// Create clustering without cells close to the blunt body
+        /// </summary>
+        /// <param name="inputClustering">Input data which has to be a previous clustering</param>
+        /// <returns>
+        /// Clustering as <see cref="MultidimensionalArray"/>
+        /// [0]: x, [1]: y, [2]: data, [3]: cellToCluster (e.g. cell 0 is in cluster 1), [4]: local cell index
+        public MultidimensionalArray CreateClustering_DeletePointsAtGeometry(MultidimensionalArray inputClustering) {
+            Console.WriteLine("CreateClustering_DeletePointsAtGeometry: START");
+
+            var gridData = (GridData)Session.Timesteps.Last().Fields.First().GridDat;
+
+            // Store values
+            int numOfPoints = inputClustering.Lengths[0];
+            int[] cellsAwayFromGeometry = new int[numOfPoints];
+            int count = 0;
+            for (int i = 0; i < numOfPoints; i++) {
+                double[] cellCenter = gridData.Cells.GetCenter((int)inputClustering[i, 4]);
+
+                if (!(Math.Abs(cellCenter[1]) < 1.2 && cellCenter[0] > -0.7)) {
+                    cellsAwayFromGeometry[count] = i;
+                    count++;
+                }
+            }
+            Array.Resize(ref cellsAwayFromGeometry, count);
+
+            MultidimensionalArray clustering = MultidimensionalArray.Create(count, inputClustering.Lengths[1]);
+            for (int i = 0; i < cellsAwayFromGeometry.Length; i++) {
+                int cell = cellsAwayFromGeometry[i];
+                clustering.ExtractSubArrayShallow(i, -1).Acc(1.0, inputClustering.ExtractSubArrayShallow(cell, -1));
+            }
+            _clusterings.Add(clustering);
+
+            Console.WriteLine("CreateClustering_DeletePointsAtGeometry: END");
 
             return clustering;
         }
@@ -227,7 +273,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// <param name="path">Optional path</param>
         public void SaveClusteringToTextFile(MultidimensionalArray clustering, string path = null) {
             if (path == null) {
-                path = sessionPath;
+                path = SessionPath;
             }
 
             using (System.IO.StreamWriter sw = new System.IO.StreamWriter(path + "clustering_" + clusteringCount + ".txt")) {
@@ -310,7 +356,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             Console.WriteLine("PlotFields: START");
 
             Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: superSampling);
-            plotDriver.PlotFields(sessionPath + "levelSetFields", 0.0, _levelSetFields);
+            plotDriver.PlotFields(SessionPath + "lsrFields", 0.0, _levelSetFields);
 
             Console.WriteLine("PlotFields: END");
         }

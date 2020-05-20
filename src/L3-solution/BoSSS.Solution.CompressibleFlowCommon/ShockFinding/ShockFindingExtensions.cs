@@ -60,7 +60,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                     input.ExtractSubArrayShallow(-1, -1, i).SaveToTextFile(path + "Results_" + i + ".txt");
                 }
             } else {
-                throw new NotSupportedException("This MdA is cannot be saved.");
+                throw new NotSupportedException("This MdA cannot be saved.");
             }
         }
 
@@ -125,7 +125,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
                     // Delete all directories in the current directory
                     foreach (DirectoryInfo dir in sessionDirectory.EnumerateDirectories()) {
-                        dir.Delete();
+                        dir.Delete(true);
                     }
 
                     // Delete all files in the current directory
