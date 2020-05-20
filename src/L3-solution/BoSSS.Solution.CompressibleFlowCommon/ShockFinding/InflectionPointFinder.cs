@@ -18,17 +18,9 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
-using BoSSS.Solution.LevelSetTools;
-using BoSSS.Solution.Statistic;
-using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Utils;
-using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
@@ -100,9 +92,24 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.tsi = tsi;
 
             this.gridData = (GridData)tsi.Fields.First().GridDat;
-            this.densityField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
-            this.avField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
-            this.levelSetField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
+
+            if (tsi.Fields.First() is XDGField) {
+                XDGField densityField = (XDGField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+                XDGField avField = (XDGField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
+                XDGField levelSetField = (XDGField)tsi.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
+
+                this.densityField = new SinglePhaseField(new Basis(gridData, densityField.Basis.Degree), "rho");
+                this.avField = new SinglePhaseField(new Basis(gridData, avField.Basis.Degree), "artificialViscosity");
+                this.levelSetField = new SinglePhaseField(new Basis(gridData, levelSetField.Basis.Degree), "artificialViscosity");
+
+                this.densityField.Acc(1.0, densityField.GetSpeciesShadowField("B"));
+                this.avField.Acc(1.0, avField.GetSpeciesShadowField("B"));
+                this.levelSetField.Acc(1.0, levelSetField.GetSpeciesShadowField("B"));
+            } else {
+                this.densityField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+                this.avField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
+                this.levelSetField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
+            }
         }
 
         /// <summary>
