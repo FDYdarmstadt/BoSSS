@@ -226,7 +226,6 @@ namespace BoSSS.Solution.Tecplot {
                 List<ScalarFunctionEx> fields = new List<ScalarFunctionEx>(
                     fieldsToPlot.Select(x => x.Item2));
 
-
                 //for (int iKref = 0; iKref < GridDat.Grid.RefElements.Length; iKref++) {
                 {
 
@@ -328,9 +327,10 @@ namespace BoSSS.Solution.Tecplot {
                             m_TECPLOT.TECNOD110(permutedConnectivity_start);
                         }
                     }
-
                 }
             }
+
+            
 
             /// <summary>
             /// Write the zone information. Since we always write exactly one zone,
@@ -459,7 +459,70 @@ namespace BoSSS.Solution.Tecplot {
         _TECDAT110 tecdat110;
         _TECEND110 tecend110;
         _TECNOD110 tecnod110;
+        _TECGEO110 tecgeo110;
 #pragma warning restore       649
+
+        /// <summary>
+        /// Writes a geometry to the data file. For more info visit http://www.hgs.k12.va.us/Tecplot/Documentation/tp_data_format_guide.pdf
+        /// </summary>
+        /// <param name="YOrRPos"></param>
+        /// <param name="ZPos"></param>
+        /// <param name="PosCoordMode"></param>
+        /// <param name="AttachToZone"></param>
+        /// <param name="Zone"></param>
+        /// <param name="Color"></param>
+        /// <param name="FillColor"></param>
+        /// <param name="IsFilled"></param>
+        /// <param name="GeomType"></param>
+        /// <param name="LinePattern"></param>
+        /// <param name="PatternLength"></param>
+        /// <param name="LineThickness"></param>
+        /// <param name="NumEllipsePts"></param>
+        /// <param name="ArrowheadStyle"></param>
+        /// <param name="ArrowheadAttachement"></param>
+        /// <param name="Arrowheadsize"></param>
+        /// <param name="ArrowheadAngle"></param>
+        /// <param name="Scope"></param>
+        /// <param name="Clipping"></param>
+        /// <param name="NumSegments"></param>
+        /// <param name="NumSegPts"></param>
+        /// <param name="XOrThetaGeomData"></param>
+        /// <param name="YOrRGeomData"></param>
+        /// <param name="ZGeomData"></param>
+        /// <param name="MFC"></param>
+        /// <returns></returns>
+        public unsafe delegate int _TECGEO110(
+            ref double XOrThetaPos,
+            ref double YOrRPos,
+            ref double ZPos,
+            ref int PosCoordMode,
+            ref int AttachToZone,
+            ref int Zone,
+            ref int Color,
+            ref int FillColor,
+            ref int IsFilled,
+            ref int GeomType,
+            ref int LinePattern,
+            ref double PatternLength,
+            ref double LineThickness,
+            ref int NumEllipsePts,
+            ref int ArrowheadStyle,
+            ref int ArrowheadAttachement,
+            ref double Arrowheadsize,
+            ref double ArrowheadAngle,
+            ref int Scope,
+            ref int Clipping,
+            ref int NumSegments,
+            ref int NumSegPts,
+            ref float XOrThetaGeomData,
+            ref float YOrRGeomData,
+            ref float ZGeomData,
+            IntPtr MFC
+            );
+
+        public unsafe _TECGEO110 TECGEO110 {
+            get { return tecgeo110; }
+        }
 
         /// <summary>
         /// Initializes the process of writing a binary data file. This must be
