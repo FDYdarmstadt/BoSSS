@@ -23,19 +23,17 @@ namespace BoSSS.Solution.Statistic {
         }
 
 
-        public ForeignGridValue(Guid TimestepID, string VarName) {
-            this.TimestepID = TimestepID;
-            throw new NotImplementedException("todo");
-        }
-
         [DataMember]
         public Guid TimestepID {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Field name within the provided timestep (<see cref="ITimestepInfo.Fields"/>, <see cref="DGField.Identification"/>).
+        /// </summary>
         [DataMember]
-        public string VariName {
+        public string FieldName {
             get;
             private set;
         }
@@ -53,7 +51,7 @@ namespace BoSSS.Solution.Statistic {
             //m_Database.Controller.Get
 
 
-            dGField = m_Timestep.Fields.Single(f => f.Identification.Equals(VariName));
+            dGField = m_Timestep.Fields.Single(f => f.Identification.Equals(FieldName));
         }
 
 

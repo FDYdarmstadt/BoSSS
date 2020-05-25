@@ -29,17 +29,18 @@ aber mit dem Job-Manger war es immer noch Gefrickel.
 Wenn du mit dem Job-Manager arbeitest, 
 solltest du dich um die Datenbank-Pfade gar nicht kümmern müssen.
 Dafür müssen aber einige Sachen richtig eingestellt sein:
+
 1. die Konfiguration der Batch-Queues: `~/.BoSSS/etc/BatchProcessorConfig.json`
    Hier ein Beispiel:
    ```
    {
-   "AllQueues": [
-    {
+    "AllQueues": [
+     {
       "$type": "BoSSS.Application.BoSSSpad.MiniBatchProcessorClient, BoSSSpad",
       "DeploymentBaseDirectory": "C:\Users\flori\AppData\Local\BoSSS-LocalJobs",
       "DeployRuntime": false
-    },
-    {
+     },
+     {
       "$type": "BoSSS.Application.BoSSSpad.SlurmClient, BoSSSpad",
       "Username": "fk69umer",
       "ServerName": "lcluster3.hrz.tu-darmstadt.de",
@@ -49,8 +50,8 @@ Dafür müssen aber einige Sachen richtig eingestellt sein:
       "AllowedDatabasesPaths": [ "X:\bosss_db_lichtenberg" ],
       "SlurmAccount": "project01217",
       "DeploymentBaseDirectoryAtRemote": "/home/fk69umer/bosss_deploy"
-    }
-   ]
+     }
+    ]
    }
    ```
    Interresant ist hier die zweite, also der Slurm-Client für den Lichtenberg:
@@ -59,27 +60,29 @@ Dafür müssen aber einige Sachen richtig eingestellt sein:
    "AllowedDatabasesPaths": [ "X:\bosss_db_lichtenberg" ],  // Die verwendete Datenbank muss auf X:\bosss_db_lichtenberg liegen
    "DeploymentBaseDirectoryAtRemote": "/home/fk69umer/bosss_deploy"  // Adresse des DeploymentBaseDirectory auf dem Lichtenberg
    ```
+
 2. Die Lichtenberg-Verzeichnisse müssen lokal gemounted sein, 
    z.B. mit ExpanDrive oder mit SSHFS-Win
    D.h. ich habe auf meinem PC ein Laufwerk `X:`, das meinem 
    Lichtenberg-Homeverzeichnis `/home/fk69umer` entspricht
    (Wenn man auch noch mit dem Lichtenberg-Scratch arbeiten möchte, 
    braucht man einen zweites Laufwerk, z.b. `Y:`)
+
 3. Die Datenbank muss ihre eigene Adresse auf verschiedenen Computern kennen. 
    Das erreicht man über die 'AlternatePaths.txt' Datei, die im 
    Datrenbank-Verzeichniss selbst liegt
    ```
    X:\bosss_deploy
-   ├───data
-   ├───grids
-   ├───sessions
-   │   ├───1522e363-903b-4106-a34e-1d9521a0ded6
-   │   ├───1f36290b-a6c8-4e65-925c-b94a6df52372
-   │   ├───231bcdbd-346e-4daf-9760-cf6c2b935434
-   │   ├───4db65cfe-d1ee-408e-ac6d-b1674af72bce
-   │   └───e26158ef-4c0e-45b7-95af-afc63d6652fa
-   └───timesteps
-   └───AlternatePaths.txt
+   |---data
+   |---grids
+   |---sessions
+   |   |---1522e363-903b-4106-a34e-1d9521a0ded6
+   |   |---1f36290b-a6c8-4e65-925c-b94a6df52372
+   |   |---231bcdbd-346e-4daf-9760-cf6c2b935434
+   |   |---4db65cfe-d1ee-408e-ac6d-b1674af72bce
+   |   |---e26158ef-4c0e-45b7-95af-afc63d6652fa
+   |---timesteps
+   |---AlternatePaths.txt
    ```
    der Inhalt von `AlternatePaths.txt` ist eine Auflistung von Verteichniss-Pfaden, mit optionalen Filtern für die Maschine
    ```

@@ -597,7 +597,7 @@ namespace BoSSS.Foundation.XDG {
             int JE = this.Tracker.GridDat.Cells.Count;
             int[][] C2E = this.Tracker.GridDat.Cells.Cells2Edges;
 
-            var CellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length, 2); // 1st index: cell, 2nd index: species
+            var CellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length, 2); // 1st index: cell, 2nd index: species, 3rd index: [surface, volume]
             var CellVolumeFracMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
             for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];

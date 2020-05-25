@@ -1735,6 +1735,8 @@ namespace CNS {
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
         public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int timeSteps) {
+            //Absturz mit 128 cores: 
+            //--control "cs:CNS.TestCases.DoubleMachReflectionHHLR(2147483647, 2, 4, 1, 1280, 320, 0.001, 0.1, 1, 1, 3, 1, 0, 0.7, 100)"
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
