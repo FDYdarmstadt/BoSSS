@@ -20,7 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -57,7 +57,12 @@
     <Compile Include="Database\Session\SessionIOTests.cs" />
     <Compile Include="Database\Session\DGFieldArithmeticTests.cs" />
     <Compile Include="Database\Session\SessionTest.cs" />
-    <Compile Include="GridCreation\GridTests.cs" />
+    <Compile Include="Grid\BoundaryTests.cs" />
+    <Compile Include="Grid\GridShapes.cs" />
+    <Compile Include="Grid\MovementTests.cs" />
+    <Compile Include="Grid\GridCreationTests.cs" />
+    <Compile Include="Grid\NodeMappingTests.cs" />
+    <Compile Include="Grid\Plotter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BoSSSTestBench.cs" />
@@ -92,13 +97,13 @@
       <Project>{45bca5f9-27e7-43c0-b021-4312bf442c7d}</Project>
       <Name>BoSSS.Solution.Statistic</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
+      <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
+      <Name>BoSSS.Solution.Tecplot</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
       <Name>BoSSS.Solution</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj">
-      <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
-      <Name>BoSSSpad</Name>
     </ProjectReference>
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj">
       <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
@@ -110,4 +115,12 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
 </Project>
