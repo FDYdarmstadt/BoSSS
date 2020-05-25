@@ -285,6 +285,14 @@ namespace BoSSS.Application.SipPoisson {
 
             #endregion
 
+            #region RHS
+
+            //Func<double[], double> exRhs = X => -1;
+
+            //C.InitialValues_Evaluators.Add("RHS", exRhs);
+
+            #endregion
+
             #region linear solver config
 
             // Linear Solver Settings
@@ -293,6 +301,8 @@ namespace BoSSS.Application.SipPoisson {
             C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.TargetBlockSize = 1000;
+            C.LinearSolver.SolverMode = LinearSolverMode.Solve;
+            //C.LinearSolver.SolverMode = LinearSolverMode.SpectralAnalysis;
 
             #endregion
 

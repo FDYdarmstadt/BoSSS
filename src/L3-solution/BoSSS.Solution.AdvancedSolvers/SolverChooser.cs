@@ -30,6 +30,9 @@ using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP;
 using ilPSP.Utils;
 using System.IO;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Solution {
 
@@ -1439,12 +1442,12 @@ namespace BoSSS.Solution {
         private Stopwatch MGTimer = new Stopwatch();
         private void MultigridAnalysis(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
         {
-            if (Mgop.LevelIndex == 0)
+            if (Mgop.LevelIndex == 0 && Mgop.GridData.MpiRank == 0)
             {
-                string file = "MG-Analysis.txt";
-                StreamWriter sw = new StreamWriter(file, true);                
-                if (MGOcc == 0) { MultigridAnalysisHeader(sw); MGTimer.Start(); }
+                string file = "MG-Analysis.txt";                
+                if (MGOcc == 0) { MultigridAnalysisHeader(file); MGTimer.Start(); }
                 if (iterIndex == 0) { MGOcc++; MGTimer.Restart(); }
+                StreamWriter sw = new StreamWriter(file, true);
                 // IMPLEMENT A WAY TO KNOW IF THIS IS A SEPERATE MG OCCURRENCE
                 var time = MGTimer.Elapsed;
                 sw.Write(MGOcc);
@@ -1460,8 +1463,9 @@ namespace BoSSS.Solution {
             }
         }
 
-        private void MultigridAnalysisHeader(StreamWriter sw)
+        private void MultigridAnalysisHeader(string file)
         {
+            StreamWriter sw = new StreamWriter(file, false);
             sw.Write("MG-Occurrence");
             sw.Write(",");
             sw.Write("MG-Iteration");
@@ -1471,6 +1475,66 @@ namespace BoSSS.Solution {
             sw.Write("Residual");
             sw.WriteLine();
             sw.Flush();
+            sw.Close();
+        }
+
+        private void Resample(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
+        {
+            if (Mgop.GridData.SpatialDimension == 2 && Mgop.LevelIndex == 0)
+            {
+                MultidimensionalArray SamplePoints;
+
+                GridData GD = (GridData)Mgop.Mapping.AggGrid.AncestorGrid;
+
+                BoundingBox BB = GD.GlobalBoundingBox;
+
+                //// global BoundingBox
+                //for (int i = 0; i < _field.GridDat.iGeomCells.Count; i++)
+                //{
+                //    BoundingBox lBB = new BoundingBox();
+                //    _field.GridDat.iGeomCells.GetCellBoundingBox(i, lBB);
+                //    BB.AddBB(lBB);
+                //}
+
+                SinglePhaseField field = new SinglePhaseField(Mgop.Mapping.AggBasis[0].DGBasis);
+                field.CoordinateVector.SetV(currentSol);
+                int DOF = field.DOFLocal;
+                double xDist = BB.Max[0] - BB.Min[0];
+                double yDist = BB.Max[1] - BB.Min[1];
+                double aspectRatio = xDist / yDist;
+
+                double N = Math.Sqrt(DOF);
+                int Nx = (int)Math.Round(Math.Sqrt(aspectRatio) * N);
+                int Ny = (int)Math.Round(1 / Math.Sqrt(aspectRatio) * N);
+
+                SamplePoints = MultidimensionalArray.Create(Ny, Nx);
+
+                for (int i = 0; i < Nx; i++)
+                {
+                    MultidimensionalArray points = MultidimensionalArray.Create(Ny, 2);
+
+                    for (int k = 0; k < Ny; k++)
+                    {
+                        points[k, 0] = BB.Min[0] + (i + 1) * xDist / (Nx + 1);
+                        points[k, 1] = BB.Min[1] + (k + 1) * yDist / (Ny + 1);
+                    }
+
+                    List<DGField> fields = new List<DGField>();
+                    fields.Add(field);
+
+                    FieldEvaluation FE = new FieldEvaluation(GD);
+
+                    MultidimensionalArray Result = MultidimensionalArray.Create(Ny, 1);
+
+                    FE.Evaluate(1.0, fields, points, 1.0, Result);
+
+                    SamplePoints.ExtractSubArrayShallow(-1, i).Acc(1.0, Result.ExtractSubArrayShallow(-1, 0));
+                }
+
+                SamplePoints.SaveToTextFile("ResampleFFT_lvl" + Mgop.LevelIndex + "_" + iterIndex  + ".txt");
+
+            }
+
         }
 
         private ISolverSmootherTemplate My_MG_Precond(LinearSolverConfig _lc, int[] _LocalDOF, int MSLength, ISolverSmootherTemplate[] prechain, ISolverSmootherTemplate[] postchain, ISolverSmootherTemplate toplevelpre, ISolverSmootherTemplate toplevelpst) {
@@ -1791,7 +1855,7 @@ namespace BoSSS.Solution {
 
                     // Extended Multigrid Analysis
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;
-
+                    if(_lc.SolverMode == LinearSolverMode.SpectralAnalysis) { ((OrthonormalizationMultigrid)levelSolver).IterationCallback += Resample; }
 
                 }
                 SolverChain.Add(levelSolver);
