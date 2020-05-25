@@ -225,7 +225,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-3, 100, true);
+            C.SetTimesteps(1e-4, 1000, true);
 
             // haben fertig...
             // ===============
@@ -298,7 +298,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-3, 500, true);
+            C.SetTimesteps(1e-3, 5000, true);
 
             // haben fertig...
             // ===============

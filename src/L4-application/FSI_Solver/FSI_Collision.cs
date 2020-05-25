@@ -868,8 +868,7 @@ namespace FSI_Solver {
             TemporaryVelocity[p1][0] = tempVel1[0];
             TemporaryVelocity[p1][1] = tempVel1[1];
             TemporaryVelocity[p1][2] = Particles[p1].Motion.IncludeRotation ? TemporaryVelocity[p1][2] - Particles[p1].Eccentricity * collisionCoefficient / Particles[p1].MomentOfInertia : 0;
-            var test1 = Particles[p0].Motion.Density;
-
+            
         }
 
         internal void ComputeMomentumBalanceCollisionWall(int p0, int wallID, Vector normalVector) {
