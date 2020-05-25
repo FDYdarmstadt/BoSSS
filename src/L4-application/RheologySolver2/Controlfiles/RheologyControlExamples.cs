@@ -57,13 +57,17 @@ namespace BoSSS.Application.Rheology {
             //Solver Options          
             C.savetodb = false;
             C.DbPath = path;
-            C.ProjectName = "Contration";
+            C.ProjectName = "Contraction";
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
+
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            //C.NoOfMultigridLevels = 3;
+            //C.LinearSolver.TargetBlockSize = 1000;
             C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
@@ -164,6 +168,7 @@ namespace BoSSS.Application.Rheology {
                 var _xNodes = GenericBlas.Linspace(0, L, cellsX + 1);
                 var _yNodes = GenericBlas.Linspace(-H, H, (cellsY + 1));
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC, false, null, boundingBox1, boundingBox2);
+                //var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_9, C.FixedStreamwisePeriodicBC, false, null, boundingBox1, boundingBox2);
 
                 #region grids
                 //var _xNodes = GenericBlas.Linspace(0, 10, cells2 + 1);// 10 * GridLevel + 1); //(10 * kelem + 1));
@@ -442,10 +447,10 @@ namespace BoSSS.Application.Rheology {
 
             C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.TargetBlockSize = 100000;
+            C.LinearSolver.TargetBlockSize = 1000;//100000;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
+            C.LinearSolver.NoOfMultigridLevels = 3;
 
 
             // nonlinear solver config
@@ -538,6 +543,11 @@ namespace BoSSS.Application.Rheology {
             //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
             //string grid = "ab9b8f9a-e1aa-469d-8eea-b56a88e672a4"; // florian terminal03 (full, level 3)
 
+            // grids Matthias
+            string grid = "5cce8f67-adbd-4aba-976f-c900a1f934c3"; // (full, level 0)
+            //string grid = "7fdc59c1-3e10-4817-8fb3-1807d97bac2a"; // (full, level 1)
+            //string grid = "c6c4d178-378f-4ee5-afa6-37b53d3b6280"; // (full, level 2)
+            //string grid = "8dfdf2cd-952c-4394-a141-ae42e88b5ed7"; // (full, level 3)
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
@@ -546,7 +556,7 @@ namespace BoSSS.Application.Rheology {
             //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
 
             // full channel mesh0 for cond tests comparison - schneller?
-            string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
+            //string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
 
             //fine grid - only on cluster!           
             //string grid = "70797022-eba0-4c77-b179-334c665044b5";
@@ -577,7 +587,6 @@ namespace BoSSS.Application.Rheology {
                     return _grid;
                 };
             }
-            
             /*
             C.GridFunc = delegate () {
 

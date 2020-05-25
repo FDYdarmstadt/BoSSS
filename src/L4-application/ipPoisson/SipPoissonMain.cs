@@ -38,6 +38,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
 using System.IO;
+using BoSSS.Platform.Utils.Geom;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -1193,6 +1194,67 @@ namespace BoSSS.Application.SipPoisson {
             Fields = Fields.Cat(this.MGColoring);
             //Fields = Fields.Cat(this.Polynomials);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, AnalyseOutputpath+ "poisson_MG_coloring" + timestepNo + caseStr, phystime, superSampling);
+            if (timestepNo != 0)
+            {
+                Resample(T);
+            }
+        }
+
+        private void Resample(DGField _field)
+        {
+            if (_field.GridDat.SpatialDimension == 2)
+            {
+                MultidimensionalArray SamplePoints;
+
+                GridData GD = (GridData)_field.GridDat;
+
+                BoundingBox BB = GD.GlobalBoundingBox;
+
+                //// global BoundingBox
+                //for (int i = 0; i < _field.GridDat.iGeomCells.Count; i++)
+                //{
+                //    BoundingBox lBB = new BoundingBox();
+                //    _field.GridDat.iGeomCells.GetCellBoundingBox(i, lBB);
+                //    BB.AddBB(lBB);
+                //}
+
+                int DOF = _field.DOFLocal;
+                double xDist = BB.Max[0] - BB.Min[0];
+                double yDist = BB.Max[1] - BB.Min[1];
+                double aspectRatio = xDist / yDist;
+
+                double N = Math.Sqrt(DOF);
+                int Nx = (int)Math.Round(Math.Sqrt(aspectRatio) * N);
+                int Ny = (int)Math.Round(1/Math.Sqrt(aspectRatio) * N);
+
+                SamplePoints = MultidimensionalArray.Create(Ny, Nx);
+
+                for (int i=0; i < Nx; i++)
+                {
+                    MultidimensionalArray points = MultidimensionalArray.Create(Ny,2);
+
+                    for (int k = 0; k < Ny; k++)
+                    {
+                        points[k, 0] = BB.Min[0] + (i + 1) * xDist / (Nx + 1);
+                        points[k, 1] = BB.Min[1] + (k + 1) * yDist / (Ny + 1);
+                    }
+
+                    List<DGField> fields = new List<DGField>();
+                    fields.Add(_field);
+                    
+                    FieldEvaluation FE = new FieldEvaluation(GD);
+
+                    MultidimensionalArray Result = MultidimensionalArray.Create(Ny, 1);
+
+                    FE.Evaluate(1.0, fields, points, 1.0, Result);
+
+                    SamplePoints.ExtractSubArrayShallow(-1, i).Acc(1.0, Result.ExtractSubArrayShallow(-1,0));
+                }
+
+                SamplePoints.SaveToTextFile(AnalyseOutputpath + "ResampleFFT.txt");
+
+            }
+
         }
 
     }
