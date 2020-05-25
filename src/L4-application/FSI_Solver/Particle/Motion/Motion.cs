@@ -290,6 +290,24 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// Used during init of the particle. Sets the translational and rotational velocity.
+        /// </summary>
+        /// <param name="initalTranslation">
+        /// The initial translational velocity.
+        /// </param>
+        /// <param name="initalRotation">
+        /// The initial rotational velocity.
+        /// </param>
+        internal void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration) {
+            for (int i = 0; i < NumberOfHistoryEntries; i++) {
+                TranslationalAcceleration[i] = new Vector(initalTranslationAcceleration);
+                RotationalAcceleration[i] = initalRotationAcceleration;
+                Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
+                Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
+            }
+        }
+
+        /// <summary>
         /// Transfer data form motionDataToTransfer to the current particle.Motion
         /// </summary>
         /// <param name="motionDataToTransfer">

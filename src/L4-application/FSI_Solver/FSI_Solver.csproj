@@ -102,8 +102,8 @@
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
+    <Compile Include="Particle\Motion\Motion.FixedWithVelocity.cs" />
     <Compile Include="Particle\ParticleHydrodynamics.cs" />
-    <Compile Include="Particle\Motion\Motion.Fixed.withForces.cs" />
     <Compile Include="Particle\Motion\Motion.Wet.NoTranslation.cs" />
     <Compile Include="Particle\Motion\Motion.Wet.NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion.AddedDamping.cs" />

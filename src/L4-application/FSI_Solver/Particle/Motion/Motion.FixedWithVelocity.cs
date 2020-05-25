@@ -14,16 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
 using ilPSP;
 using System;
 
 namespace BoSSS.Application.FSI_Solver {
     [Serializable]
-    public class MotionFixedWithForces : Motion {
+    public class MotionFixedWithVelocity : Motion {
 
         /// <summary>
         /// No motion
@@ -34,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionFixedWithForces(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
+        public MotionFixedWithVelocity(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
             IncludeRotation = false;
             IncludeTranslation = false;
         }
@@ -48,30 +45,30 @@ namespace BoSSS.Application.FSI_Solver {
         /// Include translation?
         /// </summary>
         internal override bool IncludeTranslation { get; } = false;
-
+        
         /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override Vector CalculateTranslationalVelocity(double dt) {
-            Vector l_TranslationalVelocity = new Vector(SpatialDim);
-            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
-            return l_TranslationalVelocity;
+        protected override Vector CalculateParticlePosition(double dt) {
+            Vector position = GetPosition(1);
+            Aux.TestArithmeticException(position, "particle translational velocity");
+            return position;
         }
-
+        
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt) {
-            double l_RotationalVelocity = 0;
-            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            return l_RotationalVelocity;
+        protected override double CalculateParticleAngle(double dt) {
+            double angle = GetAngle(1);
+            Aux.TestArithmeticException(angle, "particle rotational velocity");
+            return angle;
         }
 
         public override object Clone() {
-            Motion clonedMotion = new MotionFixedWithForces(Gravity, Density);
+            Motion clonedMotion = new MotionFixed(Gravity, Density);
             clonedMotion.SetParticleArea(ParticleArea);
             clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;

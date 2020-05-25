@@ -244,7 +244,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// FluidDensity
         /// </summary>
         [DataMember]
-        private double MinimalDistanceForCollision => GetMinGridLength() / 3;
+        private double MinimalDistanceForCollision => ((FSI_Control)Control).minDistanceThreshold;
 
         /// <summary>
         /// HydrodynConvergenceCriterion

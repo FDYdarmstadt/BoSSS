@@ -100,8 +100,7 @@ namespace FSI_Solver {
             double distanceThreshold = GridLengthScale / 10;
             //bool continueCollisionCalc = true;
             if (MinDistance != 0)
-                distanceThreshold = MinDistance / 10;
-
+                distanceThreshold = MinDistance;
             // Step 2
             // Loop over time until the particles hit.
             // =======================================================
@@ -166,8 +165,6 @@ namespace FSI_Solver {
                                                          out bool temp_Overlapping);
                                 Distance[p0][p1] = temp_Distance;
                                 Distance[p1][p0] = temp_Distance;
-                                if (temp_Distance < distanceThreshold)
-                                    Console.WriteLine("sodfghüiadfhgadf");
                                 Vector normalVector;
                                 if (temp_DistanceVector.Abs() < 1e-12)  // too small to given reliable directions
                                     normalVector = currentParticles[0].Motion.GetPosition() - currentParticles[1].Motion.GetPosition();
@@ -264,8 +261,6 @@ namespace FSI_Solver {
                                         normalVector.Normalize();
                                         particles[currentParticleID].ClosestPointToOtherObject = ClosestPoints[currentParticleID][secondParticleID];
                                         particles[secondParticleID].ClosestPointToOtherObject = ClosestPoints[secondParticleID][currentParticleID];
-                                        particles[currentParticleID].IsCollided = true;
-                                        particles[secondParticleID].IsCollided = true;
                                         ComputeMomentumBalanceCollision(currentParticleID, secondParticleID, normalVector, AccDynamicTimestep, DistanceVector[currentParticleID][secondParticleID].Abs());
                                         for (int k = 0; k < Particles.Length; k++) {
                                             if(Particles[currentParticleID].MasterGhostIDs[0] > 0 && Particles[currentParticleID].MasterGhostIDs[0] == Particles[k].MasterGhostIDs[0]) {
@@ -295,6 +290,7 @@ namespace FSI_Solver {
                     for (int p = 0; p < Particles.Length; p++) {
                         if (particles[p].IsCollided) {
                             particles[p].Motion.InitializeParticleVelocity(new double[] { TemporaryVelocity[p][0], TemporaryVelocity[p][1] }, TemporaryVelocity[p][2]);
+                            particles[p].Motion.InitializeParticleAcceleration(new double[] { 0, 0 }, 0);
                             particles[p].Motion.SetCollisionTimestep(AccDynamicTimestep - SaveTimeStep);
                         }
                         else {
@@ -852,6 +848,9 @@ namespace FSI_Solver {
                 return;
             if (distance / (detectCollisionVn_P1 - detectCollisionVn_P0) > (Dt - accDt))
                 return;
+
+            Particles[p0].IsCollided = true;
+            Particles[p1].IsCollided = true;
             Vector tangentialVector = new Vector(-normalVector[1], normalVector[0]);
             Particles[p0].CalculateEccentricity(tangentialVector);
             Particles[p1].CalculateEccentricity(tangentialVector);
