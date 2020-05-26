@@ -165,11 +165,7 @@ namespace FSI_Solver {
                                                          out bool temp_Overlapping);
                                 Distance[p0][p1] = temp_Distance;
                                 Distance[p1][p0] = temp_Distance;
-                                Vector normalVector;
-                                if (temp_DistanceVector.Abs() < 1e-12)  // too small to given reliable directions
-                                    normalVector = currentParticles[0].Motion.GetPosition() - currentParticles[1].Motion.GetPosition();
-                                else
-                                    normalVector = temp_DistanceVector;
+                                Vector normalVector = new Vector(temp_DistanceVector);
                                 normalVector.Normalize();
                                 double temp_SaveTimeStep = DynamicTimestep(currentParticles, temp_ClosestPoints, normalVector, Distance[p0][p1]);
                                 SaveTimeStepArray[p0][p1] += temp_SaveTimeStep;
@@ -200,6 +196,8 @@ namespace FSI_Solver {
                         if (AccDynamicTimestep >= Dt) 
                             break;
                     }
+                    if (AccDynamicTimestep == double.MaxValue)
+                        break;
 
                     // Step 3
                     // Find collision graph
@@ -261,7 +259,7 @@ namespace FSI_Solver {
                                         normalVector.Normalize();
                                         particles[currentParticleID].ClosestPointToOtherObject = ClosestPoints[currentParticleID][secondParticleID];
                                         particles[secondParticleID].ClosestPointToOtherObject = ClosestPoints[secondParticleID][currentParticleID];
-                                        ComputeMomentumBalanceCollision(currentParticleID, secondParticleID, normalVector, AccDynamicTimestep, DistanceVector[currentParticleID][secondParticleID].Abs());
+                                        ComputeMomentumBalanceCollision(currentParticleID, secondParticleID, normalVector, distanceThreshold, DistanceVector[currentParticleID][secondParticleID].Abs());
                                         for (int k = 0; k < Particles.Length; k++) {
                                             if(Particles[currentParticleID].MasterGhostIDs[0] > 0 && Particles[currentParticleID].MasterGhostIDs[0] == Particles[k].MasterGhostIDs[0]) {
                                                 TemporaryVelocity[k] = TemporaryVelocity[currentParticleID].CloneAs();
@@ -827,7 +825,7 @@ namespace FSI_Solver {
         /// <param name="collidedParticles">
         /// List of the two colliding particles
         /// </param>
-        internal void ComputeMomentumBalanceCollision(int p0, int p1, Vector normalVector, double accDt, double distance) {
+        internal void ComputeMomentumBalanceCollision(int p0, int p1, Vector normalVector, double threshold, double distance) {
             Vector velocityP0 = CalculateNormalAndTangentialVelocity(p0, normalVector);
             Vector velocityP1 = CalculateNormalAndTangentialVelocity(p1, normalVector);
             double detectCollisionVn_P0;
@@ -846,7 +844,7 @@ namespace FSI_Solver {
                 detectCollisionVn_P1 = 0;
             if (detectCollisionVn_P1 - detectCollisionVn_P0 <= 0)
                 return;
-            if (distance / (detectCollisionVn_P1 - detectCollisionVn_P0) > (Dt - accDt))
+            if (distance > threshold)
                 return;
 
             Particles[p0].IsCollided = true;
