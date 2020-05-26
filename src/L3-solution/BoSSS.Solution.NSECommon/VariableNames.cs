@@ -69,7 +69,17 @@ namespace BoSSS.Solution.NSECommon {
         /// solver.
         /// Different Turbulence models will be supported in the future.
         /// </summary>
-        RANS
+        RANS,
+
+
+        /// <summary>
+        ///  MixtureFraction solver.
+        /// Used as a pre-step for calculating reactive flows.
+        /// Equations for continuity, momentum and for a passive scalar Z are solved,
+        /// while the Temperature and mass fraction fields are approximated by the Burke-Schumann limit
+        /// </summary>
+        MixtureFraction,
+
 
     }
 
@@ -917,6 +927,10 @@ namespace BoSSS.Solution.NSECommon {
         /// variable name for the MassFraction of component 0
         /// </summary>
         public const string MassFraction0 = "MassFraction0";
+        /// <summary>
+        /// variable name for the mixture fraction (z) 
+        /// </summary>
+        public const string MixtureFraction = "MixtureFraction";
 
         /// <summary>
         /// variable name for the MassFraction of component 0 at linearization point
@@ -974,12 +988,27 @@ namespace BoSSS.Solution.NSECommon {
         public const string MassFraction3Mean = "MassFraction3Mean";
 
         /// <summary>
+        /// variable name for MassFraction of component 4
+        /// </summary>
+        public const string MassFraction4 = "MassFraction4";
+
+        /// <summary>
+        /// variable name for MassFraction of component 3 at linearization point
+        /// </summary>
+        public const string MassFraction4_0 = "MassFraction4_0";
+
+        /// <summary>
+        /// variable name for the MassFractionMean of component 3
+        /// </summary>
+        public const string MassFraction4Mean = "MassFraction4Mean";
+        /// <summary>
         /// the names of all mass fractions listed in an array
         /// </summary>
         static public string[] MassFractions(int NumberOfSpecies) {
             switch (NumberOfSpecies) {
                 case 3: return new string[] { MassFraction0, MassFraction1, MassFraction2 };
                 case 4: return new string[] { MassFraction0, MassFraction1, MassFraction2, MassFraction3 };
+                case 5: return new string[] { MassFraction0, MassFraction1, MassFraction2, MassFraction3, MassFraction4 };
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
@@ -991,6 +1020,7 @@ namespace BoSSS.Solution.NSECommon {
             switch (NumberOfSpecies) {
                 case 3: return new string[] {MassFraction0_0, MassFraction1_0, MassFraction2_0};
                 case 4: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0, MassFraction3_0 };
+                case 5: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0, MassFraction3_0, MassFraction4_0 };
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
@@ -1002,6 +1032,7 @@ namespace BoSSS.Solution.NSECommon {
             switch (NumberOfSpecies) {
                 case 3: return new string[] { MassFraction0Mean, MassFraction1Mean, MassFraction2Mean };
                 case 4: return new string[] { MassFraction0Mean, MassFraction1Mean, MassFraction2Mean, MassFraction3Mean };
+                case 5: return new string[] { MassFraction0Mean, MassFraction1Mean, MassFraction2Mean, MassFraction3Mean , MassFraction4Mean };
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
@@ -1015,6 +1046,7 @@ namespace BoSSS.Solution.NSECommon {
                 case 1: return MassFraction1;
                 case 2: return MassFraction2;
                 case 3: return MassFraction3;
+                case 4: return MassFraction4;
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
