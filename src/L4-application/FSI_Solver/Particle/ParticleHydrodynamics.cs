@@ -24,8 +24,9 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
-    internal class MotionHydrodynamics {
-        internal MotionHydrodynamics(LevelSetTracker lsTrk) {
+    [Serializable]
+    internal class ParticleHydrodynamics {
+        internal ParticleHydrodynamics(LevelSetTracker lsTrk) {
             m_LsTrk = lsTrk;
         }
         [DataMember]
@@ -48,17 +49,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
-                if (!currentParticle.IsMaster)
-                    continue;
                 CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
-                if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
-                    for (int g = 0; g < currentParticle.MasterGhostIDs.Length; g++) {
-                        if (currentParticle.MasterGhostIDs[g] < 1)
-                            continue;
-                        CellMask ghostCells = AllParticles[currentParticle.MasterGhostIDs[g] - 1].CutCells_P(m_LsTrk);
-                        cutCells = cutCells.Union(ghostCells);
-                    }
-                }
                 int offset = p * (m_Dim + 1);
                 double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
                 double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
@@ -66,6 +57,25 @@ namespace BoSSS.Application.FSI_Solver {
                     hydrodynamics[offset + d] = tempForces[d];
                 }
                 hydrodynamics[offset + m_Dim] = tempTorque;
+            }
+            for (int p = 0; p < AllParticles.Count(); p++) {
+                Particle currentParticle = AllParticles[p];
+                int offset = p * (m_Dim + 1);
+                if (!currentParticle.IsMaster)
+                    continue;
+                if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
+                    for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
+                        int ghostOffset = (currentParticle.MasterGhostIDs[g] - 1) * (m_Dim + 1);
+                        if (currentParticle.MasterGhostIDs[g] < 1)
+                            continue;
+                        for (int d = 0; d < m_Dim; d++) {
+                            hydrodynamics[offset + d] += hydrodynamics[ghostOffset + d];
+                            hydrodynamics[ghostOffset + d] = 0;
+                        }
+                        hydrodynamics[offset + m_Dim] += hydrodynamics[ghostOffset + m_Dim];
+                        hydrodynamics[ghostOffset + m_Dim] = 0;
+                    }
+                }
             }
             double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
             double omega = AllParticles[0].Motion.omega;
@@ -85,14 +95,9 @@ namespace BoSSS.Application.FSI_Solver {
         private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega) {
             double[] relaxatedHydrodynamics;
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            if (m_ForcesAndTorquePreviousIteration.Count >= 4) {
-                relaxatedHydrodynamics = AitkenUnderrelaxation(hydrodynamics, ref omega);
-            }
-            else if (m_ForcesAndTorquePreviousIteration.Count >= 1) {
-                relaxatedHydrodynamics = StaticUnderrelaxation(hydrodynamics);
-            }
-            else
-                relaxatedHydrodynamics = hydrodynamics.CloneAs();
+            relaxatedHydrodynamics = m_ForcesAndTorquePreviousIteration.Count > 2
+                ? AitkenUnderrelaxation(hydrodynamics, ref omega)
+                : StaticUnderrelaxation(hydrodynamics);
             return relaxatedHydrodynamics;
         }
 
@@ -120,10 +125,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="iterationCounter"></param>
         internal double CalculateParticleResidual(ref int iterationCounter) {
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             double residual = 0;
             double denom = 0;
-            if (iterationCounter <= 2)
+            if (iterationCounter < 1)
                 residual = double.MaxValue;
             else {
                 for (int i = 0; i < m_ForcesAndTorquePreviousIteration[0].Length; i++) {
@@ -139,6 +143,8 @@ namespace BoSSS.Application.FSI_Solver {
         private double[] StaticUnderrelaxation(double[] variable) {
             double[] returnVariable = variable.CloneAs();
             for (int d = 0; d < variable.Length; d++) {
+                if (variable[d] == 0)//ghost Particle
+                    continue;
                 returnVariable[d] = 0.1 * variable[d] + (1 - 0.1) * m_ForcesAndTorquePreviousIteration[1][d];
             }
             return returnVariable;
@@ -150,6 +156,10 @@ namespace BoSSS.Application.FSI_Solver {
             double residualScalar = 0;
             double sumVariable = 0;
             for (int i = 0; i < variable.Length; i++) {
+                if (variable[i] == 0) {// ghost particle
+                    residualDiff[i] = 0;
+                    continue;
+                }
                 residual[i] = new double[] { (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]), (m_ForcesAndTorqueWithoutRelaxation[1][i] - m_ForcesAndTorquePreviousIteration[1][i]) };
                 residualDiff[i] = residual[i][0] - residual[i][1];
                 residualScalar += residual[i][1] * residualDiff[i];
@@ -158,6 +168,8 @@ namespace BoSSS.Application.FSI_Solver {
             Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
             double[] outVar = variable.CloneAs();
             for (int i = 0; i < variable.Length; i++) {
+                if (variable[i] == 0)// ghost particle
+                    continue;
                 outVar[i] = Omega * (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]) + m_ForcesAndTorquePreviousIteration[0][i];
             }
             return outVar;

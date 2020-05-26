@@ -57,14 +57,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Hippopede(ParticleMotionInit motionInit, double length, double thickness, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, activeStress, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Hippopede(InitializeMotion motionInit, double length, double thickness, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, activeStress, startAngl, startTransVelocity, startRotVelocity) {
             m_Length = length;
             m_Thickness = thickness;
             Aux.TestArithmeticException(length, "Particle length");
             Aux.TestArithmeticException(thickness, "Particle thickness");
-            Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleArea(Area);
-            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+            Motion.SetParticleMaxLengthscale(GetLengthScales().Max());
+            Motion.SetParticleArea(Area);
+            Motion.SetParticleMomentOfInertia(MomentOfInertia);
         }
 
         [DataMember]

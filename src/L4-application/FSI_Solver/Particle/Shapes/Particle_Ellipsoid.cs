@@ -19,6 +19,8 @@ using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
 using ilPSP.Utils;
+using FSI_Solver;
+using System.Diagnostics;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -58,15 +60,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Ellipsoid(ParticleMotionInit motionInit, double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_Ellipsoid(InitializeMotion motionInit, double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = length;
             m_Thickness = thickness;
             Aux.TestArithmeticException(length, "Particle length");
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
-            Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleArea(Area);
-            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+            Motion.SetParticleMaxLengthscale(GetLengthScales().Max());
+            Motion.SetParticleArea(Area);
+            Motion.SetParticleMomentOfInertia(MomentOfInertia);
         }
 
         [DataMember]
@@ -153,6 +155,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// A vector. 
         /// </param>
         override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            Aux = new FSI_Auxillary();
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
