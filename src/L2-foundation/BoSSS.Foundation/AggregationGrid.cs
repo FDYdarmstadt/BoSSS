@@ -402,6 +402,20 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         /// <summary>
+        /// returns the grid metrics, of type <see cref="AggregationGridData"/>
+        /// </summary>
+        public AggregationGridData GridData {
+            get {
+                if (m_GridData == null)
+                {
+                    InitGridData();
+                }
+                return m_GridData;
+            }
+        }
+
+
+        /// <summary>
         /// Releases the object cached in <see cref="iGridData"/>; this is necessary if 
         /// the grid object was changed somehow.
         /// </summary>
