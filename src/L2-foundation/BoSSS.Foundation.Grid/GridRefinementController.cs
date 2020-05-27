@@ -95,7 +95,8 @@ namespace BoSSS.Foundation.Grid {
             int[] levelIndicator = GetGlobalLevelIndicator(currentGrid, CellsWithMaxRefineLevel, globalCellNeigbourship);
             cellsToRefine = GetCellsToRefine(currentGrid, levelIndicator);
 
-            BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, CutCells, levelIndicator, globalCellNeigbourship);
+            BitArray notOk2Coarsen = GetCellsNotOk2Coarsen(currentGrid, CellsMaxRefineLevel);
+            BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, notOk2Coarsen, levelIndicator, globalCellNeigbourship);
             int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen, currentGrid);
             cellsToCoarsen = GetCoarseningCells(currentGrid, coarseningClusters);
 
@@ -110,12 +111,14 @@ namespace BoSSS.Foundation.Grid {
         }
 
         private static BitArray GetCutCellNeighbours(GridData currentGrid, BitArray localCutCells, int[][] globalCellNeighbourship) {
+            if (localCutCells == null)
+                return null;
             Partitioning cellPartitioning = currentGrid.CellPartitioning;
             int globalJ = cellPartitioning.TotalLength;
             int[] i0 = cellPartitioning.GetI0s();
             BitArray[] exchangeCutCells = localCutCells.MPIGatherO(0);
             exchangeCutCells = exchangeCutCells.MPIBroadcast(0);
-            BitArray globalCutCells = new BitArray(globalJ);
+            BitArray globalCutCells = new BitArray(globalJ);   
             for (int m = 0; m < exchangeCutCells.Length; m++) {
                 for (int j = 0; j < exchangeCutCells[m].Length; j++) {
                     globalCutCells[j + i0[m]] = exchangeCutCells[m][j];
@@ -125,12 +128,6 @@ namespace BoSSS.Foundation.Grid {
                         }
                 }
             }
-            //for (int j = 0; j < globalCutCells.Length; j++) {
-            //    if (globalCutCells[j])
-            //        for (int i = 0; i < globalCellNeighbourship[j].Length; i++) {
-            //            globalCutCells[globalCellNeighbourship[j][i]] = true;
-            //        }
-            //}
             return globalCutCells;
         }
 
@@ -150,7 +147,6 @@ namespace BoSSS.Foundation.Grid {
             int localJ = currentGrid.Cells.NoOfLocalUpdatedCells;
             int[] localCellsMaxRefineLvl = new int[localJ];
             int levelSetMaxLevel = 0;
-            int local_i0 = cellPartitioning.i0;
 
             for (int i = 0; i < CellsMaxRefineLevel.Count(); i++) {
                 BitArray currentArray = CellsMaxRefineLevel[i].Item2;
@@ -165,18 +161,40 @@ namespace BoSSS.Foundation.Grid {
             levelSetMaxLevel = levelSetMaxLevel.MPIMax();
             int[][] exchangeCellsMaxRefineLvl = localCellsMaxRefineLvl.MPIGatherO(0);
             exchangeCellsMaxRefineLvl = exchangeCellsMaxRefineLvl.MPIBroadcast(0);
-            int[] globalCellsMaxRefineLvl = new int[globalJ];
-            for (int m = 0; m < exchangeCellsMaxRefineLvl.Length; m++) {
-                for (int j = 0; j < exchangeCellsMaxRefineLvl[m].Length; j++) {
-                    globalCellsMaxRefineLvl[j + i0[m]] = exchangeCellsMaxRefineLvl[m][j];
+            int[] globalCellsMaxRefineLvl = new int[globalJ];          
+                for (int m = 0; m < exchangeCellsMaxRefineLvl.Length; m++) {
+                    for (int j = 0; j < exchangeCellsMaxRefineLvl[m].Length; j++) {
+                        globalCellsMaxRefineLvl[j + i0[m]] = exchangeCellsMaxRefineLvl[m][j];
+                    }
                 }
-            }
-            for (int j = 0; j < globalJ; j++) {
-                if (cutCells[j]) {
-                    globalCellsMaxRefineLvl[j] = levelSetMaxLevel;
+            if (cutCells != null) {
+                for (int j = 0; j < globalJ; j++) {
+                    if (cutCells[j]) {
+                        globalCellsMaxRefineLvl[j] = levelSetMaxLevel;
+                    }
                 }
             }
             return globalCellsMaxRefineLvl;
+        }
+
+        private static BitArray GetCellsNotOk2Coarsen(GridData currentGrid, List<Tuple<int, BitArray>> CellsMaxRefineLevel) {
+            int localJ = currentGrid.Cells.NoOfLocalUpdatedCells;
+            BitArray localCellsNotOk2Coarsen = new BitArray(localJ);
+            bool anyCellsNotOk = false;
+            for (int i = 0; i < CellsMaxRefineLevel.Count(); i++) {
+                if (CellsMaxRefineLevel[i].Item1 == -1) {
+                    anyCellsNotOk = true;
+                    BitArray currentArray = CellsMaxRefineLevel[i].Item2;
+                    for (int j = 0; j < localJ; j++) {
+                        if (!localCellsNotOk2Coarsen[j])
+                            localCellsNotOk2Coarsen[j] = currentArray[j];
+                    }
+                }
+            }
+            if (anyCellsNotOk)
+                return localCellsNotOk2Coarsen;
+            else
+                return null;
         }
 
         /// <summary>
@@ -238,7 +256,7 @@ namespace BoSSS.Foundation.Grid {
                 if (levelIndicator[globalIndex] < CellsWithMaxRefineLevel[globalIndex] && globalCurrentLevel[globalIndex] <= CellsWithMaxRefineLevel[globalIndex]) {
                     if (globalCurrentLevel[globalIndex] == CellsWithMaxRefineLevel[globalIndex])
                         levelIndicator[globalIndex] = globalCurrentLevel[globalIndex];
-                    else
+                    else 
                         levelIndicator[globalIndex] = globalCurrentLevel[globalIndex] + 1;
                     GetLevelIndicatiorRecursive(globalIndex, levelIndicator[globalIndex] - 1, globalNeighbourship, levelIndicator);
                 }
@@ -249,31 +267,7 @@ namespace BoSSS.Foundation.Grid {
             for (int j = 0; j < globalJ; j++) {
                 levelIndicator[j] = levelIndicator[j].MPIMax();
             }
-
             return levelIndicator;
-        }
-
-        /// <summary>
-        /// Recursive computation for the desired level of each global cell.
-        /// </summary>
-        /// <param name="globalCellIndex">
-        /// The global index of the current cell.
-        /// </param>
-        /// <param name="LevelIndNeighbour"></param>
-        /// <param name="globalNeighbourship">
-        /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
-        /// </param>
-        /// <param name="levelIndicator"></param>
-        static void GetLevelIndicatiorRecursive(int globalCellIndex, int LevelIndNeighbour, int[][] globalNeighbourship, int[] levelIndicator) {
-            if (LevelIndNeighbour <= 0)
-                return;
-            for (int j = 0; j < globalNeighbourship[globalCellIndex].Length; j++) {
-                int jNeigh = globalNeighbourship[globalCellIndex][j];
-                if (levelIndicator[jNeigh] < LevelIndNeighbour) {
-                    levelIndicator[jNeigh] = LevelIndNeighbour;
-                    GetLevelIndicatiorRecursive(jNeigh, LevelIndNeighbour - 1, globalNeighbourship, levelIndicator);
-                }
-            }
         }
 
         /// <summary>
@@ -312,7 +306,29 @@ namespace BoSSS.Foundation.Grid {
             return globalDesiredLevel;
         }
 
-
+        /// <summary>
+        /// Recursive computation for the desired level of each global cell.
+        /// </summary>
+        /// <param name="globalCellIndex">
+        /// The global index of the current cell.
+        /// </param>
+        /// <param name="LevelIndNeighbour"></param>
+        /// <param name="globalNeighbourship">
+        /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
+        /// </param>
+        /// <param name="levelIndicator"></param>
+        static void GetLevelIndicatiorRecursive(int globalCellIndex, int LevelIndNeighbour, int[][] globalNeighbourship, int[] levelIndicator) {
+            if (LevelIndNeighbour <= 0)
+                return;
+            for (int j = 0; j < globalNeighbourship[globalCellIndex].Length; j++) {
+                int jNeigh = globalNeighbourship[globalCellIndex][j];
+                if (levelIndicator[jNeigh] < LevelIndNeighbour) {
+                    levelIndicator[jNeigh] = LevelIndNeighbour;
+                    GetLevelIndicatiorRecursive(jNeigh, LevelIndNeighbour - 1, globalNeighbourship, levelIndicator);
+                }
+            }
+        }
+        
         /// <summary>
         /// Recursive computation for the desired level of each global cell.
         /// </summary>
@@ -360,7 +376,6 @@ namespace BoSSS.Foundation.Grid {
             for (int j = 0; j < J; j++) {
                 localCurrentLevel[j] = currentGrid.Cells.GetCell(j).RefinementLevel;
             }
-
             int[][] exchangeGlobalCurrentLevel = localCurrentLevel.MPIGatherO(0);
             exchangeGlobalCurrentLevel = exchangeGlobalCurrentLevel.MPIBroadcast(0);
 
@@ -424,12 +439,12 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            //if (cellsNotOK2Coarsen != null) {
-            //    for (int j = 0; j < localJ; j++) {
-            //        if(cellsNotOK2Coarsen[j])
-            //            oK2Coarsen[j] = false;
-            //    }
-            //}
+            if (cellsNotOK2Coarsen != null) {
+                for (int j = 0; j < localJ; j++) {
+                    if (cellsNotOK2Coarsen[j])
+                        oK2Coarsen[j] = false;
+                }
+            }
 
             return oK2Coarsen;
         }

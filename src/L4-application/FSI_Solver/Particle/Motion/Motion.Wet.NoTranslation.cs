@@ -16,8 +16,10 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using ilPSP;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class MotionWetNoTranslation : Motion {
 
         /// <summary>
@@ -56,46 +58,13 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle position
-        /// </summary>
-        /// <param name="dt"></param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override Vector CalculateParticlePosition(double dt, double collisionTimestep) {
-            Vector l_Position = GetPosition(1);
-            Aux.TestArithmeticException(l_Position, "particle position");
-            return l_Position;
-        }
-
-        /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override Vector CalculateTranslationalVelocity(double dt) {
-            Vector l_TranslationalVelocity = new Vector(m_Dim);
+            Vector l_TranslationalVelocity = new Vector(SpatialDim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
-        }
-
-        /// <summary>
-        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override Vector CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            Vector l_TranslationalVelocity = new Vector(m_Dim);
-            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
-            return l_TranslationalVelocity;
-        }
-
-        /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt) {
-            double l_RotationalVelocity = GetRotationalVelocity(0) + (GetRotationalAcceleration(0) + GetRotationalAcceleration(1)) * dt / 2;
-            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            return l_RotationalVelocity;
         }
 
         /// <summary>
@@ -104,13 +73,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
         public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            return new Vector(m_Dim); ;
+            return new Vector(SpatialDim); ;
         }
 
         public override object Clone() {
             Motion clonedMotion = new MotionWetNoTranslation(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
-            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            clonedMotion.SetParticleArea(ParticleArea);
+            clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

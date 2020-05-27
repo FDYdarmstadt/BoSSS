@@ -19,9 +19,9 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(int k = 2, int amrLevel = 2, double aspectRatio = 2, double relaxationFactor = 0.3, bool addaptiveUnderrelaxation = true, double conv = 1e-6) {
-            FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+        public static FSI_Control Main(int k = 2, int amrLevel = 2, double angle = 180, double distance = 1) {
+            FSI_Control C = new FSI_Control(k, "2particleInteractions", "active Particles");
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
 
             // Domain
             // =============================
@@ -41,7 +41,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = conv;
+            C.hydrodynamicsConvergenceCriterion = 1e-6;
 
             // Fluid Properties
             // =============================
@@ -53,10 +53,12 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================   
             
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1.5);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5, true);
             double particleRadius = 0.5;
+            double aspectRatio = 2;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0.0, 0.0 }, 0, 1)
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -distance / 2, 0.0 }, 180 - angle, 1),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { distance / 2, 0.0 }, angle, 1)
             };
 
             // misc. solver options

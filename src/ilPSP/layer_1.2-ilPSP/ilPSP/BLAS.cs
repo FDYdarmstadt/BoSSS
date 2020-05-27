@@ -538,6 +538,8 @@ namespace ilPSP.Utils {
         /// clear all entries.
         /// </summary>
         static public void ClearEntries<T>(this T a) where T : IList<double> {
+            if (a.Count == 0)
+                throw new Exception("anfksdfnalfnyf");
             int L = a.Count;
             if(a is Array) {
                 // optimized for arrays
