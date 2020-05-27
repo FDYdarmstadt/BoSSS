@@ -54,13 +54,13 @@ namespace BoSSS.Application.DatabaseTests
             Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.SessionsDir));
             Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.TimestepDir));
 
-            return new DatabaseInfo(basePath);
+            return DatabaseInfo.Open(basePath);
         }
 
         private IDatabaseInfo GetDatabaseCopy(string newBasePath, string templateBasePath)
         {
             CreateEmptyDatabase(newBasePath);
-            IDatabaseInfo templateDB = new DatabaseInfo(templateBasePath);
+            IDatabaseInfo templateDB = DatabaseInfo.Open(templateBasePath);
 
             foreach (Guid sessionID in templateDB.Controller.DBDriver.FsDriver.GetAllSessionGUIDs())
             {
@@ -74,7 +74,7 @@ namespace BoSSS.Application.DatabaseTests
                 File.Copy(filePath, filePath.Replace(templateBasePath, newBasePath));
             }
 
-            return new DatabaseInfo(newBasePath);
+            return DatabaseInfo.Open(newBasePath);
         }
 
         private void RemoveTestDatabase(IDatabaseInfo database)

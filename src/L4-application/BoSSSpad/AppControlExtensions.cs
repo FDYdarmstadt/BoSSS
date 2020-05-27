@@ -344,7 +344,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             // otherwise, create new db
-            return new DatabaseInfo(dbPath);
+            return DatabaseInfo.Open(dbPath);
         }
     }
 }

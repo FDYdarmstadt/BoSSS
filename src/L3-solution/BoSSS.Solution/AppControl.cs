@@ -319,7 +319,6 @@ namespace BoSSS.Solution.Control {
         /// only for restarts with loaded grid, 
         /// changes a boundary condition in the loaded grid
         /// </summary>
-        /// <param name="EdgeTagNames"></param>
         public void ChangeBoundaryCondition(string oldEdgeTagName, string newEdgeTagName) {
             if(!this.BoundaryValueChanges.ContainsKey(oldEdgeTagName))
                 this.BoundaryValueChanges.Add(oldEdgeTagName, newEdgeTagName);

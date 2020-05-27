@@ -29,11 +29,84 @@ namespace BoSSS.Foundation.IO {
     /// </summary>
     public class DatabaseInfo : IDatabaseInfo {
 
+        static List<DatabaseInfo> DatabaseInfos;
+
+        static object padlock_DatabaseInfos = new object();
+
+        /// <summary>
+        /// Open the database
+        /// </summary>
+        public static DatabaseInfo Open(string _path) {
+            return Open(_path, null);
+        }
+
+        /// <summary>
+        /// Open the database
+        /// </summary>
+        public static DatabaseInfo Open((string DbPath, string MachineFilter)[] AlternateDbPaths) {
+            return Open(null, AlternateDbPaths);
+        }
+
+        /// <summary>
+        /// Open the database
+        /// </summary>
+        public static DatabaseInfo Open(string _path, (string DbPath, string MachineFilter)[] AlternateDbPaths = null) {
+            if(_path == null && (AlternateDbPaths == null || AlternateDbPaths.Length <= 0))
+                throw new ArgumentException("hey, buddy, you must provide some path to open");
+            
+            List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+
+            allPaths.Add((_path, null));
+            if(AlternateDbPaths != null)
+                allPaths.AddRange(AlternateDbPaths);
+
+            string mName = System.Environment.MachineName.ToLowerInvariant();
+
+            string dbPath = null;
+            foreach(var t in allPaths) {
+                string __path = t.Item1;
+                string filter = t.Item2;
+
+                if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                    if(!mName.Contains(filter)) {
+                        continue;
+                    }
+                }
+
+                if(Directory.Exists(__path) || File.Exists(__path)) { // the latter is for ZIP-file databases
+                    dbPath = __path;
+                    break;
+                }
+
+            }
+
+            if(dbPath == null) {
+                throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
+            }
+
+
+            lock(padlock_DatabaseInfos) {
+                if(DatabaseInfos == null)
+                    DatabaseInfos = new List<DatabaseInfo>();
+
+                foreach(var db in DatabaseInfos) {
+                    if(db.PathMatch(dbPath))
+                        return db;
+                }
+
+                var newDb = new DatabaseInfo(dbPath);
+                DatabaseInfos.Add(newDb);
+                return newDb;
+            }
+        }
+
+
+
         /// <summary>
         /// Stores the path
         /// </summary>
         /// <param name="path">Path to the database</param>
-        public DatabaseInfo(string path) {
+        private DatabaseInfo(string path) {
             this.Path = path;
             if(path == null) {
                 Controller = NullDatabaseController.Instance;
