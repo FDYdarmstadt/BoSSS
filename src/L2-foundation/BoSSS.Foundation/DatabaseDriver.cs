@@ -50,15 +50,14 @@ namespace BoSSS.Foundation.IO {
         GridDatabaseDriver gridDatabaseDriver;
         SessionDatabaseDriver sessionsDatabaseDriver;
         TimeStepDatabaseDriver timestepDatabaseDriver;
-        IFileSystemDriver fsDriver; 
+        IFileSystemDriver fsDriver;
 
         /// <summary>
         /// </summary>
         /// <param name="fsDriver">
         /// the IO Driver; can be null;
         /// </param>
-        public DatabaseDriver(IFileSystemDriver fsDriver)
-        {
+        public DatabaseDriver(IFileSystemDriver fsDriver) {
             this.fsDriver = fsDriver;
             ISerializer standardSerializer = new SerializerVersion0();
             ISerializer objectTypeSerializer = new SerializerVersion1();

@@ -48,6 +48,28 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// One of the stupid hacks that we have to do due to the shitty convoluted design of the database.
+        /// </summary>
+        public static void Close(IDatabaseInfo _dbi) {
+            DatabaseInfo dbi = _dbi as DatabaseInfo;
+
+            dbi.Controller.DBDriver.Dispose();
+            lock(padlock_DatabaseInfos) {
+                if(DatabaseInfos == null)
+                    DatabaseInfos = new List<DatabaseInfo>();
+
+                for(int i = 0; i < DatabaseInfos.Count; i++) {
+                    if(object.ReferenceEquals(dbi, DatabaseInfos[i])) {
+                        DatabaseInfos.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+        }
+
+
+
+        /// <summary>
         /// Open the database
         /// </summary>
         public static DatabaseInfo Open(string _path, (string DbPath, string MachineFilter)[] AlternateDbPaths = null) {

@@ -31,6 +31,10 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// constructor
         /// </summary>
+        /// <param name="databasePath">
+        /// - if pointing to a directory, a normal BoSSS database
+        /// - if pointing to a file, a ZIP archive of a BoSSS database
+        /// </param>
         public StandardFsDriver(string databasePath) {
             if (!File.Exists(databasePath) && !Directory.Exists(databasePath))
                 throw new FileNotFoundException("Database directory/file does not exist.");
@@ -292,6 +296,9 @@ namespace BoSSS.Foundation.IO {
             IsDisposed = true;
         }
 
+        /// <summary>
+        /// true if <see cref="Dispose"/> has been called
+        /// </summary>
         public bool IsDisposed {
             get;
             private set;

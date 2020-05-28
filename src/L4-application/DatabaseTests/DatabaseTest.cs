@@ -77,8 +77,8 @@ namespace BoSSS.Application.DatabaseTests
             return DatabaseInfo.Open(newBasePath);
         }
 
-        private void RemoveTestDatabase(IDatabaseInfo database)
-        {
+        private void RemoveTestDatabase(IDatabaseInfo database) {
+            DatabaseInfo.Close(database);
             Directory.Delete(database.Path, true);
         }
     }
