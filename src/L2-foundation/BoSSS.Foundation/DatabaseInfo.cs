@@ -52,7 +52,11 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public static void Close(IDatabaseInfo _dbi) {
             DatabaseInfo dbi = _dbi as DatabaseInfo;
-
+            if(dbi == null) {
+                Console.Error.WriteLine($"Reminder: some strange {typeof(IDatabaseInfo).Name} implementation seems to be around here - unable to close.");
+                return;
+            }
+            
             dbi.Controller.DBDriver.Dispose();
             lock(padlock_DatabaseInfos) {
                 if(DatabaseInfos == null)
@@ -110,6 +114,25 @@ namespace BoSSS.Foundation.IO {
             lock(padlock_DatabaseInfos) {
                 if(DatabaseInfos == null)
                     DatabaseInfos = new List<DatabaseInfo>();
+
+
+
+                for(int i = 0; i < DatabaseInfos.Count; i++) {
+                    var dbi = DatabaseInfos[i];
+                    IFileSystemDriver dbdr = dbi.Controller.DBDriver.FsDriver;
+                    if(dbdr is StandardFsDriver fsdr ) {
+                        if(fsdr.IsDisposed) {
+                            dbi.Controller.DBDriver.Dispose();
+                        }
+                        DatabaseInfos.RemoveAt(i);
+                        i--;
+                    }
+
+                }
+
+
+
+
 
                 foreach(var db in DatabaseInfos) {
                     if(db.PathMatch(dbPath))

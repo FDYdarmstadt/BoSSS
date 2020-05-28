@@ -3054,6 +3054,11 @@ namespace BoSSS.Solution {
                     if (DatabaseDriver != null) {
                         DatabaseDriver.Dispose();
                     }
+
+                    if(m_Database != null) {
+                        DatabaseInfo.Close(m_Database);
+                    }
+
                     Console.Out.Flush();
                     Console.Error.Flush();
 

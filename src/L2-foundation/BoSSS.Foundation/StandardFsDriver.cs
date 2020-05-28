@@ -288,6 +288,9 @@ namespace BoSSS.Foundation.IO {
         /// closes logfiles, ...
         /// </summary>
         public void Dispose() {
+            if(IsDisposed)
+                return;
+
             if (UnZippedDirectory != null) {
                 if (Directory.Exists(UnZippedDirectory)) {
                     Directory.Delete(UnZippedDirectory, true);

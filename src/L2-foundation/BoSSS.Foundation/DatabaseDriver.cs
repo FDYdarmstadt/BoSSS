@@ -78,8 +78,7 @@ namespace BoSSS.Foundation.IO {
 
         public void Dispose()
         {
-            if (this.FsDriver is IDisposable)
-            {
+            if(this.FsDriver is IDisposable) {
                 ((IDisposable)this.FsDriver).Dispose();
 
             }
