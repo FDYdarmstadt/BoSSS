@@ -1,0 +1,232 @@
+\BoSSSopen{GridGeneration/GridGeneration}
+\graphicspath{{GridGeneration/GridGeneration.texbatch/}}
+
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// This tutorial demostrates the definition, resp. the import of 
+/// data for boundary ans initial values. 
+/// In order to demonstrate the usage, 
+/// we employ the exemplaric Poisson solver.
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Application.SipPoisson;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We use a temporary database for this tutorial:
+ }
+\BoSSSexe
+\BoSSScmd{
+var tempDb = CreateTempDatabase();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We use the following helper function to create a template for 
+/// the multiple solver runs.
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<SipControl> PreDefinedControl = delegate() \{\newline 
+\btab SipControl c = new SipControl();\newline 
+ \newline 
+\btab c.SetDGdegree(2);\newline 
+ \newline 
+\btab c.GridFunc = delegate() \{\newline 
+\btab \btab // define a grid of 10x10 cells\newline 
+\btab \btab double[] nodes = GenericBlas.Linspace(-1, 1, 11);\newline 
+\btab \btab var grd = Grid2D.Cartesian2DGrid(nodes, nodes);\newline 
+ \newline 
+\btab \btab // set the entire boundary to Dirichlet b.c.\newline 
+\btab \btab grd.DefineEdgeTags(delegate (double[] X) \{\newline 
+\btab \btab \btab return BoundaryType.Dirichlet.ToString();\newline 
+\btab \btab \});\newline 
+ \newline 
+\btab \btab return grd;\newline 
+\btab \};\newline 
+ \newline 
+\btab c.SetDatabase(tempDb);\newline 
+\btab c.savetodb = true; \newline 
+ \newline 
+\btab return c;    \newline 
+\};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Again, we are using the workflow management
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.Init("Demo\_BoundaryAndInitialData");
+ }
+\BoSSSexe
+\BoSSScmd{
+MiniBatchProcessor.Server.StartIfNotRunning(false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ======================================
+/// \section{Textual and Embedded formulas}
+/// % ======================================
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+SipControl c1 = PreDefinedControl();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Provide initial data as a text:
+ }
+\BoSSSexe
+\BoSSScmd{
+c1.AddInitialValue("RHS","X => Math.Sin(X[0])*Math.Cos(X[1])",\newline 
+\btab \btab \btab \btab \btab \btab TimeDependent:false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, all initial data is stored in the 
+/// \code{AppControl.InitialValues} dictionary and 
+/// all boundary data is stored in the 
+/// \code{AppControl.BoundaryValues} dictionary.
+ \newline 
+/// The common interface for all varinats to specify boundary
+/// and initial data is \code{IBoundaryAndInitialData}.
+/// The snippet above is only a shortcut to add a \code{Formula} object,
+/// which implements the \code{IBoundaryAndInitialData} interface.
+ }
+\BoSSSexe
+\BoSSScmd{
+c1.InitialValues;
+ }
+\BoSSSexe
+\BoSSScmd{
+c1.InitialValues["RHS"];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In \BoSSSpad, such objects can also be extracted from 
+/// static methods of classes; note that these should not depend on any other
+/// object in the worksheet.
+ }
+\BoSSSexe
+\BoSSScmd{
+static class BndyValue \{\newline 
+\btab public static double BndyFunction(double[] X) \{\newline 
+\btab \btab return 1.0;\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+Formula BndyFormula = GetFormulaObject(BndyValue.BndyFunction);
+ }
+\BoSSSexe
+\BoSSScmd{
+c1.AddBoundaryValue(BoundaryType.Dirichlet.ToString(),\newline 
+\btab \btab \btab \btab \btab "T",\newline 
+\btab \btab \btab \btab \btab BndyFormula);
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+var J1 = c1.RunBatch();
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.BlockUntilAllJobsTerminate(300);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// What happened to the job?
+J1.Status;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+Nunit.Framework.Assert.IsTrue(J1.Status == JobStatus.FinishedSuccessful);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ==================
+/// \section{1D Splines}
+/// % ==================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Splines can be used to interpolate nodal data onto a DG field;
+/// currently, only 1D is supported.
+ }
+\BoSSSexe
+\BoSSScmd{
+SipControl c2 = PreDefinedControl();
+ }
+\BoSSSexe
+\BoSSScmd{
+// create test data for the spline\newline 
+double[] xNodes = GenericBlas.Linspace(-2,2,13);\newline 
+double[] yNodes = xNodes.Select(x => x*0.4).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+var rhsSpline = new Spline1D(xNodes, yNodes,\newline 
+\btab \btab \btab \btab \btab \btab \btab  0,\newline 
+\btab \btab \btab \btab \btab \btab \btab  Spline1D.OutOfBoundsBehave.Extrapolate);
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+double err = 0;\newline 
+// test the spline: a line must be interpolated exactly.\newline 
+foreach(double xtst in GenericBlas.Linspace(-3,3,77)) \{ \newline 
+   double sVal = rhsSpline.Evaluate(new double[] \{xtst , 0, 0 \}, 0.0);\newline 
+   double rVal = xtst*0.4;\newline 
+   err += Math.Abs(sVal - rVal);\newline 
+\}\newline 
+NUnit.Framework.Assert.Less(err, 1.0e-10, "Slpine implementation fail.");
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+c2.AddInitialValue("RHS", rhsSpline);
+ }
+\BoSSSexe
+\BoSSScmd{
+var J2 = c2.RunBatch();
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.BlockUntilAllJobsTerminate(300);
+ }
+\BoSSSexe
+\BoSSScmd{
+J2.Status;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+NUnit.Framework.Assert.IsTrue(J2.Status == JobStatus.FinishedSuccessful);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % =====================================================
+/// \section{Interpolating values from other Calculations}
+/// % =====================================================
+ }
+\BoSSSexe

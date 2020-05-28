@@ -130,10 +130,6 @@ namespace BoSSS.Foundation.IO {
 
                 }
 
-
-
-
-
                 foreach(var db in DatabaseInfos) {
                     if(db.PathMatch(dbPath))
                         return db;

@@ -23,6 +23,7 @@ using System.Runtime.Serialization;
 using BoSSS.Solution.Control;
 using ilPSP;
 using BoSSS.Solution.Utils;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.Control {
 
@@ -51,8 +52,11 @@ namespace BoSSS.Solution.Control {
             //Console.WriteLine("ctor private");
         }
 
+        [NonSerialized]
         double[] M;
+        [NonSerialized]
         double[] c;
+        [NonSerialized]
         double[] d;
 
         void RecomputeSplineParams() {
@@ -126,7 +130,7 @@ namespace BoSSS.Solution.Control {
         /// </param>
         /// <param name="oobb">
         /// </param>
-        public Spline1D(double[] nodes, double[] values, int d, OutOfBoundsBehave oobb) {
+        public Spline1D(double[] nodes, double[] values, int d, OutOfBoundsBehave oobb = Spline1D.OutOfBoundsBehave.Extrapolate) {
             if(nodes.Length != values.Length)
                 throw new ArgumentException("Node and Value array must have the same length.");
             this.values = values.CloneAs();
@@ -491,6 +495,43 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
             NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return nodes.Length + (int)Math.Round(nodes[0]);
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override bool Equals(object obj) {
+            var s2 = obj as Spline1D;
+            if(s2 == null)
+                return false;
+
+            if(s2.dim != this.dim)
+                return false;
+
+            if(s2.nodes.Length != this.nodes.Length)
+                return false;
+
+            if(s2.m_oobb != this.m_oobb)
+                return false;
+
+            double nref = Math.Max(s2.nodes.L2Norm(), this.nodes.L2Norm());
+            double ndst = GenericBlas.L2Dist(s2.nodes, this.nodes);
+            if(ndst > nref * 1e-13)
+                return false;
+
+            double vref = Math.Max(s2.values.L2Norm(), this.values.L2Norm());
+            double vdst = GenericBlas.L2Dist(s2.values, this.values);
+            if(vdst > vref * 1e-13)
+                return false;
+
+            return true;
         }
     }
 }
