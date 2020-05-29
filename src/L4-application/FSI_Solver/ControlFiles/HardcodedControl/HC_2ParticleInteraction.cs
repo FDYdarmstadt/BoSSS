@@ -19,21 +19,18 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(int k = 2, int amrLevel = 2, double angle = 180, double distance = 1) {
-            FSI_Control C = new FSI_Control(k, "2particleInteractions", "active Particles");
+        public static FSI_Control Main(double angle = 45, double distance = 4) {
+            FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
 
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Pressure_Outlet_left",
-                "Pressure_Outlet_right",
-                "Pressure_Outlet_lower",
-                "Pressure_Outlet_upper"
+                "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel);
+            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(3);
 
             // Coupling Properties
             // =============================
@@ -52,13 +49,13 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            
+            C.fixPosition = true;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5, true);
             double particleRadius = 0.5;
             double aspectRatio = 2;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -distance / 2, 0.0 }, 180 - angle, 1),
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { distance / 2, 0.0 }, angle, 1)
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -distance / 2, 0.0 }, angle, 1),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { distance / 2, 0.0 }, 180 - angle, 1)
             };
 
             // misc. solver options
@@ -73,7 +70,62 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 250000);
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 25);
+
+            return C;
+        }
+
+        public static FSI_Control Single(double angle = 45, double distance = 6) {
+            FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
+
+            // Domain
+            // =============================
+            List<string> boundaryValues = new List<string> {
+                "Wall"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(3);
+
+            // Coupling Properties
+            // =============================
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.LevelSetSmoothing = false;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.hydrodynamicsConvergenceCriterion = 1e-6;
+
+            // Fluid Properties
+            // =============================
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.IncludeConvection = false;
+            double particleDensity = 1;
+
+            // Particle Properties
+            // =============================   
+            C.fixPosition = true;
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5, true);
+            double particleRadius = 0.5;
+            double aspectRatio = 2;
+            C.Particles = new List<Particle> {
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -distance / 2, 0.0 }, angle, 1)
+            };
+
+            // misc. solver options
+            // =============================  
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+
+
+            // Timestepping
+            // =============================  
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 25);
 
             return C;
         }
