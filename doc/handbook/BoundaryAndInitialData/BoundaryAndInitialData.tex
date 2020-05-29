@@ -1,5 +1,5 @@
-\BoSSSopen{GridGeneration/GridGeneration}
-\graphicspath{{GridGeneration/GridGeneration.texbatch/}}
+\BoSSSopen{BoundaryAndInitialData/BoundaryAndInitialData}
+\graphicspath{{BoundaryAndInitialData/BoundaryAndInitialData.texbatch/}}
 
 \BoSSScmd{
 restart
@@ -153,7 +153,7 @@ J1.Status;
 \BoSSSexe
 \BoSSScmdSilent{
 /// BoSSScmdSilent
-Nunit.Framework.Assert.IsTrue(J1.Status == JobStatus.FinishedSuccessful);
+NUnit.Framework.Assert.IsTrue(J1.Status == JobStatus.FinishedSuccessful);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -225,8 +225,124 @@ NUnit.Framework.Assert.IsTrue(J2.Status == JobStatus.FinishedSuccessful);
  }
 \BoSSSexe
 \BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
 /// % =====================================================
 /// \section{Interpolating values from other Calculations}
 /// % =====================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For demonstrational purposes, we use the result (i.e. the last time-step) 
+/// of a previous calculation as a right-hand-side for the next calculation.
+ }
+\BoSSSexe
+\BoSSScmd{
+var j2Sess = J2.GetAllSessions().Last();
+ }
+\BoSSSexe
+\BoSSScmd{
+j2Sess;
+ }
+\BoSSSexe
+\BoSSScmd{
+j2Sess.Timesteps;
+ }
+\BoSSSexe
+\BoSSScmd{
+var lastTimeStep = j2Sess.Timesteps.Last();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We encapsulate the value T in the \code{ForeignGridValue} object,
+/// which allows interpolation between different meshes:
+ }
+\BoSSSexe
+\BoSSScmd{
+var newForeignMesh = new ForeignGridValue(lastTimeStep,"T");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Use different mesh in the control file:
+ }
+\BoSSSexe
+\BoSSScmd{
+SipControl c3 = PreDefinedControl();
+ }
+\BoSSSexe
+\BoSSScmd{
+c3.GridFunc = delegate() \{\newline 
+   // define a grid of *triangle* cells\newline 
+   double[] nodes = GenericBlas.Linspace(-1, 1, 11);\newline 
+   var grd = Grid2D.UnstructuredTriangleGrid(nodes, nodes);\newline 
+ \newline 
+   // set the entire boundary to Dirichlet b.c.\newline 
+   grd.DefineEdgeTags(delegate (double[] X) \{\newline 
+\btab    return BoundaryType.Dirichlet.ToString();\newline 
+   \});\newline 
+ \newline 
+   return grd;\newline 
+\};\newline 
+// we also save the RHS in the database\newline 
+c3.AddFieldOption("RHS", SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// finally, we define the RHS:
+ }
+\BoSSSexe
+\BoSSScmd{
+c3.AddInitialValue("RHS", newForeignMesh);
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+double orgProbe = newForeignMesh.Evaluate(new double[] \{0.5,0.5\}, 0.0);\newline 
+double newProbe = lastTimeStep.GetField("T").ProbeAt(new double[] \{0.5,0.5\});\newline 
+NUnit.Framework.Assert.Less(Math.Abs(orgProbe - newProbe), 1.0e-10, "Check (1) on ForeignGridValue failed");
+ }
+\BoSSSexe
+\BoSSScmd{
+var J3 = c3.RunBatch();
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.BlockUntilAllJobsTerminate(300);
+ }
+\BoSSSexe
+\BoSSScmd{
+J3.Status;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+NUnit.Framework.Assert.IsTrue(J3.Status == JobStatus.FinishedSuccessful);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Side Note:} Since the quadrilateral mesh used for the original
+/// right-hand-side is geometrically embedded in the triangular mesh 
+/// the interpolation error should be zero (up to machine precision).
+ }
+\BoSSSexe
+\BoSSScmd{
+var firstTimeStep = J3.GetAllSessions().Last().Timesteps.Last();
+ }
+\BoSSSexe
+\BoSSScmd{
+DGField RhsOnTriangles = firstTimeStep.GetField("rhs"); // case-inssensitive!\newline 
+DGField RhsOriginal    = lastTimeStep.GetField("T");
+ }
+\BoSSSexe
+\BoSSScmd{
+((ConventionalDGField)RhsOnTriangles).L2Distance((ConventionalDGField)RhsOriginal);
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+var H1err = ((ConventionalDGField)RhsOnTriangles).H1Distance((ConventionalDGField)RhsOriginal);\newline 
+NUnit.Framework.Assert.Less(H1err, 1.0e-10, "Check (2) on ForeignGridValue failed.");
  }
 \BoSSSexe

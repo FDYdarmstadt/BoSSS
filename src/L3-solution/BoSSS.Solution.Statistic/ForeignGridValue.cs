@@ -46,6 +46,10 @@ namespace BoSSS.Solution.Statistic {
             this.DbPaths = bla.ToArray();
         }
 
+        /// <summary>
+        /// Paths to search for the Database
+        /// </summary>
+        [DataMember]
         (string DbPath, string MachineFilter)[] DbPaths;
 
 
@@ -134,5 +138,31 @@ namespace BoSSS.Solution.Statistic {
             int L = input.GetLength(0);
             m_eval.Evaluate(1.0, new DGField[] { m_dGField }, input, 0.0, output.ResizeShallow(L, 1));
         }
+
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override bool Equals(object obj) {
+            var odha = obj as ForeignGridValue;
+            if(odha == null)
+                return false;
+
+            if(!odha.SessionID.Equals(this.SessionID))
+                return false;
+
+            if(!odha.TimestepID.Equals(this.TimestepID))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override int GetHashCode() {
+            return SessionID.GetHashCode();
+        }
     }
 }
+

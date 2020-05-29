@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.Statistic;
 using ilPSP;
@@ -794,6 +795,17 @@ namespace BoSSS.Application.BoSSSpad {
             while (enumerator.MoveNext() && enumerator.Current.TimeStepNumber.CompareTo(number) <= 0) {
                 yield return enumerator.Current;
             }
+        }
+
+
+        /// <summary>
+        /// returns the DG field from some timestep
+        /// </summary>
+        public static DGField GetField(this ITimestepInfo tsi, string Identification, bool ignoreCase = true) {
+            if(ignoreCase)
+                return tsi.Fields.Single(f => f.Identification.ToLowerInvariant().Equals(Identification.ToLowerInvariant()));
+            else 
+                return tsi.Fields.Single(f => f.Identification.Equals(Identification));
         }
     }
 }
