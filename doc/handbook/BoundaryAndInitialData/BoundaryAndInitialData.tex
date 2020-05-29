@@ -328,7 +328,7 @@ NUnit.Framework.Assert.IsTrue(J3.Status == JobStatus.FinishedSuccessful);
  }
 \BoSSSexe
 \BoSSScmd{
-var firstTimeStep = J3.GetAllSessions().Last().Timesteps.Last();
+var firstTimeStep = J3.GetAllSessions().Last().Timesteps.First();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -337,6 +337,8 @@ DGField RhsOriginal    = lastTimeStep.GetField("T");
  }
 \BoSSSexe
 \BoSSScmd{
+// note: we have to cast DGField to ConventionalDGField in order to use\newline 
+// the 'L2Distance' function:\newline 
 ((ConventionalDGField)RhsOnTriangles).L2Distance((ConventionalDGField)RhsOriginal);
  }
 \BoSSSexe
@@ -344,5 +346,79 @@ DGField RhsOriginal    = lastTimeStep.GetField("T");
 /// BoSSScmdSilent
 var H1err = ((ConventionalDGField)RhsOnTriangles).H1Distance((ConventionalDGField)RhsOriginal);\newline 
 NUnit.Framework.Assert.Less(H1err, 1.0e-10, "Check (2) on ForeignGridValue failed.");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ===================================
+/// \section{Restart from Dummy-Sessions}
+/// % ===================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Dummy sessions are kind of fake siolver runs, with the only purpose 
+/// of using them for a restart. 
+ }
+\BoSSSexe
+\BoSSScmd{
+DGField RHSforRestart = firstTimeStep.GetField("RHS");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We save the DG field \code{RHSforRestart} in the database;
+/// This automatically creates a timestep and a session which host the DG field:
+ }
+\BoSSSexe
+\BoSSScmd{
+var RestartTimestep = tempDb.SaveTimestep(RHSforRestart);
+ }
+\BoSSSexe
+\BoSSScmd{
+RestartTimestep
+ }
+\BoSSSexe
+\BoSSScmd{
+RestartTimestep.Session
+ }
+\BoSSSexe
+\BoSSScmd{
+/// This time step can be used as a restart value.:
+ }
+\BoSSSexe
+\BoSSScmd{
+var c4 = PreDefinedControl();
+ }
+\BoSSSexe
+\BoSSScmd{
+c4.InitialValues.Clear();\newline 
+c4.SetRestart(RestartTimestep);
+ }
+\BoSSSexe
+\BoSSScmd{
+var J4 = c4.RunBatch();
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.BlockUntilAllJobsTerminate(300);
+ }
+\BoSSSexe
+\BoSSScmd{
+J4.Status;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+NUnit.Framework.Assert.IsTrue(J4.Status == JobStatus.FinishedSuccessful);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph(Note:}
+/// Since no mesh interpolation is performed for the restart, it is much faster
+/// than \code{ForeignGridValue}, but less flexible 
+/// (a restart is always performed on the same mesh).
+///
+/// To avoid multiple mesh interpolations (e.g. when multiple runs are required)
+/// one coudl therefore speed up the process by doing the 
+/// mesh interpolation once (use \emph{ProjectFromForeignGrid}) in BoSSSpad and
+/// save the interpolation in a dummy session.
  }
 \BoSSSexe
