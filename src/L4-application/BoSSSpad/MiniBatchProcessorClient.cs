@@ -22,6 +22,7 @@ using System.IO;
 using System.Reflection;
 using BoSSS.Platform;
 using System.Runtime.Serialization;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
     
@@ -32,40 +33,34 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     public class MiniBatchProcessorClient : BatchProcessorClient {
 
-        /*
-        /// <summary>
-        /// Configuration options specific to the <see cref="MiniBatchProcessorClient"/>
-        /// </summary>
-        [Serializable]
-        public new class Config : BatchProcessorClient.Config {
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public override BatchProcessorClient Instance() {
-                return new MiniBatchProcessorClient(base.DeploymentBaseDirectory) {
-                    DeployRuntime = base.DeployRuntime
-                };
-            }
-        }
-        
 
         /// <summary>
-        /// .
+        /// Optional override for <see cref="MiniBatchProcessor.Configuration.BatchInstructionDir"/>
         /// </summary>
-        public override BatchProcessorClient.Config GetConfig() {
-            return new MiniBatchProcessorClient.Config() {
-                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
-                DeployRuntime = this.DeployRuntime
-            };
-        }
-        */
+        [DataMember]
+        public string BatchInstructionDir;
 
         /// <summary>
         /// Empty constructor for de-serialization
         /// </summary>
         private MiniBatchProcessorClient() {
         }
+
+        [NonSerialized]
+        MiniBatchProcessor.Client m_Clint;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        MiniBatchProcessor.Client Clint {
+            get {
+                if(m_Clint == null) {
+                    m_Clint = new MiniBatchProcessor.Client(BatchInstructionDir);
+                }
+                return m_Clint;
+            }
+        }
+
 
         /// <summary>
         /// Path to standard output file, if present - otherwise null.
@@ -74,7 +69,7 @@ namespace BoSSS.Application.BoSSSpad {
             var Problem = FilterJobData(myJob);
 
             if (Problem != null) {
-                return MiniBatchProcessor.Client.GetStdoutFile(Problem.ID);
+                return Clint.GetStdoutFile(Problem.ID);
             } else {
                 return null;
             }
@@ -87,7 +82,7 @@ namespace BoSSS.Application.BoSSSpad {
             var Problem = FilterJobData(myJob);
 
             if (Problem != null) {
-                return MiniBatchProcessor.Client.GetStderrFile(Problem.ID);
+                return Clint.GetStderrFile(Problem.ID);
             } else {
                 return null;
             }
@@ -135,64 +130,65 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// See <see cref="BatchProcessorClient.EvaluateStatus"/>.  
         /// </summary>
-        public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
-            //if (!object.ReferenceEquals(this, myJob.AssignedBatchProc))
-            //    throw new ArgumentException("Why you ask me?");
-            //string FullName = GetFullJobName(myJob);
-            //MiniBatchProcessor.JobData[] AllProblems = FilterJobData(myJob);
-            //MiniBatchProcessor.JobData JD = null;
-            //if (AllProblems.Length > 0) {
-            //    if (myJob.BatchProcessorIdentifierToken == null) {
-            //        JD = AllProblems.ElementAtMax(jd => jd.SubmitTime);
-            //    } else {
-            //        int idSearch = (int)(myJob.BatchProcessorIdentifierToken);
-            //        JD = AllProblems.SingleOrDefault(jobDat => jobDat.ID == idSearch);
-            //    }
-            //}
-            //SubmitCount = AllProblems.Length;
-            //if (AllProblems.Length <= 0 || JD == null) {
-            //    // we know nothing
-            //    isRunning = false;
-            //    isFailed = false;
-            //    wasSuccessful = false;
-            //    DeployDir = null;
-            //    return;
-            //}
+        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+            using (new FuncTrace()) {
+                //if (!object.ReferenceEquals(this, myJob.AssignedBatchProc))
+                //    throw new ArgumentException("Why you ask me?");
+                //string FullName = GetFullJobName(myJob);
+                //MiniBatchProcessor.JobData[] AllProblems = FilterJobData(myJob);
+                //MiniBatchProcessor.JobData JD = null;
+                //if (AllProblems.Length > 0) {
+                //    if (myJob.BatchProcessorIdentifierToken == null) {
+                //        JD = AllProblems.ElementAtMax(jd => jd.SubmitTime);
+                //    } else {
+                //        int idSearch = (int)(myJob.BatchProcessorIdentifierToken);
+                //        JD = AllProblems.SingleOrDefault(jobDat => jobDat.ID == idSearch);
+                //    }
+                //}
+                //SubmitCount = AllProblems.Length;
+                //if (AllProblems.Length <= 0 || JD == null) {
+                //    // we know nothing
+                //    isRunning = false;
+                //    isFailed = false;
+                //    wasSuccessful = false;
+                //    DeployDir = null;
+                //    return;
+                //}
 
-            int ID = int.Parse(idToken);
-            var mbpStatus = MiniBatchProcessor.ClientAndServer.GetStatusFromID(ID, out ExitCode);
+                int ID = int.Parse(idToken);
+                var mbpStatus = Clint.GetStatusFromID(ID, out ExitCode);
 
 
-            switch(mbpStatus) {
-                case MiniBatchProcessor.JobStatus.Queued:
-                // we know nothing
-                isRunning = false;
-                isTerminated = false;
-                return;
+                switch (mbpStatus) {
+                    case MiniBatchProcessor.JobStatus.Queued:
+                        // we know nothing
+                        isRunning = false;
+                        isTerminated = false;
+                        return;
 
-                case MiniBatchProcessor.JobStatus.Finished:
-                // we know nothing
-                isRunning = false;
-                isTerminated = true;
-                return;
+                    case MiniBatchProcessor.JobStatus.Finished:
+                        // we know nothing
+                        isRunning = false;
+                        isTerminated = true;
+                        return;
 
-                case MiniBatchProcessor.JobStatus.Working:
-                // we know nothing
-                isRunning = true;
-                isTerminated = false;
-                return;
+                    case MiniBatchProcessor.JobStatus.Working:
+                        // we know nothing
+                        isRunning = true;
+                        isTerminated = false;
+                        return;
 
-                case MiniBatchProcessor.JobStatus.Undefined:
-                // we know nothing
-                isRunning = false;
-                isTerminated = false;
-                return;
+                    case MiniBatchProcessor.JobStatus.Undefined:
+                        // we know nothing
+                        isRunning = false;
+                        isTerminated = false;
+                        return;
 
-                default:
-                throw new NotImplementedException();
+                    default:
+                        throw new NotImplementedException();
+                }
+
             }
-
-
 
         }
 
@@ -204,14 +200,14 @@ namespace BoSSS.Application.BoSSSpad {
                 return null;
             }
 
-            return MiniBatchProcessor.ClientAndServer.AllJobs.FirstOrDefault(jd => jd.ID == idSearch);
+            return Clint.AllJobs.FirstOrDefault(jd => jd.ID == idSearch);
         }
 
 
         /// <summary>
         /// See <see cref="MiniBatchProcessorClient.Submit(Job)"/>.
         /// </summary>
-        public override string Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob) {
             string FullName = GetFullJobName(myJob);
             //var AllProblems = FilterJobData(myJob);
             //if (AllProblems.Length > 0) {
@@ -228,8 +224,16 @@ namespace BoSSS.Application.BoSSSpad {
                 UseComputeNodesExclusive = myJob.UseComputeNodesExclusive
             };
 
-            int id = MiniBatchProcessor.Client.SubmitJob(JD);
-            return id.ToString(); ;
+            int id = Clint.SubmitJob(JD);
+            return (id.ToString(), JD);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return $"MiniBatchProcessor client @{this.DeploymentBaseDirectory}";
+        }
+
     }
 }

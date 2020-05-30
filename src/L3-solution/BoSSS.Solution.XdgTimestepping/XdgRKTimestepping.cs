@@ -437,24 +437,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
-            //// test code start
-            //{
-            //    CoordinateVector cv = new CoordinateVector(
-            //        ((XDGField)u0.Fields[0]).GetSpeciesShadowField("B"),
-            //        ((XDGField)u0.Fields[1]).GetSpeciesShadowField("B"),
-            //        ((XDGField)u0.Fields[2]).GetSpeciesShadowField("B"),
-            //        ((XDGField)u0.Fields[3]).GetSpeciesShadowField("B"));
-
-            //    Random r = new Random(666);
-            //    for(int ir = 0; ir < cv.Length; ir++) {
-            //        cv[ir] = r.NextDouble();
-            //    }
-            //}
-
-
-            // test code end
-
-
+          
 
             // loop over Runge-Kutta stages...
             double[][] k = new double[m_RKscheme.Stages][];
@@ -462,18 +445,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
-
-
-                //k[s].SaveToTextFile(String.Format("k_CHANGERATE.txt"));
-                //Console.WriteLine("\nk_CHANGERATE = " + k[0].L2Norm());
             }
 
             // final stage
             RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
-
-            //k[0].SaveToTextFile(String.Format("k_FINAL_STAGE.txt"));
-            //Console.WriteLine("k_FINAL_STAGE = " + k[0].L2Norm());
-
 
             // ===========================================
             // update level-set (in the case of splitting)
@@ -812,12 +787,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        //protected override void TriggerLevelSetUpdate() {
-        //    throw new NotImplementedException();
-        //}
-
-        //int count = 0;
-
         private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s <= m_RKscheme.Stages);
             for (int i = 0; i < s; i++) {
@@ -924,24 +893,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //Console.WriteLine(String.Format("\nk[0]: L2-Norm of change rate = {0}", k[0].L2Norm()));
                 //k[0].SaveToTextFile(String.Format("k_CHANGERATE_{0}.txt", count));
 
-                //if (Mass[0] != null) {
-                //    double[] kCut = new double[k[0].Length];
-                //    BlockSol(Mass[0], kCut, k[0]);
-
-                //var full = (new CoordinateVector(this.CurrentStateMapping));
-                //full.Clear();
-                //full.SetV(kCut);
-                //var B = new CoordinateVector(full.Fields.Select(xf => ((XDGField)xf).GetSpeciesShadowField("B")).ToArray());
-                //var bb = B.ToArray();
-                //var bbref = VectorIO.LoadFromTextFile("c:\\tmp\\cns_k_CUT_0.txt");
-                //double[] SchrottFehler = bb.CloneAs();
-                //SchrottFehler.AccV(-1.0, bbref);
-                //B.SetV(SchrottFehler, 1.0);
-                //Tecplot.Tecplot.PlotFields(full.Fields, "hurament", 0.0, 2);
-
-
-
-                //count++;
+            
 
                 // solve system
                 if (System != null) {
@@ -999,11 +951,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             for (int j = 0; j < J; j++) { // loop over cells...
 
-                for (int iVar = 0; iVar < NoOfVars; iVar++) {
+                for(int iVar = 0; iVar < NoOfVars; iVar++) {
                     int bS = this.CurrentStateMapping.LocalUniqueCoordinateIndex(iVar, j, 0);
                     int Nj = basisS[iVar].GetLength(j);
 
-                    if (Block == null || Block.NoOfRows != Nj) {
+                    if(Block == null || Block.NoOfRows != Nj) {
+
                         Block = MultidimensionalArray.Create(Nj, Nj);
                         x = new double[Nj];
                         b = new double[Nj];
@@ -1015,12 +968,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     M.ReadBlock(bS + M._RowPartitioning.i0, bS + M._ColPartitioning.i0, Block);
 
                     // extract part of RHS
-                    for (int iRow = 0; iRow < Nj; iRow++) {
+                    for(int iRow = 0; iRow < Nj; iRow++) {
                         bool ZeroRow = Block.GetRow(iRow).L2NormPow2() == 0;
                         b[iRow] = B[iRow + bS];
 
-                        if (ZeroRow) {
-                            if (b[iRow] != 0.0)
+                        if(ZeroRow) {
+                            if(b[iRow] != 0.0)
                                 throw new ArithmeticException();
                             else
                                 Block[iRow, iRow] = 1.0;
@@ -1034,12 +987,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Block.SolveSymmetric(x, b);
 
                     // store solution
-                    for (int iRow = 0; iRow < Nj; iRow++) {
+                    for(int iRow = 0; iRow < Nj; iRow++) {
                         X[iRow + bS] = x[iRow];
                     }
                 }
             }
-
 #if DEBUG
             for(int i = 0; i < unusedIndex.Length; i++)
                 if(unusedIndex[i] == false && B[i] != 0.0)
@@ -1047,6 +999,5 @@ namespace BoSSS.Solution.XdgTimestepping {
 #endif
 
         }
-
     }
 }

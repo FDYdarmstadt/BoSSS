@@ -320,10 +320,18 @@ namespace MPI.Wrappers {
         _MPI_Finalize MPI_Finalize;
 #pragma warning restore 649
 
+
+        bool isFinalized = false;
+
         /// <summary>
         /// MPI finalize
         /// </summary>
         public void mpiFinalize() {
+            if(isFinalized) {
+                Console.WriteLine("Warning: MPI finalization called multiple times.");
+                return;
+            }
+            isFinalized = true;
             MPIException.CheckReturnCode(MPI_Finalize());
         }
 

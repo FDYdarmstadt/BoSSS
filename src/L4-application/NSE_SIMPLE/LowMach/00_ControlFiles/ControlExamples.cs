@@ -31,7 +31,7 @@ namespace NSE_SIMPLE.LowMach {
         public static LowMachSIMPLEControl SteadyCouetteFlowWithTemperatureGradient() {
             LowMachSIMPLEControl c = new LowMachSIMPLEControl();
 
-            c.DbPath = @"..\..\Base\06_ZipDatabases\NUnitTests.zip";
+            c.DbPath = @"NUnitTests.zip";
             c.savetodb = false;
 
             c.GridGuid = new Guid("b3eb0eac-d1a1-440c-9f08-5dae1284607d");

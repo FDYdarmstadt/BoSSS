@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -24,24 +25,20 @@ using System.Linq;
 using Code = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.XdgPoisson3 {
+    
+    /// <summary>
+    /// NUnit test routines
+    /// </summary>
     [TestFixture]
     static public class Tests {
 
 
-        /// <summary>
-        /// MPI finalize.
-        /// </summary>
-        [TestFixtureTearDown]
-        static public void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
 
         /// <summary>
         /// MPI init.
         /// </summary>
-        [TestFixtureSetUp]
-        static public void TestFixtureSetUp() {
-            BoSSS.Solution.Application.InitMPI(new string[0]);
+        [OneTimeSetUp]
+        static public void OneTimeSetUp() {
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 
@@ -68,50 +65,36 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
-        private static double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
-            double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
-            double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
-
-            double xAvg = xValues.Average();
-            double yAvg = yValues.Average();
-
-            double v1 = 0.0;
-            double v2 = 0.0;
-
-            for (int i = 0; i < yValues.Length; i++) {
-                v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
-                v2 += Math.Pow(xValues[i] - xAvg, 2);
-            }
-
-            double a = v1 / v2;
-            double b = yAvg - a * xAvg;
-
-            return a;
-        }
+        
 
 
+#if !DEBUG
         /// <summary>
         /// Grid scale tests for condition numbers
         /// </summary>
         [Test]
-        public static void DiscretizationScalingTest(
-#if DEBUG
-            [Values(1)] 
-#else
+        public static void ScalingCircle2D(
+            //[Values(1)] 
             [Values(1,2,3,4)] 
-#endif
             int dgDegree
             ) //
         {
+            int sz = ilPSP.Environment.MPIEnv.MPI_Size;
+            if (sz > 1)
+                return;// deactivate for multiple procs.
 
             var Controls = new List<XdgPoisson3Control>();
 
             int[] ResS = null;
             switch(dgDegree) {
+//#if DEBUG
+//                case 1: ResS = new int[] { 8, 16, 32, 64 }; break;
+//#else
                 case 1: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65, 128 }; break;
                 case 2: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }; break;
                 case 3: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64 }; break;
                 case 4: ResS = new int[] { 8, 9, 16, 17, 32, 33 }; break;
+//#endif
                 default: throw new NotImplementedException();
             }
             
@@ -122,13 +105,6 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 Controls.Add(C);
             }
-            
-            
-            var data = RunAndLog(Controls);
-
-            //string[] xKeys = data.Keys.Where(name => name.StartsWith("Grid:")).ToArray();
-            //string[] yKeys = data.Keys.Where(name => !name.StartsWith("Grid:")).ToArray();
-
 
             /*
             Für p = 1:
@@ -140,86 +116,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             Slope for StencilCondNo-bndyCut-Var0: 0e00             
             */
 
-            var ExpectedSlopes = new List<ValueTuple<string, string, double>>();
-            ExpectedSlopes.Add(("Grid:1Dres", "TotCondNo-Var0", 2.5));
-            ExpectedSlopes.Add(("Grid:1Dres", "StencilCondNo-innerUncut-Var0", 0.5));
-            ExpectedSlopes.Add(("Grid:1Dres", "StencilCondNo-innerCut-Var0", 0.5));
-
-
-            foreach (var ttt in ExpectedSlopes) {
-                double[] xVals = data[ttt.Item1];
-                double[] yVals = data[ttt.Item2];
-
-                double Slope = LogLogRegression(xVals, yVals);
-
-                Console.WriteLine($"Slope for {ttt.Item2}: {Slope:0.###e-00}");
-            }
-
-            foreach (var ttt in ExpectedSlopes) {
-                double[] xVals = data[ttt.Item1];
-                double[] yVals = data[ttt.Item2];
-
-                double Slope = LogLogRegression(xVals, yVals);
-
-                Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
-            }
+            ConditionNumberScalingTest.Perform(Controls, plotAndWait:true, title: "ScalingCircle2D");
         }
-
-        private static IDictionary<string, double[]> RunAndLog<T>(T Controls)
-            where T : IEnumerable<BoSSS.Solution.Control.AppControl> //
-        {
-            
-            var ret = new Dictionary<string, List<double>>();
-
-            foreach (var C in Controls) {
-                var st = C.GetSolverType();
-
-                using (var solver = (BoSSS.Solution.IApplication) Activator.CreateInstance(st)) {
-                    solver.Init(C);
-                    solver.RunSolverMode();
-
-                    int J = Convert.ToInt32(solver.CurrentSessionInfo.KeysAndQueries["Grid:NoOfCells"]);
-                    double hMin = Convert.ToDouble(solver.CurrentSessionInfo.KeysAndQueries["Grid:hMin"]);
-                    double hMax = Convert.ToDouble(solver.CurrentSessionInfo.KeysAndQueries["Grid:hMax"]);
-                    int D = Convert.ToInt32(solver.CurrentSessionInfo.KeysAndQueries["Grid:SpatialDimension"]);
-                    double J1d = Math.Pow(J, 1.0 / D);
-
-                    var prop = solver.OperatorAnalysis();
-
-                    if (ret.Count == 0) {
-                        ret.Add("Grid:NoOfCells", new List<double>());
-                        ret.Add("Grid:hMin", new List<double>());
-                        ret.Add("Grid:hMax", new List<double>());
-                        ret.Add("Grid:1Dres", new List<double>());
-
-                        foreach (var kv in prop) {
-                            ret.Add(kv.Key, new List<double>());
-                        }
-                    }
-
-                    {
-                        ret["Grid:NoOfCells"].Add(J);
-                        ret["Grid:hMin"].Add(hMin);
-                        ret["Grid:hMax"].Add(hMax);
-                        ret["Grid:1Dres"].Add(J1d);
-
-                        foreach (var kv in prop) {
-                            ret[kv.Key].Add(kv.Value);
-                        }
-                    }
-                }
-            }
-
-            // data conversion & return 
-            // ========================
-            {
-                var realRet = new Dictionary<string, double[]>();
-                foreach (var kv in ret) {
-                    realRet.Add(kv.Key, kv.Value.ToArray());
-                }
-
-                return realRet;
-            }
-        }
+#endif       
     }
 }

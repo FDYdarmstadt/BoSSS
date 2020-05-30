@@ -182,7 +182,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// <summary>
         /// MPI Init
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
             MyInit = new Initializer();
             MyInit.BoSSSInitialize();
@@ -191,7 +191,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// <summary>
         /// MPI shutdown
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             MyInit.BoSSSFinalize();
         }

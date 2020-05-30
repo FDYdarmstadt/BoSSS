@@ -125,23 +125,19 @@ namespace BoSSS.Application.SipPoisson {
             RR.ProjectName = "ipPoison/cartesian";
             RR.savetodb = false;
 
-            RR.FieldOptions.Add("T", new FieldOpts() { Degree = pDG, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            RR.FieldOptions.Add("Tex", new FieldOpts() { Degree = pDG * 2 });
-            RR.InitialValues_Evaluators.Add("RHS", X => 1.0);
-            RR.InitialValues_Evaluators.Add("Tex", X => (0.5 * X[0].Pow2() - 10 * X[0]));
+            RR.SetDGdegree(pDG);
+            RR.InitialValues.Add("RHS", new Formula("X => 1.0"));
+            RR.InitialValues.Add("Tex", new Formula("X => (0.5 * X[0]*X[0] - 10 * X[0])"));
             RR.ExactSolution_provided = true;
 
-            
-            RR.GridFunc = delegate ()
-            {
+            RR.GridFunc = delegate () {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
 
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
-                grd.DefineEdgeTags(delegate (double[] X)
-                {
+                grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
                     if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
                         ret = 1;

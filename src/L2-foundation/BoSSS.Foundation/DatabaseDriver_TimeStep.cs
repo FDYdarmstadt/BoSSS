@@ -268,16 +268,13 @@ namespace BoSSS.Foundation.IO
         /// Loads a time-step from the database into previously allocated
         /// DG-fields (<paramref name="PreAllocatedFields"/>).
         /// </summary>
-        public void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields) {
+            using(var tr = new FuncTrace()) {
                 DGField[] Fields = PreAllocatedFields.ToArray(); // enforce 'evaluation' of the enum (in the case it is some delayed linq-expr).
                 List<DGField> FieldsFlatten = new List<DGField>();
                 TimestepInfo.FlattenHierarchy(FieldsFlatten, Fields);
-                foreach (var f in FieldsFlatten)
-                {
-                    if (!Fields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
+                foreach(var f in FieldsFlatten) {
+                    if(!Fields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
                         throw new ArgumentException("Unable to load timestep: field '" + f.Identification + "', which is required by at least one of the given fields, must also be contained in the given list of fields.", "PreAllocatedFields");
                 }
 
@@ -313,8 +310,7 @@ namespace BoSSS.Foundation.IO
                 // ===============
                 HashSet<object> loadedObjects = new HashSet<object>(ReferenceComparer.Instance);
 
-                foreach (var Field in Fields)
-                {
+                foreach(var Field in Fields) {
                     Field.LoadData(info, SortedDataVec, loadedObjects);
                 }
             }

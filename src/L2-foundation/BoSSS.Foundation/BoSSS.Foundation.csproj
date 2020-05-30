@@ -43,6 +43,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -55,6 +56,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <DocumentationFile>bin\Release\BoSSS.Foundation.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AggregationGrid.cs" />
@@ -229,6 +231,7 @@
     <Compile Include="QuadratureScheme.cs" />
     <Compile Include="IQuadRuleFactory.cs" />
     <Compile Include="StandardQuadRuleFactory.cs" />
+    <Compile Include="VoronoiEdge.cs" />
     <Compile Include="VoronoiGrid.cs" />
     <Compile Include="VoronoiMap.cs" />
     <Compile Include="VoronoiNodes.cs" />

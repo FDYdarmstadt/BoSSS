@@ -1997,6 +1997,24 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Accumulates some vector to the diagonal of the matrix.
+        /// </summary>
+        static public void AccDiag<T,V>(this T M, V diag) 
+            where T : IMatrix 
+            where V: IEnumerable<double> //
+        {
+            if (M.NoOfCols != M.NoOfRows)
+                throw new NotSupportedException("must be quadratic.");
+
+            int i = 0;
+            foreach(double d in diag) {
+                M[i, i] += d;
+                i++;
+            }
+        }
+
+
+        /// <summary>
         /// Least-squares-solve (LAPACK function DGELSY) with multiple right-hand-side vectors.
         /// </summary>
         /// <param name="Mtx">
@@ -2422,6 +2440,7 @@ namespace ilPSP {
                 double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, N*N);
                 double[] _work = TempBuffer.GetTempBuffer(out int i1, 4*N);
                 int* Iwork = stackalloc int[N];
+                int* IPIV = stackalloc int[N];
 
                 fixed(double* A = _this_Entries, work = _work) {
                     CopyToUnsafeBuffer(M, A, true);
@@ -2436,16 +2455,20 @@ namespace ilPSP {
                     else
                         throw new ArgumentException("Illegal Matrix Norm Specifier.");
 
+                    LAPACK.F77_LAPACK.DGETRF(ref N, ref N, A, ref LDA, IPIV, out INFO);
+                    if(INFO != 0)
+                        throw new ArithmeticException("LAPACK DGECON info is " + INFO);
+                    
                     LAPACK.F77_LAPACK.DGECON_(ref NORM, ref N, A, ref LDA, ref ANORM, ref RCOND, work, Iwork, ref INFO);
-
+                    if(INFO != 0)
+                        throw new ArithmeticException("LAPACK DGECON info is " + INFO);
                 }
 
                 TempBuffer.FreeTempBuffer(i0);
                 TempBuffer.FreeTempBuffer(i1);
             }
 
-            if(INFO != 0)
-                throw new ArithmeticException("LAPACK DGECON info is " + INFO);
+            
 
             return 1.0 / RCOND;
         }

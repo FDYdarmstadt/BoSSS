@@ -141,6 +141,7 @@ namespace BoSSS.Application.BoSSSpad {
         static internal void Reset() {
             databases = new IDatabaseInfo[0];
             m_WorkflowMgm = null;
+            executionQueues = null;
         }
         
 
@@ -291,6 +292,27 @@ namespace BoSSS.Application.BoSSSpad {
             return OpenOrCreateDatabase(path);
         }
         
+        /// <summary>
+        /// Creates a database in a temporary directory
+        /// </summary>
+        static public IDatabaseInfo CreateTempDatabase() {
+
+            DirectoryInfo TempDir;
+            {
+                var rnd = new Random();
+                bool Exists = false;
+                do {
+                    var tempPath = Path.GetTempPath();
+                    var tempDir = rnd.Next().ToString();
+                    TempDir = new DirectoryInfo(Path.Combine(tempPath, tempDir));
+                    Exists = TempDir.Exists;
+                } while (Exists == true);
+            }
+            
+            string path = TempDir.FullName;
+            return OpenOrCreateDatabase(path);
+        }
+
         /// <summary>
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
@@ -617,15 +639,15 @@ namespace BoSSS.Application.BoSSSpad {
             executionQueues = new List<BatchProcessorClient>();
 
             BatchProcessorConfig bpc;
-            try {
+            //try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
 
-            } catch (Exception e) {
-                Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
+            //} catch (Exception e) {
+            //    Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
 
-                executionQueues.Add(new MiniBatchProcessorClient());
-                return;
-            }
+            //    executionQueues.Add(new MiniBatchProcessorClient());
+            //    return;
+            //}
 
             executionQueues.AddRange(bpc.AllQueues);
         }

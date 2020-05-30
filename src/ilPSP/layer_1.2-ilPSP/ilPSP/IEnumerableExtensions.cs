@@ -663,6 +663,22 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Converts a wildcard-string into a regular expression; probably stolen from stackoverflow.
+        /// </summary>
+        public static System.Text.RegularExpressions.Regex WildcardToRegex(this string pattern) {
+            return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
+            Replace("\\*", ".*").
+            Replace("\\?", ".") + "$");
+        }
+
+        /// <summary>
+        /// Tests if <paramref name="test"/> matches <paramref name="wildcard"/>.
+        /// </summary>
+        public static bool WildcardMatch(this string wildcard, string test) {
+            return WildcardToRegex(wildcard).IsMatch(test);
+        }
+
+        /// <summary>
         /// Returns the original <paramref name="sequence"/> except for
         /// elements that are equal to (<see cref="object.Equals(object)"/>) to
         /// to the <paramref name="excludedItem"/>.

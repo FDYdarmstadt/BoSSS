@@ -1039,7 +1039,7 @@ namespace ilPSP.Utils {
         /// </summary>
         /// <param name="a"></param>
         /// <param name="val"></param>
-        public static void SetAll<T,V>(this T a, V val) where T: IList<V> {
+        public static void SetAll<T, V>(this T a, V val) where T: IList<V> {
 
             for (int i = a.Count - 1; i >= 0; i--)
                 a[i] = val;
@@ -1081,9 +1081,7 @@ namespace ilPSP.Utils {
             return R;
         }
 
-        /// <summary>
-        /// implementation of <see cref="SetAll"/>
-        /// </summary>
+        
         static void SetRecursive(Array a, object val, int[] indices, int dim) {
             int rank = a.Rank;
 

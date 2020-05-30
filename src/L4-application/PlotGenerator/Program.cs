@@ -42,9 +42,9 @@ namespace BoSSS.PlotGenerator {
             bool mustFinalizeMPI;
 
             var t = typeof(BoSSS.Application.Rheology.RheologyTimestepInfo);
-            
-            
-            ilPSP.Environment.Bootstrap(args, BoSSS.Solution.Application.GetBoSSSInstallDir(), out mustFinalizeMPI);
+
+
+            mustFinalizeMPI = BoSSS.Solution.Application.InitMPI();
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
 
             WriteLine(" --------------------------------------------");
@@ -87,7 +87,7 @@ namespace BoSSS.PlotGenerator {
 
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             if (mustFinalizeMPI) {
-                csMPI.Raw.mpiFinalize();
+                BoSSS.Solution.Application.FinalizeMPI();
             }
         }
 

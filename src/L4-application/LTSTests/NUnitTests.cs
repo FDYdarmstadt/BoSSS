@@ -34,18 +34,6 @@ namespace LTSTests {
                 () => new NUnitTests());
         }
 
-        [TestFixtureSetUp]
-        static public void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out dummy);
-            Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
-        }
-
-        [TestFixtureTearDown]
-        static public void Cleanup() {
-            //Console.Out.Dispose();
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
-        }
 
         public static void LTS2order_dtCoarse(bool LTS = true, bool ALTS = false, int numOfSubgrids = 3) {
             Program test = null;
@@ -72,7 +60,7 @@ namespace LTSTests {
                 //maxL2error = 1.94E-05;   // old (Stephan)
                 //maxL2error = 1.72669556339186E-05 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input 
                 //maxL2error = 1.7285117532218E-05 + 1e-14; // dt=dt_input
-                maxL2error = 1.7285117532218E-05 + 1e-16; // dt=dt_input
+                maxL2error = 1.72851175323E-05 + 1e-16; // dt=dt_input
             else if (ALTS)
                 //maxL2error = 1.8958107158594E-05 + 1e-14; //if (TimestepNo < 3) dt = dt_input / 3, else dt = dt_input
                 //maxL2error = 1.89762864341145E-05 + 1e-14; // dt=dt_input
@@ -109,16 +97,18 @@ namespace LTSTests {
                 //maxL2error = 4.94E-05;   // old (Stephan)
                 //maxL2error = 4.3207686040932E-06 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input 
                 //maxL2error = 4.32303875071948E-06 + 1e-14; // dt=dt_input 
-                maxL2error = 4.32303875071948E-06 + 1e-16; // dt=dt_input 
+                //maxL2error = 4.32303875071948E-06 + 1e-16; // dt=dt_input 
+                maxL2error = 4.324E-06 + 1e-16;
             else if (ALTS)
                 //maxL2error = 4.72677420970687E-06 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input
                 //maxL2error = 4.72904629811328E-06 + 1e-14; // dt=dt_input
-                maxL2error = 4.72904629811328E-06 + 1e-16; // dt=dt_input
+                //maxL2error = 4.72904629811328E-06 + 1e-16; // dt=dt_input
+                maxL2error = 4.7291E-06 + 1e-16; // dt=dt_input
 
             Console.WriteLine(
                 "LTS@dt=" + dt + "and order=" + order + " L2 Error: " + L2error + " (Threshold is " + maxL2error + ")");
 
-            Assert.IsTrue(L2error < maxL2error);
+            Assert.LessOrEqual(L2error, maxL2error, "L2 error to high");
         }
 
         public static void LTS3order_dtCoarse(bool LTS = true, bool ALTS = false, int numOfSubgrids = 3) {
@@ -216,12 +206,13 @@ namespace LTSTests {
             double L2error = (double)test.L2error;
             //double maxL2error = 2.04207522617079E-06 + 1E-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input
             //double maxL2error = 2.04241551595267E-06 + 1E-14; // dt=dt_input
-            double maxL2error = 2.04241551595267E-06 + 1e-16; // dt=dt_input
+            //double maxL2error = 2.04241551595267E-06 + 1e-16; // dt=dt_input
+            double maxL2error = 2.05E-06;
 
             Console.WriteLine(
                 "Check AB, LTS, A-LTS@dt=" + dt + "and order=" + order + " L2 Error: " + L2error + " (Threshold is " + maxL2error + ")");
 
-            Assert.IsTrue(L2error < maxL2error);
+            Assert.LessOrEqual(L2error, maxL2error, "L2 error to high");
         }
 
         // Call LTS tests

@@ -29,7 +29,8 @@ namespace NSE_SIMPLE.Multiphase {
         public static SIMPLEControl UnsteadyMultiphaseWave() {
             MultiphaseSIMPLEControl c = new MultiphaseSIMPLEControl();
 
-            c.DbPath = @"..\..\Base\06_ZipDatabases\NUnitTests.zip";
+            //c.DbPath = @"..\..\Base\06_ZipDatabases\NUnitTests.zip";
+            c.DbPath = @"NUnitTests.zip";
             c.savetodb = false;
 
             c.GridGuid = new Guid("a5135fbb-4243-4677-97f6-562860e4f95c");

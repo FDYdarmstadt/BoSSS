@@ -34,7 +34,7 @@ namespace LTSTests {
     /// NUnit test project for the implementation of LTS:
     /// The scalar transport equation of the BoSSS Tutorial is used to test LTS.
     /// </summary>
-    class Program : Application {
+    public class Program : Application {
         static void Main(string[] args) {
             Application._Main(args, true, delegate () {
                 return new Program();

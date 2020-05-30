@@ -3636,7 +3636,7 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
+            c.PrintInterval = 1000;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
@@ -3668,7 +3668,7 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("890bf0d8-6a09-4809-bf3f-fb025680b460"), -1);
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("d369e78c-6f34-42e1-b8b9-e3903db132c2"), -1);
                 c.GridGuid = new Guid("c691d970-6e52-4dd2-9d10-e95ab99f0482");
             } else {
                 c.GridFunc = delegate {
@@ -3737,7 +3737,7 @@ namespace CNS {
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
             int levelSetDegree = 2;
             c.LevelSetQuadratureOrder = 3 * levelSetDegree;
-            c.AgglomerationThreshold = 0.0;
+            c.AgglomerationThreshold = 0.3;
             c.SaveAgglomerationPairs = false;
             c.AddVariable(IBMVariables.LevelSet, levelSetDegree);
 
@@ -3826,9 +3826,9 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.Endtime = endTime;
-            //c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = 70;
-            c.dtFixed = 1e-3;
+            c.CFLFraction = CFLFraction;
+            c.NoOfTimesteps = int.MaxValue;
+            //c.dtFixed = 1e-3;
 
             c.ProjectName = "IBMBowShock";
 
@@ -3839,7 +3839,7 @@ namespace CNS {
                     tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_agg{5}",
                         dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, c.AgglomerationThreshold);
                 } else {
-                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_agg{7}_RESTART4",
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_agg{7}_RESTART12",
                         dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax, c.AgglomerationThreshold);
                 }
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
@@ -4281,6 +4281,8 @@ namespace CNS {
             string restart = "True";
 
             IBMControl c = IBMBowShock(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, numOfCellsX, numOfCellsY, lambdaMax);
+
+            //c.AlternateDbPaths = new ValueTuple<string, string>[] { (@"S:\work\scratch\yp19ysog\bosss_db_bowShock", "pcmit33"), (dbPath, "") };
 
             //c.TracingNamespaces = "BoSSS.Solution";
 

@@ -85,11 +85,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        public GridCommons CreateGrid() {
+        public GridCommons CreateGrid(int Resolution) {
+            if (Resolution < 1)
+                throw new ArgumentException();
 
 
-            var xNodes = GenericBlas.Linspace(-1.5, 1.5, 19);
-            var yNodes = GenericBlas.Linspace(-1.5, 1.5, 19);
+            var xNodes = GenericBlas.Linspace(-1.5, 1.5, 18*Resolution + 1);
+            var yNodes = GenericBlas.Linspace(-1.5, 1.5, 18*Resolution + 1);
 
 
 

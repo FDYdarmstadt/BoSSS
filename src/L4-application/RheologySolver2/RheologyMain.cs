@@ -57,6 +57,12 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
+            //RheologyTestProgram.Init();
+            //DeleteOldPlotFiles();
+            //RheologyTestProgram.ScalingChannelTestStokesCondition(2, 1.0);
+            //RheologyTestProgram.Cleanup();
+            //Assert.IsTrue(false, "Testcode left in main routine.");
+
             Rheology._Main(args, false, () => new Rheology());
         }
 
@@ -421,11 +427,11 @@ namespace BoSSS.Application.Rheology {
                         var comps = XOP.EquationComponents[CodName[d]];
 
                         // convective part:
-                        if (!this.Control.StokesConvection || !this.Control.Stokes) {
-                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
+                        if (this.Control.StokesConvection || this.Control.Stokes) {
+                            Console.WriteLine("Using Stokes Equation - no convective term.");
                             
                         } else {
-                            Console.WriteLine("Using Stokes Equation - no convective term.");
+                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         }
 
 
@@ -442,8 +448,6 @@ namespace BoSSS.Application.Rheology {
 
 
                         // viscous part:
-                        //Type GridType = GridData.iGeomCells.RefElements[0].GetType();
-
                         if (this.Control.beta < 0.0) {
                             throw new ArithmeticException("Illegal setting in control object: 'beta' is out of range, must be non-negative.");
                         }
@@ -496,12 +500,6 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
-
-                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0));
-                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
-                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
-
-
 
                     if (ConstitutiveEqs) {
                         Console.WriteLine($"configuring Weissenberg number: {this.Control.Weissenberg:#.##e+00}");
@@ -705,18 +703,6 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
-                /*
-                if (this.Control.OperatorMatrixAnalysis == true) {
-
-                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
-                    myAnalysis.VarGroup = new int[] { 0, 1, 2 };
-                    double[] cond = myAnalysis.CondNum();//Analyse();
-                    Console.WriteLine("Condition number for full matrix is " + cond[0] + ". Condition number for inner matrix is " + cond[1] + ".");
-                    base.QueryHandler.ValueQuery("condFull", cond[0], true);
-                    base.QueryHandler.ValueQuery("condInner", cond[1], true);
-                }
-                */
-
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
@@ -1222,7 +1208,7 @@ namespace BoSSS.Application.Rheology {
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     int pVelLv = Math.Max(1, pVel - iLevel);
-                    int pPreLv = Math.Max(1, pPrs - iLevel);
+                    int pPreLv = Math.Max(0, pPrs - iLevel);
                     int pStrLv = Math.Max(1, pStr - iLevel);
 
                     /*
@@ -1242,7 +1228,7 @@ namespace BoSSS.Application.Rheology {
 
 
 
-
+                    /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                         mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
@@ -1251,7 +1237,7 @@ namespace BoSSS.Application.Rheology {
                     };
                     //*/
 
-                    /*
+                    
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 4];
                     
                     // configurations for velocity
@@ -1266,7 +1252,7 @@ namespace BoSSS.Application.Rheology {
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
                         DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = this.Control.PressureBlockPrecondMode,
+                        mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { D }
                     };
 
@@ -1676,6 +1662,32 @@ namespace BoSSS.Application.Rheology {
                     Console.WriteLine($"No Weissenberg number contained in time-step; starting with pre-set.");
                 }
             }
+        }
+
+        /// <summary>
+        /// automatized analysis of condition number 
+        /// </summary>
+        public override IDictionary<string, double> OperatorAnalysis() {
+
+            int[] varGroup_convDiff = new int[] { 0, 1 };
+            int[] varGroup_Stokes = new int[] { 0, 1, 2 };
+            int[] varGroup_Constitutive = new int[] { 3, 4, 5 };
+            int[] varGroup_all = new int[] { 0, 1, 2, 3, 4, 5 };
+
+            var res = m_BDF_Timestepper.OperatorAnalysis(new[] {varGroup_convDiff, varGroup_Stokes, varGroup_Constitutive, varGroup_all });
+
+            // filter only those results that we want;
+            // this is a DG app, but it uses the LevelSetTracker; therefore, we want to filter analysis results for cut cells and only return uncut cells resutls
+            var ret = new Dictionary<string, double>();
+            foreach(var kv in res) {
+                if(kv.Key.ToLowerInvariant().Contains("innercut") || kv.Key.ToLowerInvariant().Contains("bndycut")) {
+                    // ignore
+                } else {
+                    ret.Add(kv.Key, kv.Value);
+                }
+            }
+
+            return ret;
         }
 
 

@@ -82,7 +82,6 @@ namespace BoSSS.Application.Rheology {
             C.ObjectiveParam = 1.0;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = true;
@@ -481,7 +480,6 @@ namespace BoSSS.Application.Rheology {
             C.Bodyforces = true;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;

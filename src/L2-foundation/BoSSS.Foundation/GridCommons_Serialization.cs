@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.Grid.Classic
             grid.BcCellsStorageGuid = guids.Last();
         }
 
-        public IEqualityComparer<IGrid> ReferenceComparer {
+        public IEqualityComparer<IGrid> BasePropertiesComparer {
             get {
                 return GridCommonsComparer.ReferenceComparer;
             }
