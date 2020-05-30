@@ -103,7 +103,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        //typeof(NSE_SIMPLE.SIMPLESolver),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
                         typeof(MPITest.Program)
                     };
             }
