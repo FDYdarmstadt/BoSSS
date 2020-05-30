@@ -94,6 +94,7 @@
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
     <Compile Include="FormDifferentiator.cs" />
+    <Compile Include="Sinusoid.cs" />
     <Compile Include="GridComparer.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="GridCommons_Comparer.cs" />

@@ -245,13 +245,17 @@ namespace BoSSS.Application.SipPoisson {
 
             // GUID's to confined cylinder grids (half)
             List<string> grids = new List<string>();
-            grids.Add("0f6132db-a263-4140-b0b4-cca275f3af3c"); //half_0
-            grids.Add("282f25a2-bb4e-4549-96c6-e5d8d806a607"); //half_1
-            grids.Add("e174a74c-d2fc-40a1-af12-a16356264911"); //half_2
-            grids.Add("de43ee58-c3b3-41bd-9df3-7deb883de36b"); //half_3
+            grids.Add("a8370a9b-86b6-4dda-8147-b30f897b2320");
+            grids.Add("462f3f2e-8cd9-4563-a62f-191629ffd155");
+            grids.Add("6270aeda-0ae8-4197-939b-4018cd9500fe");
+            grids.Add("f97ff88f-8980-4760-ba54-76bd7071cdbd");
+            /*grids.Add("0f6132db-a263-4140-b0b4-cca275f3af3c");*/ //half_0
+            /*grids.Add("282f25a2-bb4e-4549-96c6-e5d8d806a607");*/ //half_1
+            /*grids.Add("e174a74c-d2fc-40a1-af12-a16356264911");*/ //half_2
+            /*grids.Add("de43ee58-c3b3-41bd-9df3-7deb883de36b");*/ //half_3
 
             Guid gridGuid;
-            if (Guid.TryParse(grids[0], out gridGuid))
+            if (Guid.TryParse(grids[1], out gridGuid))
             {
                 C.GridGuid = gridGuid;
             }
@@ -280,7 +284,7 @@ namespace BoSSS.Application.SipPoisson {
             C.AddBoundaryValue("Dirichlet_inlet", "T", "X => 0", false);
             C.AddBoundaryValue("Dirichlet_top", "T", "X => 0", false);
             C.AddBoundaryValue("Dirichlet_outlet", "T", "X => 0", false);
-            C.AddBoundaryValue("Neumann_middle");
+            C.AddBoundaryValue("Dirichlet_bottom", "T", "X => 0", false);
             C.AddBoundaryValue("Dirichlet_cylinder", "T", "X => -1", false);
 
             #endregion
@@ -296,12 +300,13 @@ namespace BoSSS.Application.SipPoisson {
             #region linear solver config
 
             // Linear Solver Settings
-            C.LinearSolver.MaxKrylovDim = 20;
-            C.LinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.MaxKrylovDim = 50;
+            C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.TargetBlockSize = 1000;
+            C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.SolverMode = LinearSolverMode.Solve;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
             //C.LinearSolver.SolverMode = LinearSolverMode.SpectralAnalysis;
 
             #endregion

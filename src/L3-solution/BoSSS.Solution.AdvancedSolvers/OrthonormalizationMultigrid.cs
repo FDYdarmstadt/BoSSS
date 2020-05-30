@@ -472,7 +472,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
 
-                for (int iIter = 1; true; iIter++) {
+                for (int iIter = 1; true; iIter++) {                    
                     if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
@@ -514,62 +514,74 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // coarse grid correction
                     // ----------------------
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
-#if DEBUG
+                    
+
+                    // W-cycle (gamma=2)
+                    int gamma = 2;
+                    for (int i = 0; i < gamma; i++)
                     {
-                        double[] rTest = new double[rl.Length];
-                        Residual(rTest, X, B); // Residual on this level; 
-                        Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
-                    } 
+#if DEBUG
+                        {
+                            double[] rTest = new double[rl.Length];
+                            Residual(rTest, X, B); // Residual on this level; 
+                            // Test also fails if convergence criterium is to strict because then machine accuracy is reached
+                            Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                        }
 #endif
-                    bool usedCoarse = false;
-                    if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel) {
+                        bool usedCoarse = false;
+                        if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
+                        {
 
-                        this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
+                            this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
-                        // Berechnung der Grobgitterkorrektur
-                        double[] vlc = new double[Lc];
-                        this.CoarserLevelSolver.Solve(vlc, rlc);
+                            // Berechnung der Grobgitterkorrektur
+                            double[] vlc = new double[Lc];
+                            this.CoarserLevelSolver.Solve(vlc, rlc);
 
-                        // Prolongation der Grobgitterkorrektur
-                        double[] vl = new double[L];
-                        this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
-                        if (Corr != null)
-                            Corr.SetV(vl);
+                            // Prolongation der Grobgitterkorrektur
+                            double[] vl = new double[L];
+                            this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+                            if (Corr != null)
+                                Corr.SetV(vl);
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref vl);
-                        if (Xprev != null)
-                            Xprev.SetV(X);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                            Converged = true;
-                            break;
+                            // orthonormalization and residual minimization
+                            AddSol(ref vl);
+                            if (Xprev != null)
+                                Xprev.SetV(X);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
+                            {
+                                Converged = true;
+                                break;
+                            }
+
+                            usedCoarse = true;
                         }
+                        else
+                        {
+                            // Berechnung der Grobgitterkorrektur
+                            double[] vl = new double[L];
+                            this.CoarserLevelSolver.Solve(vl, rl);
 
-                        usedCoarse = true;
-                    } else {
-                        // Berechnung der Grobgitterkorrektur
-                        double[] vl = new double[L];
-                        this.CoarserLevelSolver.Solve(vl, rl);
+                            // orthonormalization and residual minimization
+                            AddSol(ref vl);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
+                            {
+                                Converged = true;
+                                break;
+                            }
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref vl);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                            Converged = true;
-                            break;
+                            usedCoarse = true;
                         }
-
-                        usedCoarse = true;
                     }
-
 
                     PlottyMcPlot(rl, X, Xprev, Corr);
 
                     // post-smoother
                     // -------------
 
-                    for (int g = 0; g < 2; g++) {
+                    for (int g = 0; g < 1; g++) {
                         // Test: Residual on this level / already computed by 'MinimizeResidual' above
 #if DEBUG
                         {

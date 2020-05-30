@@ -305,7 +305,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     AnyNonX = true;
                 }
             }
-
+            
             AggregationGridData[] agSeq = _agSeq.ToArray();
             if (agSeq.Length <= 0)
                 throw new ArgumentException();
@@ -468,7 +468,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             // plot aggregation basis
+#if DEBUG
             PlotAggregationBasis(agSeq, maxDgBasis, Injectors);
+#endif
 
             // create basis sequence
             // ---------------------
@@ -1344,6 +1346,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(_fields, Directory.GetCurrentDirectory() + "\\AggregationBasis", 0, 2);
         }
+
+       
 
     }
 
