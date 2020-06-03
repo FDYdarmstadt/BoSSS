@@ -283,8 +283,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control PackedParticles(int k = 2, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
-            //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);// Fluid Properties
+            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);// Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
@@ -358,9 +358,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
 
-            //string ID = "7e5ecbb3-58b7-413e-9557-2f67e73e6f68";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1400);
-            //C.IsRestart = true;
+            string ID = "4eeb3caf-b5d3-4601-a977-aab887606fb3";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1400);
+            C.IsRestart = true;
             return C;
         }
 

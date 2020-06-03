@@ -29,8 +29,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(3);
+            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(2);
 
             // Coupling Properties
             // =============================
@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 40, lengthY: 40, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(3);
 
             // Coupling Properties
