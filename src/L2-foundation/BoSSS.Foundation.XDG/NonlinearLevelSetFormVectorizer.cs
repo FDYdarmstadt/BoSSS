@@ -51,6 +51,7 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
+        
 
         public IList<string> ArgumentOrdering {
             get;
@@ -63,9 +64,11 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        double ILevelSetForm.LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            return OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
+        double IInnerEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            return OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
         }
+
+      
 
 
         void INonlinLevelSetForm_V.LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_V) {
@@ -157,10 +160,10 @@ namespace BoSSS.Foundation.XDG {
 
                     _vA = 1;
                     _vB = 0;
-                    Koeff_V[l, k, iSpcNeg] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                    Koeff_V[l, k, iSpcNeg] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                     _vA = 0;
                     _vB = 1;
-                    Koeff_V[l, k, iSpcPos] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                    Koeff_V[l, k, iSpcPos] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                 }
             }
         }
@@ -255,11 +258,11 @@ namespace BoSSS.Foundation.XDG {
                     }
                     for (int d = 0; d < D; d++) {
                         _Grad_vA[d] = 1.0;
-                        Koeff_GradV[l, k, iSpcNeg, d] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                        Koeff_GradV[l, k, iSpcNeg, d] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                         _Grad_vA[d] = 0.0;
 
                         _Grad_vB[d] = 1.0;
-                        Koeff_GradV[l, k, iSpcPos, d] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                        Koeff_GradV[l, k, iSpcPos, d] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                         _Grad_vB[d] = 0.0;
                     }
                 }

@@ -678,19 +678,7 @@ namespace BoSSS.Foundation {
     /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
     /// \f]
     /// </summary>
-    public interface IEdgeForm : IEquationComponent {
-
-        /// <summary>
-        /// Activation Flags For Boundary Edges
-        /// <see cref="TermActivationFlags"/>
-        /// </summary>
-        TermActivationFlags BoundaryEdgeTerms { get; }
-
-        /// <summary>
-        /// Activation Flags for Inner Edges 
-        /// <see cref="TermActivationFlags"/>
-        /// </summary>
-        TermActivationFlags InnerEdgeTerms { get; }
+    public interface IInnerEdgeForm : IEquationComponent {
 
         /// <summary>
         /// The form which is integrated over interior edges
@@ -708,7 +696,15 @@ namespace BoSSS.Foundation {
         double InnerEdgeForm(ref CommonParams inp,
             double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT,
             double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT);
+    }
 
+    /// <summary>
+    /// Defines a general _edge term_, i.e. a form
+    /// \f[ 
+    /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
+    /// \f]
+    /// </summary>
+    public interface IBoundaryEdgeForm : IEquationComponent {
         /// <summary>
         /// The form which is integrated over boundary edges.
         /// </summary>
@@ -722,6 +718,28 @@ namespace BoSSS.Foundation {
             double[] _uA, double[,] _Grad_uA,
             double _vA, double[] _Grad_vA);
     }
+
+    /// <summary>
+    /// Defines a general complete _edge term_ consisting of boundary and internal component, i.e. a form
+    /// \f[ 
+    /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
+    /// \f]
+    /// </summary>
+    public interface IEdgeForm : IInnerEdgeForm, IBoundaryEdgeForm {
+
+        /// <summary>
+        /// Activation Flags For Boundary Edges
+        /// <see cref="TermActivationFlags"/>
+        /// </summary>
+        TermActivationFlags BoundaryEdgeTerms { get; }
+
+        /// <summary>
+        /// Activation Flags for Inner Edges 
+        /// <see cref="TermActivationFlags"/>
+        /// </summary>
+        TermActivationFlags InnerEdgeTerms { get; }
+    }
+
 
 
     /// <summary>
@@ -1096,24 +1114,20 @@ namespace BoSSS.Foundation {
     public struct EdgeFormParams {
         
         /// <summary>
-        /// first edge
+        /// Quadrature nodes in global coordinates. 
+        /// - 1st index: edge
+        /// - 2nd index: quadrature node
+        /// - 3rd index: spatial direction
         /// </summary>
-        public int e0;
+        public MultidimensionalArray Nodes;
 
         /// <summary>
-        /// number of edges
+        /// Edge normals at quadrature nodes. 
+        /// - 1st index: edge
+        /// - 2nd index: quadrature node
+        /// - 3rd index: spatial direction
         /// </summary>
-        public int Len;
-
-        /// <summary>
-        /// reference to the current grid 
-        /// </summary>
-        public IGridData GridDat;
-
-        /// <summary>
-        /// Physical time.
-        /// </summary>
-        public double time;
+        public MultidimensionalArray Normals;
 
         /// <summary>
         /// Values of parameter fields at quadrature nodes, for the IN-cell:
@@ -1133,22 +1147,32 @@ namespace BoSSS.Foundation {
         /// </summary>
         public MultidimensionalArray[] ParameterVars_OUT;
 
+       
+        /// <summary>
+        /// first edge
+        /// </summary>
+        public int e0;
 
         /// <summary>
-        /// Edge normals at quadrature nodes. 
-        /// - 1st index: edge
-        /// - 2nd index: quadrature node
-        /// - 3rd index: spatial direction
+        /// number of edges
         /// </summary>
-        public MultidimensionalArray Normals;
+        public int Len;
 
         /// <summary>
-        /// Quadrature nodes in global coordinates. 
-        /// - 1st index: edge
-        /// - 2nd index: quadrature node
-        /// - 3rd index: spatial direction
+        /// Physical time.
         /// </summary>
-        public MultidimensionalArray Nodes;
+        public double time;
+
+        /// <summary>
+        /// reference to the current grid 
+        /// </summary>
+        public IGridData GridDat;
+
+
+
+
+
+
     }
 
     /// <summary>

@@ -64,17 +64,17 @@ namespace BoSSS.Foundation.XDG {
 
 
         private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
-            //if(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) != 0.0) {
-            //    double funky = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
+            //if(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) != 0.0) {
+            //    double funky = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
             //    Console.WriteLine(funky);
             //}
-            Debug.Assert(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
+            Debug.Assert(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
             d2 = 1; // set test function
-            double a1 = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source/affine part
+            double a1 = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source/affine part
             Debug.Assert((this.LevelSetTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
             d1 = 1; // set trial function
-            double a = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the bilinear+affine part
+            double a = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the bilinear+affine part
             d1 = 0; // reset
             d2 = 0; // reset
             return a - a1;
@@ -85,10 +85,10 @@ namespace BoSSS.Foundation.XDG {
         }
 
         private double GetSourceCoeff(ref double d2, ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
-            Debug.Assert(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
+            Debug.Assert(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
             d2 = 1; // set test function
-            double a1 = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source part
+            double a1 = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source part
             Debug.Assert((this.LevelSetTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
             d2 = 0; // reset
             return a1;
@@ -116,6 +116,13 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
         public IList<string> ArgumentOrdering {
             get;
             private set;
@@ -127,7 +134,11 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            throw new NotSupportedException("Should not be called.");
+        }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             throw new NotSupportedException("Should not be called.");
         }
 

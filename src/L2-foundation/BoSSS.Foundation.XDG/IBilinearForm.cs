@@ -52,15 +52,17 @@ namespace BoSSS.Foundation.XDG {
 		/// </list>
 		public MultidimensionalArray Normals;
 
+       /// <summary>
+        /// Values of parameter fields at quadrature nodes on negative side, i.e. where the level-set function is negative.
+        /// </summary>
+        public MultidimensionalArray[] ParamsNeg;
+ 
+
 		/// <summary>
         /// Values of parameter fields at quadrature nodes on positive side, i.e. where the level-set function is positive.
 		/// </summary>
 		public MultidimensionalArray[] ParamsPos;
 
-        /// <summary>
-        /// Values of parameter fields at quadrature nodes on negative side, i.e. where the level-set function is negative.
-        /// </summary>
-        public MultidimensionalArray[] ParamsNeg;
       
 
         /// <summary>
@@ -162,9 +164,9 @@ namespace BoSSS.Foundation.XDG {
     }
 
     /// <summary>
-    /// An integrand on the level set.
+    /// An integrand on the level set; per definition a level-set is always an interior edge
     /// </summary>
-    public interface ILevelSetForm : IEquationComponent {
+    public interface ILevelSetForm : IInnerEdgeForm {
 
 
         /// <summary>
@@ -183,12 +185,12 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         SpeciesId NegativeSpecies { get; }
 
-
+        /// <summary>
+        /// Controls integration at the level-set.
+        /// </summary>
         TermActivationFlags LevelSetTerms { get; }
 
-        double LevelSetForm(ref CommonParams inp,
-            double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
-            double vA, double vB, double[] Grad_vA, double[] Grad_vB);
+        
     }
 
     /// <summary>

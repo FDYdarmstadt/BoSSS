@@ -74,7 +74,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
 
 
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             //// Convert CommonParams to CommonParams
             //CommonParams commonParams;
             //commonParams.Normal = inp.Normal;

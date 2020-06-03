@@ -80,7 +80,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp,
+        public double InnerEdgeForm(ref CommonParams inp,
             double[] UA, double[] UB, double[,] Grad_uA, double[,] Grad_uB,
             double VA, double VB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
