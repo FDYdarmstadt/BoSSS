@@ -94,7 +94,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             this.gridData = (GridData)tsi.Fields.First().GridDat;
 
-            if (tsi.Fields.ElementAt(1) is XDGField) {
+            if (tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault() is XDGField) {
                 XDGField densityField = (XDGField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
                 XDGField avField = (XDGField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
 
