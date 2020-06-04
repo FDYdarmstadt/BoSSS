@@ -319,7 +319,6 @@ namespace BoSSS.Solution.Control {
         /// only for restarts with loaded grid, 
         /// changes a boundary condition in the loaded grid
         /// </summary>
-        /// <param name="EdgeTagNames"></param>
         public void ChangeBoundaryCondition(string oldEdgeTagName, string newEdgeTagName) {
             if(!this.BoundaryValueChanges.ContainsKey(oldEdgeTagName))
                 this.BoundaryValueChanges.Add(oldEdgeTagName, newEdgeTagName);
@@ -738,6 +737,12 @@ namespace BoSSS.Solution.Control {
         public int NoOfTimesteps = -1;
 
         /// <summary>
+        /// true: constant dt, false: dt varies depending on solution
+        /// </summary>
+        [DataMember]
+        public bool staticTimestep = true;
+
+        /// <summary>
         /// physical time at which the solver terminates;
         /// </summary>
         [DataMember]
@@ -890,7 +895,7 @@ namespace BoSSS.Solution.Control {
         /// - 2nd entry: optional machine name filter
         /// </summary>
         [DataMember]
-        public ValueTuple<string, string>[] AlternateDbPaths = null;
+        public (string DbPath, string MachineFilter)[] AlternateDbPaths = null;
         
         /// <summary>
         /// Sets <see cref="DbPath"/>, <see cref="AlternateDbPaths"/>.

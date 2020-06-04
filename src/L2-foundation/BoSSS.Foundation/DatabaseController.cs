@@ -147,7 +147,7 @@ namespace BoSSS.Foundation.IO {
                     XmlElement xmlPath = xmlDatabase.SelectSingleNode("path") as XmlElement;
                     string dbpath = xmlPath.GetAttribute("value");
                 try {
-                    databases.Add(new DatabaseInfo(dbpath));
+                    databases.Add(DatabaseInfo.Open(dbpath));
                 } catch( Exception e) {
                     Console.Error.WriteLine($"{e.GetType().Name} caught while opening database #{cnt} at '{dbpath}': {e.Message}");
                     //databases.Add(null);
@@ -291,16 +291,18 @@ namespace BoSSS.Foundation.IO {
             DBDriver.SaveSessionInfo(session);
         }
 
+        /*
         private FileManager GetFileManager() {
             return new FileManager();
         }
+        */
 
         /// <summary>
         /// Deletes a session from the database and its files from the filesystem.
         /// </summary>
         /// <param name="session">The session to be deleted.</param>
         public void DeleteSession(ISessionInfo session) {
-            FileManager fileManager = GetFileManager();
+            //FileManager fileManager = GetFileManager();
 
             // Lists of file and directory paths marked for deletion.
             // The delete operation will be executed at the very end, in
@@ -344,13 +346,13 @@ namespace BoSSS.Foundation.IO {
             // Delete all the files marked for deletion
             foreach (string file in filesToDelete) {
                 try {
-                    fileManager.Delete(file);
+                    File.Delete(file);
                 } catch (FileNotFoundException) {
                 }
             }
             foreach (string dir in dirsToDelete) {
                 try {
-                    fileManager.DeleteDirectory(dir);
+                    Directory.Delete(dir, true);
                 } catch (FileNotFoundException) {
                 }
             }
@@ -461,20 +463,20 @@ namespace BoSSS.Foundation.IO {
             }
 
             // Execute the copy or move operations
-            FileManager fileManager = GetFileManager();
+            //FileManager fileManager = GetFileManager();
 
             foreach (string dirToCreate in dirsToCreate) {
-                fileManager.CreateDirectory(dirToCreate);
+                Directory.CreateDirectory(dirToCreate);
             }
 
             foreach (KeyValuePair<string, string> fileToCopyOrMove
                 in filesToCopyOrMove) {
 
                 if (copy) {
-                    fileManager.Copy(fileToCopyOrMove.Key,
+                    File.Copy(fileToCopyOrMove.Key,
                         fileToCopyOrMove.Value, false);
                 } else {
-                    fileManager.Move(fileToCopyOrMove.Key,
+                    File.Move(fileToCopyOrMove.Key,
                         fileToCopyOrMove.Value);
                 }
             }
@@ -483,7 +485,7 @@ namespace BoSSS.Foundation.IO {
             // need to delete the original directories by hand after copying them
             // this especially applies to the subfolder of db_root/sessions
             foreach (string dirToDelete in dirsToDelete) {
-                fileManager.DeleteDirectory(dirToDelete);
+                Directory.Delete(dirToDelete, true);
             }
 
             return session.CopyFor(dest);
@@ -505,7 +507,6 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="timestep">The time-step to be deleted.</param>
         public void DeleteTimestep(ITimestepInfo timestep, bool remove) {
-            FileManager fileManager = GetFileManager();
             string path = Path.Combine(
                 Path.Combine(timestep.Database.Path, "timesteps"),
                 timestep.ID + ".ts");
@@ -523,7 +524,7 @@ namespace BoSSS.Foundation.IO {
                 DBDriver.RemoveTimestepGuid(timestep.Session.ID, timestep.ID);
             foreach (string file in filesToDelete) {
                 try {
-                    fileManager.Delete(file);
+                    File.Delete(file);
                 } catch (FileNotFoundException) {
                 }
             }
@@ -714,9 +715,9 @@ namespace BoSSS.Foundation.IO {
             IEnumerable<string> filesToDelete = GetGridFiles(grid);
 
             // Delete the files
-            FileManager fileManager = GetFileManager();
+            //FileManager fileManager = GetFileManager();
             foreach (string file in filesToDelete) {
-                fileManager.Delete(file);
+                File.Delete(file);
             }
 
             m_Grids.Remove(grid.ID);
@@ -742,8 +743,6 @@ namespace BoSSS.Foundation.IO {
             } else {
                 throw new NotSupportedException();
             }
-
-            FileManager fileManager = GetFileManager();
 
             IList<string> gridDirSrcFullPaths = Utils.GetPathsFromGuid(
                 grid.ID,
@@ -772,11 +771,11 @@ namespace BoSSS.Foundation.IO {
                         Utils.GetPathsFromGuids(dataGuids, gridDataSrcBasePath).ToList();
 
                     // copy from grids subdirectory
-                    fileManager.Copy(gridDirSrcFullPaths[i], gridDirDestFullPaths[i], false);
+                    File.Copy(gridDirSrcFullPaths[i], gridDirDestFullPaths[i], false);
 
                     // copy data files
                     foreach (string dataFile in gridDataSrcFullPaths) {
-                        fileManager.Copy(dataFile,
+                        File.Copy(dataFile,
                             Path.Combine(gridDataDestBasePath,
                             Path.GetFileName(dataFile)), false);
                     }
@@ -792,8 +791,7 @@ namespace BoSSS.Foundation.IO {
         /// structure behind.
         /// </summary>
         public void ClearDatabase() {
-            FileManager fileManager = GetFileManager();
-
+            
             // cycle through all subfolders
             // i.e. "data", "grids", "sessions" and "timesteps"
             foreach (string subDirectoryPath
@@ -804,12 +802,11 @@ namespace BoSSS.Foundation.IO {
                     .Equals(StandardFsDriver.SessionsDir)) {
                     foreach (string sessionSubDirectory
                         in Directory.GetDirectories(subDirectoryPath)) {
-                        fileManager.DeleteDirectory(sessionSubDirectory);
+                        Directory.Delete(sessionSubDirectory, true);
                     }
                 } else {
-                    foreach (string subDirectoryFile
-                        in Directory.GetFiles(subDirectoryPath)) {
-                        fileManager.Delete(subDirectoryFile);
+                    foreach (string subDirectoryFile in Directory.GetFiles(subDirectoryPath)) {
+                        File.Delete(subDirectoryFile);
                     }
                 }
             }
@@ -874,14 +871,13 @@ namespace BoSSS.Foundation.IO {
                 Where(d => !Sessions.Any(d2 => d2.ID.ToString() == Path.GetFileName(d)));
 
             // Execute delete operations
-            FileManager fileManager = GetFileManager();
-
+           
             foreach (string fileToDelete in filesToDelete) {
-                fileManager.Delete(fileToDelete);
+                File.Delete(fileToDelete);
             }
 
             foreach (string dirToDelete in dirsToDelete) {
-                fileManager.DeleteDirectory(dirToDelete);
+                Directory.Delete(dirToDelete, true);
             }
         }
 

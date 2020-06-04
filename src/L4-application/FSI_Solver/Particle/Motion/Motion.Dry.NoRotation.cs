@@ -15,9 +15,11 @@ limitations under the License.
 */
 
 using ilPSP;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Dry_NoRotation : MotionDry {
+    [Serializable]
+    public class MotionDryNoRotation : MotionDry {
 
         /// <summary>
         /// The dry description of motion without hydrodynamics and rotation.
@@ -28,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoRotation(Vector gravity, double density) : base(gravity, density) {
+        public MotionDryNoRotation(Vector gravity, double density) : base(gravity, density) {
             IncludeRotation = false;
         }
 
@@ -46,34 +48,13 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(l_Angle, "particle angle");
             return l_Angle;
         }
-
-        /// <summary>
-        /// Calculate the new particle angle
-        /// </summary>
-        /// <param name="dt"></param>
-        protected override double CalculateParticleAngle(double dt, double collisionTimestep) {
-            double l_Angle = GetAngle(1);
-            Aux.TestArithmeticException(l_Angle, "particle angle");
-            return l_Angle;
-        }
-
+        
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double CalculateAngularVelocity(double dt) {
-            double l_RotationalVelocity = 0;
-            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            return l_RotationalVelocity;
-        }
-
-        /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
             double l_RotationalVelocity = 0;
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
             return l_RotationalVelocity;
@@ -88,9 +69,9 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override object Clone() {
-            Motion clonedMotion = new Motion_Dry_NoRotation(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
-            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            Motion clonedMotion = new MotionDryNoRotation(Gravity, Density);
+            clonedMotion.SetParticleArea(ParticleArea);
+            clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

@@ -24,8 +24,8 @@ namespace BoSSS.Foundation.IO
         {
             if (m_stdout != null)
             {
-                Debug.Assert(ilPSP.Environment.StdOut.WriterS.Contains(m_stdout));
-                Debug.Assert(ilPSP.Environment.StdErr.WriterS.Contains(m_stderr));
+                //Debug.Assert(ilPSP.Environment.StdOut.WriterS.Contains(m_stdout));
+                //Debug.Assert(ilPSP.Environment.StdErr.WriterS.Contains(m_stderr));
 
                 Console.Out.Flush();
                 Console.Error.Flush();

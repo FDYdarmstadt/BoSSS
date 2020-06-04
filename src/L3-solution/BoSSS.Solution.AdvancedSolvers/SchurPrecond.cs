@@ -26,7 +26,6 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Connectors.Matlab;
-using MathNet.Numerics.LinearAlgebra.Double;
 using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.AdvancedSolvers

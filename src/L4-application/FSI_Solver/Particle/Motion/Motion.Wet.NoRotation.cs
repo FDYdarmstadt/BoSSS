@@ -17,8 +17,10 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using System.Collections.Generic;
+using System;
 
 namespace BoSSS.Application.FSI_Solver {
+    [Serializable]
     public class MotionWetNoRotation : Motion {
 
         /// <summary>
@@ -53,33 +55,11 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle angle after a collision
-        /// </summary>
-        /// <param name="dt"></param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateParticleAngle(double dt, double collisionTimestep) {
-            double l_Angle = GetAngle(1);
-            Aux.TestArithmeticException(l_Angle, "particle angle");
-            return l_Angle;
-        }
-
-        /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double CalculateAngularVelocity(double dt) {
-            double l_RotationalVelocity = 0;
-            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            return l_RotationalVelocity;
-        }
-
-        /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
             double l_RotationalVelocity = 0;
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
             return l_RotationalVelocity;
@@ -94,8 +74,8 @@ namespace BoSSS.Application.FSI_Solver {
             Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
             currentStress = TransformStressToPrint(stressToPrintOut);
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            tempForces = Force_MPISum(tempForces);
-            tempForces = CalculateGravity(fluidDensity, tempForces);
+            tempForces = ForcesMPISum(tempForces);
+            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
             return tempForces;
         }
 
@@ -114,8 +94,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override object Clone() {
             Motion clonedMotion = new MotionWetNoRotation(Gravity, Density);
-            clonedMotion.GetParticleArea(ParticleArea);
-            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            clonedMotion.SetParticleArea(ParticleArea);
+            clonedMotion.SetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

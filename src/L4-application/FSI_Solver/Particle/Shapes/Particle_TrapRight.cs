@@ -54,12 +54,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_TrapRight(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_TrapRight(InitializeMotion motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = width;
             Aux.TestArithmeticException(width, "Particle width");
-            Motion.GetParticleLengthscale(width);
-            Motion.GetParticleArea(Area);
-            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+            Motion.SetParticleMaxLengthscale(width);
+            Motion.SetParticleArea(Area);
+            Motion.SetParticleMomentOfInertia(MomentOfInertia);
 
         }
 

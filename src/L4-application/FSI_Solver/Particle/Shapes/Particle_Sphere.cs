@@ -53,14 +53,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Sphere(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_Sphere(InitializeMotion motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
 
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
 
-            Motion.GetParticleLengthscale(radius);
-            Motion.GetParticleArea(Area);
-            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+            Motion.SetParticleMaxLengthscale(radius);
+            Motion.SetParticleArea(Area);
+            Motion.SetParticleMomentOfInertia(MomentOfInertia);
 
         }
 
@@ -134,6 +134,18 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         override public double[] GetLengthScales() {
             return new double[] { m_Radius, m_Radius };
+        }
+
+        public override object Clone() {
+            Particle clonedParticle = new Particle_Sphere(MotionInitializer,
+                                                             m_Radius,
+                                                             Motion.GetPosition(),
+                                                             Motion.GetAngle() * 360 / (2 * Math.PI),
+                                                             ActiveStress,
+                                                             Motion.GetTranslationalVelocity(),
+                                                             Motion.GetRotationalVelocity());
+            clonedParticle.IsMaster = IsMaster;
+            return clonedParticle;
         }
     }
 }

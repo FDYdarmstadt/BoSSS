@@ -34,9 +34,13 @@ namespace BoSSS.Solution.NSECommon {
     [DataContract]
     [Serializable]
     public class MaterialLawLowMach : MaterialLaw {
+        [DataMember]
+        public double T_ref;
 
-        double T_ref;
+        [DataMember]
         MaterialParamsMode MatParamsMode;
+
+        [DataMember]
         bool rhoOne;
         /// <summary>
         /// Ctor.
@@ -67,16 +71,18 @@ namespace BoSSS.Solution.NSECommon {
                 return ThermodynamicPressure != null;
             }
         }
-       
+
         /// <summary>
         /// 
         /// </summary>
-        [NonSerialized]
+        //[NonSerialized]
+        [DataMember]
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
         /// <summary>
         /// 
         /// </summary>
-        [NonSerialized]
+        //[NonSerialized]
+        [DataMember]
         public double ThermodynamicPressureValue = -1;
         
 
@@ -118,27 +124,48 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-            if(IsInitialized) {
-                Debug.Assert(phi[0] > 0);
+            if (IsInitialized) {
+                //Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
+                double rho = 1.0;
 
-                double rho;
-                if(ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found
-                    //rho = 1/ phi[0];
-                    rho = ThermodynamicPressureValue / phi[0];
+                if (rhoOne) {
+                    rho = 1;
+                    return rho;
                 } else {
-                    rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                    if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    
+                        rho = ThermodynamicPressureValue / phi[0];
+                    } else {
+                        rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                    }
                 }
+
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
 
-                if(rhoOne) 
-                    rho = 1.0;
-                
+
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
         }
+
+
+        /// <summary>
+        /// Sutherlands law for air. 
+        /// </summary>
+        /// <param name="T"></param>
+        /// <returns>
+        /// The viscosity of air at a given temperature in Kg/(m.s)
+        /// <see</returns>
+        public double getViscosityDim(double T) {
+
+            double S = 110.56;
+            double T0 = 273.15; // 
+            double viscosity0 = 1.716e-5; //kg/( m s) ==> viscosity at T = 273.15 for air
+            double viscosity = viscosity0 * Math.Pow(T / T0, 1.5) * (T0 + S) / (T + S);
+            return viscosity;
+        }
+
 
         /// <summary>
         /// Dimensionless Sutherland's law.
@@ -148,24 +175,28 @@ namespace BoSSS.Solution.NSECommon {
         /// Dynamic viscosity
         /// </returns>
         public override double GetViscosity(double phi) {
+            double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
-                case MaterialParamsMode.Constant:
-                    return 1.0;
+                case MaterialParamsMode.Constant: {
+                        visc = 1.0;
+                        break;
+                    }
                 case MaterialParamsMode.Sutherland: {
-                        double S = 110.5;
-                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
-                        Debug.Assert(!double.IsNaN(viscosity));
-                        Debug.Assert(!double.IsInfinity(viscosity));
-                        Debug.Assert(viscosity > 0);
-                        return viscosity;
+                        double S = 110.56;
+                        visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        break;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        double viscosity = Math.Pow(phi, 2.0 / 3.0);
-                        return viscosity;
+                        visc = Math.Pow(phi, 2.0 / 3.0);
+                        break;
                     }
                 default:
                     throw new NotImplementedException();
             }
+            Debug.Assert(!double.IsNaN(visc));
+            Debug.Assert(!double.IsInfinity(visc));
+            Debug.Assert(visc > 0);
+            return visc;
         }
 
         /// <summary>
@@ -182,13 +213,18 @@ namespace BoSSS.Solution.NSECommon {
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
-
-                        double lambda = viscosity; //// using viscosity = lambda for Pr = 1...
+                        double cp = 1; // It has always 1 as adimensional value, because is a constant, cp/cpref = 1 
+                        double lambda = viscosity * cp / 1.0;//  0.71; // Using the fact that Pr = cp*mu/lambda
                         return lambda;
                     }
                 case MaterialParamsMode.PowerLaw: {
                         double viscosity = Math.Pow(phi, 2.0 / 3.0);
-                        double lambda = viscosity;
+                        //double S = 110.5;
+                        //double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref)*0.71;
+                        double lambda = viscosity*0.71;
+                        Debug.Assert(!double.IsNaN(lambda));
+                        Debug.Assert(!double.IsInfinity(lambda));
+
                         return lambda; // using viscosity = lambda for Pr = cte...
                     }
                 default:
@@ -196,7 +232,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
         /// <summary>
-        /// The mass diffusivity. 
+        /// The mass diffusivity,D  multiplied by rho. 
         /// </summary>
         /// <param name="phi"></param>
         /// <returns></returns>
@@ -206,12 +242,13 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Constant:
                     return 1.0;
                 case MaterialParamsMode.Sutherland: {
+                        //GetHeatConductivity(phi);
                         double S = 110.5;
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
-                        double diff = viscosity; //// using viscosity = lambda for Sc = 1...
-                        return diff; // Using a constant value! 
+                        double diff = viscosity /1.0; // Sc = mu / rho*D, and for Lewis = 1, Pr = Sc
+                        return diff;  
                     }
                 case MaterialParamsMode.PowerLaw: {
                         throw new NotImplementedException();
@@ -283,6 +320,25 @@ namespace BoSSS.Solution.NSECommon {
             return (InitialMass / omega.IntegralOver(null));
         }
 
+
+
+
+
+
+
+        /// <summary>
+        /// Returns value of the parameter Lambda/cp
+        /// Can be used for calculating the viscosity if the Prandtl number is known (visc = Pr*(lambda/cp))
+        /// and also for calculating (rho*Diff_i = 1/Le*(lambda/cp)) if the lewis number is constant.
+        /// </summary>
+        /// <param name="Temperature"></param>
+        /// <returns></returns>
+        public double get_LambdaCp_Term(double Temperature) {          
+            double TREF = 298;
+            double res = 2.58e-5 * (Temperature / TREF); // in Kg/(m.s)
+            return res;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -301,5 +357,6 @@ namespace BoSSS.Solution.NSECommon {
         public override double DiffRho_Temp(double phi) {
             throw new NotImplementedException();
         }
+ 
     }
 }

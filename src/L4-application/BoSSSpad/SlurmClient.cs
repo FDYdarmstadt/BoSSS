@@ -437,7 +437,7 @@ namespace BoSSS.Application.BoSSSpad
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                sw.WriteLine("#SBATCH -C avx");
+                sw.WriteLine("#SBATCH -C avx2");
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
                 // Load modules
