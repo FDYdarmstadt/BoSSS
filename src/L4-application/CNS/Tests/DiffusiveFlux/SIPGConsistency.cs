@@ -121,7 +121,9 @@ namespace CNS.Tests.DiffusiveFlux {
         /// the optimized version of the SIPG flux
         /// </summary>
         /// <param name="p">polynomial degree</param>
-        [NUnitFileToCopyHack("Tests/DiffusiveFlux/SIPGConsistencyRefSolution_p*.txt")]
+        [NUnitFileToCopyHack("Tests/DiffusiveFlux/SIPGConsistencyRefSolution_p1.txt",
+            "Tests/DiffusiveFlux/SIPGConsistencyRefSolution_p2.txt",
+            "Tests/DiffusiveFlux/SIPGConsistencyRefSolution_p3.txt")]
         [Test]
         public static void OptimizedSIPGconsistencyTest([Range(1, 3)] int p) {
             int numOfCells = 3;
