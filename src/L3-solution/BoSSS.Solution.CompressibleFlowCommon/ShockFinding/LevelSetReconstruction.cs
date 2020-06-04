@@ -18,6 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Tecplot;
@@ -65,6 +66,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
+        private readonly SinglePhaseField geometryLevelSetField;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -86,7 +89,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             ITimestepInfo myTimestep = session.Timesteps.Last();
             this.gridData = (GridData)myTimestep.Fields.First().GridDat;
-            this.densityField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+
+            if (myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault() is XDGField) {
+                XDGField densityField = (XDGField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+                this.densityField = new SinglePhaseField(new Basis(gridData, densityField.Basis.Degree), "rho");
+                this.densityField.Acc(1.0, densityField.GetSpeciesShadowField("B"));
+            } else {
+                this.densityField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+            }
+
+            this.geometryLevelSetField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
         }
 
         /// <summary>
@@ -342,6 +354,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 levelSetField = ShockFindingExtensions.ContinuousLevelSet(levelSetField, clustering.ExtractSubArrayShallow(-1, 4).To1DArray());
                 _levelSetFields.Add(levelSetField);
             }
+
+            _levelSetFields.Add(geometryLevelSetField);
 
             Console.WriteLine("ReconstructLevelSet: END");
 
