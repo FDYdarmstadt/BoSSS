@@ -229,7 +229,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             for (int i = 0; i < numOfPoints; i++) {
                 double[] cellCenter = gridData.Cells.GetCenter((int)inputClustering[i, 4]);
 
-                if (!(Math.Abs(cellCenter[1]) < 1.2 && cellCenter[0] > -0.7)) {
+                //if (!(Math.Abs(cellCenter[1]) < 1.2 && cellCenter[0] > -0.7)) {
+                if (!(Math.Abs(cellCenter[1]) < 2.6 && cellCenter[0] > -0.3) && !(Math.Abs(cellCenter[1]) < 1.2 && cellCenter[0] > -0.7)) {
                     cellsAwayFromGeometry[count] = i;
                     count++;
                 }
