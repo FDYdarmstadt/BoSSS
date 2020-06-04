@@ -158,7 +158,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         #endregion
 
         #region INonlineEdgeform_GradV Members
-        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
@@ -183,7 +183,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
-        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinBoundaryEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
 
@@ -224,7 +224,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         #endregion
 
         #region INonlineEdgeform_V Members
-        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
@@ -257,7 +257,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
-        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinBoundaryEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             //int NumOfCells = efp.Len;

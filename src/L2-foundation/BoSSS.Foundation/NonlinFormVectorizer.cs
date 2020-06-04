@@ -317,7 +317,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
@@ -429,7 +429,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
         }
 
-        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+        void INonlinBoundaryEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell
@@ -512,7 +512,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         }
 
 
-        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
+        void INonlinInnerEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
             Debug.Assert(fin.GetLength(0) == L);
@@ -625,7 +625,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
         }
 
-        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+        void INonlinBoundaryEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell

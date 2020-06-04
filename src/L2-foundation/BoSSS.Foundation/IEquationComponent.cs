@@ -1167,13 +1167,49 @@ namespace BoSSS.Foundation {
         /// reference to the current grid 
         /// </summary>
         public IGridData GridDat;
-
-
-
-
-
-
     }
+
+    /// <summary>
+    /// Inner edge integrand of <see cref="IEdgeform_UxV"/>
+    /// </summary>
+    public interface IInnerEdgeform_UxV : IInnerEdgeForm {
+        
+        /// <summary>
+        /// the values of \f$ {f}_{i \ j \ l}(\vec{x})\f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
+        /// </summary>
+        /// <param name="efp"></param>
+        /// <param name="UxV">
+        /// output: the values of \f$ {f}_{i \ j \ l}(\vec{x}) \f$ :<br/>
+        /// 1st index: edge index<br/>
+        /// 2nd index: quadrature node<br/>
+        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
+        ///            ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
+        /// 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
+        ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
+        /// 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
+        /// </param>
+        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxV);
+    }
+
+    /// <summary>
+    /// Boundary edge integrand of <see cref="IEdgeform_UxV"/>
+    /// </summary>
+    public interface IBoundaryEdgeform_UxV : IBoundaryEdgeForm {
+        
+        /// <summary>
+        /// the values of \f$ {f}_{0 \ 0 \ l}(\vec{x}) \f$   on boundary edges on \f$ \partial \Omega \f$ .
+        /// </summary>
+        /// <param name="efp"></param>
+        /// <param name="UxV">
+        /// output: the values of \f$ {f}_{0 \ 0 \ l}(\vec{x}) \f$ :<br/>
+        /// 1st index: edge index<br/>
+        /// 2nd index: quadrature node<br/>
+        /// 3rd index: correlates with argument ordering (of trial function; see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
+        /// </param>
+        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxV);
+    }
+
 
     /// <summary>
     /// a bi-linear form of the type
@@ -1193,36 +1229,10 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface IEdgeform_UxV : IEdgeForm {
+    public interface IEdgeform_UxV : IInnerEdgeform_UxV, IBoundaryEdgeform_UxV, IEdgeForm {
 
-        /// <summary>
-        /// the values of \f$ {f}_{i \ j \ l}(\vec{x})\f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
-        /// </summary>
-        /// <param name="efp"></param>
-        /// <param name="UxV">
-        /// output: the values of \f$ {f}_{i \ j \ l}(\vec{x}) \f$ :<br/>
-        /// 1st index: edge index<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
-        ///            ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
-        ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
-        ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
-        /// </param>
-        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxV);
 
-        /// <summary>
-        /// the values of \f$ {f}_{0 \ 0 \ l}(\vec{x}) \f$   on boundary edges on \f$ \partial \Omega \f$ .
-        /// </summary>
-        /// <param name="efp"></param>
-        /// <param name="UxV">
-        /// output: the values of \f$ {f}_{0 \ 0 \ l}(\vec{x}) \f$ :<br/>
-        /// 1st index: edge index<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: correlates with argument ordering (of trial function; see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
-        /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxV);
+       
     }
 
 
@@ -1244,8 +1254,14 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface IEdgeform_GradUxV : IEdgeForm {
+    public interface IEdgeform_GradUxV : IEdgeForm, IInnerEdgeform_GradUxV, IBoundaryEdgeform_GradUxV {
 
+    }
+
+    /// <summary>
+    /// Inner part of <see cref="IEdgeform_GradUxV"/>
+    /// </summary>
+    public interface IInnerEdgeform_GradUxV : IInnerEdgeForm {
         /// <summary>
         /// the values of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
         /// </summary>
@@ -1263,7 +1279,13 @@ namespace BoSSS.Foundation {
         /// 6th index: spatial direction of trial ('U') function gradient  <br/>
         /// </param>
         void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV);
+    }
 
+    /// <summary>
+    /// Boundary part of <see cref="IEdgeform_GradUxV"/>
+    /// </summary>
+    public interface IBoundaryEdgeform_GradUxV : IBoundaryEdgeForm { 
+        
         /// <summary>
         /// the values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x}) \f$   on boundary edges on \f$ \partial \Omega\f$ .
         /// </summary>
@@ -1297,8 +1319,14 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface IEdgeform_UxGradV : IEdgeForm {
+    public interface IEdgeform_UxGradV : IEdgeForm, IInnerEdgeform_UxGradV, IBoundaryEdgeform_UxGradV {
 
+    }
+
+    /// <summary>
+    /// <see cref="IInnerEdgeform_UxGradV"/>
+    /// </summary>
+    public interface IInnerEdgeform_UxGradV : IInnerEdgeForm { 
         /// <summary>
         /// the values of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
         /// </summary>
@@ -1316,7 +1344,12 @@ namespace BoSSS.Foundation {
         /// 6th index: spatial direction of test function ('V') gradient  <br/>
         /// </param>
         void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV);
+    }
 
+    /// <summary>
+    /// <see cref="IEdgeform_UxGradV"/>
+    /// </summary>
+    public interface IBoundaryEdgeform_UxGradV : IBoundaryEdgeForm { 
         /// <summary>
         /// the values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x}) \f$   on boundary edges on \f$ \partial \Omega\f$ .
         /// </summary>
@@ -1350,8 +1383,14 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface IEdgeform_GradUxGradV : IEdgeForm {
+    public interface IEdgeform_GradUxGradV : IEdgeForm, IInnerEdgeform_GradUxGradV, IBoundaryEdgeform_GradUxGradV {
 
+    }
+
+    /// <summary>
+    /// Inner part of <see cref="IEdgeform_GradUxGradV"/>
+    /// </summary>
+    public interface IInnerEdgeform_GradUxGradV : IInnerEdgeForm {
         /// <summary>
         /// the values of \f$ \vec{f}_{i \ j \ l}(\vec{x}) \f$   on interior edges on \f$ \Gamma_{\mathrm{int}} \f$ .
         /// </summary>
@@ -1370,7 +1409,12 @@ namespace BoSSS.Foundation {
         /// 7th index: spatial direction of test function ('V') gradient  <br/>
         /// </param>
         void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV);
+    }
 
+    /// <summary>
+    /// Boundary part of <see cref="IEdgeform_GradUxGradV"/>
+    /// </summary>
+    public interface IBoundaryEdgeform_GradUxGradV : IBoundaryEdgeForm {
         /// <summary>
         /// the values of \f$ \vec{f}_{0 \ 0 \ l}(\vec{x})\f$   on boundary edges on \f$ \partial \Omega\f$ .
         /// </summary>
@@ -1396,8 +1440,13 @@ namespace BoSSS.Foundation {
     /// \f]
     /// where <em>v</em> denotes the test function.
     /// </summary>
-    public interface IEdgeSource_V : IEdgeForm {
+    public interface IEdgeSource_V : IEdgeForm, IInnerEdgeSource_V, IBoundaryEdgeSource_V {
+    }
 
+    /// <summary>
+    /// <see cref="IEdgeSource_V"/>
+    /// </summary>
+    public interface IInnerEdgeSource_V : IInnerEdgeForm {
         /// <summary>
         /// the point-wise source term \f$ f_{i}(\vec{x})\f$  on interior edges \f$ \Gamma_{\mathrm{int}}\f$ .
         /// </summary>
@@ -1410,7 +1459,12 @@ namespace BoSSS.Foundation {
         ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
         /// </param>
         void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray V);
+    }
 
+    /// <summary>
+    /// <see cref="IEdgeSource_V"/>
+    /// </summary>
+    public interface IBoundaryEdgeSource_V : IBoundaryEdgeForm {
         /// <summary>
         /// the point-wise source term \f$ f_{0}(\vec{x})\f$  on boundary edges \f$ \partial \Omega\f$ .
         /// </summary>
@@ -1434,8 +1488,13 @@ namespace BoSSS.Foundation {
     /// \f]
     /// where <em>v</em> denotes the test function.
     /// </summary>
-    public interface IEdgeSource_GradV : IEdgeForm {
+    public interface IEdgeSource_GradV : IEdgeForm, IInnerEdgeSource_GradV, IBoundaryEdgeSource_GradV {
+    }
 
+    /// <summary>
+    /// <see cref="IEdgeSource_GradV"/>
+    /// </summary>
+    public interface IInnerEdgeSource_GradV : IInnerEdgeForm {
         /// <summary>
         /// the point-wise source term \f$ \vec{f}_{i}(\vec{x})\f$  on interior edges \f$ \Gamma_{\mathrm{int}}\f$ .
         /// </summary>
@@ -1449,7 +1508,12 @@ namespace BoSSS.Foundation {
         /// 4th index: spatial direction of test function ('V') gradient <br/>
         /// </param>
         void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradV);
+    }
 
+    /// <summary>
+    /// <see cref="IEdgeSource_GradV"/>
+    /// </summary>
+    public interface IBoundaryEdgeSource_GradV : IBoundaryEdgeForm {
         /// <summary>
         /// the point-wise source term \f$ \vec{f}_{0}(\vec{x})\f$  on boundary edges \f$ \partial \Omega\f$ .
         /// </summary>
@@ -1479,8 +1543,13 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface INonlinEdgeForm_V : IEdgeForm {
+    public interface INonlinEdgeForm_V : IEdgeForm, INonlinInnerEdgeForm_V, INonlinBoundaryEdgeForm_V {
+    }
 
+    /// <summary>
+    /// <see cref="INonlinEdgeForm_V"/>
+    /// </summary>
+    public interface INonlinInnerEdgeForm_V : IInnerEdgeForm {
         /// <summary>
         /// the values of \f$ {f}^{*}(\ldots)\f$   on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
         /// </summary>
@@ -1513,8 +1582,15 @@ namespace BoSSS.Foundation {
         /// analog to <paramref name="GradUin"/>, for 'out'-values.
         /// </param>
         void InternalEdge(ref EdgeFormParams efp,
-            MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, 
+            MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot);
+
+    }
+
+    /// <summary>
+    /// <see cref="INonlinEdgeForm_V"/>
+    /// </summary>
+    public interface INonlinBoundaryEdgeForm_V : IBoundaryEdgeForm {
 
         /// <summary>
         /// the values of \f$ {f}^\mathrm{in}(\ldots)\f$   on boundary edges on \f$ \partial \Omega\f$ .
@@ -1560,8 +1636,13 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface INonlinEdgeForm_GradV : IEdgeForm {
+    public interface INonlinEdgeForm_GradV : IEdgeForm, INonlinInnerEdgeForm_GradV, INonlinBoundaryEdgeForm_GradV {
+    }
 
+    /// <summary>
+    /// <see cref="INonlinEdgeForm_GradV"/>
+    /// </summary>
+    public interface INonlinInnerEdgeForm_GradV : IInnerEdgeForm {
         /// <summary>
         /// the values of \f$ \vec{f}^{*}(\ldots)\f$   on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
         /// </summary>
@@ -1597,7 +1678,13 @@ namespace BoSSS.Foundation {
         void InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fIN, MultidimensionalArray fOT);
+    }
 
+
+    /// <summary>
+    /// <see cref="INonlinEdgeForm_GradV"/>
+    /// </summary>
+    public interface INonlinBoundaryEdgeForm_GradV : IBoundaryEdgeForm {
         /// <summary>
         /// the values of \f$ \vec{f}_{0}(\ldots)\f$   on boundary edges on \f$ \partial \Omega\f$ .
         /// </summary>

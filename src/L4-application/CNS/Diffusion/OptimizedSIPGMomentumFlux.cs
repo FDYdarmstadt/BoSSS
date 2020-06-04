@@ -163,7 +163,7 @@ namespace CNS.Diffusion {
 
 
         #region INonlineEdgeform_GradV Members
-        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             bool adiaWall = this.AdiabaticWall;
@@ -250,7 +250,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinBoundaryEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             int NumOfCells = efp.Len;
@@ -338,7 +338,7 @@ namespace CNS.Diffusion {
         public static int EVIL_HACK_CELL_INDEX = -1;
 
         #region INonlineEdgeform_V Members
-        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             bool adiaWall = this.AdiabaticWall;
@@ -452,7 +452,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinBoundaryEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             int NumOfCells = efp.Len;

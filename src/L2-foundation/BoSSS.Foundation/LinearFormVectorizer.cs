@@ -501,7 +501,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// <summary>
         /// see <see cref="IEdgeform_GradUxV.InternalEdge"/>
         /// </summary>
-        void IEdgeform_GradUxV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV) {
+        void IInnerEdgeform_GradUxV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
@@ -546,9 +546,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeform_GradUxV.BoundaryEdge"/>
+        /// see <see cref="IBoundaryEdgeform_GradUxV.BoundaryEdge"/>
         /// </summary>
-        void IEdgeform_GradUxV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV) {
+        void IBoundaryEdgeform_GradUxV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV) {
             InitGlobals(efp);
 
             CommonParamsBnd cp;
@@ -585,9 +585,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeform_UxGradV.InternalEdge"/>
+        /// see <see cref="IInnerEdgeform_UxGradV.InternalEdge"/>
         /// </summary>
-        void IEdgeform_UxGradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV) {
+        void IInnerEdgeform_UxGradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
@@ -637,7 +637,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
-        void IEdgeform_GradUxGradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
+        void IInnerEdgeform_GradUxGradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
@@ -706,9 +706,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeform_UxGradV.BoundaryEdge"/>
+        /// see <see cref="IBoundaryEdgeform_UxGradV.BoundaryEdge"/>
         /// </summary>
-        void IEdgeform_UxGradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV) {
+        void IBoundaryEdgeform_UxGradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV) {
             InitGlobals(efp);
 
             CommonParamsBnd cp;
@@ -745,7 +745,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
 
-        void IEdgeform_GradUxGradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
+        void IBoundaryEdgeform_GradUxGradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
             InitGlobals(efp);
 
             CommonParamsBnd cp;
@@ -786,7 +786,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// <summary>
         /// see <see cref="IEdgeSource_V.InternalEdge"/>
         /// </summary>
-        void IEdgeSource_V.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray V) {
+        void IInnerEdgeSource_V.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
@@ -826,7 +826,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// <summary>
         /// see <see cref="IEdgeSource_V.BoundaryEdge"/>
         /// </summary>
-        void IEdgeSource_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray V) {
+        void IBoundaryEdgeSource_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);
 
             CommonParamsBnd cp;
@@ -861,7 +861,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// <summary>
         /// see <see cref="IEdgeSource_GradV.InternalEdge"/>
         /// </summary>
-        void IEdgeSource_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradV) {
+        void IInnerEdgeSource_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
@@ -903,7 +903,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// <summary>
         /// see <see cref="IEdgeSource_GradV.BoundaryEdge"/>
         /// </summary>
-        void IEdgeSource_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradV) {
+        void IBoundaryEdgeSource_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradV) {
             InitGlobals(efp);
 
             CommonParamsBnd cp;
@@ -940,7 +940,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// <summary>
         /// see <see cref="IEdgeform_UxV.InternalEdge"/>
         /// </summary>
-        void IEdgeform_UxV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxV) {
+        void IInnerEdgeform_UxV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
@@ -985,7 +985,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// <summary>
         /// see <see cref="IEdgeform_UxV.BoundaryEdge"/>
         /// </summary>
-        void IEdgeform_UxV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxV) {
+        void IBoundaryEdgeform_UxV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
 
             CommonParamsBnd cp;
