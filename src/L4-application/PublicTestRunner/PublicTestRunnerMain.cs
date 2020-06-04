@@ -257,7 +257,10 @@ namespace PublicTestRunner {
             }
 
             if (r.Length > 1) {
-                throw new IOException("The database '" + PartialPath + "' has been found several times. Did you specify the path correctly?");
+                foreach (string s in r) {
+                    Console.WriteLine(string.Format("Path {0}", s));
+                }
+                throw new IOException("The path '" + PartialPath + "' has been found several times. Did you specify the path correctly?");
             }
 
             return r;
