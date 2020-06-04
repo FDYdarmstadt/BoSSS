@@ -343,6 +343,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             // Extract points (x-coordinates, y-coordinates) for reconstruction from clustering
             MultidimensionalArray points = clustering.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { clustering.Lengths[0] - 1, 1 });
 
+            _levelSetFields.Add(geometryLevelSetField);
+
             SinglePhaseField levelSetField = ShockFindingExtensions.ReconstructLevelSetField(field, points);
             _levelSetFields.Add(levelSetField);
 
@@ -355,8 +357,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                 levelSetField = ShockFindingExtensions.ContinuousLevelSet(levelSetField, clustering.ExtractSubArrayShallow(-1, 4).To1DArray());
                 _levelSetFields.Add(levelSetField);
             }
-
-            _levelSetFields.Add(geometryLevelSetField);
 
             Console.WriteLine("ReconstructLevelSet: END");
 
