@@ -183,7 +183,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         #endregion
 
         #region INonlineEdgeform_GradV Members
-        void INonlinInnerEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_GradV.NonlinInternalEdge_GradV(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             InternalEdge_GradV(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
@@ -217,7 +217,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <summary>
         /// Symmetry term
         /// </summary>
-        void INonlinBoundaryEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinBoundaryEdgeForm_GradV.NonlinBoundaryEdge_GradV(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             int NumOfCells = efp.Len;
@@ -263,7 +263,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         #endregion
 
         #region INonlineEdgeform_V Members
-        void INonlinInnerEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_V.NonlinInternalEdge_V(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             InternalEdge_V(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
@@ -308,7 +308,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <summary>
         /// Consistency and penalty term
         /// </summary>
-        void INonlinBoundaryEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinBoundaryEdgeForm_V.NonlinBoundaryEdge_V(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
 

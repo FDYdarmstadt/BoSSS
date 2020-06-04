@@ -330,10 +330,10 @@ namespace BoSSS.Foundation.XDG {
 
             int _Delta = m_ColMap.BasisS.Count;
 
-            Alloc(m_LsForm_UxV, Koeff_UxV, Sum_Koeff_UxV, 2, Nitm, Nnod, _Delta, 2, 2);
-            Alloc(m_LsForm_GradUxV, Koeff_NablaUxV, Sum_Koeff_NablaUxV, 2, Nitm, Nnod, _Delta, 2, 2, D);
-            Alloc(m_LsForm_UxGradV, Koeff_UxNablaV, Sum_Koeff_UxNablaV, 2, Nitm, Nnod, _Delta, 2, 2, D);
-            Alloc(m_LsForm_GradUxGradV, Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 2, Nitm, Nnod, _Delta, 2, 2, D, D);
+            Alloc(m_LsForm_UxV, Koeff_UxV, Sum_Koeff_UxV, 2, Nitm, Nnod, 2, 2, _Delta);
+            Alloc(m_LsForm_GradUxV, Koeff_NablaUxV, Sum_Koeff_NablaUxV, 2, Nitm, Nnod, 2, 2, _Delta, D);
+            Alloc(m_LsForm_UxGradV, Koeff_UxNablaV, Sum_Koeff_UxNablaV, 2, Nitm, Nnod, 2, 2, _Delta, D);
+            Alloc(m_LsForm_GradUxGradV, Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 2, Nitm, Nnod, 2, 2, _Delta, D, D);
 
             Alloc(m_LsForm_V, Koeff_V, Sum_Koeff_V, -1, Nitm, Nnod, 2);
             Alloc(m_LsForm_GradV, Koeff_NablaV, Sum_Koeff_NablaV, -1, Nitm, Nnod, 2, D);
@@ -494,8 +494,9 @@ namespace BoSSS.Foundation.XDG {
             // Evaluate Integral components
             // ----------------------------
 
-            var _inParams = new BoSSS.Foundation.XDG.LevSetIntParams();
-            _inParams.i0 = i0;
+            //var _inParams = new BoSSS.Foundation.XDG.LevSetIntParams();
+            EdgeFormParams _inParams = default(EdgeFormParams);
+            _inParams.e0 = i0;
 
             
             
@@ -510,7 +511,6 @@ namespace BoSSS.Foundation.XDG {
                 // set Nodes Global
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
-                _inParams.LsTrk = this.m_lsTrk;
                 // set length scales
 
 
@@ -535,64 +535,64 @@ namespace BoSSS.Foundation.XDG {
                 // Evaluate Bilin. forms
                 // - - - - - - - - - - -
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_UxV[gamma], this.m_LsForm_UxV_Watches[gamma], 
-                        Koeff_UxV, Sum_Koeff_UxV , 2,
+                    EvalComponent(ref _inParams, gamma, this.m_LsForm_UxV[gamma], this.m_LsForm_UxV_Watches[gamma], 
+                        Koeff_UxV, Sum_Koeff_UxV, 4,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        delegate (ILevelSetForm_UxV _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_UxV(_inParams, Koeff_UxV[_gamma][i]);
+                        delegate (ILevelSetForm_UxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                            _comp.InternalEdge_UxV(ref inp, Koeff_UxV[_gamma][i]);
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_GradUxV[gamma], this.m_LsForm_GradUxV_Watches[gamma],
-                        Koeff_NablaUxV, Sum_Koeff_NablaUxV, 2,
+                    EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxV[gamma], this.m_LsForm_GradUxV_Watches[gamma],
+                        Koeff_NablaUxV, Sum_Koeff_NablaUxV, 4,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        delegate (ILevelSetForm_GradUxV _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_GradUxV(_inParams, Koeff_NablaUxV[_gamma][i]);
+                        delegate (ILevelSetForm_GradUxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                            _comp.InternalEdge_GradUxV(ref inp, Koeff_NablaUxV[_gamma][i]);
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_UxGradV[gamma], this.m_LsForm_UxGradV_Watches[gamma],
-                        Koeff_UxNablaV, Sum_Koeff_UxNablaV, 2,
+                    EvalComponent(ref _inParams, gamma, this.m_LsForm_UxGradV[gamma], this.m_LsForm_UxGradV_Watches[gamma],
+                        Koeff_UxNablaV, Sum_Koeff_UxNablaV, 4,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        delegate (ILevelSetForm_UxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_UxGradV(_inParams, Koeff_UxNablaV[_gamma][i]);
+                        delegate (ILevelSetForm_UxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                            _comp.InternalEdge_UxGradV(ref inp, Koeff_UxNablaV[_gamma][i]);
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_GradUxGradV[gamma], this.m_LsForm_GradUxGradV_Watches[gamma],
-                        Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 2,
+                    EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxGradV[gamma], this.m_LsForm_GradUxGradV_Watches[gamma],
+                        Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 4,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        delegate (ILevelSetForm_GradUxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_GradUxGradV(_inParams, Koeff_NablaUxNablaV[_gamma][i]);
+                        delegate (ILevelSetForm_GradUxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                            _comp.InternalEdge_GradUxGradV(ref inp, Koeff_NablaUxNablaV[_gamma][i]);
                         });
                 }
 
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_V[gamma], this.m_LsForm_V_Watches[gamma],
+                    EvalComponent(ref _inParams, gamma, this.m_LsForm_V[gamma], this.m_LsForm_V_Watches[gamma],
                         Koeff_V, Sum_Koeff_V, -1,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        delegate (ILevelSetForm_V _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_V(_inParams, Koeff_V[_gamma][i]);
+                        delegate (ILevelSetForm_V _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                            _comp.InternalEdge_V(ref inp, Koeff_V[_gamma][i]);
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_GradV[gamma], this.m_LsForm_GradV_Watches[gamma],
+                    EvalComponent(ref _inParams, gamma, this.m_LsForm_GradV[gamma], this.m_LsForm_GradV_Watches[gamma],
                         Koeff_NablaV, Sum_Koeff_NablaV, -1,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        delegate (ILevelSetForm_GradV _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_GradV(_inParams, Koeff_NablaV[_gamma][i]);
+                        delegate (ILevelSetForm_GradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
+                            _comp.InternalEdge_GradV(ref inp, Koeff_NablaV[_gamma][i]);
                         });
                 }
             }
@@ -707,9 +707,9 @@ namespace BoSSS.Foundation.XDG {
 #endif
         }
 
-        delegate void CallComponent<T>(T comp, int gamma, int i, LevSetIntParams _inParams);
+        delegate void CallComponent<T>(T comp, int gamma, int i, ref EdgeFormParams _inParams);
 
-        static private void EvalComponent<T>(LevSetIntParams _inParams,
+        static private void EvalComponent<T>(ref EdgeFormParams _inParams,
             int gamma, EquationComponentArgMapping<T> bf, Stopwatch[] timers,
             MultidimensionalArray[][] argsPerComp, MultidimensionalArray[,] argsSum,
             int componentIdx,
@@ -735,18 +735,18 @@ namespace BoSSS.Foundation.XDG {
 
 
                 // map parameters
-                _inParams.ParamsPos = new MultidimensionalArray[NoOfParams];
-                _inParams.ParamsNeg = new MultidimensionalArray[NoOfParams];
+                _inParams.ParameterVars_OUT = new MultidimensionalArray[NoOfParams];
+                _inParams.ParameterVars_IN = new MultidimensionalArray[NoOfParams];
                 for (int c = 0; c < NoOfParams; c++) {
                     int targ = bf.AllToSub[i, c + NoOfArgs] - DELTA;
                     Debug.Assert(targ >= 0);
-                    _inParams.ParamsPos[c] = ParamFieldValuesPos.ExtractSubArrayShallow(targ, -1, -1);
-                    _inParams.ParamsNeg[c] = ParamFieldValuesNeg.ExtractSubArrayShallow(targ, -1, -1);
+                    _inParams.ParameterVars_OUT[c] = ParamFieldValuesPos.ExtractSubArrayShallow(targ, -1, -1);
+                    _inParams.ParameterVars_IN[c] = ParamFieldValuesNeg.ExtractSubArrayShallow(targ, -1, -1);
                 }
 
                 // evaluate equation components
                 timers[i].Start();
-                ComponentFunc(comp, gamma, i, _inParams);
+                ComponentFunc(comp, gamma, i, ref _inParams);
                 timers[i].Stop();
 #if DEBUG
                 argsPerComp[gamma][i].CheckForNanOrInf();

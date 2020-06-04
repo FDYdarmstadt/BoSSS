@@ -75,55 +75,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            //// Convert CommonParams to CommonParams
-            //CommonParams commonParams;
-            //commonParams.Normal = inp.Normal;
-            //commonParams.X = inp.X;
-            //commonParams.Parameters_IN = inp.Parameters_IN;
-            //commonParams.Parameters_OUT = inp.Parameters_OUT;
-            //commonParams.iEdge = int.MaxValue; // Alternative: use cell index as edge index --> Might this cause problems?
-            //commonParams.GridDat = this.levelSetTracker.GridDat;
-            //commonParams.time = inp.time;
-
             return this.bulkFlux.InnerEdgeFormHack(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
         }
 
-        public void LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_GradV) {
-            // Convert LevSetIntParams to EdgeFormParams
-            EdgeFormParams edgeParams;
-            edgeParams.e0 = inp.i0;
-            edgeParams.Len = inp.Len;
-            edgeParams.GridDat = null;
-            edgeParams.time = inp.time;
-            edgeParams.ParameterVars_IN = inp.ParamsNeg;
-            edgeParams.ParameterVars_OUT = inp.ParamsPos;
-            edgeParams.Normals = inp.Normals;
-            edgeParams.Nodes = inp.Nodes;
-
-            // Split coeff array into species A and B
-            MultidimensionalArray fin = Koeff_GradV.ExtractSubArrayShallow(-1, -1, 0, -1);
-            MultidimensionalArray fout = Koeff_GradV.ExtractSubArrayShallow(-1, -1, 1, -1);
-
-            this.bulkFlux.InternalEdge_GradV(ref edgeParams, uA, uB, Grad_uA, Grad_uB, fin, fout);
+        public void NonlinInternalEdge_GradV(ref EdgeFormParams edgeParams, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_GradVin, MultidimensionalArray Koeff_GradVot) {
+            this.bulkFlux.InternalEdge_GradV(ref edgeParams, uA, uB, Grad_uA, Grad_uB, Koeff_GradVin, Koeff_GradVot);
         }
 
-        public void LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_V) {
-            // Convert LevSetIntParams to EdgeFormParams
-            EdgeFormParams edgeParams;
-            edgeParams.e0 = inp.i0;
-            edgeParams.Len = inp.Len;
-            edgeParams.GridDat = null;
-            edgeParams.time = inp.time;
-            edgeParams.ParameterVars_IN = inp.ParamsNeg;
-            edgeParams.ParameterVars_OUT = inp.ParamsPos;
-            edgeParams.Normals = inp.Normals;
-            edgeParams.Nodes = inp.Nodes;
-
-            // Split coeff array into species A and B
-            MultidimensionalArray fin = Koeff_V.ExtractSubArrayShallow(-1, -1, 0);
-            MultidimensionalArray fout = Koeff_V.ExtractSubArrayShallow(-1, -1, 1);
-
-            this.bulkFlux.InternalEdge_V(ref edgeParams, uA, uB, Grad_uA, Grad_uB, fin, fout);
+        public void NonlinInternalEdge_V(ref EdgeFormParams edgeParams, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_Vin, MultidimensionalArray Koeff_Vot) {
+            this.bulkFlux.InternalEdge_V(ref edgeParams, uA, uB, Grad_uA, Grad_uB, Koeff_Vin, Koeff_Vot);
         }
     }
 }

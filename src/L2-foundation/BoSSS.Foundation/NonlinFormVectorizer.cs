@@ -317,7 +317,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        void INonlinInnerEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinInnerEdgeForm_V.NonlinInternalEdge_V(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
@@ -359,7 +359,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 fin_check = fin.CloneAs();
                 fot_check = fot.CloneAs();
 
-                edgeForm_.InternalEdge(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
+                edgeForm_.NonlinInternalEdge_V(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
 
                 var fin_tmp = fin;
                 var fot_tmp = fot;
@@ -429,7 +429,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
         }
 
-        void INonlinBoundaryEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+        void INonlinBoundaryEdgeForm_V.NonlinBoundaryEdge_V(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell
@@ -459,7 +459,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             if (edgeForm is INonlinEdgeForm_V edgeForm_) {
                 f_check = f.CloneAs();
-                edgeForm_.BoundaryEdge(ref efp, Uin, GradUin, f);
+                edgeForm_.NonlinBoundaryEdge_V(ref efp, Uin, GradUin, f);
                 var f_tmp = f;
                 f = f_check;
                 f_check = f_tmp;
@@ -512,7 +512,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         }
 
 
-        void INonlinInnerEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
+        void INonlinInnerEdgeForm_GradV.NonlinInternalEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
             Debug.Assert(fin.GetLength(0) == L);
@@ -553,7 +553,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 fin_check = fin.CloneAs();
                 fot_check = fot.CloneAs();
 
-                edgeForm_.InternalEdge(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
+                edgeForm_.NonlinInternalEdge_GradV(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
 
                 var fin_tmp = fin;
                 var fot_tmp = fot;
@@ -625,7 +625,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
         }
 
-        void INonlinBoundaryEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+        void INonlinBoundaryEdgeForm_GradV.NonlinBoundaryEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell
@@ -654,7 +654,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             if (edgeForm is INonlinEdgeForm_GradV edgeForm_) {
                 f_check = f.CloneAs();
-                edgeForm_.BoundaryEdge(ref efp, Uin, GradUin, f);
+                edgeForm_.NonlinBoundaryEdge_GradV(ref efp, Uin, GradUin, f);
                 var f_tmp = f;
                 f = f_check;
                 f_check = f_tmp;

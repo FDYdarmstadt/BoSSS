@@ -1189,7 +1189,7 @@ namespace BoSSS.Foundation {
         /// 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxV);
+        void InternalEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV);
     }
 
     /// <summary>
@@ -1207,7 +1207,7 @@ namespace BoSSS.Foundation {
         /// 2nd index: quadrature node<br/>
         /// 3rd index: correlates with argument ordering (of trial function; see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxV);
+        void BoundaryEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV);
     }
 
 
@@ -1278,7 +1278,7 @@ namespace BoSSS.Foundation {
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 6th index: spatial direction of trial ('U') function gradient  <br/>
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV);
+        void InternalEdge_GradUxV(ref EdgeFormParams efp, MultidimensionalArray GradUxV);
     }
 
     /// <summary>
@@ -1298,7 +1298,7 @@ namespace BoSSS.Foundation {
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 4th index: spatial direction of trial function gradient <br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV);
+        void BoundaryEdge_GradUxV(ref EdgeFormParams efp, MultidimensionalArray GradUxV);
     }
 
     /// <summary>
@@ -1343,7 +1343,7 @@ namespace BoSSS.Foundation {
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 6th index: spatial direction of test function ('V') gradient  <br/>
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV);
+        void InternalEdge_UxGradV(ref EdgeFormParams efp, MultidimensionalArray UxGradV);
     }
 
     /// <summary>
@@ -1362,7 +1362,7 @@ namespace BoSSS.Foundation {
         ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
         /// 4th index: spatial direction of test function ('V') gradient <br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV);
+        void BoundaryEdge_UxGradV(ref EdgeFormParams efp, MultidimensionalArray UxGradV);
     }
 
     /// <summary>
@@ -1408,7 +1408,7 @@ namespace BoSSS.Foundation {
         /// 6th index: spatial direction of test function ('U') gradient  <br/>
         /// 7th index: spatial direction of test function ('V') gradient  <br/>
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV);
+        void InternalEdge_GradUxGradV(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV);
     }
 
     /// <summary>
@@ -1428,7 +1428,7 @@ namespace BoSSS.Foundation {
         /// 4th index: spatial direction of test function ('U') gradient <br/>
         /// 5th index: spatial direction of test function ('V') gradient <br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV);
+        void BoundaryEdge_GradUxGradV(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV);
     }
 
     /// <summary>
@@ -1458,7 +1458,7 @@ namespace BoSSS.Foundation {
         /// 3rd index: in and out - coefficients with respect to test function, i.e. index \f$ i\f$ 
         ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray V);
+        void InternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray V);
     }
 
     /// <summary>
@@ -1475,7 +1475,7 @@ namespace BoSSS.Foundation {
         /// 1st index: edge index<br/>
         /// 2nd index: quadrature node<br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray V);
+        void BoundaryEdge_V(ref EdgeFormParams efp, MultidimensionalArray V);
     }
 
     /// <summary>
@@ -1507,7 +1507,7 @@ namespace BoSSS.Foundation {
         ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
         /// 4th index: spatial direction of test function ('V') gradient <br/>
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradV);
+        void InternalEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray GradV);
     }
 
     /// <summary>
@@ -1524,7 +1524,7 @@ namespace BoSSS.Foundation {
         /// 2nd index: quadrature node<br/>
         /// 3rd index: spatial direction of test function ('V') gradient <br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradV);
+        void BoundaryEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray GradV);
     }
 
     /// <summary>
@@ -1581,7 +1581,7 @@ namespace BoSSS.Foundation {
         /// <param name="GradUout">
         /// analog to <paramref name="GradUin"/>, for 'out'-values.
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp,
+        void NonlinInternalEdge_V(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot);
 
@@ -1614,7 +1614,7 @@ namespace BoSSS.Foundation {
         /// 3rd index: quadrature node<br/>
         /// 4th index: spatial direction of derivative<br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp,
+        void NonlinBoundaryEdge_V(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin);
     }
@@ -1675,7 +1675,7 @@ namespace BoSSS.Foundation {
         /// <param name="GradUout">
         /// analog to <paramref name="GradUin"/>, for 'out'-values.
         /// </param>
-        void InternalEdge(ref EdgeFormParams efp,
+        void NonlinInternalEdge_GradV(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fIN, MultidimensionalArray fOT);
     }
@@ -1708,7 +1708,7 @@ namespace BoSSS.Foundation {
         /// 3rd index: quadrature node<br/>
         /// 4th index: spatial direction of derivative<br/>
         /// </param>
-        void BoundaryEdge(ref EdgeFormParams efp,
+        void NonlinBoundaryEdge_GradV(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray f);
     }

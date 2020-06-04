@@ -450,13 +450,12 @@ namespace BoSSS.Foundation.XDG {
                 // - - - - - - - - - 
 
                 // set Normal's
-                LevSetIntParams _inParams = new LevSetIntParams();
+                EdgeFormParams _inParams = default(EdgeFormParams);
                 _inParams.Normals = Normals;
                 // set Nodes Global
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
-                _inParams.LsTrk = this.m_lsTrk;
-                _inParams.i0 = i0;
+                _inParams.e0 = i0;
                 Debug.Assert(_inParams.Len == Len);
 
 
@@ -473,23 +472,23 @@ namespace BoSSS.Foundation.XDG {
                 // - - - - - - - - - - -
                 
                 {
-                    EvalComponent(_inParams, gamma, this.m_NonlinLsForm_V[gamma], this.m_NonlinLsForm_V_Watches[gamma],
-                        Koeff_V[gamma], 
+                    EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_V[gamma], this.m_NonlinLsForm_V_Watches[gamma],
+                        Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 0), Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 1),
                         m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
                         DELTA,
                         Flux_Eval,
-                        delegate (INonlinLevelSetForm_V _comp, LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBuf) {
-                            _comp.LevelSetForm_V(_inParams, uA, uB, Grad_uA, Grad_uB, SumBuf);
+                        delegate (INonlinLevelSetForm_V _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
+                            _comp.NonlinInternalEdge_V(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_NonlinLsForm_GradV[gamma], this.m_NonlinLsForm_GradV_Watches[gamma],
-                        Koeff_GradV[gamma], 
+                    EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_GradV[gamma], this.m_NonlinLsForm_GradV_Watches[gamma],
+                        Koeff_GradV[gamma].ExtractSubArrayShallow(-1, -1, 0, -1), Koeff_GradV[gamma].ExtractSubArrayShallow(-1, -1, 1, -1), 
                         m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
                         DELTA,
                         Flux_Eval,
-                        delegate (INonlinLevelSetForm_GradV _comp, LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBuf) {
-                            _comp.LevelSetForm_GradV(_inParams, uA, uB, Grad_uA, Grad_uB, SumBuf);
+                        delegate (INonlinLevelSetForm_GradV _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
+                            _comp.NonlinInternalEdge_GradV(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
                         });
                 }
             }            
@@ -545,13 +544,13 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        static private void EvalComponent<T>(LevSetIntParams _inParams,
+        static private void EvalComponent<T>(ref EdgeFormParams _inParams,
             int gamma, EquationComponentArgMapping<T> bf, Stopwatch[] timers,
-            MultidimensionalArray SumBuf,
+            MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt,
             MultidimensionalArray[] FieldValuesPos, MultidimensionalArray[] FieldValuesNeg, MultidimensionalArray[] FieldGradientValuesPos, MultidimensionalArray[] FieldGradientValuesNeg,
             int DELTA,
             Stopwatch timer,
-            Action<T, LevSetIntParams, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray> ComponentFunc) where T : ILevelSetForm {
+            Action<T, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray, MultidimensionalArray> ComponentFunc) where T : ILevelSetForm {
             timer.Start();
 
 
@@ -571,21 +570,22 @@ namespace BoSSS.Foundation.XDG {
                 var Grad_uB = bf.MapArguments(FieldGradientValuesPos, comp, true);
 
                 // map parameters
-                _inParams.ParamsPos = new MultidimensionalArray[NoOfParams];
-                _inParams.ParamsNeg = new MultidimensionalArray[NoOfParams];
+                _inParams.ParameterVars_OUT = new MultidimensionalArray[NoOfParams];
+                _inParams.ParameterVars_IN = new MultidimensionalArray[NoOfParams];
                 for(int c = 0; c < NoOfParams; c++) {
                     int targ = bf.AllToSub[i, c + NoOfArgs];
                     Debug.Assert(targ >= 0);
-                    _inParams.ParamsPos[c] = FieldValuesPos[targ];
-                    _inParams.ParamsNeg[c] = FieldValuesNeg[targ];
+                    _inParams.ParameterVars_OUT[c] = FieldValuesPos[targ];
+                    _inParams.ParameterVars_IN[c] = FieldValuesNeg[targ];
                 }
 
                 // evaluate equation components
                 timers[i].Start();
-                ComponentFunc(comp, _inParams, uA, uB, Grad_uA, Grad_uB, SumBuf);
+                ComponentFunc(comp, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
                 timers[i].Stop();
 #if DEBUG
-                SumBuf.CheckForNanOrInf();
+                SumBufIn.CheckForNanOrInf();
+                SumBufOt.CheckForNanOrInf();
 #endif
 
             }

@@ -894,9 +894,14 @@ namespace BoSSS.Foundation.XDG {
                 for (int iCod = 0; iCod < CodDGdeg.Length; iCod++) {
                     var comps = Owner.EquationComponents[CodNames[iCod]];
                     foreach (var c in comps) {
-                        if (c is ILevelSetEquationComponentCoefficient) {
-                            var ce = c as ILevelSetEquationComponentCoefficient;
+                        if (c is ILevelSetFormSetup cs) {
 
+
+                            cs.Setup(this.m_lsTrk);
+                        }
+
+                        if (c is ILevelSetEquationComponentCoefficient ce) {
+                            
                             int[] DomDGdeg_cd = new int[ce.ArgumentOrdering.Count];
                             for (int i = 0; i < DomDGdeg_cd.Length; i++) {
                                 string domName = ce.ArgumentOrdering[i];
@@ -906,6 +911,8 @@ namespace BoSSS.Foundation.XDG {
 
                             ce.CoefficientUpdate(csA, csB, DomDGdeg_cd, CodDGdeg[iCod]);
                         }
+
+
                     }
                 }
             }
