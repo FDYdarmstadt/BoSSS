@@ -16,7 +16,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        public NonlinearLevelSetFormVectorizer(ILevelSetForm _OrgComponent) {
+        public NonlinearLevelSetFormVectorizer(ILevelSetForm _OrgComponent, LevelSetTracker _lsTrk) {
             this.ArgumentOrdering = _OrgComponent.ArgumentOrdering.ToArray();
             this.ParameterOrdering = _OrgComponent.ParameterOrdering != null ? _OrgComponent.ParameterOrdering.ToArray() : null;
             this.LevelSetIndex = _OrgComponent.LevelSetIndex;
@@ -24,6 +24,7 @@ namespace BoSSS.Foundation.XDG {
             this.NegativeSpecies = _OrgComponent.NegativeSpecies;
             this.LevelSetTerms = _OrgComponent.LevelSetTerms;
             this.OrgComponent = _OrgComponent;
+            this.lsTrk = lsTrk;
         }
 
         

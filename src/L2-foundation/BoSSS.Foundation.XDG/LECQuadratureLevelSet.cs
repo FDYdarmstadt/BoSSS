@@ -149,22 +149,22 @@ namespace BoSSS.Foundation.XDG {
 
             m_LsForm_UxV = DiffOp.GetArgMapping<ILevelSetForm_UxV>(true,
                eq => ((eq.LevelSetTerms & TermActivationFlags.UxV) != 0) && Compfilter(eq),
-               eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
+               eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
             m_LsForm_GradUxV = DiffOp.GetArgMapping<ILevelSetForm_GradUxV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
             m_LsForm_UxGradV = DiffOp.GetArgMapping<ILevelSetForm_UxGradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.UxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
             m_LsForm_GradUxGradV = DiffOp.GetArgMapping<ILevelSetForm_GradUxGradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
             m_LsForm_V = DiffOp.GetArgMapping<ILevelSetForm_V>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.V) != 0 && Compfilter(eq)),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
             m_LsForm_GradV = DiffOp.GetArgMapping<ILevelSetForm_GradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
 
             this.m_LsForm_UxV_Watches = this.m_LsForm_UxV.InitStopWatches(0, this);
             this.m_LsForm_GradUxV_Watches = this.m_LsForm_GradUxV.InitStopWatches(0, this);
@@ -330,10 +330,10 @@ namespace BoSSS.Foundation.XDG {
 
             int _Delta = m_ColMap.BasisS.Count;
 
-            Alloc(m_LsForm_UxV, Koeff_UxV, Sum_Koeff_UxV, 2, Nitm, Nnod, 2, 2, _Delta);
-            Alloc(m_LsForm_GradUxV, Koeff_NablaUxV, Sum_Koeff_NablaUxV, 2, Nitm, Nnod, 2, 2, _Delta, D);
-            Alloc(m_LsForm_UxGradV, Koeff_UxNablaV, Sum_Koeff_UxNablaV, 2, Nitm, Nnod, 2, 2, _Delta, D);
-            Alloc(m_LsForm_GradUxGradV, Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 2, Nitm, Nnod, 2, 2, _Delta, D, D);
+            Alloc(m_LsForm_UxV, Koeff_UxV, Sum_Koeff_UxV, 4, Nitm, Nnod, 2, 2, _Delta);
+            Alloc(m_LsForm_GradUxV, Koeff_NablaUxV, Sum_Koeff_NablaUxV, 4, Nitm, Nnod, 2, 2, _Delta, D);
+            Alloc(m_LsForm_UxGradV, Koeff_UxNablaV, Sum_Koeff_UxNablaV, 4, Nitm, Nnod, 2, 2, _Delta, D);
+            Alloc(m_LsForm_GradUxGradV, Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 4, Nitm, Nnod, 2, 2, _Delta, D, D);
 
             Alloc(m_LsForm_V, Koeff_V, Sum_Koeff_V, -1, Nitm, Nnod, 2);
             Alloc(m_LsForm_GradV, Koeff_NablaV, Sum_Koeff_NablaV, -1, Nitm, Nnod, 2, D);
@@ -497,7 +497,7 @@ namespace BoSSS.Foundation.XDG {
             //var _inParams = new BoSSS.Foundation.XDG.LevSetIntParams();
             EdgeFormParams _inParams = default(EdgeFormParams);
             _inParams.e0 = i0;
-
+            _inParams.Len = Len;
             
             
             // loop over codomain variables ...
@@ -511,8 +511,9 @@ namespace BoSSS.Foundation.XDG {
                 // set Nodes Global
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
-                // set length scales
 
+                Debug.Assert(i0 == _inParams.e0);
+                Debug.Assert(Len == _inParams.Len);
 
                 // clear summation buffers
                 // - - - - - - - - - - - -
