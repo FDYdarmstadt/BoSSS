@@ -574,14 +574,16 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// The volume over cut cell surface ratio \f$ \frac{ | K^X |}{ | \partial K^X | } \f$
-        /// for each agglomerated cut-cell $K^X$.
+        /// The volume over cut cell surface ratio \f$ \frac{ | K^X |}{ | \partial K^X | } \f$ for each agglomerated cut-cell $K^X$.
         /// </summary>
         public Dictionary<SpeciesId, MultidimensionalArray> CellLengthScales {
             private set;
             get;
         }
 
+        /// <summary>
+        /// The volume of agglomerated cut cells.
+        /// </summary>
         public Dictionary<SpeciesId, MultidimensionalArray> CellVolumeFrac {
             private set;
             get;
@@ -673,7 +675,7 @@ namespace BoSSS.Foundation.XDG {
                     CellVolume2[agg_pair.jCellSource] = CellVolume2[agg_pair.jCellTarget];
                 }
 
-                if (this.AgglomerationThreshold <= 1e-6) {
+                if (this.AgglomerationThreshold <= 0.0) {
                     // special treatment for no agglomeration -- which is anyway not recommended at all
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -702,35 +704,38 @@ namespace BoSSS.Foundation.XDG {
             // MPI exchange -> Is it really needed now???
             AggCellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
 
+            /*
             #region Test code for Florian
-            //int rank;
-            //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            int rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
 
-            //for (int iSpc = 0; iSpc < species.Length; iSpc++) {
-            //    SpeciesId spc = species[iSpc];
+            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                SpeciesId spc = species[iSpc];
 
-            //    CellMask CellMask = this.Tracker.Regions.GetSpeciesMask(spc);
+                CellMask CellMask = this.Tracker.Regions.GetSpeciesMask(spc);
 
-            //    // Vector: GlobalID --> Werte
-            //    MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
-            //    MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
-            //    MultidimensionalArray CellLengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
+                // Vector: GlobalID --> Werte
+                MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
+                MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+                MultidimensionalArray CellLengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
 
-            //    string fileName = "CellMask_CellSurface_CellVolume_CellLengthScales_for_Species_" + this.Tracker.GetSpeciesName(spc) + "_Rank_" + rank;
-            //    csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-            //    if (MpiSize > 1) {
-            //        fileName = "MULTI_CORE_" + fileName;
-            //    } else {
-            //        fileName = "SINGLE_CORE_" + fileName;
-            //    }
-            //    fileName = fileName + ".txt";
+                string fileName = "CellMask_CellSurface_CellVolume_CellLengthScales_for_Species_" + this.Tracker.GetSpeciesName(spc) + "_Rank_" + rank;
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
+                if(MpiSize > 1) {
+                    fileName = "MULTI_CORE_" + fileName;
+                } else {
+                    fileName = "SINGLE_CORE_" + fileName;
+                }
+                fileName = fileName + ".txt";
 
-            //    CellMask.SaveToTextFile(fileName, false,
-            //        delegate (double[] x, int jL, int iG) { return CellSurface[jL]; },
-            //        delegate (double[] x, int jL, int iG) { return CellVolume[jL]; },
-            //        delegate (double[] x, int jL, int iG) { return CellLengthScales[jL]; });
-            //}
+                CellMask.SaveToTextFile(fileName, false,
+                    delegate (double[] x, int jL, int iG) { return CellSurface[jL]; },
+                    delegate (double[] x, int jL, int iG) { return CellVolume[jL]; },
+                    delegate (double[] x, int jL, int iG) { return CellLengthScales[jL]; });
+            }
             #endregion
+            */
+
 
             // store
             this.CellLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();

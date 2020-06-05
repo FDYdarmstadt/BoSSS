@@ -325,6 +325,17 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
+        void TestLengthScales(MultiphaseCellAgglomerator Agg) {
+            foreach(var SpeciesID in this.LsTrk.SpeciesIdS) {
+
+                //Agg.CellVolumeFrac;
+                var LenScale = Agg.CellLengthScales[SpeciesID];
+                //Agg.Are
+
+                LenScale.CheckForNanOrInf(true, true, true);
+            }
+        }
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
 
@@ -335,19 +346,22 @@ namespace BoSSS.Application.ZwoLsTest {
             // operator-matrix assemblieren
             MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
-            MultiphaseCellAgglomerator Agg;
-            MassMatrixFactory Mfact;
 
             // Agglomerator setup
             int quadOrder = Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { u.Basis.Degree });
             //Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, quadOrder, LsTrk, ), this.THRESHOLD, false);
-            Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, this.THRESHOLD);
+            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, this.THRESHOLD);
 
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
             if (this.THRESHOLD > 0.01) {
                 TestAgglomeration_Extraploation(Agg);
                 TestAgglomeration_Projection(quadOrder, Agg);
+
+                TestLengthScales(Agg);
             }
+
+
+            
 
             // operator matrix assembly
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping, LsTrk.GetSpeciesId("B"));
@@ -356,7 +370,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 
             // mass matrix factory
-            Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
+            var Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
                         
             // Mass matrix/Inverse Mass matrix
             //var MassInv = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, true, LsTrk.GetSpeciesId("B"));
