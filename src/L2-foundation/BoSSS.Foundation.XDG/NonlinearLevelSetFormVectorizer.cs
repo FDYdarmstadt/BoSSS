@@ -24,7 +24,7 @@ namespace BoSSS.Foundation.XDG {
             this.NegativeSpecies = _OrgComponent.NegativeSpecies;
             this.LevelSetTerms = _OrgComponent.LevelSetTerms;
             this.OrgComponent = _OrgComponent;
-            this.lsTrk = lsTrk;
+            this.lsTrk = _lsTrk;
         }
 
         

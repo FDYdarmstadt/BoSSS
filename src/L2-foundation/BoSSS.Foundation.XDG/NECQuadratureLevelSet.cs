@@ -456,7 +456,7 @@ namespace BoSSS.Foundation.XDG {
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
                 _inParams.e0 = i0;
-                Debug.Assert(_inParams.Len == Len);
+                _inParams.Len = Len;
 
 
                 // clear summation buffers
