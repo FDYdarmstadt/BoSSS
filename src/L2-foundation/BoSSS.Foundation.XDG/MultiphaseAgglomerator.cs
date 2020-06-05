@@ -23,6 +23,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -701,6 +702,36 @@ namespace BoSSS.Foundation.XDG {
             // MPI exchange -> Is it really needed now???
             AggCellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
 
+            #region Test code for Florian
+            //int rank;
+            //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+
+            //for (int iSpc = 0; iSpc < species.Length; iSpc++) {
+            //    SpeciesId spc = species[iSpc];
+
+            //    CellMask CellMask = this.Tracker.Regions.GetSpeciesMask(spc);
+
+            //    // Vector: GlobalID --> Werte
+            //    MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
+            //    MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+            //    MultidimensionalArray CellLengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
+
+            //    string fileName = "CellMask_CellSurface_CellVolume_CellLengthScales_for_Species_" + this.Tracker.GetSpeciesName(spc) + "_Rank_" + rank;
+            //    csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
+            //    if (MpiSize > 1) {
+            //        fileName = "MULTI_CORE_" + fileName;
+            //    } else {
+            //        fileName = "SINGLE_CORE_" + fileName;
+            //    }
+            //    fileName = fileName + ".txt";
+
+            //    CellMask.SaveToTextFile(fileName, false,
+            //        delegate (double[] x, int jL, int iG) { return CellSurface[jL]; },
+            //        delegate (double[] x, int jL, int iG) { return CellVolume[jL]; },
+            //        delegate (double[] x, int jL, int iG) { return CellLengthScales[jL]; });
+            //}
+            #endregion
+
             // store
             this.CellLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
@@ -1054,7 +1085,7 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         if (jCellNeigh_max < 0) {
-                            
+
                             failCells.Add(jCell);
                         } else {
                             _AccEdgesMask[jEdge_max] = true;
@@ -1075,12 +1106,12 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    if(failCells.Count > 0) {
+                    if (failCells.Count > 0) {
 
 
                         Basis b = new Basis(grdDat, 0);
                         DGField[] CellVolumesViz = new DGField[1 + (oldCellVolumes != null ? oldCellVolumes.Length : 0)];
-                        for(int n = -1; n < CellVolumesViz.Length - 1; n++) {
+                        for (int n = -1; n < CellVolumesViz.Length - 1; n++) {
                             MultidimensionalArray vol = n < 0 ? CellVolumes : oldCellVolumes[n];
                             CellVolumesViz[n + 1] = new SinglePhaseField(b, "VolumeAtTime" + (-n));
                             for (int j = 0; j < Jup; j++) {
@@ -1089,16 +1120,16 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         DGField AgglomCellsViz = new SinglePhaseField(b, "Cells2Agglom");
-                        foreach(int j in AgglomCellsList) {
+                        foreach (int j in AgglomCellsList) {
                             AgglomCellsViz.SetMeanValue(j, 1);
                         }
 
                         DGField FailedViz = new SinglePhaseField(b, "FailedCells");
-                        foreach(int j in failCells) {
+                        foreach (int j in failCells) {
                             FailedViz.SetMeanValue(j, 1);
                         }
 
-                        if(Katastrophenplot != null)
+                        if (Katastrophenplot != null)
                             Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
