@@ -34,28 +34,9 @@ namespace BoSSS.Application.Matrix_MPItest {
          public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
 
-            /*
-            int counter = 0;
-            foreach (var x in new XDGusage[] { XDGusage.all, XDGusage.mixed1, XDGusage.mixed2, XDGusage.none }) {
-                foreach (int p in new int[] { 2 }) {
-                    foreach (bool b in new bool[] { false }) {
-                        foreach (bool c in new bool[] { false }) {
-
-                            //SubMatrixTest(x, p, b, c);
-                            MultiplyTest(x, p, b, c);
-                            //SpMVTest(x, p, b, c);
-                            counter++;
-
-                        }
-                    }
-                }
-            }
-            //*/
-
-
-            //BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 3, true, false);
+            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.mixed2, 3, true, false);
             //MultiplyTest(XDGusage.none, 5, false, false);
-            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 1, false, false);
+            //BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 1, false, false);
 
             //SubMatrixTest(XDGusage.none, 2, false, false);
             //MultiplyTest(XDGusage.none, 2, false, false);

@@ -97,7 +97,7 @@ namespace BoSSS.Foundation.XDG {
                                      Tuple<SpeciesId,SpeciesId> SpeciesPair,
                                      //Tuple<CoefficientSet,CoefficientSet> NegPosCoeff,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
-            : base(new int[] { RowMap.MaxTotalNoOfCoordinatesPerCell, 1 + ((Matrix == null) ? 0 : ColMap.MaxTotalNoOfCoordinatesPerCell) },
+            : base(new int[] { RowMap.GetNonXBasisLengths(0).Sum()*2, 1 + ((Matrix == null) ? 0 : ColMap.GetNonXBasisLengths(0).Sum()*2) }, // we always integrate over species in pairs (neg + pos), so we need to alloc mem only 2 species
                  context,
                  domAndRule) //
         {
@@ -139,6 +139,11 @@ namespace BoSSS.Foundation.XDG {
 
             this.OperatorMatrix = Matrix;
             this.OperatorAffine = OffsetVec;
+
+            RowNonxN = m_RowMap.GetNonXBasisLengths(0);
+            ColNonxN = m_ColMap.GetNonXBasisLengths(0);
+            RowXbSw = m_RowMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
+            ColXbSw = m_ColMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
 
             // ------------------------
             // sort equation components
@@ -394,6 +399,11 @@ namespace BoSSS.Foundation.XDG {
             int GAMMA = m_RowMap.BasisS.Count;  // GAMMA: number of codom variables
 
 
+            TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, this.SpeciesA, this.SpeciesB,  this.m_LevSetIdx);
+
+
+
+
             // Evaluate Parameter fields
             // -------------------------
             base.CustomTimers[3].Start();
@@ -502,6 +512,7 @@ namespace BoSSS.Foundation.XDG {
             
             // loop over codomain variables ...
             for (int gamma = 0; gamma < GAMMA; gamma++) {
+
 
                 // prepare parameters
                 // - - - - - - - - - 
@@ -636,8 +647,12 @@ namespace BoSSS.Foundation.XDG {
                     for (int cr = 0; cr < 2; cr++) {  // 
                         for (int cc = 0; cc < 2; cc++) {
 
-                            int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma], sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] };
-                            int[] extrE = new int[] { Len - 1, NoOfNodes - 1, extr0[2] + N - 1, extr0[3] + M - 1 };
+                            int[] extr0 = new int[] { 0, 0, 
+                                sectionsTest[gamma, cr] * N + offsetCod[gamma], // row
+                                sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] }; // col
+                            int[] extrE = new int[] { Len - 1, NoOfNodes - 1, 
+                                extr0[2] + N - 1, // row
+                                extr0[3] + M - 1 }; // col
                             var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
 
                             if (Sum_Koeff_UxV[gamma, delta] != null) {
@@ -685,6 +700,40 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 base.CustomTimers[2].Stop();
+            }
+        }
+
+        /// <summary>
+        /// Test for the correct configuration of positive and negative species.
+        /// Should be pretty quick, so we can do this also in Release.
+        /// </summary>
+        internal static void TestNegativeAndPositiveSpecies(int i0, int Len, LevelSetTracker lsTrk, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
+            //var negSignCodes = lsTrk.GetLevelSetSignCodes(spcNeg);
+            //var posSignCodes = lsTrk.GetLevelSetSignCodes(spcPos);
+
+
+            for(int j = i0; j < (i0 + Len); j++) {
+                lsTrk.Regions.GetSpeciesIndex(spcNeg, j);
+                lsTrk.Regions.GetSpeciesIndex(spcPos, j);
+
+                //ushort RegionCode = m_lsTrk.Regions.m_LevSetRegions[j];
+                LevelsetCellSignCode csc = lsTrk.Regions.GetCellSignCode(j);
+
+                if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
+                    throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
+
+
+                var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
+                if(lsTrk.ContainesSpecies(spcNeg, cscNeg) == false)
+                    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell MUST contain negative species
+                if(lsTrk.ContainesSpecies(spcPos, cscNeg) == true)
+                    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell should NOT contain positive species
+
+                var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
+                if(lsTrk.ContainesSpecies(spcPos, cscPos) == false)
+                    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell MUST contain positive species
+                if(lsTrk.ContainesSpecies(spcNeg, cscPos) == true)
+                    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell should NOT contain negative species
             }
         }
 
@@ -801,13 +850,12 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="ReqGrad">true, if the gradient of the basis is required</param>
         /// <param name="TestValues"></param>
         /// <param name="TestGradientValues"></param>
-        /// <param name="sectionsTest"></param>
         /// <param name="Nodes">input, nodes where the basis should be evaluated</param>
-        static internal void EvalBasis(int i0, int Len, IList<Basis> basisEnum, bool[] ReqB, bool[] ReqGrad, out MultidimensionalArray[] TestValues, out MultidimensionalArray[] TestGradientValues, out int[,] sectionsTest, NodeSet Nodes) {
+        static internal void EvalBasis(int i0, int Len, IList<Basis> basisEnum, bool[] ReqB, bool[] ReqGrad, out MultidimensionalArray[] TestValues, out MultidimensionalArray[] TestGradientValues, NodeSet Nodes) {
             
             TestGradientValues = new MultidimensionalArray[basisEnum.Count];
             TestValues = new MultidimensionalArray[basisEnum.Count];
-            sectionsTest = new int[TestValues.Length, 2];
+            //sectionsTest = new int[TestValues.Length, 2];
 
             Debug.Assert(basisEnum.Count == ReqB.Length);
             Debug.Assert(basisEnum.Count == ReqGrad.Length);
@@ -815,20 +863,19 @@ namespace BoSSS.Foundation.XDG {
 
             int i = 0;
             foreach (var basis in basisEnum) {
-                if (basis is XDGBasis) {
-                    var Xbasis = ((XDGBasis)basis);
-
+                if (basis is XDGBasis Xbasis) {
+                    
                     TestValues[i] = ReqB[i] ? Xbasis.NonX_Basis.CellEval(Nodes, i0, Len) : null;
                     TestGradientValues[i] = ReqGrad[i] ? Xbasis.NonX_Basis.CellEvalGradient(Nodes, i0, Len) : null;
 
-                    sectionsTest[i, 0] = 0;
-                    sectionsTest[i, 1] = 1;
+                    //sectionsTest[i, 0] = 0;
+                    //sectionsTest[i, 1] = 1;
                 } else {
                     TestValues[i] = ReqB[i] ? basis.CellEval(Nodes, i0, Len) : null;
                     TestGradientValues[i] = ReqGrad[i] ? basis.CellEvalGradient(Nodes, i0, Len) : null;
 
-                    sectionsTest[i, 0] = 0;
-                    sectionsTest[i, 1] = 0;
+                    //sectionsTest[i, 0] = 0;
+                    //sectionsTest[i, 1] = 0;
                 }
                 i++;
             }
@@ -845,19 +892,36 @@ namespace BoSSS.Foundation.XDG {
         private V OperatorAffine;
 
 
+        int[] RowNonxN;
+        int[] ColNonxN;
+        int[] RowXbSw;
+        int[] ColXbSw;
+
+
         /// <summary>
         /// writes the dammed result of the integration to the sparse matrix
         /// </summary>
         protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
 
-            int Mmax = m_ColMap.MaxTotalNoOfCoordinatesPerCell;
-            int Nmax = m_RowMap.MaxTotalNoOfCoordinatesPerCell;
+            int DELTA = m_ColMap.BasisS.Count; // DELTA: number of domain/column/trial variables
+            int GAMMA = m_RowMap.BasisS.Count;  // GAMMA: number of codom/row/test variables
 
-            int[] _i0 = new int[] { int.MaxValue, 0, 1 };
-            int[] _iE = new int[] { -1, Nmax - 1, _i0[2] + Mmax - 1 };
+            int[] offsetCol = new int[DELTA];
+            CompOffsets(i0, Length, offsetCol, m_ColMap);
 
-            int[] _i0aff = new int[] { int.MaxValue, 0, 0 };
-            int[] _iEaff = new int[] { -1, Nmax - 1, -1 };
+            int[] offsetRow = new int[GAMMA];
+            CompOffsets(i0, Length, offsetRow, m_RowMap);
+
+
+
+            SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
+            var _regions = m_lsTrk.Regions;
+
+            int[] _i0 = new int[3];// { int.MaxValue, 0, 1 };
+            int[] _iE = new int[3];// { -1, Nmax - 1, _i0[2] + Mmax - 1 };
+
+            int[] _i0aff = new int[3];// { int.MaxValue, 0, 0 };
+            int[] _iEaff = new int[3];// { -1, Nmax - 1, -1 };
 
             bool saveMtx = this.OperatorMatrix != null;
             bool saveAff = this.OperatorAffine != null;
@@ -865,32 +929,56 @@ namespace BoSSS.Foundation.XDG {
             // loop over cells...
             for (int i = 0; i < Length; i++) {
                 int jCell = i + i0;
-                int Row0 = m_RowMap.LocalUniqueCoordinateIndex(0, jCell, 0);
-                int Row0_g = m_RowMap.i0 + Row0;
+#if DEBUG
+                Debug.Assert(RowNonxN.ListEquals(m_RowMap.GetNonXBasisLengths(jCell)));
+                Debug.Assert(ColNonxN.ListEquals(m_ColMap.GetNonXBasisLengths(jCell)));
+#endif
 
-                if (saveMtx) {
-                    _i0[0] = i;
-                    _iE[0] = -1;
+                _i0[0] = i;
+                _iE[0] = -1;
 
-                    var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0, _iE);
+                _i0aff[0] = i;
+                _iEaff[0] = -1;
+                _i0aff[2] = 0;
+                _iEaff[2] = -1;
 
-                    int Col0_g = m_ColMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                for(int gamma = 0; gamma < GAMMA; gamma++) { // loop over rows...
+                    for(int cr = 0; cr < 2; cr++) { // loop over neg/pos species row...
+                        SpeciesId rowSpc = spcS[cr];
+                        int Row0 = m_RowMap.LocalUniqueCoordinateIndex(m_lsTrk, gamma, jCell, rowSpc, 0);
+                        int Row0_g = m_RowMap.i0 + Row0;
 
-                    
-                    //for (int r = BlockRes.NoOfRows - 1; r >= 0; r--)
-                    //    for (int c = BlockRes.NoOfCols - 1; c >= 0; c--)
-                    //        OperatorMatrix[Row0_g + r, Col0_g + c] += BlockRes[r, c];
-                    OperatorMatrix.AccBlock(Row0_g, Col0_g, 1.0, BlockRes);
-                }
+                        _i0aff[1] = offsetRow[gamma] + RowXbSw[gamma] * RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
+                        _iEaff[1] = _i0aff[1] + RowNonxN[gamma] - 1;
 
-                if (saveAff) {
-                    _i0aff[0] = i;
-                    _iEaff[0] = -1;
 
-                    var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
+                        if(saveMtx) {
+                            _i0[1] = _i0aff[1];
+                            _iE[1] = _iEaff[1];
 
-                    for (int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
-                        OperatorAffine[Row0 + r] += BlockRes[r];
+                            for(int delta = 0; delta < DELTA; delta++) {
+                                for(int cc = 0; cc < 2; cc++) {
+                                    SpeciesId colSpc = spcS[cc];
+                                    int Col0 = m_ColMap.LocalUniqueCoordinateIndex(m_lsTrk, delta, jCell, colSpc, 0);
+                                    int Col0_g = m_ColMap.i0 + Col0;
+
+                                    _i0[2] = offsetCol[delta] + ColXbSw[delta] * ColNonxN[delta] * cc + 1;
+                                    _iE[2] = _i0[2] + ColNonxN[delta] - 1;
+
+                                    var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0, _iE);
+
+                                    OperatorMatrix.AccBlock(Row0_g, Col0_g, 1.0, BlockRes);
+                                }
+                            }
+                        }
+
+                        if(saveAff) {
+                            var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
+
+                            for(int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
+                                OperatorAffine[Row0 + r] += BlockRes[r];
+                        }
+                    }
                 }
             }
         }

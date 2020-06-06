@@ -1127,6 +1127,13 @@ namespace BoSSS.Foundation.XDG {
             internal ushort[] m_LevSetRegions;
 
             /// <summary>
+            /// 
+            /// </summary>
+            public LevelsetCellSignCode GetCellSignCode(int jCell) {
+                return LevelsetCellSignCode.Extract(m_LevSetRegions[jCell]);
+            }
+
+            /// <summary>
             /// For each cell <em>j</em>, the number of cells that follow with the same 
             /// region code as cell <em>j</em>.<br/>
             /// index: cell index <em>j</em>;

@@ -59,7 +59,7 @@ namespace BoSSS.Application.ZwoLsTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.0 });
+                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.1 });
         }
 
         protected override IGrid CreateOrLoadGrid() {
@@ -325,14 +325,23 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
-        void TestLengthScales(MultiphaseCellAgglomerator Agg) {
-            foreach(var SpeciesID in this.LsTrk.SpeciesIdS) {
+        void TestLengthScales(int quadOrder, int TimestepNo) {
+            var AllSpc = new[] { LsTrk.GetSpeciesId("B") };
+            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(AllSpc, quadOrder, this.THRESHOLD);
+
+
+            foreach(var SpeciesID in AllSpc) {
 
                 //Agg.CellVolumeFrac;
-                var LenScale = Agg.CellLengthScales[SpeciesID];
+
+                //LsTrk.Regions.GetSpeciesMask
+
+                var VolFrac = Agg.CellVolumeFrac[SpeciesID];
                 //Agg.Are
 
-                LenScale.CheckForNanOrInf(true, true, true);
+                VolFrac.CheckForNanOrInf(true, true, true);
+
+
             }
         }
 
@@ -352,12 +361,14 @@ namespace BoSSS.Application.ZwoLsTest {
             //Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, quadOrder, LsTrk, ), this.THRESHOLD, false);
             MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, this.THRESHOLD);
 
+            // plausibility of cell length scales 
+            TestLengthScales(quadOrder, TimestepNo);
+
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
             if (this.THRESHOLD > 0.01) {
                 TestAgglomeration_Extraploation(Agg);
                 TestAgglomeration_Projection(quadOrder, Agg);
 
-                TestLengthScales(Agg);
             }
 
 

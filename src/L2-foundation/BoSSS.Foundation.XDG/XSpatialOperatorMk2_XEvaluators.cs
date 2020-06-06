@@ -761,14 +761,12 @@ namespace BoSSS.Foundation.XDG {
                                     int NoOfLs = lsTrk.LevelSets.Count;
                                     for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
 
-
-
                                         var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                        // Check removed since it can cause parallel problems
-                                        //if (IntegrationDom.NoOfItemsLocally > 0) {
 
+
+                                        
                                         ICompositeQuadRule<QuadRule> rule;
                                         using (new BlockTrace("QuadRule-compilation", tr)) {
                                             CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
@@ -779,8 +777,7 @@ namespace BoSSS.Foundation.XDG {
                                             }
                                         }
 
-                                        CouplingRules.Add(new Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>(
-                                            iLevSet, SpeciesA, SpeciesB, rule));
+                                        CouplingRules.Add(Tuple.Create(iLevSet, SpeciesA, SpeciesB, rule));
                                         ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
                                     }
                                 }

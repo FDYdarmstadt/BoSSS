@@ -347,7 +347,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Detects whether a species in some cell 
+        /// Detects whether a species is present in some cell 
         /// </summary>
         /// <param name="id">
         /// species id;

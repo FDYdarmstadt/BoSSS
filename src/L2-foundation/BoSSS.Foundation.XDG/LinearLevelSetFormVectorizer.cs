@@ -185,12 +185,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
-
-            //LevelSetSignCode pos;
-            //LevelSetSignCode neg;
-            //GetSignCode(out neg, out pos);
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
@@ -203,6 +198,7 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(NoOf == 2);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+
                     cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
 
