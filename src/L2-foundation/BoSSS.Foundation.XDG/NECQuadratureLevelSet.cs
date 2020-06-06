@@ -523,7 +523,8 @@ namespace BoSSS.Foundation.XDG {
 
 
                 for(int cr = 0; cr < 2; cr++) { // loop over negative/positive species
-                    int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma] };
+                    //int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma] };
+                    int[] extr0 = new int[] { 0, 0, cr * N + offsetCod[gamma] };
                     int[] extrE = new int[] { Len - 1, NoOfNodes - 1, extr0[2] + N - 1 };
                     var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
 

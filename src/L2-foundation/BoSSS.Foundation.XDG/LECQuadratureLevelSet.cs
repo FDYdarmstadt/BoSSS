@@ -478,11 +478,9 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray[] BasisGradientValues; //   index: domain variable/trial function
             MultidimensionalArray[] TestValues; //            index: codom variable/test function
             MultidimensionalArray[] TestGradientValues; //    index: codom variable/test function
-            int[,] sectionsBasis;
-            int[,] sectionsTest;
             base.CustomTimers[1].Start();
-            EvalBasis(i0, Len, this.m_RowMap.BasisS, ReqV, ReqGradV, out TestValues, out TestGradientValues, out sectionsTest, QuadNodes);
-            EvalBasis(i0, Len, this.m_ColMap.BasisS, ReqU, ReqGradU, out BasisValues, out BasisGradientValues, out sectionsBasis, QuadNodes);
+            EvalBasis(i0, Len, this.m_RowMap.BasisS, ReqV, ReqGradV, out TestValues, out TestGradientValues, QuadNodes);
+            EvalBasis(i0, Len, this.m_ColMap.BasisS, ReqU, ReqGradU, out BasisValues, out BasisGradientValues, QuadNodes);
             base.CustomTimers[1].Stop();
 
             // compute offsets into matrix blocks
@@ -648,8 +646,10 @@ namespace BoSSS.Foundation.XDG {
                         for (int cc = 0; cc < 2; cc++) {
 
                             int[] extr0 = new int[] { 0, 0, 
-                                sectionsTest[gamma, cr] * N + offsetCod[gamma], // row
-                                sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] }; // col
+                                cr * N + offsetCod[gamma], // row
+                                cc * M + 1 + offsetDom[delta] }; // col
+                                //sectionsTest[gamma, cr] * N + offsetCod[gamma], // row
+                                //sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] }; // col
                             int[] extrE = new int[] { Len - 1, NoOfNodes - 1, 
                                 extr0[2] + N - 1, // row
                                 extr0[3] + M - 1 }; // col
@@ -683,7 +683,8 @@ namespace BoSSS.Foundation.XDG {
 
                     // Das Schleifenmonster: ---------------------------------------------
                     for (int cr = 0; cr < 2; cr++) { // 
-                        int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma], 0 };
+                        //int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma], 0 };
+                        int[] extr0 = new int[] { 0, 0, cr * N + offsetCod[gamma], 0 };
                         int[] extrE = new int[] { Len - 1, NoOfNodes - 1, extr0[2] + N - 1, -1 };
                         var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
 
