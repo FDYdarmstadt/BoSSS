@@ -24,7 +24,7 @@ namespace BoSSS.Foundation.XDG {
             this.NegativeSpecies = _OrgComponent.NegativeSpecies;
             this.LevelSetTerms = _OrgComponent.LevelSetTerms;
             this.OrgComponent = _OrgComponent;
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
         }
 
         
@@ -90,9 +90,7 @@ namespace BoSSS.Foundation.XDG {
             Debug.Assert(_NOargs == uB.Length);
             Debug.Assert(_NOargs == Grad_uA.Length);
             Debug.Assert(_NOargs == Grad_uB.Length);
-            var Reg = lsTrk.Regions;
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
+
 
             CommonParams cp;
             cp.Normal = new Vector(D);
@@ -114,22 +112,8 @@ namespace BoSSS.Foundation.XDG {
             for (int l = 0; l < L; l++) { // loop over cells...
                 cp.jCellIn = inp.e0 + l;
                 cp.jCellOut = cp.jCellIn;
-                //if (inp.PosCellLengthScale != null)
-                //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                //else
-                //    cp.PosCellLengthScale = double.NaN;
-                //if (inp.NegCellLengthScale != null)
-                //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                //else
-                //    cp.NegCellLengthScale = double.NaN;
 
-                ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(l + inp.e0, out rrc);
-                Debug.Assert(NoOf == 2);
-                int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                Debug.Assert(iSpcNeg == 0);
-                Debug.Assert(iSpcPos == 1);
+
 
                 for (int k = 0; k < K; k++) { // loop over nodes...
 
@@ -193,7 +177,6 @@ namespace BoSSS.Foundation.XDG {
             Debug.Assert(_NOargs == uB.Length);
             Debug.Assert(_NOargs == Grad_uA.Length);
             Debug.Assert(_NOargs == Grad_uB.Length);
-            var Reg = lsTrk.Regions;
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
@@ -217,23 +200,8 @@ namespace BoSSS.Foundation.XDG {
             for (int l = 0; l < L; l++) { // loop over cells...
                 cp.jCellIn = inp.e0 + l;
                 cp.jCellOut = cp.jCellIn;
-                //if (inp.PosCellLengthScale != null)
-                //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                //else
-                //    cp.PosCellLengthScale = double.NaN;
-                //if (inp.NegCellLengthScale != null)
-                //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                //else
-                //    cp.NegCellLengthScale = double.NaN;
-
-                ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(l + inp.e0, out rrc);
-                Debug.Assert(NoOf == 2);
-                int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                Debug.Assert(iSpcNeg == 0);
-                Debug.Assert(iSpcPos == 1);
-
+                
+                
                 for (int k = 0; k < K; k++) { // loop over nodes...
 
                     for (int np = 0; np < _NOParams; np++) {
@@ -280,10 +248,10 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         public void Setup(LevelSetTracker _lsTrk) {
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
         }
     }
 }

@@ -37,10 +37,10 @@ namespace BoSSS.Foundation.XDG {
         ILevelSetFormSetup //
     {
 
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         public void Setup(LevelSetTracker _lsTrk) {
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.XDG {
             this.NegativeSpecies = _OrgComponent.NegativeSpecies;
             this.LevelSetTerms = _OrgComponent.LevelSetTerms;
             this.OrgComponent = _OrgComponent;
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
         }
 
         /// <summary>
@@ -62,20 +62,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         ILevelSetForm OrgComponent;
 
-        
-        ///// <summary>
-        ///// override this method to implement the bilinear form on the edge.
-        ///// </summary>
-        //public abstract double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp, 
-        //    double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
-        //    double vA, double vB, double[] Grad_vA, double[] Grad_vB);
-
-
         private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
-            //if(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) != 0.0) {
-            //    double funky = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
-            //    Console.WriteLine(funky);
-            //}
             Debug.Assert(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
             d2 = 1; // set test function
@@ -186,30 +173,15 @@ namespace BoSSS.Foundation.XDG {
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
 
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
-
-            var Reg = lsTrk.Regions;
+             //var Reg = lsTrk.Regions;
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
 
-                    ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
-                    Debug.Assert(NoOf == 2);
-                    int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                    int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                    int iSpcNeg = 0;
+                    int iSpcPos = 1;
 
                     cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
-
-                    //if (inp.PosCellLengthScale != null)
-                    //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                    //else
-                    //    cp.PosCellLengthScale = double.NaN;
-                    //if (inp.NegCellLengthScale != null)
-                    //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                    //else
-                    //    cp.NegCellLengthScale = double.NaN;
                     
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         cp.Normal.SetFrom(inp.Normals, j, n);
@@ -230,7 +202,6 @@ namespace BoSSS.Foundation.XDG {
         }
 
         void IInnerEdgeform_UxGradV.InternalEdge_UxGradV(ref EdgeFormParams inp, MultidimensionalArray Koeff_UxNablaV) { 
-            //LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxNablaV) {
             int j0 = inp.e0;
             int Len = inp.Len;
             int N = inp.Nodes.GetLength(1); // nodes per cell
@@ -264,25 +235,12 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
-
-            //LevelSetSignCode pos;
-            //LevelSetSignCode neg;
-            //GetSignCode(out neg, out pos);
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
-
-            var Reg = lsTrk.Regions;
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
-                    ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
-                    Debug.Assert(NoOf == 2);
-                    //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
-                    //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
-                    int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                    int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                    int iSpcNeg = 0;
+                    int iSpcPos = 1;
+
                     cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
                     //if (inp.PosCellLengthScale != null)
@@ -350,35 +308,14 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
-
-            //LevelSetSignCode pos;
-            //LevelSetSignCode neg;
-            //GetSignCode(out neg, out pos);
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
-
-            var Reg = lsTrk.Regions;
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
-                    ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
-                    Debug.Assert(NoOf == 2);
-                    //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
-                    //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
-                    int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                    int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                    int iSpcNeg = 0;
+                    int iSpcPos = 1;
+
                     cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
-                    //if (inp.PosCellLengthScale != null)
-                    //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                    //else
-                    //    cp.PosCellLengthScale = double.NaN;
-                    //if (inp.NegCellLengthScale != null)
-                    //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                    //else
-                    //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         cp.Normal.SetFrom(inp.Normals, j, n);
@@ -436,18 +373,13 @@ namespace BoSSS.Foundation.XDG {
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
 
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
-
-            var Reg = lsTrk.Regions;
+           
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
 
-                    ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
-                    Debug.Assert(NoOf == 2);
-                    int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                    int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                    int iSpcNeg = 0;
+                    int iSpcPos = 1;
+
                     cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
 
@@ -510,29 +442,14 @@ namespace BoSSS.Foundation.XDG {
             double[] Grad_vB = new double[D];
             //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
                         
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
-
-            var Reg = lsTrk.Regions;
             for (int j = 0; j < Len; j++) { // loop over items...
 
-                ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
-                Debug.Assert(NoOf == 2);
-                //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
-                //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
-                int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                int iSpcNeg = 0;
+                int iSpcPos = 1;
+
                 cp.jCellIn = j + inp.e0;
                 cp.jCellOut = cp.jCellIn;
-                //if (inp.PosCellLengthScale != null)
-                //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                //else
-                //    cp.PosCellLengthScale = double.NaN;
-                //if (inp.NegCellLengthScale != null)
-                //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                //else
-                //    cp.NegCellLengthScale = double.NaN;
+
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
                     cp.Normal.SetFrom(inp.Normals, j, n);
@@ -584,35 +501,13 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
-
-            //LevelSetSignCode pos;
-            //LevelSetSignCode neg;
-            //GetSignCode(out neg, out pos);
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
-
-            var Reg = lsTrk.Regions;
             for (int j = 0; j < Len; j++) { // loop over items...
-                ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
-                Debug.Assert(NoOf == 2);
-                //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
-                //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
-                int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
-                int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                int iSpcNeg = 0;
+                int iSpcPos = 1;
                 cp.jCellIn = j + inp.e0;
                 cp.jCellOut = cp.jCellIn;
-                //if (inp.PosCellLengthScale != null)
-                //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                //else
-                //    cp.PosCellLengthScale = double.NaN;
-                //if (inp.NegCellLengthScale != null)
-                //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                //else
-                //    cp.NegCellLengthScale = double.NaN;
-
+  
                 for (int n = 0; n < N; n++) { // loop over nodes...
                     cp.Normal.SetFrom(inp.Normals, j, n);
                     cp.X.SetFrom(inp.Nodes, j, n);

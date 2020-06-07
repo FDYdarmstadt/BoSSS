@@ -141,6 +141,8 @@ namespace BoSSS.Foundation.XDG {
             m_DomainAndParamFields = ArrayTools.Cat(__DomainFields, _Parameters);
             this.DELTA = __DomainFields.Count;
 
+            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, SpeciesA, SpeciesB, m_LevSetIdx);
+
             // ------------------------
             // sort equation components
             // ------------------------
@@ -607,7 +609,6 @@ namespace BoSSS.Foundation.XDG {
             LECQuadratureLevelSet<IMutableMatrixEx,double[]>.CompOffsets(i0, Length, offsetRow, m_CodomainMap);
 
             int[] RowNonxN = m_CodomainMap.GetNonXBasisLengths(0);
-            int[] RowXbSw = m_CodomainMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
 
             SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
 
@@ -629,7 +630,7 @@ namespace BoSSS.Foundation.XDG {
                         SpeciesId rowSpc = spcS[cr];
                         int Row0 = m_CodomainMap.LocalUniqueCoordinateIndex(m_lsTrk, gamma, jCell, rowSpc, 0);
 
-                        _i0aff[1] = offsetRow[gamma] + RowXbSw[gamma] * RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
+                        _i0aff[1] = offsetRow[gamma] + RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
                         _iEaff[1] = _i0aff[1] + RowNonxN[gamma] - 1;
 
 

@@ -140,10 +140,11 @@ namespace BoSSS.Foundation.XDG {
             this.OperatorMatrix = Matrix;
             this.OperatorAffine = OffsetVec;
 
-            RowNonxN = m_RowMap.GetNonXBasisLengths(0);
-            ColNonxN = m_ColMap.GetNonXBasisLengths(0);
-            RowXbSw = m_RowMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
-            ColXbSw = m_ColMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
+            //RowXbSw = m_RowMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
+            //ColXbSw = m_ColMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
+
+
+            TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, SpeciesA, SpeciesB, m_LevSetIdx);
 
             // ------------------------
             // sort equation components
@@ -708,6 +709,18 @@ namespace BoSSS.Foundation.XDG {
         /// Test for the correct configuration of positive and negative species.
         /// Should be pretty quick, so we can do this also in Release.
         /// </summary>
+        internal static void TestNegativeAndPositiveSpecies(ICompositeQuadRule<QuadRule> rule, LevelSetTracker lsTrk, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
+            foreach(var crp in rule) {
+
+                TestNegativeAndPositiveSpecies(crp.Chunk.i0, crp.Chunk.Len, lsTrk, spcNeg, spcPos, iLevSet);
+            }
+        }
+
+
+        /// <summary>
+        /// Test for the correct configuration of positive and negative species.
+        /// Should be pretty quick, so we can do this also in Release.
+        /// </summary>
         internal static void TestNegativeAndPositiveSpecies(int i0, int Len, LevelSetTracker lsTrk, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
             //var negSignCodes = lsTrk.GetLevelSetSignCodes(spcNeg);
             //var posSignCodes = lsTrk.GetLevelSetSignCodes(spcPos);
@@ -893,10 +906,7 @@ namespace BoSSS.Foundation.XDG {
         private V OperatorAffine;
 
 
-        int[] RowNonxN;
-        int[] ColNonxN;
-        int[] RowXbSw;
-        int[] ColXbSw;
+       
 
 
         /// <summary>
@@ -913,7 +923,9 @@ namespace BoSSS.Foundation.XDG {
             int[] offsetRow = new int[GAMMA];
             CompOffsets(i0, Length, offsetRow, m_RowMap);
 
-
+            int[] RowNonxN = m_RowMap.GetNonXBasisLengths(0);
+            int[] ColNonxN = m_ColMap.GetNonXBasisLengths(0);
+            
 
             SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
             var _regions = m_lsTrk.Regions;
@@ -949,7 +961,8 @@ namespace BoSSS.Foundation.XDG {
                         int Row0 = m_RowMap.LocalUniqueCoordinateIndex(m_lsTrk, gamma, jCell, rowSpc, 0);
                         int Row0_g = m_RowMap.i0 + Row0;
 
-                        _i0aff[1] = offsetRow[gamma] + RowXbSw[gamma] * RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
+                        //_i0aff[1] = offsetRow[gamma] + RowXbSw[gamma] * RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
+                        _i0aff[1] = offsetRow[gamma] + RowNonxN[gamma] * cr;
                         _iEaff[1] = _i0aff[1] + RowNonxN[gamma] - 1;
 
 
@@ -963,7 +976,8 @@ namespace BoSSS.Foundation.XDG {
                                     int Col0 = m_ColMap.LocalUniqueCoordinateIndex(m_lsTrk, delta, jCell, colSpc, 0);
                                     int Col0_g = m_ColMap.i0 + Col0;
 
-                                    _i0[2] = offsetCol[delta] + ColXbSw[delta] * ColNonxN[delta] * cc + 1;
+                                    //_i0[2] = offsetCol[delta] + ColXbSw[delta] * ColNonxN[delta] * cc + 1;
+                                    _i0[2] = offsetCol[delta] + ColNonxN[delta] * cc + 1;
                                     _iE[2] = _i0[2] + ColNonxN[delta] - 1;
 
                                     var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0, _iE);
