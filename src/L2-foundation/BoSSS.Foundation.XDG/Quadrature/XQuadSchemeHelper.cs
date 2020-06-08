@@ -482,28 +482,76 @@ namespace BoSSS.Foundation.XDG {
             if (levSetIdx < 0 || levSetIdx > NoOfLevSets)
                 throw new ArgumentOutOfRangeException();
 
-            if (NoOfLevSets == 1) {
-                string[] speciesTable = (string[]) (this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable);
+            if(NoOfLevSets == 1) {
+                string[] speciesTable = (string[])(this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable);
                 Debug.Assert(speciesTable.Length == 2);
 
                 string spN = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(sp);
 
-                if (spN == speciesTable[0])
+                if(spN == speciesTable[0])
                     return JumpTypes.OneMinusHeaviside;
-                else if (spN == speciesTable[1])
+                else if(spN == speciesTable[1])
                     return JumpTypes.Heaviside;
                 else
                     throw new Exception("should not happen.");
 
-            } else if (NoOfLevSets == 2) {
+            } else if(NoOfLevSets == 2) {
                 string[,] speciesTable = (string[,])(this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable);
                 Debug.Assert(speciesTable.GetLength(0) == 2);
                 Debug.Assert(speciesTable.GetLength(1) == 2);
 
                 string spN = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(sp);
 
+                int[] LevSetSigns;
+                bool foundCell;
+                {
+                    // we need the signs of other level sets to identify the wing
+                    // so we search for some cut cell of Level-Set #levSetIdx
+                    // which actually contains species 'sp'
+
+                    int J = this.XDGSpaceMetrics.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                    int[] LenToNextchange = this.XDGSpaceMetrics.LevelSetRegions.m_LenToNextChange;
+                    LevSetSigns = new int[NoOfLevSets];
+                    foundCell = false;
+
+                    for(int j = 0; j < J; j += LenToNextchange[j]) {
+                        ushort code = this.XDGSpaceMetrics.LevelSetRegions.m_LevSetRegions[j];
+
+                        int dist = LevelSetTracker.DecodeLevelSetDist(code, levSetIdx);
+                        if(dist != 0)
+                            continue;
+                        // cut by Level-Set
+
+                        bool present = this.XDGSpaceMetrics.LevelSetRegions.IsSpeciesPresentInCell(sp, j);
+                        if(!present)
+                            continue;
+                        // contains species 'sp'
+
+                        var Signs = this.XDGSpaceMetrics.LevelSetRegions.GetCellSignCode(j);
+                        for(int iLs = 0; iLs < NoOfLevSets; iLs++) {
+                            if(iLs != levSetIdx) {
+                                var s = Signs.GetSign(iLs);
+
+                                if(s == LevelsetSign.Both) {
+                                    continue;
+                                } else if(s == LevelsetSign.Negative) {
+                                    foundCell = true;
+                                    LevSetSigns[iLs] = 0;
+                                } else if(s == LevelsetSign.Positive) {
+                                    foundCell = true;
+                                    LevSetSigns[iLs] = 1;
+                                } else {
+                                    throw new NotImplementedException();
+                                }
+                            }
+                        }
+                    }
+
+                }
                 int cnt = 0;
                 JumpTypes jmpRet = JumpTypes.Implicit;
+
+                /*
                 int[] _i = new int[2];
                 for (_i[0] = 0; _i[0] < 2; _i[0]++) { // loop over signs of level-set 0 ...
                     for (_i[1] = 0; _i[1] < 2; _i[1]++) { // loop over signs of level-set 1 ...
@@ -519,10 +567,27 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
                 }
+                */
 
-                if (cnt != 1)
+                if(foundCell == false)
+                    return JumpTypes.Heaviside; // no cell on this proc, so anyway pretty irrelevant
+
+                for(int i = 0; i < 2; i++) {
+                    LevSetSigns[levSetIdx] = i;
+
+                    if(speciesTable[LevSetSigns[0], LevSetSigns[1]] == spN) {
+                        cnt++;
+                        if(LevSetSigns[levSetIdx] == 0)
+                            jmpRet = JumpTypes.OneMinusHeaviside;
+                        else if(LevSetSigns[levSetIdx] == 1)
+                            jmpRet = JumpTypes.Heaviside;
+                        else
+                            throw new ApplicationException();
+                    }
+                }
+
+                if(cnt != 1)
                     throw new NotImplementedException("unable to identify.");
-
 
                 return jmpRet;
             } else {

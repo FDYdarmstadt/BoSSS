@@ -1526,7 +1526,7 @@ namespace BoSSS.Foundation.XDG {
             /// although 
             /// the index of a species (e.g. obtained by <see cref="GetSpeciesIndex(SpeciesId,int)"/>)
             /// may be positive.
-            /// In the near-field however, some species index may be allocated (on the 'other' side of the level-set),
+            /// In the near-field, some species index may be allocated (on the 'other' side of the level-set),
             /// but the species may not be present. 
             /// </remarks>
             public bool IsSpeciesPresentInCell(SpeciesId speciesId, int jCell) {

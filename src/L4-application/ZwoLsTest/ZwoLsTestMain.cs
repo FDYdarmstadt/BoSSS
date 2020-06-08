@@ -326,7 +326,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
         void TestLengthScales(int quadOrder, int TimestepNo) {
-            var AllSpc = new[] { LsTrk.GetSpeciesId("B") };
+            var AllSpc = new[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B") };
             MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(AllSpc, quadOrder, this.THRESHOLD);
 
 

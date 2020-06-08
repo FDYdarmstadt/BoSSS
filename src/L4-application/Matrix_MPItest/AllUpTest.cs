@@ -34,7 +34,7 @@ namespace BoSSS.Application.Matrix_MPItest {
          public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
 
-            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.mixed2, 3, true, false);
+            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 2, false, false);
             //MultiplyTest(XDGusage.none, 5, false, false);
             //BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 1, false, false);
 

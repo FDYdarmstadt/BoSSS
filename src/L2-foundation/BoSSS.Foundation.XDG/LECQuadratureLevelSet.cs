@@ -488,11 +488,8 @@ namespace BoSSS.Foundation.XDG {
             // ----------------------------------
 
             
-            int[] offsetDom = new int[DELTA];
-            CompOffsets(i0, Len, offsetDom, m_ColMap);
-
-            int[] offsetCod = new int[GAMMA];
-            CompOffsets(i0, Len, offsetCod, m_RowMap);
+            CompOffsets(i0, Len, out int[] offsetDom, out int[] NnonxDom, m_ColMap);
+            CompOffsets(i0, Len, out int[] offsetCod, out int[] NnonxCod, m_RowMap);
 
 
             // Transform nodes to global coordinates
@@ -607,7 +604,7 @@ namespace BoSSS.Foundation.XDG {
                         });
                 }
             }
-            
+
 
             // Summation Loops: multiply with test and trial functions
             // -------------------------------------------------------
@@ -641,10 +638,12 @@ namespace BoSSS.Foundation.XDG {
                     else
                         M = 0;
 
+                    Debug.Assert(NnonxDom[delta] == M);
+                    Debug.Assert(NnonxCod[gamma] == N);
 
                     // Das Schleifenmonster: ---------------------------------------------
-                    for (int cr = 0; cr < 2; cr++) {  // 
-                        for (int cc = 0; cc < 2; cc++) {
+                    for (int cr = 0; cr < 2; cr++) {  // loop over neg/pos species, row...
+                        for (int cc = 0; cc < 2; cc++) {  // loop over neg/pos species, column...
 
                             int[] extr0 = new int[] { 0, 0, 
                                 cr * N + offsetCod[gamma], // row
@@ -660,7 +659,6 @@ namespace BoSSS.Foundation.XDG {
                                 var Sum_Koeff_UxV_CrCc = Sum_Koeff_UxV[gamma, delta].ExtractSubArrayShallow(-1, -1, cr, cc);
                                 SubRes.Multiply(1.0, Sum_Koeff_UxV_CrCc, BasisVal, TestVal, 1.0, "jknm", "jk", "jkm", "jkn");
                             }
-
                             if (Sum_Koeff_NablaUxV[gamma, delta] != null) {
                                 var Sum_Koeff_NablaUxV_CrCc = Sum_Koeff_NablaUxV[gamma, delta].ExtractSubArrayShallow(-1, -1, cr, cc, -1);
                                 SubRes.Multiply(1.0, Sum_Koeff_NablaUxV_CrCc, BasisGradVal, TestVal, 1.0, "jknm", "jkd", "jkmd", "jkn");
@@ -751,22 +749,20 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        static internal void CompOffsets(int i0, int L, int[] offset, UnsetteledCoordinateMapping Map) {
-            int DELTA = offset.Length;
-            Debug.Assert(DELTA == Map.BasisS.Count);
-            
-            int _o0 = Map.LocalUniqueCoordinateIndex(0, i0, 0);
-            for (int delta = 0; delta < offset.Length; delta++)
-                offset[delta] = Map.LocalUniqueCoordinateIndex(delta, i0, 0) - _o0;
+        static internal void CompOffsets(int i0, int L, out int[] offset, out int[] Nnonx, UnsetteledCoordinateMapping Map) {
+            int DELTA = Map.BasisS.Count;
+            Nnonx = Map.GetNonXBasisLengths(i0);
+            Debug.Assert(DELTA == Nnonx.Length);
+            offset = new int[DELTA];
+            for(int delta = 1; delta < DELTA; delta++) {
+                offset[delta] = offset[delta - 1] + Nnonx[delta - 1] * 2;
+            }
 
 #if DEBUG
-            int[] Ns = new int[DELTA];
-            for (int delta = 0; delta < DELTA; delta++)
-                Ns[delta] = Map.BasisS[delta].GetLength(i0);
+            
             for (int i = 1; i < L; i++) {
-                for (int delta = 0; delta < DELTA; delta++)
-                    Debug.Assert(Ns[delta] == Map.BasisS[delta].GetLength(i0+i));
-                
+                int[] __Nnonx = Map.GetNonXBasisLengths(i0 + i);
+                Debug.Assert(ArrayTools.ListEquals(Nnonx, __Nnonx));
             }
 #endif
         }
@@ -917,14 +913,8 @@ namespace BoSSS.Foundation.XDG {
             int DELTA = m_ColMap.BasisS.Count; // DELTA: number of domain/column/trial variables
             int GAMMA = m_RowMap.BasisS.Count;  // GAMMA: number of codom/row/test variables
 
-            int[] offsetCol = new int[DELTA];
-            CompOffsets(i0, Length, offsetCol, m_ColMap);
-
-            int[] offsetRow = new int[GAMMA];
-            CompOffsets(i0, Length, offsetRow, m_RowMap);
-
-            int[] RowNonxN = m_RowMap.GetNonXBasisLengths(0);
-            int[] ColNonxN = m_ColMap.GetNonXBasisLengths(0);
+            CompOffsets(i0, Length, out int[] offsetCol, out int[] ColNonxN, m_ColMap);
+            CompOffsets(i0, Length, out int[] offsetRow, out int[] RowNonxN, m_RowMap);
             
 
             SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };

@@ -499,9 +499,8 @@ namespace BoSSS.Foundation.XDG {
             // Summation Loops: multiply with test and trial functions
             // -------------------------------------------------------
 
-            int[] offsetCod = new int[GAMMA];
             LECQuadratureLevelSet<IMutableMatrixEx,double[]>.
-                CompOffsets(i0, Len, offsetCod, m_CodomainMap);
+                CompOffsets(i0, Len, out int[] offsetCod, out int[] NnonxCod, m_CodomainMap);
 
             for(int gamma = 0; gamma < GAMMA; gamma++) {
                 // Evaluate Integrand
@@ -516,7 +515,7 @@ namespace BoSSS.Foundation.XDG {
                     N = TestGradVal.GetLength(2);
                 else
                     N = 0;
-
+                Debug.Assert(NnonxCod[gamma] == N);
                 Loops.Start();
 
 
@@ -605,10 +604,7 @@ namespace BoSSS.Foundation.XDG {
         protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
  
             int GAMMA = this.m_CodomainMap.BasisS.Count;  // GAMMA: number of codom/row/test variables
-            int[] offsetRow = new int[GAMMA];
-            LECQuadratureLevelSet<IMutableMatrixEx,double[]>.CompOffsets(i0, Length, offsetRow, m_CodomainMap);
-
-            int[] RowNonxN = m_CodomainMap.GetNonXBasisLengths(0);
+            LECQuadratureLevelSet<IMutableMatrixEx, double[]>.CompOffsets(i0, Length, out int[] offsetRow, out int[] RowNonxN, m_CodomainMap);
 
             SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
 
