@@ -3829,7 +3829,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        public static XNSE_Control StokesSphere(int p = 2, int kelem = 4, string _DbPath = null) {
+        public static XNSE_Control StokesSphere(int p = 1, int kelem = 4, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -3871,6 +3871,7 @@ namespace BoSSS.Application.XNSE_Solver {
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = Math.Max(4, 2 * p + 2),
+                //Degree = 4,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 

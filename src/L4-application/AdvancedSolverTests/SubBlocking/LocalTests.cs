@@ -23,27 +23,27 @@ namespace AdvancedSolverTests.SubBlocking
     static public class LocalTests
     {
 
-        /// <summary>
-        /// MPI init
-        /// </summary>
-        [OneTimeSetUp]
-        public static void SetUp() {
-            //bool dummy;
-            //ilPSP.Environment.Bootstrap(
-            //    new string[0],
-            //    BoSSS.Solution.Application.GetBoSSSInstallDir(),
-            //    out dummy);
-            //Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
-            BoSSS.Solution.Application.InitMPI();
-        }
+        ///// <summary>
+        ///// MPI init
+        ///// </summary>
+        //[OneTimeSetUp]
+        //public static void SetUp() {
+        //    //bool dummy;
+        //    //ilPSP.Environment.Bootstrap(
+        //    //    new string[0],
+        //    //    BoSSS.Solution.Application.GetBoSSSInstallDir(),
+        //    //    out dummy);
+        //    //Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
+        //    BoSSS.Solution.Application.InitMPI();
+        //}
 
-        /// <summary>
-        /// MPI shutdown.
-        /// </summary>
-        [OneTimeTearDown]
-        public static void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
+        ///// <summary>
+        ///// MPI shutdown.
+        ///// </summary>
+        //[OneTimeTearDown]
+        //public static void TestFixtureTearDown() {
+        //    csMPI.Raw.mpiFinalize();
+        //}
 
         [Test]
         public static void LocalIndexTest(
