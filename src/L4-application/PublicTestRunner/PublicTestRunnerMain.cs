@@ -513,7 +513,7 @@ namespace PublicTestRunner {
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
 
-                const double TimeOutSec = 200 * 60;
+                const double TimeOutSec = 220 * 60;
                 using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
