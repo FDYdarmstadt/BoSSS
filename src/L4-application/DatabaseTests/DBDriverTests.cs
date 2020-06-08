@@ -249,7 +249,14 @@ namespace BoSSS.Application.DatabaseTests  {
         /// The total number of files in all subdirectories in the database.
         /// </returns>
         private int CountAllFiles(string directoryPath) {
-            return Directory.GetFiles(directoryPath, "*.*", SearchOption.AllDirectories).Length;
+            string[] files = Directory.GetFiles(directoryPath, "*.*", SearchOption.AllDirectories);
+
+            int ret = 0;
+            foreach(var f in files) {
+                if(Path.GetExtension(f) != ".token")
+                    ret++;
+            }
+            return ret;
         }
 
         /// <summary>

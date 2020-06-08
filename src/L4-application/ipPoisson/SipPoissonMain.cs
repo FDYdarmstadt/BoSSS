@@ -133,6 +133,12 @@ namespace BoSSS.Application.SipPoisson {
 #endif
 
         /// <summary>
+        /// Ensures availability of <see cref="BoSSS.Solution.Statistic.ForeignGridValue"/>
+        /// </summary>
+        public Type EnsureReference = typeof(ForeignGridValue);
+
+
+        /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
@@ -151,6 +157,7 @@ namespace BoSSS.Application.SipPoisson {
             pp = pp != null ? pp : "NIX";
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
 
+            
 
 
             /*

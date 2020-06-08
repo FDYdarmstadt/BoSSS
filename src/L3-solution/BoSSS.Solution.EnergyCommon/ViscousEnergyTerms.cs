@@ -85,7 +85,7 @@ namespace BoSSS.Solution.EnergyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp,
+        public double InnerEdgeForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -402,7 +402,7 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] Vel_A = inp.Parameters_IN.GetSubVector(0, m_D);
             double[] Vel_B = inp.Parameters_OUT.GetSubVector(0, m_D);

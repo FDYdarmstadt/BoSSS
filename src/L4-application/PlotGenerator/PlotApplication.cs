@@ -217,7 +217,7 @@ namespace BoSSS.PlotGenerator {
         /// </summary>
         /// <returns></returns>
         protected IDatabaseInfo GetDatabase() {
-            IDatabaseInfo db = new DatabaseInfo(m_config.BasePaths[0]);
+            IDatabaseInfo db = DatabaseInfo.Open(m_config.BasePaths[0]);
             return db;
         }
 

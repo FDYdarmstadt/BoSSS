@@ -410,10 +410,10 @@ namespace BoSSS.Application.Rheology {
             C.ProjectName = "Cylinder";
 
             C.AlternateDbPaths = new[] {
-                (@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", "hpccluster"),
-                (@"d:\Users\kummer\default_bosss_db", "terminal03"),
-                (@"c:\Users\florian\default_bosss_db", "rennmaschin"),
-                (@"c:\Users\flori\default_bosss_db", "stormbreaker")
+                (@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", "hpccluster"), // Anne's Account
+                (@"d:\Users\kummer\default_bosss_db", "terminal03"),     // Florian#s account on Terminal03
+                (@"c:\Users\florian\default_bosss_db", "rennmaschin"),   // Florian's old Laptop
+                (@"c:\Users\flori\default_bosss_db", "stormbreaker")     // Florian's new Laptop
             };
 
             C.savetodb = false;

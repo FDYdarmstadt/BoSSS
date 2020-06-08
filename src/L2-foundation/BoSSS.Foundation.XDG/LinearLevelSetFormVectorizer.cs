@@ -33,13 +33,20 @@ namespace BoSSS.Foundation.XDG {
         ILevelSetForm_GradUxGradV, 
         ILevelSetForm_GradUxV, 
         ILevelSetForm_UxGradV, 
-        ILevelSetForm_UxV //
+        ILevelSetForm_UxV,
+        ILevelSetFormSetup //
     {
+
+        LevelSetTracker lsTrk;
+
+        public void Setup(LevelSetTracker _lsTrk) {
+            this.lsTrk = _lsTrk;
+        }
 
         /// <summary>
         /// ctor.
         /// </summary>
-        public LinearLevelSetFormVectorizer(ILevelSetForm _OrgComponent) {
+        public LinearLevelSetFormVectorizer(ILevelSetForm _OrgComponent, LevelSetTracker _lsTrk) {
             this.ArgumentOrdering = _OrgComponent.ArgumentOrdering.ToArray();
             this.ParameterOrdering = _OrgComponent.ParameterOrdering != null ? _OrgComponent.ParameterOrdering.ToArray() : null;
             this.LevelSetIndex = _OrgComponent.LevelSetIndex;
@@ -47,6 +54,7 @@ namespace BoSSS.Foundation.XDG {
             this.NegativeSpecies = _OrgComponent.NegativeSpecies;
             this.LevelSetTerms = _OrgComponent.LevelSetTerms;
             this.OrgComponent = _OrgComponent;
+            this.lsTrk = _lsTrk;
         }
 
         /// <summary>
@@ -64,17 +72,17 @@ namespace BoSSS.Foundation.XDG {
 
 
         private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
-            //if(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) != 0.0) {
-            //    double funky = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
+            //if(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) != 0.0) {
+            //    double funky = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
             //    Console.WriteLine(funky);
             //}
-            Debug.Assert(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
+            Debug.Assert(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
             d2 = 1; // set test function
-            double a1 = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source/affine part
+            double a1 = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source/affine part
             Debug.Assert((this.LevelSetTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
             d1 = 1; // set trial function
-            double a = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the bilinear+affine part
+            double a = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the bilinear+affine part
             d1 = 0; // reset
             d2 = 0; // reset
             return a - a1;
@@ -85,10 +93,10 @@ namespace BoSSS.Foundation.XDG {
         }
 
         private double GetSourceCoeff(ref double d2, ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
-            Debug.Assert(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
+            Debug.Assert(this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
             d2 = 1; // set test function
-            double a1 = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source part
+            double a1 = this.OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB); // probe for the source part
             Debug.Assert((this.LevelSetTerms & (TermActivationFlags.GradV | TermActivationFlags.V)) != 0 || a1 == 0);
             d2 = 0; // reset
             return a1;
@@ -116,6 +124,13 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
         public IList<string> ArgumentOrdering {
             get;
             private set;
@@ -127,20 +142,24 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             throw new NotSupportedException("Should not be called.");
         }
 
-        void ILevelSetForm_UxV.LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV) {
-            int j0 = inp.i0;
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException("Should not be called.");
+        }
+
+        void IInnerEdgeform_UxV.InternalEdge_UxV(ref EdgeFormParams inp, MultidimensionalArray Koeff_UxV) {
+            //(LevSetIntParams inp, MultidimensionalArray Koeff_UxV) {
+            int j0 = inp.e0;
             int Len = inp.Len;
             int N = inp.Nodes.GetLength(1); // nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = inp.LsTrk;
-
+            
             // check dimension of input array
-            Koeff_UxV.CheckLengths(Len, N, NoOfVars, 2, 2);
+            Koeff_UxV.CheckLengths(Len, N, 2, 2, NoOfVars);
 
 
             // create temp mem:
@@ -180,11 +199,11 @@ namespace BoSSS.Foundation.XDG {
                 for (int j = 0; j < Len; j++) { // loop over items...
 
                     ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
                     Debug.Assert(NoOf == 2);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCellIn = j + inp.i0;
+                    cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
 
                     //if (inp.PosCellLengthScale != null)
@@ -200,30 +219,30 @@ namespace BoSSS.Foundation.XDG {
                         cp.Normal.SetFrom(inp.Normals, j, n);
                         cp.X.SetFrom(inp.Nodes, j, n);
                         for (int i = 0; i < NP; i++) {
-                            ParamsPos[i] = inp.ParamsPos[i][j, n];
-                            ParamsNeg[i] = inp.ParamsNeg[i][j, n];
+                            ParamsPos[i] = inp.ParameterVars_OUT[i][j, n];
+                            ParamsNeg[i] = inp.ParameterVars_IN[i][j, n];
                         }
 
-                        Koeff_UxV[j, n, c, iSpcNeg, iSpcNeg] = GetCoeff(ref uA[c], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                        Koeff_UxV[j, n, c, iSpcPos, iSpcNeg] = GetCoeff(ref uA[c], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                        Koeff_UxV[j, n, c, iSpcNeg, iSpcPos] = GetCoeff(ref uB[c], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                        Koeff_UxV[j, n, c, iSpcPos, iSpcPos] = GetCoeff(ref uB[c], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                        Koeff_UxV[j, n, iSpcNeg, iSpcNeg, c] = GetCoeff(ref uA[c], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                        Koeff_UxV[j, n, iSpcPos, iSpcNeg, c] = GetCoeff(ref uA[c], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                        Koeff_UxV[j, n, iSpcNeg, iSpcPos, c] = GetCoeff(ref uB[c], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                        Koeff_UxV[j, n, iSpcPos, iSpcPos, c] = GetCoeff(ref uB[c], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
                     }
                 }
             }
 
         }
 
-        void ILevelSetForm_UxGradV.LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxNablaV) {
-            int j0 = inp.i0;
+        void IInnerEdgeform_UxGradV.InternalEdge_UxGradV(ref EdgeFormParams inp, MultidimensionalArray Koeff_UxNablaV) { 
+            //LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxNablaV) {
+            int j0 = inp.e0;
             int Len = inp.Len;
             int N = inp.Nodes.GetLength(1); // nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = inp.LsTrk;
-
+            
             // check dimension of input array
-            Koeff_UxNablaV.CheckLengths(Len, N, NoOfVars, 2, 2, D);
+            Koeff_UxNablaV.CheckLengths(Len, N, 2, 2, NoOfVars, D);
             
 
             // create temp mem:
@@ -262,13 +281,13 @@ namespace BoSSS.Foundation.XDG {
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
                     ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
                     Debug.Assert(NoOf == 2);
                     //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCellIn = j + inp.i0;
+                    cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
                     //if (inp.PosCellLengthScale != null)
                     //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
@@ -283,33 +302,33 @@ namespace BoSSS.Foundation.XDG {
                         cp.Normal.SetFrom(inp.Normals, j, n);
                         cp.X.SetFrom(inp.Nodes, j, n);
                         for (int i = 0; i < NP; i++) {
-                            ParamsPos[i] = inp.ParamsPos[i][j, n];
-                            ParamsNeg[i] = inp.ParamsNeg[i][j, n];
+                            ParamsPos[i] = inp.ParameterVars_OUT[i][j, n];
+                            ParamsNeg[i] = inp.ParameterVars_OUT[i][j, n];
                         }
 
                         
 
                         for (int d = 0; d < D; d++) {
-                            Koeff_UxNablaV[j, n, c, iSpcNeg, iSpcNeg, d] = GetCoeff(ref uA[c], ref Grad_vA[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                            Koeff_UxNablaV[j, n, c, iSpcPos, iSpcNeg, d] = GetCoeff(ref uA[c], ref Grad_vB[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                            Koeff_UxNablaV[j, n, c, iSpcNeg, iSpcPos, d] = GetCoeff(ref uB[c], ref Grad_vA[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                            Koeff_UxNablaV[j, n, c, iSpcPos, iSpcPos, d] = GetCoeff(ref uB[c], ref Grad_vB[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_UxNablaV[j, n, iSpcNeg, iSpcNeg, c, d] = GetCoeff(ref uA[c], ref Grad_vA[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_UxNablaV[j, n, iSpcPos, iSpcNeg, c, d] = GetCoeff(ref uA[c], ref Grad_vB[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_UxNablaV[j, n, iSpcNeg, iSpcPos, c, d] = GetCoeff(ref uB[c], ref Grad_vA[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_UxNablaV[j, n, iSpcPos, iSpcPos, c, d] = GetCoeff(ref uB[c], ref Grad_vB[d], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
                         }
                     }
                 }
             }
         }
 
-        void ILevelSetForm_GradUxV.LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxV) {
-            int j0 = inp.i0;
+        void IInnerEdgeform_GradUxV.InternalEdge_GradUxV(ref EdgeFormParams inp, MultidimensionalArray Koeff_NablaUxV) { 
+            //.LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxV) {
+            int j0 = inp.e0;
             int Len = inp.Len;
             int N = inp.Nodes.GetLength(1); // nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = inp.LsTrk;
-
+            
             // check dimension of input array
-            Koeff_NablaUxV.CheckLengths(Len, N, NoOfVars, 2, 2, D);
+            Koeff_NablaUxV.CheckLengths(Len, N, 2, 2, NoOfVars, D);
 
 
             // create temp mem:
@@ -348,13 +367,13 @@ namespace BoSSS.Foundation.XDG {
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
                     ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
                     Debug.Assert(NoOf == 2);
                     //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCellIn = j + inp.i0;
+                    cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
                     //if (inp.PosCellLengthScale != null)
                     //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
@@ -369,32 +388,32 @@ namespace BoSSS.Foundation.XDG {
                         cp.Normal.SetFrom(inp.Normals, j, n);
                         cp.X.SetFrom(inp.Nodes, j, n);
                         for (int i = 0; i < NP; i++) {
-                            ParamsPos[i] = inp.ParamsPos[i][j, n];
-                            ParamsNeg[i] = inp.ParamsNeg[i][j, n];
+                            ParamsPos[i] = inp.ParameterVars_OUT[i][j, n];
+                            ParamsNeg[i] = inp.ParameterVars_IN[i][j, n];
                         }
 
                         
                         for (int d = 0; d < D; d++) {
-                            Koeff_NablaUxV[j, n, c, iSpcNeg, iSpcNeg, d] = GetCoeff(ref Grad_uA[c, d], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                            Koeff_NablaUxV[j, n, c, iSpcPos, iSpcNeg, d] = GetCoeff(ref Grad_uA[c, d], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                            Koeff_NablaUxV[j, n, c, iSpcNeg, iSpcPos, d] = GetCoeff(ref Grad_uB[c, d], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                            Koeff_NablaUxV[j, n, c, iSpcPos, iSpcPos, d] = GetCoeff(ref Grad_uB[c, d], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_NablaUxV[j, n, iSpcNeg, iSpcNeg, c, d] = GetCoeff(ref Grad_uA[c, d], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_NablaUxV[j, n, iSpcPos, iSpcNeg, c, d] = GetCoeff(ref Grad_uA[c, d], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_NablaUxV[j, n, iSpcNeg, iSpcPos, c, d] = GetCoeff(ref Grad_uB[c, d], ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                            Koeff_NablaUxV[j, n, iSpcPos, iSpcPos, c, d] = GetCoeff(ref Grad_uB[c, d], ref vB, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
                         }
                     }
                 }
             }
         }
 
-        void ILevelSetForm_GradUxGradV.LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxNablaV) {
-            int j0 = inp.i0;
+        void IInnerEdgeform_GradUxGradV.InternalEdge_GradUxGradV(ref EdgeFormParams inp, MultidimensionalArray Koeff_NablaUxNablaV) { 
+        //void ILevelSetForm_GradUxGradV.LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxNablaV) {
+            int j0 = inp.e0;
             int Len = inp.Len;
             int N = inp.Nodes.GetLength(1); // nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = inp.LsTrk;
-
+            
             // check dimension of input array
-            Koeff_NablaUxNablaV.CheckLengths(Len, N, NoOfVars, 2, 2, D, D);
+            Koeff_NablaUxNablaV.CheckLengths(Len, N, 2, 2, NoOfVars, D, D);
 
 
             // create temp mem:
@@ -420,12 +439,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
-
-            //LevelSetSignCode pos;
-            //LevelSetSignCode neg;
-            //GetSignCode(out neg, out pos);
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
@@ -434,38 +448,28 @@ namespace BoSSS.Foundation.XDG {
                 for (int j = 0; j < Len; j++) { // loop over items...
 
                     ReducedRegionCode rrc;
-                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
                     Debug.Assert(NoOf == 2);
-                    //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
-                    //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCellIn = j + inp.i0;
+                    cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
-                    //if (inp.PosCellLengthScale != null)
-                    //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                    //else
-                    //    cp.PosCellLengthScale = double.NaN;
-                    //if (inp.NegCellLengthScale != null)
-                    //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                    //else
-                    //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         cp.Normal.SetFrom(inp.Normals, j, n);
                         cp.X.SetFrom(inp.Nodes, j, n);
 
                         for (int i = 0; i < NP; i++) {
-                            ParamsPos[i] = inp.ParamsPos[i][j, n];
-                            ParamsNeg[i] = inp.ParamsNeg[i][j, n];
+                            ParamsPos[i] = inp.ParameterVars_OUT[i][j, n];
+                            ParamsNeg[i] = inp.ParameterVars_IN[i][j, n];
                         }
                         
                         for (int d1 = 0; d1 < D; d1++) {
                             for (int d2 = 0; d2 < D; d2++) {
-                                Koeff_NablaUxNablaV[j, n, c, iSpcNeg, iSpcNeg, d1, d2] = GetCoeff(ref Grad_uA[c, d1], ref Grad_vA[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                                Koeff_NablaUxNablaV[j, n, c, iSpcPos, iSpcNeg, d1, d2] = GetCoeff(ref Grad_uA[c, d1], ref Grad_vB[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                                Koeff_NablaUxNablaV[j, n, c, iSpcNeg, iSpcPos, d1, d2] = GetCoeff(ref Grad_uB[c, d1], ref Grad_vA[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
-                                Koeff_NablaUxNablaV[j, n, c, iSpcPos, iSpcPos, d1, d2] = GetCoeff(ref Grad_uB[c, d1], ref Grad_vB[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                                Koeff_NablaUxNablaV[j, n, iSpcNeg, iSpcNeg, c, d1, d2] = GetCoeff(ref Grad_uA[c, d1], ref Grad_vA[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                                Koeff_NablaUxNablaV[j, n, iSpcPos, iSpcNeg, c, d1, d2] = GetCoeff(ref Grad_uA[c, d1], ref Grad_vB[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                                Koeff_NablaUxNablaV[j, n, iSpcNeg, iSpcPos, c, d1, d2] = GetCoeff(ref Grad_uB[c, d1], ref Grad_vA[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
+                                Koeff_NablaUxNablaV[j, n, iSpcPos, iSpcPos, c, d1, d2] = GetCoeff(ref Grad_uB[c, d1], ref Grad_vB[d2], ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);
                             }
                         }
                     }
@@ -473,14 +477,14 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        void ILevelSetForm_GradV.LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaV) {
-            int j0 = inp.i0;
+        void IInnerEdgeSource_GradV.InternalEdge_GradV(ref EdgeFormParams inp, MultidimensionalArray Koeff_NablaV) { 
+            //void ILevelSetForm_GradV.LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaV) {
+            int j0 = inp.e0;
             int Len = inp.Len;
             int N = inp.Nodes.GetLength(1); // nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = inp.LsTrk;
-
+            
             // check dimension of input array
             Koeff_NablaV.CheckLengths(Len, N, 2, D);
 
@@ -517,13 +521,13 @@ namespace BoSSS.Foundation.XDG {
             for (int j = 0; j < Len; j++) { // loop over items...
 
                 ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
+                int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
                 Debug.Assert(NoOf == 2);
                 //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                 //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                cp.jCellIn = j + inp.i0;
+                cp.jCellIn = j + inp.e0;
                 cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
@@ -538,8 +542,8 @@ namespace BoSSS.Foundation.XDG {
                     cp.Normal.SetFrom(inp.Normals, j, n);
                     cp.X.SetFrom(inp.Nodes, j, n);
                     for (int i = 0; i < NP; i++) {
-                        ParamsPos[i] = inp.ParamsPos[i][j, n];
-                        ParamsNeg[i] = inp.ParamsNeg[i][j, n];
+                        ParamsPos[i] = inp.ParameterVars_OUT[i][j, n];
+                        ParamsNeg[i] = inp.ParameterVars_IN[i][j, n];
                     }
                     
                     for (int d = 0; d < D; d++) {
@@ -550,14 +554,13 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        void ILevelSetForm_V.LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V) {
-            int j0 = inp.i0;
+        void IInnerEdgeSource_V.InternalEdge_V(ref EdgeFormParams inp, MultidimensionalArray Koeff_V) {
+            int j0 = inp.e0;
             int Len = inp.Len;
             int N = inp.Nodes.GetLength(1); // nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = inp.LsTrk;
-
+           
             // check dimension of input array
             Koeff_V.CheckLengths(Len, N, 2);
 
@@ -597,13 +600,13 @@ namespace BoSSS.Foundation.XDG {
             var Reg = lsTrk.Regions;
             for (int j = 0; j < Len; j++) { // loop over items...
                 ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
+                int NoOf = Reg.GetNoOfSpecies(j + inp.e0, out rrc);
                 Debug.Assert(NoOf == 2);
                 //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                 //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                cp.jCellIn = j + inp.i0;
+                cp.jCellIn = j + inp.e0;
                 cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
@@ -618,8 +621,8 @@ namespace BoSSS.Foundation.XDG {
                     cp.Normal.SetFrom(inp.Normals, j, n);
                     cp.X.SetFrom(inp.Nodes, j, n);
                     for (int i = 0; i < NP; i++) {
-                        ParamsPos[i] = inp.ParamsPos[i][j, n];
-                        ParamsNeg[i] = inp.ParamsNeg[i][j, n];
+                        ParamsPos[i] = inp.ParameterVars_OUT[i][j, n];
+                        ParamsNeg[i] = inp.ParameterVars_IN[i][j, n];
                     }
 
                     Koeff_V[j, n, iSpcNeg] = GetSourceCoeff(ref vA, ref cp, uA, uB, Grad_uA, Grad_uB, ref vA, ref vB, Grad_vA, Grad_vB);

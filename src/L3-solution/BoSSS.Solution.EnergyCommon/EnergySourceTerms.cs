@@ -170,7 +170,7 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        public double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             //Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "interface velocityX must be continuous across interface");
             //Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "interface velocityY must be continuous across interface");
             Debug.Assert(cp.Parameters_OUT[3 * m_D] == cp.Parameters_IN[3 * m_D], "curvature must be continuous across interface");

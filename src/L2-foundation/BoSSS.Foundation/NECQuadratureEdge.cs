@@ -991,7 +991,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
                         efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
 
-                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT);
+                        edgeform.NonlinInternalEdge_V(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT);
                     },
                     delegate(INonlinEdgeForm_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
@@ -1025,7 +1025,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                         if(flipNormal)
                             efp.Normals.Scale(-1.0);
-                        nonlinFlx.BoundaryEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _FluxValuesIN);
+                        nonlinFlx.NonlinBoundaryEdge_V(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _FluxValuesIN);
                         if(flipNormal)
                             efp.Normals.Scale(-1.0);
                     });
@@ -1080,7 +1080,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
                         efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
 
-                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
+                        edgeform.NonlinInternalEdge_GradV(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
                     },
                     delegate(INonlinEdgeForm_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
@@ -1113,7 +1113,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                         if(flipNormal)
                             efp.Normals.Scale(-1.0);
-                        nonlinFlx.BoundaryEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _GradFluxIN);
+                        nonlinFlx.NonlinBoundaryEdge_GradV(ref efp, _Uin.GetSubVector(0, NoArgs), _UinGrad, _GradFluxIN);
                         if(flipNormal)
                             efp.Normals.Scale(-1.0);
                     });

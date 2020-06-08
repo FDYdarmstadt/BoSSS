@@ -17,9 +17,11 @@ limitations under the License.
 using FSI_Solver;
 using ilPSP;
 using System;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class ParticleMotionInit {
+    [Serializable]
+    public class InitializeMotion {
 
         /// <summary>
         /// The initialization of the particle motion. Depending on the given parameters the correct model is chosen.
@@ -41,36 +43,46 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="addedDampingCoefficient">
         /// The added damping coefficient is a scaling factor for the model. If the value is smaller than zero no added damping is applied. Otherwise it should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
-        public ParticleMotionInit(Vector gravity, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0, bool withForces = false) {
-            m_Gravity = new Vector(gravity);
-            m_Density = particleDensity == 0 ? 1 : particleDensity;
-            m_IsDry = isDry;
-            m_NoRotation = noRotation;
-            m_NoTranslation = noTranslation;
-            m_AddedDampingCoefficient = addedDampingCoefficient;
-            m_WithForces = withForces;
+        public InitializeMotion(Vector gravity, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0, bool calculateOnlyVelocity = false) {
+            if (gravity.IsNullOrEmpty())
+                gravity = new Vector(0, 0);
+            this.gravity = new Vector(gravity);
+            this.particleDensity = particleDensity == 0 ? 1 : particleDensity;
+            this.isDry = isDry;
+            this.noRotation = noRotation;
+            this.noTranslation = noTranslation;
+            this.addedDampingCoefficient = addedDampingCoefficient;
+            this.calculateOnlyVelocity = calculateOnlyVelocity;
         }
 
+        [DataMember]
         private readonly FSI_Auxillary Aux = new FSI_Auxillary();
-        private readonly Vector m_Gravity;
-        private readonly double m_Density;
-        private readonly bool m_IsDry;
-        private readonly bool m_NoRotation;
-        private readonly bool m_NoTranslation;
-        private readonly bool m_WithForces;
-        private readonly double m_AddedDampingCoefficient;
+        [DataMember]
+        private readonly Vector gravity = new Vector(0,0);
+        [DataMember]
+        private readonly double particleDensity;
+        [DataMember]
+        private readonly bool isDry;
+        [DataMember]
+        private readonly bool noRotation;
+        [DataMember]
+        private readonly bool noTranslation;
+        [DataMember]
+        private readonly bool calculateOnlyVelocity;
+        [DataMember]
+        private readonly double addedDampingCoefficient;
 
         /// <summary>
         /// Initial check for the particle motion parameter.
         /// </summary>
         public void CheckInput() {
-            if (m_AddedDampingCoefficient != 0 && m_AddedDampingCoefficient < 0.5 && m_AddedDampingCoefficient > 1.5)
+            if (addedDampingCoefficient != 0 && addedDampingCoefficient < 0.5 && addedDampingCoefficient > 1.5)
                 throw new Exception("Error in control file: Added damping coefficient should be between 0.5 and 1.5! See for reference Banks et al.");
-            if (m_AddedDampingCoefficient != 0 && (m_NoRotation || m_NoTranslation))
+            if (addedDampingCoefficient != 0 && (noRotation || noTranslation))
                 throw new Exception("Error in control file: The added damping model is designed to contain all possible motion types (translation and rotation).");
 
-            Aux.TestArithmeticException(m_Gravity, "gravity");
-            Aux.TestArithmeticException(m_AddedDampingCoefficient, "added damping coefficient");
+            Aux.TestArithmeticException(gravity, "gravity");
+            Aux.TestArithmeticException(addedDampingCoefficient, "added damping coefficient");
         }
 
         /// <summary>
@@ -78,23 +90,23 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public Motion ParticleMotion {
             get {
-                if (m_NoRotation && m_NoTranslation) {
-                    if (m_WithForces)
-                        return new MotionFixedWithForces(m_Gravity, m_Density);
+                if (noRotation && noTranslation) {
+                    if (calculateOnlyVelocity)
+                        return new MotionFixedWithVelocity(gravity, particleDensity);
                     else
-                        return new MotionFixed(m_Gravity);
+                        return new MotionFixed(gravity);
                 }
-                if (m_IsDry) {
-                    return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity, m_Density)
-                        : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity, m_Density)
-                        : new MotionDry(m_Gravity, m_Density);
+                if (isDry) {
+                    return noRotation ? new MotionDryNoRotation(gravity, particleDensity)
+                        : noTranslation ? new MotionDryNoTranslation(gravity, particleDensity)
+                        : new MotionDry(gravity, particleDensity);
                 }
-                if (m_AddedDampingCoefficient != 0)
-                    return new MotionAddedDamping(m_Gravity, m_Density, m_AddedDampingCoefficient);
+                if (addedDampingCoefficient != 0)
+                    return new MotionAddedDamping(gravity, particleDensity, addedDampingCoefficient);
                 else
-                    return m_NoRotation ? new MotionWetNoRotation(m_Gravity, m_Density)
-                        : m_NoTranslation ? new MotionWetNoTranslation(m_Gravity, m_Density)
-                        : new Motion(m_Gravity, m_Density);
+                    return noRotation ? new MotionWetNoRotation(gravity, particleDensity)
+                        : noTranslation ? new MotionWetNoTranslation(gravity, particleDensity)
+                        : new Motion(gravity, particleDensity);
             }
         }
     }

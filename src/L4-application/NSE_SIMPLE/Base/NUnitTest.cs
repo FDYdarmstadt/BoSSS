@@ -61,7 +61,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the Taylor vortex flow using the 'Unsteady_SIMPLE' algorithm.
         /// </summary>
-        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
+        //[NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void IncompressibleUnsteadyTaylorVortexTest() {
             var C = NSE_SIMPLE.Incompressible.ControlExamples.UnsteadyTaylorVortex();
@@ -92,7 +92,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the unsteady smooth interface solver.
         /// </summary>
-        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
+        //[NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void MultiphaseUnsteadyWaveTest() {
 
@@ -129,7 +129,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the steady low-Mach solver for Couette flow with temperature gradient.
         /// </summary>
-        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
+        //[NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void LowMachSteadyCouetteWithTemperatureGradientTest() {
             var C = NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient();

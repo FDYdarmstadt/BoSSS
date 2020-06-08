@@ -226,7 +226,6 @@ namespace BoSSS.Solution.Tecplot {
                 List<ScalarFunctionEx> fields = new List<ScalarFunctionEx>(
                     fieldsToPlot.Select(x => x.Item2));
 
-
                 //for (int iKref = 0; iKref < GridDat.Grid.RefElements.Length; iKref++) {
                 {
 
@@ -328,9 +327,10 @@ namespace BoSSS.Solution.Tecplot {
                             m_TECPLOT.TECNOD110(permutedConnectivity_start);
                         }
                     }
-
                 }
             }
+
+            
 
             /// <summary>
             /// Write the zone information. Since we always write exactly one zone,

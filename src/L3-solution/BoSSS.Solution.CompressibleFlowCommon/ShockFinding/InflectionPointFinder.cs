@@ -18,17 +18,10 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
-using BoSSS.Solution.LevelSetTools;
-using BoSSS.Solution.Statistic;
-using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Utils;
-using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
@@ -100,9 +93,20 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.tsi = tsi;
 
             this.gridData = (GridData)tsi.Fields.First().GridDat;
-            this.densityField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
-            this.avField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
-            this.levelSetField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
+
+            if (tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault() is XDGField) {
+                XDGField densityField = (XDGField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+                XDGField avField = (XDGField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
+
+                this.densityField = new SinglePhaseField(new Basis(gridData, densityField.Basis.Degree), "rho");
+
+                this.densityField.Acc(1.0, densityField.GetSpeciesShadowField("B"));
+                this.levelSetField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
+            } else {
+                this.densityField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+                this.avField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "artificialViscosity").SingleOrDefault();
+                this.levelSetField = (SinglePhaseField)tsi.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
+            }
         }
 
         /// <summary>
@@ -111,6 +115,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// <param name="seeding">Setup for seeding, <see cref="SeedingSetup"/>></param>
         /// <param name="patchRecoveryGradient">Enable patch recovery for the gradient of the DG field</param>
         /// <param name="patchRecoveryHessian">Enable patch recovery for the second derivatives of the DG field</param>
+        /// <param name="eliminateNonConverged"> Eliminate non-converged points entirely</param>
         /// <param name="maxNumOfIterations">Maximum number of iterations when searching for the inflection point</param>
         /// <param name="eps">Threshold (inflection point is reached)</param>
         /// <returns></returns>
@@ -119,11 +124,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             this.patchRecoveryHessian = patchRecoveryHessian;
 
             #region Create seedings points based on artificial viscosity
-            MultidimensionalArray avValues = ShockFindingExtensions.GetAVMeanValues(gridData, avField);
             int numOfPoints;
 
             switch (seeding) {
                 case SeedingSetup.av:
+                    MultidimensionalArray avValues = ShockFindingExtensions.GetAVMeanValues(gridData, avField);
                     numOfPoints = avValues.Lengths[0];
                     Results = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 5);
 
@@ -137,19 +142,33 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                     break;
 
                 case SeedingSetup.av3x3:
-                    int numOfCells = avValues.Lengths[0];
+                    MultidimensionalArray avValues3x3 = ShockFindingExtensions.GetAVMeanValues(gridData, avField);
+
+                    int numOfCells = avValues3x3.Lengths[0];
                     int numOfPointsPerCell = 9;
                     numOfPoints = numOfCells * numOfPointsPerCell;
                     Results = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 5);
 
                     // Seed points
                     for (int i = 0; i < numOfCells; i++) {
-                        int jLocal = (int)avValues[i, 0];
+                        int jLocal = (int)avValues3x3[i, 0];
                         MultidimensionalArray grid = ShockFindingExtensions.Get3x3Grid(gridData, jLocal);
                         for (int j = 0; j < numOfPointsPerCell; j++) {
                             Results[i * numOfPointsPerCell + j, 0, 0] = grid[j, 0];
                             Results[i * numOfPointsPerCell + j, 0, 1] = grid[j, 1];
                         }
+                    }
+                    break;
+
+                case SeedingSetup.everywhere:
+                    numOfPoints = gridData.Cells.Count;
+                    Results = MultidimensionalArray.Create(numOfPoints, maxNumOfIterations + 1, 5);
+
+                    // Seed points
+                    for (int i = 0; i < numOfPoints; i++) {
+                        double[] cellCenter = gridData.Cells.GetCenter(i);
+                        Results[i, 0, 0] = cellCenter[0];
+                        Results[i, 0, 1] = cellCenter[1];
                     }
                     break;
 
@@ -218,7 +237,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             if (plotDGFields) {
                 Tecplot.Tecplot plotDriver = new Tecplot.Tecplot(gridData, showJumps: true, ghostZone: false, superSampling: 2);
-                plotDriver.PlotFields(SessionPath + "Fields", 0.0, new DGField[] { densityField, avField, levelSetField });
+
+                List<DGField> fields = new List<DGField>();
+                fields.AddRange(densityField, levelSetField);
+                if (avField != null) {
+                    fields.Add(avField);
+                }
+                plotDriver.PlotFields(SessionPath + "Fields", 0.0, fields.ToArray());
             }
 
             if (plotSeedingsPoints) {
@@ -536,6 +561,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
         /// <summary>
         /// A 3x3-grid in every cell where AV > 0
         /// </summary>
-        av3x3
+        av3x3,
+
+        /// <summary>
+        /// One seeding point in every cell
+        /// </summary>
+        everywhere
     }
 }
