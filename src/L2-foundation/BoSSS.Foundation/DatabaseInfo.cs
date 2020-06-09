@@ -53,7 +53,7 @@ namespace BoSSS.Foundation.IO {
         public static void Close(IDatabaseInfo _dbi) {
             DatabaseInfo dbi = _dbi as DatabaseInfo;
             if(dbi == null) {
-                Console.Error.WriteLine($"Reminder: some strange {typeof(IDatabaseInfo).Name} implementation seems to be around here - unable to close.");
+                //Console.Error.WriteLine($"Reminder: some strange {typeof(IDatabaseInfo).Name} implementation seems to be around here - unable to close.");
                 return;
             }
             

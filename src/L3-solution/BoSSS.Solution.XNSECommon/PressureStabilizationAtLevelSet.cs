@@ -54,7 +54,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         MultidimensionalArray h_max_Edge;
-        public double LevelSetForm(ref CommonParams inp,
+        public double InnerEdgeForm(ref CommonParams inp,
             double[] UA, double[] UB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
@@ -105,5 +105,7 @@ namespace BoSSS.Solution.NSECommon {
         public IList<string> ParameterOrdering {
             get { return null; }
         }
+
+     
     }
 }

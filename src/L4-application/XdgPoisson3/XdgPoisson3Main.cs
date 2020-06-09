@@ -546,7 +546,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
                 var Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
                 Callbacks.Add(CustomItCallback);
-                SF.GenerateLinear(out exsolver, MultigridSequence, OpConfig, Callbacks);
+                SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
 
 
 

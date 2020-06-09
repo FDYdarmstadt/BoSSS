@@ -52,8 +52,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             PosCellLengthScaleS = csB.CellLengthScales;
         }
 
-
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double S0 = 0; // velocity in normal direction, at the interface
             for(int d = 0; d < D; d++) {
                 S0 += inp.Normal[d] * inp.Parameters_IN[d];
@@ -105,6 +104,18 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             get {
                 return (TermActivationFlags.UxV | TermActivationFlags.V);
             }
+        }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
         }
     }
 

@@ -64,7 +64,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
            
-        public double LevelSetForm(ref CommonParams cp, 
+        public double InnerEdgeForm(ref CommonParams cp, 
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             Debug.Assert(m_D == cp.D);
 
@@ -99,7 +99,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             public IList<string> ParameterOrdering => m_owner.ParameterOrdering;
 
-            public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
                 throw new NotImplementedException();
             }
         }

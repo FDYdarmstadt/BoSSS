@@ -10,12 +10,13 @@ using BoSSS.Platform.LinAlg;
 namespace BoSSS.Foundation.XDG {
     class NonlinearLevelSetFormVectorizer :
         INonlinLevelSetForm_V,
-        INonlinLevelSetForm_GradV //
+        INonlinLevelSetForm_GradV, 
+        ILevelSetFormSetup //
     {
         /// <summary>
         /// ctor.
         /// </summary>
-        public NonlinearLevelSetFormVectorizer(ILevelSetForm _OrgComponent) {
+        public NonlinearLevelSetFormVectorizer(ILevelSetForm _OrgComponent, LevelSetTracker _lsTrk) {
             this.ArgumentOrdering = _OrgComponent.ArgumentOrdering.ToArray();
             this.ParameterOrdering = _OrgComponent.ParameterOrdering != null ? _OrgComponent.ParameterOrdering.ToArray() : null;
             this.LevelSetIndex = _OrgComponent.LevelSetIndex;
@@ -23,6 +24,7 @@ namespace BoSSS.Foundation.XDG {
             this.NegativeSpecies = _OrgComponent.NegativeSpecies;
             this.LevelSetTerms = _OrgComponent.LevelSetTerms;
             this.OrgComponent = _OrgComponent;
+            this.lsTrk = _lsTrk;
         }
 
         
@@ -51,6 +53,7 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
+        
 
         public IList<string> ArgumentOrdering {
             get;
@@ -63,25 +66,30 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        double ILevelSetForm.LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            return OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
+        double IInnerEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            return OrgComponent.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
         }
 
+      
 
-        void INonlinLevelSetForm_V.LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_V) {
+
+        void INonlinInnerEdgeForm_V.NonlinInternalEdge_V(ref EdgeFormParams inp, 
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, 
+            MultidimensionalArray Koeff_Vin, MultidimensionalArray Koeff_Vot) {
             int L = inp.Len;
-            Debug.Assert(Koeff_V.GetLength(0) == L);
-            int K = Koeff_V.GetLength(1); // no of nodes per cell
+            Debug.Assert(Koeff_Vin.GetLength(0) == L);
+            Debug.Assert(Koeff_Vot.GetLength(0) == L);
+            Debug.Assert(Koeff_Vin.GetLength(1) == Koeff_Vot.GetLength(1));
+            int K = Koeff_Vin.GetLength(1); // no of nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            Debug.Assert(_NOParams == inp.ParamsNeg.Length);
-            Debug.Assert(_NOParams == inp.ParamsPos.Length);
+            Debug.Assert(_NOParams == inp.ParameterVars_IN.Length);
+            Debug.Assert(_NOParams == inp.ParameterVars_OUT.Length);
             int _NOargs = this.ArgumentOrdering.Count;
             Debug.Assert(_NOargs == uA.Length);
             Debug.Assert(_NOargs == uB.Length);
             Debug.Assert(_NOargs == Grad_uA.Length);
             Debug.Assert(_NOargs == Grad_uB.Length);
-            var lsTrk = inp.LsTrk;
             var Reg = lsTrk.Regions;
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
@@ -104,7 +112,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             for (int l = 0; l < L; l++) { // loop over cells...
-                cp.jCellIn = inp.i0 + l;
+                cp.jCellIn = inp.e0 + l;
                 cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
@@ -116,16 +124,18 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(l + inp.i0, out rrc);
+                int NoOf = Reg.GetNoOfSpecies(l + inp.e0, out rrc);
                 Debug.Assert(NoOf == 2);
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                Debug.Assert(iSpcNeg == 0);
+                Debug.Assert(iSpcPos == 1);
 
                 for (int k = 0; k < K; k++) { // loop over nodes...
 
                     for (int np = 0; np < _NOParams; np++) {
-                        cp.Parameters_OUT[np] = inp.ParamsPos[np][l, k];
-                        cp.Parameters_IN[np] = inp.ParamsNeg[np][l, k];
+                        cp.Parameters_OUT[np] = inp.ParameterVars_OUT[np][l, k];
+                        cp.Parameters_IN[np] = inp.ParameterVars_IN[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
                         cp.X[d] = inp.Nodes[l, k, d];
@@ -157,30 +167,32 @@ namespace BoSSS.Foundation.XDG {
 
                     _vA = 1;
                     _vB = 0;
-                    Koeff_V[l, k, iSpcNeg] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                    Koeff_Vin[l, k] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                     _vA = 0;
                     _vB = 1;
-                    Koeff_V[l, k, iSpcPos] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                    Koeff_Vot[l, k] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                 }
             }
         }
 
-        
-
-        void INonlinLevelSetForm_GradV.LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_GradV) {
+         
+        void INonlinInnerEdgeForm_GradV.NonlinInternalEdge_GradV(ref EdgeFormParams inp, 
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, 
+            MultidimensionalArray Koeff_GradVin, MultidimensionalArray Koeff_GradVot) {
             int L = inp.Len;
-            Debug.Assert(Koeff_GradV.GetLength(0) == L);
-            int K = Koeff_GradV.GetLength(1); // no of nodes per cell
+            Debug.Assert(Koeff_GradVin.GetLength(0) == L);
+            Debug.Assert(Koeff_GradVot.GetLength(0) == L);
+            Debug.Assert(Koeff_GradVin.GetLength(1) == Koeff_GradVot.GetLength(1));
+            int K = Koeff_GradVin.GetLength(1); // no of nodes per cell
             int D = inp.Nodes.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            Debug.Assert(_NOParams == inp.ParamsNeg.Length);
-            Debug.Assert(_NOParams == inp.ParamsPos.Length);
+            Debug.Assert(_NOParams == inp.ParameterVars_OUT.Length);
+            Debug.Assert(_NOParams == inp.ParameterVars_IN.Length);
             int _NOargs = this.ArgumentOrdering.Count;
             Debug.Assert(_NOargs == uA.Length);
             Debug.Assert(_NOargs == uB.Length);
             Debug.Assert(_NOargs == Grad_uA.Length);
             Debug.Assert(_NOargs == Grad_uB.Length);
-            var lsTrk = inp.LsTrk;
             var Reg = lsTrk.Regions;
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
@@ -203,7 +215,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             for (int l = 0; l < L; l++) { // loop over cells...
-                cp.jCellIn = inp.i0 + l;
+                cp.jCellIn = inp.e0 + l;
                 cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
@@ -215,16 +227,18 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 ReducedRegionCode rrc;
-                int NoOf = Reg.GetNoOfSpecies(l + inp.i0, out rrc);
+                int NoOf = Reg.GetNoOfSpecies(l + inp.e0, out rrc);
                 Debug.Assert(NoOf == 2);
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
+                Debug.Assert(iSpcNeg == 0);
+                Debug.Assert(iSpcPos == 1);
 
                 for (int k = 0; k < K; k++) { // loop over nodes...
 
                     for (int np = 0; np < _NOParams; np++) {
-                        cp.Parameters_OUT[np] = inp.ParamsPos[np][l, k];
-                        cp.Parameters_IN[np] = inp.ParamsNeg[np][l, k];
+                        cp.Parameters_OUT[np] = inp.ParameterVars_OUT[np][l, k];
+                        cp.Parameters_IN[np] = inp.ParameterVars_IN[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
                         cp.X[d] = inp.Nodes[l, k, d];
@@ -255,15 +269,21 @@ namespace BoSSS.Foundation.XDG {
                     }
                     for (int d = 0; d < D; d++) {
                         _Grad_vA[d] = 1.0;
-                        Koeff_GradV[l, k, iSpcNeg, d] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                        Koeff_GradVin[l, k, d] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                         _Grad_vA[d] = 0.0;
 
                         _Grad_vB[d] = 1.0;
-                        Koeff_GradV[l, k, iSpcPos, d] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                        Koeff_GradVot[l, k, d] += OrgComponent.InnerEdgeForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                         _Grad_vB[d] = 0.0;
                     }
                 }
             }
+        }
+
+        LevelSetTracker lsTrk;
+
+        public void Setup(LevelSetTracker _lsTrk) {
+            this.lsTrk = _lsTrk;
         }
     }
 }
