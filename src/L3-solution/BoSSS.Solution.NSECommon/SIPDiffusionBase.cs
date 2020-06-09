@@ -80,11 +80,6 @@ namespace BoSSS.Solution.NSECommon
 
 
         /// <summary>
-        /// Reynolds number
-        /// </summary>
-       public double m_reynolds;
-
-        /// <summary>
         /// really really ugly hack for defining if the <see cref="Diffusivity(double[])"/> method should take arguments or variables as argument
         /// </summary>
         bool prmsOK;
@@ -160,11 +155,6 @@ namespace BoSSS.Solution.NSECommon
             m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             cj = cs.CellLengthScales;
-
-            // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
-            // Useful in case that the Reynolds number changes during a simulation...
-            if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
-                m_reynolds = (double)cs.UserDefinedValues["Reynolds"];
         }
 
 
