@@ -237,6 +237,7 @@ namespace BoSSS.Solution.NSECommon {
         MaterialLaw EoS = null;
         int NumberOfSpecies = -1;
         string[] m_ArgumentOrdering;
+        string[] m_ParameterOrdering;
         /// <summary>
         /// Ctor for low Mach number flows.
         /// </summary>
@@ -253,6 +254,7 @@ namespace BoSSS.Solution.NSECommon {
                     throw new ApplicationException("Wrong constructor");
                 case PhysicsMode.MixtureFraction:
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), new string[] { VariableNames.MixtureFraction });
+                    m_ParameterOrdering = new string[] { VariableNames.Rho };
                     break;
                 case PhysicsMode.LowMach:                      
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), new string[] { VariableNames.Temperature });
@@ -276,19 +278,20 @@ namespace BoSSS.Solution.NSECommon {
             
             IncompressibleBcType edgeType = Bcmap.EdgeTag2Type[inp.EdgeTag];
             double[] DensityArgumentsIn;
-            switch(edgeType) {
+            switch (edgeType) {
                 case IncompressibleBcType.Wall:
-                case IncompressibleBcType.NoSlipNeumann: {
-                        res = 0.0;
-                        break;
-                    }
+                case IncompressibleBcType.NoSlipNeumann:
+                    res = 0.0;
+                    break;
                 case IncompressibleBcType.Velocity_Inlet: {
                         double TemperatureOut = 0.0;
                         double Uout = VelFunction[inp.EdgeTag](inp.X, inp.time);
-                        switch(Bcmap.PhysMode) {
-                            case PhysicsMode.MixtureFraction:
+                        switch (Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
                                 res = Uout * inp.Normal[Component];
+                                break;
+                            case PhysicsMode.MixtureFraction:
+                                res = inp.Parameters_IN[0] * Uout * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase: {
@@ -301,16 +304,16 @@ namespace BoSSS.Solution.NSECommon {
                                     //res = rhoIn * Uout * inp.Normale[Component];
                                     break;
                                 }
-                            case PhysicsMode.Combustion: { 
-                                // opt1:
-                                TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
-                                double[] args = new double[NumberOfSpecies-1 + 1];
-                                args[0] = TemperatureOut;
-                                for(int n = 1; n < NumberOfSpecies ; n++) {
-                                    args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
-                                }
-                                res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
-                                break;
+                            case PhysicsMode.Combustion: {
+                                    // opt1:
+                                    TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    double[] args = new double[NumberOfSpecies - 1 + 1];
+                                    args[0] = TemperatureOut;
+                                    for (int n = 1; n < NumberOfSpecies; n++) {
+                                        args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
+                                    }
+                                    res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
+                                    break;
                                 }
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
@@ -319,10 +322,13 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet: {
-                        switch(Bcmap.PhysMode) {
+                        switch (Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
-                            case PhysicsMode.MixtureFraction:
                                 res = Uin[Component] * inp.Normal[Component];
+                                break;
+                            case PhysicsMode.MixtureFraction:
+                                double rho = inp.Parameters_IN[0]; // rho as parameters
+                                res = rho * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
@@ -330,9 +336,8 @@ namespace BoSSS.Solution.NSECommon {
                                 res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Combustion:
-                       
-                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);  
-                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component]; //TODO 
+                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);
+                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
@@ -354,8 +359,12 @@ namespace BoSSS.Solution.NSECommon {
             double densityOut;
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
-                case PhysicsMode.MixtureFraction:
                     res = 0.5 * (Uin[Component] + Uout[Component]) * inp.Normal[Component];
+                    break;
+                case PhysicsMode.MixtureFraction:
+                    densityIn = inp.Parameters_IN[0];
+                    densityOut = inp.Parameters_OUT[0];
+                    res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -390,8 +399,10 @@ namespace BoSSS.Solution.NSECommon {
             double[] DensityArguments; // Arguments used to calculate the density with the EoS
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
-                case PhysicsMode.MixtureFraction:
                     output[Component] = U[Component];
+                    break;
+                case PhysicsMode.MixtureFraction:
+                    output[Component] = inp.Parameters[0] * U[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -442,7 +453,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return null;
+                return m_ParameterOrdering;
             }
         }
         /// <summary>

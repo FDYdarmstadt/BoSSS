@@ -617,6 +617,7 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.MixtureFraction:
                     scalarFunction = m_bcmap.bndFunction[VariableNames.MixtureFraction];
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
+                    m_ParameterOrdering = new string[] { VariableNames.Rho };
                     break;
                 case PhysicsMode.LowMach:
                     scalarFunction = m_bcmap.bndFunction[VariableNames.Temperature];
@@ -700,7 +701,7 @@ namespace BoSSS.Solution.NSECommon {
                                 switch(edgeType) {
                                     case IncompressibleBcType.Velocity_Inlet:
                                     case IncompressibleBcType.Wall:
-                                        Uout[m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
+                                         Uout[m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
                                         break;
                                     case IncompressibleBcType.NoSlipNeumann:
                                         Uout[m_SpatialDimension] = Uin[m_SpatialDimension];
@@ -741,6 +742,10 @@ namespace BoSSS.Solution.NSECommon {
                             default:
                                 throw new NotImplementedException("PhysicsMode not implemented");
                         }
+
+                        //Add the density parameter for the MixtureFraction Calculation
+                        if (m_bcmap.PhysMode == PhysicsMode.MixtureFraction)
+                            inp2.Parameters_OUT = inp2.Parameters_IN;
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================
                         r = InnerEdgeFlux(ref inp2, Uin, Uout);
@@ -768,7 +773,9 @@ namespace BoSSS.Solution.NSECommon {
                         double[] densityArguments;
                         switch(PhysMode) {
                             case PhysicsMode.Incompressible:
+                                break;
                             case PhysicsMode.MixtureFraction:
+                                rho = inp.Parameters_IN[0];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
@@ -808,8 +815,11 @@ namespace BoSSS.Solution.NSECommon {
             switch(m_bcmap.PhysMode) {
                 case PhysicsMode.Viscoelastic:
                 case PhysicsMode.Incompressible:
-                case PhysicsMode.MixtureFraction:
                     // Constant density
+                    break;
+                case PhysicsMode.MixtureFraction:
+                    rhoIn = inp.Parameters_IN[0];
+                    rhoOut = inp.Parameters_OUT[0];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -861,6 +871,10 @@ namespace BoSSS.Solution.NSECommon {
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, true);
                     break;
                 case PhysicsMode.MixtureFraction:
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, inp.Parameters_IN[0]);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, inp.Parameters_OUT[0]);
+                    break;
+            
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
                     double TemperatureMeanIn = Uin[m_SpatialDimension];  /* inp.Parameters_IN[2 * m_SpatialDimension + 1];*/
@@ -907,10 +921,12 @@ namespace BoSSS.Solution.NSECommon {
                 output[2] = U[idx] * U[2];
             }
 
-            switch(PhysMode) {
-                case PhysicsMode.MixtureFraction:
+            switch (PhysMode) {
                 case PhysicsMode.Incompressible:
                     rho = 1.0;
+                    break;
+                case PhysicsMode.MixtureFraction:
+                    rho = inp.Parameters[0];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:

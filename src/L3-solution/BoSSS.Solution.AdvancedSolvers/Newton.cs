@@ -100,6 +100,11 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         public bool UsePresRefPoint;
 
+        /// <summary>
+        /// Prints the step reduction factor
+        /// </summary>
+        public bool printLambda = false; 
+
         //bool solveVelocity = true;
 
         //double VelocitySolver_ConvergenceCriterion = 1e-5;
@@ -280,9 +285,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                             ffm = ffc;
                             ffc = nft * nft;
                             iarm++;
-#if DEBUG
-                            Console.WriteLine("    Residuum:  " + nft + " lambda = " + lambda);
-#endif 
+
+                            if (printLambda)
+                                Console.WriteLine("    Residuum:  " + nft + " lambda = " + lambda);
+
                         }
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...

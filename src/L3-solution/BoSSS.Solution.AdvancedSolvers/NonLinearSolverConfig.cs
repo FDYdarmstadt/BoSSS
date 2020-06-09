@@ -100,6 +100,12 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         public bool UsePresRefPoint = true;
 
+
+        /// <summary>
+        /// Prints the step reduction factor of the newton backtracking method
+        /// </summary>
+        public bool printLambda = false;
+
         /// <summary>
         /// Clones the NonLinearConfig
         /// </summary>
@@ -113,6 +119,7 @@ namespace BoSSS.Solution.Control {
                 SolverCode = this.SolverCode,
                 UnderRelax = this.UnderRelax,
                 UsePresRefPoint = this.UsePresRefPoint,
+                printLambda = this.printLambda,
                 verbose = this.verbose
         };
             return clone;
@@ -131,6 +138,7 @@ namespace BoSSS.Solution.Control {
                 this.SolverCode == compareto.SolverCode &&
                 this.UnderRelax == compareto.UnderRelax &&
                 this.UsePresRefPoint == compareto.UsePresRefPoint &&
+                this.printLambda == compareto.printLambda &&
                 this.verbose == compareto.verbose;
         }
     }
