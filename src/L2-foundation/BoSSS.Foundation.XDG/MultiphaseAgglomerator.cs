@@ -588,6 +588,22 @@ namespace BoSSS.Foundation.XDG {
             private set;
             get;
         }
+        
+        /// <summary>
+        /// The volume of agglomerated cut cells.
+        /// </summary>
+        public Dictionary<SpeciesId, MultidimensionalArray> CellVolume {
+            private set;
+            get;
+        }
+
+        /// <summary>
+        /// The surface of agglomerated cut cells.
+        /// </summary>
+        public Dictionary<SpeciesId, MultidimensionalArray> CellSurface {
+            private set;
+            get;
+        }
 
 
         /// <summary>
@@ -740,10 +756,14 @@ namespace BoSSS.Foundation.XDG {
             // store
             this.CellLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
+            this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
+            this.CellVolume = new Dictionary<SpeciesId, MultidimensionalArray>();
             for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];
                 this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
                 this.CellVolumeFrac.Add(spc, CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
+                this.CellSurface.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
+                this.CellVolume.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
             }
         }
 

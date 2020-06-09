@@ -326,10 +326,10 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
         void TestLengthScales(int quadOrder, int TimestepNo) {
-            var AllSpc = new[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B") };
-            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(AllSpc, quadOrder, this.THRESHOLD);
+            var species = new[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B") };
+            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
 
-
+            /*
             foreach(var SpeciesID in AllSpc) {
 
                 //Agg.CellVolumeFrac;
@@ -343,6 +343,39 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
             }
+            */
+
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+
+            /*
+            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                SpeciesId spc = species[iSpc];
+
+                CellMask CellMask = LsTrk.Regions.GetSpeciesMask(spc);
+
+                // Vector: GlobalID --> Werte
+                MultidimensionalArray CellSurface = Agg.CellSurface[spc];
+                MultidimensionalArray CellVolume = Agg.CellVolume[spc];
+                MultidimensionalArray CellLengthScales = Agg.CellLengthScales[spc];
+
+                CellSurface.CheckForNanOrInf(true, true, true);
+                CellVolume.CheckForNanOrInf(true, true, true);
+
+                string fileName = "T" + TimestepNo +"_Spc_" + LsTrk.GetSpeciesName(spc) + "_Rank_" + rank;
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
+                if(MpiSize > 1) {
+                    fileName = "N_" + fileName;
+                } else {
+                    fileName = "SINGLE_CORE_" + fileName;
+                }
+                fileName = fileName + ".txt";
+
+                CellMask.SaveToTextFile(fileName, false,
+                    delegate (double[] x, int jL, int iG) { return CellSurface[jL]; },
+                    delegate (double[] x, int jL, int iG) { return CellVolume[jL]; },
+                    delegate (double[] x, int jL, int iG) { return CellLengthScales[jL]; });
+            }
+            */
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
