@@ -64,9 +64,7 @@ namespace AdvancedSolverTests {
             int size;
             csMPI.Raw.Comm_Size(comm,out size);
 
-            base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
-
-            base.Control.GridPartOptions = "hallo";
+            
             double xMax = 1.0, yMax = 1.0;
             double xMin = -1.0, yMin = -1.0;
             Func<double[], int> MakeMyPartioning = delegate (double[] X) {
@@ -95,10 +93,13 @@ namespace AdvancedSolverTests {
 
             m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res + 1), GenericBlas.Linspace(-1, 1, m_Res + 1));
             if (size == 4) {
+                base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
+                base.Control.GridPartOptions = "hallo";
                 ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);
             } else {
                 if (size != 1)
                     throw new NotSupportedException("supported MPIsize is 1 or 4");
+                base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
             }
             return m_grid;
         }
@@ -115,7 +116,7 @@ namespace AdvancedSolverTests {
 
         public int m_Res;
 
-        AggregationGridData[] MgSeq;
+        public AggregationGridData[] MgSeq;
 
         MultigridMapping MG_Mapping;
 

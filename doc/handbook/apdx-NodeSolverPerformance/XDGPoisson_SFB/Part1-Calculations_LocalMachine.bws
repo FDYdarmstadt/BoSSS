@@ -1,0 +1,1657 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XdgPoisson3;
+**************
+==============
+**************
+==============
+string WFlowName = "Xdg_condnum_AggT001";
+WorkflowMgm.Init(WFlowName);
+WorkflowMgm.AllJobs;
+**************
+Project name is set to 'Xdg_condnum_AggT001'.
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+//var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
+//var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper");
+//var tempDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
+var tempDB = OpenOrCreateDatabase(@"V:\testDB2");
+**************
+Opening existing database 'V:\testDB2'.
+
+==============
+var myBatch = new MiniBatchProcessorClient(@"V:\deploy");
+//var myBatch = new SlurmClient(@"X:\Deployerie","lcluster3.hrz.tu-darmstadt.de","jw52xeqa");
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\weber\dply","hpccluster",ComputeNodes : new[] {"hpccluster"});
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Mini batch processor is already running.
+
+==============
+// ===================
+// Utility definitions
+// ===================
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }    
+    
+    //Non-equidistant nodes
+    public static double[] SinLinSpacing(double l, double r, double a, int n) {
+        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
+        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
+        double[] nodes = new double[n];
+
+        for (int i = 0; i < n; i++)
+            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
+            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
+
+        for (int i = 0; i < n; i++)
+            nodes[i] = nodes[i] * (r - l)*0.5 + l;
+        return nodes;
+    }
+}
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+tempDB.Grids;
+**************
+List of 8 instances of IGridInfo {
+  0: { Guid = ec9d3e12-239f-4dbe-be83-e6b4b012635b; Name = Xdg_condnum_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = 46dddb29-7b70-4f2e-bed5-c169b59c7061; Name = Xdg_condnum_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = 510de5aa-b040-4855-a5e7-4a60f2025ef2; Name = Xdg_condnum_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = a4190850-284c-47d3-87cf-6febe715ba84; Name = Xdg_condnum_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = 657d1fc7-e71f-4f98-8a2c-66291a0d1f4d; Name = Xdg_condnum_J4096; Cell Count = 4096; Dim = 3 }
+  5: { Guid = d2b0105e-6347-4c1d-be93-c657128260b0; Name = Xdg_condnum_J512; Cell Count = 512; Dim = 3 }
+  6: { Guid = b9b9c785-424d-4f89-9c72-d9078b77d4cc; Name = Xdg_condnum_J64; Cell Count = 64; Dim = 3 }
+  7: { Guid = ab0b75d2-e1c2-4f55-946b-864e013fc2e3; Name = Xdg_condnum_J8; Cell Count = 8; Dim = 3 }
+}
+==============
+int[] Resolutions_3D = new int[] { 2,4,8,16,24,32,48,64 };
+//int[] Resolutions_3D = new int[] { 2 };
+IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
+for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
+    int Res = Resolutions_3D[cnt];    
+    
+    //double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+    //double[] yNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    //double[] zNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+    double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+    double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
+    
+    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
+    
+    grids[cnt]=null;
+    foreach(IGridInfo grd in tempDB.Grids){
+        bool check = grd.Name.Contains(string.Format("_J"+ J));
+        if(check){
+          grids[cnt]=grd;
+        }
+    }
+    
+    //grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
+    
+    if(grids[cnt] == null){
+        Console.WriteLine("Creating grid with " + J + " cells.");
+        
+        GridCommons g;
+        g      = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        g.Name = GridName;
+        
+        g.EdgeTagNames.Add(1, "Dirichlet");
+        //g.EdgeTagNames.Add(2, "Neumann");
+    
+        g.DefineEdgeTags(delegate (double[] X) {
+            byte ret;
+//            if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                ret = 1;
+//            else
+//                ret = 2;
+            return ret;
+        });
+      
+        tempDB.SaveGrid(ref g);  
+        grids[cnt] = g;
+    } else {
+        Console.WriteLine("Found Grid: " + grids[cnt]);
+        if(grids[cnt].NumberOfCells != J)
+            throw new Exception("J mismatch");
+        
+        if(grids[cnt].SpatialDimension != 3)
+            throw new Exception("D mismatch");
+    }
+}
+**************
+Found Grid: { Guid = ab0b75d2-e1c2-4f55-946b-864e013fc2e3; Name = Xdg_condnum_J8; Cell Count = 8; Dim = 3 }
+Found Grid: { Guid = b9b9c785-424d-4f89-9c72-d9078b77d4cc; Name = Xdg_condnum_J64; Cell Count = 64; Dim = 3 }
+Found Grid: { Guid = d2b0105e-6347-4c1d-be93-c657128260b0; Name = Xdg_condnum_J512; Cell Count = 512; Dim = 3 }
+Found Grid: { Guid = 657d1fc7-e71f-4f98-8a2c-66291a0d1f4d; Name = Xdg_condnum_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = a4190850-284c-47d3-87cf-6febe715ba84; Name = Xdg_condnum_J13824; Cell Count = 13824; Dim = 3 }
+Found Grid: { Guid = 510de5aa-b040-4855-a5e7-4a60f2025ef2; Name = Xdg_condnum_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = 46dddb29-7b70-4f2e-bed5-c169b59c7061; Name = Xdg_condnum_J110592; Cell Count = 110592; Dim = 3 }
+Found Grid: { Guid = ec9d3e12-239f-4dbe-be83-e6b4b012635b; Name = Xdg_condnum_J262144; Cell Count = 262144; Dim = 3 }
+
+==============
+grids;
+**************
+List of 8 instances of IGridInfo {
+  0: { Guid = ab0b75d2-e1c2-4f55-946b-864e013fc2e3; Name = Xdg_condnum_J8; Cell Count = 8; Dim = 3 }
+  1: { Guid = b9b9c785-424d-4f89-9c72-d9078b77d4cc; Name = Xdg_condnum_J64; Cell Count = 64; Dim = 3 }
+  2: { Guid = d2b0105e-6347-4c1d-be93-c657128260b0; Name = Xdg_condnum_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 657d1fc7-e71f-4f98-8a2c-66291a0d1f4d; Name = Xdg_condnum_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = a4190850-284c-47d3-87cf-6febe715ba84; Name = Xdg_condnum_J13824; Cell Count = 13824; Dim = 3 }
+  5: { Guid = 510de5aa-b040-4855-a5e7-4a60f2025ef2; Name = Xdg_condnum_J32768; Cell Count = 32768; Dim = 3 }
+  6: { Guid = 46dddb29-7b70-4f2e-bed5-c169b59c7061; Name = Xdg_condnum_J110592; Cell Count = 110592; Dim = 3 }
+  7: { Guid = ec9d3e12-239f-4dbe-be83-e6b4b012635b; Name = Xdg_condnum_J262144; Cell Count = 262144; Dim = 3 }
+}
+==============
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - - - - - - - -
+// Initial Values & Boundary conditions
+// - - - - - - - - - - - - - - - - - - -
+**************
+==============
+static class InitialValues {
+    public static double RHS(double[] X) {
+        return -Math.Sin(X[0]);
+    }
+    
+    public static double DirichletBC(double[] X) {
+        return 0.0;
+    }
+    
+    public static double NeumannBC(double[] X) {
+       if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8)
+           return 0;
+       if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8))
+           return 0;
+
+       return Math.Cos(10.0);
+   }
+}
+**************
+==============
+//InitialValues.RHS(new double[]{ 1,1});
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+int[] PolyDegS = new int[] {2, 3 ,5};
+//int[] PolyDegS = new int[] {2};
+**************
+==============
+// Solvers which we want to instrument:
+LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
+    //LinearSolverCode.classic_pardiso,
+    //LinearSolverCode.exp_OrthoS_pMG,
+    //LinearSolverCode.exp_gmres_levelpmg,
+    //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
+    LinearSolverCode.exp_Kcycle_schwarz,
+    //LinearSolverConfig.Code.classic_mumps, 
+    //LinearSolverConfig.Code.classic_cg,
+    //LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
+    //LinearSolverConfig.Code.exp_softpcg_mg
+}; 
+**************
+==============
+// MaxDof for one claculation (we skip fine grids for higher polynomial orders)
+int MaxDof = 5000000;
+**************
+==============
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Foundation.XDG;
+**************
+==============
+//IGridInfo tmp_grd = 
+//IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(1)};
+IGridInfo[] t_grids = grids;
+t_grids;
+**************
+List of 8 instances of IGridInfo {
+  0: { Guid = ab0b75d2-e1c2-4f55-946b-864e013fc2e3; Name = Xdg_condnum_J8; Cell Count = 8; Dim = 3 }
+  1: { Guid = b9b9c785-424d-4f89-9c72-d9078b77d4cc; Name = Xdg_condnum_J64; Cell Count = 64; Dim = 3 }
+  2: { Guid = d2b0105e-6347-4c1d-be93-c657128260b0; Name = Xdg_condnum_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 657d1fc7-e71f-4f98-8a2c-66291a0d1f4d; Name = Xdg_condnum_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = a4190850-284c-47d3-87cf-6febe715ba84; Name = Xdg_condnum_J13824; Cell Count = 13824; Dim = 3 }
+  5: { Guid = 510de5aa-b040-4855-a5e7-4a60f2025ef2; Name = Xdg_condnum_J32768; Cell Count = 32768; Dim = 3 }
+  6: { Guid = 46dddb29-7b70-4f2e-bed5-c169b59c7061; Name = Xdg_condnum_J110592; Cell Count = 110592; Dim = 3 }
+  7: { Guid = ec9d3e12-239f-4dbe-be83-e6b4b012635b; Name = Xdg_condnum_J262144; Cell Count = 262144; Dim = 3 }
+}
+==============
+controls.Clear();
+foreach(LinearSolverCode solver_name in solver_nameS) {
+foreach(int k in PolyDegS) {
+int iGrd = 0;    
+foreach(IGridInfo grd in t_grids) {
+    iGrd ++;
+    //if(k >= 3 && iGrd > 6)
+    //    continue; 
+    //if(k >= 4 && iGrd > 5)
+    //    continue; 
+    //if(k >= 5 && iGrd > 4)
+    //    continue; 
+    
+    int Np = Utils.Np(k);
+    int J  = grd.NumberOfCells;
+    if(J*Np > MaxDof)
+        continue;
+    
+    string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    Console.WriteLine("setting up: " + caseName);
+
+    var ctrl = new XdgPoisson3Control();
+    
+    
+    //ctrl.SessionName = caseName;
+    
+    ctrl.savetodb = true;
+    ctrl.SetDatabase(tempDB);
+    ctrl.SetGrid(grd);
+    //ctrl.SetDGdegree(k);
+    
+    ctrl.FieldOptions.Add("Phi", new FieldOpts() {
+         Degree = 2,
+         SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+    });
+    ctrl.FieldOptions.Add("u", new FieldOpts() {
+         Degree = k,
+         SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+    });
+    
+    //provoke Multigrid descend ...
+    if(solver_name==LinearSolverCode.exp_Kcycle_schwarz){
+        ctrl.LinearSolver.TargetBlockSize = J*Np-1;
+    }
+
+    ctrl.LinearSolver.SolverCode           = solver_name;
+    ctrl.LinearSolver.NoOfMultigridLevels  = 5;
+    ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
+    ctrl.LinearSolver.MaxSolverIterations  = 1;
+    
+    double radius           = 0.7;
+    ctrl.ExcactSolSupported = false;
+    ctrl.InitialValues.Add("Phi", new Formula("X => X[0].Pow2()+X[1].Pow2()+X[2].Pow2()-"+radius+".Pow2()"));
+    ctrl.MU_A = -1;
+    ctrl.MU_B = -1000;
+    ctrl.InitialValues.Add("rhs#A", new Formula("X => 1"));
+    ctrl.InitialValues.Add("rhs#B", new Formula("X => 1"));
+    ctrl.InitialValues.Add("u#A", new Formula ("X => 0"));
+    ctrl.InitialValues.Add("u#B", new Formula ("X => 0"));
+    //ctrl.AddBoundaryValue("Dirichlet", "u#A",
+    //    GetFormulaObject(InitialValues.DirichletBC));
+    //ctrl.AddBoundaryValue("Dirichlet", "u#B",
+    //    GetFormulaObject(InitialValues.DirichletBC));
+    //ctrl.AddBoundaryValue("Neumann", "u#A",
+    //    GetFormulaObject(InitialValues.NeumannBC));
+    //ctrl.AddBoundaryValue("Neumann", "u#B",
+    //    GetFormulaObject(InitialValues.NeumannBC));
+    ctrl.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+    ctrl.SetDefaultDiriBndCnd  = true;
+    ctrl.ViscosityMode         = XLaplace_Interface.Mode.SIP;
+    ctrl.SessionName           = "XdgPoissonVelocity_"+caseName;
+    ctrl.ProjectName           = WFlowName;
+    
+    ctrl.AgglomerationThreshold = 0.01;
+    
+    controls.Add(ctrl);
+}
+}
+}
+**************
+setting up: J8_k2_exp_Kcycle_schwarz
+setting up: J64_k2_exp_Kcycle_schwarz
+setting up: J512_k2_exp_Kcycle_schwarz
+setting up: J4096_k2_exp_Kcycle_schwarz
+setting up: J13824_k2_exp_Kcycle_schwarz
+setting up: J32768_k2_exp_Kcycle_schwarz
+setting up: J110592_k2_exp_Kcycle_schwarz
+setting up: J262144_k2_exp_Kcycle_schwarz
+setting up: J8_k3_exp_Kcycle_schwarz
+setting up: J64_k3_exp_Kcycle_schwarz
+setting up: J512_k3_exp_Kcycle_schwarz
+setting up: J4096_k3_exp_Kcycle_schwarz
+setting up: J13824_k3_exp_Kcycle_schwarz
+setting up: J32768_k3_exp_Kcycle_schwarz
+setting up: J110592_k3_exp_Kcycle_schwarz
+setting up: J8_k5_exp_Kcycle_schwarz
+setting up: J64_k5_exp_Kcycle_schwarz
+setting up: J512_k5_exp_Kcycle_schwarz
+setting up: J4096_k5_exp_Kcycle_schwarz
+setting up: J13824_k5_exp_Kcycle_schwarz
+setting up: J32768_k5_exp_Kcycle_schwarz
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+//var solver = new XdgPoisson3Main();
+//solver.Init(controls[0]);
+//solver.RunSolverMode();
+//solver.Dispose();
+**************
+==============
+//WorkflowMgm.AllJobs.Pick(0);
+//WorkflowMgm.AllJobs.Pick(0).Value.Stdout;
+//WorkflowMgm.AllJobs.Pick(0).Value.Stderr;
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("softpcg") && s.Name.Contains("k2") && s.Name.Contains("mg"));//.ForEach(si => si.Delete(true));
+//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
+**************
+==============
+foreach(var ctrl in controls) {
+    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+    var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
+    aJob.SetControlObject(ctrl);
+    aJob.NumberOfMPIProcs = 1;
+    aJob.Activate(myBatch);
+    //ctrl.RunBatch(myBatch);
+}
+**************
+ Submitting: XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-1
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-2
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-3
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J13824_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-4
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-5
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J110592_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-6
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-7
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-27-8
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-1
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-2
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J13824_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-3
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-4
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J110592_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-5
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-6
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-7
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-8
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-28-9
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J13824_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-29
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+ Submitting: XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: V:\deploy\XdgPoisson32020Feb07_17-25-29-1
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+==============
+**************
+==============
+WorkflowMgm.AllJobs;
+**************
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+List of 21 instances of KeyValuePair{String,Job} {
+  0: [XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  1: [XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  2: [XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  3: [XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  4: [XdgPoissonVelocity_J13824_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J13824_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  5: [XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  6: [XdgPoissonVelocity_J110592_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J110592_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  7: [XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  8: [XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  9: [XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  10: [XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  11: [XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  12: [XdgPoissonVelocity_J13824_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J13824_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  13: [XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  14: [XdgPoissonVelocity_J110592_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J110592_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  15: [XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  16: [XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  17: [XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  18: [XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  19: [XdgPoissonVelocity_J13824_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J13824_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  20: [XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+}
+==============
+WorkflowMgm.AllJobs.Where(j=>j.Value.Status==JobStatus.Failed).ForEach(j=>j.Value.AllSessions.Pick(0).Delete(true))
+**************
+Session b34fc523-6b9d-4547-b31e-df936958e69e deleted.
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d deleted.
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session 21e722a8-b647-4499-97d8-b7c9f5866c7f deleted.
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session 22cbd034-4899-4120-93b4-4be5aaca1351 deleted.
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session 7db7b365-af80-4f69-8abf-e61c16e3eda7 deleted.
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 deleted.
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 deleted.
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session 3854be22-7741-47cb-950f-52649ed484bc deleted.
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session c9343f0c-659d-45b4-abcb-6a578c862ff4 deleted.
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Session 497d0a60-191e-4fc7-8859-bea82bde8146 deleted.
+
+==============
+using System.IO
+**************
+==============
+//write out stout
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccessful));
+//var somelist = WorkflowMgm.AllJobs;
+somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+}
+**************
+writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
+
+==============
+//write out stdout of Failed Jobs
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+Dictionary<string, string> Stderrlist = new Dictionary<string, string>();
+var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
+somelist.ForEach(j=>{
+Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString());
+Stderrlist.Add(j.Value.Name ,j.Value.Stderr.ToString());
+});
+
+
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stdout_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+};
+foreach(KeyValuePair<string,string> sterr in Stderrlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stderr_"+sterr.Key+".txt")){
+    Console.Write("writing {0} ...",sterr.Key);
+    sw.WriteLine(sterr.Value);
+    Console.WriteLine("done.");
+    }
+};
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value;
+**************
+List of 11 instances of ISessionInfo {
+  0: Xdg_condnum	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	02/07/2020 00:08:02	daff3919...
+  1: Xdg_condnum	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	02/07/2020 00:07:02	60982c8e...
+  2: Xdg_condnum	XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz	02/06/2020 23:43:32	c942cc80...
+  3: Xdg_condnum	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz	02/06/2020 23:40:23	8217d1e3...
+  4: Xdg_condnum	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	02/06/2020 23:38:33	8caf51bd...
+  5: Xdg_condnum	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	02/06/2020 23:37:13	f06046a6...
+  6: Xdg_condnum	XdgPoissonVelocity_J13824_k2_exp_Kcycle_schwarz	02/06/2020 23:28:12	ec0cd6e6...
+  7: Xdg_condnum	XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz	02/06/2020 23:27:22	1011db46...
+  8: Xdg_condnum	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	02/06/2020 23:27:22	e7e2b043...
+  9: Xdg_condnum	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	02/06/2020 23:27:22	43a0ed34...
+  10: Xdg_condnum	XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz	02/06/2020 23:27:22	81ecf2cb...
+}
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().ForEach(s=>s.ProjectName=WFlowName+"_failed");
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName+"_failed")).Pick(0).Value
+**************
+List of 19 instances of ISessionInfo {
+  0: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_classic_pardiso*	09/22/2019 13:04:02	6a7bc838...
+  1: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*	09/22/2019 13:04:01	8aeb3f74...
+  2: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*	09/22/2019 13:04:02	8f664514...
+  3: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*	09/22/2019 13:04:00	40ba4ea4...
+  4: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/22/2019 13:04:02	b964d61f...
+  5: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg*	09/22/2019 13:04:01	7ce23584...
+  6: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz*	09/22/2019 13:04:01	8fc1f40d...
+  7: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*	09/22/2019 13:04:02	07195f20...
+  8: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*	09/22/2019 02:12:53	83ebb30a...
+  9: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*	09/22/2019 13:04:02	dabf5f03...
+  10: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*	09/22/2019 01:50:40	c3dc7077...
+  11: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz*	09/22/2019 02:09:30	8ccd3eb0...
+  12: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*	09/22/2019 01:37:59	37746796...
+  13: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*	09/22/2019 01:43:03	5a7f531f...
+  14: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg*	09/22/2019 01:42:14	5fae9fa3...
+  15: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_classic_pardiso*	09/22/2019 01:23:18	a5bfdbbd...
+  16: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*	09/22/2019 01:25:59	faa590e0...
+  17: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_classic_pardiso*	09/22/2019 01:17:39	43d605c2...
+  18: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/22/2019 01:22:28	0d8eaf5f...
+}
+==============
+tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Where(s=>s.Name.Contains("J13824_k5_exp_gmres_levelpmg")).Pick(0).Delete(true)
+**************
+Session 9d684405-2826-4ba5-b33d-75a7dfe04725 deleted.
+
+==============
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed();
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().DeleteAll();
+//WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
+//WorkflowMgm.AllJobs.Where(s => s.Value.Status.Equals(JobStatus.InProgress)).Pick(0).Value.Stdout;
+//WorkflowMgm.AllJobs.Pick(0).Value.Stdout;
+**************
+==============
+//WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+**************
+==============
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Stdout;
+**************
+==============
+WorkflowMgm.SessionTable.Rows.Count;
+**************
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session 497d0a60-191e-4fc7-8859-bea82bde8146 failed with message 'Could not find file 'V:\testDB2\sessions\497d0a60-191e-4fc7-8859-bea82bde8146\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session c9343f0c-659d-45b4-abcb-6a578c862ff4 failed with message 'Could not find file 'V:\testDB2\sessions\c9343f0c-659d-45b4-abcb-6a578c862ff4\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 3854be22-7741-47cb-950f-52649ed484bc failed with message 'Could not find file 'V:\testDB2\sessions\3854be22-7741-47cb-950f-52649ed484bc\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session 2cb74cab-c26c-4101-a58b-3506bc0cbe37 failed with message 'Could not find file 'V:\testDB2\sessions\2cb74cab-c26c-4101-a58b-3506bc0cbe37\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session fe6480cc-74dc-4b82-baa0-d02c56a7e0a2 failed with message 'Could not find file 'V:\testDB2\sessions\fe6480cc-74dc-4b82-baa0-d02c56a7e0a2\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 7db7b365-af80-4f69-8abf-e61c16e3eda7 failed with message 'Could not find file 'V:\testDB2\sessions\7db7b365-af80-4f69-8abf-e61c16e3eda7\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 22cbd034-4899-4120-93b4-4be5aaca1351 failed with message 'Could not find file 'V:\testDB2\sessions\22cbd034-4899-4120-93b4-4be5aaca1351\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 21e722a8-b647-4499-97d8-b7c9f5866c7f failed with message 'Could not find file 'V:\testDB2\sessions\21e722a8-b647-4499-97d8-b7c9f5866c7f\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session 6298c9ba-fc4c-4d19-9864-a1f35f2bec3d failed with message 'Could not find file 'V:\testDB2\sessions\6298c9ba-fc4c-4d19-9864-a1f35f2bec3d\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+Loading session b34fc523-6b9d-4547-b31e-df936958e69e failed with message 'Could not find file 'V:\testDB2\sessions\b34fc523-6b9d-4547-b31e-df936958e69e\Session.info'.'
+21
+==============
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timesteps.Last().Fields.Pick(1).Coordinates.NoOfCols;
+**************
+112
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
+//tempDB.Projects.Pick(0).Value.Pick(0).KeysAndQueries;
+tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries
+**************
+List of 67 instances of KeyValuePair{String,Object} {
+  0: [SessionName, XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg]
+  1: [DGdegree:Phi, 2]
+  2: [DGdegree:u, 5]
+  3: [GeneratedFromCode, False]
+  4: [ControlFileText_Index, 0]
+  5: [dtFixed, -1]
+  6: [SetDefaultDiriBndCnd, True]
+  7: [ViscosityMode, 1]
+  8: [MU_A, -1]
+  9: [MU_B, -1000]
+  10: [ExcactSolSupported, False]
+  11: [PrePreCond, 4]
+  12: [AgglomerationThreshold, 0.3]
+  13: [penalty_multiplyer, 2]
+  14: [pOff, 2]
+  15: [SuppressExceptionPrompt, False]
+  16: [GridPartType, 5]
+  17: [ProjectName, Xdg_SFB_Performance_r4_1]
+  18: [NoOfTimesteps, -1]
+  19: [Endtime, 1.79769313486232E+308]
+  20: [saveperiod, 1]
+  21: [rollingSaves, 0]
+  22: [dtMin, -1]
+  23: [dtMax, -1]
+  24: [CompMode, 0]
+  25: [ImmediatePlotPeriod, -1]
+  26: [SuperSampling, 0]
+  27: [savetodb, True]
+  28: [logFileDirectory, .]
+  29: [Paramstudy_ContinueOnError, True]
+  30: [LinearSolver.verbose, True]
+  31: [LinearSolver.MaxKrylovDim, 30]
+  32: [LinearSolver.MaxSolverIterations, 2000]
+  33: [LinearSolver.MinSolverIterations, 2]
+  34: [LinearSolver.ConvergenceCriterion, 1E-08]
+  35: [LinearSolver.SolverCode, 47]
+  36: [LinearSolver.NoOfMultigridLevels, 10]
+  37: [LinearSolver.exp_localPrec_muA, 1]
+  38: [LinearSolver.exp_localPrec_Min_dt, 0]
+  39: [LinearSolver.TargetBlockSize, 10000]
+  40: [NonLinearSolver.verbose, False]
+  41: [NonLinearSolver.PrecondSolver.verbose, False]
+  42: [NonLinearSolver.PrecondSolver.MaxKrylovDim, 30]
+  43: [NonLinearSolver.PrecondSolver.MaxSolverIterations, 2000]
+  44: [NonLinearSolver.PrecondSolver.MinSolverIterations, 2]
+  45: [NonLinearSolver.PrecondSolver.ConvergenceCriterion, 1E-10]
+  46: [NonLinearSolver.PrecondSolver.SolverCode, 1]
+  47: [NonLinearSolver.PrecondSolver.NoOfMultigridLevels, 1]
+  48: [NonLinearSolver.PrecondSolver.exp_localPrec_muA, 1]
+  49: [NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt, 0]
+  50: [NonLinearSolver.PrecondSolver.TargetBlockSize, 10000]
+  51: [NonLinearSolver.MaxSolverIterations, 2000]
+  52: [NonLinearSolver.MinSolverIterations, 2]
+  53: [NonLinearSolver.ConvergenceCriterion, 1E-08]
+  54: [NonLinearSolver.UnderRelax, 1]
+  55: [NonLinearSolver.SolverCode, 1]
+  56: [DynamicLoadBalancing_RedistributeAtStartup, False]
+  57: [DynamicLoadBalancing_Period, -1]
+  58: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
+  59: [DynamicLoadBalancing_On, False]
+  60: [AdaptiveMeshRefinement, False]
+  61: [AMR_startUpSweeps, 1]
+  62: [CutCellQuadratureType, 5]
+  63: [ContinueOnIoError, True]
+  64: [Grid:NoOfCells, 8]
+  65: [Grid:hMax, 1.73205080756888]
+  66: [Grid:hMin, 1]
+}
+==============
+static class AddCols {
+    static public object SipMatrixAssembly_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("XdgMatrixAssembly");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Aggregation_basis_init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Aggregation_basis_init");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Solver_Init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Init");
+        var nd  = ndS.ElementAt(0);
+        //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );
+        return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;
+    }
+    static public object Solver_Run_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Run");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "XdgMatrixAssembly", AddCols.SipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Run_time", AddCols.Solver_Run_time);
+**************
+==============
+// --------------------------
+// Save Session table in file
+// --------------------------
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+SessTab.Rows.Count;
+**************
+53
+==============
+// The Session column can't be serialized,
+// we have to remove it
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+using System.IO;
+**************
+==============
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
+**************
+==============
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

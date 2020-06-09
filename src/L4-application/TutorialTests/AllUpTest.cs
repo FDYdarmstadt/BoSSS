@@ -76,6 +76,13 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
+        [Test]
+        static public void Run__BoundaryAndInitialData() {
+            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
         [Test]
         static public void Run__MetaJobManager() {

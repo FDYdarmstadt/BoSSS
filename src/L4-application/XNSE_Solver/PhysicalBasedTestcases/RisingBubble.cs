@@ -1078,7 +1078,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("GravityY#A", X => -0.981);
             //C.InitialValues_Evaluators.Add("GravityY#B", X => -0.981);
 
-            var database = new DatabaseInfo(_DbPath);
+            //var database = DatabaseInfo.Open(_DbPath);
             Guid restartID = new Guid("9d1bbcd2-38d0-43d3-90d4-7ac7f535079c");
             C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
 

@@ -78,6 +78,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdvancedSolverMain.cs" />
+    <Compile Include="SolverChooser\ConfigTest.cs" />
+    <Compile Include="SolverChooser\Utils.cs" />
     <Compile Include="SubBlocking\ExternalTests.cs" />
     <Compile Include="SubBlocking\LocalTests.cs" />
     <Compile Include="SubBlocking\Fluxes.cs" />

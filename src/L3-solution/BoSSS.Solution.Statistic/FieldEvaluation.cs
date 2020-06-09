@@ -54,6 +54,44 @@ namespace BoSSS.Solution.Statistic {
 
 
         /// <summary>
+        /// Evaluation at a singe point
+        /// </summary>
+        public double Evaluate(Vector Point, DGField F) {
+            var gdat = CellLoc.GrdDat;
+            if(!object.ReferenceEquals(gdat, F.GridDat)) {
+                throw new ArgumentException("Grid mismatch.");
+            }
+            int D = gdat.SpatialDimension;
+            if(Point.Dim != D) {
+                throw new ArgumentException("Spatial dimension mismatch.");
+            }
+
+            MultidimensionalArray _Point = MultidimensionalArray.Create(1, Point.Dim);
+            _Point.SetRowPt(0, Point);
+
+            int[] cellIdx = new int[1];
+            CellLoc.LocalizePointsWithinGrid(_Point, cellIdx, out int NoOfUnassi);
+            if(NoOfUnassi > 0) {
+                throw new ArithmeticException("unable to locate point " + Point);
+            }
+            int j = cellIdx[0];
+
+            NodeSet ns = new NodeSet(gdat.iGeomCells.GetRefElement(j), 1, D);
+            bool[] NewtonConvergence = new bool[1];
+            gdat.TransformGlobal2Local(_Point, ns, j, NewtonConvergence);
+            if(NewtonConvergence[0] == false) {
+                throw new ArithmeticException("unable to transform point " + Point + " to cell " + j + "; Newton method did not converged.");
+            }
+            ns.LockForever();
+
+            var R = MultidimensionalArray.Create(1, 1);
+            F.Evaluate(j, 1, ns, R);
+            return R[0, 0];
+        } 
+
+
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="Flds">
@@ -65,9 +103,9 @@ namespace BoSSS.Solution.Statistic {
         ///  - 2nd index: spatial dimension/direction
         /// </param>
         /// <param name="Result">
-        /// result of the evaluation of the DG fields <paramref name="Flds"/> at points <paramref name="Points"/>.<br/>
-        ///  - 1st index: point index, from 0 (including) to <em>N</em> (excluding)<br/>
-        ///  - 2nd index: DG field, from 0 (including) to <em>M</em> (excluding).<br/>
+        /// result of the evaluation of the DG fields <paramref name="Flds"/> at points <paramref name="Points"/>.
+        ///  - 1st index: point index, from 0 (including) to <em>N</em> (excluding)
+        ///  - 2nd index: DG field, from 0 (including) to <em>M</em> (excluding).
         /// the result will be accumulated.
         /// </param>
         /// <param name="UnlocatedPoints">

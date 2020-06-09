@@ -22,8 +22,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
 using MathNet.Numerics.IntegralTransforms;
-using MathNet.Numerics.IntegralTransforms.Algorithms;
-using MathNet.Numerics.Interpolation.Algorithms;
 using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Platform;
@@ -387,7 +385,9 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
                 for (int sp = 0; sp < numFp; sp++) {
                     samplP_complex[sp] = (Complex)samplP_change[sp];
                 }
-                Complex[] DFTchange = DFT.NaiveForward(samplP_complex, FourierOptions.Matlab);
+                //Complex[] DFTchange = DFT.NaiveForward(samplP_complex, FourierOptions.Matlab);
+                Complex[] DFTchange = samplP_complex; samplP_complex = null;
+                Fourier.Forward(DFTchange, FourierOptions.Matlab);
                 double[] DFTchange_double = new double[2 * numFp + 2];
                 DFTchange_double[0] = VelocityAtCenter[0, 0];
                 DFTchange_double[1] = VelocityAtCenter[0, 1];
