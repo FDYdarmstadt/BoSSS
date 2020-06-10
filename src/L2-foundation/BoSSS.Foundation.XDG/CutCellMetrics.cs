@@ -29,10 +29,31 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.XDG {
 
 
+    public interface ICutCellMetrics {
+        /// <summary>
+        /// Quadrature order used to obtain the metrics
+        /// </summary>
+        int CutCellQuadratureOrder { get; }
+
+        /// <summary>
+        /// available species
+        /// </summary>
+        IEnumerable<SpeciesId> SpeciesList { get; }
+
+
+        /// <summary>
+        /// Volume of non-agglomerated cut cells.
+        /// - key: species
+        /// - index: cell index
+        /// </summary>
+        Dictionary<SpeciesId, MultidimensionalArray> CutCellVolumes { get; }
+    }
+
+
     /// <summary>
     /// HMF-based computation of cut-cell volumes and cut-edge areas.
     /// </summary>
-    public class CutCellMetrics {
+    public class CutCellMetrics : ICutCellMetrics {
 
         /// <summary>
         /// owner object.
@@ -106,6 +127,10 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
+
+
+
+
 
         /// <summary>
         /// Computes Cell-volumes and edge areas before agglomeration.

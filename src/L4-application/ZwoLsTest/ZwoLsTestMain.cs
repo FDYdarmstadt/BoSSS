@@ -326,8 +326,14 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
         void TestLengthScales(int quadOrder, int TimestepNo) {
-            var species = new[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B") };
+            var spcA = LsTrk.GetSpeciesId("A");
+            var spcB = LsTrk.GetSpeciesId("B");
+
+            var species = new[] { spcA, spcB };
             MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
+
+            var nixAgg = Agg.NonAgglomeratedMetrics;
+
 
             /*
             foreach(var SpeciesID in AllSpc) {
@@ -345,37 +351,43 @@ namespace BoSSS.Application.ZwoLsTest {
             }
             */
 
+            MultidimensionalArray CellSurfaceA = Agg.CellSurface[spcA];
+            MultidimensionalArray CellVolumeA = Agg.CutCellVolumes[spcA];
+            MultidimensionalArray CellSurfaceB = Agg.CellSurface[spcB];
+            MultidimensionalArray CellVolumeB = Agg.CutCellVolumes[spcB];
+
+
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
 
-            /*
-            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
-                SpeciesId spc = species[iSpc];
+            string FileName = $"AgglomeratedLengthScales-t{TimestepNo}-alpha{this.THRESHOLD}-p{this.DEGREE}.csv";
+            var Checker = new TestingUtils(this.GridData, FileName, 1);
+            Checker.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
+            Checker.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
+            Checker.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
+            Checker.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
+            Checker.AddDGField(this.Phi0);
+            Checker.DoIOnow();
 
-                CellMask CellMask = LsTrk.Regions.GetSpeciesMask(spc);
+            if(this.MPISize == 1) {
+                var Checker2 = new TestingUtils(this.GridData, FileName, 1);
+                Checker2.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
+                Checker2.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
+                Checker2.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
+                Checker2.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
+                Checker2.AddDGField(this.Phi0);
+                Checker2.DoIOnow();
 
-                // Vector: GlobalID --> Werte
-                MultidimensionalArray CellSurface = Agg.CellSurface[spc];
-                MultidimensionalArray CellVolume = Agg.CellVolume[spc];
-                MultidimensionalArray CellLengthScales = Agg.CellLengthScales[spc];
-
-                CellSurface.CheckForNanOrInf(true, true, true);
-                CellVolume.CheckForNanOrInf(true, true, true);
-
-                string fileName = "T" + TimestepNo +"_Spc_" + LsTrk.GetSpeciesName(spc) + "_Rank_" + rank;
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-                if(MpiSize > 1) {
-                    fileName = "N_" + fileName;
-                } else {
-                    fileName = "SINGLE_CORE_" + fileName;
+                foreach(string s in Checker2.ColumnNames) {
+                    Assert.Less(Checker2.RelError(s), 1.0e-10, "'TestingUtils.Compare' itself is fucked up.");
                 }
-                fileName = fileName + ".txt";
-
-                CellMask.SaveToTextFile(fileName, false,
-                    delegate (double[] x, int jL, int iG) { return CellSurface[jL]; },
-                    delegate (double[] x, int jL, int iG) { return CellVolume[jL]; },
-                    delegate (double[] x, int jL, int iG) { return CellLengthScales[jL]; });
             }
-            */
+
+
+            Assert.Less(Checker.RelError("CellSurfA"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell surface area for species A between single-core and parallel run.");
+            Assert.Less(Checker.RelError("CellVolA"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell volume area for species B between single-core and parallel run.");
+            Assert.Less(Checker.RelError("CellSurfB"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell surface area for species A between single-core and parallel run.");
+            Assert.Less(Checker.RelError("CellVolB"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell volume area for species B between single-core and parallel run.");
+
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -404,7 +416,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             }
 
-
+            
             
 
             // operator matrix assembly

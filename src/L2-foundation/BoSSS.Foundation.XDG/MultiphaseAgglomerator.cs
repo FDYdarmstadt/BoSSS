@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// algebraic cell agglomeration to avoid small cut-cells;
     /// </summary>
-    public class MultiphaseCellAgglomerator {
+    public class MultiphaseCellAgglomerator : ICutCellMetrics {
 
         /// <summary>
         /// number of agglomerations in all species
@@ -592,7 +592,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The volume of agglomerated cut cells.
         /// </summary>
-        public Dictionary<SpeciesId, MultidimensionalArray> CellVolume {
+        public Dictionary<SpeciesId, MultidimensionalArray> CutCellVolumes {
             private set;
             get;
         }
@@ -605,6 +605,8 @@ namespace BoSSS.Foundation.XDG {
             get;
         }
 
+        static int Counter = 0;
+        static public Action<LevelSet, LevelSet, int> Plot;
 
         /// <summary>
         /// Initializes <see cref="CellLengthScales"/>.
@@ -615,6 +617,7 @@ namespace BoSSS.Foundation.XDG {
             int J = this.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
             int JE = this.Tracker.GridDat.Cells.Count;
             int[][] C2E = this.Tracker.GridDat.Cells.Cells2Edges;
+
 
             var CellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length, 2); // 1st index: cell, 2nd index: species, 3rd index: [surface, volume]
             var CellVolumeFracMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
@@ -631,6 +634,7 @@ namespace BoSSS.Foundation.XDG {
                 CellSurface.Set(this.NonAgglomeratedMetrics.InterfaceArea[spc]);
                 CellVolume.Set(this.NonAgglomeratedMetrics.CutCellVolumes[spc]);
                 CellVolume2.Set(this.NonAgglomeratedMetrics.CutCellVolumes[spc]);
+
 
                 MultidimensionalArray EdgeArea = this.NonAgglomeratedMetrics.CutEdgeAreas[spc];
 
@@ -653,6 +657,55 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
                 }
+
+                /*
+                {
+                    if(iSpc == 0)
+                        Counter++;
+                    Console.WriteLine("comparison run " + Counter);
+                    
+                    var orgCellVol = this.NonAgglomeratedMetrics.CutCellVolumes[spc];
+                    var orgInterfs = this.NonAgglomeratedMetrics.InterfaceArea[spc];
+
+                    LevelSet ls0 = this.Tracker.LevelSets[0] as LevelSet;
+                    LevelSet ls1 = this.Tracker.LevelSets[1] as LevelSet;
+
+                    var Checker = new TestingUtils(this.Tracker.GridDat, $"NonaggLengthScales-Spc{this.Tracker.GetSpeciesName(spc)}-run{Counter}.csv", 1);
+
+                    Checker.AddColumn("NonaggCellSurface", (double[] X, int j, int jG) => CellSurface[j]);
+                    Checker.AddColumn("NonaggCellVol", (double[] X, int j, int jG) => orgCellVol[j]);
+                    Checker.AddColumn("NonaggLevset", (double[] X, int j, int jG) => orgInterfs[j]);
+                    Checker.AddColumn("Levset0Dist", delegate (double[] X, int j, int jG) {
+                        double d = this.Tracker.Regions.GetLevelSetDistance(0, j);
+                        return d;
+                    });
+                    Checker.AddColumn("Levset1Dist", delegate (double[] X, int j, int jG) {
+                        double d = this.Tracker.Regions.GetLevelSetDistance(1, j);
+                        return d;
+                    });
+                    Checker.AddColumn("Levset0meanval", delegate (double[] X, int j, int jG) {
+                        double d = this.Tracker.Regions.GetLevelSetDistance(0, j) == 0 ? ls0.GetMeanValue(j) : 0.0;
+                        return d;
+                    });
+                    Checker.AddColumn("Levset1meanval", delegate (double[] X, int j, int jG) {
+                        double d = this.Tracker.Regions.GetLevelSetDistance(1, j) == 0 ? ls1.GetMeanValue(j) : 0.0;
+                        return d;
+                    });
+
+
+                    Checker.DoIOnow();
+
+                    Console.WriteLine($"------- Nonagg Cell Surface Error:   " + Checker.AbsError("NonaggCellSurface"));
+                    Console.WriteLine($"------- Nonagg Cell Volume Error:    " + Checker.AbsError("NonaggCellVol"));
+                    Console.WriteLine($"------- Nonagg Cell Interface Error: " + Checker.AbsError("NonaggLevset"));
+                    Console.WriteLine($"------- Level Set 0 Dist Error:      " + Checker.AbsError("Levset0Dist"));
+                    Console.WriteLine($"------- Level Set 1 Dist Error:      " + Checker.AbsError("Levset1Dist"));
+                    Console.WriteLine($"------- Level Set 0 Cell Mean Error: " + Checker.AbsError("Levset0meanval"));
+                    Console.WriteLine($"------- Level Set 1 Cell Mean Error: " + Checker.AbsError("Levset1meanval"));
+
+             
+                }
+                */
             }
 
             // MPI exchange
@@ -662,7 +715,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             var AggCellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
-            for (int iSpc = 0; iSpc < species.Length; iSpc++) {
+            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];
                 var agginfo = this.GetAgglomerator(spc).AggInfo;
 
@@ -672,7 +725,7 @@ namespace BoSSS.Foundation.XDG {
                 MultidimensionalArray CellVolume2 = CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc);
 
                 // sum agglomeration sources to targets
-                foreach (var agg_pair in agginfo.AgglomerationPairs) {
+                foreach(var agg_pair in agginfo.AgglomerationPairs) {
                     CellSurface[agg_pair.jCellTarget] += CellSurface[agg_pair.jCellSource];
                     CellVolume[agg_pair.jCellTarget] += CellVolume[agg_pair.jCellSource];
                 }
@@ -680,45 +733,65 @@ namespace BoSSS.Foundation.XDG {
                 MultidimensionalArray LengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
 
                 // Loop includes external cells
-                for (int j = 0; j < JE; j++) {
+                for(int j = 0; j < JE; j++) {
                     LengthScales[j] = CellVolume[j] / CellSurface[j];
                     CellVolume2[j] = CellVolume2[j] / this.Tracker.GridDat.Cells.GetCellVolume(j);
                 }
 
                 // set values in agglomeration sources to be equal to agglomeration targets
-                foreach (var agg_pair in agginfo.AgglomerationPairs) {
+                foreach(var agg_pair in agginfo.AgglomerationPairs) {
                     LengthScales[agg_pair.jCellSource] = LengthScales[agg_pair.jCellTarget];
                     CellVolume2[agg_pair.jCellSource] = CellVolume2[agg_pair.jCellTarget];
                 }
 
-                if (this.AgglomerationThreshold <= 0.0) {
+                if(this.AgglomerationThreshold <= 0.0) {
                     // special treatment for no agglomeration -- which is anyway not recommended at all
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                     CellMask spcDom = this.Tracker.Regions.GetSpeciesMask(spc);
 
-                    foreach (int j in spcDom.ItemEnum) {
+                    foreach(int j in spcDom.ItemEnum) {
 
                         double unCut = this.Tracker.GridDat.Cells.GetCellVolume(j);
                         double Fraction = CellVolume[j] / unCut;
 
-                        if (Fraction <= 1.0e-10)
+                        if(Fraction <= 1.0e-10)
                             LengthScales[j] = 1e10;
                     }
                 }
 
+                /*
+                var Err = TestingUtils.Compare(this.Tracker.GridDat, $"AgglomeratedLengthScales-Spc{this.Tracker.GetSpeciesName(spc)}-run{Counter}.csv",
+                   1, $"AgglomeratedLengthScales-Spc{this.Tracker.GetSpeciesName(spc)}-comp-run{Counter}.csv",
+                   (double[] X, int j, int jG) => CellSurface[j],
+                   (double[] X, int j, int jG) => CellVolume[j]
+               );
 
+                Console.WriteLine($"------- Cell Surface Error: " + Err.AbsL2Errors[0]);
+                Console.WriteLine($"------- Cell Volume Error: " + Err.AbsL2Errors[1]);
+                */
+            }
+
+            Plot(this.Tracker.LevelSets[0] as LevelSet, this.Tracker.LevelSets[1] as LevelSet, Counter);
+
+            /*
 #if DEBUG
+            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                SpeciesId spc = species[iSpc];
                 foreach (int jCell in this.Tracker.Regions.GetSpeciesMask(spc).ItemEnum) {
                     Debug.Assert(!(double.IsNaN(LengthScales[jCell]) || double.IsInfinity(LengthScales[jCell])));
                 }
 
-#endif
 
+               
             }
-
+#endif
+*/
             // MPI exchange -> Is it really needed now???
             AggCellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
+
+
+            
 
             /*
             #region Test code for Florian
@@ -757,13 +830,13 @@ namespace BoSSS.Foundation.XDG {
             this.CellLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
-            this.CellVolume = new Dictionary<SpeciesId, MultidimensionalArray>();
+            this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
             for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];
                 this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
                 this.CellVolumeFrac.Add(spc, CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
                 this.CellSurface.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
-                this.CellVolume.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
+                this.CutCellVolumes.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
             }
         }
 

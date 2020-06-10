@@ -31,7 +31,9 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Writes a 'table' in a csv format to a file named <paramref name="filename"/>.
         /// </summary>
-        public static void SaveToCSVFile(this IDictionary<string, System.Collections.IEnumerable> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true) {
+        public static void SaveToCSVFile<T>(this IDictionary<string, T> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true)
+            where T : System.Collections.IEnumerable //    
+        {
             using(var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
                 WriteCSVToStream(table, txt, ColSep, writeHeader);
                 txt.Flush();
@@ -142,15 +144,14 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Writes a 'table' in a csv format to a stream <paramref name="txt"/>.
         /// </summary>
-        public static void WriteCSVToStream(this IDictionary<string, System.Collections.IEnumerable> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true) {
+        public static void WriteCSVToStream<T>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
+            where T : System.Collections.IEnumerable //
+        {
             string[] cols = table.Keys.ToArray();
             if(cols.Length <= 0)
                 return;
 
-            int[] a= null;
-            a.Count();
-
-
+      
             int L = table[cols[0]].Count();
 
             foreach(var kv in table) {

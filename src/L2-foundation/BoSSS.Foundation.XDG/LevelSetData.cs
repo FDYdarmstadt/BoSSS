@@ -66,6 +66,21 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
+            /// returns the distance layer index for level-set <paramref name="levSetInd"/>,
+            /// see also <see cref="DecodeLevelSetDist(ushort, int)"/>, <see cref="RegionsCode"/>.
+            /// </summary>
+            /// <param name="levSetIdx"></param>
+            /// <param name="jCell"></param>
+            /// <returns></returns>
+            public int GetLevelSetDistance(int levSetIdx, int jCell) {
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
+                    throw new IndexOutOfRangeException();
+                ushort code = m_LevSetRegions[jCell];
+                return LevelSetTracker.DecodeLevelSetDist(code, levSetIdx);
+            }
+
+
+            /// <summary>
             /// A color map for each species; a color is a positive integer. Each topologically, simply connected part
             /// of a species is painted in a unique color. 
             /// - key: species ID
