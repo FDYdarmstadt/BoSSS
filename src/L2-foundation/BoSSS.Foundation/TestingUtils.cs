@@ -66,15 +66,13 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="__CSVfile"><see cref="CSVFile"/></param>
-        /// <param name="__g"></param>
-        public TestingUtils(IGridData __g, string __CSVfile, int _ReferenceMPISize) {
-            if(_ReferenceMPISize < 1)
+        public TestingUtils(IGridData __g, string __CSVfile, int __ReferenceMPISize = 1) {
+            if(__ReferenceMPISize < 1)
                 throw new ArgumentOutOfRangeException();
 
             CSVfile = __CSVfile;
             GridDat = __g;
-            this.ReferenceMPISize = _ReferenceMPISize;
+            this.ReferenceMPISize = __ReferenceMPISize;
             Setup();
         }
 
@@ -224,6 +222,22 @@ namespace BoSSS.Foundation {
                     throw new ArgumentException("Mismatch in cell center coordinates.");
             }
         }
+
+        /// <summary>
+        /// Absolute L2 for DG fields
+        /// </summary>
+        public double AbsError(ConventionalDGField f) {
+            if(GridDat.MpiSize == ReferenceMPISize)
+                return 0.0;
+
+            var err = f.CloneAs();
+            OverwriteDGField(err);
+            err.Acc(-1.0, f);
+
+            return err.L2Norm();
+        }
+
+
 
         /// <summary>
         /// Absolute L2 error between columns
@@ -438,9 +452,12 @@ namespace BoSSS.Foundation {
             if(N != N1)
                 throw new ArgumentException("DG degree seems different");
 
+            int J = this.GridDat.CellPartitioning.LocalLength;
+
             for(int n = 0; n < N; n++) {
-                var col = m_CurrentData[ColName_DGfield(f, n)];
-                f.Coordinates.SetColumn(n, col);
+                var col = ReferenceData[ColName_DGfield(f, n)];
+                for(int j = 0; j < J; j++)
+                    f.Coordinates[j, n] = col[j];
             }
         }
 

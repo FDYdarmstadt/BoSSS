@@ -179,22 +179,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            //var fullCel = CellMask.GetFullMask(this.Tracker.GridDat);
-            //var fullEdg = EdgeMask.GetFullMask(this.Tracker.GridDat);
-
-            //foreach (string spc in new string[] { "A", "B" }) {
-            //    SpeciesId spId = this.Tracker.GetSpeciesId(spc);
-
-            //    var Vol = this.NonAgglomeratedMetrics.CutCellVolumes[spId];
-            //    var Edg = this.NonAgglomeratedMetrics.CutEdgeAreas[spId];
-
-
-            //    fullCel.ToTxtFile("CellVol-" + spc + ".csv", false, ((double[] CoordGlobal, int ItemIndex) => Vol[ItemIndex]));
-            //    fullEdg.ToTxtFile("EdgeArea-" + spc + ".csv", false, ((double[] CoordGlobal, int ItemIndex) => Edg[ItemIndex]));
-            //}
-
-
-
+ 
             // perform agglomeration
             foreach (var spc in this.SpeciesList) {
                 IEnumerable<Tuple<int, int>> ai = FindAgglomeration(
@@ -705,7 +690,7 @@ namespace BoSSS.Foundation.XDG {
 
              
                 }
-                */
+                //*/
             }
 
             // MPI exchange
