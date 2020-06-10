@@ -606,7 +606,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         static int Counter = 0;
-        static public Action<LevelSet, LevelSet, int> Plot;
+        //static public Action<LevelSet, LevelSet, int> Plot;
 
         /// <summary>
         /// Initializes <see cref="CellLengthScales"/>.
@@ -772,7 +772,7 @@ namespace BoSSS.Foundation.XDG {
                 */
             }
 
-            Plot(this.Tracker.LevelSets[0] as LevelSet, this.Tracker.LevelSets[1] as LevelSet, Counter);
+            //Plot(this.Tracker.LevelSets[0] as LevelSet, this.Tracker.LevelSets[1] as LevelSet, Counter);
 
             /*
 #if DEBUG

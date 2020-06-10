@@ -66,13 +66,13 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="_CSVfile"><see cref="CSVFile"/></param>
+        /// <param name="__CSVfile"><see cref="CSVFile"/></param>
         /// <param name="__g"></param>
-        public TestingUtils(IGridData __g, string _CSVfile, int _ReferenceMPISize) {
+        public TestingUtils(IGridData __g, string __CSVfile, int _ReferenceMPISize) {
             if(_ReferenceMPISize < 1)
                 throw new ArgumentOutOfRangeException();
 
-            CSVfile = CSVfile;
+            CSVfile = __CSVfile;
             GridDat = __g;
             this.ReferenceMPISize = _ReferenceMPISize;
             Setup();
@@ -526,12 +526,13 @@ namespace BoSSS.Foundation {
         /// <param name="SortedDataColumns">Data, sorted according to GlobalId, at rank 0</param>
         /// <param name="G"></param>
         static public double[][] ScatterSortedData(IGridData G, double[][] SortedDataColumns) {
-
+            //Debugger.Launch();
             int Jglob = G.CellPartitioning.TotalLength;
             int Jloc = G.CellPartitioning.LocalLength;
             int MPIrank = G.MpiRank;
             MPI_Comm comm = G.CellPartitioning.MPI_Comm;
-            int NoOfColumns = SortedDataColumns.Length.MPIBroadcast(0);
+            int NoOfColumns = MPIrank == 0 ? SortedDataColumns.Length : 0;
+            NoOfColumns = NoOfColumns.MPIBroadcast(0);
 
 
             if(MPIrank == 0) {
@@ -576,7 +577,7 @@ namespace BoSSS.Foundation {
                     Check = new long[0];
 
                 long[] Resort = new long[Jloc];
-                Resorting.ApplyToVector(Check, Resort);
+                Resorting.ApplyToVector(Check, Resort, G.CellPartitioning);
 
                 for(int j = 0; j < Jloc; j++) {
                     if(Resort[j] != G.CurrentGlobalIdPermutation.Values[j])
@@ -592,7 +593,7 @@ namespace BoSSS.Foundation {
             for(int iCol = 0; iCol < NoOfColumns; iCol++) {
                 RetColunms[iCol] = new double[Jloc];
 
-                Resorting.ApplyToVector(SortedDataColumns[iCol], RetColunms[iCol]);
+                Resorting.ApplyToVector(SortedDataColumns[iCol], RetColunms[iCol], G.CellPartitioning);
 
             }
 
