@@ -70,6 +70,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// path to deploy directory
+        /// </summary>
+        string DeployPath {
+            get;
+        }
+
+        /// <summary>
         /// Names of compute nodes on which the session is running; Index: MPI rank index in the
         /// MPI_COMM_WORLD communicator;
         /// </summary>

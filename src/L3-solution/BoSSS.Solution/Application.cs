@@ -1327,6 +1327,9 @@ namespace BoSSS.Solution {
                 // set master git commit
                 CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
 
+                // set deploy directory path
+                CurrentSessionInfo.DeployPath = typeof(BoSSS.Solution.Application).Assembly.Location;
+
                 // set computeNode - names:
                 CurrentSessionInfo.ComputeNodeNames.Clear();
                 CurrentSessionInfo.ComputeNodeNames.AddRange(ilPSP.Environment.MPIEnv.HostnameForRank); 

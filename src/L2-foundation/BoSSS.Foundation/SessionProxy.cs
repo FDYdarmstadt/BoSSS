@@ -169,6 +169,15 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public string DeployPath {
+            get {
+                return RealSessionInfo.DeployPath;
+            }
+        }
+
+        /// <summary>
         /// See <see cref="SessionInfo.GetGrids"/>
         /// </summary>
         public IEnumerable<IGridInfo> GetGrids() {
@@ -344,6 +353,15 @@ namespace BoSSS.Foundation.IO {
                 }
                 set {
                     //nop
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string DeployPath {
+                get {
+                    return "";
                 }
             }
 
