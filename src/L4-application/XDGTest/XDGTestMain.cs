@@ -34,17 +34,30 @@ using ilPSP;
 
 namespace BoSSS.Application.XDGTest {
 
+    public class XDGTestControl : BoSSS.Solution.Control.AppControl {
+
+        public XDGTestControl() {
+            SetDGdegree(2);
+        }
+
+
+        public override void SetDGdegree(int p) {
+            base.FieldOptions.Clear();
+            base.AddFieldOption("Pressure", p, Solution.Control.FieldOpts.SaveToDBOpt.TRUE);
+            base.AddFieldOption("Phi", Math.Max(2, p), Solution.Control.FieldOpts.SaveToDBOpt.TRUE);
+        }
+    }
+
+
     /// <summary>
     /// Some basic tests for the XDG framework, e.g. DG projection and extrapolation under level-set movement
     /// </summary>
-    class XDGTestMain : BoSSS.Solution.Application {
+    class XDGTestMain : BoSSS.Solution.Application<XDGTestControl> {
         static void Main(string[] args) {
-            
-            BoSSS.Solution.Application._Main(args, true, delegate() {
-                var p = new XDGTestMain();
-                //p.passiveIo = true;
-                return p;
-            });
+            InitMPI();
+            DeleteOldPlotFiles();
+            UnitTest.AllUp();
+            FinalizeMPI();
         }
 
         /// <summary>
@@ -58,29 +71,13 @@ namespace BoSSS.Application.XDGTest {
         LevelSet LevSet;
 
         protected override void CreateFields() {
-            this.LevSet = new LevelSet(new Basis(this.GridData, 2), "Phi");
+            this.LevSet = new LevelSet(new Basis(this.GridData, Control.FieldOptions["Phi"].Degree), "Phi");
             this.LsTrk = new LevelSetTracker((GridData) this.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
-            Pressure = new XDGField(new XDGBasis(this.LsTrk, 2), "Pressure");
+            Pressure = new XDGField(new XDGBasis(this.LsTrk, Control.FieldOptions["Pressure"].Degree), "Pressure");
+            IOFields.Add(this.LevSet);
+            IOFields.Add(this.Pressure);
         }
 
-        protected override IGrid CreateOrLoadGrid() {
-            var xNodes = GenericBlas.Linspace(-0.33333, 0.666667, 7);
-            //var yNodes = GenericBlas.Linspace(-1, 1, 2);
-            //var xNodes = GenericBlas.Linspace(-2, 2, 25);
-            var yNodes = GenericBlas.Linspace(-1, 1, 13);
-            var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-            return grd;
-        }
-
-        protected override void SetInitial() {
-            //this.LevSet.ProjectField((_2D)((x, y) => (x - 0.1)));
-            this.LevSet.ProjectField((_2D)((x, y) => ((x - 0.83) / 0.8).Pow2() + (y / 0.8).Pow2() - 1.0));
-            this.LsTrk.UpdateTracker();
-            this.LsTrk.PushStacks();
-            this.Pressure.ProjectField((_2D)((x, y) => 1 - y * y));
-
-            //PlotCurrentState(0, 0, 3);
-        }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
@@ -89,8 +86,7 @@ namespace BoSSS.Application.XDGTest {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
-            dt = 1.0;
-            base.NoOfTimesteps = 1;
+            dt = Control.dtFixed;
 
             Console.WriteLine("Timestep #{0}, dt = {1} ...", TimestepNo, dt);
 
@@ -104,15 +100,13 @@ namespace BoSSS.Application.XDGTest {
 
 
             var RefPressure = new XDGField(this.Pressure.Basis);
-            RefPressure.ProjectField((_2D)((x, y) => 1 - y * y));
+            RefPressure.GetSpeciesShadowField("A").ProjectField((_2D)((x, y) => 2 + 0.3* x * y));
+            RefPressure.GetSpeciesShadowField("B").ProjectField((_2D)((x, y) => 1 - y * y));
             RefPressure.Acc(-1.0, Pressure);
 
             AutoExtrapolationErr = RefPressure.L2Norm();
             Console.WriteLine("Error of extrapolation: " + AutoExtrapolationErr);
 
-
-
-           // PlotCurrentState(phystime + dt, TimestepNo);
 
 
             Console.WriteLine("done.");

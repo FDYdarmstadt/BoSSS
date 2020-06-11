@@ -1421,6 +1421,8 @@ namespace BoSSS.Solution {
                 if (this.Control != null) {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
+                    if (this.Control.GridFunc == null && this.Control.GridGuid == Guid.Empty)
+                        throw new ApplicationException("Control object error: No grid specified -- either 'AppControl.GridFunc' or 'AppControl.GridGuid' must be specified.");
 
                     if (this.Control.GridFunc != null) {
                         var g = this.Control.GridFunc();

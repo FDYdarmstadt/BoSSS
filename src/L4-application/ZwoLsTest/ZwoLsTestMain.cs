@@ -360,7 +360,7 @@ namespace BoSSS.Application.ZwoLsTest {
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
 
             string FileName = $"AgglomeratedLengthScales-t{TimestepNo}-alpha{this.THRESHOLD}-p{this.DEGREE}.csv";
-            var Checker = new TestingUtils(this.GridData, FileName, 1);
+            var Checker = new TestingIO(this.GridData, FileName, 1);
             Checker.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
             Checker.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
             Checker.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
@@ -369,7 +369,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Checker.DoIOnow();
 
             if(this.MPISize == 1) {
-                var Checker2 = new TestingUtils(this.GridData, FileName, 2);
+                var Checker2 = new TestingIO(this.GridData, FileName, 2);
                 Checker2.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
                 Checker2.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
                 Checker2.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);

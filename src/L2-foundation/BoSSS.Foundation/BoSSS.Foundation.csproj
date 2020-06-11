@@ -212,7 +212,7 @@
     <Compile Include="StandardDoubleEdgeRuleFactory.cs" />
     <Compile Include="StandardFsDriver.cs" />
     <Compile Include="SubGrid.cs" />
-    <Compile Include="TestingUtils.cs" />
+    <Compile Include="TestingIO.cs" />
     <Compile Include="Tetra.cs" />
     <Compile Include="TimestepInfo.cs" />
     <Compile Include="TimestepNumber.cs" />

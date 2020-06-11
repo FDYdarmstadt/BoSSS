@@ -19,7 +19,7 @@ namespace BoSSS.Foundation {
     /// Utility class for testing: Enables the comparison of calculations with different number of MPI cores, 
     /// typically the comparison of a single-core vs. a parallel run, without using a BoSSS database
     /// </summary>
-    public class TestingUtils {
+    public class TestingIO {
         /// <summary>
         /// Data file.
         /// </summary>
@@ -66,7 +66,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// 
         /// </summary>
-        public TestingUtils(IGridData __g, string __CSVfile, int __ReferenceMPISize = 1) {
+        public TestingIO(IGridData __g, string __CSVfile, int __ReferenceMPISize = 1) {
             if(__ReferenceMPISize < 1)
                 throw new ArgumentOutOfRangeException();
 
