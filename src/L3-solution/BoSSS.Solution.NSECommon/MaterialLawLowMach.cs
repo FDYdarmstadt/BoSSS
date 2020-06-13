@@ -129,7 +129,7 @@ namespace BoSSS.Solution.NSECommon {
                 double rho = 1.0;
 
                 if (rhoOne) {
-                    rho = 1;
+                    rho = 1.0;
                     return rho;
                 } else {
                     if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    

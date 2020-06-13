@@ -456,7 +456,7 @@ namespace BoSSS.Solution.NSECommon {
         int NumberOfReactants;
         int argumentIndex;
 
-        double LaxFriedrichsSchemeSwitch = 0.0;
+        double LaxFriedrichsSchemeSwitch = 1.0;
 
         string[] m_ArgumentOrdering;
         string[] m_ParameterOrdering;
