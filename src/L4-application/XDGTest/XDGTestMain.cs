@@ -31,6 +31,7 @@ using BoSSS.Solution.Utils;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using NUnit.Framework;
 
 namespace BoSSS.Application.XDGTest {
 
@@ -56,7 +57,8 @@ namespace BoSSS.Application.XDGTest {
         static void Main(string[] args) {
             InitMPI();
             DeleteOldPlotFiles();
-            UnitTest.AllUp();
+            //UnitTest.AllUp();
+            UnitTest.RestartTest();
             FinalizeMPI();
         }
 
@@ -70,14 +72,43 @@ namespace BoSSS.Application.XDGTest {
         /// </summary>
         LevelSet LevSet;
 
+
+        /// <summary>
+        /// marks all cells which contain species A
+        /// </summary>
+        SinglePhaseField Amarker;
+
+        /// <summary>
+        /// marks all cells which contain species B
+        /// </summary>
+        SinglePhaseField Bmarker;
+
+        static public double PressureExactA(double[] X) {
+            return 2 + 0.3 * X[0] * X[1];
+        }
+        static public double PressureExactB(double[] X) {
+            return 1 - X[1].Pow2();
+        }
+
+        static public double Phi(double[] X, double x0) {
+            return ((X[0] - 0.83 - x0) / 0.8).Pow2() + (X[1] / 0.8).Pow2() - 1.0;
+        }
+        static public double Phi0(double[] X) {
+            return Phi(X, 0.0);
+        }
+
+
         protected override void CreateFields() {
             this.LevSet = new LevelSet(new Basis(this.GridData, Control.FieldOptions["Phi"].Degree), "Phi");
             this.LsTrk = new LevelSetTracker((GridData) this.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
             Pressure = new XDGField(new XDGBasis(this.LsTrk, Control.FieldOptions["Pressure"].Degree), "Pressure");
             IOFields.Add(this.LevSet);
             IOFields.Add(this.Pressure);
+            Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "SpeciesA");
+            Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "SpeciesB");
         }
 
+        protected override int BurstSave => 2;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
@@ -88,25 +119,37 @@ namespace BoSSS.Application.XDGTest {
 
             dt = Control.dtFixed;
 
+          
             Console.WriteLine("Timestep #{0}, dt = {1} ...", TimestepNo, dt);
+
+            // advance level-set
+            // -----------------
+
+            double x0 = 0.17 * (phystime + dt);
+            this.Pressure.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+            this.LevSet.ProjectField((_2D)((x, y) => Phi(new[] { x, y }, x0)));
+            this.LsTrk.PushStacks();
+            this.LsTrk.UpdateTracker();
+
+
+            // update markers
+            // --------------
+            this.Amarker.Clear();
+            this.Bmarker.Clear();
+            this.Amarker.AccConstant(1.0, this.LsTrk.Regions.GetSpeciesMask("A"));
+            this.Bmarker.AccConstant(1.0, this.LsTrk.Regions.GetSpeciesMask("B"));
 
             // test the auto-extrapolation
             // ---------------------------
 
-            double x0 = 0.17 * (phystime + dt);
-            this.Pressure.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
-            this.LevSet.ProjectField((_2D)((x, y) => ((x - 0.83 - x0) / 0.8).Pow2() + (y / 0.8).Pow2() - 1.0));
-            this.LsTrk.UpdateTracker();
-
-
             var RefPressure = new XDGField(this.Pressure.Basis);
-            RefPressure.GetSpeciesShadowField("A").ProjectField((_2D)((x, y) => 2 + 0.3* x * y));
-            RefPressure.GetSpeciesShadowField("B").ProjectField((_2D)((x, y) => 1 - y * y));
+            RefPressure.GetSpeciesShadowField("A").ProjectField(PressureExactA);
+            RefPressure.GetSpeciesShadowField("B").ProjectField(PressureExactB);
             RefPressure.Acc(-1.0, Pressure);
 
             AutoExtrapolationErr = RefPressure.L2Norm();
             Console.WriteLine("Error of extrapolation: " + AutoExtrapolationErr);
-
+            Assert.LessOrEqual(AutoExtrapolationErr, 1.0e-8, "Error after auto-extrapolation to high.");
 
 
             Console.WriteLine("done.");
@@ -116,7 +159,7 @@ namespace BoSSS.Application.XDGTest {
 
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.PlotFields(new DGField[] { this.Pressure, this.LevSet }, "XNSE_prj" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(new DGField[] { this.Pressure, this.LevSet, this.Amarker, this.Bmarker }, "XNSE_prj" + timestepNo, physTime, superSampling);
         }
 
 

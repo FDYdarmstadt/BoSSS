@@ -755,10 +755,12 @@ namespace BoSSS.Solution.Control {
         public int saveperiod = 1;
 
         /// <summary>
-        /// A number of previous timesteps which are always saved in case of a simulation crash.
+        /// Intended for restart simulations after a crash:
+        /// Causes the currently completed time step to always be saved;
+        /// It will be deleted if it is not at the <see cref="saveperiod"/> and a newer timestep is available.
         /// </summary>
         [DataMember]
-        public int rollingSaves = 0;
+        public bool rollingSaves = false;
 
 
 
