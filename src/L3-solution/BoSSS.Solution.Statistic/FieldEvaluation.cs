@@ -183,15 +183,7 @@ namespace BoSSS.Solution.Statistic {
 
                 // try to evaluate the so-far-unlocalized points
                 // ---------------------------------------------
-                //BoundingBox bb = null;
-                //if(LL > 0) {
-                //    bb = new BoundingBox(globalUnlocated);
-
-                //    globalUnlocated.SaveToTextFile("unlocated-r" + m_Context.MpiRank + ".csv");
-                //}
-               
-
-
+           
                 var unlocated2 = new System.Collections.BitArray(LL);
                 var Result2 = LL > 0 ? MultidimensionalArray.Create(LL, Flds.Count()) : null;
                 int NoOfUnlocated2 = LL > 0 ? this.Evaluate(1.0, Flds, globalUnlocated, 0.0, Result2, unlocated2) : 0;
