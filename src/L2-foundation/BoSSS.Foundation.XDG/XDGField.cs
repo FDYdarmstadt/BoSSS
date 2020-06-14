@@ -1279,7 +1279,7 @@ namespace BoSSS.Foundation.XDG {
 
                 if((newTrackerPushCount - oldTrackerPushCount) != 1) {
                     string message = $"The update behavior {BehaveUnder_LevSetMoovement.PreserveMemory} and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call.";
-                    Console.WriteLine("message");
+                    Console.WriteLine(message);
                     //throw new NotSupportedException(message);
                 }
 

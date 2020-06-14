@@ -25,6 +25,10 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Platform.Utils.Geom;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using ilPSP.Tracing;
+using MPI.Wrappers;
+using System.Diagnostics;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.Statistic {
     /// <summary>
@@ -87,8 +91,166 @@ namespace BoSSS.Solution.Statistic {
             var R = MultidimensionalArray.Create(1, 1);
             F.Evaluate(j, 1, ns, R);
             return R[0, 0];
-        } 
+        }
 
+        /// <summary>
+        /// Like <see cref="Evaluate(double, IEnumerable{DGField}, MultidimensionalArray, double, MultidimensionalArray, BitArray, int[])"/>,
+        /// but with MPI-Exchange
+        /// </summary>
+        public int EvaluateParallel(double alpha, IEnumerable<DGField> Flds, MultidimensionalArray Points, double beta, MultidimensionalArray Result, BitArray UnlocatedPoints = null) {
+            using(new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                
+
+                int L = Points != null ? Points.NoOfRows : 0;
+                int MPIsize = m_Context.MpiSize;
+                int D = m_Context.SpatialDimension;
+
+                if(UnlocatedPoints != null) {
+                    if(UnlocatedPoints.Length != L)
+                        throw new ArgumentException("Length mismatch");
+                }
+
+                // evaluate locally
+                // ================
+                var unlocated = new System.Collections.BitArray(L);
+                int NoOfUnlocated;
+                if(L > 0)
+                    NoOfUnlocated = this.Evaluate(alpha, Flds, Points, beta, Result, unlocated);
+                else
+                    NoOfUnlocated = 0;
+
+                // return, if there are no unlocalized points
+                // ==========================================
+
+                int TotNoOfUnlocated = NoOfUnlocated.MPISum();
+                if(TotNoOfUnlocated <= 0) {
+                    if(UnlocatedPoints != null)
+                        UnlocatedPoints.SetAll(false);
+
+                    return 0;
+                }
+
+                // copy unlocalized to separate array
+                // ==================================
+                double[,] localUnlocated = new double[NoOfUnlocated, D]; // MultidimensionalArray does not allow zero length -- so use double[,] instead
+                int[] IndexToOrgIndex = new int[NoOfUnlocated];
+                int u = 0;
+                for(int i = 0; i < L; i++) {
+                    if(unlocated[i]) {
+                        localUnlocated.SetRowPt(u, Points.GetRowPt(i));
+                        IndexToOrgIndex[u] = i;
+                        u++;
+                    }
+                }
+                Debug.Assert(u == NoOfUnlocated);
+
+                // collect on all ranks -- this won't scale well, but it may work
+                // ==============================================================
+                MultidimensionalArray globalUnlocated;
+                int[] WhoIsInterestedIn; // index: point index, corresponds with 'globalUnlocated' rows; content: rank which needs the result
+                int[] OriginalIndex; // index: detto; content: index which the point had on the processor that sent it.
+                double[][,] __globalUnlocated;
+                int LL;
+                {
+                    __globalUnlocated = localUnlocated.MPIAllGatherO();
+                    Debug.Assert(__globalUnlocated.Length == MPIsize);
+                    Debug.Assert(__globalUnlocated.Select(aa => aa.GetLength(0)).Sum() == TotNoOfUnlocated);
+                    Debug.Assert(__globalUnlocated[m_Context.MpiRank].GetLength(0) == NoOfUnlocated);
+                    LL = TotNoOfUnlocated - NoOfUnlocated;
+                    if(LL > 0)
+                        globalUnlocated = MultidimensionalArray.Create(LL, D);
+                    else
+                        globalUnlocated = null;
+                    WhoIsInterestedIn = new int[LL];
+                    OriginalIndex = new int[LL];
+                    int g = 0;
+                    for(int r = 0; r < MPIsize; r++) { // concat all point arrays from all processors
+                        if(r == m_Context.MpiRank)
+                            continue;
+
+                        double[,] __globalPart = __globalUnlocated[r];
+                        int Lr = __globalPart.GetLength(0);
+                        if(Lr > 0)
+                            globalUnlocated.ExtractSubArrayShallow(new[] { g, 0 }, new[] { g + Lr - 1, D - 1 }).Acc2DArray(1.0, __globalPart);
+                        for(int i = 0; i < Lr; i++) {
+                            WhoIsInterestedIn[i + g] = r;
+                            OriginalIndex[i + g] = i;
+                        }
+                        g += Lr;
+                    }
+                }
+
+                // try to evaluate the so-far-unlocalized points
+                // ---------------------------------------------
+                //BoundingBox bb = null;
+                //if(LL > 0) {
+                //    bb = new BoundingBox(globalUnlocated);
+
+                //    globalUnlocated.SaveToTextFile("unlocated-r" + m_Context.MpiRank + ".csv");
+                //}
+               
+
+
+                var unlocated2 = new System.Collections.BitArray(LL);
+                var Result2 = LL > 0 ? MultidimensionalArray.Create(LL, Flds.Count()) : null;
+                int NoOfUnlocated2 = LL > 0 ? this.Evaluate(1.0, Flds, globalUnlocated, 0.0, Result2, unlocated2) : 0;
+
+                // backward MPI sending
+                // --------------------
+                IDictionary<int, EvaluateParallelHelper> resultFromOtherProcs;
+                {
+                    var backSend = new Dictionary<int, EvaluateParallelHelper>();
+                    for(int ll = 0; ll < LL; ll++) {
+                        if(!unlocated2[ll]) {
+                            int iTarget = WhoIsInterestedIn[ll];
+                            Debug.Assert(iTarget != m_Context.MpiRank);
+                            if(!backSend.TryGetValue(iTarget, out EvaluateParallelHelper eph)) {
+                                eph = new EvaluateParallelHelper();
+                                backSend.Add(iTarget, eph);
+                            }
+
+                            eph.OriginalIndices.Add(OriginalIndex[ll]);
+                            eph.Results.Add(Result2.GetRow(ll));
+                        }
+                    }
+
+                    resultFromOtherProcs = SerialisationMessenger.ExchangeData(backSend);
+                }
+
+                // fill the results from other processors
+                // ======================================
+                foreach(var res in resultFromOtherProcs.Values) {
+                    int K = res.OriginalIndices.Count();
+                    Debug.Assert(res.OriginalIndices.Count == res.Results.Count);
+
+                    for(int k = 0; k < K; k++) {
+                        int iOrg = IndexToOrgIndex[res.OriginalIndices[k]];
+                        if(unlocated[iOrg] == true)
+                            NoOfUnlocated--;
+                        unlocated[iOrg] = false;
+
+                        Result.AccRow(iOrg, alpha, res.Results[k]);
+                    }
+                }
+
+                // Return
+                // ======
+                if(UnlocatedPoints != null) {
+                    for(int l = 0; l < L; l++)
+                        UnlocatedPoints[l] = unlocated[l];
+                }
+
+                return NoOfUnlocated;
+            }
+
+        }
+
+        [Serializable]
+        class EvaluateParallelHelper {
+            public List<int> OriginalIndices = new List<int>();
+            public List<double[]> Results = new List<double[]>();
+        }
 
 
         /// <summary>

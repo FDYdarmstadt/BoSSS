@@ -107,14 +107,20 @@ namespace ilPSP {
             if (other.NoOfCols != m_StorageLayout.m_Length1)
                 throw new ArgumentException("mismatch in length of 1-st dimension.", "other");
 
-            int I = m_StorageLayout.m_Length0;
-            int J = m_StorageLayout.m_Length1;
-            int ind;
-            for (int i = 0; i < I; i++) {
-                for (int j = 0; j < J; j++) {
-                    ind = Index(i, j);
+            if(other is MultidimensionalArray mda) {
+                if(mda.Dimension != 2)
+                    throw new ArgumentException($"Not a matrix - MultidimensionalArray is {mda.Dimension} dimensional.");
+                Acc(1.0, mda);
+            } else {
+                int I = m_StorageLayout.m_Length0;
+                int J = m_StorageLayout.m_Length1;
+                int ind;
+                for(int i = 0; i < I; i++) {
+                    for(int j = 0; j < J; j++) {
+                        ind = Index(i, j);
 
-                    m_Storage[ind] += other[i, j] * scl;
+                        m_Storage[ind] += other[i, j] * scl;
+                    }
                 }
             }
         }

@@ -132,7 +132,7 @@ namespace BoSSS.Application.XDGTest {
             ctrl.DbPath = DbPath;
             ctrl.saveperiod = 50;
             ctrl.rollingSaves = true;
-            ExpectedTimeSteps = new int[] { 10, 19, 20 };
+            ExpectedTimeSteps = new int[] { 10, 29, 30 };
 
 
             return ctrl;

@@ -2008,8 +2008,6 @@ namespace BoSSS.Solution {
                         if(this.BurstSave < 1) {
                             throw new NotSupportedException("misconfiguration of burst save variable.");
                         }
-                        if(i == 30)
-                            Console.WriteLine("test");
 
                         for(int sb = 0; sb < this.BurstSave; sb++) {
                             if((i + sb) % SavePeriod == 0) {
