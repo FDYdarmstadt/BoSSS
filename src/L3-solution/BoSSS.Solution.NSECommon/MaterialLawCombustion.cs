@@ -49,7 +49,6 @@ namespace BoSSS.Solution.NSECommon {
             this.MatParamsMode = MatParamsMode;
             this.MolarMasses = MolarMasses;
             this.rhoOne = rhoOne;
-
         }
 
 
@@ -82,9 +81,7 @@ namespace BoSSS.Solution.NSECommon {
                         MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                     }
 
-                    //rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
                     rho = ThermodynamicPressureValue / (phi[0] * MassFractionsOverMolarFractions);
-                    //rho = ThermodynamicPressureValue / (phi[0]);
                     Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                 } else {
                     rho = 1.0;
@@ -97,7 +94,7 @@ namespace BoSSS.Solution.NSECommon {
         
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0/*, VariableNames.MassFraction3_0*/}; 
+                return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; 
             }
         }
 
