@@ -140,6 +140,24 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Sorted column names
+        /// </summary>
+        public string[] ColumnNamesWithoutReserved {
+            get {
+                int D = GridDat.SpatialDimension;
+                var colnames = this.m_CurrentData.Keys.ToList();
+                colnames.Remove(ColName_Gid);
+                for(int d = 0; d < D; d++)
+                    colnames.Remove(ColName_Coörd(d));
+
+                colnames.Sort();
+
+
+                return colnames.ToArray();
+            }
+        }
+
 
         double[][] Dict2AoA<T>(IDictionary<string, T> table) where T : IEnumerable<double> {
             var coln = ColumnNames;
@@ -372,6 +390,18 @@ namespace BoSSS.Foundation {
             }
         }
         */
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void AddVector(string ColName, IEnumerable<double> data) {
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            if(J != data.Count())
+                throw new ArgumentException("wrong length of input vector");
+
+            m_CurrentData.Add(ColName, data.ToArray());
+        }
 
 
         /// <summary>

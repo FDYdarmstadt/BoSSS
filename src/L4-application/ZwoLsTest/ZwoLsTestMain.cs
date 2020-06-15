@@ -345,7 +345,49 @@ namespace BoSSS.Application.ZwoLsTest {
             var spcB = LsTrk.GetSpeciesId("B");
 
             var species = new[] { spcA, spcB };
+            MultiphaseCellAgglomerator.CheckFile = $"InsideMpagg-{name_disc}.csv";
             MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
+            MultiphaseCellAgglomerator.CheckFile = null;
+
+            var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", 1);
+            long[] GiDs = GridData.CurrentGlobalIdPermutation.Values;
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            long[] extGiDs = GridData.iParallel.GlobalIndicesExternalCells;
+
+            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                var spc = species[iSpc];
+                var spcN = LsTrk.GetSpeciesName(spc);
+                var ai = Agg.GetAgglomerator(spc).AggInfo;
+                var srcMask = ai.SourceCells.GetBitMask();
+                var aggPairs = ai.AgglomerationPairs;
+
+                aggoCheck.AddColumn($"SourceCells{spcN}", delegate(double[] X, int j, int jG) {
+                    if(srcMask[j]) {
+                        var pair = aggPairs.Single(cap => cap.jCellSource == j);
+                        if(pair.jCellTarget < J)
+                            return (double)GiDs[pair.jCellTarget];
+                        else
+                            return (double)extGiDs[pair.jCellTarget - J];
+                    }
+                    return 0.0;
+                 });
+
+            }
+
+            aggoCheck.DoIOnow();
+
+            bool[] equalAggAsinReferenceRun = new bool[species.Length];
+            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                var spc = species[iSpc];
+                var spcN = LsTrk.GetSpeciesName(spc);
+
+                equalAggAsinReferenceRun[iSpc] = aggoCheck.AbsError($"SourceCells{spcN}") < 0.1;
+                if(equalAggAsinReferenceRun[iSpc] == false)
+                    Console.WriteLine("Different agglomeration between single-core and parallel run for species " + spcN + ".");
+            }
+
+
+            //Agg.PlotAgglomerationPairs($"-aggPairs-{name_disc}-MPI{MPIRank + 1}of{MPISize}");
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
 
@@ -361,6 +403,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 MultidimensionalArray CellVolumeA = ccm.CutCellVolumes[spcA];
                 MultidimensionalArray CellSurfaceB = ccm.CellSurface[spcB];
                 MultidimensionalArray CellVolumeB = ccm.CutCellVolumes[spcB];
+
 
                 string FileName = $"{name}LengthScales-{name_disc}.csv";
                 var Checker = new TestingIO(this.GridData, FileName, 1);
@@ -381,15 +424,16 @@ namespace BoSSS.Application.ZwoLsTest {
                     foreach(string s in Checker2.ColumnNames) {
                         Assert.Less(Checker2.RelError(s), 1.0e-10, "'TestingUtils.Compare' itself is fucked up.");
                     }
+
                 }
 
-                double srfA = Checker.RelError("CellSurfA");
-                double volA = Checker.RelError("CellVolA");
-                double srfB = Checker.RelError("CellSurfB");
-                double volB = Checker.RelError("CellVolB");
+                double srfA = Checker.RelError("CellSurfA") * (equalAggAsinReferenceRun[0] ? 1.0 : 0.0);
+                double volA = Checker.RelError("CellVolA") * (equalAggAsinReferenceRun[0] ? 1.0 : 0.0);
+                double srfB = Checker.RelError("CellSurfB") * (equalAggAsinReferenceRun[1] ? 1.0 : 0.0);
+                double volB = Checker.RelError("CellVolB") * (equalAggAsinReferenceRun[1] ? 1.0 : 0.0);
 
                 if(srfA + volA + srfB + volB > 0.001) {
-
+                    /*
                     var plotlist = new List<DGField>();
 
                     foreach(var s in new[] { "CellSurfA", "CellVolA", "CellSurfB", "CellVolB" }) {
@@ -400,7 +444,6 @@ namespace BoSSS.Application.ZwoLsTest {
                         var rfViz = new SinglePhaseField(b, s + "-reference");
                         var crViz = new SinglePhaseField(b, s + "-current");
                         var dsViz = new SinglePhaseField(b, s + "-distance");
-                        int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                         for(int j = 0; j < J; j++) {
                             rfViz.SetMeanValue(j, refData[j]);
                             crViz.SetMeanValue(j, curData[j]);
@@ -417,7 +460,7 @@ namespace BoSSS.Application.ZwoLsTest {
                     plotlist.Add(Phi1);
 
                     Tecplot.PlotFields(plotlist, "Fuck" + name + "-" + TimestepNo, 0, 0);
-
+                    */
 
                     Console.WriteLine($"Mismatch in {name} cell surface for species A between single-core and parallel run: {srfA}.");
                     Console.WriteLine($"Mismatch in {name} cell volume  for species A between single-core and parallel run: {volA}.");
@@ -427,11 +470,10 @@ namespace BoSSS.Application.ZwoLsTest {
                 }
 
 
-                //Assert.Less(srfA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species A between single-core and parallel run.");
-                //Assert.Less(volA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species A between single-core and parallel run.");
-                //Assert.Less(srfB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species B between single-core and parallel run.");
-                //Assert.Less(volB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species B between single-core and parallel run.");
-                break;
+                Assert.Less(srfA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species A between single-core and parallel run.");
+                Assert.Less(volA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species A between single-core and parallel run.");
+                Assert.Less(srfB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species B between single-core and parallel run.");
+                Assert.Less(volB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species B between single-core and parallel run.");
             }
         }
 
