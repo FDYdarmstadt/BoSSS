@@ -47,6 +47,14 @@ namespace BoSSS.Foundation.XDG {
         /// - index: cell index
         /// </summary>
         Dictionary<SpeciesId, MultidimensionalArray> CutCellVolumes { get; }
+
+
+        /// <summary>
+        /// Surface (Level-Set plus cut edges) of non-agglomerated cut cells.
+        /// - key: species
+        /// - index: cell index
+        /// </summary>
+        Dictionary<SpeciesId, MultidimensionalArray> CellSurface { get; }
     }
 
 
@@ -128,8 +136,15 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-
-
+        /// <summary>
+        /// Surface (Level-Set plus cut edges) of non-agglomerated cut cells.
+        /// - key: species
+        /// - index: cell index
+        /// </summary>
+        public Dictionary<SpeciesId, MultidimensionalArray> CellSurface { 
+            get;
+            private set;
+        }
 
 
         /// <summary>
@@ -137,27 +152,28 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         void ComputeNonAgglomeratedMetrics() {
             var gd = XDGSpaceMetrics.GridDat;
-            int JE = gd.Cells.Count;
-            int J = gd.Cells.NoOfLocalUpdatedCells;
+            int JE = gd.iLogicalCells.Count;
+            int J = gd.iLogicalCells.NoOfLocalUpdatedCells;
             int D = gd.SpatialDimension;
             int EE = gd.Edges.Count;
             SpeciesId[] species = this.SpeciesList.ToArray();
             int NoSpc = species.Count();
-            int[,] E2C = gd.Edges.CellIndices;
+            int[,] E2C = gd.iLogicalEdges.CellIndices;
 
             var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
 
-            double[] vec_cellMetrics = new double[JE * NoSpc * 2];
 
-            // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange
+            // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
             // 1st index: cell
             // 2nd index: species
-            // 3rd index: 0 for interface surface per cell, 1 for cut-cell-volume
-            MultidimensionalArray cellMetrics = MultidimensionalArray.CreateWrapper(vec_cellMetrics, JE, NoSpc, 2);
+            // 3rd index: 0 for interface surface per cell, 1 for cut-cell-volume, 2 for cut-cell surface
+            double[] vec_cellMetrics = new double[JE * NoSpc * 3];
+            MultidimensionalArray cellMetrics = MultidimensionalArray.CreateWrapper(vec_cellMetrics, JE, NoSpc, 3);
 
             this.CutEdgeAreas = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.InterfaceArea = new Dictionary<SpeciesId, MultidimensionalArray>();
+            this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
 
             //var schS = new List<CellQuadratureScheme>();
             //var rulz = new List<ICompositeQuadRule<QuadRule>>();
@@ -169,11 +185,11 @@ namespace BoSSS.Foundation.XDG {
                 var cellVol = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1);
                 var spc = species[iSpc];
 
-                MultidimensionalArray edgArea = MultidimensionalArray.Create(EE);
-                this.CutEdgeAreas.Add(spc, edgArea);
 
                 // compute cut edge area
                 // ---------------------
+                MultidimensionalArray edgArea = MultidimensionalArray.Create(EE);
+                this.CutEdgeAreas.Add(spc, edgArea);
 
                 var edgeScheme = schH.GetEdgeQuadScheme(spc);
                 var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
@@ -195,14 +211,26 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }).Execute();
 
+                // sum up edges for surface
+                // ------------------------
+
+                var cellSurf = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 2);
+
+                for(int e = 0; e < EE; e++) {
+                    double a = edgArea[e];
+                    int jCell0 = E2C[e, 0];
+                    int jCell2 = E2C[e, 1];
+                    cellSurf[jCell0] += a;
+                    if(jCell2 >= 0)
+                        cellSurf[jCell2] += a;
+
+                }
+
                 // compute cut cell volumes
                 // ------------------------
 
                 var volScheme = schH.GetVolumeQuadScheme(spc);
                 var volRule = volScheme.Compile(gd, this.CutCellQuadratureOrder);
-
-                //schS.Add(volScheme);
-                //rulz.Add(volRule);
 
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
@@ -360,6 +388,9 @@ namespace BoSSS.Foundation.XDG {
                 var spc = species[iSpc];
                 this.InterfaceArea.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
                 this.CutCellVolumes.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
+                this.CellSurface.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 2).CloneAs());
+
+                this.CellSurface[spc].Acc(1.0, this.InterfaceArea[spc]);
             }
 
             //Console.WriteLine("Erinn - debug code.");
