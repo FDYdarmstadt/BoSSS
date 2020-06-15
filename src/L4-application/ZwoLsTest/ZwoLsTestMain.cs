@@ -49,12 +49,12 @@ namespace BoSSS.Application.ZwoLsTest {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            AllUpTest.SetUp();
+            //AllUpTest.SetUp();
             //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, true);
-            BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 3, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, false);
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 3, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, false);
             //AllUpTest.Teardown();
-            Assert.IsTrue(false, "Remove me");
-            return;
+            //Assert.IsTrue(false, "Remove me");
+            //return;
 
 
             BoSSS.Solution.Application._Main(
@@ -327,9 +327,21 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
+        /// <summary>
+        /// Mainly, comparison of single-core vs MPI-parallel run
+        /// </summary>
         void TestLengthScales(int quadOrder, int TimestepNo) {
             string name_disc = $"t{TimestepNo}-alpha{this.THRESHOLD}-p{this.DEGREE}-q{MomentFittingVariant}";
+            var spcA = LsTrk.GetSpeciesId("A");
+            var spcB = LsTrk.GetSpeciesId("B");
 
+            var species = new[] { spcA, spcB };
+            //MultiphaseCellAgglomerator.CheckFile = $"InsideMpagg-{name_disc}.csv";
+            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
+            
+            
+            // check level-set coordinates
+            // ===========================
             {
                 var LsChecker = new TestingIO(this.GridData, $"LevelSets-{name_disc}.csv", 1);
                 LsChecker.AddDGField(this.Phi0);
@@ -341,62 +353,71 @@ namespace BoSSS.Application.ZwoLsTest {
 
             }
 
-            var spcA = LsTrk.GetSpeciesId("A");
-            var spcB = LsTrk.GetSpeciesId("B");
+           
+            // check equality of agglomeration
+            // ===============================
 
-            var species = new[] { spcA, spcB };
-            MultiphaseCellAgglomerator.CheckFile = $"InsideMpagg-{name_disc}.csv";
-            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
-            MultiphaseCellAgglomerator.CheckFile = null;
+            // Note: agglomeration in parallel and serial mode is not necessarily equal - but very often it is.
+            //       Therefore, we need to check whether the agglomeration is equal or not,
+            //       in order to know whether agglomerated length scales should be compared or not.
 
-            var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", 1);
-            long[] GiDs = GridData.CurrentGlobalIdPermutation.Values;
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            long[] extGiDs = GridData.iParallel.GlobalIndicesExternalCells;
+            bool[] equalAggAsinReferenceRun;
+            {
+                var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", 1);
+                long[] GiDs = GridData.CurrentGlobalIdPermutation.Values;
+                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                long[] extGiDs = GridData.iParallel.GlobalIndicesExternalCells;
 
-            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
-                var spc = species[iSpc];
-                var spcN = LsTrk.GetSpeciesName(spc);
-                var ai = Agg.GetAgglomerator(spc).AggInfo;
-                var srcMask = ai.SourceCells.GetBitMask();
-                var aggPairs = ai.AgglomerationPairs;
+                for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                    var spc = species[iSpc];
+                    var spcN = LsTrk.GetSpeciesName(spc);
+                    var ai = Agg.GetAgglomerator(spc).AggInfo;
+                    var srcMask = ai.SourceCells.GetBitMask();
+                    var aggPairs = ai.AgglomerationPairs;
 
-                aggoCheck.AddColumn($"SourceCells{spcN}", delegate(double[] X, int j, int jG) {
-                    if(srcMask[j]) {
-                        var pair = aggPairs.Single(cap => cap.jCellSource == j);
-                        if(pair.jCellTarget < J)
-                            return (double)GiDs[pair.jCellTarget];
-                        else
-                            return (double)extGiDs[pair.jCellTarget - J];
-                    }
-                    return 0.0;
-                 });
+                    aggoCheck.AddColumn($"SourceCells{spcN}", delegate (double[] X, int j, int jG) {
+                        if(srcMask[j]) {
+                            var pair = aggPairs.Single(cap => cap.jCellSource == j);
+                            if(pair.jCellTarget < J)
+                                return (double)GiDs[pair.jCellTarget];
+                            else
+                                return (double)extGiDs[pair.jCellTarget - J];
+                        }
+                        return 0.0;
+                    });
 
+                }
+
+                aggoCheck.DoIOnow();
+
+                equalAggAsinReferenceRun = new bool[species.Length];
+                for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                    var spc = species[iSpc];
+                    var spcN = LsTrk.GetSpeciesName(spc);
+
+                    equalAggAsinReferenceRun[iSpc] = aggoCheck.AbsError($"SourceCells{spcN}") < 0.1;
+                    if(equalAggAsinReferenceRun[iSpc] == false)
+                        Console.WriteLine("Different agglomeration between single-core and parallel run for species " + spcN + ".");
+                }
+            
+                //Agg.PlotAgglomerationPairs($"-aggPairs-{name_disc}-MPI{MPIRank + 1}of{MPISize}");
             }
 
-            aggoCheck.DoIOnow();
 
-            bool[] equalAggAsinReferenceRun = new bool[species.Length];
-            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
-                var spc = species[iSpc];
-                var spcN = LsTrk.GetSpeciesName(spc);
-
-                equalAggAsinReferenceRun[iSpc] = aggoCheck.AbsError($"SourceCells{spcN}") < 0.1;
-                if(equalAggAsinReferenceRun[iSpc] == false)
-                    Console.WriteLine("Different agglomeration between single-core and parallel run for species " + spcN + ".");
-            }
-
-
-            //Agg.PlotAgglomerationPairs($"-aggPairs-{name_disc}-MPI{MPIRank + 1}of{MPISize}");
+            // compare length scales
+            // =====================
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
 
-            foreach(ICutCellMetrics ccm in new ICutCellMetrics[] { Agg.NonAgglomeratedMetrics, Agg }) {
+            foreach(ICutCellMetrics ccm in new ICutCellMetrics[] { Agg.NonAgglomeratedMetrics, Agg }) { // loop over non-agglom and agglomerated metrics
                 string name;
+                bool Agglom;
                 if(object.ReferenceEquals(ccm,Agg)) {
                     name = "Agglomerated";
+                    Agglom = false;
                 } else {
                     name = "Nonagglom";
+                    Agglom = false;
                 }
 
                 MultidimensionalArray CellSurfaceA = ccm.CellSurface[spcA];
@@ -427,10 +448,10 @@ namespace BoSSS.Application.ZwoLsTest {
 
                 }
 
-                double srfA = Checker.RelError("CellSurfA") * (equalAggAsinReferenceRun[0] ? 1.0 : 0.0);
-                double volA = Checker.RelError("CellVolA") * (equalAggAsinReferenceRun[0] ? 1.0 : 0.0);
-                double srfB = Checker.RelError("CellSurfB") * (equalAggAsinReferenceRun[1] ? 1.0 : 0.0);
-                double volB = Checker.RelError("CellVolB") * (equalAggAsinReferenceRun[1] ? 1.0 : 0.0);
+                double srfA = Checker.RelError("CellSurfA") * ((!Agglom || equalAggAsinReferenceRun[0]) ? 1.0 : 0.0);
+                double volA = Checker.RelError("CellVolA") * ((!Agglom || equalAggAsinReferenceRun[0]) ? 1.0 : 0.0);
+                double srfB = Checker.RelError("CellSurfB") * ((!Agglom || equalAggAsinReferenceRun[1]) ? 1.0 : 0.0);
+                double volB = Checker.RelError("CellVolB") * ((!Agglom || equalAggAsinReferenceRun[1]) ? 1.0 : 0.0);
 
                 if(srfA + volA + srfB + volB > 0.001) {
                     /*

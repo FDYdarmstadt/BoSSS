@@ -592,12 +592,6 @@ namespace BoSSS.Foundation.XDG {
             get;
         }
 
-        static int Counter = 0;
-        //static public Action<LevelSet, LevelSet, int> Plot;
-
-
-        static public string CheckFile; 
-
         /// <summary>
         /// Initializes <see cref="CellLengthScales"/>.
         /// </summary>
@@ -609,7 +603,7 @@ namespace BoSSS.Foundation.XDG {
                 int JE = this.Tracker.GridDat.Cells.Count;
                 int[][] C2E = this.Tracker.GridDat.Cells.Cells2Edges;
 
-                TestingIO Checker = CheckFile != null ? new TestingIO(this.Tracker.GridDat, CheckFile, 1) : null;
+                //TestingIO Checker = CheckFile != null ? new TestingIO(this.Tracker.GridDat, CheckFile, 1) : null;
 
 
                 var CellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length, 2); // 1st index: cell, 2nd index: species, 3rd index: [surface, volume]
@@ -652,48 +646,48 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    if(Checker != null) {
-                        Checker.AddVector("CellSurface" + this.Tracker.GetSpeciesName(spc), CellSurface.To1DArray().GetSubVector(0, J));
-                        Checker.AddVector("CellVolume" + this.Tracker.GetSpeciesName(spc), CellVolume.To1DArray().GetSubVector(0, J));
-                        Checker.AddVector("CellVolume2" + this.Tracker.GetSpeciesName(spc), CellVolume2.To1DArray().GetSubVector(0, J));
-                    }
+                    //if(Checker != null) {
+                    //    Checker.AddVector("CellSurface" + this.Tracker.GetSpeciesName(spc), CellSurface.To1DArray().GetSubVector(0, J));
+                    //    Checker.AddVector("CellVolume" + this.Tracker.GetSpeciesName(spc), CellVolume.To1DArray().GetSubVector(0, J));
+                    //    Checker.AddVector("CellVolume2" + this.Tracker.GetSpeciesName(spc), CellVolume2.To1DArray().GetSubVector(0, J));
+                    //}
                 }
 
-                if(Checker != null) {
-                    Checker.DoIOnow();
-                    foreach(string cn in Checker.ColumnNamesWithoutReserved) {
-                        double d = Checker.RelError(cn);
-                        Console.WriteLine($"   ------------ rel error of {cn} before comm: " + d);
-                    }
+                //if(Checker != null) {
+                //    Checker.DoIOnow();
+                //    foreach(string cn in Checker.ColumnNamesWithoutReserved) {
+                //        double d = Checker.RelError(cn);
+                //        Console.WriteLine($"   ------------ rel error of {cn} before comm: " + d);
+                //    }
 
-                    Checker.CurrentData.Clear();
-                }
+                //    Checker.CurrentData.Clear();
+                //}
 
                 // MPI exchange
                 // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
                 CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
                 CellVolumeFracMda.Storage.MPIExchange(this.Tracker.GridDat);
 
-                if(Checker != null) {
-                    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
-                        SpeciesId spc = species[iSpc];
+                //if(Checker != null) {
+                //    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                //        SpeciesId spc = species[iSpc];
 
-                        MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
-                        MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+                //        MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
+                //        MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
 
-                        MultidimensionalArray CellVolume2 = CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc);
+                //        MultidimensionalArray CellVolume2 = CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc);
 
 
-                        Checker.AddVector("CellSurface" + this.Tracker.GetSpeciesName(spc), CellSurface.To1DArray().GetSubVector(0, J));
-                        Checker.AddVector("CellVolume" + this.Tracker.GetSpeciesName(spc), CellVolume.To1DArray().GetSubVector(0, J));
-                        Checker.AddVector("CellVolume2" + this.Tracker.GetSpeciesName(spc), CellVolume2.To1DArray().GetSubVector(0, J));
-                    }
+                //        Checker.AddVector("CellSurface" + this.Tracker.GetSpeciesName(spc), CellSurface.To1DArray().GetSubVector(0, J));
+                //        Checker.AddVector("CellVolume" + this.Tracker.GetSpeciesName(spc), CellVolume.To1DArray().GetSubVector(0, J));
+                //        Checker.AddVector("CellVolume2" + this.Tracker.GetSpeciesName(spc), CellVolume2.To1DArray().GetSubVector(0, J));
+                //    }
 
-                    foreach(string cn in Checker.ColumnNamesWithoutReserved) {
-                        double d = Checker.RelError(cn);
-                        Console.WriteLine($"   ------------ rel error of {cn} AFTER comm: " + d);
-                    }
-                }
+                //    foreach(string cn in Checker.ColumnNamesWithoutReserved) {
+                //        double d = Checker.RelError(cn);
+                //        Console.WriteLine($"   ------------ rel error of {cn} AFTER comm: " + d);
+                //    }
+                //}
 
                 var AggCellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
                 for(int iSpc = 0; iSpc < species.Length; iSpc++) {
