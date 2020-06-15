@@ -33,6 +33,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.ZwoLsTest {
 
@@ -43,17 +44,17 @@ namespace BoSSS.Application.ZwoLsTest {
     /// </summary>
     class ZwoLsTestMain : BoSSS.Solution.Application {
 
-        private static readonly XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant
-            = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            //AllUpTest.SetUp();
+            AllUpTest.SetUp();
             //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, true);
+            BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 3, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, false);
             //AllUpTest.Teardown();
-            //Assert.IsTrue(false, "Remove me");
-            //return;
+            Assert.IsTrue(false, "Remove me");
+            return;
 
 
             BoSSS.Solution.Application._Main(
@@ -167,6 +168,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Phi0.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.85).Pow2());
             Phi1.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (2.4).Pow2());
             LsTrk.UpdateTracker();
+            LsTrk.PushStacks();
 
             if (LsTrk.Regions.GetSpeciesSubGrid("X").GlobalNoOfCells > 0)
                 throw new ApplicationException("there should be no X-species");
@@ -326,68 +328,111 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
         void TestLengthScales(int quadOrder, int TimestepNo) {
+            string name_disc = $"t{TimestepNo}-alpha{this.THRESHOLD}-p{this.DEGREE}-q{MomentFittingVariant}";
+
+            {
+                var LsChecker = new TestingIO(this.GridData, $"LevelSets-{name_disc}.csv", 1);
+                LsChecker.AddDGField(this.Phi0);
+                LsChecker.AddDGField(this.Phi1);
+                LsChecker.DoIOnow();
+
+                Assert.Less(LsChecker.AbsError(this.Phi0), 1.0e-8, "Mismatch in level-set 0 between single-core and parallel run.");
+                Assert.Less(LsChecker.AbsError(this.Phi1), 1.0e-8, "Mismatch in level-set 1 between single-core and parallel run.");
+
+            }
+
             var spcA = LsTrk.GetSpeciesId("A");
             var spcB = LsTrk.GetSpeciesId("B");
 
             var species = new[] { spcA, spcB };
             MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
 
-            var nixAgg = Agg.NonAgglomeratedMetrics;
-
-
-            /*
-            foreach(var SpeciesID in AllSpc) {
-
-                //Agg.CellVolumeFrac;
-
-                //LsTrk.Regions.GetSpeciesMask
-
-                var VolFrac = Agg.CellVolumeFrac[SpeciesID];
-                //Agg.Are
-
-                VolFrac.CheckForNanOrInf(true, true, true);
-
-
-            }
-            */
-
-            MultidimensionalArray CellSurfaceA = Agg.CellSurface[spcA];
-            MultidimensionalArray CellVolumeA = Agg.CutCellVolumes[spcA];
-            MultidimensionalArray CellSurfaceB = Agg.CellSurface[spcB];
-            MultidimensionalArray CellVolumeB = Agg.CutCellVolumes[spcB];
-
-
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
 
-            string FileName = $"AgglomeratedLengthScales-t{TimestepNo}-alpha{this.THRESHOLD}-p{this.DEGREE}.csv";
-            var Checker = new TestingIO(this.GridData, FileName, 1);
-            Checker.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
-            Checker.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
-            Checker.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
-            Checker.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
-            Checker.AddDGField(this.Phi0);
-            Checker.DoIOnow();
-
-            if(this.MPISize == 1) {
-                var Checker2 = new TestingIO(this.GridData, FileName, 2);
-                Checker2.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
-                Checker2.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
-                Checker2.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
-                Checker2.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
-                Checker2.AddDGField(this.Phi0);
-                Checker2.DoIOnow();
-
-                foreach(string s in Checker2.ColumnNames) {
-                    Assert.Less(Checker2.RelError(s), 1.0e-10, "'TestingUtils.Compare' itself is fucked up.");
+            foreach(ICutCellMetrics ccm in new ICutCellMetrics[] { Agg.NonAgglomeratedMetrics, Agg }) {
+                string name;
+                if(object.ReferenceEquals(ccm,Agg)) {
+                    name = "Agglomerated";
+                } else {
+                    name = "Nonagglom";
                 }
+
+                MultidimensionalArray CellSurfaceA = Agg.CellSurface[spcA];
+                MultidimensionalArray CellVolumeA = Agg.CutCellVolumes[spcA];
+                MultidimensionalArray CellSurfaceB = Agg.CellSurface[spcB];
+                MultidimensionalArray CellVolumeB = Agg.CutCellVolumes[spcB];
+
+                string FileName = $"{name}LengthScales-{name_disc}.csv";
+                var Checker = new TestingIO(this.GridData, FileName, 1);
+                Checker.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
+                Checker.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
+                Checker.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
+                Checker.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
+                Checker.DoIOnow();
+
+                if(this.MPISize == 1) {
+                    var Checker2 = new TestingIO(this.GridData, FileName, 2);
+                    Checker2.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
+                    Checker2.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
+                    Checker2.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
+                    Checker2.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
+                    Checker2.DoIOnow();
+
+                    foreach(string s in Checker2.ColumnNames) {
+                        Assert.Less(Checker2.RelError(s), 1.0e-10, "'TestingUtils.Compare' itself is fucked up.");
+                    }
+                }
+
+                double srfA = Checker.RelError("CellSurfA");
+                double volA = Checker.RelError("CellVolA");
+                double srfB = Checker.RelError("CellSurfB");
+                double volB = Checker.RelError("CellVolB");
+
+                if(srfA + volA + srfB + volB > 0.001) {
+
+                    var plotlist = new List<DGField>();
+
+                    foreach(var s in new[] { "CellSurfA", "CellVolA", "CellSurfB", "CellVolB" }) {
+                        double[] refData = Checker.ReferenceData[s];
+                        double[] curData = Checker.CurrentData[s];
+
+                        Basis b = new Basis(this.GridData, 0);
+                        var rfViz = new SinglePhaseField(b, s + "-reference");
+                        var crViz = new SinglePhaseField(b, s + "-current");
+                        var dsViz = new SinglePhaseField(b, s + "-distance");
+                        int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                        for(int j = 0; j < J; j++) {
+                            rfViz.SetMeanValue(j, refData[j]);
+                            crViz.SetMeanValue(j, curData[j]);
+                            dsViz.SetMeanValue(j, curData[j] - refData[j]);
+                        }
+
+                        plotlist.Add(rfViz);
+                        plotlist.Add(crViz);
+                        plotlist.Add(dsViz);
+
+                    }
+
+                    plotlist.Add(Phi0);
+                    plotlist.Add(Phi1);
+
+                    Tecplot.PlotFields(plotlist, "Fuck" + name + "-" + TimestepNo, 0, 0);
+
+
+                    Console.WriteLine($"Mismatch in {name} cell surface for species A between single-core and parallel run: {srfA}.");
+                    Console.WriteLine($"Mismatch in {name} cell volume  for species A between single-core and parallel run: {volA}.");
+                    Console.WriteLine($"Mismatch in {name} cell surface for species B between single-core and parallel run: {srfB}.");
+                    Console.WriteLine($"Mismatch in {name} cell volume  for species B between single-core and parallel run: {volB}.");
+
+                }
+
+
+                Assert.Less(srfA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species A between single-core and parallel run.");
+                Assert.Less(volA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species A between single-core and parallel run.");
+                Assert.Less(srfB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species B between single-core and parallel run.");
+                Assert.Less(volB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species B between single-core and parallel run.");
+                break;
             }
-
-
-            Assert.Less(Checker.RelError("CellSurfA"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell surface area for species A between single-core and parallel run.");
-            Assert.Less(Checker.RelError("CellVolA"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell volume area for species B between single-core and parallel run.");
-            Assert.Less(Checker.RelError("CellSurfB"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell surface area for species A between single-core and parallel run.");
-            Assert.Less(Checker.RelError("CellVolB"), BLAS.MachineEps.Sqrt(), "Mismatch in agglomerated cell volume area for species B between single-core and parallel run.");
-
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -476,9 +521,9 @@ namespace BoSSS.Application.ZwoLsTest {
                 if (this.THRESHOLD > 0.01) {
                     // without agglomeration, the error in very tiny cut-cells may be large over the whole cell
                     // However, the error in the XDG-space should be small under all circumstances
-                    Assert.LessOrEqual(L2Err, 1.0e-6);
+                    Assert.LessOrEqual(L2Err, 1.0e-6, "DG L2 error of computing du_dx");
                 }
-                Assert.LessOrEqual(xL2Err, 1.0e-6);
+                Assert.LessOrEqual(xL2Err, 1.0e-6, "XDG L2 error of computing du_dx");
             }
 
             bool IsPassed = ((L2Err <= 1.0e-6 || this.THRESHOLD <= 0.01) && xL2Err <= 1.0e-7);

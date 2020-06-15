@@ -344,9 +344,18 @@ namespace BoSSS.Foundation.XDG {
             // MPI exchange & store
             // ====================
 
-            if(species.Length > 0)
+            if(species.Length > 0) {
+#if DEBUG
+                int NoOfSpc = species.Length;
+                var cellMetricsB4 = cellMetrics.ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { J - 1, NoOfSpc - 1, 1 }).CloneAs();
+#endif
                 vec_cellMetrics.MPIExchange(gd);
-
+#if DEBUG
+                var cellMetricsComp = cellMetrics.ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { J - 1, NoOfSpc - 1, 1 }).CloneAs();
+                cellMetricsComp.Acc(-1.0, cellMetricsB4);
+                Debug.Assert(cellMetricsComp.L2Norm() == 0.0);
+#endif
+            }
             for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                 var spc = species[iSpc];
                 this.InterfaceArea.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());

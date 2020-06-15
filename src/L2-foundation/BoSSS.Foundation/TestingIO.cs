@@ -171,6 +171,7 @@ namespace BoSSS.Foundation {
         public void DoIOnow() {
             if(GridDat.CellPartitioning.MpiSize == ReferenceMPISize) {
                 SaveData();
+                this.ReferenceData = this.CurrentData;
             } else {
                 LoadData();
             }

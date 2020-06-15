@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
 using NUnit.Framework;
@@ -33,9 +34,11 @@ namespace BoSSS.Application.ZwoLsTest {
         static public void AllUp([Values(0.0, 0.3)] double AggTresh,
 #if DEBUG            
             [Values(1)] int DGdegree,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants quadVariant,
             [Values(false)] bool DynamicBalance)
 #else
             [Values(1, 2, 3)] int DGdegree,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants quadVariant,
             [Values(false, true)] bool DynamicBalance)            
 #endif
          {
@@ -52,6 +55,7 @@ namespace BoSSS.Application.ZwoLsTest {
                     p.THRESHOLD = AggTresh;
                     p.DEGREE = DGdegree;
                     p.DYNAMIC_BALANCE = DynamicBalance;
+                    p.MomentFittingVariant = quadVariant;
                     return p;
                 });
         }
