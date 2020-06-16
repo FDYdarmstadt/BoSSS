@@ -1033,7 +1033,7 @@ namespace BoSSS.Application.SipPoisson {
                     //    Console.WriteLine("====================");
                     //}
                     
-                    SF.GenerateLinear(out solver, MgSeq, MgConfig, ItCallbacks_Kollekte);
+                    SF.GenerateLinear(out solver, AggBasis, MgConfig, ItCallbacks_Kollekte);
 
                     using (new BlockTrace("Solver_Init", tr)) {
                         solver.Init(MultigridOp);

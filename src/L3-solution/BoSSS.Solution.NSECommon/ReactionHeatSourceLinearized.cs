@@ -183,12 +183,12 @@ namespace BoSSS.Solution.NSECommon {
 
             double Tb = 2300/300;
             //ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2);
-            ReactionRate = m_Da * Math.Exp(Ta / Tb*0 -Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2)/**16/28*/;
+            ReactionRate = m_Da * Math.Exp(Ta / Tb*0 -Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2) ;
 
             if (ReactionRate < 0)
                 ReactionRate = 0;
             //return HeatReleaseFactor * ReactionRate;
-            return -HeatReleaseFactor * ReactionRate;
+            return -HeatReleaseFactor * ReactionRate * PM_CH4;
 
         }
     }

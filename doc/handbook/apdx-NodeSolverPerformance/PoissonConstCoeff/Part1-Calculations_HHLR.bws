@@ -19,12 +19,18 @@ using BoSSS.Application.SipPoisson;
 ExecutionQueues;
 **************
 List of 2 instances of BatchProcessorClient {
-  0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
   1: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
 }
 ==============
-var myBatch = (MiniBatchProcessorClient)ExecutionQueues[0];
+var myBatch = (SlurmClient)ExecutionQueues[1];
 **************
+==============
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 28; Grid Count = 3; Path = W:\work\scratch\jw52xeqa\DB_trash }
+}
 ==============
 string WFlowName = "test";
 WorkflowMgm.Init(WFlowName);
@@ -34,19 +40,44 @@ Project name is set to 'test'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
-//var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
-var tempDB = OpenOrCreateDatabase(@"V:\testDB1");
-**************
-Opening existing database 'V:\testDB1'.
-
-==============
+string path = @"W:\work\scratch\jw52xeqa\DB_SIP_MPI";
 **************
 ==============
-MiniBatchProcessor.Server.StartIfNotRunning();
+var tempDB = OpenOrCreateDatabase(path);
 **************
-Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 28996.
-True
+==============
+tempDB.Sessions
+**************
+List of 25 instances of ISessionInfo {
+  0: SIP_Multicore_HHLR	SIP_J64000_k2_classic_pardiso_MPI*	04/30/2020 21:22:11	6522455a...
+  1: SIP_Multicore_HHLR	SIP_J32768_k2_classic_pardiso_MPI	04/30/2020 21:04:15	f89d7128...
+  2: SIP_Multicore_HHLR	SIP_J64000_k2_classic_pardiso_OMP*	04/30/2020 20:58:43	c9a938f3...
+  3: SIP_Multicore_HHLR	SIP_J17576_k2_classic_pardiso_MPI	04/30/2020 20:54:04	9e63585f...
+  4: SIP_Multicore_HHLR	SIP_J32768_k2_classic_pardiso_OMP	04/30/2020 20:42:40	354660b5...
+  5: SIP_Multicore_HHLR	SIP_J8000_k2_classic_pardiso_MPI	04/30/2020 20:48:55	000c18d1...
+  6: SIP_Multicore_HHLR	SIP_J17576_k2_classic_pardiso_OMP	04/30/2020 20:36:38	8f17f150...
+  7: SIP_Multicore_HHLR	SIP_J8000_k2_classic_pardiso_OMP	04/30/2020 20:34:44	d2db4f49...
+  8: SIP_Multicore_HHLR	SIP_J4096_k2_classic_pardiso_MPI	04/30/2020 20:33:18	d2cae5b9...
+  9: SIP_Multicore_HHLR	SIP_J4096_k2_classic_pardiso_OMP	04/30/2020 20:29:38	819b3343...
+  10: SIM_Multicore_HHLR_overtime	SIP_J64000_k2_exp_Kcycle_schwarz*	04/26/2020 21:06:24	101806b7...
+  11: SIM_Multicore_HHLR_overtime	SIP_J64000_k2_classic_pardiso*	04/26/2020 21:06:16	1b43de8e...
+  12: SIM_Multicore_HHLR_overtime	SIP_J64000_k2_exp_gmres_levelpmg*	04/26/2020 21:06:20	783a6ee0...
+  13: SIP_Multicore_HHLR	SIP_J32768_k2_exp_gmres_levelpmg	04/26/2020 21:06:07	01f6f1c2...
+  14: SIP_Multicore_HHLR	SIP_J17576_k2_exp_gmres_levelpmg	04/26/2020 21:05:54	c0909e44...
+  15: SIP_Multicore_HHLR	SIP_J32768_k2_classic_pardiso	04/26/2020 21:06:02	c007f226...
+  16: SIP_Multicore_HHLR	SIP_J8000_k2_exp_gmres_levelpmg	04/26/2020 21:05:50	dc853519...
+  17: SIP_Multicore_HHLR	SIP_J17576_k2_classic_pardiso	04/26/2020 21:05:49	35114d47...
+  18: SIP_Multicore_HHLR	SIP_J4096_k2_exp_gmres_levelpmg	04/26/2020 21:05:31	f7165e76...
+  19: SIP_Multicore_HHLR	SIP_J32768_k2_exp_Kcycle_schwarz	04/26/2020 21:06:03	02b95165...
+  20: SIP_Multicore_HHLR	SIP_J17576_k2_exp_Kcycle_schwarz	04/26/2020 21:05:50	d78795b2...
+  21: SIP_Multicore_HHLR	SIP_J8000_k2_exp_Kcycle_schwarz	04/26/2020 21:05:42	0be2a515...
+  22: SIP_Multicore_HHLR	SIP_J4096_k2_exp_Kcycle_schwarz	04/26/2020 21:05:37	3e9cdf35...
+  23: SIP_Multicore_HHLR	SIP_J8000_k2_classic_pardiso	04/26/2020 21:05:38	71a9381e...
+  24: SIP_Multicore_HHLR	SIP_J4096_k2_classic_pardiso	04/26/2020 21:00:59	152f6fe8...
+}
+==============
+//var myBatch = new SlurmClient(@"X:\Deployerie","lcluster4.hrz.tu-darmstadt.de","jw52xeqa");
+**************
 ==============
 // ===================
 // Utility definitions
@@ -83,18 +114,86 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = 57ba53d0-8d5e-4c49-846b-141ad66ed4f4; Name = test_J320; Cell Count = 320; Dim = 3 }
+List of 5 instances of IGridInfo {
+  0: { Guid = c0cbad1f-251b-47df-be7e-139ce3273727; Name = SIP_Multicore_HHLR_J64000; Cell Count = 64000; Dim = 3 }
+  1: { Guid = 701d9ddf-5693-4f7b-bcae-44fed591013c; Name = SIP_Multicore_HHLR_J32768; Cell Count = 32768; Dim = 3 }
+  2: { Guid = fd1fcf1e-66c4-4089-8f42-0d28e8037d23; Name = SIP_Multicore_HHLR_J17576; Cell Count = 17576; Dim = 3 }
+  3: { Guid = 14d89d96-a0e6-4ff8-a0c2-a232be366364; Name = SIP_Multicore_HHLR_J8000; Cell Count = 8000; Dim = 3 }
+  4: { Guid = 7fdc5682-9b96-47c7-99ba-7c5bcf16b787; Name = SIP_Multicore_HHLR_J4096; Cell Count = 4096; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 4 };
+//Weak scaling
+//int[] core_sweep = {4,8,16,32,64};
+int[] core_sweep = {64};
+int p          = 2;
+int DOFperCore = 10000;
+**************
+==============
+int[] res=new int[core_sweep.Length];
+int[] test=new int[core_sweep.Length];
+for(int i=0;i<core_sweep.Length;i++){
+double Res   = Math.Pow(DOFperCore/Utils.Np(p)*core_sweep[i],0.333333333);
+int ResRndup = (int)Math.Ceiling(Res / 1);
+res[i]=ResRndup;
+test[i]=ResRndup*ResRndup*ResRndup;
+}
+test;
+**************
+List of 1 instances of Int32 {
+  0: 64000
+}
+==============
+tempDB.Grids
+**************
+List of 5 instances of IGridInfo {
+  0: { Guid = c0cbad1f-251b-47df-be7e-139ce3273727; Name = SIP_Multicore_HHLR_J64000; Cell Count = 64000; Dim = 3 }
+  1: { Guid = 701d9ddf-5693-4f7b-bcae-44fed591013c; Name = SIP_Multicore_HHLR_J32768; Cell Count = 32768; Dim = 3 }
+  2: { Guid = fd1fcf1e-66c4-4089-8f42-0d28e8037d23; Name = SIP_Multicore_HHLR_J17576; Cell Count = 17576; Dim = 3 }
+  3: { Guid = 14d89d96-a0e6-4ff8-a0c2-a232be366364; Name = SIP_Multicore_HHLR_J8000; Cell Count = 8000; Dim = 3 }
+  4: { Guid = 7fdc5682-9b96-47c7-99ba-7c5bcf16b787; Name = SIP_Multicore_HHLR_J4096; Cell Count = 4096; Dim = 3 }
+}
+==============
+//Add Predefined Partitioning
+double xMax = 1.0, yMax = 1.0, zMax=1.0;
+double xMin = -1.0, yMin = -1.0,zMin = -1.0;
+Func<double[], int> MakeMyPartioning = delegate (double[] X) {
+    double x = X[0];
+    double y = X[1];
+    double z = X[2];
+
+    int separation = 4;
+    double xspan   = (xMax - xMin) / separation;
+    double yspan   = (yMax - yMin) / separation;
+    double zspan   = (zMax - zMin) / separation;
+    int rank       = int.MaxValue;
+    int icore      = 0;
+    for (int i = 0; i < separation; i++) {
+        for (int j = 0; j < separation; j++) {
+            for(int k=0;k<separation;k++){
+                bool xtrue = x <= xspan * (i + 1) + xMin;
+                bool ytrue = y <= yspan * (j + 1) + yMin;
+                bool ztrue = z <= zspan * (k + 1) + zMin;
+                if (xtrue && ytrue && ztrue) {
+                    rank = icore;
+                    return rank;
+                }
+                icore++;
+            }
+        }
+    }
+
+    return rank;
+};
+**************
+==============
+int[] Resolutions_3D = res;
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
-    int Res = Resolutions_3D[cnt];    
-    
-    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
-    double[] yNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
-    double[] zNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    int Res        = Resolutions_3D[cnt];    
+    int lowerbound = -1;
+    double[] xNodes = GenericBlas.Linspace(lowerbound, +1, Res + 1);
+    double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+    double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
     int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
     
     string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
@@ -106,7 +205,6 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
           grids[cnt]=grd;
         }
     }
-    Console.WriteLine(grids.Length);
   
     //grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name.Contains(string.Format("_J"+ J));
     if(grids[cnt]==null){
@@ -114,20 +212,21 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
         
         GridCommons g;
         g      = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        g.AddPredefinedPartitioning("hallo", MakeMyPartioning);
         g.Name = GridName;
         
-        g.EdgeTagNames.Add(1, "Dirichlet");
-        g.EdgeTagNames.Add(2, "Neumann");
+        g.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+        g.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
     
         g.DefineEdgeTags(delegate (double[] X) {
            byte ret;
-             if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+             if(Math.Abs(X[0] - (double)lowerbound) <= 1.0e-6)
                ret = 1;
            else
                 ret = 2;
             return ret;
         });
-      
+  
         tempDB.SaveGrid(ref g);  
         grids[cnt] = g;
     } else {
@@ -138,21 +237,23 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
         if(grids[cnt].SpatialDimension != 3)
             throw new Exception("D mismatch");
     }
-    
 }
 **************
-1
-Found Grid: { Guid = 57ba53d0-8d5e-4c49-846b-141ad66ed4f4; Name = test_J320; Cell Count = 320; Dim = 3 }
+Found Grid: { Guid = c0cbad1f-251b-47df-be7e-139ce3273727; Name = SIP_Multicore_HHLR_J64000; Cell Count = 64000; Dim = 3 }
 
+==============
+**************
 ==============
 grids;
 **************
 List of 1 instances of IGridInfo {
-  0: { Guid = 57ba53d0-8d5e-4c49-846b-141ad66ed4f4; Name = test_J320; Cell Count = 320; Dim = 3 }
+  0: { Guid = c0cbad1f-251b-47df-be7e-139ce3273727; Name = SIP_Multicore_HHLR_J64000; Cell Count = 64000; Dim = 3 }
 }
 ==============
-LastError;
+grids.Pick(0).PrintExportDirectory()
 **************
+C:\Users\weber\AppData\Local\BoSSS\plots\grids\c0cbad1f-251b-47df-be7e-139ce3273727
+
 ==============
 // =====================================
 // setup control object for a solver run
@@ -206,9 +307,9 @@ InitialValues.RHS(new double[]{ 0, 0 });
 List<SipControl> controls = new List<SipControl>();
 **************
 ==============
-// polynomial degrees to test
-//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-int[] PolyDegS = new int[] {2}; // reduced options for dev.
+**************
+==============
+LastError
 **************
 ==============
 using BoSSS.Solution.AdvancedSolvers;
@@ -216,34 +317,34 @@ using BoSSS.Solution.AdvancedSolvers;
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    //SolverCodes.classic_pardiso, 
-    LinearSolverCode.classic_mumps, 
-    //LinearSolverConfig.Code.classic_cg,
-    //LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
-    //SolverCodes.exp_direct,
-    //SolverCodes.exp_softpcg_schwarz,
-    //SolverCodes.exp_direct_lapack,
-    //LinearSolverConfig.Code.exp_softpcg_mg
+    LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_mumps, 
+    LinearSolverCode.exp_Kcycle_schwarz, 
+    LinearSolverCode.exp_gmres_levelpmg, 
 }; 
 **************
 ==============
+int[] PolyDegS={p};
+//core_sweep = new int[]{4};
+//IGridInfo[] tmp = grids;
+//grids = new IGridInfo[]{tmp[0]};
+//LinearSolverCode[] tmpsc=solver_nameS;
+//solver_nameS = new LinearSolverCode[]{tmpsc[0]};
+**************
+==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
-int MaxDof = 5000000;
+int MaxDof           = 5000000;
+int JobsWithSameCore = PolyDegS.Length * solver_nameS.Length;
 **************
 ==============
 controls.Clear();
+foreach(IGridInfo grd in grids) {
 foreach(LinearSolverCode solver_name in solver_nameS) {
 foreach(int k in PolyDegS) {
-int iGrd = 0;    
-foreach(IGridInfo grd in grids) {
-    iGrd ++;
-    //if(k >= 3 && iGrd > 6)
-    //    continue; 
-    //if(k >= 4 && iGrd > 5)
-    //    continue; 
-    //if(k >= 5 && iGrd > 4)
-    //    continue; 
     
+    var ctrl = new SipControl();
+    controls.Add(ctrl);
+
     int Np = Utils.Np(k);
     int J  = grd.NumberOfCells;
     if(J*Np > MaxDof)
@@ -251,15 +352,14 @@ foreach(IGridInfo grd in grids) {
     
     string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
     Console.WriteLine("setting up: " + caseName);
-
-    var ctrl = new SipControl();
-    controls.Add(ctrl);
+ 
+    ctrl.AlternateDbPaths = new[]{
+        new ValueTuple<string,string>(@"/work/scratch/jw52xeqa/DB_SIP_MPI", ""),
+        new ValueTuple<string,string>(@"W:\work\scratch\jw52xeqa\DB_SIP_MPI", "pcmit32")
+    };
     
-    ctrl.SuppressExceptionPrompt = true;//set true if you are using MiniBatchprocessor
-    
-    //ctrl.SessionName = caseName;
-    ctrl.SetDatabase(tempDB);
-    ctrl.SetGrid(grd);
+    ctrl.savetodb = true; //for debug's sake
+    ctrl.GridGuid = grd.ID;
     ctrl.SetDGdegree(k);
     ctrl.LinearSolver.SolverCode          = solver_name;
     ctrl.LinearSolver.NoOfMultigridLevels = int.MaxValue;
@@ -269,62 +369,103 @@ foreach(IGridInfo grd in grids) {
         GetFormulaObject(InitialValues.DirichletBC));
     ctrl.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
         GetFormulaObject(InitialValues.NeumannBC));
-    ctrl.SessionName = "PoissonConstCoeff_"+caseName;
+    ctrl.SessionName             = "SIP_"+caseName;
+    ctrl.TracingNamespaces       = "BoSSS.Foundation.Grid.Classic";
+    
+    ctrl.GridPartType    = BoSSS.Foundation.Grid.GridPartType.Predefined;
+    ctrl.GridPartOptions = "hallo";
+    
 }
 }
 }
-
 **************
-setting up: J320_k2_classic_mumps
+setting up: J64000_k2_classic_pardiso
+setting up: J64000_k2_exp_Kcycle_schwarz
+setting up: J64000_k2_exp_gmres_levelpmg
 
+==============
+**************
 ==============
 // ==========
 // Launch Job
 // ==========
 **************
 ==============
-//var job = new Job("zwa", solver);
-**************
-==============
-//myCtrl.GetType();
-**************
-==============
-//job.SetControlObject(myCtrl);
-**************
-==============
-//tempDB.Sessions.Where(s => s.Name.Contains("softpcg") && s.Name.Contains("k2") && s.Name.Contains("mg"));//.ForEach(si => si.Delete(true));
-**************
-==============
-//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
-**************
-==============
-**************
-==============
+int cnt   = 0;
+int iCore = -1;
 foreach(var ctrl in controls) {
+
+    if(cnt % JobsWithSameCore == 0)
+        iCore++;
+         
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-    ctrl.RunBatch(myBatch); 
+    var aJob = new Job(ctrl.SessionName, typeof(SipPoissonMain));
+    aJob.SetControlObject(ctrl);
+    ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
+    aJob.NumberOfMPIProcs         = core_sweep[iCore];
+    aJob.ExecutionTime            = "02:00:00";
+    //aJob.HHLR_project             = "project01217";
+    aJob.MemPerCPU                = "5000";
+    aJob.UseComputeNodesExclusive = true;
+    aJob.Activate(myBatch);
+    cnt++;
 }
 **************
- Submitting: PoissonConstCoeff_J320_k2_classic_mumps
+ Submitting: SIP_J64000_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: C:\Users\weber\AppData\Local\BoSSS-LocalJobs\test-ipPoisson2020May27_222940
+Deployment directory: X:\Deployerie\test-ipPoisson2020May06_225244
 copied 25 files.
    written file: control.obj
 deployment finished.
-System.InvalidOperationException occurred: Sequence contains no elements. Type 'LastError' for details.
+
+14658598
+ Submitting: SIP_J64000_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\test-ipPoisson2020May06_225308
+copied 25 files.
+   written file: control.obj
+deployment finished.
+
+14658599
+ Submitting: SIP_J64000_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\test-ipPoisson2020May06_225313
+copied 25 files.
+   written file: control.obj
+deployment finished.
+
+14658600
 
 ==============
 LastError
 **************
-System.InvalidOperationException: Sequence contains no elements
-   at MiniBatchProcessor.Client.SubmitJob(JobData JD) in V:\BoSSS-jenkins\public\src\Utils\MiniBatchProcessor\Client.cs:line 79
-   at BoSSS.Application.BoSSSpad.MiniBatchProcessorClient.Submit(Job myJob) in V:\BoSSS-jenkins\public\src\L4-application\BoSSSpad\MiniBatchProcessorClient.cs:line 227
-   at BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc) in V:\BoSSS-jenkins\public\src\L4-application\BoSSSpad\Job.cs:line 963
-   at BoSSS.Application.BoSSSpad.AppControlExtensions.RunBatch(AppControl ctrl, BatchProcessorClient BatchSys) in V:\BoSSS-jenkins\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 69
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in V:\BoSSS-jenkins\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+cnt 
+foreach(var ctrl in controls) {
+    for(){
+        Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+        ctrl.RunBatch(myBatch); 
+    }
+}
+**************
+(2,8): error CS1525: Unexpected symbol `)'
+No. of errors|warnings: 1|0.
+
+==============
+**************
+No. of errors|warnings: 2|0.
+
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
@@ -558,6 +699,60 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
