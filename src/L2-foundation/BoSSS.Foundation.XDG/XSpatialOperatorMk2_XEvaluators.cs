@@ -181,12 +181,6 @@ namespace BoSSS.Foundation.XDG {
                     }
                     #endregion
 
-                    #region find quadrature instructions
-                    // ----------------------------
-
-
-
-                    #endregion
 
 
                     // build matrix, bulk
@@ -223,29 +217,12 @@ namespace BoSSS.Foundation.XDG {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
 
-                            //if(m_Xowner.OnIntegratingBulk != null)
-                            //    m_Xowner.OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId);
 
                             SpeciesFrameMatrix<M> mtx = mtx_spc[iSpecies];
                             var _mtx = Matrix != null ? mtx : default(SpeciesFrameMatrix<M>);
 
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
-
-                            //DGField[] Params = 
-
-
-                            //#if DEBUG
-                            //                            // switch the diagnostic output on or off
-                            //                            bool SubGridRuleDiagnosis = false;
-                            //                            if (SubGrid == null && SubGridRuleDiagnosis == true) {
-                            //                                Console.WriteLine("Warning SubGrid Rule Diagnosis is Switched on!");
-                            //                            }
-                            //                            if (SubGridRuleDiagnosis) {
-                            //                                edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                            //                                volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysVol_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                            //                            }
-                            //#endif
 
                             foreach (var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
 
@@ -297,6 +274,9 @@ namespace BoSSS.Foundation.XDG {
                                                              CodomainMapping, Parameters, DomainMapping,
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
+                            //ICompositeQuadRule_Ext.ToTextFileVolume
+                            //rule.ToTextFileVolume(GridDat as BoSSS.Foundation.Grid.Classic.GridData, "LevSet-" + iLevSet + ".csv");
+
                             MtxBuilder.time = time;
                             this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
                             this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);

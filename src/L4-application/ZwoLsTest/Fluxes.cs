@@ -22,6 +22,18 @@ using BoSSS.Solution.Utils;
 
 namespace BoSSS.Application.ZwoLsTest {
 
+    class DxBroken : IVolumeForm {
+        public TermActivationFlags VolTerms => TermActivationFlags.AllOn;
+
+        public IList<string> ArgumentOrdering => new string[] { "u" };
+
+        public IList<string> ParameterOrdering => null;
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            return GradU[0, 0] * V;
+        }
+    }
+
     /// <summary>
     /// fluss fuer du/dx; (Ableitung nach 1. Raumrichtung), bulk-Phase;
     /// </summary>

@@ -78,25 +78,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        /*
-        /// <summary>
-        /// ctor.
-        /// </summary>
-        /// <param name="_lsTrk"></param>
-        /// <param name="momentFittingVariant"></param>
-        public XQuadSchemeHelper(LevelSetTracker _lsTrk, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, params SpeciesId[] __SpeciesList) {
-            MPICollectiveWatchDog.Watch();
-            this.lsTrk = _lsTrk;
-            this.MomentFittingVariant = momentFittingVariant;
-            this.CellAgglomeration = null;
-            this.NonAgglomeratedMetrics = null;
-            this.SpeciesList = __SpeciesList.ToList().AsReadOnly();
-            this.GhostSupport = false;
-
-            ConstructorCommon();
-        }
-        */
-
         /// <summary>
         /// owner object.
         /// </summary>
@@ -117,43 +98,6 @@ namespace BoSSS.Foundation.XDG {
             ConstructorCommon();
         }
 
-
-        /*
-        /// <summary>
-        /// ctor.
-        /// </summary>
-        /// <param name="momentFittingVariant"></param>
-        /// <param name="order"></param>
-        /// <param name="NonAggCutCellMetric">Can be null, see <see cref="CellAgglomeration"/>.</param>
-        public XQuadSchemeHelper(CutCellMetrics NonAggCutCellMetric, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant) {
-            MPICollectiveWatchDog.Watch();
-            this.lsTrk = NonAggCutCellMetric.Tracker;
-            this.MomentFittingVariant = momentFittingVariant;
-            this.CellAgglomeration = null;
-            this.NonAgglomeratedMetrics = NonAggCutCellMetric;
-            this.SpeciesList = NonAgglomeratedMetrics.SpeciesList.ToList().AsReadOnly();
-            this.GhostSupport = false;
-
-            ConstructorCommon();
-        }
-
-        /// <summary>
-        /// ctor.
-        /// </summary>
-        /// <param name="order"></param>
-        /// <param name="agg">Can be null, see <see cref="CellAgglomeration"/>.</param>
-        public XQuadSchemeHelper(MultiphaseCellAgglomerator agg) {
-            MPICollectiveWatchDog.Watch();
-            this.lsTrk = agg.Tracker;
-            this.MomentFittingVariant = agg.HMFvariant;
-            this.CellAgglomeration = agg;
-            this.NonAgglomeratedMetrics = agg.NonAgglomeratedMetrics;
-            this.SpeciesList = agg.SpeciesList.ToList().AsReadOnly();
-            this.GhostSupport = false;
-
-            ConstructorCommon();
-        }
-        */
 
         void ConstructorCommon() {
             var Krefs = this.XDGSpaceMetrics.GridDat.Grid.RefElements;
@@ -203,86 +147,6 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            //if (this.GhostSupport == true) {
-            //    for (int iKref = 0; iKref < Krefs.Length; iKref++) {
-            //        m_Subgrid4Kref_AllEdges.Add(
-            //            Krefs[iKref],
-            //            this.lsTrk.GridDat.GetRefElementSubGrid(iKref).AllEdgesMask);
-            //    }
-            //}
-
-            //this.GhostIntegrationDomain = new Dictionary<SpeciesId, EdgeMask>();
-
-            
-            /*
-            if (this.CellAgglomeration != null) {
-                if (!object.ReferenceEquals(this.CellAgglomeration.Tracker, this.lsTrk))
-                    throw new ArgumentException();
-
-                SpeciesId[] AgglomSpecies = this.CellAgglomeration.SpeciesList.ToArray();
-
-                var Edge2Cell = this.lsTrk.GridDat.Edges.CellIndices;
-                int J = this.lsTrk.GridDat.Cells.NoOfLocalUpdatedCells;
-                int JE = this.lsTrk.GridDat.Cells.NoOfCells;
-                int E = this.lsTrk.GridDat.Edges.Count;
-                
-
-                // eliminate "empty" edges
-                for (int iSpc = 0; iSpc < AgglomSpecies.Length; iSpc++) {
-                    var spId = AgglomSpecies[iSpc];
-                    MultidimensionalArray EdgeArea = this.NonAgglomeratedMetrics.CutEdgeAreas[spId];
-                    MultidimensionalArray Volumes = this.NonAgglomeratedMetrics.CutCellVolumes[spId];
-
-                    
-                    // compute ghost exclusions (part 1)
-                    // =================================
-                    List<int> GhostExclusions = new List<int>();
-                    var E2C = this.lsTrk.GridDat.Edges.CellIndices;
-                    foreach (int jEdge in this.GetEdgeMask(spId).ItemEnum) {
-                        int jCell0 = E2C[jEdge, 0];
-                        if (Volumes[jCell0] <= 1.0e-10) {
-                            GhostExclusions.Add(jEdge);
-                        } else {
-                            int jCell1 = E2C[jEdge, 1];
-                            if (jCell1 >= 0) {
-                                if (Volumes[jCell1] <= 1.0e-10) {
-                                    GhostExclusions.Add(jEdge);
-                                }
-                            }
-                        }
-                    }
-
-
-                    // determine edges over which agglomeration is forbidden
-                    // (because their measure is zero)
-                    // =====================================================
-                    {
-
-                        var scheme = this.GetEdgeQuadScheme(spId).Compile(_lsTrk.GridDat, order);
-
-                        foreach (ChunkRulePair<QuadRule> cqr in scheme) {
-                            for (int iEdge = cqr.Chunk.i0; iEdge < cqr.Chunk.JE; iEdge++) {
-                                var edgArea = cqr.Rule.Weights.Sum();
-                                EdgeArea[iEdge] = edgArea;
-                                if (edgArea <= 1.0e-12) {
-                                    // edge has zero measure => should not be in the ghost scheme
-                                    GhostExclusions.Add(iEdge);
-                                }
-                            }
-                        }
-                    }
-
-                    if (GhostExclusions.Count > 0) {
-                        var _newGhostIntegrationDomain = _GhostIntegrationDomain.GetBitMask().CloneAs();
-                        foreach (int iEdge in GhostExclusions)
-                            _newGhostIntegrationDomain[iEdge] = false;
-                        _GhostIntegrationDomain = new EdgeMask(lsTrk.GridDat, _newGhostIntegrationDomain);
-                    }
-
-                    this.GhostIntegrationDomain.Add(spId, _GhostIntegrationDomain);
-                }
-            }
-            */
         }
 
         /// <summary>
@@ -335,12 +199,6 @@ namespace BoSSS.Foundation.XDG {
             return m_HMFEdgesDomain[iKref, iLevSet];
         }
 
-
-        ///// <summary>
-        ///// edge masks for the ghost domain, see <see cref="XSpatialOperator.GhostEdgesOperator"/>
-        ///// </summary>
-        //Dictionary<SpeciesId, EdgeMask> GhostIntegrationDomain;
-
         /// <summary>
         /// initialized by the constructor to avoid MPI-deadlocks;
         /// keys: species 'S' <br/>
@@ -353,19 +211,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         EdgeMask m_CutCellSubgrid_InnerEdges;
 
-        /*
-        /// <summary>
-        /// initialized by the constructor to avoid MPI-deadlocks;
-        /// </summary>
-        Dictionary<RefElement, EdgeMask> m_Subgrid4Kref_AllEdges = new Dictionary<RefElement, EdgeMask>();
-        */
-
-        //LevelSetTracker lsTrk {
-        //    get {
-        //        return XDGSpaceMetrics.Tracker;
-        //    }
-        //}
-
+      
 
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp) {
             if (!this.SpeciesList.Contains(sp))

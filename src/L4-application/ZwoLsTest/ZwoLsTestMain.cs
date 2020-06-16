@@ -51,16 +51,16 @@ namespace BoSSS.Application.ZwoLsTest {
 
             //AllUpTest.SetUp();
             //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, true);
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 3, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, false);
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, XQuadFactoryHelper.MomentFittingVariants.Saye, false);
             //AllUpTest.Teardown();
             //Assert.IsTrue(false, "Remove me");
             //return;
 
-
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d,3,OneStepGaussAndStokes,False)
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.1 });
+                () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, DYNAMIC_BALANCE = false });
         }
 
         protected override IGrid CreateOrLoadGrid() {
@@ -192,6 +192,8 @@ namespace BoSSS.Application.ZwoLsTest {
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_phi0(this.LsTrk)); // flux am lev-set 0
             Op.EquationComponents["c1"].Add(new LevSetFlx_phi1(this.LsTrk)); // flux am lev-set 1
+
+            //Op.EquationComponents["c1"].Add(new DxBroken());
 
             Op.Commit();
         }
@@ -338,12 +340,14 @@ namespace BoSSS.Application.ZwoLsTest {
             var species = new[] { spcA, spcB };
             //MultiphaseCellAgglomerator.CheckFile = $"InsideMpagg-{name_disc}.csv";
             MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
-            
-            
+
+            int RefMPIsize = 1;
+
+
             // check level-set coordinates
             // ===========================
             {
-                var LsChecker = new TestingIO(this.GridData, $"LevelSets-{name_disc}.csv", 1);
+                var LsChecker = new TestingIO(this.GridData, $"LevelSets-{name_disc}.csv", RefMPIsize);
                 LsChecker.AddDGField(this.Phi0);
                 LsChecker.AddDGField(this.Phi1);
                 LsChecker.DoIOnow();
@@ -363,7 +367,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             bool[] equalAggAsinReferenceRun;
             {
-                var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", 1);
+                var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", RefMPIsize);
                 long[] GiDs = GridData.CurrentGlobalIdPermutation.Values;
                 int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 long[] extGiDs = GridData.iParallel.GlobalIndicesExternalCells;
@@ -414,7 +418,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 bool Agglom;
                 if(object.ReferenceEquals(ccm,Agg)) {
                     name = "Agglomerated";
-                    Agglom = false;
+                    Agglom = true;
                 } else {
                     name = "Nonagglom";
                     Agglom = false;
@@ -427,7 +431,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
                 string FileName = $"{name}LengthScales-{name_disc}.csv";
-                var Checker = new TestingIO(this.GridData, FileName, 1);
+                var Checker = new TestingIO(this.GridData, FileName, RefMPIsize);
                 Checker.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
                 Checker.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
                 Checker.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
@@ -435,7 +439,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 Checker.DoIOnow();
 
                 if(this.MPISize == 1) {
-                    var Checker2 = new TestingIO(this.GridData, FileName, 2);
+                    var Checker2 = new TestingIO(this.GridData, FileName, int.MaxValue);
                     Checker2.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
                     Checker2.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
                     Checker2.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
@@ -454,35 +458,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 double volB = Checker.RelError("CellVolB") * ((!Agglom || equalAggAsinReferenceRun[1]) ? 1.0 : 0.0);
 
                 if(srfA + volA + srfB + volB > 0.001) {
-                    /*
-                    var plotlist = new List<DGField>();
-
-                    foreach(var s in new[] { "CellSurfA", "CellVolA", "CellSurfB", "CellVolB" }) {
-                        double[] refData = Checker.ReferenceData[s];
-                        double[] curData = Checker.CurrentData[s];
-
-                        Basis b = new Basis(this.GridData, 0);
-                        var rfViz = new SinglePhaseField(b, s + "-reference");
-                        var crViz = new SinglePhaseField(b, s + "-current");
-                        var dsViz = new SinglePhaseField(b, s + "-distance");
-                        for(int j = 0; j < J; j++) {
-                            rfViz.SetMeanValue(j, refData[j]);
-                            crViz.SetMeanValue(j, curData[j]);
-                            dsViz.SetMeanValue(j, curData[j] - refData[j]);
-                        }
-
-                        plotlist.Add(rfViz);
-                        plotlist.Add(crViz);
-                        plotlist.Add(dsViz);
-
-                    }
-
-                    plotlist.Add(Phi0);
-                    plotlist.Add(Phi1);
-
-                    Tecplot.PlotFields(plotlist, "Fuck" + name + "-" + TimestepNo, 0, 0);
-                    */
-
+                  
                     Console.WriteLine($"Mismatch in {name} cell surface for species A between single-core and parallel run: {srfA}.");
                     Console.WriteLine($"Mismatch in {name} cell volume  for species A between single-core and parallel run: {volA}.");
                     Console.WriteLine($"Mismatch in {name} cell surface for species B between single-core and parallel run: {srfB}.");
@@ -522,9 +498,6 @@ namespace BoSSS.Application.ZwoLsTest {
                 TestAgglomeration_Projection(quadOrder, Agg);
 
             }
-
-            
-            
 
             // operator matrix assembly
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping, LsTrk.GetSpeciesId("B"));
