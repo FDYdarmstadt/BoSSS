@@ -924,7 +924,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-            static bool ruleDiagnosis = true;
+            static bool ruleDiagnosis = false;
 
             /// <summary>
             /// calls all <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate(CoefficientSet, CoefficientSet, int[], int)"/> methods
