@@ -810,8 +810,6 @@ namespace BoSSS.Foundation.XDG {
                                             //if(lsTrk.ContainesSpecies(SpeciesB, cscPos) == true)
                                             //    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell should NOT contain negative species
 
-
-
                                         }
 
                                         
@@ -821,7 +819,8 @@ namespace BoSSS.Foundation.XDG {
                                             rule = SurfIntegration.Compile(GridData, order);
 
                                             if (ruleDiagnosis) {
-                                                rule.SumOfWeightsToTextFileVolume(GridData, string.Format("Levset_{0}.csv", iLevSet));
+                                                //rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                                rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
                                             }
                                         }
 
@@ -925,7 +924,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-            static bool ruleDiagnosis = false;
+            static bool ruleDiagnosis = true;
 
             /// <summary>
             /// calls all <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate(CoefficientSet, CoefficientSet, int[], int)"/> methods

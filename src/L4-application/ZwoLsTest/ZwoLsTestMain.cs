@@ -40,11 +40,10 @@ namespace BoSSS.Application.ZwoLsTest {
     /// <summary>
     /// This guy tests the basic functionality of the XDG framework
     /// if more than one level-set is involved.
-    /// It is mainly relevant for surface equations (Christina's work).
     /// </summary>
     class ZwoLsTestMain : BoSSS.Solution.Application {
 
-        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
@@ -60,7 +59,7 @@ namespace BoSSS.Application.ZwoLsTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, DYNAMIC_BALANCE = false });
+                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, DYNAMIC_BALANCE = true });
         }
 
         protected override IGrid CreateOrLoadGrid() {
@@ -490,7 +489,8 @@ namespace BoSSS.Application.ZwoLsTest {
             MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, this.THRESHOLD);
 
             // plausibility of cell length scales 
-            TestLengthScales(quadOrder, TimestepNo);
+            if(DYNAMIC_BALANCE == false)
+                TestLengthScales(quadOrder, TimestepNo);
 
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
             if (this.THRESHOLD > 0.01) {
@@ -531,6 +531,8 @@ namespace BoSSS.Application.ZwoLsTest {
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
             Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).Extrapolate(du_dx.Mapping);
 
+            PlotCurrentState(666.0, 666, 3);
+            
 
             // markieren, wo ueberhaupt A und B sind
             Bmarker.AccConstant(1.0, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);

@@ -148,7 +148,6 @@ namespace BoSSS.Application.ZwoLsTest {
             double FlxPos = U_Pos[0]*inp.Normal[0];
 
             return FlxNeg * vA - FlxPos * vB;
-            //return 0.0;
         }
 
         public override int LevelSetIndex {
