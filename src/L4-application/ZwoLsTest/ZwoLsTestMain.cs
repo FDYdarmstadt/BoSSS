@@ -59,7 +59,7 @@ namespace BoSSS.Application.ZwoLsTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye, DYNAMIC_BALANCE = true });
+                () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye, DYNAMIC_BALANCE = true });
         }
 
         protected override IGrid CreateOrLoadGrid() {
@@ -208,12 +208,14 @@ namespace BoSSS.Application.ZwoLsTest {
         XSpatialOperatorMk2 Op;
 
 
-        int quadOrderFunc(int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) {
-            return this.DEGREE * 2 + 2;
+        int QuadOrder {
+            get {
+                return this.DEGREE * 2 + 2;
+            }
         }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1, quadOrderFunc, new SpeciesId[] { LsTrk.GetSpeciesId("B") }, "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1, (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder, new SpeciesId[] { LsTrk.GetSpeciesId("B") }, "u", "c1");
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             if(usePhi0)
@@ -514,17 +516,16 @@ namespace BoSSS.Application.ZwoLsTest {
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // Agglomerator setup
-            int quadOrder = Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { u.Basis.Degree });
-            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, this.THRESHOLD);
+            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, QuadOrder, this.THRESHOLD);
 
             // plausibility of cell length scales 
             if(SER_PAR_COMPARISON)
-                TestLengthScales(quadOrder, TimestepNo);
+                TestLengthScales(QuadOrder, TimestepNo);
 
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
             if (this.THRESHOLD > 0.01) {
                 TestAgglomeration_Extraploation(Agg);
-                TestAgglomeration_Projection(quadOrder, Agg);
+                TestAgglomeration_Projection(QuadOrder, Agg);
 
             }
 
@@ -535,7 +536,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 
             // mass matrix factory
-            var Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
+            var Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
                         
             // Mass matrix/Inverse Mass matrix
             //var MassInv = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, true, LsTrk.GetSpeciesId("B"));
@@ -581,7 +582,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
             // check error
-            double ErrorThreshold = 0.1;
+            double ErrorThreshold = 1.0e-1;
             if(this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
                 ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
