@@ -1454,69 +1454,7 @@ namespace BoSSS.Solution {
             sw.WriteLine();
             sw.Flush();
             sw.Close();
-        }
-
-        // extract the Fields from the solution, Resample them equally spaced and ready to use in an fft
-        private void Resample(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
-        {
-            if (Mgop.GridData.SpatialDimension == 2 && Mgop.LevelIndex == 0)
-            {
-                MultidimensionalArray SamplePoints;
-
-                GridData GD = (GridData)Mgop.Mapping.AggGrid.AncestorGrid;
-
-                BoundingBox BB = GD.GlobalBoundingBox;
-
-                double xDist = BB.Max[0] - BB.Min[0];
-                double yDist = BB.Max[1] - BB.Min[1];
-                double aspectRatio = xDist / yDist;
-                                
-                MGViz viz = new MGViz(Mgop);
-                DGField[] Fields = viz.ProlongateToDg(currentSol, "Error");
-
-                for (int p = 0; p < Fields.Length; p++)
-                {
-                    var field = Fields[p];
-
-                    int DOF = field.DOFLocal;
-                    double N = Math.Sqrt(DOF);
-                    int Nx = (int)Math.Round(Math.Sqrt(aspectRatio) * N);
-                    int Ny = (int)Math.Round(1 / Math.Sqrt(aspectRatio) * N);
-
-                    SamplePoints = MultidimensionalArray.Create(Ny, Nx);
-
-                    for (int i = 0; i < Nx; i++)
-                    {
-                        MultidimensionalArray points = MultidimensionalArray.Create(Ny, 2);
-
-                        for (int k = 0; k < Ny; k++)
-                        {
-                            points[k, 0] = BB.Min[0] + (i + 1) * xDist / (Nx + 1);
-                            points[k, 1] = BB.Min[1] + (k + 1) * yDist / (Ny + 1);
-                        }
-
-                        List<DGField> fields = new List<DGField>();
-                        fields.Add(field);
-
-                        FieldEvaluation FE = new FieldEvaluation(GD);
-
-                        MultidimensionalArray Result = MultidimensionalArray.Create(Ny, 1);
-
-                        FE.Evaluate(1.0, fields, points, 1.0, Result);
-
-                        SamplePoints.ExtractSubArrayShallow(-1, i).Acc(1.0, Result.ExtractSubArrayShallow(-1, 0));
-                    }
-
-                    SamplePoints.SaveToTextFile("ResampleFFT_lvl" + Mgop.LevelIndex + "_" + iterIndex  + "_" + field.Identification + ".txt");
-                }                
-                if (iterIndex != 0)
-                {
-                    Console.WriteLine("Completed analysis, written resampled error, exiting ...");
-                    System.Environment.Exit(0);
-                }
-            }
-
-        }
+        }        
 
         private ISolverSmootherTemplate My_MG_Precond(LinearSolverConfig _lc, int[] _LocalDOF, int MSLength, ISolverSmootherTemplate[] prechain, ISolverSmootherTemplate[] postchain, ISolverSmootherTemplate toplevelpre, ISolverSmootherTemplate toplevelpst) {
 
@@ -1821,13 +1759,15 @@ namespace BoSSS.Solution {
                         //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                         //    Depth = 1
                         //},
-                        Overlap = 1, // overlap seems to help; more overlap seems to help more
+                        Overlap = 2, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = true
+                        UsePMGinBlocks = false //true
                     };
-                    
+
 
                     levelSolver = new OrthonormalizationMultigrid() {
+                        MaxKrylovDimension = _lc.MaxKrylovDim,
+                        SpectralAnalysis = _lc.SolverMode == LinearSolverMode.SpectralAnalysis,
                         PreSmoother = smoother1,
                         PostSmoother = smoother1,
                     };
@@ -1844,8 +1784,7 @@ namespace BoSSS.Solution {
                         };
 
                     // Extended Multigrid Analysis
-                    ((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;
-                    if(_lc.SolverMode == LinearSolverMode.SpectralAnalysis) { ((OrthonormalizationMultigrid)levelSolver).IterationCallback += Resample; }
+                    ((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
 
                 }
                 SolverChain.Add(levelSolver);

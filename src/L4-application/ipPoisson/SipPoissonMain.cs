@@ -1078,17 +1078,6 @@ namespace BoSSS.Application.SipPoisson {
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
 
-                        if (this.Control.LinearSolver.SolverMode == LinearSolverMode.SpectralAnalysis)
-                        {
-                            // set rhs to zeros
-                            RHSvec.Clear();
-
-                            // insert random solution resp. error values between +-1
-                            T2.Clear();
-                            var rand = new Random();
-                            T2 = Enumerable.Repeat(0, T2.Length).Select(i => rand.NextDouble()*2-1).ToArray();
-                        }
-
                         MultigridOp.UseSolver(solver, T2, RHSvec);
                         T.CoordinateVector.SetV(T2);
                     }

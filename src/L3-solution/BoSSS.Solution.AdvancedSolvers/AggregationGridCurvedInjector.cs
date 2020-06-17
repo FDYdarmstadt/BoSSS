@@ -2493,7 +2493,6 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                     // populate Injectors
                     _Injectors[ilevel][i].Multiply(1.0, a, orthoInv, 0.0, "jkn", "jkm", "mn");
-
                     // next direct Injector
                     for (int k = 0; k < _Injectors[ilevel][i].Lengths[0]; k++)
                     {
@@ -2506,6 +2505,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                             int kCell = parts[j];
                             _injectorCoarse[kCell].DGEMM(1.0, _injectorCoarse[kCell].CloneAs(), _Injectors[ilevel][i].ExtractSubArrayShallow(k, -1, -1), 0.0);
                         }
+                        
                     }
                 }
             }

@@ -46,19 +46,19 @@ namespace BoSSS.Application.MultigridTest {
 
         [OneTimeSetUp]
         public static void Init() {
-            
+
             //GridCommons grd = Grid2D.Cartesian2DGrid(RandomSpacing(), RandomSpacing());
             //grid = new GridData(Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-7, 7, 8), GenericBlas.Linspace(-1, 1, 2)));
             //grid = new GridData(Grid2D.Cartesian2DGrid(new double[] { -6, -4, -2, 2, 4, 6 }, GenericBlas.Linspace(-1, 1, 2)));
-            if (curved)
-            {
-                grid = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 5), GenericBlas.Linspace(0, 1, 17), CellType.Square_9, true).GridData;
-            }
-            else
-            {
-                grid = (Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1.5, 1.5, 17), GenericBlas.Linspace(-1.5, 1.5, 17))).GridData;
-            }
-
+            //if (curved)
+            //{
+            //    grid = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 5), GenericBlas.Linspace(0, 1, 17), CellType.Square_9, true).GridData;
+            //}
+            //else
+            //{
+            //    grid = (Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1.5, 1.5, 17), GenericBlas.Linspace(-1.5, 1.5, 17))).GridData;
+            //}
+            grid = (Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1.5, 1.5, 17), GenericBlas.Linspace(-1.5, 1.5, 17))).GridData;
             MgSeq = CoarseningAlgorithms.CreateSequence(grid);
 
             for (int p = 0; p <= 3; p++) { // loop over polynomial degrees...

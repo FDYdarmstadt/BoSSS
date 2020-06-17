@@ -1461,6 +1461,13 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         bool OneTimeMgInit = false;
 
+
+        //iterations of linear solver
+        public double NoIter = new double();
+        List<int> Iter = new List<int>();
+        // time of linear solver
+        public double LinTime = new double();
+
         /// <summary>
         /// Solver;
         /// </summary>
@@ -1572,14 +1579,18 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // Nonlinear Solver (Navier-Stokes)
                     // --------------------------------
-
+                    Stopwatch sw = new Stopwatch();
+                    sw.Start();
                     // use solver
                     nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
                     // 'revert' agglomeration
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
-
+                   
+                    LinTime = sw.Elapsed.TotalSeconds;
+                    Iter.Add(linearSolver.ThisLevelIterations);
+                    NoIter = (double)Iter.Sum() / (double)Iter.Count;
                 } else {
                     // Linear Solver (Stokes)
                     // ----------------------
@@ -1598,7 +1609,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     //System.SaveToTextFileSparse("MatrixNOsplitting.txt");
                     //RHS.SaveToTextFile("rhsNOsplitting.txt");
-
+                    LinTime = 0;
+                    Stopwatch sw = new Stopwatch();
+                    sw.Start();
                     using (var tr = new FuncTrace()) {
                         // init linear solver
                         using (new BlockTrace("Slv Init", tr)) {
@@ -1610,6 +1623,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                         }
                     }
+                    LinTime = sw.Elapsed.TotalSeconds;
+                    Iter.Add(linearSolver.ThisLevelIterations);
+                    NoIter = (double)Iter.Sum() / (double)Iter.Count;
+
 
                     // 'revert' agglomeration
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));

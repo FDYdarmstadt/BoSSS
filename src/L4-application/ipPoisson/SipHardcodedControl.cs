@@ -221,7 +221,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test channel flow around a cylinder (half domain with symmetry condition)
         /// </summary>
-        public static SipControl ConfinedCylinder(int k = 4)
+        public static SipControl ConfinedCylinder(int k = 3)
         {
             var C = new SipControl();
 
@@ -281,7 +281,7 @@ namespace BoSSS.Application.SipPoisson {
             C.AddBoundaryValue("Dirichlet_top", "T", "X => 0", false);
             C.AddBoundaryValue("Dirichlet_outlet", "T", "X => 0", false);
             C.AddBoundaryValue("Dirichlet_bottom", "T", "X => 0", false);
-            C.AddBoundaryValue("Dirichlet_cylinder", "T", "X => -1", false);
+            C.AddBoundaryValue("Dirichlet_cylinder", "T", "X => -10", false);
 
             #endregion
 
@@ -296,12 +296,13 @@ namespace BoSSS.Application.SipPoisson {
             #region linear solver config
 
             // Linear Solver Settings
-            C.LinearSolver.MaxKrylovDim = 50;
-            C.LinearSolver.MaxSolverIterations = 500;
-            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.MaxKrylovDim = 5000;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.SolverMode = LinearSolverMode.Solve;
+            C.SuperSampling = 2;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             //C.LinearSolver.SolverMode = LinearSolverMode.SpectralAnalysis;
 
@@ -326,7 +327,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 5) {
+        public static SipControl TestCartesian2(int Res = 20, int Dim = 2, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 1) {
             //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian2(8,3,deg:2)
 
             if (Dim != 2 && Dim != 3)
@@ -338,26 +339,32 @@ namespace BoSSS.Application.SipPoisson {
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
-            R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
-            R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
-            R.ExactSolution_provided = true;
-            R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
+            //R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
+            R.InitialValues_Evaluators.Add("RHS", X => -1.0); // constant force i.e. gravity
+            //R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
+            R.ExactSolution_provided = false;//true;
+            R.LinearSolver.NoOfMultigridLevels = 2;
             R.LinearSolver.SolverCode = solver_name;
+            R.LinearSolver.MaxSolverIterations = 20;
+            R.LinearSolver.TargetBlockSize = 10000;
+            R.LinearSolver.MaxKrylovDim = 20;
+            R.LinearSolver.SolverMode = LinearSolverMode.SpectralAnalysis;
             // exp_Kcycle_schwarz
             // exp_gmres_levelpmg
 
 #if DEBUG
             // For testing in DEBUG mode, this setting enforces the use 
             // of many multigrid-levels. In 2D, the examples are so small that 
-            R.LinearSolver.TargetBlockSize = 100;
+            R.LinearSolver.TargetBlockSize = 10000;
 #endif
 
 
             R.GridFunc = delegate () {
                 GridCommons grd = null;
                 if (Dim == 2) {
-                    double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
-                    double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    double[] xNodes = GenericBlas.Linspace(-10, 10, Res * 5 + 1);
+                    double[] yNodes = GenericBlas.Linspace(-10, 10, Res * 5 + 1);
+                    //double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
 
                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 } else if (Dim == 3) {
@@ -376,10 +383,11 @@ namespace BoSSS.Application.SipPoisson {
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
                     double x = X[0];
-                    if (Math.Abs(x - 0.0) <= 1.0e-8)
-                        ret = 1; // Dirichlet
-                    else
-                        ret = 2; // Neumann
+                    //if (Math.Abs(x - 0.0) <= 1.0e-8)
+                    //    ret = 1; // Dirichlet
+                    //else
+                    //    ret = 2; // Neumann
+                    ret = 1; // all dirichlet
                     return ret;
                 });
 
@@ -391,28 +399,28 @@ namespace BoSSS.Application.SipPoisson {
                      double x = X[0], y = X[1];
 
 
-                     return Math.Sin(x);
+                     return 0.0;//Math.Sin(x);
                      //if (Math.Abs(X[0] - (0.0)) < 1.0e-8)
                      //    return 0.0;
 
                      //throw new ArgumentOutOfRangeException();
                  });
 
-            R.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
-                 delegate (double[] X) {
-                     double x = X[0], y = X[1], z = X.Length > 2 ? X[2] : 0.0;
+            //R.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
+            //     delegate (double[] X) {
+            //         double x = X[0], y = X[1], z = X.Length > 2 ? X[2] : 0.0;
 
-                     if (Math.Abs(y - 1.0) < 1.0e-8 || Math.Abs(y + 1.0) < 1.0e-8) // y = -1, y = +1
-                         return 0;
+            //         if (Math.Abs(y - 1.0) < 1.0e-8 || Math.Abs(y + 1.0) < 1.0e-8) // y = -1, y = +1
+            //             return 0;
 
-                     if (X.Length > 2 && (Math.Abs(z - 1.0) < 1.0e-8 || Math.Abs(z + 1.0) < 1.0e-8)) // z = -1, z = +1
-                         return 0;
+            //         if (X.Length > 2 && (Math.Abs(z - 1.0) < 1.0e-8 || Math.Abs(z + 1.0) < 1.0e-8)) // z = -1, z = +1
+            //             return 0;
 
-                     //if (Math.Abs(X[0] - (+10.0)) < 1.0e-8)
-                         return Math.Cos(x);
+            //         //if (Math.Abs(X[0] - (+10.0)) < 1.0e-8)
+            //             return Math.Cos(x);
 
-                     //throw new ArgumentOutOfRangeException();
-                 });
+            //         //throw new ArgumentOutOfRangeException();
+            //     });
             return R;
         }
 

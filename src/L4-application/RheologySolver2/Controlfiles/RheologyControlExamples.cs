@@ -410,7 +410,7 @@ namespace BoSSS.Application.Rheology {
                                           
             //Solver Options
             C.NoOfTimesteps = 1;
-            C.savetodb = true;
+            C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
@@ -435,7 +435,7 @@ namespace BoSSS.Application.Rheology {
 
             // transient calculation
             // =====================
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.dt = 0.1;
             C.dtMax = C.dt;
@@ -446,10 +446,10 @@ namespace BoSSS.Application.Rheology {
 
             C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.TargetBlockSize = 1000;//100000;
-            C.LinearSolver.ConvergenceCriterion = 1E-7;
+            C.LinearSolver.TargetBlockSize = 10000;//100000;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
-            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.NoOfMultigridLevels = 4;
 
 
             // nonlinear solver config
@@ -457,7 +457,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-8;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady; //Transient;//   Steady;
@@ -491,14 +491,14 @@ namespace BoSSS.Application.Rheology {
             double h = 4;
 
             C.Stokes = false;
-            C.StokesConvection = true;
+            C.StokesConvection = false;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
-            C.Reynolds = 1;
-            C.Weissenberg = 0.3; //aim Weissenberg number!
+            C.Reynolds = 0.1;
+            C.Weissenberg = 0.3001; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
-            C.WeissenbergIncrement = 0.1001;
-            C.giesekusfactor = 0.1;
+            C.WeissenbergIncrement = 0.1;
+            C.giesekusfactor = 0.0;
 
             //Penalties
             C.ViscousPenaltyScaling = 1.0;
@@ -542,9 +542,9 @@ namespace BoSSS.Application.Rheology {
             //string grid = "ab9b8f9a-e1aa-469d-8eea-b56a88e672a4"; // florian terminal03 (full, level 3)
 
             // grids Matthias
-            string grid = "5cce8f67-adbd-4aba-976f-c900a1f934c3"; // (full, level 0)
+            //string grid = "5cce8f67-adbd-4aba-976f-c900a1f934c3"; // (full, level 0)
             //string grid = "7fdc59c1-3e10-4817-8fb3-1807d97bac2a"; // (full, level 1)
-            //string grid = "c6c4d178-378f-4ee5-afa6-37b53d3b6280"; // (full, level 2)
+            string grid = "3a4bf165-6464-4450-b7e2-b7d9d2436556"; // (full, level 2)
             //string grid = "8dfdf2cd-952c-4394-a141-ae42e88b5ed7"; // (full, level 3)
 
             // half channel mesh3 for cond tests

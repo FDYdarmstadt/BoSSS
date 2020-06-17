@@ -141,6 +141,80 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
+        public static IBM_Control ConfinedCylinder()
+        {
+
+            var C = new IBM_Control();
+            C.DbPath = @"d:\bosss_db_masterthesis";
+            // GUID's to confined cylinder grids (full)
+            List<string> grids = new List<string>();
+            grids.Add("bbb695f0-94e9-4e2d-812e-6cf50798b490");
+            grids.Add("ebe0db94-949e-4948-85f2-ecf45ee421ef");
+            grids.Add("3a4bf165-6464-4450-b7e2-b7d9d2436556");
+            grids.Add("d1f5d426-d72f-4e50-b816-f9e4a8150383");
+
+            
+
+            // DG Fields
+            int k = 2;
+            C.SetDGdegree(k);
+
+            // set grid
+            var grd = grids[2];
+            Guid gridGuid;
+            if (Guid.TryParse(grd, out gridGuid))
+            {
+                C.GridGuid = gridGuid;
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+
+            // Physical Parameters
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0 / 0.1; // 1 / Reynoldsnumber  Re << 1 (Stokesflow)
+
+            // Boundary Values
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula("X => 1.5 * (1 - 0.25 * X[1] * X[1])"));
+            C.AddBoundaryValue("Wall_top");
+            C.AddBoundaryValue("Pressure_outlet");
+            C.AddBoundaryValue("Wall_bottom");
+            C.AddBoundaryValue("Wall_cylinder");
+
+            // Initial Values
+            C.InitialValues.Add("VelocityX", new Formula("X => 0.0"));
+            C.InitialValues.Add("VelocityY", new Formula("X => 0.0"));
+            C.InitialValues.Add("Pressure", new Formula("X => 0.0"));
+            C.InitialValues.Add("Phi", new Formula("X => -1.0"));
+
+            // Linear Solver Settings
+            C.LinearSolver.MaxKrylovDim = 5000;
+            C.LinearSolver.MaxSolverIterations = 500;
+            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.SolverMode = LinearSolverMode.Solve;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
+
+            //NonlinearSolver
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.MaxSolverIterations = 200;
+
+            // Timestepping
+            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+            // Miscellaneous Solver Settings
+            C.savetodb = false;
+            C.ProjectName = "MG-Stokes";
+            C.SessionName = "MG-Stokes-p=" + k + "-h=" + grids.IndexOf(grd);
+
+            return C;
+        }
+
+
         public static IBM_Control nonIBMCylinderFlow(string _DbPath = null, int k = 2, bool xPeriodic = false, double VelXBase = 0.0) {
             IBM_Control C = new IBM_Control();
 

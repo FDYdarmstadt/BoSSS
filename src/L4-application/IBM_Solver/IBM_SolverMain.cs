@@ -706,8 +706,11 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 
-                m_BDF_Timestepper.Solve(phystime, dt); 
-                
+                m_BDF_Timestepper.Solve(phystime, dt);
+
+                base.QueryHandler.ValueQuery("DOFs", CurrentSolution.Mapping.TotalLength, true);
+                base.QueryHandler.ValueQuery("NoIter", m_BDF_Timestepper.NoIter, true);
+                base.QueryHandler.ValueQuery("maxSolRunT", m_BDF_Timestepper.LinTime, true);
 
                 // Residual();
                 this.ResLogger.NextTimestep(false);
@@ -1169,12 +1172,12 @@ namespace BoSSS.Application.IBM_Solver {
                 int pPrs = this.Pressure.Basis.Degree;
                 int D = this.GridData.SpatialDimension;
 
-                if (this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite
-                    && this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.IdMass_DropIndefinite) {
-                    throw new NotSupportedException("Invalid option for block-preconditioning of momentum equation: " + this.Control.VelocityBlockPrecondMode
-                        + ". Valid options are " + MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite + " and " + MultigridOperator.Mode.IdMass_DropIndefinite + ".");
+                //if (this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite
+                //    && this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.IdMass_DropIndefinite) {
+                //    throw new NotSupportedException("Invalid option for block-preconditioning of momentum equation: " + this.Control.VelocityBlockPrecondMode
+                //        + ". Valid options are " + MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite + " and " + MultigridOperator.Mode.IdMass_DropIndefinite + ".");
 
-                }
+                //}
 
 
                 // set the MultigridOperator configuration for each level:
@@ -1187,14 +1190,14 @@ namespace BoSSS.Application.IBM_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                            DegreeS = new int[] { Math.Max(1, pVel) },//DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        DegreeS = new int[] { Math.Max(0, pPrs) },//DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };

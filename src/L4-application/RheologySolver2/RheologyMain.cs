@@ -696,6 +696,10 @@ namespace BoSSS.Application.Rheology {
         }
 
 
+        // linear solver evalutation
+        List<double> iters = new List<double>();
+        List<double> times = new List<double>();
+
         // Build and solve system
         //=================================================================
         /// <summary>
@@ -789,6 +793,13 @@ namespace BoSSS.Application.Rheology {
                             // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                             m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+                            iters.Add(m_BDF_Timestepper.NoIter);
+                            times.Add(m_BDF_Timestepper.LinTime);
+
+                            base.QueryHandler.ValueQuery("DOFs", CurrentSolution.Mapping.TotalLength, true);
+                            base.QueryHandler.ValueQuery("NoIter", iters.Sum()/(double)iters.Count, true);
+                            base.QueryHandler.ValueQuery("maxSolRunT", times.Sum() / (double)times.Count, true);
 
                             //this.ResLogger.NextTimestep(false);
 
@@ -1243,16 +1254,20 @@ namespace BoSSS.Application.Rheology {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                            DegreeS = new int[] { Math.Max(1, pVel) },
+                            //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             //mode = this.Control.VelocityBlockPrecondMode,
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            //mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
+                        DegreeS = new int[] { Math.Max(0, pPrs) },
+                        //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        //mode = MultigridOperator.Mode.Eye,
+                        mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };
 
@@ -1260,8 +1275,9 @@ namespace BoSSS.Application.Rheology {
                     // configurations for stresses
                     for (int d = 3; d < 6; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pStr - iLevel) },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            DegreeS = new int[] { Math.Max(1, pStr) },//DegreeS = new int[] { Math.Max(1, pStr - iLevel) },
+                            //mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                             VarIndex = new int[] { d }
                         };
                     }
