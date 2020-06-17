@@ -199,6 +199,14 @@ namespace BoSSS.Application.FSI_Solver {
         private double StartDt => ((FSI_Control)Control).dtMax / 10;
 
         /// <summary>
+        /// The maximum timestep setted in the control file.
+        /// </summary>
+        [DataMember]
+        private double RestartDt => ((FSI_Control)Control).dtMax / 1000;
+
+        private double CountFromRestart = 0;
+
+        /// <summary>
         /// FluidDensity
         /// </summary>
         [DataMember]
@@ -900,6 +908,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         private double CalculateTimestep(double phystime, int TimestepInt) {
             double dt = DtMax;
+            if(CountFromRestart > 0) {
+                CountFromRestart -= 1;
+                return RestartDt;
+            }
             if (oldTimestep == 0)
                 oldTimestep = StartDt;
             if (StaticTimestep)
@@ -1272,27 +1284,36 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
                 }
             }
-            for (int p = 0; p < m_Particles.Count(); p++) {
-                Particle currentParticle = m_Particles[p];
-                int index = timestepIndexOffset + p;
-                string currentLine = records[index];
-                string[] currentLineFields = currentLine.Split(',');
-                double[] position = new double[2];
-                double[] translationalVelocity = new double[2];
-                position[0] = Convert.ToDouble(currentLineFields[3]);
-                position[1] = Convert.ToDouble(currentLineFields[4]);
-                double angle = Convert.ToDouble(currentLineFields[5]) * 360 / (2 * Math.PI);
-                translationalVelocity[0] = Convert.ToDouble(currentLineFields[6]);
-                translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
-                double angularVelocity = Convert.ToDouble(currentLineFields[8]);
-                currentParticle.Motion.InitializeParticlePositionAndAngle(position, angle);
-                currentParticle.Motion.InitializeParticleVelocity(translationalVelocity, angularVelocity);
+            int historyLength = 3;
+            for (int t = historyLength; t > 0; t--) {
+                for (int p = 0; p < m_Particles.Count(); p++) {
+                    Particle currentParticle = m_Particles[p];
+                    int index = timestepIndexOffset - m_Particles.Count() * (t - 1) + p;
+                    string currentLine = records[index];
+                    string[] currentLineFields = currentLine.Split(',');
+                    double[] position = new double[2];
+                    double[] translationalVelocity = new double[2];
+                    double[] force = new double[2];
+                    position[0] = Convert.ToDouble(currentLineFields[3]);
+                    position[1] = Convert.ToDouble(currentLineFields[4]);
+                    force[0] = Convert.ToDouble(currentLineFields[9]);
+                    force[1] = Convert.ToDouble(currentLineFields[10]);
+                    double angle = Convert.ToDouble(currentLineFields[5]) * 360 / (2 * Math.PI);
+                    translationalVelocity[0] = Convert.ToDouble(currentLineFields[6]);
+                    translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
+                    double angularVelocity = Convert.ToDouble(currentLineFields[8]);
+                    double torque = Convert.ToDouble(currentLineFields[11]);
+                    currentParticle.Motion.InitializeParticlePositionAndAngle(position, angle, t);
+                    currentParticle.Motion.InitializeParticleVelocity(translationalVelocity, angularVelocity, t);
+                    currentParticle.Motion.InitializeParticleForceAndTorque(force, torque, t, RestartDt);
+                }
             }
             cellColor = null;
             UpdateLevelSetParticles(time);
             CreatePhysicalDataLogger();
             CreateResidualLogger();
             ProcessColoring();
+            CountFromRestart = 50;
         }
 
         /// <summary>

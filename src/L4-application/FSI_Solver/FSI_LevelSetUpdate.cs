@@ -139,14 +139,11 @@ namespace FSI_Solver {
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int> CurrentColor = new List<int>();
             for (int p = 0; p < Particles.Count; p++) {
-                double h_min = minGridLength > Particles[p].GetLengthScales().Min()
-                    ? 1.5 * minGridLength
-                    : 0;
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++) {
                     if (ColoredCellsSorted[i][0] < J) {
                         Vector center = new Vector(gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]));
-                        if (ColoredCellsSorted[i][1] != 0 && Particles[p].Contains(center, h_min)) {
+                        if (ColoredCellsSorted[i][1] != 0 && Particles[p].Contains(center, 1.5 * minGridLength)) {
                             temp = ColoredCellsSorted[i][1];
                             break;
                         }
