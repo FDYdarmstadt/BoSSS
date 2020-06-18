@@ -87,8 +87,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures
 
         public bool Remove(TKey key)
         {
-            bool removed = keysAndValues.Remove(new KeyValuePair<TKey, TValue>(key, default(TValue)));
-            return removed;
+            var node = keysAndValues.First;
+            while( node != null)
+            {
+                TKey nodeKey = node.Value.Key;
+                if (nodeKey.Equals(key))
+                {
+                    keysAndValues.Remove(node);
+                    return true;
+                }
+                node = node.Next;
+            }
+            return false;
         }
 
         public bool TryGetValue(TKey key, out TValue value)

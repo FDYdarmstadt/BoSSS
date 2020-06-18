@@ -149,8 +149,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             return edge;
         }
 
-
-
         public Vertex DivideEdge(Edge<T> edge, double alpha, out Edge<T> newEdge)
         {
             Vector start = edge.Start.Position;
@@ -417,7 +415,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             //New Ridges
             Edge<T>[] newEdges;
             Edge<T>[] newNeighborEdges;
-            MeshCell<T> newCell = new MeshCell<T>();
+            MeshCell<T> newCell = new MeshCell<T> { Node = new T() };
+            newCell.Node.Position = cell.Node.Position;
             mesh.AddCell(newCell);
             MeshMethods.CreateBoundaryEdge(verticesOfNewEdgeBoundary, cell, newCell, out newEdges, out newNeighborEdges, boundaryCount);
             //Link Ridges to old neighbors
