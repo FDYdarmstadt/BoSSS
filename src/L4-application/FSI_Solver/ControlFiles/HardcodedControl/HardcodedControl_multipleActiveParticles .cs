@@ -339,7 +339,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-3, int.MaxValue, false);
+            C.SetTimesteps(1e-4, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -358,9 +358,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
 
-            //string ID = "3bcf5496-0f63-4407-ae88-a50872575592";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
-            //C.IsRestart = true;
+            string ID = "45f9f49e-814e-436c-b4cf-8c5a7ba83a3e";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 220);
+            C.IsRestart = true;
             return C;
         }
 

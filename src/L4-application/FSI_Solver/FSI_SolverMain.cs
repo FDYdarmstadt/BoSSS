@@ -908,15 +908,15 @@ namespace BoSSS.Application.FSI_Solver {
 
         private double CalculateTimestep(double phystime, int TimestepInt) {
             double dt = DtMax;
-            if(CountFromRestart > 0) {
-                CountFromRestart -= 1;
-                return RestartDt;
-            }
             if (oldTimestep == 0)
                 oldTimestep = StartDt;
             if (StaticTimestep)
                 return dt;
             else {
+                if (CountFromRestart > 0) {
+                    CountFromRestart -= 1;
+                    return RestartDt;
+                }
                 double maxVelocityL2Norm = 1e-15;
                 if (phystime == 0)
                     dt = StartDt;
