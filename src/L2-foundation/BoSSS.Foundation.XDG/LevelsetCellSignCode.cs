@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -74,6 +75,58 @@ namespace BoSSS.Foundation.XDG {
             lsSig += (newSign - oldSign) * bs;
         }
 
+        /// <summary>
+        /// Returns all combinations of level set signs which are possible under this cell sign.
+        /// </summary>
+        /// <param name="NoOfLS">Total number of level-sets, <see cref="LevelSetTracker.NoOfLevelSets"/></param>
+        public LevelSetSignCode[] GetAllSignCodes(int NoOfLS) {
+            if (NoOfLS <= 0 || NoOfLS > 4)
+                throw new ArgumentException("Number of Level Sets must be between 1 and 4.");
+
+            var R = new List<LevelSetSignCode>();
+
+            GetAllSignCodesRecursive(0, NoOfLS, R, new bool[0]);
+
+            return R.ToArray();
+        }
+
+        void GetAllSignCodesRecursive(int iLs, int NoOfLS, List<LevelSetSignCode> R, bool[] PrevSigns) {
+            Debug.Assert(PrevSigns.Length == iLs);
+
+            bool[] Sings_iLs;
+            switch(GetSign(iLs)) {
+                case LevelsetSign.Negative: Sings_iLs = new bool[] { false }; break;
+                case LevelsetSign.Positive: Sings_iLs = new bool[] { true }; break;
+                case LevelsetSign.Both: Sings_iLs = new bool[] { false, true }; break;
+                default: throw new NotImplementedException();
+            }
+
+            bool[] AllSigns = new bool[PrevSigns.Length + 1];
+                if(PrevSigns.Length > 0)
+                    Array.Copy(PrevSigns, AllSigns, PrevSigns.Length);
+
+            if(iLs < NoOfLS - 1) {
+                
+
+                foreach(bool b in Sings_iLs) {
+                    AllSigns[iLs] = b;
+                    GetAllSignCodesRecursive(iLs + 1, NoOfLS, R, AllSigns);
+                }
+            } else {
+                // end of recursion
+
+                Debug.Assert(AllSigns.Length == NoOfLS);
+
+                foreach(bool b in Sings_iLs) {
+                    AllSigns[iLs] = b;
+
+                    var lssc = new LevelSetSignCode();
+                    lssc.SetSigns(AllSigns);
+
+                    R.Add(lssc);
+                }
+            }
+        }
 
         /// <summary>
         /// equality

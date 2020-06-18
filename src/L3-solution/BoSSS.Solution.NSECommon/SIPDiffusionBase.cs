@@ -144,7 +144,7 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="cs"></param>
         /// <param name="DomainDGdeg"></param>
         /// <param name="TestDGdeg"></param>
-        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             m_D = cs.GrdDat.SpatialDimension;
             double _D = m_D;
             double _p = DomainDGdeg.Max();

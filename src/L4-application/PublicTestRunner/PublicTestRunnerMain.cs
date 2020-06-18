@@ -48,7 +48,7 @@ namespace PublicTestRunner {
     /// 
     /// </summary>
     public interface ITestTypeProvider {
-        
+
         /// <summary>
         /// List of serial tests (one MPI core) that should be executed in DEBUG and RELEASE mode.
         /// Referencing any type of the assembly will do.
@@ -103,6 +103,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
                         typeof(MPITest.Program)
                     };
             }
@@ -191,6 +192,9 @@ namespace PublicTestRunner {
 
         static ITestTypeProvider TestTypeProvider;
 
+        static public bool discoverRelease = true;
+
+
         static Assembly[] GetAllAssemblies() {
             var R = new HashSet<Assembly>();
 
@@ -203,13 +207,16 @@ namespace PublicTestRunner {
                     //Console.WriteLine("  added? " + added);
                 }
             }
-#if !DEBUG
-            if (TestTypeProvider.ReleaseOnlyTests != null) {
-                foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
-                    R.Add(t.Assembly);
+
+
+
+            if(discoverRelease) {
+                if(TestTypeProvider.ReleaseOnlyTests != null) {
+                    foreach(var t in TestTypeProvider.ReleaseOnlyTests) {
+                        R.Add(t.Assembly);
+                    }
                 }
             }
-#endif
 
 
 
@@ -230,16 +237,18 @@ namespace PublicTestRunner {
                     //Console.WriteLine("  added? " + (!contains));
                 }
             }
-#if !DEBUG
-            if (TestTypeProvider.MpiReleaseOnlyTests != null){
-                foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
-                    bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                    if (!contains) {
-                        R.Add((t.type.Assembly, t.NoOfProcs));
+
+            if(discoverRelease) {
+                if(TestTypeProvider.MpiReleaseOnlyTests != null) {
+                    foreach(var t in TestTypeProvider.MpiReleaseOnlyTests) {
+                        bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                        if(!contains) {
+                            R.Add((t.type.Assembly, t.NoOfProcs));
+                        }
                     }
                 }
             }
-#endif
+
             return R.ToArray();
         }
 
@@ -253,6 +262,13 @@ namespace PublicTestRunner {
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);
             if (r == null || r.Length <= 0) {
                 throw new IOException("unable to find file '" + PartialPath + "'");
+            }
+
+            if (r.Length > 1) {
+                foreach (string s in r) {
+                    Console.WriteLine(string.Format("Path {0}", s));
+                }
+                throw new IOException("The path '" + PartialPath + "' has been found several times. Did you specify the path correctly?");
             }
 
             return r;
@@ -395,7 +411,7 @@ namespace PublicTestRunner {
             }
             string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
             Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
-            
+
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile(DateNtime);
 
@@ -427,7 +443,7 @@ namespace PublicTestRunner {
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 {
                     var assln = GetAllAssemblies();
-                    if (assln != null){
+                    if (assln != null) {
                         foreach (var a in assln) {
                             if (FilterAssembly(a, AssemblyFilter)) {
                                 var allTst4Assi = GetTestsInAssembly(a);
@@ -440,7 +456,7 @@ namespace PublicTestRunner {
                 }
                 {
                     var ParAssln = GetAllMpiAssemblies();
-                    if (ParAssln != null){
+                    if (ParAssln != null) {
                         foreach (var TT in ParAssln) {
                             if (FilterAssembly(TT.Asbly, AssemblyFilter)) {
 
@@ -468,7 +484,7 @@ namespace PublicTestRunner {
 
                 DateTime start = DateTime.Now;
 
-                
+
                 cnt = 0;
                 var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
                 using (new BlockTrace("DEPLOYMENT", tr)) {
@@ -479,7 +495,7 @@ namespace PublicTestRunner {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
                             var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, cnt);
-                            if(checkResFileName.Add(j.resultFile) == false) {
+                            if (checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
 
@@ -503,9 +519,9 @@ namespace PublicTestRunner {
 
 
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
-                
 
-                const double TimeOutSec = 200 * 60;
+
+                const double TimeOutSec = 220 * 60;
                 using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
@@ -522,7 +538,7 @@ namespace PublicTestRunner {
                                     string resultArg = "--result=";
                                     string resArg = jj.job.EnvironmentVars.Values.Single(arg => arg.StartsWith(resultArg));
                                     string _resFile = resArg.Replace(resultArg, "");
-                                    if(_resFile != jj.ResFile) {
+                                    if (_resFile != jj.ResFile) {
                                         throw new ApplicationException("internal mismatch in result file name");
                                     }
                                 }
@@ -586,7 +602,7 @@ namespace PublicTestRunner {
                         }
                         var ll = UpdateFinishedJobs();
                         RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
-                        Console.WriteLine("Remaining minutes until timeout: " + Math.Round(RestTime/60.0));
+                        Console.WriteLine("Remaining minutes until timeout: " + Math.Round(RestTime / 60.0));
                     }
                 }
 
@@ -629,16 +645,16 @@ namespace PublicTestRunner {
                 if (SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine("All tests/jobs finished successfully.");
 
-                    if(returnCode != 0) {
+                    if (returnCode != 0) {
                         Console.Error.WriteLine("Some other error occurred (maybe IO error after successful test run) -- check output log");
-                        Console.Error.WriteLine("FAILURE."); 
+                        Console.Error.WriteLine("FAILURE.");
                     } else {
-                        Console.WriteLine("SUCCESS."); 
+                        Console.WriteLine("SUCCESS.");
                     }
 
                 } else {
                     Console.Error.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
-                    Console.Error.WriteLine("FAILURE."); 
+                    Console.Error.WriteLine("FAILURE.");
                 }
                 Console.WriteLine($"{DateTime.Now}");
             }
@@ -696,12 +712,12 @@ namespace PublicTestRunner {
                 }
                 ot.WriteLine("]]]");
 
-                using(var str = new StringReader(stdout)) {
+                using (var str = new StringReader(stdout)) {
                     string magic = "arg #3 override from environment variable 'BOSSS_ARG_3': --result=";
-                    for(string line = str.ReadLine(); line != null; line = str.ReadLine()) {
-                        if(line.StartsWith(magic)) {
+                    for (string line = str.ReadLine(); line != null; line = str.ReadLine()) {
+                        if (line.StartsWith(magic)) {
                             string file = line.Replace(magic, "");
-                            if(file != ResFile) {
+                            if (file != ResFile) {
                                 throw new ArgumentException("Internal result file mismatch: " + file + " vs. " + ResFile + " on job " + j.BatchProcessorIdentifierToken);
                             }
 
@@ -846,7 +862,7 @@ namespace PublicTestRunner {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
 
-            if(MpiSize != 1) {
+            if (MpiSize != 1) {
                 // this seems some parallel run
                 // we have to fix the result argument
 
@@ -857,28 +873,30 @@ namespace PublicTestRunner {
                 int i = args.IndexWhere(a => a.StartsWith("--result="));
                 string arg_i = args[i];
                 string resFileName = arg_i.Replace("--result=", "");
-                args[i] = "--result=" + MpiResFileNameMod( MpiRank, MpiSize, resFileName);
+                args[i] = "--result=" + MpiResFileNameMod(MpiRank, MpiSize, resFileName);
 
 
                 var parAssis = GetAllMpiAssemblies();
-                foreach(var t in parAssis) {
+                foreach (var t in parAssis) {
                     t.Asbly.AddToArray(ref assln);
                 }
             }
 
             int count = 0;
             bool ret = false;
-            foreach(var a in assln) {
-                if(!FilterAssembly(a, AssemblyFilter)) {
+            foreach (var a in assln) {
+                if (!FilterAssembly(a, AssemblyFilter)) {
                     continue;
                 }
                 Console.WriteLine("Matching assembly: " + a.Location);
-                
+
                 count++;
 
-                MegaMurxPlusPlus(a);
+                if (MpiRank == 0) {
+                    MegaMurxPlusPlus(a);
+                }
 
-                
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 var tr = new TextRunner(a);
                 int r = tr.Execute(args);
@@ -895,7 +913,7 @@ namespace PublicTestRunner {
             }
 
             {
-                if(count <= 0) {
+                if (count <= 0) {
                     Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
                     return -1;
                 }
@@ -905,9 +923,9 @@ namespace PublicTestRunner {
             return ret ? -1 : 0;
         }
 
-        private static string MpiResFileNameMod( int MpiRank, int MpiSize, string resFileName) {
+        private static string MpiResFileNameMod(int MpiRank, int MpiSize, string resFileName) {
             if (MpiRank > MpiSize)
-                throw new ArgumentException(); 
+                throw new ArgumentException();
 
             if (MpiSize == 1)
                 return resFileName;
@@ -926,7 +944,9 @@ namespace PublicTestRunner {
             Console.WriteLine("  where SUBPROGRAM is one of:");
             Console.WriteLine("         nunit3        : execute all tests in FILTER within this process.");
             Console.WriteLine("                         additional arguments are passed to NUnit.");
-            Console.WriteLine("         runjobmanager : submit tests to the job manger.");
+            Console.WriteLine("         runjobmanager         : submit tests to the job manger.");
+            Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
+            Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
             Console.WriteLine("         help          : prints this message.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
@@ -945,7 +965,7 @@ namespace PublicTestRunner {
         public static int _Main(string[] args, ITestTypeProvider ttp) {
             if(args.Length > 5) {
                 Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
-                
+
                 Console.WriteLine("No of args: " + args.Length);
                 int i = 0;
                 foreach(string arg in args) {
@@ -981,10 +1001,23 @@ namespace PublicTestRunner {
                 ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
                 break;
 
-
                 case "runjobmanager":
+                case "runjobmanager-debug":
+                case "runjobmanager-release":
                 DeleteResultFiles();
 
+                bool runRelease;
+#if DEBUG
+                runRelease = false;
+#else
+                runRelease = true;
+#endif
+
+                if(args[0].EndsWith("release"))
+                    runRelease = true;
+                if(args[0].EndsWith("debug"))
+                    runRelease = false;
+                discoverRelease = runRelease;
 
                 int iQueue = 1;
                 string filter = args[1];
@@ -1021,10 +1054,10 @@ namespace PublicTestRunner {
             }
 
             csMPI.Raw.mpiFinalize();
-            
+
 
             return ret;
-            
+
         }
 
         static int Main(string[] args) {

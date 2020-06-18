@@ -226,19 +226,18 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="Component"></param>
         /// <param name="Bcmap"></param>
-        public Divergence_CentralDifferenceJacobian(int Component, IncompressibleBoundaryCondMap Bcmap) {
+        public Divergence_CentralDifferenceJacobian(int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) {
             this.Component = Component;
             this.Bcmap = Bcmap;
             this.VelFunction = Bcmap.bndFunction[VariableNames.Velocity_d(Component)];
-            int SpatDim = 2;
             m_SpatialDimension = SpatDim;
             m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim));
         }
 
         MaterialLaw EoS = null;
-        string[] Parameters = null;
         int NumberOfSpecies = -1;
         string[] m_ArgumentOrdering;
+        string[] m_ParameterOrdering;
         /// <summary>
         /// Ctor for low Mach number flows.
         /// </summary>
@@ -246,27 +245,32 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Bcmap"></param>
         /// <param name="EoS"></param>
         public Divergence_CentralDifferenceJacobian(int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfSpecies = -1)
-            : this(Component, Bcmap) {
+            : this(Component, Bcmap, SpatDim) {
             this.EoS = EoS;
-            m_SpatialDimension = SpatDim;
-            switch(Bcmap.PhysMode) {
+
+            switch (Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
                 case PhysicsMode.Multiphase:
                     throw new ApplicationException("Wrong constructor");
-                case PhysicsMode.LowMach:
-                    this.Parameters = new string[] { VariableNames.Temperature };                
-                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), Parameters);
+                case PhysicsMode.MixtureFraction:
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), new string[] { VariableNames.MixtureFraction });
+                    m_ParameterOrdering = new string[] { VariableNames.Rho };
+                    break;
+                case PhysicsMode.LowMach:                      
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), new string[] { VariableNames.Temperature });
                     break;
                 case PhysicsMode.Combustion:
                     if(NumberOfSpecies == -1)
                         throw new ArgumentException("NumberOfSpecies must be specified for combustion flows.");
-                    this.Parameters = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfSpecies-1));
+                    string[] Parameters = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfSpecies-1));
                     this.NumberOfSpecies = NumberOfSpecies;
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), Parameters);
                     break;
                 default:
                     throw new NotImplementedException();
             }
+
+
         }
 
         double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
@@ -274,18 +278,20 @@ namespace BoSSS.Solution.NSECommon {
             
             IncompressibleBcType edgeType = Bcmap.EdgeTag2Type[inp.EdgeTag];
             double[] DensityArgumentsIn;
-            switch(edgeType) {
+            switch (edgeType) {
                 case IncompressibleBcType.Wall:
-                case IncompressibleBcType.NoSlipNeumann: {
-                        res = 0.0;
-                        break;
-                    }
+                case IncompressibleBcType.NoSlipNeumann:
+                    res = 0.0;
+                    break;
                 case IncompressibleBcType.Velocity_Inlet: {
                         double TemperatureOut = 0.0;
                         double Uout = VelFunction[inp.EdgeTag](inp.X, inp.time);
-                        switch(Bcmap.PhysMode) {
+                        switch (Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
                                 res = Uout * inp.Normal[Component];
+                                break;
+                            case PhysicsMode.MixtureFraction:
+                                res = inp.Parameters_IN[0] * Uout * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase: {
@@ -298,26 +304,31 @@ namespace BoSSS.Solution.NSECommon {
                                     //res = rhoIn * Uout * inp.Normale[Component];
                                     break;
                                 }
-                            case PhysicsMode.Combustion: { 
-                                // opt1:
-                                TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
-                                double[] args = new double[NumberOfSpecies-1 + 1];
-                                args[0] = TemperatureOut;
-                                for(int n = 1; n < NumberOfSpecies ; n++) {
-                                    args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
-                                }
-                                res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
-                                break;
+                            case PhysicsMode.Combustion: {
+                                    // opt1:
+                                    TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    double[] args = new double[NumberOfSpecies - 1 + 1];
+                                    args[0] = TemperatureOut;
+                                    for (int n = 1; n < NumberOfSpecies; n++) {
+                                        args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
+                                    }
+                                    res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
+                                    break;
                                 }
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
                         }
                     }
                     break;
+                case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet: {
-                        switch(Bcmap.PhysMode) {
+                        switch (Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
                                 res = Uin[Component] * inp.Normal[Component];
+                                break;
+                            case PhysicsMode.MixtureFraction:
+                                double rho = inp.Parameters_IN[0]; // rho as parameters
+                                res = rho * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
@@ -325,9 +336,8 @@ namespace BoSSS.Solution.NSECommon {
                                 res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Combustion:
-                       
-                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);  
-                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component]; //TODO 
+                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);
+                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
@@ -350,6 +360,11 @@ namespace BoSSS.Solution.NSECommon {
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
                     res = 0.5 * (Uin[Component] + Uout[Component]) * inp.Normal[Component];
+                    break;
+                case PhysicsMode.MixtureFraction:
+                    densityIn = inp.Parameters_IN[0];
+                    densityOut = inp.Parameters_OUT[0];
+                    res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -386,13 +401,16 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.Incompressible:
                     output[Component] = U[Component];
                     break;
+                case PhysicsMode.MixtureFraction:
+                    output[Component] = inp.Parameters[0] * U[Component];
+                    break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
                     DensityArguments = U.GetSubVector(m_SpatialDimension, 1);
                     output[Component] = EoS.GetDensity(DensityArguments) * U[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    DensityArguments = U.GetSubVector(m_SpatialDimension, NumberOfSpecies ); //MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
+                    DensityArguments = U.GetSubVector(m_SpatialDimension, NumberOfSpecies ); //MassFraction4 does not exist as a variable, because it is just calculated at the end of each iteration
                     output[Component] = EoS.GetDensity(DensityArguments) * U[Component];
                     break;
                 default:
@@ -435,7 +453,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return null;
+                return m_ParameterOrdering;
             }
         }
         /// <summary>
@@ -466,46 +484,5 @@ namespace BoSSS.Solution.NSECommon {
                 return TermActivationFlags.UxGradV | TermActivationFlags.GradV;
             }
         }
-
-
     }
-
-
-
-    //class Form<T> : IEdgeForm, IVolumeForm, ISupportsJacobianComponent
-    //    where T : IEdgeForm, IVolumeForm, ISupportsJacobianComponent {
-
-    //    T innerComponent;
-
-    //    public Form(T equationComponent) {
-    //        this.innerComponent = equationComponent;
-    //    }
-
-    //    public IList<string> ArgumentOrdering => ArrayTools.Cat(innerComponent.ArgumentOrdering, innerComponent.ParameterOrdering);
-
-    //    public IList<string> ParameterOrdering => new string[] { };
-
-    //    public TermActivationFlags BoundaryEdgeTerms => throw new NotImplementedException();
-
-    //    public TermActivationFlags InnerEdgeTerms => throw new NotImplementedException();
-
-    //    public TermActivationFlags VolTerms => throw new NotImplementedException();
-
-    //    public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-    //        return innerComponent.BoundaryEdgeForm()
-    //    }
-
-    //    public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-    //        throw new NotImplementedException();
-    //    }
-    //}
-
 }

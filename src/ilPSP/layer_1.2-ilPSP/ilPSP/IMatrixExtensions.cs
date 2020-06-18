@@ -1070,7 +1070,7 @@ namespace ilPSP {
             // copy data
             // =========
             int TotRows = RowOffsets[I - 1] + RowLengths[I - 1];
-            int TotCols = ColOffsets[I - 1] + ColLengths[I - 1];
+            int TotCols = ColOffsets[J - 1] + ColLengths[J - 1];
             var Ret = MultidimensionalArray.Create(TotRows, TotCols);
             for(int i = 0; i < block.GetLength(0); i++) { // loop over block rows...
                 for(int j = 0; j < block.GetLength(1); j++) { // loop over block columns...

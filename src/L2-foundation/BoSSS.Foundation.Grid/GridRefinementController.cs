@@ -111,12 +111,14 @@ namespace BoSSS.Foundation.Grid {
         }
 
         private static BitArray GetCutCellNeighbours(GridData currentGrid, BitArray localCutCells, int[][] globalCellNeighbourship) {
+            if (localCutCells == null)
+                return null;
             Partitioning cellPartitioning = currentGrid.CellPartitioning;
             int globalJ = cellPartitioning.TotalLength;
             int[] i0 = cellPartitioning.GetI0s();
             BitArray[] exchangeCutCells = localCutCells.MPIGatherO(0);
             exchangeCutCells = exchangeCutCells.MPIBroadcast(0);
-            BitArray globalCutCells = new BitArray(globalJ);
+            BitArray globalCutCells = new BitArray(globalJ);   
             for (int m = 0; m < exchangeCutCells.Length; m++) {
                 for (int j = 0; j < exchangeCutCells[m].Length; j++) {
                     globalCutCells[j + i0[m]] = exchangeCutCells[m][j];
@@ -159,15 +161,17 @@ namespace BoSSS.Foundation.Grid {
             levelSetMaxLevel = levelSetMaxLevel.MPIMax();
             int[][] exchangeCellsMaxRefineLvl = localCellsMaxRefineLvl.MPIGatherO(0);
             exchangeCellsMaxRefineLvl = exchangeCellsMaxRefineLvl.MPIBroadcast(0);
-            int[] globalCellsMaxRefineLvl = new int[globalJ];
-            for (int m = 0; m < exchangeCellsMaxRefineLvl.Length; m++) {
-                for (int j = 0; j < exchangeCellsMaxRefineLvl[m].Length; j++) {
-                    globalCellsMaxRefineLvl[j + i0[m]] = exchangeCellsMaxRefineLvl[m][j];
+            int[] globalCellsMaxRefineLvl = new int[globalJ];          
+                for (int m = 0; m < exchangeCellsMaxRefineLvl.Length; m++) {
+                    for (int j = 0; j < exchangeCellsMaxRefineLvl[m].Length; j++) {
+                        globalCellsMaxRefineLvl[j + i0[m]] = exchangeCellsMaxRefineLvl[m][j];
+                    }
                 }
-            }
-            for (int j = 0; j < globalJ; j++) {
-                if (cutCells[j]) {
-                    globalCellsMaxRefineLvl[j] = levelSetMaxLevel;
+            if (cutCells != null) {
+                for (int j = 0; j < globalJ; j++) {
+                    if (cutCells[j]) {
+                        globalCellsMaxRefineLvl[j] = levelSetMaxLevel;
+                    }
                 }
             }
             return globalCellsMaxRefineLvl;

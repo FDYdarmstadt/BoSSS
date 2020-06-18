@@ -147,5 +147,17 @@ namespace BoSSS.Foundation.XDG {
 
             val = (val & NotMask) | mask;
         }
+
+        /// <summary>
+        /// Manipulates the sign of all level sets
+        /// </summary>
+        public void SetSigns(params bool[] signS) {
+            if (signS.Length <= 0 || signS.Length > 4)
+                throw new ArgumentException("Number of signs/Level Sets must be between 1 and 4.");
+
+            for(int ilS = 0; ilS < signS.Length; ilS++) {
+                SetSign(ilS, signS[ilS]);
+            }
+        }
     }
 }

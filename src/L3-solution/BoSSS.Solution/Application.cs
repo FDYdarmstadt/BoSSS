@@ -801,7 +801,7 @@ namespace BoSSS.Solution {
                     this.SavePeriod = this.Control.saveperiod;
                 }
 
-                if (this.Control.rollingSaves > 0) {
+                if (this.Control.rollingSaves == true) {
                     this.RollingSave = this.Control.rollingSaves;
                 }
             }
@@ -1348,38 +1348,7 @@ namespace BoSSS.Solution {
             if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
-                if (!this.Control.DbPath.IsNullOrEmpty())
-                    allPaths.Add((this.Control.DbPath, null));
-                if (this.Control.AlternateDbPaths != null)
-                    allPaths.AddRange(this.Control.AlternateDbPaths);
-
-                string mName = System.Environment.MachineName.ToLowerInvariant();
-
-                string dbPath = null;
-                foreach(var t in allPaths) {
-                    string path = t.Item1;
-                    string filter = t.Item2;
-
-                    if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
-                        if (!mName.Contains(filter)) {
-                            continue;
-                        } 
-                    }
-
-                    if(Directory.Exists(path) || File.Exists(path)) { // th latter is for ZIP-file databases
-                        dbPath = path;
-                        break;
-                    }
-
-                }
-
-                if(dbPath == null) {
-                    throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
-                }
-
-
-                return new DatabaseInfo(dbPath);
+                return DatabaseInfo.Open(this.Control.DbPath, this.Control.AlternateDbPaths);
             }
         }
 
@@ -1452,6 +1421,8 @@ namespace BoSSS.Solution {
                 if (this.Control != null) {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
+                    if (this.Control.GridFunc == null && this.Control.GridGuid == Guid.Empty && this.Control.RestartInfo == null)
+                        throw new ApplicationException("Control object error: No grid specified -- either 'AppControl.GridFunc' or 'AppControl.GridGuid' or 'AppControl.RestartInfo' must be specified.");
 
                     if (this.Control.GridFunc != null) {
                         var g = this.Control.GridFunc();
@@ -1864,14 +1835,25 @@ namespace BoSSS.Solution {
         protected double EndTime = double.MaxValue;
 
         /// <summary>
-        /// if this value is set to n, a restart file is written every n time-steps
+        /// if this value is set to n, a restart file is written every n time-steps, <see cref="AppControl.saveperiod"/>
         /// </summary>
         protected int SavePeriod = 1;
 
         /// <summary>
         /// <see cref="AppControl.rollingSaves"/>
         /// </summary>
-        protected int RollingSave = 0;
+        protected bool RollingSave = false;
+
+        /// <summary>
+        /// Number of Consecutive timesteps which are saved -- this is intended to be used by BDF or Adams-Bashforth time integrators which require multiple time steps
+        /// (e.g. 3 to save time-step 98, 99, 100 for a save-period of 100;)
+        /// </summary>
+        protected virtual int BurstSave {
+            get {
+                return 1;
+            }
+        }
+
 
         /// <summary>
         /// Implement this method by performing a single time-step of the
@@ -1983,7 +1965,7 @@ namespace BoSSS.Solution {
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
 
                 var ts0 = SaveToDatabase(i0, physTime); // save the initial value
-                if (this.RollingSave > 0)
+                if (this.RollingSave)
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
 
@@ -2000,10 +1982,9 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                int i = i0.MajorNumber;
                 bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                    initialRedist |= this.MpiRedistributeAndMeshAdapt(i, physTime);
+                    initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
                 }
                 { 
 
@@ -2013,7 +1994,7 @@ namespace BoSSS.Solution {
                             PlotCurrentState(physTime, i0, this.Control.SuperSampling);
                     }
 
-                    for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
+                    for (int i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
                         this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
@@ -2023,17 +2004,25 @@ namespace BoSSS.Solution {
                         physTime += dt;
 
                         ITimestepInfo tsi = null;
-                        if (i % SavePeriod == 0) {
-                            tsi = SaveToDatabase(i, physTime);
-                            this.ProfilingLog();
+
+                        if(this.BurstSave < 1) {
+                            throw new NotSupportedException("misconfiguration of burst save variable.");
                         }
-                        if (this.RollingSave > 0) {
+
+                        for(int sb = 0; sb < this.BurstSave; sb++) {
+                            if((i + sb) % SavePeriod == 0) {
+                                tsi = SaveToDatabase(i, physTime);
+                                this.ProfilingLog();
+                                break;
+                            }
+                        }
+                        if (this.RollingSave) {
                             if (tsi == null) {
                                 tsi = SaveToDatabase(i, physTime);
                             }
                             rollingSavesTsi.Add(Tuple.Create(i, tsi));
 
-                            while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
+                            while (rollingSavesTsi.Count > this.BurstSave) { // delete overdue rolling timesteps...
                                 var top_i_tsi = rollingSavesTsi[0];
 
                                 rollingSavesTsi.RemoveAt(0);
@@ -2053,11 +2042,10 @@ namespace BoSSS.Solution {
                         if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
-                    i--;
-
-                    if (i % SavePeriod != 0) {
-                        SaveToDatabase(i, physTime);
-                    }
+                    //i--;
+                    //if (i % SavePeriod != 0) {
+                    //    SaveToDatabase(i, physTime);
+                    //}
 
 
                     // Evaluate queries and write log file (either to session directory
@@ -3085,6 +3073,11 @@ namespace BoSSS.Solution {
                     if (DatabaseDriver != null) {
                         DatabaseDriver.Dispose();
                     }
+
+                    if(m_Database != null) {
+                        DatabaseInfo.Close(m_Database);
+                    }
+
                     Console.Out.Flush();
                     Console.Error.Flush();
 

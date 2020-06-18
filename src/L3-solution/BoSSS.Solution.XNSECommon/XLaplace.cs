@@ -215,7 +215,7 @@ namespace BoSSS.Solution.XNSECommon {
         protected Mode m_mode;
 
         
-        public virtual double LevelSetForm(ref CommonParams inp, 
+        public virtual double InnerEdgeForm(ref CommonParams inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
@@ -351,7 +351,7 @@ namespace BoSSS.Solution.XNSECommon {
             get { return null; }
         }
 
-
+        
     }
 
 

@@ -122,7 +122,7 @@ namespace AdvancedSolverTests {
         }
 
 
-        public double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double Flx = 0.5 * (U_Pos[0] + U_Neg[0]) * inp.Normal[0];
             return Flx * vA - Flx * vB * m_factor;
         }
@@ -141,6 +141,18 @@ namespace AdvancedSolverTests {
             get { 
                 return m_LsTrk.GetSpeciesId("B"); 
             }
+        }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
         }
     }
 
@@ -332,7 +344,7 @@ namespace AdvancedSolverTests {
         string m_varname;
 
 
-        public virtual double LevelSetForm(ref CommonParams inp,
+        public virtual double InnerEdgeForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
@@ -452,6 +464,17 @@ namespace AdvancedSolverTests {
             get { return null; }
         }
 
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
 
     }
 

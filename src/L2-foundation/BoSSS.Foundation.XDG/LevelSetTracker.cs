@@ -347,7 +347,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Detects whether a species in some cell 
+        /// Detects whether a species is present in some cell 
         /// </summary>
         /// <param name="id">
         /// species id;
@@ -1828,6 +1828,9 @@ namespace BoSSS.Foundation.XDG {
 
             // Remove obsolete observers from list...
             // ======================================
+
+            // MPI synchronization of observers...
+
             var ObserversRefs = new List<IObserver<LevelSetRegions>>();
             {
                 int NoObservers = m_Observers.Count;

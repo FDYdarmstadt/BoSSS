@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG {
         /// <list type="bullet">
         ///   <item><b>2:</b> the cell if in the positive FAR region: <i>distance</i> == 7, i.e. the <i>code</i> is 0xf</item>
         ///   <item><b>1:</b>the cell if in the negative FAR region: <i>distance</i> == -1, i.e the <i>code</i> is 0x1</item>
-        ///   <item><b>0:</b>the cell is cuttet or in the near reagion: -6 &lt; <i>distance</i> &lt; 6</item>
+        ///   <item><b>0:</b>the cell is cut or in the near region: -6 &lt; <i>distance</i> &lt; 6</item>
         /// </list>
         /// The reduced region code is build from the reduced regions of each level set 
         /// by encoding them into a 3-adic representation.

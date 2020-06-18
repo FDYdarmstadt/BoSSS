@@ -41,6 +41,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             //NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, fluidDensity, 0, _LFFA, double.NaN, LsTrk);
             //NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"), null);
         }
+
         LevelSetTracker m_LsTrk;
         int m_D;
         int m_d;
@@ -87,6 +88,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
         }
 
+       
+
+     
         /*
 
         // Flux over interface
@@ -134,7 +138,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         }
         */
 
-        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
             BoSSS.Foundation.CommonParams inp = cp; // = default(BoSSS.Foundation.InParams);
             //inp.Parameters_IN = cp.ParamsNeg;
@@ -175,7 +179,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             //FlxNeg = this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, Grad_uA, Grad_uB, v_Neg, v_Pos, Grad_vA, Grad_vB);
 
             return FlxNeg;
-
         }
+    
+    
+        
     }
 }

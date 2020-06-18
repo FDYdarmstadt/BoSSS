@@ -319,7 +319,6 @@ namespace BoSSS.Solution.Control {
         /// only for restarts with loaded grid, 
         /// changes a boundary condition in the loaded grid
         /// </summary>
-        /// <param name="EdgeTagNames"></param>
         public void ChangeBoundaryCondition(string oldEdgeTagName, string newEdgeTagName) {
             if(!this.BoundaryValueChanges.ContainsKey(oldEdgeTagName))
                 this.BoundaryValueChanges.Add(oldEdgeTagName, newEdgeTagName);
@@ -756,10 +755,12 @@ namespace BoSSS.Solution.Control {
         public int saveperiod = 1;
 
         /// <summary>
-        /// A number of previous timesteps which are always saved in case of a simulation crash.
+        /// Intended for restart simulations after a crash:
+        /// Causes the currently completed time step to always be saved;
+        /// It will be deleted if it is not at the <see cref="saveperiod"/> and a newer timestep is available.
         /// </summary>
         [DataMember]
-        public int rollingSaves = 0;
+        public bool rollingSaves = false;
 
 
 
@@ -896,7 +897,7 @@ namespace BoSSS.Solution.Control {
         /// - 2nd entry: optional machine name filter
         /// </summary>
         [DataMember]
-        public ValueTuple<string, string>[] AlternateDbPaths = null;
+        public (string DbPath, string MachineFilter)[] AlternateDbPaths = null;
         
         /// <summary>
         /// Sets <see cref="DbPath"/>, <see cref="AlternateDbPaths"/>.

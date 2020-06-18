@@ -25,8 +25,9 @@ using ilPSP;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System.Diagnostics;
-using MathNet.Numerics.Algorithms.LinearAlgebra;
 using System.Numerics;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Factorization;
 
 namespace BoSSS.Solution.Timestepping {
 
@@ -267,17 +268,25 @@ namespace BoSSS.Solution.Timestepping {
         /// Maximum of the absolute value of all Eigenvalues of <paramref name="H"/>.
         /// </summary>
         static public double EigenScheisse(double[,] H) {
-            var linalg = new ManagedLinearAlgebraProvider();
+            double MaxEigen;
 
-            double Eigen;
-            int N = H.GetLength(0);
-            double[] Matrix = H.Resize(false);
-            double[] EigenVect = new double[Matrix.Length];
-            double[] diagM = new double[Matrix.Length];
-            Complex[] EigenValues = new Complex[N];
-            linalg.EigenDecomp(false, N, Matrix, EigenVect, EigenValues, diagM);
-            Eigen = EigenValues.Select(ev => Complex.Abs(ev)).Max();
-            return Eigen;
+            Matrix<double> processedData = Matrix<double>.Build.DenseOfArray(H);
+            Evd<double> eigen = processedData.Evd(Symmetricity.Asymmetric);
+            Vector<Complex> EigenValues = eigen.EigenValues;
+            
+            MaxEigen = EigenValues.Select(ev => Complex.Abs(ev)).Max();
+
+
+            //var linalg = new ManagedLinearAlgebraProvider();
+            //int N = H.GetLength(0);
+            //double[] Matrix = H.Resize(false);
+            //double[] EigenVect = new double[Matrix.Length];
+            //double[] diagM = new double[Matrix.Length];
+            //Complex[] EigenValues = new Complex[N];
+            //linalg.EigenDecomp(false, N, Matrix, EigenVect, EigenValues, diagM);
+            //MaxEigen = EigenValues.Select(ev => Complex.Abs(ev)).Max();
+            
+            return MaxEigen;
         }
 
         /// <summary>
