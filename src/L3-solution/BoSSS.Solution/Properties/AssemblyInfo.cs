@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,9 +26,13 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("FG Stroemungsdynamik")]
 [assembly: AssemblyProduct("BoSSS.Solution")]
-[assembly: AssemblyCopyright("Copyright © FG Stroemungsdynamik 2009")]
+[assembly: AssemblyCopyright("Copyright � FG Stroemungsdynamik 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+
+// This is a placeholder for the git commit hash
+// the hash is put here with pre build task
+[assembly: AssemblyInformationalVersion("726508e8c753d438424763233955d02e3205643f")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

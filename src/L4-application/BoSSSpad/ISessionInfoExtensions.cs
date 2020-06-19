@@ -164,6 +164,27 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Opens the database directory where the files for the selected
+        /// <paramref name="session"/> are stored in the explorer.
+        /// </summary>
+        /// <param name="session">
+        /// The selected session.
+        /// </param>
+        public static void OpenDeployDirectory(this ISessionInfo session) {
+            string deployname = session.DeployPath.Split('/', '\\').Last();
+            string deploydir = "";
+            foreach(var stuff in session.GetControl().AlternateDbPaths) {
+                if (Directory.Exists(stuff.DbPath))
+                    deploydir = stuff.DbPath;
+            }
+
+            if (!deploydir.IsEmptyOrWhite() && Directory.Exists(Path.Combine(deploydir,deployname)))
+                Process.Start(session.DeployPath);
+            else
+                Console.WriteLine("Attempt failed. Search directory via DeployPath-Attribute");
+        }
+
+        /// <summary>
         /// Opens the specified <paramref name="TextFile"/>
         /// of the selected <paramref name="session"/>.
         /// </summary>
