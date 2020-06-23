@@ -16,6 +16,7 @@ limitations under the License.
 
 using ilPSP;
 using Microsoft.Win32.SafeHandles;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,7 +35,40 @@ namespace BoSSS.Foundation.IO {
         static object padlock_DatabaseInfos = new object();
 
         /// <summary>
-        /// Open the database
+        /// Tries to open a database if <paramref name="path"/> is existent;
+        /// Otherwise, creates a new database and opens it.
+        /// </summary>
+        public static DatabaseInfo CreateOrOpen(string path) {
+            if(File.Exists(path) || Directory.Exists(path))
+                return Open(path);
+
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MpiRank);
+            if(MpiRank == 0) {
+                DirectoryInfo targetDirectory = new DirectoryInfo(path);
+                if(!targetDirectory.Exists) {
+                    targetDirectory.Create();
+                } else {
+                    if(targetDirectory.GetFiles().Length > 0)
+                        throw new ArgumentException("Must be empty.");
+                    if(targetDirectory.GetDirectories().Length > 0)
+                        throw new ArgumentException("Must be empty.");
+                }
+
+                // Create structure
+                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "data"));
+                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "timesteps"));
+                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "grids"));
+                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "sessions"));
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+            return Open(path);
+        }
+
+
+
+        /// <summary>
+        /// Opens an existing 
         /// </summary>
         public static DatabaseInfo Open(string _path) {
             return Open(_path, null);

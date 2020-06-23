@@ -218,7 +218,7 @@ namespace BoSSS.Solution.NSECommon {
             double ReactionRate = 0.0;
              rho = EoS.GetDensity(U);
 
-            double Tb = 2300/300; 
+            double Tb = 2300/300;
             //ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
             ReactionRate = m_Da * Math.Exp(Ta / Tb*0 - Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
 

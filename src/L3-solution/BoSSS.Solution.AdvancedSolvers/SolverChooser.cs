@@ -293,6 +293,7 @@ namespace BoSSS.Solution {
                             ConvCrit = nc.ConvergenceCriterion,
                             m_SessionPath = SessionPath,
                             UsePresRefPoint = nc.UsePresRefPoint,
+                            printLambda = nc.printLambda,
                         };
                         linsolver = precondonly; // put out the solver, which is actually used!
                     } else {
@@ -304,6 +305,7 @@ namespace BoSSS.Solution {
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
                             UsePresRefPoint = nc.UsePresRefPoint,
+                            printLambda = nc.printLambda,
                             ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
                             linsolver = linsolver,
                             GMRESConvCrit = lc.ConvergenceCriterion,

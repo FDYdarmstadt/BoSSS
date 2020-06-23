@@ -66,6 +66,21 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
+            /// returns the distance layer index for level-set <paramref name="levSetInd"/>,
+            /// see also <see cref="DecodeLevelSetDist(ushort, int)"/>, <see cref="RegionsCode"/>.
+            /// </summary>
+            /// <param name="levSetIdx"></param>
+            /// <param name="jCell"></param>
+            /// <returns></returns>
+            public int GetLevelSetDistance(int levSetIdx, int jCell) {
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
+                    throw new IndexOutOfRangeException();
+                ushort code = m_LevSetRegions[jCell];
+                return LevelSetTracker.DecodeLevelSetDist(code, levSetIdx);
+            }
+
+
+            /// <summary>
             /// A color map for each species; a color is a positive integer. Each topologically, simply connected part
             /// of a species is painted in a unique color. 
             /// - key: species ID
@@ -1127,6 +1142,13 @@ namespace BoSSS.Foundation.XDG {
             internal ushort[] m_LevSetRegions;
 
             /// <summary>
+            /// 
+            /// </summary>
+            public LevelsetCellSignCode GetCellSignCode(int jCell) {
+                return LevelsetCellSignCode.Extract(m_LevSetRegions[jCell]);
+            }
+
+            /// <summary>
             /// For each cell <em>j</em>, the number of cells that follow with the same 
             /// region code as cell <em>j</em>.<br/>
             /// index: cell index <em>j</em>;
@@ -1519,7 +1541,7 @@ namespace BoSSS.Foundation.XDG {
             /// although 
             /// the index of a species (e.g. obtained by <see cref="GetSpeciesIndex(SpeciesId,int)"/>)
             /// may be positive.
-            /// In the near-field however, some species index may be allocated (on the 'other' side of the level-set),
+            /// In the near-field, some species index may be allocated (on the 'other' side of the level-set),
             /// but the species may not be present. 
             /// </remarks>
             public bool IsSpeciesPresentInCell(SpeciesId speciesId, int jCell) {

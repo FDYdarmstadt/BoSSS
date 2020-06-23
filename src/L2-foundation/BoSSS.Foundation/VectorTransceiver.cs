@@ -122,9 +122,9 @@ namespace BoSSS.Foundation.Comm {
 
 
             var Para = m_master.iParallel;
-            int mul = m_ItemsPerCell;
 
             /*
+            int mul = m_ItemsPerCell;
             for (int i = 0; i < Para.ProcessesToSendTo.Length; i++) {
                 int proc = Para.ProcessesToSendTo[i];
                 int[] CellIndexList = Para.m_SendCommLists[proc];
@@ -236,7 +236,6 @@ namespace BoSSS.Foundation.Comm {
 
             int MyRank;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
-
 
             var rvcProc = Para.ProcessesToReceiveFrom;
             var sndProc = Para.ProcessesToSendTo;
@@ -373,8 +372,9 @@ namespace BoSSS.Foundation.Comm {
             where Titm : struct {
             int J = master.iLogicalCells.Count;
             int L = vector.Count;
-            if (L % J != 0)
+            if(L % J != 0) {
                 throw new ArgumentException("Length of vector must be equal or a multiple of number of cells (including external).");
+            }
 
             var Trx = new VectorTransceiver<Tlst, Titm>(master, vector, L / J);
             Trx.TransceiveStartImReturn();

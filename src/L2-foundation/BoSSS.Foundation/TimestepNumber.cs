@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using ilPSP;
@@ -45,12 +46,23 @@ namespace BoSSS.Foundation.IO {
         [DataMember]
         private int[] numbers;
 
+
+        private int[] save_numbers {
+            get {
+                if(numbers == null)
+                    return new int[0];
+                else
+                    return numbers;
+            }
+        }
+
+
         /// <summary>
         /// retuns a clone of the internal indices
         /// </summary>
         public int[] GetNumbers {
             get {
-                return numbers.CloneAs();
+                return save_numbers.CloneAs();
             }
         }
 
@@ -63,7 +75,7 @@ namespace BoSSS.Foundation.IO {
         /// number, <paramref name="numbers"/>[1] is one level below, and so on
         /// </param>
         public TimestepNumber(params int[] numbers) {
-            this.numbers = numbers;
+            this.numbers = numbers.CloneAs();
         }
 
         /// <summary>
@@ -83,7 +95,7 @@ namespace BoSSS.Foundation.IO {
                         "Given string is not a valid TimestepNumber (integers separated by '.')");
                 }
 
-                this.numbers[i] = number;
+                this.save_numbers[i] = number;
             }
         }
 
@@ -118,7 +130,9 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public int MajorNumber {
             get {
-                return numbers[0];
+                if(this.save_numbers == null || this.save_numbers.Length <= 0)
+                    return -1111;
+                return save_numbers[0];
             }
         }
 
@@ -135,10 +149,10 @@ namespace BoSSS.Foundation.IO {
         /// </returns>
         public int this[int index] {
             get {
-                if (numbers.Length < index) {
+                if (save_numbers.Length < index) {
                     return 0;
                 } else {
-                    return numbers[index];
+                    return save_numbers[index];
                 }
             }
         }
@@ -148,7 +162,9 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public int Length {
             get {
-                return numbers.Length;
+                if(save_numbers == null)
+                    return 0;
+                return save_numbers.Length;
             }
         }
 
@@ -166,10 +182,10 @@ namespace BoSSS.Foundation.IO {
         /// in <see cref="P:Item(System.Int32)"/> is incremented by one.
         /// </returns>
         public TimestepNumber NextNumber(uint level) {
-            int[] newNumbers = new int[Math.Max(numbers.Length, level + 1)];
+            int[] newNumbers = new int[Math.Max(save_numbers.Length, level + 1)];
 
             // Only copy part up $level
-            Array.Copy(numbers, newNumbers, Math.Min(numbers.Length, level + 1));
+            Array.Copy(save_numbers, newNumbers, Math.Min(save_numbers.Length, level + 1));
             newNumbers[level]++;
             return new TimestepNumber(newNumbers);
         }
@@ -206,7 +222,7 @@ namespace BoSSS.Foundation.IO {
         /// Given a number [1, 2, 3], returns '1.2.3'
         /// </returns>
         public override string ToString() {
-            return numbers.Skip(1).Aggregate(MajorNumber.ToString(),
+            return save_numbers.Skip(1).Aggregate(MajorNumber.ToString(),
                 (s, t) => s + "." + t);
         }
 
@@ -217,7 +233,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns></returns>
         public IEnumerator<int> GetEnumerator() {
-            return numbers.AsEnumerable().GetEnumerator();
+            return save_numbers.AsEnumerable().GetEnumerator();
         }
 
         #endregion
@@ -229,7 +245,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns></returns>
         IEnumerator IEnumerable.GetEnumerator() {
-            return numbers.GetEnumerator();
+            return save_numbers.GetEnumerator();
         }
 
         #endregion
@@ -250,7 +266,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns></returns>
         public override int GetHashCode() {
-            return numbers.GetHashCode();
+            return save_numbers.GetHashCode();
         }
 
         /// <summary>
@@ -259,7 +275,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="other"></param>
         /// <returns></returns>
         public bool Equals(TimestepNumber other) {
-            return ArrayTools.ListEquals(numbers, other.numbers);
+            return ArrayTools.ListEquals(save_numbers, other.save_numbers);
         }
 
         #endregion
@@ -279,18 +295,34 @@ namespace BoSSS.Foundation.IO {
         /// highest significance for which the result is not zero.
         /// </returns>
         public int CompareTo(TimestepNumber other) {
-            int length = Math.Min(this.numbers.Length, other.numbers.Length);
+            bool thisIsNix = (this.save_numbers == null || this.save_numbers.Length <= 0);
+            bool othrIsNix = (other.save_numbers == null || other.save_numbers.Length <= 0);
+
+
+            if(thisIsNix && othrIsNix)
+                // both unspecified -> equal
+                return 0;
+
+            if(thisIsNix && !othrIsNix)
+                return -1;
+
+            if(thisIsNix && !othrIsNix)
+                return +1;
+
+            Debug.Assert(!thisIsNix && !othrIsNix);
+
+            int length = Math.Min(this.save_numbers.Length, other.save_numbers.Length);
 
             // Decision based on existing entries
             for (int i = 0; i < length; i++) {
-                int result = this.numbers[i].CompareTo(other.numbers[i]);
+                int result = this.save_numbers[i].CompareTo(other.save_numbers[i]);
                 if (result != 0) {
                     return result;
                 }
             }
 
             // Still undecided? -> More indices = larger
-            return this.numbers.Length.CompareTo(other.numbers.Length);
+            return this.save_numbers.Length.CompareTo(other.save_numbers.Length);
         }
 
         #endregion

@@ -114,7 +114,7 @@ namespace BoSSS.Foundation.XDG {
                                      UnsetteledCoordinateMapping CodomainMap,
                                      LevelSetTracker lsTrk, int _iLevSet, Tuple<SpeciesId, SpeciesId> SpeciesPair,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
-            : base(new int[] { CodomainMap.MaxTotalNoOfCoordinatesPerCell },
+            : base(new int[] { CodomainMap.GetNonXBasisLengths(0).Sum()*2 }, // we always integrate over species in pairs (neg + pos), so we need to alloc mem only 2 species
                  context,
                  domAndRule) //
         {
@@ -140,6 +140,8 @@ namespace BoSSS.Foundation.XDG {
 
             m_DomainAndParamFields = ArrayTools.Cat(__DomainFields, _Parameters);
             this.DELTA = __DomainFields.Count;
+
+            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, SpeciesA, SpeciesB, m_LevSetIdx);
 
             // ------------------------
             // sort equation components
@@ -351,7 +353,9 @@ namespace BoSSS.Foundation.XDG {
             int D = gridData.SpatialDimension;
             int NoOfNodes = QuadNodes.NoOfNodes;
             int GAMMA = m_CodomainMap.NoOfVariables;  // GAMMA: number of codom variables
-           
+
+            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, this.SpeciesA, this.SpeciesB, this.m_LevSetIdx);
+
 
             // Evaluate Domain & Parameter fields
             // --------------------------------
@@ -432,10 +436,9 @@ namespace BoSSS.Foundation.XDG {
             
             MultidimensionalArray[] TestValues; //            index: codom variable/test function
             MultidimensionalArray[] TestGradientValues; //    index: codom variable/test function
-            int[,] sectionsTest;
             Basis_Eval.Start();
             LECQuadratureLevelSet<IMutableMatrixEx,double[]>
-                .EvalBasis(i0, Len, this.m_CodomainMap.BasisS, ReqV, ReqGradV, out TestValues, out TestGradientValues, out sectionsTest, QuadNodes);
+                .EvalBasis(i0, Len, this.m_CodomainMap.BasisS, ReqV, ReqGradV, out TestValues, out TestGradientValues, QuadNodes);
             Basis_Eval.Stop();
 
 
@@ -496,9 +499,8 @@ namespace BoSSS.Foundation.XDG {
             // Summation Loops: multiply with test and trial functions
             // -------------------------------------------------------
 
-            int[] offsetCod = new int[GAMMA];
             LECQuadratureLevelSet<IMutableMatrixEx,double[]>.
-                CompOffsets(i0, Len, offsetCod, m_CodomainMap);
+                CompOffsets(i0, Len, out int[] offsetCod, out int[] NnonxCod, m_CodomainMap);
 
             for(int gamma = 0; gamma < GAMMA; gamma++) {
                 // Evaluate Integrand
@@ -513,7 +515,7 @@ namespace BoSSS.Foundation.XDG {
                     N = TestGradVal.GetLength(2);
                 else
                     N = 0;
-
+                Debug.Assert(NnonxCod[gamma] == N);
                 Loops.Start();
 
 
@@ -522,7 +524,8 @@ namespace BoSSS.Foundation.XDG {
 
 
                 for(int cr = 0; cr < 2; cr++) { // loop over negative/positive species
-                    int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma] };
+                    //int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma] };
+                    int[] extr0 = new int[] { 0, 0, cr * N + offsetCod[gamma] };
                     int[] extrE = new int[] { Len - 1, NoOfNodes - 1, extr0[2] + N - 1 };
                     var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
 
@@ -550,8 +553,11 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray[] FieldValuesPos, MultidimensionalArray[] FieldValuesNeg, MultidimensionalArray[] FieldGradientValuesPos, MultidimensionalArray[] FieldGradientValuesNeg,
             int DELTA,
             Stopwatch timer,
-            Action<T, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray, MultidimensionalArray> ComponentFunc) where T : ILevelSetForm {
+            Action<T, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray, MultidimensionalArray> ComponentFunc) 
+            where T : ILevelSetForm //
+        {
             timer.Start();
+
 
 
             for(int i = 0; i < bf.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
@@ -596,30 +602,40 @@ namespace BoSSS.Foundation.XDG {
         /// writes the dammed result of the integration to the sparse matrix
         /// </summary>
         protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+ 
+            int GAMMA = this.m_CodomainMap.BasisS.Count;  // GAMMA: number of codom/row/test variables
+            LECQuadratureLevelSet<IMutableMatrixEx, double[]>.CompOffsets(i0, Length, out int[] offsetRow, out int[] RowNonxN, m_CodomainMap);
 
-            int Nmax = m_CodomainMap.MaxTotalNoOfCoordinatesPerCell;
+            SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
 
-            //int[] _i0 = new int[] { int.MaxValue, 0, 1 };
-            //int[] _iE = new int[] { -1, Nmax - 1, _i0[2] + Mmax - 1 };
-
-            int[] _i0aff = new int[] { int.MaxValue, 0 };
-            int[] _iEaff = new int[] { -1, Nmax - 1 };
-
+            int[] _i0aff = new int[2];
+            int[] _iEaff = new int[2];
 
             // loop over cells...
             for(int i = 0; i < Length; i++) {
                 int jCell = i + i0;
-                int Row0 = m_CodomainMap.LocalUniqueCoordinateIndex(0, jCell, 0);
-                int Row0_g = m_CodomainMap.i0 + Row0;
+#if DEBUG
+                Debug.Assert(RowNonxN.ListEquals(m_CodomainMap.GetNonXBasisLengths(jCell)));
+#endif
 
                 _i0aff[0] = i;
                 _iEaff[0] = -1;
 
-                var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
+                for(int gamma = 0; gamma < GAMMA; gamma++) { // loop over rows...
+                    for(int cr = 0; cr < 2; cr++) { // loop over neg/pos species row...
+                        SpeciesId rowSpc = spcS[cr];
+                        int Row0 = m_CodomainMap.LocalUniqueCoordinateIndex(m_lsTrk, gamma, jCell, rowSpc, 0);
 
-                for(int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
-                    ResultVector[Row0 + r] += BlockRes[r];
+                        _i0aff[1] = offsetRow[gamma] + RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
+                        _iEaff[1] = _i0aff[1] + RowNonxN[gamma] - 1;
 
+
+                        var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
+
+                        for(int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
+                            ResultVector[Row0 + r] += BlockRes[r];
+                    }
+                }
             }
         }
     }

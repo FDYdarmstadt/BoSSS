@@ -1445,6 +1445,8 @@ namespace BoSSS.Foundation {
                             mtxBuilder.Execute(volRule,
                                 CodomainMapping, Parameters, DomainMapping,
                                 OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+
+                            //volRule.ToTextFileVolume(this.GridData as BoSSS.Foundation.Grid.Classic.GridData, "Volume.csv");
                         }
 
                     } else {

@@ -192,6 +192,9 @@ namespace PublicTestRunner {
 
         static ITestTypeProvider TestTypeProvider;
 
+        static public bool discoverRelease = true;
+
+
         static Assembly[] GetAllAssemblies() {
             var R = new HashSet<Assembly>();
 
@@ -204,13 +207,16 @@ namespace PublicTestRunner {
                     //Console.WriteLine("  added? " + added);
                 }
             }
-#if !DEBUG
-            if (TestTypeProvider.ReleaseOnlyTests != null) {
-                foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
-                    R.Add(t.Assembly);
+
+
+
+            if(discoverRelease) {
+                if(TestTypeProvider.ReleaseOnlyTests != null) {
+                    foreach(var t in TestTypeProvider.ReleaseOnlyTests) {
+                        R.Add(t.Assembly);
+                    }
                 }
             }
-#endif
 
 
 
@@ -231,16 +237,18 @@ namespace PublicTestRunner {
                     //Console.WriteLine("  added? " + (!contains));
                 }
             }
-#if !DEBUG
-            if (TestTypeProvider.MpiReleaseOnlyTests != null) {
-                foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
-                    bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                    if (!contains) {
-                        R.Add((t.type.Assembly, t.NoOfProcs));
+
+            if(discoverRelease) {
+                if(TestTypeProvider.MpiReleaseOnlyTests != null) {
+                    foreach(var t in TestTypeProvider.MpiReleaseOnlyTests) {
+                        bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                        if(!contains) {
+                            R.Add((t.type.Assembly, t.NoOfProcs));
+                        }
                     }
                 }
             }
-#endif
+
             return R.ToArray();
         }
 
@@ -936,7 +944,9 @@ namespace PublicTestRunner {
             Console.WriteLine("  where SUBPROGRAM is one of:");
             Console.WriteLine("         nunit3        : execute all tests in FILTER within this process.");
             Console.WriteLine("                         additional arguments are passed to NUnit.");
-            Console.WriteLine("         runjobmanager : submit tests to the job manger.");
+            Console.WriteLine("         runjobmanager         : submit tests to the job manger.");
+            Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
+            Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
             Console.WriteLine("         help          : prints this message.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
@@ -953,12 +963,12 @@ namespace PublicTestRunner {
         /// </param>
         /// <returns></returns>
         public static int _Main(string[] args, ITestTypeProvider ttp) {
-            if (args.Length > 5) {
+            if(args.Length > 5) {
                 Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
 
                 Console.WriteLine("No of args: " + args.Length);
                 int i = 0;
-                foreach (string arg in args) {
+                foreach(string arg in args) {
                     Console.WriteLine("    " + arg);
                 }
 
@@ -976,7 +986,7 @@ namespace PublicTestRunner {
             ll.Add(new MyListener());
 
 
-            if (args.Length < 2) {
+            if(args.Length < 2) {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
@@ -986,48 +996,61 @@ namespace PublicTestRunner {
 
 
             int ret = -1;
-            switch (args[0]) {
+            switch(args[0]) {
                 case "nunit3":
-                    ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
-                    break;
-
+                ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
+                break;
 
                 case "runjobmanager":
-                    DeleteResultFiles();
+                case "runjobmanager-debug":
+                case "runjobmanager-release":
+                DeleteResultFiles();
 
+                bool runRelease;
+#if DEBUG
+                runRelease = false;
+#else
+                runRelease = true;
+#endif
 
-                    int iQueue = 1;
-                    string filter = args[1];
-                    if (args.Length == 3) {
-                        Console.WriteLine("arg 2 is:" + args[2]);
-                        if (args[2].StartsWith("queue#")) {
-                            try {
-                                iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            } catch (Exception) {
-                                ret = -1;
-                                Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
-                                PrintMainUsage();
-                                break;
-                            }
-                        } else {
+                if(args[0].EndsWith("release"))
+                    runRelease = true;
+                if(args[0].EndsWith("debug"))
+                    runRelease = false;
+                discoverRelease = runRelease;
+
+                int iQueue = 1;
+                string filter = args[1];
+                if(args.Length == 3) {
+                    Console.WriteLine("arg 2 is:" + args[2]);
+                    if(args[2].StartsWith("queue#")) {
+                        try {
+                            iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                        } catch(Exception) {
                             ret = -1;
+                            Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
                             PrintMainUsage();
                             break;
                         }
                     } else {
-
+                        ret = -1;
+                        PrintMainUsage();
+                        break;
                     }
+                } else {
 
-                    ret = JobManagerRun(filter, iQueue);
-                    break;
+                }
+
+                ret = JobManagerRun(filter, iQueue);
+                break;
 
                 case "help":
-                    PrintMainUsage();
-                    ret = 0;
-                    break;
+                PrintMainUsage();
+                ret = 0;
+                break;
 
                 default:
-                    throw new NotSupportedException("unknown subprogram.");
+                throw new NotSupportedException("unknown subprogram.");
             }
 
             csMPI.Raw.mpiFinalize();

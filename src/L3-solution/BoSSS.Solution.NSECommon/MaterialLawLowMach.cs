@@ -26,8 +26,24 @@ using NUnit.Framework;
 
 namespace BoSSS.Solution.NSECommon {
 
-    
+    [DataContract]
+    [Serializable]
+    public class MaterialLawLowMach_MF : MaterialLawLowMach {
+        public MaterialLawLowMach_MF(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne) : base(T_ref, MatParamsMode, rhoOne) {
+        }
 
+        public override IList<string> ParameterOrdering {
+            get {
+                return new string[] { 
+                    VariableNames.Temperature0, 
+                    VariableNames.MassFraction0_0, 
+                    VariableNames.MassFraction1_0, 
+                    VariableNames.MassFraction2_0, 
+                    VariableNames.MassFraction3_0, 
+                    VariableNames.MassFraction4_0 };
+            }
+        }
+    }
     /// <summary>
     /// Material law for low Mach number flows.
     /// </summary>
@@ -129,7 +145,7 @@ namespace BoSSS.Solution.NSECommon {
                 double rho = 1.0;
 
                 if (rhoOne) {
-                    rho = 1;
+                    rho = 1.0;
                     return rho;
                 } else {
                     if (ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found                                                    

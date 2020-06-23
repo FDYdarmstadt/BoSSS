@@ -80,5 +80,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             StateVector stateEdge = riemannSolver.GetCentralState();
             return equationComponent.Flux(stateEdge) * normal;
         }
+
     }
 }

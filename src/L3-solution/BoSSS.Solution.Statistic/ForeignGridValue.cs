@@ -113,6 +113,9 @@ namespace BoSSS.Solution.Statistic {
 
             if(m_dGField == null) {
                 m_dGField = m_Timestep.Fields.Single(f => f.Identification.Equals(FieldName));
+
+                if(m_dGField.GridDat.MpiSize > 1)
+                    throw new NotSupportedException($"{this.GetType().Name} currently only supports 1 MPI core.");
             }
 
             if(m_eval == null) {

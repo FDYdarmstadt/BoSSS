@@ -1001,6 +1001,13 @@ namespace BoSSS.Solution.NSECommon {
         /// variable name for the MassFractionMean of component 3
         /// </summary>
         public const string MassFraction4Mean = "MassFraction4Mean";
+
+        /// <summary>
+        /// variable name for the arrhenius reaction term 
+        /// </summary>
+        public const string ReactionRate = "ReactionRate";
+
+
         /// <summary>
         /// the names of all mass fractions listed in an array
         /// </summary>

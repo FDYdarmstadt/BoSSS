@@ -49,6 +49,7 @@
     <Compile Include="IEquationComponentExtensionXDG.cs" />
     <Compile Include="IXEvaluator.cs" />
     <Compile Include="LevelSetTracker_Caches.cs" />
+    <Compile Include="MappingExtensions.cs" />
     <Compile Include="NECQuadratureLevelSet.cs" />
     <Compile Include="NonlinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />

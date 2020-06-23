@@ -49,7 +49,6 @@ namespace BoSSS.Solution.NSECommon {
             this.MatParamsMode = MatParamsMode;
             this.MolarMasses = MolarMasses;
             this.rhoOne = rhoOne;
-
         }
 
 
@@ -66,38 +65,36 @@ namespace BoSSS.Solution.NSECommon {
             if (IsInitialized) {
                 double rho;
                 double MassFractionsOverMolarFractions;
+                if (!rhoOne) {
+                    if (phi.Length < 4)
+                        throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
 
-                if (phi.Length < 4)
-                    throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
+                    MassFractionsOverMolarFractions = 0.0;
+                    double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
+                    for (int n = 1; n < phi.Length; n++) {
+                        lastMassFract -= phi[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
+                    }
 
-                MassFractionsOverMolarFractions = 0.0;
-                double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
-                for(int n = 1; n < phi.Length; n++) {
-                    lastMassFract -= phi[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
-                }
+                    phi = ArrayTools.Cat(phi, lastMassFract);
 
-                phi = ArrayTools.Cat(phi, lastMassFract);
+                    for (int n = 1; n < phi.Length; n++) {
+                        MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
+                    }
 
-                for(int n = 1; n < phi.Length; n++) {
-                    MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
-                }
-
-                //rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
-                rho = ThermodynamicPressureValue / (phi[0] * MassFractionsOverMolarFractions);
-
-                Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
-                if(rhoOne)
+                    rho = ThermodynamicPressureValue / (phi[0] * MassFractionsOverMolarFractions);
+                    Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
+                } else {
                     rho = 1.0;
+                }
                 return rho;
-            }
-            else {
+            } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
         }
         
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0/*, VariableNames.MassFraction3_0*/}; 
+                return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; 
             }
         }
 
@@ -146,6 +143,24 @@ namespace BoSSS.Solution.NSECommon {
         }
 
 
+
+        /// <summary>
+        /// Calculates the average molecular weigth of a mixture. 
+        /// </summary>
+        /// <param name="Mws">Array with molecular weigths</param>
+        /// <param name="Ys">Mass Fractions of the mixture</param>
+        /// <returns></returns>
+        public double getAvgMW(double[] Mws, double[] Ys) {
+            double AvgMw;
+            double arg = 0;
+            for(int i = 0; i < Mws.Length; i++) {
+                arg += Ys[i] / Mws[i];
+            }
+            AvgMw = 1.0 / arg;
+
+
+            return AvgMw;
+        }
 
     }
 }
