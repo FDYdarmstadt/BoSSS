@@ -170,16 +170,29 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session">
         /// The selected session.
         /// </param>
-        public static void OpenDeployDirectory(this ISessionInfo session) {
+        public static void OpenDeployDirectory(this ISessionInfo session, int Clientidx=-1) {
             string deployname = session.DeployPath.Split('/', '\\').Last();
-            string deploydir = "";
-            foreach(var stuff in session.GetControl().AlternateDbPaths) {
-                if (Directory.Exists(stuff.DbPath))
-                    deploydir = stuff.DbPath;
+            var bpc = BatchProcessorConfig.LoadOrDefault();
+            int idx = -1;
+
+            if (Clientidx < 0) {
+                for (int i = 0; i < bpc.AllQueues.Length; i++) Console.WriteLine(i + " : " + bpc.AllQueues[i].ToString());
+                Console.WriteLine("Choose Client-Config:");
+                string usrinput = Console.ReadLine();
+                idx = Convert.ToInt32(usrinput);
+            } else {
+                idx = Clientidx;
             }
 
-            if (!deploydir.IsEmptyOrWhite() && Directory.Exists(Path.Combine(deploydir,deployname)))
-                Process.Start(session.DeployPath);
+            if (idx > bpc.AllQueues.Length)
+                throw new IndexOutOfRangeException();
+
+            var bpclnt = bpc.AllQueues[idx];
+            string deploydir = bpclnt.DeploymentBaseDirectory;
+            string deploypath = Path.Combine(deploydir, deployname);
+
+            if (!deploydir.IsEmptyOrWhite() && Directory.Exists(deploypath))
+                Process.Start(deploypath);
             else
                 Console.WriteLine("Attempt failed. Search directory via DeployPath-Attribute");
         }

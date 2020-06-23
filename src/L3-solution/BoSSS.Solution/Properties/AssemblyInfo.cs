@@ -32,7 +32,7 @@ using System.Runtime.InteropServices;
 
 // This is a placeholder for the git commit hash
 // the hash is put here with pre build task
-[assembly: AssemblyInformationalVersion("726508e8c753d438424763233955d02e3205643f")]
+[assembly: AssemblyInformationalVersion("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

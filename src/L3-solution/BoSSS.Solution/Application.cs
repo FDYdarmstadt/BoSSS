@@ -1333,7 +1333,8 @@ namespace BoSSS.Solution {
 
                 // set deploy directory path
                 string path = typeof(BoSSS.Solution.Application).Assembly.Location;
-                string outpath = path.Substring(0, path.Length - "BoSSS.Solution.Application".Length);
+                string outpath =  path.Substring(0, path.Length - "BoSSS.Solution.dll".Length-1); // skip "\BoSSS.Solution.dll" at end of path
+
                 CurrentSessionInfo.DeployPath = outpath;
 
                 // set computeNode - names:
