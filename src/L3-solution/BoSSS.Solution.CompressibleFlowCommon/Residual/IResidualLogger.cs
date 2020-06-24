@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Foundation.IO;
 
-namespace CNS.Residual {
+namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
     /// <summary>
     /// Common interface for residual loggers.

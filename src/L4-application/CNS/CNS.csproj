@@ -175,16 +175,9 @@
     <Compile Include="Tests\TestProgram.cs" />
     <Compile Include="Tests\DiffusiveFlux\SIPGConsistency.cs" />
     <Compile Include="Tests\ViscousShockProfile\ViscousShockProfile.cs" />
-    <Compile Include="Residual\IResidualLogger.cs" />
-    <Compile Include="Residual\QueryLogger.cs" />
     <Compile Include="SingleSpeciesMap.cs" />
-    <Compile Include="Residual\ResidualLoggerTypes.cs" />
-    <Compile Include="Residual\NullResidualLogger.cs" />
-    <Compile Include="Residual\ChangeRateResidualLogger.cs" />
     <Compile Include="Convection\HLLFlux.cs" />
     <Compile Include="Convection\HLLFluxBuilder.cs" />
-    <Compile Include="Residual\ResidualLogger.cs" />
-    <Compile Include="Residual\RigorousResidualLogger.cs" />
     <Compile Include="Source\CustomSourceBuilder.cs" />
     <Compile Include="Tests\IsentropicVortex\IsentropicVortexTest.cs" />
     <Compile Include="Tests\Ringleb\RinglebTest.cs" />

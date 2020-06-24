@@ -19,7 +19,7 @@ using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
 
-namespace CNS.Residual {
+namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
     /// <summary>
     /// Utility class for the calculation of residuals. In contrast to
@@ -29,7 +29,7 @@ namespace CNS.Residual {
     /// difference. This makes it applicable to unsteady problems. 
     /// </summary>
     public class RigorousResidualLogger<T> : ResidualLogger
-            where T : CNSControl, new() {
+            where T : CompressibleControl, new() {
 
         /// <summary>
         /// The spatial differential operator defining (the spatial part of)
@@ -48,15 +48,14 @@ namespace CNS.Residual {
         /// The spatial differential operator defining (the spatial part of)
         /// the system of equations that are solved.
         /// </param>
-        public RigorousResidualLogger(Program<T> program, int residualInterval, SpatialOperator differentialOperator)
-            : base(program.ResLogger, program.CurrentSessionInfo, program.WorkingSet, residualInterval) {
-            DGField[] primalFields = program.WorkingSet.ConservativeVariables;
-            CoordinateMapping domainMapping = new CoordinateMapping(primalFields);
+        public RigorousResidualLogger(Application<T> program, DGField[] consVars, CoordinateMapping paramMap, int residualInterval, SpatialOperator differentialOperator)
+            : base(program.ResLogger, program.CurrentSessionInfo, consVars, residualInterval) {
+            CoordinateMapping domainMapping = new CoordinateMapping(consVars);
             UnsetteledCoordinateMapping codomainMapping = new UnsetteledCoordinateMapping(
-                primalFields.Select((field) => field.Basis).ToArray());
+                consVars.Select((field) => field.Basis).ToArray());
             evaluator = differentialOperator.GetEvaluatorEx(
                 domainMapping,
-                program.ParameterMapping,
+                paramMap,
                 codomainMapping);
         }
 

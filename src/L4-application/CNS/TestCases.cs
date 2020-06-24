@@ -18,24 +18,20 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.Residual;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.LoadBalancing;
-using CNS.Residual;
 using CNS.ShockCapturing;
 using ilPSP;
 using ilPSP.Utils;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace CNS {
@@ -3007,7 +3003,7 @@ namespace CNS {
             //c.VolumeHMF_RestrictNodes = true;
             //c.VolumeHMF_UseGaussNodes = false;
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             //Guid restart = new Guid(" 60688cbc-707d-4777-98e6-d237796ec14c");
             //c.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restart, -1);
