@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Foundation.IO;
@@ -110,6 +111,31 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
                 }
             }
             return result;
+        }
+
+        public static bool ShouldTerminate(this IEnumerable<IResidualLogger> loggers, IDictionary<string, double> residuals, CompressibleControl control) {
+            if (control.ResidualBasedTerminationCriteria.Count > 0
+                && residuals.Count > 0) {
+                bool terminate = true;
+                foreach (var keyThresholdPair in control.ResidualBasedTerminationCriteria) {
+                    if (!residuals.ContainsKey(keyThresholdPair.Key)) {
+                        throw new Exception(String.Format(
+                            "A termination criterion is based on {0} was found"
+                                + " but the corresponding residual value was"
+                                + " not calculated.",
+                            keyThresholdPair.Key));
+                    }
+
+                    terminate &= residuals[keyThresholdPair.Key] < keyThresholdPair.Value;
+                }
+
+                if (terminate) {
+                    Console.WriteLine("All residual criteria fulfilled, stopping calculation.");
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

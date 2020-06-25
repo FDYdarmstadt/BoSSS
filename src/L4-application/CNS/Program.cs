@@ -22,6 +22,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Residual;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
@@ -33,7 +34,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.Grid;
-using BoSSS.Solution.CompressibleFlowCommon.Residual;
 
 namespace CNS {
 
@@ -342,7 +342,7 @@ namespace CNS {
                     }
 
                     IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
-                    base.TerminationKey = ShouldTerminate(residuals);
+                    base.TerminationKey = residualLoggers.ShouldTerminate(residuals, Control);
 
                     this.ResLogger.NextTimestep(
                         residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
@@ -385,31 +385,6 @@ namespace CNS {
         /// <param name="phystime"></param>
         void IProgram<T>.SaveToDatabase(TimestepNumber ts, double phystime) {
             this.SaveToDatabase(ts, phystime);
-        }
-
-        private bool ShouldTerminate(IDictionary<string, double> residuals) {
-            if (Control.ResidualBasedTerminationCriteria.Count > 0
-                && residuals.Count > 0) {
-                bool terminate = true;
-                foreach (var keyThresholdPair in Control.ResidualBasedTerminationCriteria) {
-                    if (!residuals.ContainsKey(keyThresholdPair.Key)) {
-                        throw new Exception(String.Format(
-                            "A termination criterion is based on {0} was found"
-                                + " but the corresponding residual value was"
-                                + " not calculated.",
-                            keyThresholdPair.Key));
-                    }
-
-                    terminate &= residuals[keyThresholdPair.Key] < keyThresholdPair.Value;
-                }
-
-                if (terminate) {
-                    Console.WriteLine("All residual criteria fulfilled, stopping calculation.");
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private PlotDriver plotDriver;

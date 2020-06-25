@@ -2984,11 +2984,12 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = 1000.0;
             c.CFLFraction = CFL;
-            c.NoOfTimesteps = int.MaxValue;
+            c.dtFixed = 4.8e-3;
+            c.NoOfTimesteps = 500;
 
-            c.ResidualInterval = 100;
+            c.ResidualInterval = 10;
             c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
-            c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-3);
+            //c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-3);
 
             // IBM Settings
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
