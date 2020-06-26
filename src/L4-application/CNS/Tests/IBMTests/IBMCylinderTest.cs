@@ -23,14 +23,12 @@ using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.Residual;
-using ilPSP.Utils;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using ilPSP;
+using BoSSS.Solution.CompressibleFlowCommon.Residual;
 
 namespace CNS.Tests.IBMTests {
 

@@ -18,7 +18,7 @@ using BoSSS.Foundation;
 using System;
 using System.Collections.Generic;
 
-namespace CNS.Residual {
+namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
     /// <summary>
     /// Available types of residual loggers.
@@ -76,10 +76,12 @@ namespace CNS.Residual {
         /// </returns>
         public static IEnumerable<IResidualLogger> Instantiate<T>(
             this ResidualLoggerTypes loggerType,
-            Program<T> program,
-            CNSControl config,
-            SpatialOperator differentialOperator)
-            where T : CNSControl, new() {
+            Application<T> program,
+            CompressibleControl config,
+            SpatialOperator differentialOperator,
+            DGField[] consVars,
+            CoordinateMapping paramMap)
+            where T : CompressibleControl, new() {
 
             if (loggerType.HasFlag(ResidualLoggerTypes.ChangeRate)
                 && loggerType.HasFlag(ResidualLoggerTypes.Rigorous)) {
@@ -89,18 +91,20 @@ namespace CNS.Residual {
 
             if (loggerType == ResidualLoggerTypes.None) {
                 yield return new NullResidualLogger(
-                    program.ResLogger, program.CurrentSessionInfo, program.WorkingSet);
+                    program.ResLogger, program.CurrentSessionInfo, consVars);
             } else {
                 if (loggerType.HasFlag(ResidualLoggerTypes.ChangeRate)) {
                     loggerType ^= ResidualLoggerTypes.ChangeRate;
                     yield return new ChangeRateResidualLogger(
-                        program.ResLogger, program.CurrentSessionInfo, program.WorkingSet, config.ResidualInterval);
+                        program.ResLogger, program.CurrentSessionInfo, consVars, config.ResidualInterval);
                 }
 
                 if (loggerType.HasFlag(ResidualLoggerTypes.Rigorous)) {
                     loggerType ^= ResidualLoggerTypes.Rigorous;
                     yield return new RigorousResidualLogger<T>(
                         program,
+                        consVars,
+                        paramMap,
                         config.ResidualInterval,
                         differentialOperator);
                 }

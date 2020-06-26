@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
@@ -26,22 +25,15 @@ using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
-using CNS.Residual;
 using ilPSP;
 using ilPSP.Tracing;
-using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-using CNS.Convection;
 using BoSSS.Foundation.Grid;
-using ilPSP.Utils;
-using BoSSS.Solution.Statistic;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using BoSSS.Solution.CompressibleFlowCommon.Residual;
 
 namespace CNS {
 
@@ -227,7 +219,9 @@ namespace CNS {
                 residualLoggers = Control.ResidualLoggerType.Instantiate(
                     this,
                     Control,
-                    FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
+                    FullOperator.ToSpatialOperator(WorkingSet),
+                    WorkingSet.ConservativeVariables,
+                    ParameterMapping).ToArray();
 
                 WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
             }

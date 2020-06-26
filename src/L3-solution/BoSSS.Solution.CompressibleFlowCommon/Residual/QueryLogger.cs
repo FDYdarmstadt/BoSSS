@@ -23,7 +23,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.Queries;
 
-namespace CNS.Residual {
+namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
     /// <summary>
     /// A residual logger that logs results based on the output of the queries
@@ -56,7 +56,7 @@ namespace CNS.Residual {
         /// </summary>
         private Dictionary<string, double> lastResult;
 
-        private IApplication<CNSControl> application;
+        private IApplication<CompressibleControl> application;
 
         /// <summary>
         /// Creates a new logger for the configured queries.
@@ -65,7 +65,7 @@ namespace CNS.Residual {
         /// The real logger
         /// </param>
         /// <param name="application"></param>
-        public QueryLogger(BoSSS.Solution.ResidualLogger baseLogger, IApplication<CNSControl> application) {
+        public QueryLogger(BoSSS.Solution.ResidualLogger baseLogger, IApplication<CompressibleControl> application) {
             this.baseLogger = baseLogger;
             this.CurrentSession = application.CurrentSessionInfo;
             this.queries = application.QueryHandler.QueryMap;

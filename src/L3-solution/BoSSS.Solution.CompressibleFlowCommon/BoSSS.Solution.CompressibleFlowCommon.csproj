@@ -71,6 +71,13 @@
     <Compile Include="Diffusion\INonlinear2ndOrderForm.cs" />
     <Compile Include="EquationSystem\CompressibleOperatorFactory.cs" />
     <Compile Include="ILimiter.cs" />
+    <Compile Include="Residual\ChangeRateResidualLogger.cs" />
+    <Compile Include="Residual\IResidualLogger.cs" />
+    <Compile Include="Residual\NullResidualLogger.cs" />
+    <Compile Include="Residual\QueryLogger.cs" />
+    <Compile Include="Residual\ResidualLogger.cs" />
+    <Compile Include="Residual\ResidualLoggerTypes.cs" />
+    <Compile Include="Residual\RigorousResidualLogger.cs" />
     <Compile Include="ShockFinding\ShockFindingExtensions.cs" />
     <Compile Include="ShockFinding\LevelSetReconstruction.cs" />
     <Compile Include="ShockFinding\InflectionPointFinder.cs" />

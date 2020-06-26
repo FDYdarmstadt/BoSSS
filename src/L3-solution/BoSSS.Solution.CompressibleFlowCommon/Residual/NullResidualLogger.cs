@@ -18,7 +18,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation;
 using System.Collections.Generic;
 
-namespace CNS.Residual {
+namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
     /// <summary>
     /// No residuals are calculated. This class just serves as a realization of
@@ -29,8 +29,8 @@ namespace CNS.Residual {
         /// <summary>
         /// <see cref="ResidualLogger"/>
         /// </summary>
-        public NullResidualLogger(BoSSS.Solution.ResidualLogger baseLogger, SessionInfo currentSession, CNSFieldSet workingSet)
-            : base(baseLogger, currentSession, workingSet, 0) {
+        public NullResidualLogger(BoSSS.Solution.ResidualLogger baseLogger, SessionInfo currentSession, DGField[] consVars)
+            : base(baseLogger, currentSession, consVars, 0) {
         }
 
         /// <summary>
