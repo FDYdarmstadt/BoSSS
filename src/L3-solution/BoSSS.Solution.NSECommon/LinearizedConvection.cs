@@ -562,7 +562,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// set to 0.0 to turn the Lax-Friedrichs scheme into an central difference scheme.
         /// </summary>
-        protected double LaxFriedrichsSchemeSwitch = 1.0;
+        protected double LaxFriedrichsSchemeSwitch = 0.0;
 
         /// <summary>
         /// Ctor for incompressible flows.
@@ -644,6 +644,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+ 
         /// <summary>
         /// flux at the boundary
         /// </summary>
@@ -691,9 +692,9 @@ namespace BoSSS.Solution.NSECommon {
                         // Outer values for Scalar and ScalarMean
                         switch(m_bcmap.PhysMode) {
                             case PhysicsMode.Viscoelastic:
+                            case PhysicsMode.MixtureFraction: 
                             case PhysicsMode.Incompressible:
                                 break;
-                            case PhysicsMode.MixtureFraction:
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
                                 //Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
@@ -720,7 +721,7 @@ namespace BoSSS.Solution.NSECommon {
                                                 Uout[m_SpatialDimension + n] =  m_bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
                                             }
                                             break;
-                                        case IncompressibleBcType.Wall:
+                                        case IncompressibleBcType.Wall: // Dirichlet for temperature and neumann = 0 for mass Fractions
                                             // opt1: (using Dirichlet values for the temperature)
                                             Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                             for(int n = 1; n < NumberOfReactants ; n++) {
@@ -743,9 +744,7 @@ namespace BoSSS.Solution.NSECommon {
                                 throw new NotImplementedException("PhysicsMode not implemented");
                         }
 
-                        //Add the density parameter for the MixtureFraction Calculation
-                        if (m_bcmap.PhysMode == PhysicsMode.MixtureFraction)
-                            inp2.Parameters_OUT = inp2.Parameters_IN;
+                        //Add the density parameter for the MixtureFraction Calculation                       
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================
                         r = InnerEdgeFlux(ref inp2, Uin, Uout);
@@ -771,11 +770,11 @@ namespace BoSSS.Solution.NSECommon {
 
                         double rho = 1.0;
                         double[] densityArguments;
-                        switch(PhysMode) {
+                    switch (PhysMode) {
                             case PhysicsMode.Incompressible:
                                 break;
                             case PhysicsMode.MixtureFraction:
-                                rho = inp.Parameters_IN[0];
+                                rho = EoS.getDensityFromZ(Uin[inp.D]);
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
@@ -818,8 +817,9 @@ namespace BoSSS.Solution.NSECommon {
                     // Constant density
                     break;
                 case PhysicsMode.MixtureFraction:
-                    rhoIn = inp.Parameters_IN[0];
-                    rhoOut = inp.Parameters_OUT[0];
+                    // opt1:
+                    rhoIn = EoS.getDensityFromZ(Uin[inp.D]);
+                    rhoOut = EoS.getDensityFromZ(Uout[inp.D]);
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -828,8 +828,7 @@ namespace BoSSS.Solution.NSECommon {
                     rhoIn = EoS.GetDensity(DensityArgumentsIn);
                     rhoOut = EoS.GetDensity(DensityArgumentsOut);
                     break; 
-                case PhysicsMode.Combustion:                     
-
+                case PhysicsMode.Combustion:
                     DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, (NumberOfReactants-1) + 1); 
                     DensityArgumentsOut = Uout.GetSubVector(m_SpatialDimension, (NumberOfReactants-1) + 1);
 
@@ -871,10 +870,11 @@ namespace BoSSS.Solution.NSECommon {
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, true);
                     break;
                 case PhysicsMode.MixtureFraction:
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, inp.Parameters_IN[0]);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, inp.Parameters_OUT[0]);
-                    break;
-            
+                    rhoIn = EoS.getDensityFromZ(Uin[inp.D]);
+                    rhoOut = EoS.getDensityFromZ(Uout[inp.D]);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal,  true, rhoIn);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal,  true, rhoOut);
+                    break;            
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
                     double TemperatureMeanIn = Uin[m_SpatialDimension];  /* inp.Parameters_IN[2 * m_SpatialDimension + 1];*/
@@ -882,12 +882,9 @@ namespace BoSSS.Solution.NSECommon {
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, TemperatureMeanIn);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, TemperatureMeanOut);
                     break;
-                case PhysicsMode.Combustion:               
-
-
+                case PhysicsMode.Combustion:
                     double[] ScalarMeanIn = Uin.GetSubVector(m_SpatialDimension, (NumberOfReactants - 1) + 1);
                     double[] ScalarMeanOut = Uout.GetSubVector(m_SpatialDimension, (NumberOfReactants - 1) + 1);
-
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, ScalarMeanIn);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, ScalarMeanOut);
                     break;
@@ -926,7 +923,7 @@ namespace BoSSS.Solution.NSECommon {
                     rho = 1.0;
                     break;
                 case PhysicsMode.MixtureFraction:
-                    rho = inp.Parameters[0];
+                    rho = EoS.getDensityFromZ(U[inp.D]);
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -934,7 +931,6 @@ namespace BoSSS.Solution.NSECommon {
                     rho = EoS.GetDensity(DensityArguments);
                     break;
                 case PhysicsMode.Combustion:
-
                     DensityArguments = U.GetSubVector(m_SpatialDimension, (NumberOfReactants - 1) + 1); // Temperature, Y0,Y1 and Y2. Y3 is calculated in GetDensity.
                     rho = EoS.GetDensity(DensityArguments);
                     break;
