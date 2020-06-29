@@ -83,9 +83,12 @@ namespace BoSSS.Solution.NSECommon {
 
                     rho = ThermodynamicPressureValue / (phi[0] * MassFractionsOverMolarFractions);
                     Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
+                    Debug.Assert((rho > 0.0));
                 } else {
                     rho = 1.0;
                 }
+
+
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");

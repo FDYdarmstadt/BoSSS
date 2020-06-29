@@ -456,7 +456,7 @@ namespace BoSSS.Solution.NSECommon {
         int NumberOfReactants;
         int argumentIndex;
 
-        double LaxFriedrichsSchemeSwitch = 1.0;
+        double LaxFriedrichsSchemeSwitch = 0.0;
 
         string[] m_ArgumentOrdering;
         string[] m_ParameterOrdering;
@@ -512,7 +512,7 @@ namespace BoSSS.Solution.NSECommon {
                     //m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim),
                     //    VariableNames.Rho);
                     m_ParameterOrdering = new string[] { VariableNames.Rho };
-                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), MixtureFraction as variables. 
 
                     if (EoS == null)
                         throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
@@ -536,17 +536,17 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>        
         double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
-            int idx = argumentIndex; // Valid for Temperature only. has to be changed 
-                                     // Calculate central part
-                                     // ======================
+            int idx = argumentIndex;  
 
+            // Calculate central part
+            // ======================
             // 2 * (rho u_j * scalar) * n_j
             double rhoIn = 0.0;
             double rhoOut = 0.0;
             switch (m_bcmap.PhysMode) {
                 case PhysicsMode.MixtureFraction:
-                    rhoIn = inp.Parameters_IN[0];
-                    rhoOut = inp.Parameters_OUT[0];
+                    rhoIn = EoS.getDensityFromZ(Uin[inp.D]);
+                    rhoOut = EoS.getDensityFromZ(Uout[inp.D]);
                     break;
                 case PhysicsMode.LowMach:
                     double[] DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, 1);
@@ -563,6 +563,7 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException("PhysicsMode not implemented");
             }
+            Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
 
             r += rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);
             r += rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
@@ -581,8 +582,8 @@ namespace BoSSS.Solution.NSECommon {
             double LambdaOut;
             switch(m_bcmap.PhysMode) {
                 case PhysicsMode.MixtureFraction:
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, false, inp.Parameters_IN[0]);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, false, inp.Parameters_OUT[0]);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, false, rhoIn);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, false, rhoOut);
                     break;
                 case PhysicsMode.Multiphase:
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, false);
@@ -641,7 +642,7 @@ namespace BoSSS.Solution.NSECommon {
 
                         // Boundary values for Parameters
                         // ==============================
-                        inp2.Parameters_OUT = new double[inp.Parameters_IN.Length]; // Parameters are not being used...
+                        inp2.Parameters_OUT = new double[inp.Parameters_IN.Length]; 
 
                         // Dirichlet values for scalars and Velocities
                         // ==========================
@@ -654,7 +655,7 @@ namespace BoSSS.Solution.NSECommon {
                         switch (m_bcmap.PhysMode) {
                             case PhysicsMode.MixtureFraction:
                                 // opt1:
-                                inp2.Parameters_OUT = inp.Parameters_IN;
+                                //inp2.Parameters_OUT = inp.Parameters_IN;
                                 Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
                                 break;
                             case PhysicsMode.LowMach: {
@@ -717,7 +718,6 @@ namespace BoSSS.Solution.NSECommon {
                         switch(m_bcmap.PhysMode) {
                             case PhysicsMode.MixtureFraction: {
                                     // opt1:
-                                    inp2.Parameters_OUT = inp.Parameters_IN;
                                     Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, 0);
                                     break;
                                 }
@@ -771,7 +771,7 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Incompressible:
                                 break;
                             case PhysicsMode.MixtureFraction:
-                                rho = inp.Parameters_IN[0];
+                                rho = EoS.getDensityFromZ(Uin[inp.D]);
                                 break;
                             case PhysicsMode.LowMach:
                                 rho = EoS.GetDensity(Uin[argumentIndex]);
@@ -816,32 +816,34 @@ namespace BoSSS.Solution.NSECommon {
 
 
             double rho;
-            switch(m_bcmap.PhysMode) {
+            switch (m_bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
+                    rho = 1.0;
                     break;
                 case PhysicsMode.MixtureFraction:
-                    rho = inp.Parameters[0];
+                    rho = EoS.getDensityFromZ(U[inp.D]);
                     break;
                 case PhysicsMode.LowMach:
                     double[] DensityArguments = U.GetSubVector(m_SpatialDimension, 1);
-                     rho = EoS.GetDensity(DensityArguments);
-                    for(int d = 0; d < m_SpatialDimension; d++)
-                        output[d] *= rho;
+                    rho = EoS.GetDensity(DensityArguments);
                     break;
                 case PhysicsMode.Combustion:
                     double[] DensityArguments2 = U.GetSubVector(m_SpatialDimension, NumberOfReactants); // T, Y0,Y1,Y2
                     rho = EoS.GetDensity(DensityArguments2);
-                    for(int d = 0; d < m_SpatialDimension; d++)
-                        output[d] *= rho;
                     break;
-
                 default:
                     throw new NotImplementedException("not implemented physics mode");
 
 
 
             }
-            for(int d = 0; d < m_SpatialDimension; d++) {
+
+
+            for (int d = 0; d < m_SpatialDimension; d++)
+                output[d] *= rho;
+
+
+            for (int d = 0; d < m_SpatialDimension; d++) {
                 if(double.IsNaN(output[d]))
                     throw new NotFiniteNumberException();
             }
