@@ -110,7 +110,6 @@ namespace BoSSS.Application.SipPoisson.Tests {
             [Values(8)]int res,
             [Values(3)]int dim,
             [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
-
 #endif
             ) {
 
