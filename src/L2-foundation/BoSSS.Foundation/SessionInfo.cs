@@ -353,6 +353,21 @@ namespace BoSSS.Foundation.IO {
         #endregion
 
         /// <summary>
+        /// path to deploy dir
+        /// </summary>
+        public string DeployPath {
+            get {
+                return m_deploypath;
+            }
+            set {
+                m_deploypath = value;
+            }
+        }
+
+        [DataMember]
+        private string m_deploypath;
+
+        /// <summary>
         /// Names of compute nodes on which the session is running; Index: MPI
         /// rank index in the MPI_COMM_WORLD communicator;
         /// </summary>
@@ -361,6 +376,7 @@ namespace BoSSS.Foundation.IO {
                 return m_ComputeNodeNames;
             }
         }
+
 
         /// <summary>
         /// <see cref="ComputeNodeNames"/>

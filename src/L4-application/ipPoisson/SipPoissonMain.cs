@@ -1137,10 +1137,12 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override void Bye() {
             object SolL2err;
-            if (this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
-                Console.WriteLine("Value of Query 'SolL2err' " + SolL2err.ToString());
-            } else {
-                Console.WriteLine("query 'SolL2err' not found.");
+            if (this.QueryHandler != null) {
+                if (this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
+                    Console.WriteLine("Value of Query 'SolL2err' " + SolL2err.ToString());
+                } else {
+                    Console.WriteLine("query 'SolL2err' not found.");
+                }
             }
         }
 
