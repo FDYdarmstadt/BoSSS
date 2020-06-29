@@ -209,8 +209,10 @@
   <!--Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" /-->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
+    <PreBuildEvent>powershell $assemblyInfoPath = \"$(projectDir)Properties\AssemblyInfo.cs\"; $versionText = (git rev-parse HEAD); $assemblyInfoText = (Get-Content -Path $assemblyInfoPath -ReadCount 0); $assemblyInfoText = $assemblyInfoText -replace \"^\[assembly: AssemblyInformationalVersion\(".*"\)\]$\", \"[assembly: AssemblyInformationalVersion(`\"$versionText`\")]\"; Set-Content -Path $assemblyInfoPath -Value $assemblyInfoText</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>powershell $assemblyInfoPath = \"$(projectDir)Properties\AssemblyInfo.cs\"; $assemblyInfoText = (Get-Content -Path $assemblyInfoPath -ReadCount 0); $assemblyInfoText = $assemblyInfoText -replace \"^\[assembly: AssemblyInformationalVersion\(".*"\)\]$\", \"[assembly: AssemblyInformationalVersion(`\"`\")]\"; Set-Content -Path $assemblyInfoPath -Value $assemblyInfoText</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
       Other similar extension points exist, see Microsoft.Common.targets.
