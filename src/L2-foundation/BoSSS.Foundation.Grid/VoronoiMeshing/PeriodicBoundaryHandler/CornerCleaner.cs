@@ -19,10 +19,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             if (edge.Outer.Count > 0)
             {
-                MeshCell<T> firstCandidate = edge.Outer[0];
+                MeshCell<T> firstCandidate = edge.Outer[0].cell;
                 if (edge.Inner.Count > 1)
                 {
-                    MeshCell<T> secondCandidate = edge.Outer[edge.Outer.Count - 1];
+                    MeshCell<T> secondCandidate = edge.Outer[edge.Outer.Count - 1].cell;
                     if (cornerCandidates.Contains(secondCandidate.ID))
                     {
                         edge.Inner.RemoveAt(edge.Outer.Count - 1);

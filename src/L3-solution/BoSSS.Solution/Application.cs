@@ -1325,7 +1325,17 @@ namespace BoSSS.Solution {
                 }
 
                 // set master git commit
-                CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
+                //CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
+                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)Assembly
+                  .GetAssembly(typeof(BoSSS.Solution.Application))
+                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
+                  .InformationalVersion;
+
+                // set deploy directory path
+                string path = typeof(BoSSS.Solution.Application).Assembly.Location;
+                string outpath =  path.Substring(0, path.Length - "BoSSS.Solution.dll".Length-1); // skip "\BoSSS.Solution.dll" at end of path
+
+                CurrentSessionInfo.DeployPath = outpath;
 
                 // set computeNode - names:
                 CurrentSessionInfo.ComputeNodeNames.Clear();

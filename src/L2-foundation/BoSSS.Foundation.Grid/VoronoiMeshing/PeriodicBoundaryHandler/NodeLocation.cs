@@ -15,13 +15,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return IsOnRightSide(Node.Position, edge);
         }
 
-        public static bool NodeOfEdgeIsOnRightSideOfEdge<T>(Edge<T> edge)
-            where T : ILocatable
-        {
-            Vector position = edge.Cell.Node.Position;
-            return IsOnRightSide(position, edge);
-        }
-
         static bool IsOnRightSide(Vector node, Line line)
         {
             Vector start = line.Start.Position;

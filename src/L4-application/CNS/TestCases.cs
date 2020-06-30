@@ -2969,11 +2969,11 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMGaussianBump(string dbPath = null, int savePeriod = 100, int noOfCellsY = 16, int dgDegree = 2, int lsDegree = 8, double CFL = 0.3, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 100, int maxNumOfSubSteps = 0, double epsilonX = 0.0, double epsilonY = 0.0) {
+        public static IBMControl IBMGaussianBump(string dbPath = null, int savePeriod = 100, int noOfCellsY = 16, int dgDegree = 2, int lsDegree = 8, double CFL = 0.3, double agg = 0.0, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 100, int maxNumOfSubSteps = 0, double epsilonX = 0.0, double epsilonY = 0.0) {
             IBMControl c = new IBMControl();
 
             // Session Settings
-            dbPath = @"c:\bosss_db";
+            //dbPath = @"c:\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = c.DbPath != null;
             c.saveperiod = savePeriod;
@@ -2984,16 +2984,24 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = 1000.0;
             c.CFLFraction = CFL;
-            c.NoOfTimesteps = int.MaxValue;
+            //c.dtFixed = 4.8e-3;
+            c.NoOfTimesteps = 250000;   // CNS Config
 
-            c.ResidualInterval = 100;
+            // Residual logging
+            c.ResidualInterval = 100;   // CNS Config
             c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
-            c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-3);
+            //c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-3);
+            c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-8);     // CNS Config
+
+            // Queries
+            c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));
 
             // IBM Settings
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.LevelSetQuadratureOrder = 2 * dgDegree;
-            c.AgglomerationThreshold = 0.0;
+            c.AgglomerationThreshold = agg;
+
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             //c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             //c.SurfaceHMF_ProjectNodesToLevelSet = false;
@@ -3003,10 +3011,7 @@ namespace CNS {
             //c.VolumeHMF_RestrictNodes = true;
             //c.VolumeHMF_UseGaussNodes = false;
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
-
-            //Guid restart = new Guid(" 60688cbc-707d-4777-98e6-d237796ec14c");
-            //c.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restart, -1);
+            //c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("60688cbc-707d-4777-98e6-d237796ec14c"), -1);
 
             // Solver Type
             c.DomainType = DomainTypes.StaticImmersedBoundary;
@@ -3124,11 +3129,19 @@ namespace CNS {
             //c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.yComponent, u1);
             //c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, pressure);
 
-            // Queries
-            c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));
-
             c.ProjectName = "IBMGaussianBump";
             c.SessionName = c.CutCellQuadratureType + "_(" + 2 * noOfCellsY + "x" + noOfCellsY + ")_CFL=" + c.CFLFraction + "_lsQuadOrder=" + c.LevelSetQuadratureOrder + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_epsX=" + epsilonX + "_epsY=" + epsilonY;
+
+            return c;
+        }
+
+        public static IBMControl IBMGaussianBump_HHLR(int savePeriod = 100, int noOfCellsY = 16, int dgDegree = 2, int lsDegree = 8, double CFL = 0.3, double agg = 0.0) {
+            // Lichtenberg
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_ibmgaussianbump";
+
+            IBMControl c = IBMGaussianBump(dbPath, savePeriod,noOfCellsY, dgDegree, lsDegree, CFL, agg);
+
+            c.ProjectName = "IBMGaussianBump_HHLR";
 
             return c;
         }
