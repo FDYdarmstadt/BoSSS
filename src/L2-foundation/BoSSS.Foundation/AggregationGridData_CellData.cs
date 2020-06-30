@@ -245,7 +245,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             public double GetCellVolume(int j) {
                 double Sum = 0;
                 foreach(int jPart in AggregateCellToParts[j]) {
-                    Sum += m_Owner.m_GeomCellData.GetCellVolume(j);
+                    Sum += m_Owner.m_GeomCellData.GetCellVolume(jPart);
                 }
                 return Sum;
             }

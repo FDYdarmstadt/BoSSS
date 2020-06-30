@@ -60,13 +60,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public virtual IEnumerable<MeshCell<T>> EnumerateCellsInConcentricCircles()
         {
             Debug.Assert( boundary.FirstCorner != null, "Initialize before calling Cells()");
-            HashSet<int> visited = new HashSet<int>();//mesh.Cells.Count);
             return GetInsideCells(boundary.FirstCorner);
         }
 
         public static IEnumerable<MeshCell<T>> GetInsideCells(MeshCell<T> cell)
         {
-            HashSet<int> visited = new HashSet<int>();//mesh.Cells.Count);
+            HashSet<int> visited = new HashSet<int>();
             return IterativeYieldConnectedCells(cell, visited);
         }
 
