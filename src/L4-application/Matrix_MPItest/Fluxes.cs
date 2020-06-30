@@ -89,7 +89,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         }
 
 
-        public double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double Flx = 0.5*(U_Pos[0] + U_Neg[0])*inp.Normal[0];
             return Flx * vA - Flx * vB*m_factor;
         }

@@ -18,24 +18,20 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.Residual;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.LoadBalancing;
-using CNS.Residual;
 using CNS.ShockCapturing;
 using ilPSP;
 using ilPSP.Utils;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace CNS {
@@ -1735,6 +1731,8 @@ namespace CNS {
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
         public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int timeSteps) {
+            //Absturz mit 128 cores: 
+            //--control "cs:CNS.TestCases.DoubleMachReflectionHHLR(2147483647, 2, 4, 1, 1280, 320, 0.001, 0.1, 1, 1, 3, 1, 0, 0.7, 100)"
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
@@ -2971,52 +2969,49 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMGaussianBump(string dbPath = null, int savePeriod = 100, int noOfCellsY = 16, int dgDegree = 2, int lsDegree = 8, double CFL = 0.3, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 100, int maxNumOfSubSteps = 0, double epsilonX = 0.0, double epsilonY = 0.0) {
+        public static IBMControl IBMGaussianBump(string dbPath = null, int savePeriod = 100, int noOfCellsY = 16, int dgDegree = 2, int lsDegree = 8, double CFL = 0.3, double agg = 0.0, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 100, int maxNumOfSubSteps = 0, double epsilonX = 0.0, double epsilonY = 0.0) {
             IBMControl c = new IBMControl();
+
+            // Session Settings
+            //dbPath = @"c:\bosss_db";
+            c.DbPath = dbPath;
+            c.savetodb = c.DbPath != null;
+            c.saveperiod = savePeriod;
+            c.PrintInterval = 1;
 
             // Solver Settings
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.Endtime = 1000.0;
             c.CFLFraction = CFL;
-            //c.NoOfTimesteps = 200000;
-            c.NoOfTimesteps = int.MaxValue;
+            //c.dtFixed = 4.8e-3;
+            c.NoOfTimesteps = 250000;   // CNS Config
 
-            c.ResidualInterval = 100;
+            // Residual logging
+            c.ResidualInterval = 100;   // CNS Config
             c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
-            //c.ResidualBasedTerminationCriteria.Add("changeRate_L2_abs_rhoE", 1E-8);
+            //c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-3);
+            c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-8);     // CNS Config
+
+            // Queries
+            c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));
 
             // IBM Settings
-            c.LevelSetBoundaryTag = "adiabaticSlipWall";
+            c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.LevelSetQuadratureOrder = 2 * dgDegree;
-            c.AgglomerationThreshold = 0.3;
+            c.AgglomerationThreshold = agg;
 
-            // NEXT STEP: SET THIS BOOL TO FALSE AND JUST USE IN POSITIVE SUB_VOLUME;
-            // THEN TRY BOUNDING BOX APPROACH?
-            // WHY THE HELL DOES THIS CONFIGURATION FAIL!??!?!?!?
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
-            c.SurfaceHMF_ProjectNodesToLevelSet = false;
-            c.SurfaceHMF_RestrictNodes = true;
-            c.SurfaceHMF_UseGaussNodes = false;
-            c.VolumeHMF_NodeCountSafetyFactor = 3.0;
-            c.VolumeHMF_RestrictNodes = true;
-            c.VolumeHMF_UseGaussNodes = false;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
-            //Guid restart = new Guid(" 60688cbc-707d-4777-98e6-d237796ec14c");
-            //c.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restart, -1);
+            //c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //c.SurfaceHMF_ProjectNodesToLevelSet = false;
+            //c.SurfaceHMF_RestrictNodes = true;
+            //c.SurfaceHMF_UseGaussNodes = false;
+            //c.VolumeHMF_NodeCountSafetyFactor = 3.0;
+            //c.VolumeHMF_RestrictNodes = true;
+            //c.VolumeHMF_UseGaussNodes = false;
 
-            // Session Settings
-            //c.DbPath = @"\\fdyprime\userspace\kraemer-eis\FDY-Cluster\dbe_bump\";
-            //c.DbPath = @"/home/kraemer/GaussianBump/dbev2/";
-            //c.DbPath = @"c:\bosss_db";
-            c.DbPath = dbPath;
-            c.savetodb = c.DbPath != null;
-            c.saveperiod = savePeriod;
-            c.PrintInterval = 100;
-            c.ProjectName = "BoxHMF=" + c.CutCellQuadratureType + "_Ma=0.5_(" + 2 * noOfCellsY + "x" + noOfCellsY + ")_CFL=" + c.CFLFraction + "_lsQuadOrder=" + c.LevelSetQuadratureOrder + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_epsX=" + epsilonX + "_epsY=" + epsilonY;
-            c.ProjectDescription = "GaussianBump with Ma=0.5";
-            c.Tags.Add("Gaussian Bump");
-            c.Tags.Add("IBM Test");
+            //c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("60688cbc-707d-4777-98e6-d237796ec14c"), -1);
 
             // Solver Type
             c.DomainType = DomainTypes.StaticImmersedBoundary;
@@ -3084,10 +3079,10 @@ namespace CNS {
 
                 GridCommons grid = Grid2D.Cartesian2DGrid(xnodes, ynodes);
 
-                grid.EdgeTagNames.Add(1, "supersonicinlet");
-                grid.EdgeTagNames.Add(2, "subsonicInlet");
-                grid.EdgeTagNames.Add(3, "adiabaticSlipWall");
-                grid.EdgeTagNames.Add(4, "subsonicOutlet");
+                grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                //grid.EdgeTagNames.Add(2, "SubsonicInlet");
+                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+                //grid.EdgeTagNames.Add(4, "SubsonicOutlet");
 
                 Func<double[], byte> func = delegate (double[] x) {
 
@@ -3110,6 +3105,7 @@ namespace CNS {
             Func<double[], double, double> rho = (X, t) => 1.0;
             Func<double[], double, double> u0 = (X, t) => 1.0;
             Func<double[], double, double> u1 = (X, t) => 0.0;
+            // M_infty = 0.5, set u0 = 1.0, using u0 = M_infty * sqrt(gamma * p / rho) ==> p = rho * u0 * u0 / (M_infty^2 * gamma)
             Func<double[], double, double> pressure = (X, t) => 2.8571428571428;
 
             // Initial Values
@@ -3121,20 +3117,31 @@ namespace CNS {
             c.LevelSetFunction = (X, t) => X[1] - epsilonY - 0.01 - 0.3939 * Math.Exp(-0.5 * (X[0] - epsilonX) * (X[0] - epsilonX));
 
             // Supersonic boundary conditions
-            c.AddBoundaryValue("adiabaticSlipWall");
-            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
-            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.yComponent, u1);
-            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, pressure);
+            c.AddBoundaryValue("AdiabaticSlipWall");
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, rho);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, pressure);
 
             // Subsonic boundary conditions
-            c.AddBoundaryValue("subsonicInlet", CompressibleVariables.Density, rho);
-            c.AddBoundaryValue("subsonicInlet", CNSVariables.Velocity.xComponent, u0);
-            c.AddBoundaryValue("subsonicInlet", CNSVariables.Velocity.yComponent, u1);
-            c.AddBoundaryValue("subsonicOutlet", CNSVariables.Pressure, pressure);
+            //c.AddBoundaryValue("SubsonicInlet", CompressibleVariables.Density, rho);
+            //c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.xComponent, u0);
+            //c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.yComponent, u1);
+            //c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, pressure);
 
-            // Queries
-            c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));
+            c.ProjectName = "IBMGaussianBump";
+            c.SessionName = c.CutCellQuadratureType + "_(" + 2 * noOfCellsY + "x" + noOfCellsY + ")_CFL=" + c.CFLFraction + "_lsQuadOrder=" + c.LevelSetQuadratureOrder + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_epsX=" + epsilonX + "_epsY=" + epsilonY;
+
+            return c;
+        }
+
+        public static IBMControl IBMGaussianBump_HHLR(int savePeriod = 100, int noOfCellsY = 16, int dgDegree = 2, int lsDegree = 8, double CFL = 0.3, double agg = 0.0) {
+            // Lichtenberg
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_ibmgaussianbump";
+
+            IBMControl c = IBMGaussianBump(dbPath, savePeriod,noOfCellsY, dgDegree, lsDegree, CFL, agg);
+
+            c.ProjectName = "IBMGaussianBump_HHLR";
 
             return c;
         }

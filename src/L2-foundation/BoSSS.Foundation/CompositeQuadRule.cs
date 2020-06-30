@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// Saves the location and weight associated with each node in
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
-        public static void ToTextFileVolume(this ICompositeQuadRule<QuadRule> compositeRule, Grid.Classic.GridData gridData, string filename) {
+        public static void ToTextFileVolume(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
             int D = gridData.SpatialDimension;
             string[] dimensions = new string[] { "x", "y", "z" };
 

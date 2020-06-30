@@ -61,7 +61,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.012242156816534;
+                double angularVelocitySol = -0.00732081626486242;
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
@@ -136,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 2.86834994106668;
+                double ForcesSoll = 251.290976136511;
 
                 double Forces = p.Particles[0].Motion.GetHydrodynamicForces(0)[0];
 

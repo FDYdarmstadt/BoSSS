@@ -298,7 +298,10 @@ namespace BoSSS.Application.BoSSSpad
             }
         }
 
-
+        /// <summary>
+        /// Sets debug flag for Mono
+        /// </summary>
+        public bool MonoDebug = false;
 
         /// <summary>
         /// 
@@ -399,6 +402,7 @@ namespace BoSSS.Application.BoSSSpad
 
             using (var str = new StringWriter()) {
                 str.Write("mpiexec mono ");
+                if (MonoDebug) { str.Write("-v --debug "); }
                 str.Write(jobpath_unix + "/" + Path.GetFileName(myJob.EntryAssembly.Location));
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
@@ -437,7 +441,7 @@ namespace BoSSS.Application.BoSSSpad
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                sw.WriteLine("#SBATCH -C avx");
+                sw.WriteLine("#SBATCH -C avx2");
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
                 // Load modules
@@ -451,6 +455,10 @@ namespace BoSSS.Application.BoSSSpad
                 sw.WriteLine(startupstring);
                 sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob) + "/exit.txt'");
                 sw.WriteLine($"rm '{RunningToken}'");
+                sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
+                sw.WriteLine($"rm core.*");
+                sw.WriteLine($"rm mono_crash.*");
+                sw.WriteLine($"rm mono_crash.mem.*");
             }
 
         }

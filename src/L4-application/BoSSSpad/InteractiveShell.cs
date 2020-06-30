@@ -333,7 +333,7 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("Creating database '" + dbDir + "'.");
             }
 
-            var dbi = new DatabaseInfo(dbDir);
+            var dbi = DatabaseInfo.Open(dbDir);
 
             List<IDatabaseInfo> mod_databases = new List<IDatabaseInfo>();
             if (databases != null) {

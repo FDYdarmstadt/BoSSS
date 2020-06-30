@@ -95,7 +95,7 @@ namespace BoSSS.Application.BoSSSpad {
                         for (int i = 0; i < AllowedDatabasesPaths.Length; i++) {
                             if (m_AllowedDatabases[i] == null) {
                                 try {
-                                    m_AllowedDatabases[i] = new DatabaseInfo(AllowedDatabasesPaths[i]);
+                                    m_AllowedDatabases[i] = DatabaseInfo.Open(AllowedDatabasesPaths[i]);
                                 } catch (Exception e) {
                                     Console.Error.WriteLine($"Unable to open 'allowed database' for {this.ToString()} at path {AllowedDatabasesPaths[i]}. Check configuration file 'BatchProcessorConfig.json'. ({e.GetType().Name} : {e.Message})");
                                     Console.Error.WriteLine($"{this.ToString()} will continue to work, but database synchronization on job submission might not work correctly.");
@@ -372,7 +372,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // hundreds of files copied successfully, suddenly an IOException: file already exists.
                 // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
 
-                try {
+                try  {
 
                     latest = op(iTry);
                     if(latest != null)

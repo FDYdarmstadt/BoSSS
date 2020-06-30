@@ -525,9 +525,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                 case 1:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
                     break;
-                case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap;
-                    break;
                 case 3:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
                     break;
@@ -541,7 +538,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 8;
+            int Res = 16;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -559,9 +556,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             C.GridPartType = GridPartType.directHilbert;
             C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(2);
+            C.SetDGdegree(5);
 
-            C.LinearSolver.NoOfMultigridLevels = 2;
+            C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MaxKrylovDim = 50;

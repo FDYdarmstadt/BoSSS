@@ -529,30 +529,33 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 case 1:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Schur;
                         break;
                     }
                 case 2:
                     {
 
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_Simple;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Simple;
                         break;
                     }
                 case 3:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_1000;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
+                        C.LinearSolver.TargetBlockSize = 1000;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
                         break;
                     }
                 case 4:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_5000;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
+                        C.LinearSolver.TargetBlockSize = 5000;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 5:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_10000;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
+                        C.LinearSolver.TargetBlockSize = 10000;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
@@ -560,13 +563,14 @@ namespace BoSSS.Application.IBM_Solver {
                     {
                         //depth = 2,
                         //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_MG;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS_MG;
+                        C.NoOfMultigridLevels = 2;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 7:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_localPrec; ;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_localPrec; ;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }

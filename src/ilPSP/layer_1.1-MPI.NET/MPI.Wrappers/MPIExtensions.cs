@@ -252,11 +252,7 @@ namespace MPI.Wrappers {
             T[] ret = new T[MpiSize];
             using(var ms = new MemoryStream(rcvBuffer)) {
                 for(int r = 0; r < MpiSize; r++) {
-                    if(r == MyRank) {
-                        ret[r] = o;
-                    } else {
-                        ret[r] = (T)_Formatter.Deserialize(ms);
-                    }
+                    ret[r] = (T)_Formatter.Deserialize(ms);
                 }
             }
             return ret;

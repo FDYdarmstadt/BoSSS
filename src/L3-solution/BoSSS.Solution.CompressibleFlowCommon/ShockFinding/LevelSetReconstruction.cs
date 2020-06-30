@@ -18,6 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Tecplot;
@@ -65,6 +66,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
+        private readonly SinglePhaseField geometryLevelSetField;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -86,7 +89,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             ITimestepInfo myTimestep = session.Timesteps.Last();
             this.gridData = (GridData)myTimestep.Fields.First().GridDat;
-            this.densityField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+
+            if (myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault() is XDGField) {
+                XDGField densityField = (XDGField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+                this.densityField = new SinglePhaseField(new Basis(gridData, densityField.Basis.Degree), "rho");
+                this.densityField.Acc(1.0, densityField.GetSpeciesShadowField("B"));
+            } else {
+                this.densityField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "rho").SingleOrDefault();
+            }
+
+            this.geometryLevelSetField = (SinglePhaseField)myTimestep.Fields.Where(f => f.Identification == "levelSet").SingleOrDefault();
         }
 
         /// <summary>
@@ -217,7 +229,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             for (int i = 0; i < numOfPoints; i++) {
                 double[] cellCenter = gridData.Cells.GetCenter((int)inputClustering[i, 4]);
 
-                if (!(Math.Abs(cellCenter[1]) < 1.2 && cellCenter[0] > -0.7)) {
+                //if (!(Math.Abs(cellCenter[1]) < 1.2 && cellCenter[0] > -0.7)) {
+                if (!(Math.Abs(cellCenter[1]) < 2.6 && cellCenter[0] > -0.3) && !(Math.Abs(cellCenter[1]) < 1.2 && cellCenter[0] > -0.7)) {
                     cellsAwayFromGeometry[count] = i;
                     count++;
                 }
@@ -329,6 +342,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             // Extract points (x-coordinates, y-coordinates) for reconstruction from clustering
             MultidimensionalArray points = clustering.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { clustering.Lengths[0] - 1, 1 });
+
+            _levelSetFields.Add(geometryLevelSetField);
 
             SinglePhaseField levelSetField = ShockFindingExtensions.ReconstructLevelSetField(field, points);
             _levelSetFields.Add(levelSetField);
