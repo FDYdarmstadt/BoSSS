@@ -28,9 +28,157 @@ namespace BoSSS.Solution.NSECommon {
 
     [DataContract]
     [Serializable]
-    public class MaterialLawLowMach_MF : MaterialLawLowMach {
-        public MaterialLawLowMach_MF(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne) : base(T_ref, MatParamsMode, rhoOne) {
+    public class MaterialLawLowMach_MF : MaterialLawCombustion {
+        public MaterialLawLowMach_MF(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YF0, double YO0, double zst, ChemicalConstants CC) : base(T_ref, MolarMasses, rhoOne, MatParamsMode) {
+            this.Q = Q;
+            this.TO0 = TO0;
+            this.TF0 = TF0;
+            this.YF0 = YF0;
+            this.YO0 = YO0;
+            this.zst = zst;
+            this.cp = 1.0;
+            this.CC = CC;
+
+            this.rhoOne = rhoOne;
         }
+        public bool rhoOne;
+        public double Q;
+        public double TO0;
+        public double TF0;
+        public double YF0;
+        public double YO0;
+        public double zst;
+        public double cp;
+        public ChemicalConstants CC;
+
+
+
+        public override double getDensityFromZ(double Z) {
+            double res;
+            //rhoOne = true;
+            if (!rhoOne) {
+                Debug.Assert(Z - 1.0 < 1e-4 && Z > -1e-4);
+                double T, Y0, Y1, Y2, Y3, Y4;
+                if (Z >= zst) { // Fuel side
+                    T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
+                    Y0 = YF0 * (Z - zst) / (1 - zst);
+                    Y1 = 0;
+                    Y2 = -YO0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
+                    Y3 = -YO0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
+                    Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
+                } else if (Z < zst) { // Oxydizer side
+                    T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
+                    Y0 = 0;
+                    Y1 = YO0 * (1 - Z / zst);
+                    Y2 = -YF0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_CH4 * CC.PM_CH4) * Z;
+                    Y3 = -YF0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_CH4 * CC.PM_CH4) * Z;
+                    Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
+
+                } else {
+                    throw new Exception("out of bounds");
+                }
+                double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
+
+                res = GetDensity(densityArguments);
+            } else {
+                res = 1.0;
+            }
+
+            return res;
+
+        }
+        
+
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Z"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public override double getVariableFromZ(double Z, string id) {
+            double res;
+
+            if (Z >= zst) { // Fuel side
+                switch (id) {
+                    case VariableNames.Temperature:
+                        res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
+                        break;
+                    case VariableNames.MassFraction0:
+                        res = YF0 * (Z - zst) / (1 - zst);
+
+                        break;
+                    case VariableNames.MassFraction1:
+                        res = 0;
+
+                        break;
+                    case VariableNames.MassFraction2:
+                        res = -YO0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
+
+                        break;
+                    case VariableNames.MassFraction3:
+                        res = -YO0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
+
+                        break;
+                    case VariableNames.MassFraction4:
+                        double YNOxi0 = 1.0 - YF0;
+                        double YNFuel0 = 1.0 - YO0;
+                        res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+                        break;
+                    default:
+                        throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                }
+
+                } else if (Z < zst) { // Oxydizer side
+                switch (id) {
+                    case VariableNames.Temperature:
+                        res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
+                        break;
+                    case VariableNames.MassFraction0:
+                        res = 0;
+                        break;
+                    case VariableNames.MassFraction1:
+                        res = YO0 * (1 - Z / zst);
+                        break;
+                    case VariableNames.MassFraction2:
+                        res = -YF0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_CH4 * CC.PM_CH4) * Z;
+                        break;
+                    case VariableNames.MassFraction3:
+                        res = -YF0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_CH4 * CC.PM_CH4) * Z;
+                        break;
+                    case VariableNames.MassFraction4:
+                        double YNOxi0 = 1.0 - YF0;
+                        double YNFuel0 = 1.0 - YO0;
+                        res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+                        break;
+                    default:
+                        throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                }
+            } else {
+                throw new Exception("out of bounds");
+            }             
+            return res;
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         public override IList<string> ParameterOrdering {
             get {
@@ -75,7 +223,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0/*, VariableNames.Rho */};            
+                return new string[] { /*VariableNames.Temperature0*//*, VariableNames.Rho */};            
             }
         }
 
@@ -373,6 +521,13 @@ namespace BoSSS.Solution.NSECommon {
         public override double DiffRho_Temp(double phi) {
             throw new NotImplementedException();
         }
- 
+
+        public override double getVariableFromZ(double Z, string id) {
+            throw new NotImplementedException();
+        }
+
+        public override double getDensityFromZ(double Z) {
+            throw new NotImplementedException();
+        }
     }
 }

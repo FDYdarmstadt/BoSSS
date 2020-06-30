@@ -22,7 +22,6 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.Residual;
 using ilPSP;
 using ilPSP.Utils;
 using System;

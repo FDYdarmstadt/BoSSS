@@ -17,21 +17,17 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.LoadBalancing;
-using CNS.Residual;
 using CNS.ShockCapturing;
 using CNS.Source;
 using ilPSP;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace CNS {
 
@@ -183,25 +179,6 @@ namespace CNS {
         /// </summary>
         [ExclusiveLowerBound(0.0)]
         public double SIPGPenaltyScaling = 1.0;
-
-        /// <summary>
-        /// The type of residual logger to be used, see
-        /// <see cref="ResidualLoggerTypes"/>.
-        /// </summary>
-        public ResidualLoggerTypes ResidualLoggerType = ResidualLoggerTypes.None;
-
-        /// <summary>
-        /// Indicates that the residual should be calculated (and saved) every
-        /// n-th time-step. If zero, no residual calculation should take place
-        /// </summary>
-        [InclusiveLowerBound(0)]
-        public int ResidualInterval = 0;
-
-        /// <summary>
-        /// A mapping between residual variables and the corresponding
-        /// termination criteria
-        /// </summary>
-        public IDictionary<string, double> ResidualBasedTerminationCriteria = new Dictionary<string, double>();
 
         /// <summary>
         /// Custom source terms for the continuity equation

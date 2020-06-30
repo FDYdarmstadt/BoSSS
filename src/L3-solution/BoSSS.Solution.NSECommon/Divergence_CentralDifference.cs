@@ -253,8 +253,9 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.Multiphase:
                     throw new ApplicationException("Wrong constructor");
                 case PhysicsMode.MixtureFraction:
-                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), new string[] { VariableNames.MixtureFraction });
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), new string[] { VariableNames.MixtureFraction});
                     m_ParameterOrdering = new string[] { VariableNames.Rho };
+                    this.NumberOfSpecies = NumberOfSpecies;
                     break;
                 case PhysicsMode.LowMach:                      
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), new string[] { VariableNames.Temperature });
@@ -291,7 +292,9 @@ namespace BoSSS.Solution.NSECommon {
                                 res = Uout * inp.Normal[Component];
                                 break;
                             case PhysicsMode.MixtureFraction:
-                                res = inp.Parameters_IN[0] * Uout * inp.Normal[Component];
+                                // opt1:
+                                double Zout = Bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, 0);                                
+                                res = EoS.getDensityFromZ(Zout) * Uout * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase: {
@@ -307,12 +310,12 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Combustion: {
                                     // opt1:
                                     TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
-                                    double[] args = new double[NumberOfSpecies - 1 + 1];
-                                    args[0] = TemperatureOut;
+                                    double[] argsa = new double[NumberOfSpecies - 1 + 1];
+                                    argsa[0] = TemperatureOut;
                                     for (int n = 1; n < NumberOfSpecies; n++) {
-                                        args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
+                                        argsa[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
                                     }
-                                    res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
+                                    res = EoS.GetDensity(argsa) * Uout * inp.Normal[Component];
                                     break;
                                 }
                             default:
@@ -327,8 +330,8 @@ namespace BoSSS.Solution.NSECommon {
                                 res = Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.MixtureFraction:
-                                double rho = inp.Parameters_IN[0]; // rho as parameters
-                                res = rho * Uin[Component] * inp.Normal[Component];
+                                double Zin = Uin[inp.D];
+                                res = EoS.getDensityFromZ(Zin) * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
@@ -357,34 +360,33 @@ namespace BoSSS.Solution.NSECommon {
             double[] DensityArguments_Out; // Arguments used to calculate the density with the EoS
             double densityIn;
             double densityOut;
-            switch(Bcmap.PhysMode) {
+            switch (Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
                     res = 0.5 * (Uin[Component] + Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.MixtureFraction:
-                    densityIn = inp.Parameters_IN[0];
-                    densityOut = inp.Parameters_OUT[0];
+                    densityIn = EoS.getDensityFromZ(Uin[inp.D]);
+                    densityOut = EoS.getDensityFromZ(Uout[inp.D]);
                     res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
                     DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, 1);
                     DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, 1);
-                     densityIn = (EoS.GetDensity(DensityArguments_In));
-                     densityOut = (EoS.GetDensity(DensityArguments_Out));
-                    if(double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
+                    densityIn = (EoS.GetDensity(DensityArguments_In));
+                    densityOut = (EoS.GetDensity(DensityArguments_Out));
+                    if (double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
                         throw new NotFiniteNumberException();
-
                     res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies); 
-                    DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, NumberOfSpecies); 
-                     densityIn = (EoS.GetDensity(DensityArguments_In));
-                     densityOut = (EoS.GetDensity(DensityArguments_Out));
-                    if(double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
+                    DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);
+                    DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, NumberOfSpecies);
+                    densityIn = (EoS.GetDensity(DensityArguments_In));
+                    densityOut = (EoS.GetDensity(DensityArguments_Out));
+                    if (double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
                         throw new NotFiniteNumberException();
-                    res = 0.5 * (densityIn* Uin[Component] + densityOut* Uout[Component]) * inp.Normal[Component];
+                    res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 default:
                     throw new ApplicationException("PhysicsMode not implemented");
@@ -402,7 +404,7 @@ namespace BoSSS.Solution.NSECommon {
                     output[Component] = U[Component];
                     break;
                 case PhysicsMode.MixtureFraction:
-                    output[Component] = inp.Parameters[0] * U[Component];
+                    output[Component] = EoS.getDensityFromZ(U[inp.D]) * U[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:

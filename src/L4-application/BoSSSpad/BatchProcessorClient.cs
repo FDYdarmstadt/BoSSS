@@ -372,7 +372,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // hundreds of files copied successfully, suddenly an IOException: file already exists.
                 // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
 
-                try {
+                try  {
 
                     latest = op(iTry);
                     if(latest != null)

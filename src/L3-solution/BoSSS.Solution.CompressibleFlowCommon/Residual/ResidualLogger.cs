@@ -20,7 +20,7 @@ using System.IO;
 using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
 
-namespace CNS.Residual {
+namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
     /// <summary>
     /// Base class for residual loggers
@@ -76,12 +76,12 @@ namespace CNS.Residual {
         /// <param name="residualInterval">
         /// Interval at which residuals are calculated
         /// </param>
-        public ResidualLogger(BoSSS.Solution.ResidualLogger baseLogger, SessionInfo currentsession, CNSFieldSet workingSet, int residualInterval) {
+        public ResidualLogger(BoSSS.Solution.ResidualLogger baseLogger, SessionInfo currentsession, DGField[] consVars, int residualInterval) {
             this.baseLogger = baseLogger;
             this.residualInterval = residualInterval;
             this.m_currentsession = currentsession;
 
-            CurrentState = new VectorField<DGField>(workingSet.ConservativeVariables);
+            CurrentState = new VectorField<DGField>(consVars);
             PreviousState = CurrentState.CloneAs();
         }
 

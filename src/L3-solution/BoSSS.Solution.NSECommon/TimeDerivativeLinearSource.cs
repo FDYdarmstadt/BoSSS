@@ -32,7 +32,7 @@ namespace BoSSS.Solution.NSECommon {
     public class MassMatrixComponent : BoSSS.Solution.Utils.LinearSource {
         string[] m_ArgumentOrdering;
         IList<string> m_ParameterOrdering;
-        MaterialLawLowMach EoS;
+        MaterialLaw EoS;
         bool m_energy;
         bool m_conti;
         double rho;
@@ -45,29 +45,23 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="energy">Set conti: true for the energy equation</param>
         /// <param name="ArgumentOrdering"></param>
         /// <param name="TimeStepSize"></param>
-        public MassMatrixComponent(MaterialLawLowMach EoS, double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
+        public MassMatrixComponent(MaterialLaw EoS, String[] ArgumentOrdering) {
             m_ArgumentOrdering = ArgumentOrdering;//.Cat(VariableNames.Rho);
             this.EoS = EoS;
-            dt = TimeStepSize;
-            m_energy = energy;
-            m_conti = conti;
             m_ParameterOrdering = EoS.ParameterOrdering;
 
         }
         /// <summary>
-        /// ctor for cte density flows
+        /// ctor for constant density flows
         /// </summary>
         /// <param name="EoS"></param>
         /// <param name="TimeStepSize"></param>
         /// <param name="ArgumentOrdering"></param>
         /// <param name="energy"></param>
         /// <param name="conti"></param>
-        public MassMatrixComponent(double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
+        public MassMatrixComponent(String[] ArgumentOrdering) {
             m_ArgumentOrdering = ArgumentOrdering;
             this.EoS = null;
-            dt = TimeStepSize;
-            m_energy = energy;
-            m_conti = conti;
             m_ParameterOrdering = null;
         }
 
@@ -102,8 +96,14 @@ namespace BoSSS.Solution.NSECommon {
             rho = 1.0;
 
             if (EoS != null) {
-                rho = EoS.GetDensity(parameters); 
+                if (m_ArgumentOrdering[0] == VariableNames.MixtureFraction) {
+                    rho = EoS.getDensityFromZ(U[0]);
+                } else {
+                    rho = EoS.GetDensity(parameters);
+                                    }
             }
+
+
 
             return mult * rho * U[0];
 
