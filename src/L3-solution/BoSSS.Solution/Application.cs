@@ -1462,7 +1462,7 @@ namespace BoSSS.Solution {
 
                         ht.LogMemoryStat();
                         return _Grid;
-                    } else if (this.Control.GridGuid != null && this.Control.RestartInfo != null) {
+                    } else if (this.Control.GridGuid != null && this.Control.GridGuid != default(Guid)) {/* && this.Control.RestartInfo != null*/
                         // ++++++++++++++++++++
                         // load grid by GridID
                         // ++++++++++++++++++++
