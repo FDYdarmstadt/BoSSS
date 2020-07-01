@@ -56,6 +56,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 FirstCorner = mesh.Cells[firstCornerNodeIndice]
             };
             cutter.CutOut(mesh, boundary);
+            //MatlabPlotter.Plot(mesh);
             return new Domain<T>
             {
                 Mesh = mesh,

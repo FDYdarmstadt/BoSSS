@@ -44,11 +44,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 }
                 domain = voronoiMesher.Generate(domain.Nodes, domain.Boundary.FirstCorner);
             }
-            
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
 
+            //MatlabPlotter.Plot(domain.Mesh);
             Debug.Assert(InnerEdgesAlign(domain.Mesh));
+            
             return domain;
         }
 
@@ -110,6 +111,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     if (!edge.IsBoundary)
                     {
                         if((edge.Start.ID != edge.Twin.End.ID) || (edge.End.ID != edge.Twin.Start.ID))
+                        {
+                            return false;
+                        }
+                        if(edge.Start.ID == edge.End.ID)
                         {
                             return false;
                         }

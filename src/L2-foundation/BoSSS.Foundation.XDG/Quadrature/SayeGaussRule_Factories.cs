@@ -210,6 +210,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                                 Console.WriteLine("Reusing {0} \n", quadMode);
 #endif
                                 return UseExistingRule(mask);
+                                //return InitializeRule(mask, order);
                             }
                         //break;
                         case Mode.RecalculateOnEverySurfaceCall:
@@ -253,7 +254,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 //If not, filter rules to fit subMask
                 else
                 {
-                    Debug.Assert(subMask.IsSubMaskOf(RuleStatus.initialMask));
+                    //Debug.Assert(subMask.IsSubMaskOf(RuleStatus.initialMask));
+                    if (!subMask.IsSubMaskOf(RuleStatus.initialMask)){
+                        throw new Exception("subMask is probably empty.");
+                    }
                     List<IChunkRulePair<QuadRule>> subRulez = new List<IChunkRulePair<QuadRule>>(subMask.Count());
 
                     IEnumerator<int> initialMask_enum = RuleStatus.initialMask.GetItemEnumerator();
