@@ -1294,7 +1294,7 @@ namespace BoSSS.Solution {
                         m_queryHandler.AddQuery(queryIdPair.Key, queryIdPair.Value);
                     }
                 }
-                this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
+                //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
                 //save session information
                 //========================
@@ -2415,7 +2415,7 @@ namespace BoSSS.Solution {
                     }
                 } //end of adapt mesh branch
 
-                this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
+                //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
                 return true;
             }

@@ -2969,7 +2969,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMGaussianBump(string dbPath = null, int savePeriod = 100, int noOfCellsY = 16, int dgDegree = 2, int lsDegree = 8, double CFL = 0.3, double agg = 0.0, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 100, int maxNumOfSubSteps = 0, double epsilonX = 0.0, double epsilonY = 0.0) {
+        public static IBMControl IBMGaussianBump(string dbPath = null, int savePeriod = 100, int noOfCellsY = 16 * 8, int dgDegree = 0, int lsDegree = 8, double CFL = 0.3, double agg = 0.3, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 100, int maxNumOfSubSteps = 0, double epsilonX = 0.0, double epsilonY = 0.0) {
             IBMControl c = new IBMControl();
 
             // Session Settings
@@ -3141,7 +3141,7 @@ namespace CNS {
 
             IBMControl c = IBMGaussianBump(dbPath, savePeriod,noOfCellsY, dgDegree, lsDegree, CFL, agg);
 
-            c.ProjectName = "IBMGaussianBump_HHLR";
+            c.ProjectName = string.Format("IBMGaussianBump_HHLR_agg{0}", agg);
 
             return c;
         }
