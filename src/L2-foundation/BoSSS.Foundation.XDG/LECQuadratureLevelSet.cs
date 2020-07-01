@@ -40,7 +40,8 @@ namespace BoSSS.Foundation.XDG {
         UnsetteledCoordinateMapping m_RowMap;
         UnsetteledCoordinateMapping m_ColMap;
 
-        DGField[] m_Parameters;
+        ConventionalDGField[] m_ParametersA;
+        ConventionalDGField[] m_ParametersB;
 
         bool AffineOnly {
             get {
@@ -117,13 +118,27 @@ namespace BoSSS.Foundation.XDG {
 
             m_RowMap = RowMap;
             m_ColMap = ColMap;
-            m_Parameters = (ParamsMap != null) ? ParamsMap.ToArray() : new DGField[0];
-                       
+            var _Parameters = (ParamsMap != null) ? ParamsMap.ToArray() : new DGField[0];
+            m_ParametersA = new ConventionalDGField[_Parameters.Length];
+            m_ParametersB = new ConventionalDGField[_Parameters.Length];
+            for(int i = 0; i < _Parameters.Length; i++) {
+                var f = _Parameters[i];
+                if(f is XDGField xf) {
+                    m_ParametersA[i] = xf.GetSpeciesShadowField(this.SpeciesA);
+                    m_ParametersB[i] = xf.GetSpeciesShadowField(this.SpeciesB);
+                } else if(f is ConventionalDGField cf) {
+                    m_ParametersA[i] = cf;
+                    m_ParametersB[i] = null;
+                } else {
+                    throw new NotImplementedException("missing implementation for " + f.GetType().Name);
+                }
+            }
+
             if (m_RowMap.BasisS.Count != DiffOp.CodomainVar.Count)
                 throw new ArgumentException("mismatch between number of codomain variables in spatial operator and row mapping");
             if (m_ColMap.BasisS.Count != DiffOp.DomainVar.Count)
                 throw new ArgumentException("mismatch between number of domain variables in spatial operator and column mapping");
-            if (m_Parameters.Length != DiffOp.ParameterVar.Count)
+            if (_Parameters.Length != DiffOp.ParameterVar.Count)
                 throw new ArgumentException("mismatch between number of parameter variables in spatial operator and given parameters");
 
             int Gamma = m_RowMap.BasisS.Count;
@@ -328,9 +343,10 @@ namespace BoSSS.Foundation.XDG {
         protected override void AllocateBuffers(int Nitm, NodeSet ruleNodes) {
             int Nnod = ruleNodes.GetLength(0);
             base.AllocateBuffers(Nitm, ruleNodes);
-            if (m_Parameters.Length > 0) {
-                m_ParamFieldValuesPos = MultidimensionalArray.Create(m_Parameters.Length, Nitm, Nnod);
-                m_ParamFieldValuesNeg = MultidimensionalArray.Create(m_Parameters.Length, Nitm, Nnod);
+            Debug.Assert(m_ParametersA.Length == m_ParametersB.Length);
+            if (m_ParametersA.Length > 0) {
+                m_ParamFieldValuesPos = MultidimensionalArray.Create(m_ParametersB.Length, Nitm, Nnod);
+                m_ParamFieldValuesNeg = MultidimensionalArray.Create(m_ParametersA.Length, Nitm, Nnod);
             }
             int D = gridData.SpatialDimension;
 
@@ -408,23 +424,18 @@ namespace BoSSS.Foundation.XDG {
             // Evaluate Parameter fields
             // -------------------------
             base.CustomTimers[3].Start();
-            for (int i = 0; i < m_Parameters.Length; i++) {
+            for (int i = 0; i < m_ParametersA.Length; i++) {
                 var bufPos = m_ParamFieldValuesPos.ExtractSubArrayShallow(i, -1, -1);
                 var bufNeg = m_ParamFieldValuesNeg.ExtractSubArrayShallow(i, -1, -1);
-                DGField m_Field = m_Parameters[i];
-                if (m_Field != null) {
-                    if (m_Field is XDGField) {
+                if (m_ParametersA[i] != null || m_ParametersB[i] != null) {
+                    if (m_ParametersB[i] != null) {
                         // jump in parameter i at level-set: separate evaluation for both sides
-                        var xfi = m_Field as XDGField;
-
-                        //xfi.GetSpeciesShadowField(this.SpeciesA).Evaluate(i0, Len, QuadNodes, bufNeg);
-                        //xfi.GetSpeciesShadowField(this.SpeciesB).Evaluate(i0, Len, QuadNodes, bufPos);
-                        xfi.GetSpeciesShadowField(m_lsTrk.GetSpeciesIdFromSign(-1)).Evaluate(i0, Len, QuadNodes, bufNeg);
-                        xfi.GetSpeciesShadowField(m_lsTrk.GetSpeciesIdFromSign(+1)).Evaluate(i0, Len, QuadNodes, bufPos);
+                        m_ParametersA[i].Evaluate(i0, Len, QuadNodes, bufNeg);
+                        m_ParametersB[i].Evaluate(i0, Len, QuadNodes, bufPos);
 
                     } else {
                         // no jump at level set: positive and negative limit of parameter i are equal
-                        m_Parameters[i].Evaluate(i0, Len, QuadNodes, bufPos);
+                        m_ParametersA[i].Evaluate(i0, Len, QuadNodes, bufPos);
                         bufNeg.Set(bufPos);
                     }
                 } else {

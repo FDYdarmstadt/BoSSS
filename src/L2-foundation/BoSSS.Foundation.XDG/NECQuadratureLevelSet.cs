@@ -46,9 +46,14 @@ namespace BoSSS.Foundation.XDG {
         UnsetteledCoordinateMapping m_CodomainMap;
                 
         /// <summary>
-        /// All Domain and Parameter fields (domain first (0 to <see cref="DELTA"/>-1), then parameters) are defined by the operator.
+        /// All Domain and Parameter fields (domain first (0 to <see cref="DELTA"/>-1), then parameters) are defined by the operator, on the negative side of the level-set (species A)
         /// </summary>
-        DGField[] m_DomainAndParamFields;
+        ConventionalDGField[] m_DomainAndParamFieldsA;
+
+        /// <summary>
+        /// All Domain and Parameter fields (domain first (0 to <see cref="DELTA"/>-1), then parameters) are defined by the operator, on the positive side of the level-set (species A)
+        /// </summary>
+        ConventionalDGField[] m_DomainAndParamFieldsB;
 
         /// <summary>
         /// Number of domain fields
@@ -118,7 +123,7 @@ namespace BoSSS.Foundation.XDG {
                  context,
                  domAndRule) //
         {
-
+            MPICollectiveWatchDog.Watch();
 
 
             // -----------------------------------
@@ -138,8 +143,26 @@ namespace BoSSS.Foundation.XDG {
             if(m_CodomainMap.NoOfVariables != DiffOp.CodomainVar.Count)
                 throw new ArgumentException("mismatch between number of codomain variables in spatial operator and given codomain mapping");
 
-            m_DomainAndParamFields = ArrayTools.Cat(__DomainFields, _Parameters);
+            var _DomainAndParamFields = ArrayTools.Cat(__DomainFields, _Parameters);
             this.DELTA = __DomainFields.Count;
+
+            m_DomainAndParamFieldsA = new ConventionalDGField[_DomainAndParamFields.Length];
+            m_DomainAndParamFieldsB = new ConventionalDGField[_DomainAndParamFields.Length];
+            for(int i = 0; i < m_DomainAndParamFieldsA.Length; i++) {
+                var f = _DomainAndParamFields[i];
+                if(f == null) {
+                    m_DomainAndParamFieldsA[i] = null;
+                    m_DomainAndParamFieldsB[i] = null;
+                } else if(f is XDGField xf) {
+                    m_DomainAndParamFieldsA[i] = xf.GetSpeciesShadowField(this.SpeciesA);
+                    m_DomainAndParamFieldsB[i] = xf.GetSpeciesShadowField(this.SpeciesB);
+                } else if(f is ConventionalDGField cf) {
+                    m_DomainAndParamFieldsA[i] = cf;
+                    m_DomainAndParamFieldsB[i] = null;
+                } else {
+                    throw new NotImplementedException("missing implementation for " + f.GetType().Name);
+                }
+            }
 
             LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, SpeciesA, SpeciesB, m_LevSetIdx);
 
@@ -157,8 +180,8 @@ namespace BoSSS.Foundation.XDG {
                 eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
 
 
-            m_ValueRequired = new bool[m_DomainAndParamFields.Length];
-            m_GradientRequired = new bool[m_DomainAndParamFields.Length];
+            m_ValueRequired = new bool[m_DomainAndParamFieldsA.Length];
+            m_GradientRequired = new bool[m_DomainAndParamFieldsA.Length];
 
             m_NonlinLsForm_V.DetermineReqFields(m_GradientRequired,
                 comp => ((comp.LevelSetTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
@@ -169,7 +192,7 @@ namespace BoSSS.Foundation.XDG {
             m_NonlinLsForm_GradV.DetermineReqFields(m_ValueRequired,
                 comp => ((comp.LevelSetTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
 
-            for(int i = __DomainFields.Count; i < m_DomainAndParamFields.Length; i++) {
+            for(int i = __DomainFields.Count; i < m_DomainAndParamFieldsA.Length; i++) {
                 m_ValueRequired[i] = true; // parameters are always required!
             }
 
@@ -185,7 +208,8 @@ namespace BoSSS.Foundation.XDG {
                 Koeff_GradV[gamma] = new MultidimensionalArray(4);
             }
 
-            int L = m_DomainAndParamFields.Length;
+            Debug.Assert(m_DomainAndParamFieldsA.Length == m_DomainAndParamFieldsB.Length);
+            int L = m_DomainAndParamFieldsA.Length;
             m_FieldValuesPos = new MultidimensionalArray[L];
             m_FieldValuesNeg = new MultidimensionalArray[L];
             m_FieldGradientValuesPos = new MultidimensionalArray[L];
@@ -319,7 +343,8 @@ namespace BoSSS.Foundation.XDG {
             int D = this.GridDat.SpatialDimension;
             base.AllocateBuffers(Nitm, ruleNodes);
 
-            int L = m_DomainAndParamFields.Length;
+            Debug.Assert(m_DomainAndParamFieldsA.Length == m_DomainAndParamFieldsB.Length);
+            int L = m_DomainAndParamFieldsA.Length;
             for(int l = 0; l < L; l++) {
                 Debug.Assert((m_FieldValuesPos[l] != null) == (m_FieldValuesNeg[l] != null));
                 if(m_FieldValuesPos[l] != null) {
@@ -362,50 +387,45 @@ namespace BoSSS.Foundation.XDG {
 
             Field_Eval.Start();
 
-            for (int i = 0; i < m_DomainAndParamFields.Length; i++) {
+            Debug.Assert(m_DomainAndParamFieldsA.Length == m_DomainAndParamFieldsB.Length);
+            for(int i = 0; i < m_DomainAndParamFieldsA.Length; i++) {
+                var _FieldA = m_DomainAndParamFieldsA[i];
+                var _FieldB = m_DomainAndParamFieldsB[i];
 
                 if(m_ValueRequired[i]) {
-                    DGField _Field = m_DomainAndParamFields[i];
-                    if(_Field != null) {
-                        if (_Field is XDGField) {
-                            // jump in parameter i at level-set: separate evaluation for both sides
-                            var _xField = _Field as XDGField;
 
-                            _xField.GetSpeciesShadowField(this.SpeciesA).Evaluate(i0, Len, QuadNodes, m_FieldValuesNeg[i]);
-                            _xField.GetSpeciesShadowField(this.SpeciesB).Evaluate(i0, Len, QuadNodes, m_FieldValuesPos[i]);
+                    if(_FieldA != null && _FieldB != null) {
+                        // jump in parameter i at level-set: separate evaluation for both sides
+                        _FieldA.Evaluate(i0, Len, QuadNodes, m_FieldValuesNeg[i]);
+                        _FieldB.Evaluate(i0, Len, QuadNodes, m_FieldValuesPos[i]);
 
-                    } else {
+                    } else if(_FieldA != null) {
                         // no jump at level set: positive and negative limit of parameter i are equal
-                        _Field.Evaluate(i0, Len, QuadNodes, m_FieldValuesPos[i]);
+                        _FieldA.Evaluate(i0, Len, QuadNodes, m_FieldValuesPos[i]);
                         m_FieldValuesNeg[i].Set(m_FieldValuesPos[i]);
-                    }
                     } else {
                         m_FieldValuesPos[i].Clear();
                         m_FieldValuesNeg[i].Clear();
                     }
                 }
 
+
                 if(m_GradientRequired[i]) {
-                    DGField _Field = m_DomainAndParamFields[i];
-                    if(_Field != null) {
-                        if (_Field is XDGField) {
-                            // jump in parameter i at level-set: separate evaluation for both sides
-                            var _xField = _Field as XDGField;
+                    if(_FieldA != null && _FieldB != null) {
 
-                            _xField.GetSpeciesShadowField(this.SpeciesA).EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesNeg[i]);
-                            _xField.GetSpeciesShadowField(this.SpeciesB).EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesPos[i]);
+                        // jump in parameter i at level-set: separate evaluation for both sides
+                        _FieldA.EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesNeg[i]);
+                        _FieldB.EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesPos[i]);
 
-                    } else {
+                    } else if(_FieldA != null) {
                         // no jump at level set: positive and negative limit of parameter i are equal
-                        _Field.EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesPos[i]);
+                        _FieldA.EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesPos[i]);
                         m_FieldGradientValuesNeg[i].Set(m_FieldGradientValuesPos[i]);
-                    }
                     } else {
                         m_FieldGradientValuesPos[i].Clear();
                         m_FieldGradientValuesNeg[i].Clear();
                     }
                 }
-                
             }
 
             Field_Eval.Stop();

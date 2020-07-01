@@ -105,12 +105,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         public bool printLambda = false; 
 
-        //bool solveVelocity = true;
 
-        //double VelocitySolver_ConvergenceCriterion = 1e-5;
-
-        //double StressSolver_ConvergenceCriterion = 1e-5;
-
+        /// <summary>
+        /// Main solver routine
+        /// </summary>
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
             using (var tr = new FuncTrace()) {
@@ -182,6 +180,11 @@ namespace BoSSS.Solution.AdvancedSolvers
                             f0.ScaleV(-1.0);
                             step = Krylov(SolutionVec, x, f0, out errstep);
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
+                            // +++++++++++++++++++++++++++++
+                            // Option: use 'external' solver
+                            // +++++++++++++++++++++++++++++
+
+
                             /*
                             double[] _step = step.ToArray();
                             double[] _f0 = f0.ToArray();
@@ -229,7 +232,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                             solver.Solve(step, f0);
                             
                         } else {
-                            throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
+                            throw new NotImplementedException("Your approximation option for the Jacobian seems not to be existent.");
                         }
 
                         // Start line search
@@ -359,14 +362,15 @@ namespace BoSSS.Solution.AdvancedSolvers
 
 
         /// <summary>
-        /// 
+        /// Preconditioned GMRES, using <see cref="NonlinearSolver.Precond"/> as a preconditioner
         /// </summary>
         /// <param name="SolutionVec">Current Point</param>
         /// <param name="f0">Function at current point</param>
         /// <param name="xinit">initial iterate</param>
         /// <param name="errstep">error of step</param>
+        /// <param name="currentX"></param>
         /// <returns></returns>
-        static double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
+        double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
 
@@ -536,7 +540,10 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
-        public double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
+        /// <summary>
+        /// Driver routine
+        /// </summary>
+        double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
             //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
             double[] step = GMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
