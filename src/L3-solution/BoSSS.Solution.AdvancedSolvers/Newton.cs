@@ -158,8 +158,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double fnorminit = fnorm;
                 using (new BlockTrace("Slv Iter", tr)) {
                     while (
-                        (fnorm > ConvCrit * fnorminit + ConvCrit && 
-                        /*secondCriteriumConverged == false &&*/ itc < MaxIter)   
+                        (fnorm > ConvCrit * fnorminit + ConvCrit && /*secondCriteriumConverged == false &&*/ itc < MaxIter)   
                         || itc < MinIter) {
                         //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
                         rat = fnorm / fNormo;
@@ -170,6 +169,12 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         // How should the inverse of the Jacobian be approximated?
                         if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
+                            // ++++++++++++++++++++++++++
+                            // Option: Matrix-Free GMRES
+                            // ++++++++++++++++++++++++++
+
+
+
                             if (Precond != null) {
                                 Precond.Init(CurrentLin);
                             }
@@ -222,24 +227,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                             
                             solver.Solve(step, f0);
-                            /*
-                            double check_norm; 
-                            {
-                                CurrentLin.OperatorMatrix.SpMV(-1.0, step, -1.0, check);
-                                check_norm = check.L2Norm();
-                            }
-
-
-                            double dist = GenericBlas.L2Dist(step, _step);
-
-
-                            Console.WriteLine("    conv: " + solver.Converged + " /iter = " + solver.ThisLevelIterations + " /dist  = " + dist + " /resNrm = " + check_norm + " /parresNrm = " + _check_norm);
-                            */
-                            //step.SetV(step);
-
-                            //if (solver.Converged == false)
-                            //    Debugger.Launch();
-
+                            
                         } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
@@ -378,7 +366,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="xinit">initial iterate</param>
         /// <param name="errstep">error of step</param>
         /// <returns></returns>
-        double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
+        static double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
 
@@ -643,7 +631,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="vin"></param>
         /// <param name="k"></param>
         /// <returns></returns>
-        public double[] givapp(double[] c, double[] s, double[] vin, int k) {
+        static double[] givapp(double[] c, double[] s, double[] vin, int k) {
             double[] vrot = vin;
             double w1, w2;
 
@@ -700,7 +688,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="ffc"></param>
         /// <param name="ffm"></param>
         /// <returns></returns>
-        public double parab3p(double lambdac, double lambdam, double ff0, double ffc, double ffm) {
+        static double parab3p(double lambdac, double lambdam, double ff0, double ffc, double ffm) {
             double sigma0 = 0.1;
             double sigma1 = 0.5;
 
@@ -713,184 +701,6 @@ namespace BoSSS.Solution.AdvancedSolvers
             if (lambdap > sigma1 * lambdac) lambdap = sigma1 * lambdac;
 
             return lambdap;
-        }
-
-
-
-
-        /// <summary>
-        /// Computes a forward difference jacobian and returns the dense jacobian
-        /// </summary>
-        /// <param name="SolutionVec"></param>
-        /// <param name="currentX"></param>
-        /// <param name="f0"></param>
-        /// <returns></returns>
-        public BlockMsrMatrix diffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
-            int n = currentX.Length;
-            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
-
-            var temp = new double[n];
-
-            for (int i = 0; i < n; i++) {
-                var zz = new double[n];
-                zz[i] = 1;
-                temp = dirder(SolutionVec, currentX, zz, f0);
-                for (int j = 0; j < n; j++) {
-                    jac[j, i] = temp[j];
-                }
-            }
-
-            return jac;
-        }
-
-        public int Bandwidth(double[] currentX) {
-            int beta;
-            int dim = currentX.Length;
-            int full_bandwidth_row;
-            BlockMsrMatrix OpMatrix = CurrentLin.OperatorMatrix;
-            double[] b = new double[dim];
-
-            for (int j = 0; j < dim; j++) {
-                for (int i = dim - 1; i >= 0; i--) {
-                    if (OpMatrix[j, i] != 0) {
-
-                        b[j] = i - j;
-                        break;
-
-                    }
-
-                }
-
-            }
-
-            beta = (int)b.Max();
-            full_bandwidth_row = b.FirstIndexWhere(c => c == beta);
-
-            return beta;
-
-        }
-
-        public BlockMsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
-            int n = currentX.Length;
-            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
-            int beta = Bandwidth(currentX);
-            int number_Cells = n / beta;
-
-            var temp = new double[n];
-
-            for (int k = 0; k < beta; k++) {
-                var zz = new double[n];
-
-                for (int i = 0; i < number_Cells; i++) {
-                    zz[i * beta + k] = 1;
-
-                }
-                temp = dirder(SolutionVec, currentX, zz, f0);
-
-
-                for (int i = 0; i < number_Cells; i++) {
-                    for (int j = i * beta + k; j < (i + 1) * beta; j++) {
-                        jac[j, i * beta + k] = temp[j];
-                    }
-                }
-            }
-
-            return jac;
-        }
-
-        public BlockMsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
-            int dimension = SolutionVec.Mapping.GridDat.SpatialDimension;
-
-            int degree_VelocityX = SolutionVec.Mapping.Fields[0].Basis.Degree;
-            int degree_VelocityY = SolutionVec.Mapping.Fields[1].Basis.Degree;
-            int degree_VelocityZ = new int();
-            int degree_Pressure = new int();
-            int degree_StressXX = new int();
-            int degree_StressXY = new int();
-            int degree_StressYY = new int();
-
-            int NoVariables = SolutionVec.Mapping.NoOfVariables;
-
-
-
-            if (dimension == 2) {
-                degree_Pressure = SolutionVec.Mapping.Fields[2].Basis.Degree;
-
-                if (NoVariables > 4) {
-                    degree_StressXX = SolutionVec.Mapping.Fields[3].Basis.Degree;
-                    degree_StressXY = SolutionVec.Mapping.Fields[4].Basis.Degree;
-                    degree_StressYY = SolutionVec.Mapping.Fields[5].Basis.Degree;
-                }
-            }
-            else if (dimension == 3) {
-                degree_VelocityZ = SolutionVec.Mapping.Fields[2].Basis.Degree;
-                degree_Pressure = SolutionVec.Mapping.Fields[3].Basis.Degree;
-            }
-            else throw new ArgumentException();
-
-
-            int factor = 1;
-            int PI_VelocityX = 1;
-            int PI_VelocityY = 1;
-            int PI_VelocityZ = 1;
-            int PI_Pressure = 1;
-            int PI_StressXX = 1;
-            int PI_StressXY = 1;
-            int PI_StressYY = 1;
-
-            for (int i = 1; i <= dimension; i++) {
-                factor *= factor * i;
-                PI_VelocityX *= degree_VelocityX + i;
-                PI_VelocityY *= degree_VelocityY + i;
-                PI_Pressure *= degree_Pressure + i;
-
-                if (dimension == 3) {
-                    PI_VelocityZ *= degree_VelocityZ + i;
-                }
-
-                if (NoVariables > 4) {
-                    PI_StressXX *= degree_StressXX + i;
-                    PI_StressXY *= degree_StressXY + i;
-                    PI_StressYY *= degree_StressYY + i;
-                }
-            }
-
-            int number_Polynomials = (PI_VelocityX + PI_VelocityY + PI_Pressure) / factor;
-
-            if (dimension == 3) {
-                number_Polynomials += PI_VelocityZ / factor;
-            }
-
-            if (NoVariables > 4) {
-                number_Polynomials += (PI_StressXX + PI_StressXY + PI_StressYY) / factor;
-            }
-
-            int n = currentX.Length;
-            int number_Cells = n / number_Polynomials;
-
-            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
-
-            var temp = new double[n];
-
-            for (int k = 0; k < number_Polynomials; k++) {
-                var zz = new double[n];
-
-                for (int i = 0; i < number_Cells; i++) {
-                    zz[i * number_Polynomials + k] = 1;
-
-                }
-                temp = dirder(SolutionVec, currentX, zz, f0);
-
-
-                for (int i = 0; i < number_Cells; i++) {
-                    for (int j = i * number_Polynomials + k; j < (i + 1) * number_Polynomials; j++) {
-                        jac[j, i * number_Polynomials + k] = temp[j];
-                    }
-                }
-            }
-
-
-            return jac;
         }
 
 
