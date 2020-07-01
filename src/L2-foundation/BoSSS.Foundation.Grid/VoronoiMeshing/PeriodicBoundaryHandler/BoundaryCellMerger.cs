@@ -24,9 +24,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         }
 
         public static void MergeAtBoundary(
-            IList<MeshCell<T>> source,
-            IList<MeshCell<T>> target,
-            IList<(int sourceEdgeIndice, int targetEdgeIndice)> glueMap)
+            IList<(MeshCell<T> cell, bool)> source,
+            IList<(MeshCell<T> cell, bool)> target,
+            IList<(int sourceEdgeIndice, int targetEdgeIndice, bool glue)> glueMap)
         {
             BoundaryCellMerger<T> merger = new BoundaryCellMerger<T>();
             if (source.Count != target.Count && source.Count != glueMap.Count)
@@ -35,8 +35,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
             for (int i = 0; i < source.Count; ++i)
             {
-                merger.Merge(source[i], glueMap[i].sourceEdgeIndice, target[i], glueMap[i].targetEdgeIndice);
+                if (glueMap[i].glue)
+                {
+                    merger.Merge(source[i].cell, glueMap[i].sourceEdgeIndice, target[i].cell, glueMap[i].targetEdgeIndice);
+                }
+                else
+                {
+                    merger.Link(source[i].cell, glueMap[i].sourceEdgeIndice, target[i].cell, glueMap[i].targetEdgeIndice);
+                }
             }
+        }
+
+        public void Link(MeshCell<T> source, int sourceEdgeIndice, MeshCell<T> target, int targetEdgeIndice)
+        {
+            source.Edges[sourceEdgeIndice].Twin = target.Edges[targetEdgeIndice];
+            target.Edges[targetEdgeIndice].Twin = source.Edges[sourceEdgeIndice];
         }
 
         public void Merge(MeshCell<T> source, int sourceEdgeIndice, MeshCell<T> target, int targetEdgeIndice)

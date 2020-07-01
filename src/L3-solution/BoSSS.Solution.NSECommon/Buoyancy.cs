@@ -152,13 +152,17 @@ namespace BoSSS.Solution.NSECommon {
             this.physicsMode = physicsMode;
 
             switch(physicsMode) {
+                case PhysicsMode.MixtureFraction:
+                    this.m_ParameterOrdering = null;
+                    this.m_ArgumentOrdering = new string[] { VariableNames.MixtureFraction };
+                    break;
                 case PhysicsMode.LowMach:
                     this.m_ParameterOrdering = null; // new string[] { VariableNames.Temperature0 };
                     this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
                     break;
                 case PhysicsMode.Combustion:
                     this.m_ParameterOrdering = null;
-                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2};
+                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3};
                     break;
                 default:
                     throw new ApplicationException("wrong physicsmode");
@@ -176,7 +180,10 @@ namespace BoSSS.Solution.NSECommon {
             double src = 0.0;
 
             double rho;
-            switch(physicsMode) {
+            switch (physicsMode) {
+                case PhysicsMode.MixtureFraction:
+                    rho = EoS.getDensityFromZ(U[0]);
+                    break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Combustion:
                     rho = EoS.GetDensity(U);

@@ -164,6 +164,40 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Opens the database directory where the files for the selected
+        /// <paramref name="session"/> are stored in the explorer.
+        /// </summary>
+        /// <param name="session">
+        /// The selected session.
+        /// </param>
+        public static void OpenDeployDirectory(this ISessionInfo session, int Clientidx=-1) {
+            string deployname = session.DeployPath.Split('/', '\\').Last();
+            var bpc = BatchProcessorConfig.LoadOrDefault();
+            int idx = -1;
+
+            if (Clientidx < 0) {
+                for (int i = 0; i < bpc.AllQueues.Length; i++) Console.WriteLine(i + " : " + bpc.AllQueues[i].ToString());
+                Console.WriteLine("Choose Client-Config:");
+                string usrinput = Console.ReadLine();
+                idx = Convert.ToInt32(usrinput);
+            } else {
+                idx = Clientidx;
+            }
+
+            if (idx > bpc.AllQueues.Length)
+                throw new IndexOutOfRangeException();
+
+            var bpclnt = bpc.AllQueues[idx];
+            string deploydir = bpclnt.DeploymentBaseDirectory;
+            string deploypath = Path.Combine(deploydir, deployname);
+
+            if (!deploydir.IsEmptyOrWhite() && Directory.Exists(deploypath))
+                Process.Start(deploypath);
+            else
+                Console.WriteLine("Attempt failed. Search directory via DeployPath-Attribute");
+        }
+
+        /// <summary>
         /// Opens the specified <paramref name="TextFile"/>
         /// of the selected <paramref name="session"/>.
         /// </summary>

@@ -115,7 +115,6 @@ namespace PublicTestRunner {
                         typeof(CNS.Program),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),

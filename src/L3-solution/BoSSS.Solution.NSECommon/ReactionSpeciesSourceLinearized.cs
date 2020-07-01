@@ -224,8 +224,8 @@ namespace BoSSS.Solution.NSECommon {
 
             Debug.Assert(!double.IsNaN(ReactionRate));
             Debug.Assert(!double.IsInfinity(ReactionRate));
-            if (ReactionRate < 0)
-                ReactionRate = 0;
+            //if (ReactionRate < 0)
+            //    ReactionRate = 0;
 
  
 

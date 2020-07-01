@@ -78,6 +78,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         bool PeriodicEdgeIDsLineUp(Domain<T> mesh)
         {
+            Console.Write("Edge Numbers: ");
+            int count = 0;
+            foreach(Edge<T> edge in BoundaryEdgesOf(mesh))
+            {
+                Console.Write(edge.BoundaryEdgeNumber);
+                count++;
+            }
+            Console.WriteLine($"Total Edges : {count}");
+
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
             List<Vertex> innerIds = new List<Vertex>();
             List<Vertex> outerIds = new List<Vertex>();
