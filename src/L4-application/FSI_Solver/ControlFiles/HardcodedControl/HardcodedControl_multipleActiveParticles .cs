@@ -299,10 +299,10 @@ namespace BoSSS.Application.FSI_Solver {
             double position = 1;
             double distance = position / 2;
 
-            C.SetGrid(lengthX: 2 * position + distance, lengthY: 2 * position + distance, cellsPerUnitLength: 40, periodicX: true, periodicY: true);
+            C.SetGrid(lengthX: 2 * position + distance, lengthY: 2 * position + distance, cellsPerUnitLength: 30, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-4;
-            C.minDistanceThreshold = 1 / 40;
+            C.minDistanceThreshold = 1 / 10;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
 
@@ -339,7 +339,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-4, int.MaxValue, true);
+            C.SetTimesteps(1e-3, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -358,9 +358,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
 
-            string ID = "45f9f49e-814e-436c-b4cf-8c5a7ba83a3e";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 220);
-            C.IsRestart = true;
+            //string ID = "665207e0-7ed3-4acb-900d-570862dc38b5";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1240);
+            //C.IsRestart = true;
             return C;
         }
 

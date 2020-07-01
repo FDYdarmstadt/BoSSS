@@ -1020,6 +1020,20 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         else {
                             m_BDF_Timestepper.Solve(phystime, dt, false);
+                            //double[] velInt = new double[2];
+                            //velInt[0] = Velocity[0].GetMeanValueTotal(CellMask.GetFullMask(GridData));
+                            //velInt[1] = Velocity[1].GetMeanValueTotal(CellMask.GetFullMask(GridData));
+                            //velInt[0] = velInt[0].MPISum() / MPISize;
+                            //velInt[1] = velInt[1].MPISum() / MPISize;
+                            
+                            //for (int p = 0; p < m_Particles.Count(); p++) {
+                            //    velInt[0] += m_Particles[p].Motion.GetTranslationalVelocity()[0];
+                            //    velInt[1] += m_Particles[p].Motion.GetTranslationalVelocity()[1];
+                            //}
+                            //velInt[0] /= m_Particles.Count();
+                            //velInt[1] /= m_Particles.Count();
+                            //Velocity[0].AccConstant(-velInt[0]);
+                            //Velocity[1].AccConstant(-velInt[1]);
                             CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                         }
                         if (((FSI_Control)Control).UsePerssonSensor == true) {
