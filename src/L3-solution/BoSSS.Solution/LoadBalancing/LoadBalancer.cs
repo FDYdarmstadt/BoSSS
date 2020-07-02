@@ -131,8 +131,8 @@ namespace BoSSS.Solution {
                 return null;
             }
 
-            if (gridPartType != GridPartType.ParMETIS && gridPartType != GridPartType.Hilbert && cellCosts.Count > 1) {
-                throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS or Hilbert for now");
+            if (gridPartType != GridPartType.ParMETIS && gridPartType != GridPartType.clusterHilbert && cellCosts.Count > 1) {
+                throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS or clusterHilbert for now");
             }
 
             int[] result;
@@ -159,10 +159,10 @@ namespace BoSSS.Solution {
                     }
                     break;
 
-                case GridPartType.Hilbert:
+                case GridPartType.clusterHilbert:
                     return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 0);
 
-                case GridPartType.directHilbert:
+                case GridPartType.Hilbert:
                     return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 1);
 
                 case GridPartType.none:
