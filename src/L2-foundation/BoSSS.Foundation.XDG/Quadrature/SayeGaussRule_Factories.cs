@@ -209,8 +209,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 #if LOG_ACTIONS
                                 Console.WriteLine("Reusing {0} \n", quadMode);
 #endif
-                                //return UseExistingRule(mask);
-                                return InitializeRule(mask, order);
+                                return UseExistingRule(mask);
+                                //return InitializeRule(mask, order);
                             }
                         //break;
                         case Mode.RecalculateOnEverySurfaceCall:

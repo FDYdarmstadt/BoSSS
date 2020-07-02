@@ -572,7 +572,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
                                 out filtLevSetGradient, this.LsTrk,
                                 this.DGLevSet.Current);
-                            if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmpty) || XOpConfig.isEvaporation) {
+                            if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmptyOnRank) || XOpConfig.isEvaporation) {
                                 VectorField<SinglePhaseField> filtLevSetGradient_dummy;
                                 CurvatureAlgorithms.CurvatureDriver(
                                     SurfaceStressTensor_IsotropicMode.Curvature_Projected,

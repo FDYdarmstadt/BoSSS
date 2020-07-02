@@ -93,7 +93,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Negative species/Species A
         /// </summary>
-        SpeciesId SpeciesA {
+        public SpeciesId SpeciesA {
             get {
                 return m_SpeciesPair.Item1;
             }
@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Positive species/Species B
         /// </summary>
-        SpeciesId SpeciesB {
+        public SpeciesId SpeciesB {
             get {
                 return m_SpeciesPair.Item2;
             }
@@ -124,7 +124,6 @@ namespace BoSSS.Foundation.XDG {
                  domAndRule) //
         {
             MPICollectiveWatchDog.Watch();
-
 
             // -----------------------------------
             // set members / check ctor parameters
