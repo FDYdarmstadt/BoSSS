@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
@@ -23,25 +22,18 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Residual;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
-using CNS.Residual;
 using ilPSP;
 using ilPSP.Tracing;
-using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-using CNS.Convection;
 using BoSSS.Foundation.Grid;
-using ilPSP.Utils;
-using BoSSS.Solution.Statistic;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
 namespace CNS {
 
@@ -227,7 +219,9 @@ namespace CNS {
                 residualLoggers = Control.ResidualLoggerType.Instantiate(
                     this,
                     Control,
-                    FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
+                    FullOperator.ToSpatialOperator(WorkingSet),
+                    WorkingSet.ConservativeVariables,
+                    ParameterMapping).ToArray();
 
                 WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
             }
@@ -348,7 +342,7 @@ namespace CNS {
                     }
 
                     IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
-                    base.TerminationKey = ShouldTerminate(residuals);
+                    base.TerminationKey = residualLoggers.ShouldTerminate(residuals, Control);
 
                     this.ResLogger.NextTimestep(
                         residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
@@ -391,31 +385,6 @@ namespace CNS {
         /// <param name="phystime"></param>
         void IProgram<T>.SaveToDatabase(TimestepNumber ts, double phystime) {
             this.SaveToDatabase(ts, phystime);
-        }
-
-        private bool ShouldTerminate(IDictionary<string, double> residuals) {
-            if (Control.ResidualBasedTerminationCriteria.Count > 0
-                && residuals.Count > 0) {
-                bool terminate = true;
-                foreach (var keyThresholdPair in Control.ResidualBasedTerminationCriteria) {
-                    if (!residuals.ContainsKey(keyThresholdPair.Key)) {
-                        throw new Exception(String.Format(
-                            "A termination criterion is based on {0} was found"
-                                + " but the corresponding residual value was"
-                                + " not calculated.",
-                            keyThresholdPair.Key));
-                    }
-
-                    terminate &= residuals[keyThresholdPair.Key] < keyThresholdPair.Value;
-                }
-
-                if (terminate) {
-                    Console.WriteLine("All residual criteria fulfilled, stopping calculation.");
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private PlotDriver plotDriver;

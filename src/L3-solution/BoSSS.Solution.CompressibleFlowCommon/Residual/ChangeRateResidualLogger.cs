@@ -15,9 +15,10 @@ limitations under the License.
 */
 
 using System.Collections.Generic;
+using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
 
-namespace CNS.Residual {
+namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
 
     /// <summary>
     /// Utility class for the calculation of "pseudo-residuals". That is, the
@@ -31,8 +32,8 @@ namespace CNS.Residual {
         /// <summary>
         /// <see cref="ResidualLogger"/>
         /// </summary>
-        public ChangeRateResidualLogger(BoSSS.Solution.ResidualLogger baseLogger, SessionInfo currentSession, CNSFieldSet workingSet, int residualInterval)
-            : base(baseLogger, currentSession, workingSet, residualInterval) {
+        public ChangeRateResidualLogger(BoSSS.Solution.ResidualLogger baseLogger, SessionInfo currentSession, DGField[] consVars, int residualInterval)
+            : base(baseLogger, currentSession, consVars, residualInterval) {
         }
 
         /// <summary>

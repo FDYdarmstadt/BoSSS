@@ -4,6 +4,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
 using ilPSP.Utils;
+using log4net.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -45,6 +46,89 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             return nodes;
         }
 
+        static void SortDescendingArea(int[,] triangles, Vector[] vertices)
+        {
+            //Quicksort for fun, lazy https://en.wikipedia.org/wiki/Quicksort implementation
+            double[] areas = new double[triangles.GetLength(0)];
+            for(int i = 0; i < triangles.GetLength(0); ++i)
+            {
+                int iV0 = triangles[i, 0];
+                int iV1 = triangles[i, 1];
+                int iV2 = triangles[i, 2];
+
+                Vector V0 = vertices[iV0];
+                Vector V1 = vertices[iV1];
+                Vector V2 = vertices[iV2];
+
+                Vector D1 = V1 - V0;
+                Vector D2 = V2 - V0;
+                areas[i] = D1.CrossProduct2D(D2);
+            }
+
+            Quicksort(0, areas.Length -1);
+
+            void Quicksort(int low, int high)
+            {
+                if(low < high)
+                {
+                    int p = Partition(low, high);
+                    Quicksort(low, p -1);
+                    Quicksort(p + 1, high);
+                }
+            }
+
+            int Partition(int low, int high)
+            {
+                double pivot = areas[high];
+                int i = low;
+                for(int j = low; j < high; ++j)
+                {
+                    if(areas[j] > pivot)
+                    {
+                        double temp = areas[j];
+                        areas[j] = areas[i];
+                        areas[i] = temp;
+                        SwitchTriangles(i, j);
+                        ++i;
+                    }
+                }
+                double temp1 = areas[high];
+                areas[high] = areas[i];
+                areas[i] = temp1;
+                SwitchTriangles(i, high);
+                return i;
+            }
+
+            void SwitchTriangles(int i, int j)
+            {
+                for(int k = 0; k < 3; ++k)
+                {
+                    int temp = triangles[j, k];
+                    triangles[j, k] = triangles[i, k];
+                    triangles[i, k] = temp;
+                }
+            }
+        }
+
+        static (int, int, int) Rearrange(int iV0, int iV1, int iV2, Vector V0, Vector V1, Vector V2)
+        {
+            double D01 = (V1 - V0).AbsSquare();  
+            double D12 = (V2 - V1).AbsSquare();  
+            double D20 = (V0 - V2).AbsSquare();
+            if(D01 > D20 && D12 > D20)
+            {
+                return (iV1, iV2, iV0);
+            }
+            else if ( D12 > D01 && D20 > D01)
+            {
+                return (iV2, iV0, iV1);
+            }
+            else
+            {
+                return ( iV0, iV1, iV2);
+            }
+        }
+
         static (GridCommons, int[][]) ExtractGridCommonsAndCellAggregation(
             IEnumerable<MeshCell<T>> cells,
             BoundaryConverter boundaryConverter)
@@ -55,8 +139,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             foreach (MeshCell<T> cell in cells)
             {
                 //Convert to BoSSSCell : Triangulate
-                Vector[] VoronoiCell = cell.Vertices.Select(voVtx => voVtx.Position).ToArray();
-                int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
+                Vector[] voronoiCellVertices = cell.Vertices.Select(voVtx => voVtx.Position).ToArray();
+                int[,] iVtxTri = PolygonTesselation.TesselatePolygon(voronoiCellVertices);
+                //SortDescendingArea(iVtxTri, voronoiCellVertices);
                 int[] Agg2Pt = new int[iVtxTri.GetLength(0)];
 
                 bool isBoundaryCell = IsBoundary(cell);
@@ -66,29 +151,49 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                     int iV0 = iVtxTri[iTri, 0];
                     int iV1 = iVtxTri[iTri, 1];
                     int iV2 = iVtxTri[iTri, 2];
+                    
+                    Vector V0 = voronoiCellVertices[iV0];
+                    Vector V1 = voronoiCellVertices[iV1];
+                    Vector V2 = voronoiCellVertices[iV2];
 
-                    Vector V0 = VoronoiCell[iV0];
-                    Vector V1 = VoronoiCell[iV1];
-                    Vector V2 = VoronoiCell[iV2];
+                    (iV0, iV1, iV2) = Rearrange(iV0, iV1, iV2, V0, V1, V2);
+
+                    V0 = voronoiCellVertices[iV0];
+                    V1 = voronoiCellVertices[iV1];
+                    V2 = voronoiCellVertices[iV2];
 
                     Vector D1 = V1 - V0;
                     Vector D2 = V2 - V0;
 
+                    bool positive = true;
                     if (D1.CrossProduct2D(D2) < 0)
                     {
-                        int it = iV0;
-                        iV0 = iV2;
-                        iV2 = it;
+                        if (isBoundaryCell)
+                        {
+                            Console.WriteLine($"Cell{cell.Node.AsVoronoiNode().Position} not positive. It is probably not convex.");
+                            positive = false;
+                            int it = iV0;
+                            iV0 = iV2;
+                            iV2 = it;
 
-                        Vector vt = V0;
-                        V0 = V2;
-                        V2 = vt;
+                            Vector vt = V0;
+                            V0 = V2;
+                            V2 = vt;
 
-                        D1 = V1 - V0;
-                        D2 = V2 - V0;
+                            D1 = V1 - V0;
+                            D2 = V2 - V0;
+                        }
+                        else
+                        {
+                            throw new Exception($"Created negatively oriented cell. Node = {cell.Node.AsVoronoiNode().Position}");
+                        }
+
                     }
 
-                    Debug.Assert(D1.CrossProduct2D(D2) > 1.0e-8);
+                    //if(D1.CrossProduct2D(D2) < 1.0e-7)
+                    //{
+                    //    Console.WriteLine($"Created very small cell. Node = {cell.Node.AsVoronoiNode().Position}, Area= {D1.CrossProduct2D(D2)}, positive = {positive}");
+                    //}
 
                     Cell Cj = new Cell()
                     {
@@ -106,7 +211,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                     //Save BoundaryInformation
                     if (isBoundaryCell)
                     {
-                        List<BoundaryFace> tags = GetBoundaryFacesOf(cell, iV0, iV1, iV2);
+                        List<BoundaryFace> tags;
+                        if (positive)
+                        {
+                            tags = GetBoundaryFacesOfTriangle(cell, iV0, iV1, iV2);
+                        }
+                        else
+                        {
+                            tags = GetBoundaryFacesOfNegativeTriangle(cell, iV0, iV1, iV2);
+                        }
                         boundaryConverter.RegisterBoundaries(Cj, tags);
                     }
                     Cj.NodeIndices = new int[]
@@ -123,7 +236,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             {
                 Cells = cellsGridCommons.ToArray()
             };
-            
+            //PrintEdgeTags(cellsGridCommons);
             boundaryConverter.RegisterEdgesTo(grid);
             return (grid, aggregation.ToArray());
         }
@@ -149,40 +262,59 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             }
         }
 
-        static List<BoundaryFace> GetBoundaryFacesOf(MeshCell<T> cell, int iV0, int iV1, int iV2)
+        static List<BoundaryFace> GetBoundaryFacesOfTriangle(MeshCell<T> cell, int iV0, int iV1, int iV2)
         {
             //Indices are debug magic. FML
             List<BoundaryFace> tags = new List<BoundaryFace>(3);
             int max = cell.Edges.Length;
             if (iV0 + 1 == iV1 || iV0 - max + 1 == iV1)
             {
-                IfIsBoundaryAddEdge2Tags(iV0, 0);
+                IfIsBoundaryAddEdge2Tags(cell.Edges[iV0], 0, tags);
             }
             if (iV1 + 1 == iV2 || iV1 - max + 1 == iV2)
             {
-                IfIsBoundaryAddEdge2Tags(iV1, 1);
+                IfIsBoundaryAddEdge2Tags(cell.Edges[iV1], 1, tags);
             }
             if (iV2 + 1 == iV0 || iV2 - max + 1 == iV0)
             {
-                IfIsBoundaryAddEdge2Tags(iV2, 2);
+                IfIsBoundaryAddEdge2Tags(cell.Edges[iV2], 2, tags);
             }
             return tags;
+        }
 
-            void IfIsBoundaryAddEdge2Tags(int iV, int iFace)
+        static void IfIsBoundaryAddEdge2Tags(Edge<T> edge, int iFace, List<BoundaryFace> tags)
+        {
+            if (edge.IsBoundary)
             {
-                Edge<T> edge = cell.Edges[iV];
-                if (edge.IsBoundary)
+                BoundaryFace tag = new BoundaryFace
                 {
-                    BoundaryFace tag = new BoundaryFace
-                    {
-                        Face = iFace,
-                        BoundaryEdgeNumber = edge.BoundaryEdgeNumber,
-                        ID = edge.Start.ID,
-                        NeighborID = edge.Twin.Start.ID
-                    };
-                    tags.Add(tag);
-                }
+                    Face = iFace,
+                    BoundaryEdgeNumber = edge.BoundaryEdgeNumber,
+                    ID = edge.Start.ID,
+                    NeighborID = edge.Twin.Start.ID
+                };
+                tags.Add(tag);
             }
+        }
+
+        static List<BoundaryFace> GetBoundaryFacesOfNegativeTriangle(MeshCell<T> cell, int iV0, int iV1, int iV2)
+        {
+            //Indices are debug magic. FML
+            List<BoundaryFace> tags = new List<BoundaryFace>(3);
+            int max = cell.Edges.Length;
+            if (iV0 - 1 == iV1 || iV1 - max + 1 == iV0)
+            {
+                IfIsBoundaryAddEdge2Tags(cell.Edges[iV1], 0, tags);
+            }
+            if (iV1 - 1 == iV2 || iV2 - max + 1 == iV1)
+            {
+                IfIsBoundaryAddEdge2Tags(cell.Edges[iV2], 1, tags);
+            }
+            if (iV2 - 1 == iV0 || iV0 - max + 1 == iV2)
+            {
+                IfIsBoundaryAddEdge2Tags(cell.Edges[iV0], 2, tags);
+            }
+            return tags;
         }
 
         static bool IsBoundary(MeshCell<T> cell)

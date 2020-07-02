@@ -106,10 +106,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                         default:
                             throw new Exception();
                     }
-                    if (state.Case != IntersectionCase.NotIntersecting)
-                    {
-                        lines.Clear();
-                    }
                 }
                 lines.Add(activeLine);
             }
@@ -226,6 +222,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                     activeRidge = meshIntersecter.Subdivide(activeRidge, lines, state.AlphaCut, boundaryLines.LineIndex());
                     if (boundaryLines.MoveNext())
                     {
+                        lines.Clear();
                         runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
                         (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     }
@@ -237,12 +234,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 case IntersectionCase.EndOfEdge:
                     activeRidge = meshIntersecter.SubdivideWithoutNewVertex(activeRidge, lines, boundaryLines.LineIndex());
                     runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
+                    lines.Clear();
                     (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     break;
                 case IntersectionCase.EndOfEdgeAndLine:
                     activeRidge = meshIntersecter.SubdivideWithoutNewVertex(activeRidge, lines, boundaryLines.LineIndex());
                     if (boundaryLines.MoveNext())
                     {
+                        lines.Clear();
                         runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
                         (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     }
