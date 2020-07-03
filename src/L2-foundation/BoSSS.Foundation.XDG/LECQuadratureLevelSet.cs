@@ -118,6 +118,21 @@ namespace BoSSS.Foundation.XDG {
 
             m_RowMap = RowMap;
             m_ColMap = ColMap;
+
+            int Gamma = m_RowMap.BasisS.Count;
+            m_lsTrk = lsTrk;
+
+            if (Matrix != null && (Matrix.RowPartitioning.LocalLength != RowMap.LocalLength))
+                throw new ArgumentException("mismatch between matrix number of rows and row mapping.");
+            if (Matrix != null && (Matrix.ColPartition.LocalLength != ColMap.LocalLength))
+                throw new ArgumentException("mismatch between matrix number of columns and column mapping.");
+
+            this.m_LevSetIdx = _iLevSet;
+            this.m_SpeciesPair = SpeciesPair;
+
+            this.OperatorMatrix = Matrix;
+            this.OperatorAffine = OffsetVec;
+
             var _Parameters = (ParamsMap != null) ? ParamsMap.ToArray() : new DGField[0];
             m_ParametersA = new ConventionalDGField[_Parameters.Length];
             m_ParametersB = new ConventionalDGField[_Parameters.Length];
@@ -141,19 +156,7 @@ namespace BoSSS.Foundation.XDG {
             if (_Parameters.Length != DiffOp.ParameterVar.Count)
                 throw new ArgumentException("mismatch between number of parameter variables in spatial operator and given parameters");
 
-            int Gamma = m_RowMap.BasisS.Count;
-            m_lsTrk = lsTrk;
 
-            if (Matrix != null && (Matrix.RowPartitioning.LocalLength != RowMap.LocalLength))
-                throw new ArgumentException("mismatch between matrix number of rows and row mapping.");
-            if (Matrix != null && (Matrix.ColPartition.LocalLength != ColMap.LocalLength))
-                throw new ArgumentException("mismatch between matrix number of columns and column mapping.");
-
-            this.m_LevSetIdx = _iLevSet;
-            this.m_SpeciesPair = SpeciesPair;
-
-            this.OperatorMatrix = Matrix;
-            this.OperatorAffine = OffsetVec;
 
             //RowXbSw = m_RowMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
             //ColXbSw = m_ColMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();

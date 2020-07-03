@@ -208,8 +208,12 @@ namespace BoSSS.Application.XDGTest {
             }
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
-            if(rank == 0)
+            if(rank == 0) {
+                Console.WriteLine($"Deleting test database at {TestDbFullPath} ...");
                 Directory.Delete(TestDbFullPath, true);
+                Console.WriteLine("done.");
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
         }
 
 
