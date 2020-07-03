@@ -138,7 +138,10 @@ namespace BoSSS.Foundation.XDG {
             m_ParametersB = new ConventionalDGField[_Parameters.Length];
             for(int i = 0; i < _Parameters.Length; i++) {
                 var f = _Parameters[i];
-                if(f is XDGField xf) {
+                if(f == null) {
+                    m_ParametersA[i] = null;
+                    m_ParametersB[i] = null;
+                } else if(f is XDGField xf) {
                     m_ParametersA[i] = xf.GetSpeciesShadowField(this.SpeciesA);
                     m_ParametersB[i] = xf.GetSpeciesShadowField(this.SpeciesB);
                 } else if(f is ConventionalDGField cf) {
