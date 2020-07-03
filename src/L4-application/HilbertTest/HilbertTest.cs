@@ -48,28 +48,28 @@ namespace HilbertTest {
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
-   
+
         [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
-        [Test]
+        [Test]       
         public static void Test() {
             //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             //Testing coordinate samples
             bool coordresult = TestingCoordinateSamples();
             Assert.IsTrue(coordresult, "Code of HilbertCurve is corrupted");
 
-            //Testing Partition without any Constraints, even distribution of cells among processes
+            //Testing partitioning with clusters, even distribution of cells among processes
             bool gridevenresult = TestingGridDistributionEven();
             Assert.IsTrue(gridevenresult, "HilbertCurve or mapping (rank->Hilbertcurve) is corrupted");
 
-            //Testing Partition without any Constraints, uneven distribution of cells among processes
+            //Testing partitioning with clusters, uneven distribution of cells among processes
             bool gridunevenresult = TestingGridDistributionUneven();
             Assert.IsTrue(gridunevenresult, "Distribution pattern along HilbertCurve is corrupted");
 
-            //Testing Partition yield from Hilbert without any Constraints, even distribution of cells among processes
+            //Testing bare Hilbert partitioning, even distribution of cells among processes
             bool directHilbert_E = TestingdirectHilbertEven();
             Assert.IsTrue(directHilbert_E, "HilbertCurve or mapping of Hilbert (rank->Hilbertcurve) is corrupted");
 
-            //Testing Partition yield from Hilbert without any Constraints, uneven distribution of cells among processes
+            //Testing bare Hilbert partitioning, uneven distribution of cells among processes
             bool directHilbert_UE = TestingdirectHilbertUneven();
             Assert.IsTrue(directHilbert_UE, "Distribution pattern along HilbertCurve is corrupted");
 
@@ -209,16 +209,17 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                            result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
+                            result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67) ||
+                            (xC > 0.33) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67);
                             break;
                         case 1:
-                            result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
+                            result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
                             break;
                         case 2:
-                            result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
+                            result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
                             break;
                         case 3:
-                            result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
+                            result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
                             break;
                     }
                 }
