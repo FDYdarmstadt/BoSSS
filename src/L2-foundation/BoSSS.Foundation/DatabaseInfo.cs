@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.IO {
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MpiRank);
             if(MpiRank == 0) {
-                if(!File.Exists(path) || Directory.Exists(path)) {
+                if(!File.Exists(path) && !Directory.Exists(path)) {
                     DirectoryInfo targetDirectory = new DirectoryInfo(path);
                     if(!targetDirectory.Exists) {
                         targetDirectory.Create();
