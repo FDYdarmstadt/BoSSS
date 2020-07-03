@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace BoSSS.Foundation.IO {
 
@@ -39,27 +40,30 @@ namespace BoSSS.Foundation.IO {
         /// Otherwise, creates a new database and opens it.
         /// </summary>
         public static DatabaseInfo CreateOrOpen(string path) {
-            if(File.Exists(path) || Directory.Exists(path))
-                return Open(path);
+
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MpiRank);
             if(MpiRank == 0) {
-                DirectoryInfo targetDirectory = new DirectoryInfo(path);
-                if(!targetDirectory.Exists) {
-                    targetDirectory.Create();
-                } else {
-                    if(targetDirectory.GetFiles().Length > 0)
-                        throw new ArgumentException("Must be empty.");
-                    if(targetDirectory.GetDirectories().Length > 0)
-                        throw new ArgumentException("Must be empty.");
-                }
+                if(!File.Exists(path) || Directory.Exists(path)) {
+                    DirectoryInfo targetDirectory = new DirectoryInfo(path);
+                    if(!targetDirectory.Exists) {
+                        targetDirectory.Create();
+                    } else {
+                        if(targetDirectory.GetFiles().Length > 0)
+                            throw new ArgumentException("Must be empty.");
+                        if(targetDirectory.GetDirectories().Length > 0)
+                            throw new ArgumentException("Must be empty.");
+                    }
 
-                // Create structure
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "data"));
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "timesteps"));
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "grids"));
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "sessions"));
+                    // Create structure
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "data"));
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "timesteps"));
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "grids"));
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "sessions"));
+                }
             }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            Thread.Sleep(5000); // allow Network file systems to catch up
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
             return Open(path);
