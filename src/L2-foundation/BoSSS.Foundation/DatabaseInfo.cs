@@ -141,6 +141,18 @@ namespace BoSSS.Foundation.IO {
             }
 
             if(dbPath == null) {
+                Console.Error.WriteLine("Unable to open database: ");
+                Console.Error.WriteLine($"primary path: {_path}");
+                if (AlternateDbPaths == null || AlternateDbPaths.Length <= 0) {
+                    Console.Error.WriteLine("No alternative paths specified.");
+                } else {
+                    Console.Error.WriteLine("Got " + AlternateDbPaths.Length + " all other paths: ");
+                    for(int i = 0; i < AlternateDbPaths.Length; i++) {
+                        Console.Error.WriteLine($"  #{i}: {AlternateDbPaths[i].DbPath}, filter is {AlternateDbPaths[i].MachineFilter}");
+                    }
+
+                }
+
                 throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
             }
 
