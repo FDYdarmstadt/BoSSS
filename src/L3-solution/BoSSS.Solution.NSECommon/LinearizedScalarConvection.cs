@@ -153,7 +153,7 @@ namespace BoSSS.Solution.NSECommon
                     switch (m_bcmap.PhysMode) {
                         case PhysicsMode.LowMach: {
                             // opt1:
-                            inp2.Parameters_OUT[2 * m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, 0);
+                            inp2.Parameters_OUT[2 * m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
                             // opt2: inner values
                             //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension];
                             // Use inner value for TemperatureMean, i.e. LambdaIn is used.
@@ -441,7 +441,7 @@ namespace BoSSS.Solution.NSECommon
     //                         case PhysicsMode.LowMach:
     //                             {
     //                                 // opt1:
-    //                                 inp2.Parameters_OUT[2 * m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, 0);
+    //                                 inp2.Parameters_OUT[2 * m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
     //                                 // opt2: inner values
     //                                 //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension];
     //                                 // Use inner value for TemperatureMean, i.e. LambdaIn is used.
