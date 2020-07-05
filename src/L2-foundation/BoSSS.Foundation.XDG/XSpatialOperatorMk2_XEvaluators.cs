@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.XDG {
     partial class XSpatialOperatorMk2 {
 
         /// <summary>
-        /// Assembly of matrices for XDG operators
+        /// Assembly of matrices for linear (or linearized) XDG operators
         /// </summary>
         public class XEvaluatorLinear : XEvaluatorBase, IXEvaluatorLinear {
 
@@ -131,9 +131,9 @@ namespace BoSSS.Foundation.XDG {
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
-                if (base.MPITtransceive == true)
+                if(base.MPITtransceive == true)
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     var lsTrk = base.m_lsTrk;
                     IGridData GridDat = lsTrk.GridDat;
 
@@ -157,10 +157,10 @@ namespace BoSSS.Foundation.XDG {
                     //        throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
                     //}
 
-                    if (OnlyAffine == false) {
-                        if (!Matrix.RowPartitioning.Equals(base.CodomainMapping))
+                    if(OnlyAffine == false) {
+                        if(!Matrix.RowPartitioning.Equals(base.CodomainMapping))
                             throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                        if (!Matrix.ColPartition.Equals(base.DomainMapping))
+                        if(!Matrix.ColPartition.Equals(base.DomainMapping))
                             throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                     }
 
@@ -176,7 +176,7 @@ namespace BoSSS.Foundation.XDG {
                     #region MPI exchange of parameter fields
                     // --------------------------------
                     Transceiver trx = base.m_TRX;
-                    if (trx != null) {
+                    if(trx != null) {
                         trx.TransceiveStartImReturn();
                     }
                     #endregion
@@ -187,13 +187,13 @@ namespace BoSSS.Foundation.XDG {
                     // ---------------------
                     //MsrMatrix BulkMatrix = null;
                     //double[] BulkAffineOffset = null;
-                    using (new BlockTrace("bulk_integration", tr)) {
+                    using(new BlockTrace("bulk_integration", tr)) {
 
                         // create the frame matrices & vectors...
                         // this is an MPI-collective operation, so it must be executed before the program may take different branches...
                         SpeciesFrameMatrix<M>[] mtx_spc = new SpeciesFrameMatrix<M>[ReqSpecies.Length];
                         SpeciesFrameVector<V>[] vec_spc = new SpeciesFrameVector<V>[ReqSpecies.Length];
-                        for (int i = 0; i < ReqSpecies.Length; i++) {
+                        for(int i = 0; i < ReqSpecies.Length; i++) {
                             SpeciesId SpId = ReqSpecies[i];
                             mtx_spc[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame[SpId], this.SpeciesDomainFrame[SpId]);
                             vec_spc[i] = (AffineOffset != null) ?
@@ -213,7 +213,7 @@ namespace BoSSS.Foundation.XDG {
                         //}
 
                         // do the Bulk integration...
-                        foreach (var SpeciesId in ReqSpecies) {
+                        foreach(var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
 
@@ -224,22 +224,22 @@ namespace BoSSS.Foundation.XDG {
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
 
-                            foreach (var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
+                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
 
-                                if (SpeciesBuilder.ContainsKey(SpeciesId)) {
+                                if(SpeciesBuilder.ContainsKey(SpeciesId)) {
 
                                     var builder = SpeciesBuilder[SpeciesId];
                                     builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
                                     NotifySpecies(builder.Owner, this.m_lsTrk, SpeciesId);
 
-                                    if (trx != null) {
+                                    if(trx != null) {
                                         trx.TransceiveFinish();
                                         trx = null;
                                     }
 
                                     builder.time = base.time;
 
-                                    if (OnlyAffine) {
+                                    if(OnlyAffine) {
                                         builder.ComputeAffine(vec);
                                     } else {
                                         builder.ComputeMatrix(_mtx, vec);
@@ -254,19 +254,33 @@ namespace BoSSS.Foundation.XDG {
                     // build matrix, coupling
                     ///////////////////
 
-                    using (new BlockTrace("surface_integration", tr)) {
-                        foreach (var tt in this.CouplingRules) {
+                    using(new BlockTrace("surface_integration", tr)) {
+#if DEBUG
+                        {
+                            // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
+                            int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                            for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                                Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                            }
+                        }
+#endif
+
+                        var allBuilders = new List<LECQuadratureLevelSet<M, V>>();
+                        foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
                             var SpeciesA = tt.Item2;
                             var SpeciesB = tt.Item3;
                             var rule = tt.Item4;
-
-
-
-                            if (trx != null) {
-                                trx.TransceiveFinish();
-                                trx = null;
+#if DEBUG
+                            int[] all_iLs = iLevSet.MPIAllGather();
+                            int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
+                            int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
+                            for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
+                                Debug.Assert(all_iLs[rnk] == iLevSet);
+                                Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
+                                Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
+#endif
 
                             var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
                                                              m_Xowner,
@@ -274,19 +288,29 @@ namespace BoSSS.Foundation.XDG {
                                                              CodomainMapping, Parameters, DomainMapping,
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
-                            //ICompositeQuadRule_Ext.ToTextFileVolume
-                            //rule.ToTextFileVolume(GridDat as BoSSS.Foundation.Grid.Classic.GridData, "LevSet-" + iLevSet + ".csv");
+                            allBuilders.Add(MtxBuilder);
 
+                            if(trx != null) {
+                                trx.TransceiveFinish();
+                                trx = null; // we only need to do comm once!
+                            }
+                        }
+
+                        // Note: this kind of deferred execution
+                        // (first, collecting all integrators in a list and second, executing them in a separate loop)
+                        // should prevent waiting for unevenly balanced level sets
+
+                        foreach(var MtxBuilder in allBuilders) {
                             MtxBuilder.time = time;
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            this.SpeciesOperatorCoefficients.TryGetValue(MtxBuilder.SpeciesA, out var csA);
+                            this.SpeciesOperatorCoefficients.TryGetValue(MtxBuilder.SpeciesB, out var csB);
                             UpdateLevelSetCoefficients(csA, csB);
                             MtxBuilder.Execute();
 
 #if DEBUG
-                            if (Matrix != null && OnlyAffine == false)
+                            if(Matrix != null && OnlyAffine == false)
                                 Matrix.CheckForNanOrInfM();
-                            if (AffineOffset != null)
+                            if(AffineOffset != null)
                                 GenericBlas.CheckForNanOrInfV(AffineOffset);
 #endif
 
@@ -295,7 +319,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // allow all processes to catch up
                     // -------------------------------
-                    if (trx != null) {
+                    if(trx != null) {
                         trx.TransceiveFinish();
                         trx = null;
                     }
@@ -312,6 +336,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
+        /// <summary>
+        /// Explicit evaluation of (nonlinear and linear) XDG operators
+        /// </summary>
         public class XEvaluatorNonlin : XEvaluatorBase, IXEvaluatorNonLin {
 
 
@@ -426,27 +453,59 @@ namespace BoSSS.Foundation.XDG {
                     //    SurfaceElement_Edge, SurfaceElement_volume, null);
 
 
+
                     using (new BlockTrace("surface_integration", tr)) {
-                        foreach (var tt in this.CouplingRules) {
+#if DEBUG
+                    {
+                        // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
+                        int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                        for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                            Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                        }
+                    }
+#endif
+                        var necList = new List<NECQuadratureLevelSet<Tout>> ();
+
+                        foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
                             var SpeciesA = tt.Item2;
                             var SpeciesB = tt.Item3;
                             var rule = tt.Item4;
-
-                            if (trx != null) {
-                                trx.TransceiveFinish();
-                                trx = null;
+#if DEBUG
+                            int[] all_iLs = iLevSet.MPIAllGather();
+                            int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
+                            int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
+                            for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
+                                Debug.Assert(all_iLs[rnk] == iLevSet);
+                                Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
+                                Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
+#endif
 
+
+                            // constructor is a collective operation
                             var LsEval = new NECQuadratureLevelSet<Tout>(GridDat,
                                                              m_Xowner,
                                                              output,
                                                              this.DomainFields.Fields, Parameters, base.CodomainMapping,
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
+                            necList.Add(LsEval);
+
+                            if(trx != null) {
+                                trx.TransceiveFinish();
+                                trx = null;
+                            }
+                        }
+
+                        // Note: this kind of deferred execution
+                        // (first, collecting all integrators in a list and second, executing them in a separate loop)
+                        // should prevent waiting for unevenly balanced level sets
+
+                        foreach(var LsEval in necList) { 
                             LsEval.time = time;
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            this.SpeciesOperatorCoefficients.TryGetValue(LsEval.SpeciesA, out var csA);
+                            this.SpeciesOperatorCoefficients.TryGetValue(LsEval.SpeciesB, out var csB);
                             UpdateLevelSetCoefficients(csA, csB);
                             LsEval.Execute();
 
@@ -715,8 +774,8 @@ namespace BoSSS.Foundation.XDG {
                             for (int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
                                 var SpeciesA = AllSpc[iSpcA];
                                 var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
-                                if (SpeciesADom.NoOfItemsLocally <= 0)
-                                    continue;
+                                //if (SpeciesADom.NoOfItemsLocally <= 0)
+                                //    continue;
 
                                 int _iSpcA = Array.IndexOf(ReqSpecies, SpeciesA);
 
@@ -746,6 +805,7 @@ namespace BoSSS.Foundation.XDG {
 
                                         Chunk c = IntegrationDom.FirstOrDefault();
                                         if(c.Len > 0) {
+                                            Debug.Assert(IntegrationDom.IsEmptyOnRank == false);
                                             int jtest = c.i0;
 
                                             LevelsetCellSignCode csc = lsTrk.Regions.GetCellSignCode(jtest);
@@ -826,11 +886,17 @@ namespace BoSSS.Foundation.XDG {
 
                                         LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, SpeciesA, SpeciesB, iLevSet);
 
-                                        CouplingRules.Add(Tuple.Create(iLevSet, SpeciesA, SpeciesB, rule));
+                                        CouplingRules.Add((iLevSet, SpeciesA, SpeciesB, rule));
                                         ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
                                     }
                                 }
                             }
+#if DEBUG
+                            int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                            for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                                Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                            }
+#endif
                         }
                     }
 
@@ -920,7 +986,7 @@ namespace BoSSS.Foundation.XDG {
             /// - 3rd item positive species/species B
             /// - 4th item respective quadrature rule
             /// </summary>
-            protected List<Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>> CouplingRules = new List<Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>>();
+            protected List<(int LsIdx, SpeciesId spcA, SpeciesId spcB, ICompositeQuadRule<QuadRule> quadRule)> CouplingRules = new List<(int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>)>();
 
 
 

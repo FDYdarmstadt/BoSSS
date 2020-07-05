@@ -273,6 +273,7 @@ namespace BoSSS.Foundation.IO
             }
         }
 
+        /*
         /// <summary>
         /// Loads a vector from the database
         /// </summary>
@@ -388,6 +389,7 @@ namespace BoSSS.Foundation.IO
                 return ret;
             }
         }
+        */
 
         public object Deserialize(Stream stream, Type objectType)
         {

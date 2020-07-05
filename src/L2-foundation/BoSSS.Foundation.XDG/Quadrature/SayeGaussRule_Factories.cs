@@ -41,6 +41,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         class Status
         {
+           
             public bool initialized;
             public int order;
             public ExecutionMask initialMask;
@@ -58,8 +59,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// CalculateComboQuadRuleSet(...).
         /// </summary>
         /// <param name="ComboRule"></param>
-        public SayeGaussComboRuleFactory(ISayeGaussComboRule ComboRule, Mode recalculationMode)
-        {
+        public SayeGaussComboRuleFactory(ISayeGaussComboRule ComboRule, Mode recalculationMode) {
             comboRule = ComboRule;
 
             rulez = new[] {
@@ -67,23 +67,22 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 new List<ChunkRulePair<QuadRule>>()
             };
 
-            ComboStatus = new Status
-            {
+            ComboStatus = new Status {
                 initialized = false,
                 order = 0,
                 RecalculationMode = recalculationMode
             };
-            
+
             volumeRuleFactory = new ComboFactoryWrapper(
-                CalculateComboQuadRuleSet, 
-                rulez[0], 
-                comboRule.RefElement, 
+                CalculateComboQuadRuleSet,
+                rulez[0],
+                comboRule.RefElement,
                 ComboStatus,
                 ComboFactoryWrapper.QuadratureType.Volume);
             surfaceRuleFactory = new ComboFactoryWrapper(
-                CalculateComboQuadRuleSet, 
-                rulez[1], 
-                comboRule.RefElement, 
+                CalculateComboQuadRuleSet,
+                rulez[1],
+                comboRule.RefElement,
                 ComboStatus,
                 ComboFactoryWrapper.QuadratureType.Surface);
         }
@@ -179,6 +178,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
             {
+
                 if(!RuleStatus.initialized || order != RuleStatus.order)
                 {
 #if LOG_ACTIONS
