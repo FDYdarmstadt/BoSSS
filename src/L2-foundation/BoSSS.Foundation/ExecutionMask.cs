@@ -676,9 +676,9 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// true if this mask contains no items
+        /// true if this mask contains no items on he current MPI process
         /// </summary>
-        public bool IsEmpty {
+        public bool IsEmptyOnRank {
             get {
                 foreach (var c in this) {
                     if (c.Len > 0)

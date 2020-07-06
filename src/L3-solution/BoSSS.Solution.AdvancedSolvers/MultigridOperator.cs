@@ -107,7 +107,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         bool setupdone = false;
 
         void Setup() {
-            using (new FuncTrace()) {
+            using (var tr =new FuncTrace()) {
                 if (setupdone)
                     return;
                 setupdone = true;
@@ -172,6 +172,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // compute change of basis
                 // =======================
                 int[] IndefRows = this.ComputeChangeOfBasis(RawOpMatrix, RawMassMatrix, out m_LeftChangeOfBasis, out m_RightChangeOfBasis, out m_LeftChangeOfBasis_Inverse, out m_RightChangeOfBasis_Inverse);
+
 
                 // apply change of basis to operator matrix
                 // ========================================

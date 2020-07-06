@@ -554,7 +554,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 return grid;
             };
 
-            C.GridPartType = GridPartType.directHilbert;
+            C.GridPartType = GridPartType.Hilbert;
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(5);
 

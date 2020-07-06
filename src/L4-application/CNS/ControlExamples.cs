@@ -2318,7 +2318,7 @@ namespace CNS {
             c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
 
-            c.GridPartType = GridPartType.Hilbert;
+            c.GridPartType = GridPartType.clusterHilbert;
             //c.GridPartType = GridPartType.none;
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
@@ -3431,11 +3431,11 @@ namespace CNS {
                     break;
                 case 2:
                     if (AVratio > 1) {
-                        c.GridPartType = GridPartType.directHilbert;
-                        Console.WriteLine("directHilbert is executed");
-                    } else {
                         c.GridPartType = GridPartType.Hilbert;
-                        Console.WriteLine("Hilbert with Clusters is executed");
+                        Console.WriteLine("Hilbert is executed");
+                    } else {
+                        c.GridPartType = GridPartType.clusterHilbert;
+                        Console.WriteLine("clusterHilbert with Clusters is executed");
                     }
                     break;
             }
@@ -3639,11 +3639,11 @@ namespace CNS {
                     break;
                 case 2:
                     if (AVratio > 1) {
-                        c.GridPartType = GridPartType.directHilbert;
-                        Console.WriteLine("directHilbert is executed");
-                    } else {
                         c.GridPartType = GridPartType.Hilbert;
-                        Console.WriteLine("Hilbert with Clusters is executed");
+                        Console.WriteLine("Hilbert is executed");
+                    } else {
+                        c.GridPartType = GridPartType.clusterHilbert;
+                        Console.WriteLine("clusterHilbert with Clusters is executed");
                     }
                     break;
             }

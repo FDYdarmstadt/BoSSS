@@ -160,6 +160,7 @@ namespace BoSSS.Foundation.XDG {
         /// return value is cached
         /// </remarks>
         public SpeciesShadowField GetSpeciesShadowField(SpeciesId id) {
+            MPICollectiveWatchDog.Watch();
             if (!m_SpeciesShadowFields.ContainsKey(id.cntnt)) {
                 SpeciesShadowField ssf = new SpeciesShadowField(this, id);
                 m_SpeciesShadowFields.Add(id.cntnt, ssf);
