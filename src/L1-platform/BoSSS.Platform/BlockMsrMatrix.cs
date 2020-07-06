@@ -138,26 +138,33 @@ namespace ilPSP.LinSolvers {
         static void Debug_Assert(bool cond) {
             if(!cond) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+                string err = $"BlockMsrMatrix rank{rank} error";
 
-
-                //throw new ApplicationException("internal error");
+                /*
                 bool o = ilPSP.Environment.StdoutOnlyOnRank0;
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                Console.Error.WriteLine($"Bmsr r{rank} error");
+                Console.Error.WriteLine(err);
                 ilPSP.Environment.StdoutOnlyOnRank0 = o;
+                */
+
+                throw new ApplicationException(err);
+
             }
         }
 
         static void Debug_Assert(bool cond, string message) {
             if(!cond) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
-
-                Debugger.Launch();
-
+                string err = $"BlockMsrMatrix rank{rank} error: {message}";
+               
+                /*
                 bool o = ilPSP.Environment.StdoutOnlyOnRank0;
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                Console.Error.WriteLine($"Bmsr r{rank} error: " + message);
+                Console.Error.WriteLine(err);
                 ilPSP.Environment.StdoutOnlyOnRank0 = o;
+                */
+
+                throw new ApplicationException(err);
             }
         }
 
@@ -5491,6 +5498,15 @@ namespace ilPSP.LinSolvers {
             int[] RanksToSendTo;
             int[] RanksToReceiveFrom;
 
+#if DEBUG
+            /// <summary>
+            /// 1st index: origin process rank 'o'
+            /// 2nd index: destination process rank 'r'
+            /// content: number of bytes send from rank 'o' to 'r'
+            /// </summary>
+            int[,] SizesCheck;
+#endif
+
             internal void Finish(Action<int,IntPtr,int> ReceiveAction) {
                 MPICollectiveWatchDog.Watch(comm);
                 unsafe {
@@ -5535,9 +5551,15 @@ namespace ilPSP.LinSolvers {
 
             internal void TransceiveStart(Func<int, int> GetSentBufferSize, Action<int, IntPtr> FillSendBuffer) {
                 MPICollectiveWatchDog.Watch(comm);
+#if DEBUG
+                csMPI.Raw.Comm_Size(comm, out int MPIsize);
+                csMPI.Raw.Comm_Rank(comm, out int MPIrank);
+                int[] SendSizes = new int[MPIsize];
+#endif
                 unsafe {
                     int NoOfSend = RanksToSendTo.Length;
                     int NoOfRecv = RanksToReceiveFrom.Length;
+
 
                     MPI_Request[] firstWave = new MPI_Request[NoOfSend + NoOfRecv];
                     secondWave = new MPI_Request[NoOfSend + NoOfRecv];
@@ -5561,7 +5583,9 @@ namespace ilPSP.LinSolvers {
 
                         // calculate size of send buffer
                         int Sz = GetSentBufferSize(DestinationProc);
-
+#if DEBUG
+                        SendSizes[DestinationProc] = Sz;
+#endif
                         // send size of send buffer
                         csMPI.Raw.Issend((IntPtr)(&Sz), 1, csMPI.Raw._DATATYPE.INT, DestinationProc, 567, comm, out firstWave[counter]);
 
@@ -5583,6 +5607,7 @@ namespace ilPSP.LinSolvers {
                     secondWave_ReceiveBuffer = new IntPtr[NoOfRecv];
 #if DEBUG
                     bool[] checker = new bool[NoOfRecv + NoOfSend];
+                    SizesCheck = SendSizes.MPIAllGather(comm).Resize(false, MPIsize, MPIsize);
 #endif
                     for(int i = 0; i < NoOfRecv + NoOfSend; i++) {
                         MPI_Status Stat;
@@ -5595,10 +5620,14 @@ namespace ilPSP.LinSolvers {
 #endif
                         if(index >= NoOfSend) {
                             // received buffer size
+#if DEBUG                            
                             Debug_Assert(Stat.count == 1 * sizeof(int), $"1st wave, receiving: receive count mismatch -- Status count {Stat.count}, expected {sizeof(int)}.");
                             Debug_Assert(RecvSize[index - NoOfSend] >= 0, "11");
                             Debug_Assert(Stat.MPI_TAG == 567, $"1st wave, receiving: tag mismatch.");
                             Debug_Assert(Stat.MPI_SOURCE == RanksToReceiveFrom[index - NoOfSend], $"1st wave, receiving: source mismatch.");
+
+                            Debug_Assert(RecvSize[index - NoOfSend] == SizesCheck[RanksToReceiveFrom[index - NoOfSend], MPIrank], "Buffer size check failed.");
+#endif
                             IntPtr Buffer = Marshal.AllocHGlobal(RecvSize[index - NoOfSend]);
                             secondWave_ReceiveBuffer[index - NoOfSend] = Buffer;
                             csMPI.Raw.Irecv(Buffer, RecvSize[index - NoOfSend], csMPI.Raw._DATATYPE.BYTE, RanksToReceiveFrom[index - NoOfSend], 32567, comm, out secondWave[index]);
