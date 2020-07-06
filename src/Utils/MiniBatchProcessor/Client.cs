@@ -52,7 +52,11 @@ namespace MiniBatchProcessor {
             while (Retry < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
                 Retry++;
                 try {
-                    var newID = base.AllJobs.Select(j => j.ID).Max() + 1;
+                    int newID;
+                    if (base.AllJobs != null && base.AllJobs.Count > 0)
+                        newID = base.AllJobs.Select(j => j.ID).Max() + 1;
+                    else
+                        newID = 1;
                     JD.m_ID = newID;
                     string f = Path.Combine(config.BatchInstructionDir, ClientAndServer.QUEUE_DIR, newID.ToString());
 
