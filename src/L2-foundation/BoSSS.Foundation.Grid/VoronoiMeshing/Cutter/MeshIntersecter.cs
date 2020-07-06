@@ -5,6 +5,7 @@ using System.Linq;
 using System.Diagnostics;
 using ilPSP;
 using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
@@ -67,6 +68,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 counter = -1;
                 length = edges.Length;
                 currentIndex = startIndex;
+            }
+
+            public MeshCell<T> Cell {
+                get {
+                    return edges[0].Cell;
+                }
             }
         }
 
@@ -275,7 +282,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             cell.IntersectionVertex = newOldVertex.ID;
         }
 
-        public IEnumerator<Edge<T>> GetNeighborFromLineDirection(Edge<T> edge, BoundaryLine line)
+        public AfterCutEdgeEnumerator GetNeighborFromLineDirection(Edge<T> edge, BoundaryLine line)
         {
             IEnumerator<Edge<T>> outgoingEdges = GetConnectedEdgeEnum(edge);
             Edge<T> A = null;
@@ -305,19 +312,24 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             return new AfterCutEdgeEnumerator(A.Cell.Edges, A);
         }
 
+        public AfterCutEdgeEnumerator GetAfterCutEdgeEnumerator(Edge<T>[] edges, Edge<T> edge)
+        {
+            return new AfterCutEdgeEnumerator(edges, edge);
+        }
+
         //Check if in positive rotation a, c, b order
         static bool IsBetween(Edge<T> a, BoundaryLine b, Edge<T> c)
         {
             Vector A1 = a.End.Position - a.Start.Position;
-            Vector C1 = b.End.Position - a.Start.Position;
-            Vector B1 = c.End.Position - a.Start.Position;
+            Vector B1 = b.End.Position - b.Start.Position;
+            Vector C1 = c.End.Position - c.Start.Position;
 
             double crossAB = A1.CrossProduct2D(B1);
-            double crossCB = C1.CrossProduct2D(B1);
+            double crossBC = B1.CrossProduct2D(C1);
             double crossAC = A1.CrossProduct2D(C1);
             if (crossAC > 0)
             {
-                if (crossCB > 0 || crossAB < 0)
+                if (crossAB > 0 && crossBC > 0)
                 {
                     return true;
                 }
@@ -325,7 +337,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             }
             else
             {
-                if (crossCB > 0 && crossAB < 0)
+                if (crossAB < 0 && crossBC < 0)
                 {
                     return true;
                 }

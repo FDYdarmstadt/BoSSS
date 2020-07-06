@@ -276,23 +276,17 @@ namespace BoSSS.Platform
 
             Vector S12 = S2 - S1;
             Vector E12 = E2 - E1;
-            if (S12.Abs() <= 0)
-                throw new ArgumentException();
-            if (E12.Abs() <= 0)
-                throw new ArgumentException();
-
 
             var P_S12 = AffineManifold.FromPoints(S1, S2);
             var P_E12 = AffineManifold.FromPoints(E1, E2);
 
-            Vector NS = P_S12.Normal; NS.Normalize();
-            Vector NE = P_E12.Normal; NE.Normalize();
+            double parallel = S12[0] * E12[1] - S12[1] * E12[0];
+            double relParallel = parallel * parallel / (S12.AbsSquare() * E12.AbsSquare());
 
-            double parallel = NS * NE;
-            if (parallel.Abs() >= 1.0 - 1e-12)
+            if ( Math.Abs(relParallel)  <= 1e-20)
             {
-                alpha1 = P_S12.PointDistance(E1);
-                //alpha1 = double.PositiveInfinity;
+                alpha1 = P_S12.PointDistance(E1); 
+                alpha1 /= E12.Abs();
                 alpha2 = double.PositiveInfinity;
                 I = new Vector(double.PositiveInfinity, double.PositiveInfinity);
                 return false;

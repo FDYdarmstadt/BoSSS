@@ -12,7 +12,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            Shift();
+            PeriodicPairSkewCheckerBoard();
         }
 
         [Test]
@@ -270,7 +270,7 @@ namespace VoronoiTests.Grid
 
             Random random = new Random(10);
             MultidimensionalArray nodes = default(MultidimensionalArray);
-            for (int i = 0; i < 1000; i += 1)
+            for (int i = 0; i < 10; i += 1)
             {
                 Console.WriteLine($"Roll number{i}");
                 nodes = RandomNodesInSquare(4.09, 4.0, 300, random);
