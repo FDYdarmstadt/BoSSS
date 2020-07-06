@@ -80,11 +80,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return target;
         }
 
-        const double accuracy = 1e-10;
+        const double accuracy = 1e-5;
 
         static bool OnLine(Vertex a, Vertex b, Vertex c)
         {
-            return true;
             Vector vA = a.Position;
             Vector vB = b.Position;
             Vector vC = c.Position;

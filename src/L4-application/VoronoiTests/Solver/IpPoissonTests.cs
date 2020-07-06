@@ -17,7 +17,7 @@ namespace VoronoiTests.Solver
         }
 
         [Test]
-        void Test_LDomain()
+        public void Test_LDomain()
         {
             int numberOfVoronoiCells = 20;
             AppControl lShape = VoronoiControl.TestVoronoi_LDomain(numberOfVoronoiCells, NoOfLlyodsIter: 20);
