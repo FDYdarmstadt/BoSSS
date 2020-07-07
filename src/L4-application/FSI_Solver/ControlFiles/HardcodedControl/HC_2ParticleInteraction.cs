@@ -14,24 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(double angle = 45, double distance = 3) {
+        public static FSI_Control Main(double angle = 150, double distance = 3) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
-            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
-            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
-
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
+            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            //C.AlternateDbPaths = new[] { new ValueTuple<string, string>(@"/work/scratch/ij83requ/default_bosss_db", ""), new ValueTuple<string, string>(@"U:\default_bosss_db", "") };
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 4.1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(4);
 
             // Coupling Properties
@@ -47,6 +48,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
+            C.IsStationary = true;
             double particleDensity = 1;
 
             // Particle Properties
@@ -67,7 +69,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             // Timestepping
             // =============================  
@@ -79,8 +81,9 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Single(double angle = 80, double distance = 0) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
-            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
-            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
+            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            //C.AlternateDbPaths = new[] { new ValueTuple<string, string>(@"/work/scratch/ij83requ/default_bosss_db", ""), new ValueTuple<string, string>(@"U:\default_bosss_db", "") };
 
             // Domain
             // =============================
@@ -104,6 +107,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
+            C.IsStationary = true;
             double particleDensity = 1;
 
             // Particle Properties

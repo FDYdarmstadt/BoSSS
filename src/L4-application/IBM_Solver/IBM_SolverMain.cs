@@ -132,7 +132,8 @@ namespace BoSSS.Application.IBM_Solver {
                 int D = this.GridData.SpatialDimension;
 
                 double[] _rho = new double[D + 1];
-                //_rho.SetAll(rho);
+                if(!this.Control.IsStationary)
+                    _rho.SetAll(rho);
                 //No MassMatrix for the pressure
                 _rho[D] = 0;
 
