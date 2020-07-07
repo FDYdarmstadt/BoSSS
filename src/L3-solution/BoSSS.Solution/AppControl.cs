@@ -621,7 +621,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public Tuple<Guid, TimestepNumber> RestartInfo;
-
         /// <summary>
         /// Setting <see cref="RestartInfo"/>
         /// </summary>
@@ -629,6 +628,9 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(tsi.Session.ID, tsi.TimeStepNumber);
+
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -638,6 +640,10 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, default(TimestepNumber));
+
+            var tsi = si.Timesteps.Last();
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -647,8 +653,11 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, idx);
-        }
 
+            var tsi = si.Timesteps.Single(_tsi => _tsi.TimeStepNumber.Equals(idx));
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
+        }
 
         /// <summary>
         /// The GUID of the grid to load. 
