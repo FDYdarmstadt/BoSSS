@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#define DEBUG
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -135,7 +134,8 @@ namespace ilPSP.LinSolvers {
     /// </remarks>
     public class BlockMsrMatrix : IMutableMatrixEx {
 
-        static void Debug_Assert(bool cond) {
+        /*
+        static void Debug.Assert(bool cond) {
             if(!cond) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
                 string err = $"BlockMsrMatrix rank{rank} error";
@@ -152,7 +152,7 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-        static void Debug_Assert(bool cond, string message) {
+        static void Debug.Assert(bool cond, string message) {
             if(!cond) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
                 string err = $"BlockMsrMatrix rank{rank} error: {message}";
@@ -166,7 +166,7 @@ namespace ilPSP.LinSolvers {
                 //throw new ApplicationException(err);
             }
         }
-
+        */
 
         /// <summary>
         /// MPI Communicator on which this object lives on
@@ -187,7 +187,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public IBlockPartitioning _RowPartitioning {
             get {
-                Debug_Assert(m_RowPartitioning.IsMutable == false);
+                Debug.Assert(m_RowPartitioning.IsMutable == false);
                 return m_RowPartitioning;
             }
         }
@@ -202,7 +202,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public IBlockPartitioning _ColPartitioning {
             get {
-                Debug_Assert(m_ColPartitioning.IsMutable == false);
+                Debug.Assert(m_ColPartitioning.IsMutable == false);
                 return m_ColPartitioning;
             }
         }
@@ -212,7 +212,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public IPartitioning RowPartitioning {
             get {
-                Debug_Assert(m_RowPartitioning.IsMutable == false);
+                Debug.Assert(m_RowPartitioning.IsMutable == false);
                 return m_RowPartitioning;
             }
         }
@@ -222,7 +222,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public IPartitioning ColPartition {
             get {
-                Debug_Assert(m_ColPartitioning.IsMutable == false);
+                Debug.Assert(m_ColPartitioning.IsMutable == false);
                 return m_ColPartitioning;
             }
         }
@@ -297,10 +297,10 @@ namespace ilPSP.LinSolvers {
                 int LC = OldColIndices2New.GetLength(0);
 #if DEBUG
                 for (int l = 1; l < LC; l++) {
-                    Debug_Assert(OldColIndices2New[l, 0] > OldColIndices2New[l - 1, 0]);
+                    Debug.Assert(OldColIndices2New[l, 0] > OldColIndices2New[l - 1, 0]);
                 }
                 for (int l = 1; l < LR; l++) {
-                    Debug_Assert(OldRowIndices2New[l, 0] > OldRowIndices2New[l - 1, 0]);
+                    Debug.Assert(OldRowIndices2New[l, 0] > OldRowIndices2New[l - 1, 0]);
                 }
 
 #endif
@@ -333,7 +333,7 @@ namespace ilPSP.LinSolvers {
 #if DEBUG
                 if (!this.m_ExternalBlockIndicesByProcessor.Any(kv => kv.Value.Count > 0)) {
                     // no external block
-                    Debug_Assert(this.ComPatternValid);
+                    Debug.Assert(this.ComPatternValid);
                 }
 #endif
                 Ret.ComPatternValid = !this.m_ExternalBlockIndicesByProcessor.Any(kv => kv.Value.Count > 0);
@@ -390,7 +390,7 @@ namespace ilPSP.LinSolvers {
                 // ====================
                 
                 int NoofRowBlocks = _RowPartitioning.LocalNoOfBlocks;
-                Debug_Assert(m_BlockRows.Length == NoofRowBlocks);
+                Debug.Assert(m_BlockRows.Length == NoofRowBlocks);
                 int lr = 0;
                 for (int iBlockLoc = 0; iBlockLoc < NoofRowBlocks; iBlockLoc++) {
                     //this.VerifyDataStructure();
@@ -405,12 +405,12 @@ namespace ilPSP.LinSolvers {
                         int llr0, llre, LRinc;
                         if (RowPermReq) {
                             LRinc = Scan(lr, OldRowIndices2New, _RowPartitioning, false, iBlockLoc + FirstRowBlock, out llr0, out llre);
-                            Debug_Assert(llre - llr0 >= 0);
-                            Debug_Assert(LRinc > 0);
+                            Debug.Assert(llre - llr0 >= 0);
+                            Debug.Assert(LRinc > 0);
 #if DEBUG
                             for (int llr = llr0; llr <= llre; llr++) {
-                                Debug_Assert(OldRowIndices2New[llr, 0] >= i0);
-                                Debug_Assert(OldRowIndices2New[llr, 0] < iE);
+                                Debug.Assert(OldRowIndices2New[llr, 0] >= i0);
+                                Debug.Assert(OldRowIndices2New[llr, 0] < iE);
                             }
 #endif
                         } else {
@@ -425,8 +425,8 @@ namespace ilPSP.LinSolvers {
                         var OrgRow = Row.ToArray();
                         foreach (var kv in OrgRow) {
                             int jBlock = kv.Key;
-                            Debug_Assert(jBlock == kv.Value.jBlkCol);
-                            Debug_Assert(jBlock > LastjBlock);
+                            Debug.Assert(jBlock == kv.Value.jBlkCol);
+                            Debug.Assert(jBlock > LastjBlock);
                             LastjBlock = jBlock;
 
                             int j0, jE;
@@ -438,18 +438,18 @@ namespace ilPSP.LinSolvers {
                             } else {
                                 colPermReq = ExtColBlockMarker.Contains(jBlock);
                                 GetExternalSubblockIndices(_ColPartitioning, jBlock, out j0, out jE);
-                                Debug_Assert(jE - j0 > 0);
+                                Debug.Assert(jE - j0 > 0);
                             }
 
                             int llc0, llce, LCinc;
                             if (colPermReq) {
                                 LCinc = Scan(lc, OldColIndices2New, _ColPartitioning, true, jBlock, out llc0, out llce);
-                                Debug_Assert(llce - llc0 >= 0);
-                                Debug_Assert(LCinc > 0);
+                                Debug.Assert(llce - llc0 >= 0);
+                                Debug.Assert(LCinc > 0);
 #if DEBUG
                                 for (int llc = llc0; llc <= llce; llc++) {
-                                    Debug_Assert(OldColIndices2New[llc, 0] >= j0);
-                                    Debug_Assert(OldColIndices2New[llc, 0] < jE);
+                                    Debug.Assert(OldColIndices2New[llc, 0] >= j0);
+                                    Debug.Assert(OldColIndices2New[llc, 0] < jE);
                                 }
 #endif
                             } else {
@@ -469,22 +469,22 @@ namespace ilPSP.LinSolvers {
                                 this.ClearBlock(i0, j0, I, J);
 #if DEBUG
                                 {
-                                    Debug_Assert(this.m_BlockRows[iBlockLoc].ContainsKey(jBlock) == false);
-                                    Debug_Assert(Ret.m_BlockRows[iBlockLoc].ContainsKey(jBlock) == false);
+                                    Debug.Assert(this.m_BlockRows[iBlockLoc].ContainsKey(jBlock) == false);
+                                    Debug.Assert(Ret.m_BlockRows[iBlockLoc].ContainsKey(jBlock) == false);
 
                                     int RowBlockType = this._RowPartitioning.GetBlockType(iBlockLoc + FirstRowBlock);
                                     BlockEntry BE = kv.Value;
-                                    Debug_Assert(BE.InMembnk.GetLength(0) == this._RowPartitioning.GetSubblk_i0(RowBlockType).Length);
+                                    Debug.Assert(BE.InMembnk.GetLength(0) == this._RowPartitioning.GetSubblk_i0(RowBlockType).Length);
                                     if (this._ColPartitioning.IsLocalBlock(jBlock)) {
                                         int ColBlockType = this._ColPartitioning.GetBlockType(iBlockLoc + FirstColBlock);
-                                        Debug_Assert(BE.InMembnk.GetLength(1) == this._ColPartitioning.GetSubblk_i0(ColBlockType).Length);
+                                        Debug.Assert(BE.InMembnk.GetLength(1) == this._ColPartitioning.GetSubblk_i0(ColBlockType).Length);
                                     }
-                                    Debug_Assert(BE.InMembnk.GetLength(0) == BE.MembnkIdx.GetLength(0));
-                                    Debug_Assert(BE.InMembnk.GetLength(1) == BE.MembnkIdx.GetLength(1));
+                                    Debug.Assert(BE.InMembnk.GetLength(0) == BE.MembnkIdx.GetLength(0));
+                                    Debug.Assert(BE.InMembnk.GetLength(1) == BE.MembnkIdx.GetLength(1));
                                     for (int __i = 0; __i < BE.InMembnk.GetLength(0); __i++) {
                                         for (int __j = 0; __j < BE.InMembnk.GetLength(1); __j++) {
-                                            Debug_Assert(kv.Value.InMembnk[__i, __j] < 0);
-                                            Debug_Assert(kv.Value.MembnkIdx[__i, __j] < 0);
+                                            Debug.Assert(kv.Value.InMembnk[__i, __j] < 0);
+                                            Debug.Assert(kv.Value.MembnkIdx[__i, __j] < 0);
                                         }
                                     }
                                 }
@@ -494,10 +494,10 @@ namespace ilPSP.LinSolvers {
                                     for (int llr = llr0; llr <= llre; llr++) {
                                         int iOrg = OldRowIndices2New[llr, 0] - i0;
                                         int iDst = OldRowIndices2New[llr, 1] - i0;
-                                        Debug_Assert(iOrg >= 0);
-                                        Debug_Assert(iDst >= 0);
-                                        Debug_Assert(iOrg < I);
-                                        Debug_Assert(iDst < I);
+                                        Debug.Assert(iOrg >= 0);
+                                        Debug.Assert(iDst >= 0);
+                                        Debug.Assert(iOrg < I);
+                                        Debug.Assert(iDst < I);
                                         for (int _j = 0; _j < J; _j++)
                                             prmBlock[iDst, _j] = tmpBlock[iOrg, _j];
                                     }
@@ -514,10 +514,10 @@ namespace ilPSP.LinSolvers {
                                     for (int llc = llc0; llc <= llce; llc++) {
                                         int jOrg = OldColIndices2New[llc, 0] - j0;
                                         int jDst = OldColIndices2New[llc, 1] - j0;
-                                        Debug_Assert(jOrg >= 0);
-                                        Debug_Assert(jDst >= 0);
-                                        Debug_Assert(jOrg < J);
-                                        Debug_Assert(jDst < J);
+                                        Debug.Assert(jOrg >= 0);
+                                        Debug.Assert(jDst >= 0);
+                                        Debug.Assert(jOrg < J);
+                                        Debug.Assert(jDst < J);
                                         for (int _i = 0; _i < I; _i++)
                                             prmBlock[_i, jDst] = tmpBlock[_i, jOrg];
                                     }
@@ -528,21 +528,21 @@ namespace ilPSP.LinSolvers {
                                 Ret.AccBlock(i0, j0, 1.0, prmBlock);
 #if DEBUG
                                 {
-                                    Debug_Assert(Ret.m_BlockRows[iBlockLoc].ContainsKey(jBlock) == true);
+                                    Debug.Assert(Ret.m_BlockRows[iBlockLoc].ContainsKey(jBlock) == true);
 
                                     BlockEntry BE = Ret.m_BlockRows[iBlockLoc][jBlock];
                                     int RowBlockType = Ret._RowPartitioning.GetBlockType(iBlockLoc + FirstRowBlock);
-                                    Debug_Assert(BE.InMembnk.GetLength(0) == Ret._RowPartitioning.GetSubblk_i0(RowBlockType).Length);
+                                    Debug.Assert(BE.InMembnk.GetLength(0) == Ret._RowPartitioning.GetSubblk_i0(RowBlockType).Length);
                                     if (Ret._ColPartitioning.IsLocalBlock(jBlock)) {
                                         int ColBlockType = Ret._ColPartitioning.GetBlockType(iBlockLoc + FirstColBlock);
-                                        Debug_Assert(BE.InMembnk.GetLength(1) == Ret._ColPartitioning.GetSubblk_i0(ColBlockType).Length);
+                                        Debug.Assert(BE.InMembnk.GetLength(1) == Ret._ColPartitioning.GetSubblk_i0(ColBlockType).Length);
                                     }
-                                    Debug_Assert(BE.InMembnk.GetLength(0) == BE.MembnkIdx.GetLength(0));
-                                    Debug_Assert(BE.InMembnk.GetLength(1) == BE.MembnkIdx.GetLength(1));
+                                    Debug.Assert(BE.InMembnk.GetLength(0) == BE.MembnkIdx.GetLength(0));
+                                    Debug.Assert(BE.InMembnk.GetLength(1) == BE.MembnkIdx.GetLength(1));
                                     for (int __i = 0; __i < BE.InMembnk.GetLength(0); __i++) {
                                         for (int __j = 0; __j < BE.InMembnk.GetLength(1); __j++) {
-                                            Debug_Assert(kv.Value.InMembnk[__i, __j] < 0);
-                                            Debug_Assert(kv.Value.MembnkIdx[__i, __j] < 0);
+                                            Debug.Assert(kv.Value.InMembnk[__i, __j] < 0);
+                                            Debug.Assert(kv.Value.MembnkIdx[__i, __j] < 0);
                                         }
                                     }
                                 }
@@ -589,11 +589,11 @@ namespace ilPSP.LinSolvers {
                 if (part.IsInLocalRange(i)) {
                     _iBlock = part.GetBlockIndex(i);
                 } else {
-                    Debug_Assert(ExtOk == true);
+                    Debug.Assert(ExtOk == true);
                     int d1, d2;
                     GetExternalSubblockIndices(part, i, out _iBlock, out d1, out d2);
-                    Debug_Assert(d1 <= i);
-                    Debug_Assert(i <= d2);
+                    Debug.Assert(d1 <= i);
+                    Debug.Assert(i <= d2);
                 }
 
                 if(_iBlock < iBlock) {
@@ -609,9 +609,9 @@ namespace ilPSP.LinSolvers {
 
             // scan all entries of 'old2new' which in 'iBlock'
             // -----------------------------------------------
-            Debug_Assert(l >= l0);
-            Debug_Assert(le < l0);
-            Debug_Assert(_iBlock >= iBlock);
+            Debug.Assert(l >= l0);
+            Debug.Assert(le < l0);
+            Debug.Assert(_iBlock >= iBlock);
             while(iBlock == _iBlock) {
                 le++;
                 Inc++;
@@ -620,7 +620,7 @@ namespace ilPSP.LinSolvers {
                 if (l >= L)
                     return Inc;
 
-                Debug_Assert(old2new[l, 0] > i, "Indices must be strictly ascending.");
+                Debug.Assert(old2new[l, 0] > i, "Indices must be strictly ascending.");
                 i = old2new[l, 0];
                 if (part.IsInLocalRange(i)) {
                     _iBlock = part.GetBlockIndex(i);
@@ -628,7 +628,7 @@ namespace ilPSP.LinSolvers {
                     int Block_i0, Block_iE;
                     GetExternalSubblockIndices(part, i, out _iBlock, out Block_i0, out Block_iE);
                 }
-                Debug_Assert(_iBlock >= iBlock);
+                Debug.Assert(_iBlock >= iBlock);
             }
 
             return Inc;
@@ -720,7 +720,7 @@ namespace ilPSP.LinSolvers {
             // -------------------
 
             foreach (int ProcRank in PeerProcs) {
-                Debug_Assert(ProcRank != MpiRank);
+                Debug.Assert(ProcRank != MpiRank);
                 int[,] IdxRange = GetExternalIndexRange(ProcRank);
                 ReceiveLists.Add(ProcRank, IdxRange); //] = GetExternalIndexRange(ProcRank);
             }
@@ -747,13 +747,13 @@ namespace ilPSP.LinSolvers {
 #if DEBUG
             foreach (int[,] slist in SendLists.Values) {
                 int L = slist.GetLength(0);
-                Debug_Assert(slist.GetLength(1) == 2);
+                Debug.Assert(slist.GetLength(1) == 2);
                 for (int l = 0; l < L; l++) {
                     int i0 = slist[l, 0];
                     int iE = slist[l, 1];
-                    Debug_Assert(iE - i0 > 0);
-                    Debug_Assert(m_ColPartitioning.IsInLocalRange(i0));
-                    Debug_Assert(m_ColPartitioning.IsInLocalRange(iE - 1));
+                    Debug.Assert(iE - i0 > 0);
+                    Debug.Assert(m_ColPartitioning.IsInLocalRange(i0));
+                    Debug.Assert(m_ColPartitioning.IsInLocalRange(iE - 1));
                 }
             }
 #endif
@@ -779,8 +779,8 @@ namespace ilPSP.LinSolvers {
                     int[,] data = kv.Value;
                     if (data.GetLength(1) != 2)
                         throw new NotSupportedException();
-                    Debug_Assert(ProcRank != MpiRank);
-                    Debug_Assert(ProcRank >= 0 && ProcRank < MpiSize);
+                    Debug.Assert(ProcRank != MpiRank);
+                    Debug.Assert(ProcRank >= 0 && ProcRank < MpiSize);
                     NoOfItems_this[ProcRank] = data.GetLength(0) * 2;
                 }
 
@@ -790,8 +790,8 @@ namespace ilPSP.LinSolvers {
                 }
 #if DEBUG
                 for (int i = 0; i < MpiSize; i++) {
-                    Debug_Assert(NoOfItems[MpiRank, i] == NoOfItems_this[i]);
-                    Debug_Assert(NoOfItems[i, i] == 0);
+                    Debug.Assert(NoOfItems[MpiRank, i] == NoOfItems_this[i]);
+                    Debug.Assert(NoOfItems[i, i] == 0);
                 }
 #endif
 
@@ -865,12 +865,12 @@ namespace ilPSP.LinSolvers {
             for (int i = 0; i < L; i++) {
                 int i0, iE;
                 GetExternalSubblockIndices(m_ColPartitioning, set[i], out i0, out iE);
-                Debug_Assert(iE - i0 > 0);
+                Debug.Assert(iE - i0 > 0);
                 Range[i, 0] = i0;
                 Range[i, 1] = iE;
 
-                Debug_Assert(m_ColPartitioning.FindProcess(i0) == ProcRank);
-                Debug_Assert(iE - i0 == 0 || m_ColPartitioning.FindProcess(iE - 1) == ProcRank);
+                Debug.Assert(m_ColPartitioning.FindProcess(i0) == ProcRank);
+                Debug.Assert(iE - i0 == 0 || m_ColPartitioning.FindProcess(iE - 1) == ProcRank);
             }
 
             return Range;
@@ -908,14 +908,14 @@ namespace ilPSP.LinSolvers {
             /// </summary>
             public bool IsEmpty {
                 get {
-                    Debug_Assert(MembnkIdx.GetLength(0) == InMembnk.GetLength(0));
-                    Debug_Assert(MembnkIdx.GetLength(1) == InMembnk.GetLength(1));
+                    Debug.Assert(MembnkIdx.GetLength(0) == InMembnk.GetLength(0));
+                    Debug.Assert(MembnkIdx.GetLength(1) == InMembnk.GetLength(1));
                     int NR = MembnkIdx.GetLength(0);
                     int NC = InMembnk.GetLength(1);
 
                     for(int i = 0; i < NR; i++) {
                         for(int j = 0; j < NC; j++) {
-                            Debug_Assert((MembnkIdx[i, j] < 0) == (InMembnk[i, j] < 0));
+                            Debug.Assert((MembnkIdx[i, j] < 0) == (InMembnk[i, j] < 0));
                             if (MembnkIdx[i, j] >= 0)
                                 return false;
                         }
@@ -967,7 +967,7 @@ namespace ilPSP.LinSolvers {
                 if (Storage == null && value != 0.0)
                     throw new ArgumentException("Can not save non-zero entry in void-region.");
 
-                Debug_Assert(Storage != null || value == 0.0);
+                Debug.Assert(Storage != null || value == 0.0);
 
                 if (Storage != null) {
                     int StorageIdx = Offset + (iSblk) * CI + (jSblk) * CJ;
@@ -1011,14 +1011,14 @@ namespace ilPSP.LinSolvers {
                         out MembnkIdx, out InMembnk
                         );
 #if DEBUG
-            Debug_Assert((Storage != null) == (MembnkIdx >= 0 && InMembnk >= 0));
+            Debug.Assert((Storage != null) == (MembnkIdx >= 0 && InMembnk >= 0));
             if (Storage != null) {
                 if (!_ColPartitioning.IsLocalBlock(jBlk)) {
-                    Debug_Assert(m_ExternalBlock[iBlk - _RowPartitioning.FirstBlock] == true);
-                    Debug_Assert(_ColPartitioning.FindProcessForBlock(jBlk) == _ColPartitioning.FindProcess(j));
+                    Debug.Assert(m_ExternalBlock[iBlk - _RowPartitioning.FirstBlock] == true);
+                    Debug.Assert(_ColPartitioning.FindProcessForBlock(jBlk) == _ColPartitioning.FindProcess(j));
                     int OwnerProcRank = _ColPartitioning.FindProcessForBlock(jBlk);
-                    Debug_Assert(m_ExternalBlockIndicesByProcessor.ContainsKey(OwnerProcRank));
-                    Debug_Assert(m_ExternalBlockIndicesByProcessor[OwnerProcRank].Contains(jBlk));
+                    Debug.Assert(m_ExternalBlockIndicesByProcessor.ContainsKey(OwnerProcRank));
+                    Debug.Assert(m_ExternalBlockIndicesByProcessor[OwnerProcRank].Contains(jBlk));
                 }
             }
 #endif
@@ -1057,7 +1057,7 @@ namespace ilPSP.LinSolvers {
                 } else {
                     GetExternalSubblockIndices(m_ColPartitioning, j, out __jColBlk, out __Block0, out __BlockEnd);
                 }
-                Debug_Assert(j >= __Block0 && j < __BlockEnd);
+                Debug.Assert(j >= __Block0 && j < __BlockEnd);
                 JSblk = __BlockEnd - j;
                 iSblk = 0;
                 ISblk = RemVoidLen;
@@ -1108,10 +1108,10 @@ namespace ilPSP.LinSolvers {
                 }
 
                 jSblk = j - j0 - j0_Sblk;
-                Debug_Assert(jSblk >= 0);
-                Debug_Assert(jSblk < JSblk);
-                Debug_Assert(_ColPartitioning.IsInLocalRange(j) == _ColPartitioning.IsLocalBlock(BlkCol));
-                Debug_Assert(_ColPartitioning.IsInLocalRange(j) == true || NoOfColSblk == 1);
+                Debug.Assert(jSblk >= 0);
+                Debug.Assert(jSblk < JSblk);
+                Debug.Assert(_ColPartitioning.IsInLocalRange(j) == _ColPartitioning.IsLocalBlock(BlkCol));
+                Debug.Assert(_ColPartitioning.IsInLocalRange(j) == true || NoOfColSblk == 1);
 
                 // ============
                 // access block
@@ -1135,10 +1135,10 @@ namespace ilPSP.LinSolvers {
                         BlockRows.Add(BlkCol, BE);
                     }
                 }
-                Debug_Assert(BE.InMembnk.GetLength(0) == NoOfRowSblk);
-                Debug_Assert(BE.InMembnk.GetLength(1) == NoOfColSblk);
-                Debug_Assert(BE.MembnkIdx.GetLength(0) == NoOfRowSblk);
-                Debug_Assert(BE.MembnkIdx.GetLength(1) == NoOfColSblk);
+                Debug.Assert(BE.InMembnk.GetLength(0) == NoOfRowSblk);
+                Debug.Assert(BE.InMembnk.GetLength(1) == NoOfColSblk);
+                Debug.Assert(BE.MembnkIdx.GetLength(0) == NoOfRowSblk);
+                Debug.Assert(BE.MembnkIdx.GetLength(1) == NoOfColSblk);
 
                 // ================
                 // access sub-block
@@ -1170,7 +1170,7 @@ namespace ilPSP.LinSolvers {
 
                             // block range
                             int OwnerRank = m_ColPartitioning.FindProcess(j);
-                            Debug_Assert(OwnerRank != m_ColPartitioning.MpiRank);
+                            Debug.Assert(OwnerRank != m_ColPartitioning.MpiRank);
                             HashSet<int> BlockIndicesByProcessor;
                             if (!m_ExternalBlockIndicesByProcessor.TryGetValue(OwnerRank, out BlockIndicesByProcessor)) {
                                 BlockIndicesByProcessor = new HashSet<int>();
@@ -1203,11 +1203,11 @@ namespace ilPSP.LinSolvers {
             out int Offset, out int CI, out int CJ // offset pointer and i,j cycles into 'Storage'
             ) {
 
-            Debug_Assert(jBlock >= 0);
-            Debug_Assert(jBlock < this._ColPartitioning.TotalNoOfBlocks);
+            Debug.Assert(jBlock >= 0);
+            Debug.Assert(jBlock < this._ColPartitioning.TotalNoOfBlocks);
             int iBlockLoc = iBlock - this._RowPartitioning.FirstBlock;
-            Debug_Assert(iBlockLoc >= 0);
-            Debug_Assert(iBlockLoc < this._RowPartitioning.LocalNoOfBlocks);
+            Debug.Assert(iBlockLoc >= 0);
+            Debug.Assert(iBlockLoc < this._RowPartitioning.LocalNoOfBlocks);
 
 
 #if DEBUG
@@ -1215,19 +1215,19 @@ namespace ilPSP.LinSolvers {
                 int rowBT = this._RowPartitioning.GetBlockType(iBlock);
                 int[] i0_Sblk_row = this._RowPartitioning.GetSubblk_i0(rowBT);
                 int[] LenSblk_row = this._RowPartitioning.GetSubblkLen(rowBT);
-                Debug_Assert(i0_Sblk_row.Length == NoOfRowSblk);
-                Debug_Assert(LenSblk_row.Length == NoOfRowSblk);
-                Debug_Assert(ISblk == LenSblk_row[rowSblk]);
+                Debug.Assert(i0_Sblk_row.Length == NoOfRowSblk);
+                Debug.Assert(LenSblk_row.Length == NoOfRowSblk);
+                Debug.Assert(ISblk == LenSblk_row[rowSblk]);
 
                 if (this._ColPartitioning .IsLocalBlock(jBlock)) {
                     int colBT = this._ColPartitioning.GetBlockType(jBlock);
                     int[] i0_Sblk_col = this._ColPartitioning.GetSubblk_i0(colBT);
                     int[] LenSblk_col = this._ColPartitioning.GetSubblkLen(colBT);
-                    Debug_Assert(i0_Sblk_col.Length == NoOfColSblk);
-                    Debug_Assert(LenSblk_col.Length == NoOfColSblk);
-                    Debug_Assert(JSblk == LenSblk_col[colSblk]);
+                    Debug.Assert(i0_Sblk_col.Length == NoOfColSblk);
+                    Debug.Assert(LenSblk_col.Length == NoOfColSblk);
+                    Debug.Assert(JSblk == LenSblk_col[colSblk]);
                 } else {
-                    Debug_Assert(NoOfColSblk == 1);
+                    Debug.Assert(NoOfColSblk == 1);
                 }
             }
 #endif
@@ -1266,10 +1266,10 @@ namespace ilPSP.LinSolvers {
                     BlockRow.Add(jBlock, BE);
                 }
             }
-            Debug_Assert(BE.InMembnk.GetLength(0) == NoOfRowSblk);
-            Debug_Assert(BE.InMembnk.GetLength(1) == NoOfColSblk);
-            Debug_Assert(BE.MembnkIdx.GetLength(0) == NoOfRowSblk);
-            Debug_Assert(BE.MembnkIdx.GetLength(1) == NoOfColSblk);
+            Debug.Assert(BE.InMembnk.GetLength(0) == NoOfRowSblk);
+            Debug.Assert(BE.InMembnk.GetLength(1) == NoOfColSblk);
+            Debug.Assert(BE.MembnkIdx.GetLength(0) == NoOfRowSblk);
+            Debug.Assert(BE.MembnkIdx.GetLength(1) == NoOfColSblk);
 
             // ================
             // access sub-block
@@ -1305,7 +1305,7 @@ namespace ilPSP.LinSolvers {
                         int j0, jE;
                         BlockMsrMatrix.GetExternalSubblockIndices(this._ColPartitioning, jBlock, out j0, out jE);
                         int OwnerRank = m_ColPartitioning.FindProcess(j0);
-                        Debug_Assert(OwnerRank != m_ColPartitioning.MpiRank);
+                        Debug.Assert(OwnerRank != m_ColPartitioning.MpiRank);
                         HashSet<int> BlockIndicesByProcessor;
                         if (!m_ExternalBlockIndicesByProcessor.TryGetValue(OwnerRank, out BlockIndicesByProcessor)) {
                             BlockIndicesByProcessor = new HashSet<int>();
@@ -1385,14 +1385,14 @@ namespace ilPSP.LinSolvers {
 
                     int IWrt = Math.Min(I - i, ISblk - iSblk); // number of rows to write
                     int JWrt = Math.Min(J - j, JSblk - jSblk); // number of columns to write
-                    Debug_Assert(IWRT < 0 || IWRT == IWrt);
+                    Debug.Assert(IWRT < 0 || IWRT == IWrt);
                     IWRT = IWrt;
 
                     if (Storage != null) {
                         for (int iw = 0; iw < IWrt; iw++) {
                             for (int jw = 0; jw < JWrt; jw++) {
 #if DEBUG
-                                Debug_Assert(bTouch[(i + iw) * J + j + jw] == false);
+                                Debug.Assert(bTouch[(i + iw) * J + j + jw] == false);
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
@@ -1403,7 +1403,7 @@ namespace ilPSP.LinSolvers {
                         for (int iw = 0; iw < IWrt; iw++) {
                             for (int jw = 0; jw < JWrt; jw++) {
 #if DEBUG
-                                Debug_Assert(bTouch[(i + iw) * J + j + jw] == false);
+                                Debug.Assert(bTouch[(i + iw) * J + j + jw] == false);
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 if (Block[i + iw, j + jw] != 0.0) {
@@ -1414,16 +1414,16 @@ namespace ilPSP.LinSolvers {
                     }
 
                     j += JWrt;
-                    Debug_Assert(JWrt > 0);
+                    Debug.Assert(JWrt > 0);
                 }
                 i += IWRT;
-                Debug_Assert(IWRT > 0);
+                Debug.Assert(IWRT > 0);
             }
 
 #if DEBUG
             for (i = 0; i < I; i++)
                 for (j = 0; j < J; j++)
-                    Debug_Assert(bTouch[i * J + j] == true);
+                    Debug.Assert(bTouch[i * J + j] == true);
 #endif
 
         }
@@ -1468,20 +1468,20 @@ namespace ilPSP.LinSolvers {
                     GetSetAlloc(false, i + i0, j + j0, out iSblk, out jSblk, out ISblk, out JSblk, 
                         out Storage, out Offset, out CI, out CJ);
 
-                    Debug_Assert(I - i > 0);
-                    Debug_Assert(J - j > 0);
+                    Debug.Assert(I - i > 0);
+                    Debug.Assert(J - j > 0);
                     int IWrt = Math.Min(I - i, ISblk - iSblk); // number of rows to write
                     int JWrt = Math.Min(J - j, JSblk - jSblk); // number of columns to write
-                    Debug_Assert(IWRT < 0 || IWRT == IWrt);
+                    Debug.Assert(IWRT < 0 || IWRT == IWrt);
                     IWRT = IWrt;
 
                     if (Storage != null) {
-                        Debug_Assert(IWrt > 0);
-                        Debug_Assert(JWrt > 0);
+                        Debug.Assert(IWrt > 0);
+                        Debug.Assert(JWrt > 0);
                         for (int iw = 0; iw < IWrt; iw++) {
                             for (int jw = 0; jw < JWrt; jw++) {
 #if DEBUG
-                                Debug_Assert(bTouch[(i + iw) * J + j + jw] == false);
+                                Debug.Assert(bTouch[(i + iw) * J + j + jw] == false);
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
@@ -1489,7 +1489,7 @@ namespace ilPSP.LinSolvers {
                             }
                         }
                     } else {
-                        Debug_Assert(IWrt > 0);
+                        Debug.Assert(IWrt > 0);
 
                         if(JSblk <= 0) {
                             // nothing allocated in respective block-row
@@ -1507,11 +1507,11 @@ namespace ilPSP.LinSolvers {
                             //JWrt = 1; // work column by column
                         }
 
-                        Debug_Assert(JWrt > 0);
+                        Debug.Assert(JWrt > 0);
                         for (int iw = 0; iw < IWrt; iw++) {
                             for (int jw = 0; jw < JWrt; jw++) {
 #if DEBUG
-                                Debug_Assert(bTouch[(i + iw) * J + j + jw] == false);
+                                Debug.Assert(bTouch[(i + iw) * J + j + jw] == false);
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 Block[i + iw, j + jw] = 0.0;
@@ -1519,17 +1519,17 @@ namespace ilPSP.LinSolvers {
                         }
                     }
 
-                    Debug_Assert(JWrt >= 0);
+                    Debug.Assert(JWrt >= 0);
                     j += JWrt;
                 }
-                Debug_Assert(IWRT > 0);
+                Debug.Assert(IWRT > 0);
                 i += IWRT;
             }
 
 #if DEBUG
             for (i = 0; i < I; i++)
                 for (j = 0; j < J; j++)
-                    Debug_Assert(bTouch[i * J + j] == true);
+                    Debug.Assert(bTouch[i * J + j] == true);
 #endif
         }
 
@@ -1576,11 +1576,11 @@ namespace ilPSP.LinSolvers {
                     int MembnkIdx, InMembnk; //    which bank, which index within bank
 
                     GetSetAlloc(false, i + i0, j + j0, out BlockRow, out BlockCol, out rowSblkIdx, out colSblkIdx, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ, out MembnkIdx, out InMembnk);
-                    Debug_Assert((Storage != null) == (MembnkIdx >= 0 && InMembnk >= 0));
+                    Debug.Assert((Storage != null) == (MembnkIdx >= 0 && InMembnk >= 0));
 
                     int IWrt = Math.Min(I - i, ISblk - iSblk); // number of rows to write
                     int JWrt = Math.Min(J - j, JSblk - jSblk); // number of columns to write
-                    Debug_Assert(IWRT < 0 || IWRT == IWrt);
+                    Debug.Assert(IWRT < 0 || IWRT == IWrt);
                     IWRT = IWrt;
 
                     if (Storage != null) {
@@ -1589,23 +1589,23 @@ namespace ilPSP.LinSolvers {
                         if (IWRT == ISblk && JWrt == JSblk) {
                             // release sub-block
 
-                            Debug_Assert(iSblk == 0);
-                            Debug_Assert(jSblk == 0);
+                            Debug.Assert(iSblk == 0);
+                            Debug.Assert(jSblk == 0);
 
                             FreeSblk(MembnkIdx, InMembnk);
 
 #if DEBUG
                             for (int iw = 0; iw < IWrt; iw++) {
                                 for (int jw = 0; jw < JWrt; jw++) {
-                                    Debug_Assert(bTouch[(i + iw) * J + j + jw] == false);
+                                    Debug.Assert(bTouch[(i + iw) * J + j + jw] == false);
                                     bTouch[(i + iw) * J + j + jw] = true;
                                 }
                             }
 #endif
                             BlockEntry BE = m_BlockRows[BlockRow - m_RowPartitioning.FirstBlock][BlockCol];
-                            Debug_Assert(BlockCol == BE.jBlkCol);
-                            Debug_Assert(BE.MembnkIdx[rowSblkIdx, colSblkIdx] == MembnkIdx);
-                            Debug_Assert(BE.InMembnk[rowSblkIdx, colSblkIdx] == InMembnk);
+                            Debug.Assert(BlockCol == BE.jBlkCol);
+                            Debug.Assert(BE.MembnkIdx[rowSblkIdx, colSblkIdx] == MembnkIdx);
+                            Debug.Assert(BE.InMembnk[rowSblkIdx, colSblkIdx] == InMembnk);
                             BE.MembnkIdx[rowSblkIdx, colSblkIdx] = -1;
                             BE.InMembnk[rowSblkIdx, colSblkIdx] = -1;
                             
@@ -1617,9 +1617,9 @@ namespace ilPSP.LinSolvers {
 
                                 if(isExternal) {
                                     int OwnerProc = m_ColPartitioning.FindProcessForBlock(BE.jBlkCol);
-                                    Debug_Assert(OwnerProc != m_ColPartitioning.MpiRank);
+                                    Debug.Assert(OwnerProc != m_ColPartitioning.MpiRank);
                                     HashSet<int> ExtIdx = m_ExternalBlockIndicesByProcessor[OwnerProc];
-                                    Debug_Assert(ExtIdx.Contains(BE.jBlkCol));
+                                    Debug.Assert(ExtIdx.Contains(BE.jBlkCol));
                                     ExtIdx.Remove(BE.jBlkCol);
                                 }
                                 */
@@ -1639,7 +1639,7 @@ namespace ilPSP.LinSolvers {
                             for (int iw = 0; iw < IWrt; iw++) {
                                 for (int jw = 0; jw < JWrt; jw++) {
 #if DEBUG
-                                    Debug_Assert(bTouch[(i + iw) * J + j + jw] == false);
+                                    Debug.Assert(bTouch[(i + iw) * J + j + jw] == false);
                                     bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                     int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
@@ -1651,24 +1651,24 @@ namespace ilPSP.LinSolvers {
 #if DEBUG
                             for (int iw = 0; iw < IWrt; iw++) {
                                 for (int jw = 0; jw < JWrt; jw++) {
-                                    Debug_Assert(bTouch[(i + iw) * J + j + jw] == false);
+                                    Debug.Assert(bTouch[(i + iw) * J + j + jw] == false);
                                     bTouch[(i + iw) * J + j + jw] = true;
                                 }
                             }
 #endif
                     }
 
-                    Debug_Assert(JWrt > 0);
+                    Debug.Assert(JWrt > 0);
                     j += JWrt;
                 }
-                Debug_Assert(IWRT > 0);
+                Debug.Assert(IWRT > 0);
                 i += IWRT;
             }
 
 #if DEBUG
             for (i = 0; i < I; i++)
                 for (j = 0; j < J; j++)
-                    Debug_Assert(bTouch[i * J + j] == true);
+                    Debug.Assert(bTouch[i * J + j] == true);
 #endif
         }
 
@@ -1695,20 +1695,20 @@ namespace ilPSP.LinSolvers {
 
                 iBlk = part.GetBlockIndex(i);
                 iBlkLoc = iBlk - part.FirstBlock;
-                Debug_Assert(iBlk >= part.FirstBlock && iBlk < part.LocalNoOfBlocks + part.FirstBlock);
+                Debug.Assert(iBlk >= part.FirstBlock && iBlk < part.LocalNoOfBlocks + part.FirstBlock);
 
                 i0 = part.GetBlockI0(iBlk);
                 iLoc = i - i0;
                 int BlkLen = part.GetBlockLen(iBlk);
-                Debug_Assert(iLoc >= 0);
-                Debug_Assert(iLoc < BlkLen);
+                Debug.Assert(iLoc >= 0);
+                Debug.Assert(iLoc < BlkLen);
 
                 BlkT = part.GetBlockType(iBlk);
 
                 int[] Sblk_i0, SblkLen;
                 Sblk_i0 = part.GetSubblk_i0(BlkT);
                 SblkLen = part.GetSubblkLen(BlkT);
-                Debug_Assert(Sblk_i0.Length == SblkLen.Length);
+                Debug.Assert(Sblk_i0.Length == SblkLen.Length);
                 NoOfSblk = Sblk_i0.Length;
 
 
@@ -1735,7 +1735,7 @@ namespace ilPSP.LinSolvers {
                             int __i0_Sblk = Sblk_i0[_Sblk_idx];
                             int __ISblk = SblkLen[_Sblk_idx];
                             int __iE_Sblk = __i0_Sblk + __ISblk;
-                            Debug_Assert((__i0_Sblk <= iLoc && iLoc < __iE_Sblk) == false); // not really in void-section
+                            Debug.Assert((__i0_Sblk <= iLoc && iLoc < __iE_Sblk) == false); // not really in void-section
                         }
 #endif
                         RemainingVoidWidth = Sblk_i0[Sblk_idx + 1] - iLoc;
@@ -1753,7 +1753,7 @@ namespace ilPSP.LinSolvers {
                             int __i0_Sblk = Sblk_i0[_Sblk_idx];
                             int __ISblk = SblkLen[_Sblk_idx];
                             int __iE_Sblk = __i0_Sblk + __ISblk;
-                            Debug_Assert((__i0_Sblk <= iLoc && iLoc < __iE_Sblk) == false); // not really in void-section
+                            Debug.Assert((__i0_Sblk <= iLoc && iLoc < __iE_Sblk) == false); // not really in void-section
                         }
 #endif
                         return;
@@ -1762,17 +1762,17 @@ namespace ilPSP.LinSolvers {
                 }
 
                 // in void - region
-                Debug_Assert(Sblk_idx == NoOfSblk);
-                //Debug_Assert(iLoc >= Sblk_i0[NoOfSblk - 1] + SblkLen[NoOfSblk - 1]);
+                Debug.Assert(Sblk_idx == NoOfSblk);
+                //Debug.Assert(iLoc >= Sblk_i0[NoOfSblk - 1] + SblkLen[NoOfSblk - 1]);
 #if DEBUG
                 if (NoOfSblk > 0)
-                    Debug_Assert(iLoc >= Sblk_i0[NoOfSblk - 1] + SblkLen[NoOfSblk - 1]);
+                    Debug.Assert(iLoc >= Sblk_i0[NoOfSblk - 1] + SblkLen[NoOfSblk - 1]);
 
                 for (int _Sblk_idx = 0; _Sblk_idx < NoOfSblk; _Sblk_idx++) {
                     int __i0_Sblk = Sblk_i0[_Sblk_idx];
                     int __ISblk = SblkLen[_Sblk_idx];
                     int __iE_Sblk = __i0_Sblk + __ISblk;
-                    Debug_Assert((__i0_Sblk <= iLoc && iLoc < __iE_Sblk) == false); // not really in void-section
+                    Debug.Assert((__i0_Sblk <= iLoc && iLoc < __iE_Sblk) == false); // not really in void-section
                 }
 #endif
                 i0_Sblk = int.MinValue;
@@ -1794,7 +1794,7 @@ namespace ilPSP.LinSolvers {
 
                 int iE;
                 GetExternalSubblockIndices(part, i, out iBlk, out i0, out iE);
-                Debug_Assert(iBlk < part.FirstBlock || iBlk >= part.LocalNoOfBlocks + part.FirstBlock);
+                Debug.Assert(iBlk < part.FirstBlock || iBlk >= part.LocalNoOfBlocks + part.FirstBlock);
 
 
                 BlkT = int.MinValue;
@@ -1820,13 +1820,13 @@ namespace ilPSP.LinSolvers {
         /// </returns>
         static int GetExternalSubblockIndices(IBlockPartitioning part, int iBlk, out int i0, out int iE) {
             int Rank = part.FindProcessForBlock(iBlk);
-            Debug_Assert(Rank != part.MpiRank);
+            Debug.Assert(Rank != part.MpiRank);
             long NoBlkLoc = part.GetLocalNoOfBlocks(Rank);
             long L = part.GetLocalLength(Rank);
             long FistBlock = part.GetFirstBlock(Rank);
             long iBlkLoc = iBlk - FistBlock;
-            Debug_Assert(iBlkLoc >= 0);
-            Debug_Assert(iBlkLoc < NoBlkLoc);
+            Debug.Assert(iBlkLoc >= 0);
+            Debug.Assert(iBlkLoc < NoBlkLoc);
 
             int i0Loc = (int)((iBlkLoc * L) / NoBlkLoc);
             int iELoc = (int)(((iBlkLoc + 1) * L) / NoBlkLoc);
@@ -1839,9 +1839,9 @@ namespace ilPSP.LinSolvers {
             for (int i = i0; i < iE; i++) {
                 int check_i0, check_iE, check_iBlk;
                 GetExternalSubblockIndices(part, i, out check_iBlk, out check_i0, out check_iE);
-                Debug_Assert(check_i0 == i0);
-                Debug_Assert(check_iE == iE);
-                Debug_Assert(check_iBlk == iBlk);
+                Debug.Assert(check_i0 == i0);
+                Debug.Assert(check_iE == iE);
+                Debug.Assert(check_iBlk == iBlk);
             }
 #endif
             return Rank;
@@ -1856,7 +1856,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="i0">first index of the block</param>
         /// <param name="iE">last index of the block</param>
         static void GetExternalSubblockIndices(IBlockPartitioning part, int i, out int iBlk, out int i0, out int iE) {
-            Debug_Assert(i < part.i0 || i >= part.iE);
+            Debug.Assert(i < part.i0 || i >= part.iE);
 
             // we use a lot of integer operations like (a*b)/c here, which give a much more even block distribution than a*(b/c)
             // the downside is this can cause integer overflow
@@ -1865,8 +1865,8 @@ namespace ilPSP.LinSolvers {
             long i0_Rank = part.GetI0Offest(Rank);
             long iLoc = i - i0_Rank;
             long L = part.GetLocalLength(Rank);
-            Debug_Assert(iLoc >= 0);
-            Debug_Assert(iLoc < L);
+            Debug.Assert(iLoc >= 0);
+            Debug.Assert(iLoc < L);
             long NoBlkLoc = part.GetLocalNoOfBlocks(Rank);
 
             long iBlkLoc = (long)Math.Floor(((double)(iLoc * NoBlkLoc)) / ((double)L)); // get a first guess
@@ -1883,10 +1883,10 @@ namespace ilPSP.LinSolvers {
                 i0Loc = (iBlkLoc * L) / NoBlkLoc;
                 iELoc = ((iBlkLoc + 1) * L) / NoBlkLoc;
             }
-            Debug_Assert(iBlkLoc >= 0);
-            Debug_Assert(iBlkLoc < NoBlkLoc);
-            Debug_Assert(iLoc >= i0Loc);
-            Debug_Assert(iLoc < iELoc);
+            Debug.Assert(iBlkLoc >= 0);
+            Debug.Assert(iBlkLoc < NoBlkLoc);
+            Debug.Assert(iLoc >= i0Loc);
+            Debug.Assert(iLoc < iELoc);
 
             iBlk = (int)(part.GetFirstBlock(Rank) + iBlkLoc);
             i0 = (int)(i0Loc + i0_Rank);
@@ -1925,14 +1925,14 @@ namespace ilPSP.LinSolvers {
 
                     for (int i = 0; i < ISblk; i++) {
                         for (int j = 0; j < JSblk; j++) {
-                            Debug_Assert(RawMem[Offset + i * CI + j * CJ] == 0);
+                            Debug.Assert(RawMem[Offset + i * CI + j * CJ] == 0);
                         }
                     }
 #endif
                     // find next free block (i.e. ensure that 'B.NextFree' is valid)
                     B.Occupied[InMembnk] = true;
                     int L = B.Occupied.Count;
-                    Debug_Assert(B.Occupied.Count == B.Mem.GetLength(0));
+                    Debug.Assert(B.Occupied.Count == B.Mem.GetLength(0));
                     B.NextFree = int.MinValue;
                     for (int i = InMembnk + 1; i < L; i++) {
                         if (B.Occupied[i] == false) {
@@ -1994,7 +1994,7 @@ namespace ilPSP.LinSolvers {
         /// Common implementation for <see cref="GetRow(int, ref int[], ref double[])"/> and <see cref="GetOccupiedColumnIndices(int, ref int[])"/>.
         /// </summary>
         int GetRowInternal(int i, ref int[] ColumnIndices, ref double[] Values, bool NoValues) {
-            Debug_Assert(m_RowPartitioning.IsInLocalRange(i));
+            Debug.Assert(m_RowPartitioning.IsInLocalRange(i));
 
             // =====================
             // translate row indices
@@ -2003,13 +2003,13 @@ namespace ilPSP.LinSolvers {
             TranslateIndex(i, m_RowPartitioning, false, out iBlk, out iBlkLoc, out i0, out iLoc, out iBlkT, out rowSblkIdx, out i0_Sblk, out ISblk, out NoOfRowSblk, out RemVoidRows);
             if (i0_Sblk < 0) {
                 // in void region
-                Debug_Assert(RemVoidRows > 0);
+                Debug.Assert(RemVoidRows > 0);
                 return 0;
             }
 
             int iSblk = i - i0 - i0_Sblk;
-            Debug_Assert(iSblk >= 0);
-            Debug_Assert(iSblk < m_RowPartitioning.GetSubblkLen(iBlkT)[rowSblkIdx]);
+            Debug.Assert(iSblk >= 0);
+            Debug.Assert(iSblk < m_RowPartitioning.GetSubblkLen(iBlkT)[rowSblkIdx]);
 
             // ==================================
             // compute number of occupied entries
@@ -2050,7 +2050,7 @@ namespace ilPSP.LinSolvers {
             foreach (var kv in BlockRows) { // loop over blocks in row...
                 int jBlk = kv.Key;
                 BlockEntry B = kv.Value;
-                Debug_Assert(jBlk == B.jBlkCol);
+                Debug.Assert(jBlk == B.jBlkCol);
 
                 int[] ColSubblkLen, ColSubblk_i0;
                 int NoOfSblkCol, j0, jE;
@@ -2059,8 +2059,8 @@ namespace ilPSP.LinSolvers {
                     ColSubblkLen = m_ColPartitioning.GetSubblkLen(jBlkT);
                     ColSubblk_i0 = m_ColPartitioning.GetSubblk_i0(jBlkT);
                     NoOfSblkCol = B.InMembnk.GetLength(1);
-                    Debug_Assert(ColSubblkLen.Length == NoOfSblkCol);
-                    Debug_Assert(ColSubblk_i0.Length == NoOfSblkCol);
+                    Debug.Assert(ColSubblkLen.Length == NoOfSblkCol);
+                    Debug.Assert(ColSubblk_i0.Length == NoOfSblkCol);
 
                     j0 = m_ColPartitioning.GetBlockI0(jBlk);
                     jE = int.MinValue;
@@ -2081,8 +2081,8 @@ namespace ilPSP.LinSolvers {
                         int Offset, CI, CJ;
                         bool isDense;
                         Mbnk.GetFastBlockAccessInfo(out Rawmem, out Offset, out CI, out CJ, out isDense, B.InMembnk[rowSblkIdx, colSblkIdx]);
-                        Debug_Assert(iSblk >= 0);
-                        Debug_Assert(iSblk < Mbnk.Mem.GetLength(1));
+                        Debug.Assert(iSblk >= 0);
+                        Debug.Assert(iSblk < Mbnk.Mem.GetLength(1));
 
                         int RowOffset = Offset + CI * iSblk;
 
@@ -2094,12 +2094,12 @@ namespace ilPSP.LinSolvers {
                             j00 = j0;
                             JSb = jE - j0;
                         }
-                        Debug_Assert(Mbnk.Mem.GetLength(2) == JSb);
+                        Debug.Assert(Mbnk.Mem.GetLength(2) == JSb);
 
                         for (int jsb = 0; jsb < JSb; jsb++) { // loop over columns in sub-block...
                             int j = j00 + jsb;
-                            Debug_Assert(jE >= 0 || j >= m_ColPartitioning.GetBlockI0(jBlk));
-                            Debug_Assert(jE >= 0 || j < m_ColPartitioning.GetBlockLen(jBlk) + m_ColPartitioning.GetBlockI0(jBlk));
+                            Debug.Assert(jE >= 0 || j >= m_ColPartitioning.GetBlockI0(jBlk));
+                            Debug.Assert(jE >= 0 || j < m_ColPartitioning.GetBlockLen(jBlk) + m_ColPartitioning.GetBlockI0(jBlk));
 
                             double vat = Rawmem[RowOffset + jsb * CJ];
                             if (vat != 0.0) {
@@ -2116,7 +2116,7 @@ namespace ilPSP.LinSolvers {
             }
 
             if (nnz >= 0) {
-                Debug_Assert(cnt == nnz);
+                Debug.Assert(cnt == nnz);
             } else {
                 nnz = cnt;
             }
@@ -2342,7 +2342,7 @@ namespace ilPSP.LinSolvers {
                     foreach (var KV in BlockRow) {
                         int jBlockGlb = KV.Key;
                         BlockEntry Block = KV.Value;
-                        Debug_Assert(jBlockGlb == Block.jBlkCol);
+                        Debug.Assert(jBlockGlb == Block.jBlkCol);
 
                         int BlockPointerMem = (Block.InMembnk.Length + Block.MembnkIdx.Length + 1) * sizeof(int);
                         Used += BlockPointerMem;
@@ -2358,10 +2358,10 @@ namespace ilPSP.LinSolvers {
                             int ColBlockType = _ColPartitioning.GetBlockType(jBlockGlb);
                             
                             int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
-                            Debug_Assert(RowSblkLen.Length == NoOfSblk_rows);
+                            Debug.Assert(RowSblkLen.Length == NoOfSblk_rows);
 
                             int[] ColSblkLen = _ColPartitioning.GetSubblkLen(ColBlockType);
-                            Debug_Assert(ColSblkLen.Length == NoOfSblk_cols);
+                            Debug.Assert(ColSblkLen.Length == NoOfSblk_cols);
 
                             for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
                                 for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
@@ -2544,14 +2544,14 @@ namespace ilPSP.LinSolvers {
                             int iE = SndList[l, 1];
 
                             for (int iRow = i0; iRow < iE; iRow++) {
-                                Debug_Assert(_ColPartitioning.IsInLocalRange(iRow));
+                                Debug.Assert(_ColPartitioning.IsInLocalRange(iRow));
                                 int iRowLoc = iRow - iFirstCol;
-                                Debug_Assert(iRowLoc >= 0 && iRowLoc < a.Length);
+                                Debug.Assert(iRowLoc >= 0 && iRowLoc < a.Length);
                                 *sb = a[iRowLoc];
                                 sb++;
                             }
                         }
-                        Debug_Assert((sb - ((double*)(SendBuffers[i]))) == Len);
+                        Debug.Assert((sb - ((double*)(SendBuffers[i]))) == Len);
 
                         csMPI.Raw.Issend(SendBuffers[i], Len, csMPI.Raw._DATATYPE.DOUBLE, SendRnk, 55 * 19 * MPIrank, this.MPI_Comm, out Requests[i]);
                     }
@@ -2565,7 +2565,7 @@ namespace ilPSP.LinSolvers {
                 SpMV_local.Start();
 
                 int NoOfBlockRows = _RowPartitioning.LocalNoOfBlocks;
-                Debug_Assert(NoOfBlockRows == m_BlockRows.Length);
+                Debug.Assert(NoOfBlockRows == m_BlockRows.Length);
                 int FirstRowBlock = _RowPartitioning.FirstBlock;
                 unsafe {
                     fixed (double* pa = a) {
@@ -2595,7 +2595,7 @@ namespace ilPSP.LinSolvers {
                                     foreach (var kv in BlockRow) { // loop over block columns...
                                         BlockEntry BE = kv.Value;
                                         int jBlkCol = kv.Key;
-                                        Debug_Assert(BE.jBlkCol == jBlkCol);
+                                        Debug.Assert(BE.jBlkCol == jBlkCol);
                                         if (_ColPartitioning.IsLocalBlock(jBlkCol)) {
                                             int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
 
@@ -2603,14 +2603,14 @@ namespace ilPSP.LinSolvers {
                                             int[] Col_i0Sblk = _ColPartitioning.GetSubblk_i0(ColBlockType);
                                             int[] ColLenSblk = _ColPartitioning.GetSubblkLen(ColBlockType);
 
-                                            Debug_Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
-                                            Debug_Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
+                                            Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
+                                            Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
                                             int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
                                             int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
-                                            Debug_Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
-                                            Debug_Assert(RowLenSblk.Length == NoOfSblk_Rows);
-                                            Debug_Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
-                                            Debug_Assert(ColLenSblk.Length == NoOfSblk_Cols);
+                                            Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
+                                            Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
+                                            Debug.Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
+                                            Debug.Assert(ColLenSblk.Length == NoOfSblk_Cols);
                                             for (int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
 
                                                 int _iRowLoc = locBlockRowOffset + Row_i0Sblk[iSblkRow]; // local row index
@@ -2619,7 +2619,7 @@ namespace ilPSP.LinSolvers {
                                                 for (int jSblkCol = 0; jSblkCol < NoOfSblk_Cols; jSblkCol++) { // loop over sub-block columns
                                                     int MembnkIdx = BE.MembnkIdx[iSblkRow, jSblkCol];
                                                     int InMembnk = BE.InMembnk[iSblkRow, jSblkCol];
-                                                    Debug_Assert((MembnkIdx >= 0) == (InMembnk >= 0));
+                                                    Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
                                                     if (InMembnk >= 0) {
                                                         int Offset, CI, CJ;
@@ -2632,8 +2632,8 @@ namespace ilPSP.LinSolvers {
 
                                                             int I = RowLenSblk[iSblkRow];
                                                             int J = ColLenSblk[jSblkCol];
-                                                            Debug_Assert(m_Membanks[MembnkIdx].Mem.GetLength(1) == I);
-                                                            Debug_Assert(m_Membanks[MembnkIdx].Mem.GetLength(2) == J);
+                                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(1) == I);
+                                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(2) == J);
 
                                                             int iRowLoc = _iRowLoc; // local row index
                                                             int iRowBlockLoc = _iRowBlockLoc; // row index within block
@@ -2685,17 +2685,17 @@ namespace ilPSP.LinSolvers {
                                         int __iRowLoc = __i + locBlockRowOffset;
                                         double ri = acc[__iRowLoc] * beta + alpha * VecAccu[__i];
                                         acc[__iRowLoc] = ri;
-                                        Debug_Assert(acc[__iRowLoc] == ri);
+                                        Debug.Assert(acc[__iRowLoc] == ri);
                                     }
                                 }
 
-                                Debug_Assert(m_ExternalBlock[iBlockLoc] == ContainsExternal);
+                                Debug.Assert(m_ExternalBlock[iBlockLoc] == ContainsExternal);
                             } else {
                                 for (int __i = 0; __i < RowBlockLength; __i++) {
                                     int __iRowLoc = __i + locBlockRowOffset;
                                     double ri = acc[__iRowLoc] * beta;
                                     acc[__iRowLoc] = ri;
-                                    Debug_Assert(acc[__iRowLoc] == ri);
+                                    Debug.Assert(acc[__iRowLoc] == ri);
                                 }
                             }
                         }
@@ -2721,14 +2721,14 @@ namespace ilPSP.LinSolvers {
                         // finished sending
                         Marshal.FreeHGlobal(SendBuffers[index]);
                         SendBuffers[index] = IntPtr.Zero;
-                        Debug_Assert(Stat.MPI_SOURCE == SendRanks[index]);
-                        Debug_Assert(Stat.MPI_TAG == 55 * 19 * MPIrank);
-                        Debug_Assert(Stat.count == SendBuffersLen[index] * sizeof(double));
+                        Debug.Assert(Stat.MPI_SOURCE == SendRanks[index]);
+                        Debug.Assert(Stat.MPI_TAG == 55 * 19 * MPIrank);
+                        Debug.Assert(Stat.count == SendBuffersLen[index] * sizeof(double));
                     } else {
                         // finished receiving
-                        Debug_Assert(Stat.MPI_SOURCE == RecvRanks[index - SendRanks.Length]);
-                        Debug_Assert(Stat.MPI_TAG == 55 * 19 * RecvRanks[index - SendRanks.Length]);
-                        Debug_Assert(Stat.count == RecvBuffersLen[index - SendRanks.Length] * sizeof(double));
+                        Debug.Assert(Stat.MPI_SOURCE == RecvRanks[index - SendRanks.Length]);
+                        Debug.Assert(Stat.MPI_TAG == 55 * 19 * RecvRanks[index - SendRanks.Length]);
+                        Debug.Assert(Stat.count == RecvBuffersLen[index - SendRanks.Length] * sizeof(double));
                     }
                 }
                 */
@@ -2741,7 +2741,7 @@ namespace ilPSP.LinSolvers {
                     if (m_ExternalBlock[iBlockLoc]) {
 
                         var BlockRow = m_BlockRows[iBlockLoc];
-                        Debug_Assert(BlockRow != null);
+                        Debug.Assert(BlockRow != null);
                         int iBlock = iBlockLoc + FirstRowBlock;
                         int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
                         int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
@@ -2751,7 +2751,7 @@ namespace ilPSP.LinSolvers {
                         foreach (var kv in BlockRow) { // loop over block columns...
                             BlockEntry BE = kv.Value;
                             int jBlkCol = kv.Key;
-                            Debug_Assert(BE.jBlkCol == jBlkCol);
+                            Debug.Assert(BE.jBlkCol == jBlkCol);
 
                             int OwnerRank = -1;
                             int[,] RcvList = null;
@@ -2778,21 +2778,21 @@ namespace ilPSP.LinSolvers {
                                     OffetInto_RecvBuffer += RcvList[RcvListBlockRow, 1] - RcvList[RcvListBlockRow, 0];
                                     RcvListBlockRow++;
                                 }
-                                Debug_Assert(RcvList[RcvListBlockRow, 0] == j0);
-                                Debug_Assert(RcvList[RcvListBlockRow, 1] == jE);
+                                Debug.Assert(RcvList[RcvListBlockRow, 0] == j0);
+                                Debug.Assert(RcvList[RcvListBlockRow, 1] == jE);
 
-                                Debug_Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
-                                Debug_Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
+                                Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
+                                Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
                                 int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
                                 int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
-                                Debug_Assert(NoOfSblk_Cols == 1);
-                                Debug_Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
-                                Debug_Assert(RowLenSblk.Length == NoOfSblk_Rows);
+                                Debug.Assert(NoOfSblk_Cols == 1);
+                                Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
+                                Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
 
                                 for (int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
                                     int MembnkIdx = BE.MembnkIdx[iSblkRow, 0];
                                     int InMembnk = BE.InMembnk[iSblkRow, 0];
-                                    Debug_Assert((MembnkIdx >= 0) == (InMembnk >= 0));
+                                    Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
                                     if (InMembnk >= 0) {
                                         double[] RawMem;
@@ -2804,11 +2804,11 @@ namespace ilPSP.LinSolvers {
 
                                             int I = RowLenSblk[iSblkRow];
                                             int J = jE - j0;
-                                            Debug_Assert(I == m_Membanks[MembnkIdx].Mem.GetLength(1));
-                                            Debug_Assert(J == m_Membanks[MembnkIdx].Mem.GetLength(2));
+                                            Debug.Assert(I == m_Membanks[MembnkIdx].Mem.GetLength(1));
+                                            Debug.Assert(J == m_Membanks[MembnkIdx].Mem.GetLength(2));
                                             for (int i = 0; i < I; i++) { // loop over sub-block rows...
                                                 int iRowLoc = locBlockRowOffset + i + Row_i0Sblk[iSblkRow]; // local row index
-                                                Debug_Assert(iRowLoc >= 0 && iRowLoc < _RowPartitioning.LocalLength);
+                                                Debug.Assert(iRowLoc >= 0 && iRowLoc < _RowPartitioning.LocalLength);
                                                 double Accu = 0;
 
                                                 for (int j = 0; j < J; j++) { // loop over sub-block columns...
@@ -2821,11 +2821,11 @@ namespace ilPSP.LinSolvers {
                                                     int iList = BruteForceExternalIndexTranslation(jColGlob, out ownerRank);
                                                     int __bufferIdx = Array.IndexOf(RecvRanks, OwnerRank);
                                                     SpMV_indextrans.Stop();
-                                                    Debug_Assert(ownerRank == OwnerRank);
-                                                    Debug_Assert(RecvBuffers[__bufferIdx] == RecvBuffer);
-                                                    Debug_Assert(RcvList[RcvListBlockRow, 0] <= jColGlob);
-                                                    Debug_Assert(RcvList[RcvListBlockRow, 1] > jColGlob);
-                                                    Debug_Assert(iRcvBuff == iList);
+                                                    Debug.Assert(ownerRank == OwnerRank);
+                                                    Debug.Assert(RecvBuffers[__bufferIdx] == RecvBuffer);
+                                                    Debug.Assert(RcvList[RcvListBlockRow, 0] <= jColGlob);
+                                                    Debug.Assert(RcvList[RcvListBlockRow, 1] > jColGlob);
+                                                    Debug.Assert(iRcvBuff == iList);
 
 #endif
                                                     //double* dRecvBuffer = (double*)RecvBuffers[bufferIdx];
@@ -2868,7 +2868,7 @@ namespace ilPSP.LinSolvers {
             int[,] Rcvlist = ReceiveLists[OwnerProc];
 
             int L = Rcvlist.GetLength(0);
-            Debug_Assert(Rcvlist.GetLength(1) == 2);
+            Debug.Assert(Rcvlist.GetLength(1) == 2);
             int ListIdx = 0;
             for(int l = 0; l < L; l++) {
                 int i0 = Rcvlist[l, 0];
@@ -3138,7 +3138,7 @@ namespace ilPSP.LinSolvers {
                         int rank = kv.Key;
                         int[,] IdxEs = kv.Value;
                         int L = IdxEs.GetLength(0);
-                        Debug_Assert(IdxEs.GetLength(1) == 2);
+                        Debug.Assert(IdxEs.GetLength(1) == 2);
                         for (int l = 0; l < L; l++) {
                             ExternalColIndexPermutation.Add(IdxEs[l, 0], IdxEs[l, 1]);
                         }
@@ -3149,7 +3149,7 @@ namespace ilPSP.LinSolvers {
                         IEnumerator<int> enuTrg = ExternalColIndicesTarget.GetEnumerator();
                         while(enuSrc.MoveNext()) {
                             bool t = enuTrg.MoveNext();
-                            Debug_Assert(t == true);
+                            Debug.Assert(t == true);
 
                             int iSrc = enuSrc.Current;
                             int iTrg = enuTrg.Current;
@@ -3158,7 +3158,7 @@ namespace ilPSP.LinSolvers {
 
                             ExternalColIndexPermutation.Add(iSrc, iTrg);
                         }
-                        Debug_Assert(enuTrg.MoveNext() == false);
+                        Debug.Assert(enuTrg.MoveNext() == false);
 
                     }
                 }
@@ -3178,7 +3178,7 @@ namespace ilPSP.LinSolvers {
                             TargetRowCounter++;
                             if (RowTargEnu != null) {
                                 bool bt = RowTargEnu.MoveNext();
-                                Debug_Assert(bt);
+                                Debug.Assert(bt);
                             }
                         }
                         SkipRowEnu = false;
@@ -3205,7 +3205,7 @@ namespace ilPSP.LinSolvers {
                         }
 
                         int MaxRowBlockSize = m_RowPartitioning.GetBlockLen(iBlk) - iLoc;
-                        Debug_Assert(MaxRowBlockSize > 0);
+                        Debug.Assert(MaxRowBlockSize > 0);
 
                         int i0Copy;
                         if (RowIndicesTarget == null) {
@@ -3220,7 +3220,7 @@ namespace ilPSP.LinSolvers {
                             bool reMN = RowEnu.MoveNext();
                             if (RowTargEnu != null) {
                                 bool rteMN = RowTargEnu.MoveNext();
-                                Debug_Assert(rteMN == reMN);
+                                Debug.Assert(rteMN == reMN);
                             }
                             if (!reMN)
                                 break;
@@ -3235,11 +3235,11 @@ namespace ilPSP.LinSolvers {
                             iNext = RowEnu.Current;
                         }
 
-                        Debug_Assert(RowCopyLen >= 1);
-                        Debug_Assert(m_RowPartitioning.IsInLocalRange(i0ThisCopy));
-                        Debug_Assert(m_RowPartitioning.IsInLocalRange(i0ThisCopy + RowCopyLen - 1));
-                        Debug_Assert(Target.RowPartitioning.IsInLocalRange(i0Copy));
-                        Debug_Assert(Target.RowPartitioning.IsInLocalRange(i0Copy + RowCopyLen - 1));
+                        Debug.Assert(RowCopyLen >= 1);
+                        Debug.Assert(m_RowPartitioning.IsInLocalRange(i0ThisCopy));
+                        Debug.Assert(m_RowPartitioning.IsInLocalRange(i0ThisCopy + RowCopyLen - 1));
+                        Debug.Assert(Target.RowPartitioning.IsInLocalRange(i0Copy));
+                        Debug.Assert(Target.RowPartitioning.IsInLocalRange(i0Copy + RowCopyLen - 1));
 
                         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
                         // ** now, we are going to extract the rows i0Copy to i0Copy+RowCopyLen-1 **
@@ -3262,8 +3262,8 @@ namespace ilPSP.LinSolvers {
                                 }
 
                                 bool LocalBlock = m_ColPartitioning.IsInLocalRange(j0);
-                                Debug_Assert(LocalBlock == (Colj0 <= j0 && j0 < ColJE));
-                                Debug_Assert(LocalBlock == (Colj0 < JE && JE <= ColJE));
+                                Debug.Assert(LocalBlock == (Colj0 <= j0 && j0 < ColJE));
+                                Debug.Assert(LocalBlock == (Colj0 < JE && JE <= ColJE));
 
                                 int j = j0;
                                 while (j < JE) { // scan the column block range
@@ -3276,7 +3276,7 @@ namespace ilPSP.LinSolvers {
                                         if (LocalBlock) {
                                             jTarg = LocalColIndexPermutation[j - Colj0];
                                         } else {
-                                            //Debug_Assert(ExternalColIndexPermutation.ContainsKey(j));
+                                            //Debug.Assert(ExternalColIndexPermutation.ContainsKey(j));
                                             //jTarg = ExternalColIndexPermutation[j];
                                             if (ExternalColIndexPermutation.TryGetValue(j, out jTarg) == false)
                                                 jTarg = -132343;
@@ -3317,18 +3317,18 @@ namespace ilPSP.LinSolvers {
 
                                     if (j0ThisCopy >= 0) {
                                         // copy columns j0Copy to j0Copy + jCopyLen - 1
-                                        Debug_Assert(ColCopyLen > 0);
+                                        Debug.Assert(ColCopyLen > 0);
 #if DEBUG
                                         for (int _j = j0ThisCopy; _j < j0ThisCopy + ColCopyLen; _j++) {
                                             if (LocalBlock) {
-                                                Debug_Assert(LocalColIndexPermutation[_j - Colj0] >= 0);
+                                                Debug.Assert(LocalColIndexPermutation[_j - Colj0] >= 0);
                                                 if (_j < j0ThisCopy + ColCopyLen - 1) {
-                                                    Debug_Assert(LocalColIndexPermutation[_j - Colj0 + 1] - LocalColIndexPermutation[_j - Colj0] == 1);
+                                                    Debug.Assert(LocalColIndexPermutation[_j - Colj0 + 1] - LocalColIndexPermutation[_j - Colj0] == 1);
                                                 }
                                             } else {
-                                                Debug_Assert(ExternalColIndexPermutation.ContainsKey(_j) && ExternalColIndexPermutation[_j] >= 0);
+                                                Debug.Assert(ExternalColIndexPermutation.ContainsKey(_j) && ExternalColIndexPermutation[_j] >= 0);
                                                 if (_j < j0ThisCopy + ColCopyLen - 1) {
-                                                    Debug_Assert(ExternalColIndexPermutation[_j + 1] - ExternalColIndexPermutation[_j] == 1);
+                                                    Debug.Assert(ExternalColIndexPermutation[_j + 1] - ExternalColIndexPermutation[_j] == 1);
                                                 }
                                             }
                                         }
@@ -3343,9 +3343,9 @@ namespace ilPSP.LinSolvers {
                                         // number of columns:                   ColCopyLen
                                         // --------------------------------------------------------------------
 
-                                        Debug_Assert(RowCopyLen > 0);
-                                        Debug_Assert(ColCopyLen > 0);
-                                        Debug_Assert(i0 + iLoc == i0ThisCopy);
+                                        Debug.Assert(RowCopyLen > 0);
+                                        Debug.Assert(ColCopyLen > 0);
+                                        Debug.Assert(i0 + iLoc == i0ThisCopy);
                                         if (RowCopyLen == 1 && ColCopyLen == 1) {
                                             // scalar version
                                             Target[i0Copy, j0Copy] += alpha * this[i0ThisCopy, j0ThisCopy];
@@ -3443,9 +3443,9 @@ namespace ilPSP.LinSolvers {
 
                             int Send_i0 = _SendRange[RangePointer[i], 0];
                             int Send_iE = _SendRange[RangePointer[i], 1];
-                            Debug_Assert(m_ColPartitioning.IsInLocalRange(Send_i0));
-                            Debug_Assert(Send_iE - Send_i0 >= 1);
-                            Debug_Assert(m_ColPartitioning.IsInLocalRange(Send_iE - 1));
+                            Debug.Assert(m_ColPartitioning.IsInLocalRange(Send_i0));
+                            Debug.Assert(Send_iE - Send_i0 >= 1);
+                            Debug.Assert(m_ColPartitioning.IsInLocalRange(Send_iE - 1));
                             bool bFinished = false;
                             while (Send_iE <= iColSource) {
                                 RangePointer[i]++;
@@ -3455,16 +3455,16 @@ namespace ilPSP.LinSolvers {
                                 }
                                 Send_i0 = _SendRange[RangePointer[i], 0];
                                 Send_iE = _SendRange[RangePointer[i], 1];
-                                Debug_Assert(m_ColPartitioning.IsInLocalRange(Send_i0));
-                                Debug_Assert(Send_iE - Send_i0 >= 1);
-                                Debug_Assert(m_ColPartitioning.IsInLocalRange(Send_iE - 1));
+                                Debug.Assert(m_ColPartitioning.IsInLocalRange(Send_i0));
+                                Debug.Assert(Send_iE - Send_i0 >= 1);
+                                Debug.Assert(m_ColPartitioning.IsInLocalRange(Send_iE - 1));
                             }
 
                             if (bFinished)
                                 continue;
                             AllFinish = false;
 
-                            Debug_Assert(iColSource < Send_iE);
+                            Debug.Assert(iColSource < Send_iE);
                             if (Send_i0 <= iColSource) {
                                 SendColSource[i].Add(iColSource);
                                 SendColTarget[i].Add(iColTarget);
@@ -3478,7 +3478,7 @@ namespace ilPSP.LinSolvers {
 
                 // finalize send list assembly
                 for (int i = 0; i < TargetProc.Length; i++) {
-                    Debug_Assert(SendColSource[i].Count == SendColTarget[i].Count);
+                    Debug.Assert(SendColSource[i].Count == SendColTarget[i].Count);
                     if (SendColSource[i].Count > 0) {
                         int[,] data = new int[SendColSource[i].Count, 2];
                         data.SetColumn(SendColSource[i], 0);
@@ -3508,10 +3508,10 @@ namespace ilPSP.LinSolvers {
                 int rank = kv.Key;
                 int[,] IdxEs = kv.Value;
                 int L = IdxEs.GetLength(0);
-                Debug_Assert(IdxEs.GetLength(1) == 2);
+                Debug.Assert(IdxEs.GetLength(1) == 2);
                 for (int l = 0; l < L; l++) {
-                    Debug_Assert(this.m_ColPartitioning.FindProcess(IdxEs[l, 0]) == rank);
-                    Debug_Assert(Target.ColPartition.FindProcess(IdxEs[l, 1]) == rank);
+                    Debug.Assert(this.m_ColPartitioning.FindProcess(IdxEs[l, 0]) == rank);
+                    Debug.Assert(Target.ColPartition.FindProcess(IdxEs[l, 1]) == rank);
                 }
             }
 #endif
@@ -3526,7 +3526,7 @@ namespace ilPSP.LinSolvers {
                 //throw new NotImplementedException();
                 BlockMsrMatrix Ret = new BlockMsrMatrix(this._ColPartitioning, this._RowPartitioning);
 
-                Debug_Assert(this.m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
+                Debug.Assert(this.m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
                 int LocalNoOfBlocks = _RowPartitioning.LocalNoOfBlocks;
                 int FirstBlock = _RowPartitioning.FirstBlock;
 
@@ -3545,7 +3545,7 @@ namespace ilPSP.LinSolvers {
                         foreach (var kv in Row) {
                             int jBlkCol = kv.Key;
                             BlockEntry BE = kv.Value;
-                            Debug_Assert(BE.jBlkCol == jBlkCol);
+                            Debug.Assert(BE.jBlkCol == jBlkCol);
                             int J, j0;
                             if (m_ColPartitioning.IsLocalBlock(jBlkCol)) {
                                 J = _ColPartitioning.GetBlockLen(jBlkCol);
@@ -3576,8 +3576,8 @@ namespace ilPSP.LinSolvers {
                                         ExchangeData.Add(TargProc, ExchangeData_TargProc);
                                     }
 
-                                    Debug_Assert(_ColPartitioning.FindProcess(j0) == TargProc);
-                                    Debug_Assert(_ColPartitioning.FindProcess(j0 + J - 1) == TargProc);
+                                    Debug.Assert(_ColPartitioning.FindProcess(j0) == TargProc);
+                                    Debug.Assert(_ColPartitioning.FindProcess(j0 + J - 1) == TargProc);
                                     ExchangeData_TargProc.Add(new Tuple<int, int, MultidimensionalArray>(j0, i0, tempT));
                                     tempT = null;
                                 }
@@ -3679,8 +3679,8 @@ namespace ilPSP.LinSolvers {
 #endif
                         }
 
-                        Debug_Assert(B.InMembnk.GetLength(0) == B.MembnkIdx.GetLength(0));
-                        Debug_Assert(B.InMembnk.GetLength(1) == B.MembnkIdx.GetLength(1));
+                        Debug.Assert(B.InMembnk.GetLength(0) == B.MembnkIdx.GetLength(0));
+                        Debug.Assert(B.InMembnk.GetLength(1) == B.MembnkIdx.GetLength(1));
 
                         int NoOfRowSblk = B.InMembnk.GetLength(0);
                         int NoOfColSblk = B.InMembnk.GetLength(1);
@@ -3689,13 +3689,13 @@ namespace ilPSP.LinSolvers {
                             for (int jSblk = 0; jSblk < NoOfColSblk; jSblk++) {
                                 int InMembnk = B.InMembnk[iSblk, jSblk];
                                 int MembnkIdx = B.MembnkIdx[iSblk, jSblk];
-                                Debug_Assert((InMembnk >= 0) == (MembnkIdx >= 0));
+                                Debug.Assert((InMembnk >= 0) == (MembnkIdx >= 0));
 
                                 if (InMembnk >= 0) {
                                     var Block = A.m_Membanks[MembnkIdx].Mem.ExtractSubArrayShallow(InMembnk, -1, -1);
 #if DEBUG
-                                    Debug_Assert(Block.NoOfRows == SblkLen[iSblk]);
-                                    Debug_Assert(Block.NoOfCols == ColSblkLen[jSblk]);
+                                    Debug.Assert(Block.NoOfRows == SblkLen[iSblk]);
+                                    Debug.Assert(Block.NoOfCols == ColSblkLen[jSblk]);
 
 #endif
                                     this.AccBlock(i0 + SblkOffset[iSblk], j0 + ColSblkOffset[jSblk], Ascale, Block);
@@ -3802,10 +3802,10 @@ namespace ilPSP.LinSolvers {
             if (Row != null) {
                 foreach (var kv in Row) {
                     BlockEntry Blk = kv.Value;
-                    Debug_Assert(Blk.jBlkCol == kv.Key);
+                    Debug.Assert(Blk.jBlkCol == kv.Key);
 
-                    Debug_Assert(Blk.InMembnk.GetLength(0) == Blk.MembnkIdx.GetLength(0));
-                    Debug_Assert(Blk.InMembnk.GetLength(1) == Blk.MembnkIdx.GetLength(1));
+                    Debug.Assert(Blk.InMembnk.GetLength(0) == Blk.MembnkIdx.GetLength(0));
+                    Debug.Assert(Blk.InMembnk.GetLength(1) == Blk.MembnkIdx.GetLength(1));
                     int IB = Blk.InMembnk.GetLength(0);
                     int JB = Blk.InMembnk.GetLength(1);
 
@@ -3813,11 +3813,11 @@ namespace ilPSP.LinSolvers {
                         for (int jb = 0; jb < JB; jb++) {
                             int inmembnk = Blk.InMembnk[ib, jb];
                             int membnkidx = Blk.MembnkIdx[ib, jb];
-                            Debug_Assert((inmembnk < 0) == (membnkidx < 0));
+                            Debug.Assert((inmembnk < 0) == (membnkidx < 0));
 
                             if (membnkidx >= 0) {
-                                Debug_Assert(this.m_Membanks[membnkidx].Mem.Dimension == 3);
-                                Debug_Assert(this.m_Membanks[membnkidx].Mem.GetLength(0) == this.m_Membanks[membnkidx].Occupied.Length);
+                                Debug.Assert(this.m_Membanks[membnkidx].Mem.Dimension == 3);
+                                Debug.Assert(this.m_Membanks[membnkidx].Mem.GetLength(0) == this.m_Membanks[membnkidx].Occupied.Length);
                                 FreeSblk(membnkidx, inmembnk);
                             }
 
@@ -3829,9 +3829,9 @@ namespace ilPSP.LinSolvers {
 
                     if(isExternal) {
                         int OwnerProc = m_ColPartitioning.FindProcessForBlock(Blk.jBlkCol);
-                        Debug_Assert(OwnerProc != m_ColPartitioning.MpiRank);
+                        Debug.Assert(OwnerProc != m_ColPartitioning.MpiRank);
                         HashSet<int> ExtIdx = m_ExternalBlockIndicesByProcessor[OwnerProc];
-                        Debug_Assert(ExtIdx.Contains(Blk.jBlkCol));
+                        Debug.Assert(ExtIdx.Contains(Blk.jBlkCol));
                         ExtIdx.Remove(Blk.jBlkCol);
                     }
                     */
@@ -4013,9 +4013,9 @@ namespace ilPSP.LinSolvers {
                     *pI = count;
                     pI++;
 
-                    Debug_Assert((count == 0 && m_j0S == null) || (m_j0S.Length >= count));
-                    Debug_Assert((count == 0 && m_JES == null) || (m_JES.Length >= count));
-                    Debug_Assert((count == 0 && m_Offset == null) || (m_Offset.Length >= count + 1));
+                    Debug.Assert((count == 0 && m_j0S == null) || (m_j0S.Length >= count));
+                    Debug.Assert((count == 0 && m_JES == null) || (m_JES.Length >= count));
+                    Debug.Assert((count == 0 && m_Offset == null) || (m_Offset.Length >= count + 1));
 
                     fixed (int* p_j0S = m_j0S, p_jES = m_JES, p_Offset = m_Offset) {
                         int* _j0S = p_j0S, _jES = p_jES, _Offset = p_Offset;
@@ -4046,7 +4046,7 @@ namespace ilPSP.LinSolvers {
                     }
 
                     IntPtr r = (IntPtr)pD;
-                    Debug_Assert(((byte*)r - (byte*)pBuffer) == this.GetSize());
+                    Debug.Assert(((byte*)r - (byte*)pBuffer) == this.GetSize());
                     return r;
                 }
             }
@@ -4092,7 +4092,7 @@ namespace ilPSP.LinSolvers {
                     }
 
                     ResizeMem(this.MemEntries, 0);
-                    Debug_Assert(m_mem.Length >= m_Offset[count]);
+                    Debug.Assert(m_mem.Length >= m_Offset[count]);
 
 
                     double* pD = (double*)pI;
@@ -4105,16 +4105,16 @@ namespace ilPSP.LinSolvers {
                     }
 
                     IntPtr r = (IntPtr)pD;
-                    Debug_Assert(((byte*)r - (byte*)pBuffer) == this.GetSize());
+                    Debug.Assert(((byte*)r - (byte*)pBuffer) == this.GetSize());
                     return r;
                 }
             }
 
             public void Dispose() {
-                Debug_Assert((m_mem != null) == (m_pMem != IntPtr.Zero));
+                Debug.Assert((m_mem != null) == (m_pMem != IntPtr.Zero));
 
                 if (m_mem != null) {
-                    Debug_Assert(m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(m_mem, 0));
+                    Debug.Assert(m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(m_mem, 0));
                     m_memLock.Free();
                     m_pMem = IntPtr.Zero;
                 }
@@ -4124,9 +4124,9 @@ namespace ilPSP.LinSolvers {
                 if (m_mem != null && m_mem.Length >= minSz)
                     return;
 
-                Debug_Assert((m_mem != null) == (m_pMem != IntPtr.Zero));
+                Debug.Assert((m_mem != null) == (m_pMem != IntPtr.Zero));
                 if (m_mem != null) {
-                    Debug_Assert(m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(m_mem, 0));
+                    Debug.Assert(m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(m_mem, 0));
                     m_memLock.Free();
                 }
 
@@ -4140,16 +4140,16 @@ namespace ilPSP.LinSolvers {
             }
 
             public void AccessBlock(int jBlock, out int _Offset, out int _CI) {
-                Debug_Assert(jBlock < count);
+                Debug.Assert(jBlock < count);
                 _Offset = m_Offset[jBlock];
                 _CI = m_JES[jBlock] - m_j0S[jBlock];
             }
 
             void AllocBlock(int j0, int jE, out int _Offset, out int _CI) {
-                Debug_Assert(jE > j0);
-                Debug_Assert(this.iE > this.i0);
-                Debug_Assert((m_j0S == null) == (m_JES == null));
-                Debug_Assert((m_j0S == null) || (m_j0S.Length == m_JES.Length));
+                Debug.Assert(jE > j0);
+                Debug.Assert(this.iE > this.i0);
+                Debug.Assert((m_j0S == null) == (m_JES == null));
+                Debug.Assert((m_j0S == null) || (m_j0S.Length == m_JES.Length));
 
                 int Capacity = m_j0S != null ? m_j0S.Length : 0;
                 if (count >= Capacity - 1) {
@@ -4160,7 +4160,7 @@ namespace ilPSP.LinSolvers {
 
                 int Offset;
                 if (count > 0) {
-                    Debug_Assert(j0 >= m_JES[count - 1]);
+                    Debug.Assert(j0 >= m_JES[count - 1]);
                     Offset = m_Offset[count - 1] + (m_JES[count - 1] - m_j0S[count - 1]) * (iE - i0);
                 } else {
                     Offset = 0;
@@ -4184,10 +4184,10 @@ namespace ilPSP.LinSolvers {
 #if DEBUG
                 for (int i = 0; i < (this.iE - this.i0); i++) {
                     for (int j = 0; j < (jE - j0); j++) {
-                        Debug_Assert(m_mem[i * _CI + j + _Offset] == 0.0);
+                        Debug.Assert(m_mem[i * _CI + j + _Offset] == 0.0);
                         unsafe
                         {
-                            Debug_Assert(((double*)(m_pMem))[i * _CI + j + _Offset] == 0.0);
+                            Debug.Assert(((double*)(m_pMem))[i * _CI + j + _Offset] == 0.0);
                         }
                     }
                 }
@@ -4197,10 +4197,10 @@ namespace ilPSP.LinSolvers {
             }
 
             void EnlargeLastBlock(int new_JE, out int _Offset, out int _Ci) {
-                Debug_Assert(this.count > 0);
-                Debug_Assert(this.m_mem != null);
+                Debug.Assert(this.count > 0);
+                Debug.Assert(this.m_mem != null);
                 int cc = this.count - 1;
-                Debug_Assert(new_JE > this.m_JES[cc]);
+                Debug.Assert(new_JE > this.m_JES[cc]);
 
                 int Offset = m_Offset[cc];
                 int j0 = m_j0S[cc];
@@ -4245,7 +4245,7 @@ namespace ilPSP.LinSolvers {
                 int RowBtüpe = BM._RowPartitioning.GetBlockType(iBlock);
                 int[] RowSblk_i0 = BM._RowPartitioning.GetSubblk_i0(RowBtüpe);
                 int[] RowSblkLen = BM._RowPartitioning.GetSubblkLen(RowBtüpe);
-                Debug_Assert(RowSblk_i0.Length == RowSblkLen.Length);
+                Debug.Assert(RowSblk_i0.Length == RowSblkLen.Length);
                 int NoOfRowSblk = RowSblk_i0.Length;
 
                 double[] srcMem = this.m_mem;
@@ -4278,16 +4278,16 @@ namespace ilPSP.LinSolvers {
                             ColSblk_i0[0] = 0;
                             ColSblkLen[0] = jE_Block - j0_Block;
                         }
-                        Debug_Assert(ColSblk_i0.Length == ColSblkLen.Length);
+                        Debug.Assert(ColSblk_i0.Length == ColSblkLen.Length);
                         int NoOfColSblk = ColSblk_i0.Length;
 
                         for (int rowSblk = 0; rowSblk < NoOfRowSblk; rowSblk++) { // loop over row-sub-blocks...
                             int i0_Sblk = i0_Block + RowSblk_i0[rowSblk];
                             int NrwsSblk = RowSblkLen[rowSblk];
                             int iE_Sblk = i0_Sblk + NrwsSblk;
-                            Debug_Assert(i0_Sblk >= i0_Block);
-                            Debug_Assert(NrwsSblk >= 0);
-                            Debug_Assert(iE_Sblk <= iE_Block);
+                            Debug.Assert(i0_Sblk >= i0_Block);
+                            Debug.Assert(NrwsSblk >= 0);
+                            Debug.Assert(iE_Sblk <= iE_Block);
 
                             if (iE_Sblk <= this.i0)
                                 continue;
@@ -4301,16 +4301,16 @@ namespace ilPSP.LinSolvers {
                                 continue;
                             int sblk_iOffset = i0_clip - i0_Sblk; // compute offset within sub-block ...
                             int this_iOffset = i0_clip - this.i0; // ...  and within block-row
-                            Debug_Assert(sblk_iOffset >= 0);
-                            Debug_Assert(this_iOffset >= 0);
+                            Debug.Assert(sblk_iOffset >= 0);
+                            Debug.Assert(this_iOffset >= 0);
 
                             for (int colSblk = 0; colSblk < NoOfColSblk; colSblk++) { // loop over column sub-blocks...
                                 int j0_Sblk = j0_Block + ColSblk_i0[colSblk];
                                 int NclsSblk = ColSblkLen[colSblk];
                                 int jE_Sblk = j0_Sblk + NclsSblk;
-                                Debug_Assert(j0_Sblk >= j0_Block);
-                                Debug_Assert(NclsSblk >= 0);
-                                Debug_Assert(jE_Sblk <= jE_Block);
+                                Debug.Assert(j0_Sblk >= j0_Block);
+                                Debug.Assert(NclsSblk >= 0);
+                                Debug.Assert(jE_Sblk <= jE_Block);
 
                                 if (jE_Sblk <= jPointer)
                                     continue;
@@ -4321,8 +4321,8 @@ namespace ilPSP.LinSolvers {
                                 int jE_clip = Math.Min(jE_Sblk, _jE);
                                 int sblk_jOffset = j0_clip - j0_Sblk;
                                 int this_jOffset = j0_clip - _j0;
-                                Debug_Assert(sblk_jOffset >= 0);
-                                Debug_Assert(this_jOffset >= 0);
+                                Debug.Assert(sblk_jOffset >= 0);
+                                Debug.Assert(this_jOffset >= 0);
                                 int Jcopy = jE_clip - j0_clip;
 
                                 double[] Storage;
@@ -4353,8 +4353,8 @@ namespace ilPSP.LinSolvers {
             public int Check__jE_Block;
 
             void CheckEntries(BlockMsrMatrix BM) {
-                Debug_Assert(Check__i0_Block >= this.i0);
-                Debug_Assert(Check__iE_Block <= this.iE);
+                Debug.Assert(Check__i0_Block >= this.i0);
+                Debug.Assert(Check__iE_Block <= this.iE);
                 
                 int I = this.iE - this.i0;
 
@@ -4372,13 +4372,13 @@ namespace ilPSP.LinSolvers {
                             int idxB = m_Offset[bCol] + (i) * J + j; // index into the memory region of this object
 
                             if(iM >= Check__i0_Block && iM < Check__iE_Block)
-                                Debug_Assert(BM[iM, jM] == m_mem[idxB]); 
+                                Debug.Assert(BM[iM, jM] == m_mem[idxB]); 
                             else 
-                                Debug_Assert(0.0 == m_mem[idxB]); 
+                                Debug.Assert(0.0 == m_mem[idxB]); 
                             unsafe
                             {
                                 double* pMem = (double*)(this.m_pMem);
-                                Debug_Assert(pMem[idxB] == m_mem[idxB]);
+                                Debug.Assert(pMem[idxB] == m_mem[idxB]);
                             }
                         }
                     }
@@ -4409,7 +4409,7 @@ namespace ilPSP.LinSolvers {
                 int[] Sblk_i0 = BM._RowPartitioning.GetSubblk_i0(BT);
                 int[] SblkLen = BM._RowPartitioning.GetSubblkLen(BT);
                 int RowOffset = BM._RowPartitioning.GetBlockI0(iBlock);
-                Debug_Assert(Sblk_i0.Length == SblkLen.Length);
+                Debug.Assert(Sblk_i0.Length == SblkLen.Length);
                 int NoOfSblk = Sblk_i0.Length;
 
                 // clip the sub-blocks to the range [i0 .. iE[
@@ -4436,9 +4436,9 @@ namespace ilPSP.LinSolvers {
                     int Clipi00 = Clip_abs_si0 - RowOffset;  //   offset of clipped region within sub-block
 
                     if (ClipLen > 0) {
-                        Debug_Assert(Clipi00 >= Sblk_i0[SblkRow]);
-                        Debug_Assert(Clipi00 < Sblk_i0[SblkRow] + SblkLen[SblkRow]);
-                        Debug_Assert(ClipLen <= SblkLen[SblkRow]);
+                        Debug.Assert(Clipi00 >= Sblk_i0[SblkRow]);
+                        Debug.Assert(Clipi00 < Sblk_i0[SblkRow] + SblkLen[SblkRow]);
+                        Debug.Assert(ClipLen <= SblkLen[SblkRow]);
 
                         Sblk_i00[NoOfClipSblk] = Clipi00;
                         SblkClen[NoOfClipSblk] = ClipLen;
@@ -4455,7 +4455,7 @@ namespace ilPSP.LinSolvers {
                         foreach (var kv in Row) {
                             int jBlock = kv.Key;
                             BlockEntry BE = kv.Value;
-                            Debug_Assert(BE.jBlkCol == jBlock);
+                            Debug.Assert(BE.jBlkCol == jBlock);
 
                             int ColBlockE;
                             int[] ColSblk_j0, ColSblkLen;
@@ -4480,7 +4480,7 @@ namespace ilPSP.LinSolvers {
                                 ColOffset = BM._ColPartitioning.GetBlockI0(jBlock);
                                 ColBlockE = ColOffset + BM._ColPartitioning.GetBlockLen(jBlock);
                             }
-                            Debug_Assert(ColSblk_j0.Length == ColSblkLen.Length);
+                            Debug.Assert(ColSblk_j0.Length == ColSblkLen.Length);
                             int NoOfColSblk = ColSblk_j0.Length;
 
                             int DestOffset, DestCI;
@@ -4489,10 +4489,10 @@ namespace ilPSP.LinSolvers {
                             
                             for (int i = 0; i < (this.iE - this.i0); i++) {
                                 for(int j = 0; j < (ColBlockE - ColOffset); j++) {
-                                    Debug_Assert(m_mem[i * DestCI + j + DestOffset] == 0.0);
+                                    Debug.Assert(m_mem[i * DestCI + j + DestOffset] == 0.0);
                                     unsafe
                                     {
-                                        Debug_Assert(((double*)(m_pMem))[i * DestCI + j + DestOffset] == 0.0);
+                                        Debug.Assert(((double*)(m_pMem))[i * DestCI + j + DestOffset] == 0.0);
                                     }
                                 }
                             }
@@ -4504,7 +4504,7 @@ namespace ilPSP.LinSolvers {
 
                                     int MembnkIdx = BE.MembnkIdx[_SblkRow, SblkCol];
                                     int InMembnk = BE.InMembnk[_SblkRow, SblkCol];
-                                    Debug_Assert((InMembnk >= 0) == (MembnkIdx >= 0));
+                                    Debug.Assert((InMembnk >= 0) == (MembnkIdx >= 0));
                                     if (MembnkIdx >= 0) {
                                         double[] Source;
                                         int Offset, CI, CJ;
@@ -4517,15 +4517,15 @@ namespace ilPSP.LinSolvers {
                                         int fj = ColSblk_j0[SblkCol];
 
                                         int ei = i0_Block + Sblk_i00[SblkRow]; // global start-index of the sub-block
-                                        Debug_Assert(ei >= this.i0);
-                                        Debug_Assert(ei < this.iE);
-                                        Debug_Assert(ei + I <= this.iE);
+                                        Debug.Assert(ei >= this.i0);
+                                        Debug.Assert(ei < this.iE);
+                                        Debug.Assert(ei + I <= this.iE);
                                         int fi = ei - this.i0; // relative start-index within this block row
 
                                         for (int i = 0; i < I; i++) {
 #if DEBUG
                                             int iM = i + Sblk_i00[SblkRow] + i0_Block; // row index into matrix
-                                            Debug_Assert(i0_Block <= iM && iM < iE_Block);
+                                            Debug.Assert(i0_Block <= iM && iM < iE_Block);
 #endif
                                             for (int j = 0; j < J; j++) {
 #if DEBUG
@@ -4535,7 +4535,7 @@ namespace ilPSP.LinSolvers {
                                                 double src_ij = Source[src_index];
 
 #if DEBUG
-                                                Debug_Assert(BM[iM, jM] == src_ij);
+                                                Debug.Assert(BM[iM, jM] == src_ij);
 #endif
                                                 int dst_index = DestOffset + (i + fi) * DestCI + (j + fj);
                                                 m_mem[dst_index] = src_ij;
@@ -4611,15 +4611,15 @@ namespace ilPSP.LinSolvers {
             /// <param name="AscaleM_I"></param>
             /// <param name="AscaleM_J"></param>
             unsafe static public void Merge(TempBlockRow C, TempBlockRow A, TempBlockRow B, double* _AscaleM_left, int AscaleM_I, int AscaleM_J) {
-                Debug_Assert(!object.ReferenceEquals(C, A));
-                Debug_Assert(!object.ReferenceEquals(C, B));
-                Debug_Assert(!object.ReferenceEquals(A, B));
-                Debug_Assert((A.m_mem == null && A.m_pMem == IntPtr.Zero) || (A.m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(A.m_mem, 0)));
-                Debug_Assert((B.m_mem == null && B.m_pMem == IntPtr.Zero) || (B.m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(B.m_mem, 0)));
-                Debug_Assert((C.m_mem == null && C.m_pMem == IntPtr.Zero) || (C.m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(C.m_mem, 0)));
+                Debug.Assert(!object.ReferenceEquals(C, A));
+                Debug.Assert(!object.ReferenceEquals(C, B));
+                Debug.Assert(!object.ReferenceEquals(A, B));
+                Debug.Assert((A.m_mem == null && A.m_pMem == IntPtr.Zero) || (A.m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(A.m_mem, 0)));
+                Debug.Assert((B.m_mem == null && B.m_pMem == IntPtr.Zero) || (B.m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(B.m_mem, 0)));
+                Debug.Assert((C.m_mem == null && C.m_pMem == IntPtr.Zero) || (C.m_pMem == Marshal.UnsafeAddrOfPinnedArrayElement(C.m_mem, 0)));
 #if DEBUG
-                Debug_Assert((_AscaleM_left != null) || ((A.iE - A.i0) == (B.iE - B.i0)));
-                Debug_Assert((_AscaleM_left == null) || (AscaleM_I == (B.iE - B.i0) && AscaleM_J == (A.iE - A.i0)));
+                Debug.Assert((_AscaleM_left != null) || ((A.iE - A.i0) == (B.iE - B.i0)));
+                Debug.Assert((_AscaleM_left == null) || (AscaleM_I == (B.iE - B.i0) && AscaleM_J == (A.iE - A.i0)));
 #endif
                 C.Clear(B.i0, B.iE); // reset 'C'
                 int NoRows = B.iE - B.i0;
@@ -4641,7 +4641,7 @@ namespace ilPSP.LinSolvers {
 
                             if (counterA >= A.count) {
                             // finished A, but still entries in B
-                            Debug_Assert(counterB < B.count);
+                            Debug.Assert(counterB < B.count);
                             NXT = B;
                             counterNXT = counterB;
                             p_memNXT = p_memB;
@@ -4649,7 +4649,7 @@ namespace ilPSP.LinSolvers {
                             AscaleM_left = null;
                         } else if (counterB >= B.count) {
                             // finished B, but still entries in A
-                            Debug_Assert(counterA < A.count);
+                            Debug.Assert(counterA < A.count);
 
                             NXT = A;
                             counterNXT = counterA;
@@ -4658,7 +4658,7 @@ namespace ilPSP.LinSolvers {
                             AscaleM_left = _AscaleM_left;
                         } else {
                             // pick the minimum of A and B
-                            Debug_Assert(counterA < A.count && counterB < B.count);
+                            Debug.Assert(counterA < A.count && counterB < B.count);
 
                             if (A.m_j0S[counterA] <= B.m_j0S[counterB]) {
                                 // pick A
@@ -4693,7 +4693,7 @@ namespace ilPSP.LinSolvers {
 
                             int Coffset;
                             C.AllocBlock(NXT.m_j0S[counterNXT], NXT.m_JES[counterNXT], out Coffset, out C_Ci);
-                            Debug_Assert(C_Ci == NXT_Ci);
+                            Debug.Assert(C_Ci == NXT_Ci);
 
                             p_memC = (double*)C.m_pMem;
                             pS = p_memNXT + NXToffset;
@@ -4706,8 +4706,8 @@ namespace ilPSP.LinSolvers {
 
 
                         } else {
-                            Debug_Assert(C.count >= 0);
-                            Debug_Assert(NXT.m_j0S[counterNXT] < C.m_JES[C.count - 1]);
+                            Debug.Assert(C.count >= 0);
+                            Debug.Assert(NXT.m_j0S[counterNXT] < C.m_JES[C.count - 1]);
 
                             if (NXT.m_j0S[counterNXT] == C.m_j0S[counterNXT]
                                 || NXT.m_JES[counterNXT] == C.m_JES[counterNXT]) {
@@ -4715,7 +4715,7 @@ namespace ilPSP.LinSolvers {
 
                                 int Coffset;
                                 C.AccessBlock(C.count - 1, out Coffset, out C_Ci);
-                                Debug_Assert(C_Ci == NXT_Ci);
+                                Debug.Assert(C_Ci == NXT_Ci);
 
                                 p_memC = (double*)C.m_pMem;
                                 pS = p_memNXT + NXToffset;
@@ -4734,8 +4734,8 @@ namespace ilPSP.LinSolvers {
                                 } else {
                                     C.AccessBlock(C.count - 1, out Coffset, out C_Ci);
                                 }
-                                Debug_Assert(NXT.m_j0S[counterNXT] >= C.m_j0S[C.count - 1]);
-                                Debug_Assert(NXT.m_JES[counterNXT] <= C.m_JES[C.count - 1]);
+                                Debug.Assert(NXT.m_j0S[counterNXT] >= C.m_j0S[C.count - 1]);
+                                Debug.Assert(NXT.m_JES[counterNXT] <= C.m_JES[C.count - 1]);
 
                                 p_memC = (double*)C.m_pMem;
                                 NoCols = NXT.m_JES[counterNXT] - NXT.m_j0S[counterNXT];
@@ -4747,8 +4747,8 @@ namespace ilPSP.LinSolvers {
                         }
                     }
 
-                    Debug_Assert((C.count > 0) == (A.count > 0 || B.count > 0));
-                    Debug_Assert((A.count <= 0 && B.count <= 0) || (C.m_j0S != null));
+                    Debug.Assert((C.count > 0) == (A.count > 0 || B.count > 0));
+                    Debug.Assert((A.count <= 0 && B.count <= 0) || (C.m_j0S != null));
 
                 }
             }
@@ -4820,9 +4820,9 @@ namespace ilPSP.LinSolvers {
             }
 
             public static TempBlockRow Init(BlockMsrMatrix BM, int i0, int iE, bool doExternalCols, TempBlockRow A1, TempBlockRow A2, TempBlockRow A3) {
-                Debug_Assert(BM._RowPartitioning.i0 <= i0);
-                Debug_Assert(iE <= BM._RowPartitioning.iE);
-                Debug_Assert(iE > i0);
+                Debug.Assert(BM._RowPartitioning.i0 <= i0);
+                Debug.Assert(iE <= BM._RowPartitioning.iE);
+                Debug.Assert(iE > i0);
                 unsafe
                 {
                     TempBlockRow[] A = new TempBlockRow[] { A1, A2, A3 };
@@ -4872,8 +4872,8 @@ namespace ilPSP.LinSolvers {
                     }
 
 #if DEBUG
-                    Debug_Assert(OldAccu.iE == iE);
-                    Debug_Assert(OldAccu.i0 == i0);
+                    Debug.Assert(OldAccu.iE == iE);
+                    Debug.Assert(OldAccu.i0 == i0);
                     OldAccu.Check__jE_Block = BM._ColPartitioning.TotalLength;
                     OldAccu.Check__i0_Block = i0;
                     OldAccu.Check__iE_Block = iE;
@@ -4991,28 +4991,28 @@ namespace ilPSP.LinSolvers {
                             int BT = A._RowPartitioning.GetBlockType(iBlkRow);
                             int[] Sbkl_i0 = A._RowPartitioning.GetSubblk_i0(BT);
                             int[] SbklLen = A._RowPartitioning.GetSubblkLen(BT);
-                            Debug_Assert(Sbkl_i0.Length == SbklLen.Length);
+                            Debug.Assert(Sbkl_i0.Length == SbklLen.Length);
                             int NoOfSblk = Sbkl_i0.Length;
                             int RowOffset = A._RowPartitioning.GetBlockI0(iBlkRow);
 
                             foreach(var kv in row) {
                                 int jBlkCol = kv.Key;
                                 BlockEntry BE = kv.Value;
-                                Debug_Assert(BE.jBlkCol == jBlkCol, "1");
-                                Debug_Assert(BE.MembnkIdx.GetLength(0) == NoOfSblk, "2");
-                                Debug_Assert(BE.InMembnk.GetLength(0) == NoOfSblk, "3");
+                                Debug.Assert(BE.jBlkCol == jBlkCol, "1");
+                                Debug.Assert(BE.MembnkIdx.GetLength(0) == NoOfSblk, "2");
+                                Debug.Assert(BE.InMembnk.GetLength(0) == NoOfSblk, "3");
 
                                 if(jBlkCol < A_coliBlk0 || jBlkCol >= A_colIBlkE) {
                                     // external block
-                                    Debug_Assert(BE.MembnkIdx.GetLength(1) == 1, "4");
-                                    Debug_Assert(BE.InMembnk.GetLength(1) == 1, "5");
+                                    Debug.Assert(BE.MembnkIdx.GetLength(1) == 1, "4");
+                                    Debug.Assert(BE.InMembnk.GetLength(1) == 1, "5");
 
                                     int j0, jE;
                                     BlockMsrMatrix.GetExternalSubblockIndices(A._ColPartitioning, jBlkCol, out j0, out jE);
                                     int proc = A._ColPartitioning.FindProcess(j0);
                                     int[,] ReceiveList = A.ReceiveLists[proc];
 #if DEBUG
-                                    Debug_Assert(A.ReceiveLists.ContainsKey(proc), "6");
+                                    Debug.Assert(A.ReceiveLists.ContainsKey(proc), "6");
 #endif
 
                                     List<Multiply_Helper_1> copyColection = MpiSendCollection[proc];
@@ -5065,10 +5065,10 @@ namespace ilPSP.LinSolvers {
                             *pI = copyColection.Count;
                             pI++;
                             pBuffer = pI;
-                            Debug_Assert((((byte*)pBuffer) - ((byte*)Buffer)) == sizeof(int), "8");
+                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == sizeof(int), "8");
                             foreach(var H in copyColection) {
                                 Membank Mbnk = A.m_Membanks[H.MembankIdx];
-                                Debug_Assert(Mbnk.Occupied.Length == Mbnk.Mem.GetLength(0), "9");
+                                Debug.Assert(Mbnk.Occupied.Length == Mbnk.Mem.GetLength(0), "9");
                                 int I = Mbnk.Mem.GetLength(1);
                                 int J = Mbnk.Mem.GetLength(2);
 
@@ -5087,8 +5087,8 @@ namespace ilPSP.LinSolvers {
 
                                 for(int i = 0; i < I; i++) {
                                     for(int j = 0; j < J; j++) {
-                                        Debug_Assert(i * Ci + j * Cj >= 0);
-                                        Debug_Assert(i * Ci + j * Cj < I * J);
+                                        Debug.Assert(i * Ci + j * Cj >= 0);
+                                        Debug.Assert(i * Ci + j * Cj < I * J);
 
                                         pB[i * J + j] = buf[offset + i * Ci + j * Cj];
                                     }
@@ -5097,10 +5097,10 @@ namespace ilPSP.LinSolvers {
                                 double* _pB = pB;
                                 pB += I * J;
                                 pBuffer = pB;
-                                Debug_Assert((((byte*)pBuffer) - ((byte*)_pB)) == I * J * sizeof(double), "10");
+                                Debug.Assert((((byte*)pBuffer) - ((byte*)_pB)) == I * J * sizeof(double), "10");
                             }
 #if DEBUG
-                            Debug_Assert((((byte*)pBuffer) - ((byte*)Buffer)) == GetSendBufferSize(Rank), "10");
+                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == GetSendBufferSize(Rank), "10");
 #endif
                         }
                     }
@@ -5136,7 +5136,7 @@ namespace ilPSP.LinSolvers {
                             // extract row from 'A'
                             TempBlockRow Arow = TempBlockRow.Init(A, i0, iE, false, rA1, rA2, rA3);
                             int NoRows = Arow.iE - Arow.i0;
-                            Debug_Assert(NoRows == C._RowPartitioning.GetBlockLen(iBlkRow));
+                            Debug.Assert(NoRows == C._RowPartitioning.GetBlockLen(iBlkRow));
 
                             if(Arow.count > 0) {
                                 //int jBlk = 0;
@@ -5158,9 +5158,9 @@ namespace ilPSP.LinSolvers {
                                         _inBlock = true;
                                         jPointer = _j0;
 
-                                        Debug_Assert(_j0 >= A.ColPartition.i0, "12");
-                                        Debug_Assert(_jE <= A.ColPartition.iE, "13");
-                                        Debug_Assert(_j0 < _jE, "14");
+                                        Debug.Assert(_j0 >= A.ColPartition.i0, "12");
+                                        Debug.Assert(_jE <= A.ColPartition.iE, "13");
+                                        Debug.Assert(_j0 < _jE, "14");
                                     }
                                     if(!inBlock) {
                                         jBlock = B._RowPartitioning.GetBlockIndex(jPointer);
@@ -5175,21 +5175,21 @@ namespace ilPSP.LinSolvers {
                                     int RelOffsetSource = jPointer - _j0;
                                     int RelOffsetDest = jPointer - j0;
                                     int Length = jNext - jPointer;
-                                    Debug_Assert(Length >= 0, "15");
-                                    Debug_Assert(RelOffsetSource >= 0, "16");
-                                    Debug_Assert(RelOffsetDest >= 0, "17");
+                                    Debug.Assert(Length >= 0, "15");
+                                    Debug.Assert(RelOffsetSource >= 0, "16");
+                                    Debug.Assert(RelOffsetDest >= 0, "17");
                                     //Console.WriteLine("{0} {1}--{2} off: {3}  ===>  {4} {5}--{6} off: {7}", _BlkCount, j, jNext, RelOffsetSource,
                                     //    jBlock, j, jNext, RelOffsetDest);
                                     bool ExMatch = false;
                                     if(Length > 0) {
                                         ExMatch = RelOffsetDest == 0 && RelOffsetSource == 0 && Length == (jE - j0);
-                                        Debug_Assert(ExMatch == (pAij == null), "18");
+                                        Debug.Assert(ExMatch == (pAij == null), "18");
 
                                         if(ExMatch) {
                                             int PointerOffset, ANoOfCols;
                                             Arow.AccessBlock(_BlkCount, out PointerOffset, out ANoOfCols);
                                             pAij = ((double*)(Arow.m_pMem)) + PointerOffset;
-                                            Debug_Assert(ANoOfCols == NoCols, "19");
+                                            Debug.Assert(ANoOfCols == NoCols, "19");
 
                                             double* _pAij = pAij;
                                             for(int l = NoRows * NoCols; l > 0; l--) {
@@ -5269,7 +5269,7 @@ namespace ilPSP.LinSolvers {
                         }
                     }
 
-                    Debug_Assert((tempBuf_Length >= 0) == (tempBuf != IntPtr.Zero), "20");
+                    Debug.Assert((tempBuf_Length >= 0) == (tempBuf != IntPtr.Zero), "20");
                     if(tempBuf_Length >= 0) {
                         Marshal.FreeHGlobal(tempBuf);
                     }
@@ -5309,10 +5309,10 @@ namespace ilPSP.LinSolvers {
                                 int j0 = pH[1];
                                 int I = pH[2];
                                 int J = pH[3];
-                                Debug_Assert(B._RowPartitioning.IsInLocalRange(j0), "2nd wave: first index not in local range");
-                                Debug_Assert(J <= 0 || B._RowPartitioning.IsInLocalRange(j0 + J - 1), "2nd wave: last index not in local range");
-                                Debug_Assert(A._RowPartitioning.FindProcess(i0) == OriginRank, "2nd wave: receive index mismatch (1)");
-                                Debug_Assert(I <= 0 || A._RowPartitioning.FindProcess(i0 + I - 1) == OriginRank, "2nd wave: receive index mismatch (2)");
+                                Debug.Assert(B._RowPartitioning.IsInLocalRange(j0), "2nd wave: first index not in local range");
+                                Debug.Assert(J <= 0 || B._RowPartitioning.IsInLocalRange(j0 + J - 1), "2nd wave: last index not in local range");
+                                Debug.Assert(A._RowPartitioning.FindProcess(i0) == OriginRank, "2nd wave: receive index mismatch (1)");
+                                Debug.Assert(I <= 0 || A._RowPartitioning.FindProcess(i0 + I - 1) == OriginRank, "2nd wave: receive index mismatch (2)");
                                 double* pBlock = (double*)(pH + 4);
 
                                 double* _pAij = pBlock;
@@ -5338,8 +5338,8 @@ namespace ilPSP.LinSolvers {
                                         Crow.Clear(i0, i0 + I);
                                         ExternalRows_rank.Add(i0, Crow);
                                     } else {
-                                        Debug_Assert(Crow.i0 == i0, "22");
-                                        Debug_Assert(Crow.iE == i0 + I, "23");
+                                        Debug.Assert(Crow.i0 == i0, "22");
+                                        Debug.Assert(Crow.iE == i0 + I, "23");
                                     }
 
                                     // multiply & merge
@@ -5357,7 +5357,7 @@ namespace ilPSP.LinSolvers {
 
                             }
 #if DEBUG
-                            Debug_Assert((((byte*)pBuffer) - ((byte*)Buffer)) == _RecvSize, "mismatch between pointer difference and receive size");
+                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == _RecvSize, "mismatch between pointer difference and receive size");
 #endif
                         }
                     }
@@ -5402,13 +5402,13 @@ namespace ilPSP.LinSolvers {
                             IntPtr Buffer = (IntPtr)pBuffer;
                             foreach(var _kv in RowCollection) {
                                 var r = _kv.Value;
-                                Debug_Assert(C._RowPartitioning.FindProcess(r.i0) == DestRank, "24");
-                                Debug_Assert(C._RowPartitioning.FindProcess(Math.Max(r.i0, r.iE - 1)) == DestRank, "25");
+                                Debug.Assert(C._RowPartitioning.FindProcess(r.i0) == DestRank, "24");
+                                Debug.Assert(C._RowPartitioning.FindProcess(Math.Max(r.i0, r.iE - 1)) == DestRank, "25");
 
                                 Buffer = r.Serialize(Buffer);
                             }
 #if DEBUG
-                            Debug_Assert((byte*)Buffer - (byte*)_Buffer == GetSendBufferSize(DestRank));
+                            Debug.Assert((byte*)Buffer - (byte*)_Buffer == GetSendBufferSize(DestRank));
 #endif
                         }
                     }
@@ -5432,8 +5432,8 @@ namespace ilPSP.LinSolvers {
                             IntPtr Buffer = (IntPtr)(pBuffer);
                             for(int j = 0; j < NoOfRows; j++) {
                                 Buffer = rt1.Deserialize(Buffer);
-                                Debug_Assert(C._RowPartitioning.IsInLocalRange(rt1.i0), "31");
-                                Debug_Assert(C._RowPartitioning.IsInLocalRange(Math.Max(rt1.i0, rt1.iE - 1)), "32");
+                                Debug.Assert(C._RowPartitioning.IsInLocalRange(rt1.i0), "31");
+                                Debug.Assert(C._RowPartitioning.IsInLocalRange(Math.Max(rt1.i0, rt1.iE - 1)), "32");
 
 
                                 // accumulation:
@@ -5446,7 +5446,7 @@ namespace ilPSP.LinSolvers {
                                 }
                             }
 #if DEBUG
-                            Debug_Assert(((byte*)Buffer - (byte*)_Buffer) == _RecvSize, "33");
+                            Debug.Assert(((byte*)Buffer - (byte*)_Buffer) == _RecvSize, "33");
 #endif
                         }
                     }
@@ -5489,7 +5489,7 @@ namespace ilPSP.LinSolvers {
                     } 
                 }
 
-                Debug_Assert(__RanksToReceiveFrom.SetEquals(Sources), "MPI-global mismatch in sources and destinations.");
+                Debug.Assert(__RanksToReceiveFrom.SetEquals(Sources), "MPI-global mismatch in sources and destinations.");
 #endif
             }
 
@@ -5511,7 +5511,7 @@ namespace ilPSP.LinSolvers {
                 unsafe {
                     int NoOfSend = secondWave_SendBuffers.Length;
                     int NoOfRecv = secondWave_ReceiveBuffer.Length;
-                    Debug_Assert(secondWave.Length == NoOfSend + NoOfRecv, "21");
+                    Debug.Assert(secondWave.Length == NoOfSend + NoOfRecv, "21");
 
 #if DEBUG
                     bool[] checker = new bool[NoOfRecv + NoOfSend];
@@ -5522,16 +5522,16 @@ namespace ilPSP.LinSolvers {
                         csMPI.Raw.Waitany(NoOfSend + NoOfRecv, secondWave, out index, out Stat);
 
 #if DEBUG
-                        Debug_Assert(checker[index] == false, $"2nd wave: request {index} already handled.");
+                        Debug.Assert(checker[index] == false, $"2nd wave: request {index} already handled.");
                         checker[index] = true;
 #endif
                         if(index >= NoOfSend) {
                             // received buffer
-                            Debug_Assert(Stat.MPI_TAG == 32567, "2nd wave, receiving: tag mismatch in MPI status.");
-                            Debug_Assert(Stat.MPI_SOURCE == RanksToReceiveFrom[index - NoOfSend], "2nd wave, receiving: source rank mismatch in MPI status.");
+                            Debug.Assert(Stat.MPI_TAG == 32567, "2nd wave, receiving: tag mismatch in MPI status.");
+                            Debug.Assert(Stat.MPI_SOURCE == RanksToReceiveFrom[index - NoOfSend], "2nd wave, receiving: source rank mismatch in MPI status.");
 #if DEBUG
                             //the count filed seeems to be wrongly mapped for OpenMPI
-                            //Debug_Assert(Stat.count == _RecvSize[index - NoOfSend], $"2nd wave, receiving: receive count mismatch -- Status count {Stat.count}, expected {_RecvSize[index - NoOfSend]}.");
+                            //Debug.Assert(Stat.count == _RecvSize[index - NoOfSend], $"2nd wave, receiving: receive count mismatch -- Status count {Stat.count}, expected {_RecvSize[index - NoOfSend]}.");
 #endif
                             IntPtr Buffer = secondWave_ReceiveBuffer[index - NoOfSend];
 
@@ -5613,18 +5613,18 @@ namespace ilPSP.LinSolvers {
                         csMPI.Raw.Waitany(NoOfSend + NoOfRecv, firstWave, out index, out Stat);
 
 #if DEBUG
-                        Debug_Assert(checker[index] == false, $"1st wave: request {index} already handled.");
+                        Debug.Assert(checker[index] == false, $"1st wave: request {index} already handled.");
                         checker[index] = true;
 #endif
                         if(index >= NoOfSend) {
                             // received buffer size
 #if DEBUG                            
-                            //Debug_Assert(Stat.count == 1 * sizeof(int), $"1st wave, receiving: receive count mismatch -- Status count {Stat.count}, expected {sizeof(int)}.");
-                            Debug_Assert(RecvSize[index - NoOfSend] >= 0, "11");
-                            Debug_Assert(Stat.MPI_TAG == 567, $"1st wave, receiving: tag mismatch.");
-                            Debug_Assert(Stat.MPI_SOURCE == RanksToReceiveFrom[index - NoOfSend], $"1st wave, receiving: source mismatch.");
+                            //Debug.Assert(Stat.count == 1 * sizeof(int), $"1st wave, receiving: receive count mismatch -- Status count {Stat.count}, expected {sizeof(int)}.");
+                            Debug.Assert(RecvSize[index - NoOfSend] >= 0, "11");
+                            Debug.Assert(Stat.MPI_TAG == 567, $"1st wave, receiving: tag mismatch.");
+                            Debug.Assert(Stat.MPI_SOURCE == RanksToReceiveFrom[index - NoOfSend], $"1st wave, receiving: source mismatch.");
 
-                            Debug_Assert(RecvSize[index - NoOfSend] == SizesCheck[RanksToReceiveFrom[index - NoOfSend], MPIrank], $"Buffer size check failed: received size {RecvSize[index - NoOfSend]}, check says {SizesCheck[RanksToReceiveFrom[index - NoOfSend], MPIrank]}");
+                            Debug.Assert(RecvSize[index - NoOfSend] == SizesCheck[RanksToReceiveFrom[index - NoOfSend], MPIrank], $"Buffer size check failed: received size {RecvSize[index - NoOfSend]}, check says {SizesCheck[RanksToReceiveFrom[index - NoOfSend], MPIrank]}");
 #endif
                             IntPtr Buffer = Marshal.AllocHGlobal(RecvSize[index - NoOfSend]);
                             secondWave_ReceiveBuffer[index - NoOfSend] = Buffer;
@@ -5643,11 +5643,11 @@ namespace ilPSP.LinSolvers {
                 for(int r = 0; r < MPIsize; r++) {
                     bool receiveFrom_r_check = SizesCheck[r, MPIrank] != 0;
                     bool receiveFrom_r = RanksToReceiveFrom.Contains(r);
-                    Debug_Assert(receiveFrom_r == receiveFrom_r_check, "Receive/Send pattern failed 2nd check.");
+                    Debug.Assert(receiveFrom_r == receiveFrom_r_check, "Receive/Send pattern failed 2nd check.");
 
                     int idx = Array.IndexOf(RanksToReceiveFrom, r);
                     int recvSize = idx >= 0 ? _RecvSize[idx] : 0;
-                    Debug_Assert(recvSize == SizesCheck[r, MPIrank], $"Buffer size check failed (2): received size {recvSize}, check says {SizesCheck[r, MPIrank]}");
+                    Debug.Assert(recvSize == SizesCheck[r, MPIrank], $"Buffer size check failed (2): received size {recvSize}, check says {SizesCheck[r, MPIrank]}");
                 }
 #endif
             }
@@ -5702,7 +5702,7 @@ namespace ilPSP.LinSolvers {
                 MultidimensionalArray tmp = null;
                 //for (int BlockNo = 0; BlockNo < NoOfBlocks; BlockNo++) {
 
-                Debug_Assert(m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
+                Debug.Assert(m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
                 for (int iBlockLoc = 0; iBlockLoc < m_BlockRows.Length; iBlockLoc++) {
                     var BlockRow = this.m_BlockRows[iBlockLoc];
                     if (BlockRow != null) {
@@ -5712,7 +5712,7 @@ namespace ilPSP.LinSolvers {
                         foreach (var KV in BlockRow) {
                             int jBlockGlb = KV.Key;
                             BlockEntry Block = KV.Value;
-                            Debug_Assert(jBlockGlb == Block.jBlkCol);
+                            Debug.Assert(jBlockGlb == Block.jBlkCol);
 
                             if (OnlyDiagonal && (iBlockGlb != jBlockGlb)) {
                                 // skip of-diagonal entries
@@ -5732,13 +5732,13 @@ namespace ilPSP.LinSolvers {
                                 int ColBlockType = _ColPartitioning.GetBlockType(jBlockGlb);
                                 int[] RowSblk_i0 = _RowPartitioning.GetSubblk_i0(RowBlockType);
                                 int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
-                                Debug_Assert(RowSblk_i0.Length == NoOfSblk_rows);
-                                Debug_Assert(RowSblkLen.Length == NoOfSblk_rows);
+                                Debug.Assert(RowSblk_i0.Length == NoOfSblk_rows);
+                                Debug.Assert(RowSblkLen.Length == NoOfSblk_rows);
 
                                 int[] ColSblk_i0 = _ColPartitioning.GetSubblk_i0(ColBlockType);
                                 int[] ColSblkLen = _ColPartitioning.GetSubblkLen(ColBlockType);
-                                Debug_Assert(ColSblk_i0.Length == NoOfSblk_cols);
-                                Debug_Assert(ColSblkLen.Length == NoOfSblk_cols);
+                                Debug.Assert(ColSblk_i0.Length == NoOfSblk_cols);
+                                Debug.Assert(ColSblkLen.Length == NoOfSblk_cols);
 
                                 for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
                                     for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
