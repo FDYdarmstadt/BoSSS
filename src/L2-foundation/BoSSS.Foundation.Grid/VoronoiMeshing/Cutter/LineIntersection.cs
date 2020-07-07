@@ -10,7 +10,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     static class LineIntersect
     {
-        const double accuracy = 1e-10;
+        public const double accuracy = 1e-10;
 
         //Return end of edge if parallel and overlapping.
         public static bool FindFirst(Line edge, Line line, ref IntersectionCase intersectionCase, out double alpha)
@@ -117,7 +117,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 {
                     if (accuracy <= alpha2)
                     {
-                        if (accuracy <= alpha && 1 + accuracy >= alpha)
+                        if (0 <= alpha && 1 + accuracy >= alpha)
                         {
                             if (alpha > 1 - accuracy)
                             {
