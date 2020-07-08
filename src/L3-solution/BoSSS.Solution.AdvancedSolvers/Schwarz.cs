@@ -561,9 +561,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //*/
                 }
 
-                BlockMsrMatrix ExtRows=null;
-                if (m_Overlap > 0)
-                    ExtRows=BlockMask.GetAllExternalRows(m_MgOp.Mapping, m_MgOp.OperatorMatrix);
+                BlockMsrMatrix ExtRows = null;
+                if(m_Overlap > 0)
+                    ExtRows = BlockMask.GetAllExternalRows(m_MgOp.Mapping, m_MgOp.OperatorMatrix);
 #if TEST
                 ExtRows.SaveToTextFileSparseDebug("ExtRows");
 #endif
@@ -650,7 +650,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     BlockMatrices[iPart] = fullBlock;
                 }
-              
+
+                // Watchdog bomb!
+                // ==============
+
+                // multiple watchdogs to detect out-of-sync                
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
+                MPICollectiveWatchDog.Watch();
 
 
                 // solution scaling in overlapping regions
