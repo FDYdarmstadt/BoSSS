@@ -21,7 +21,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(double angle = 150, double distance = 3) {
+        public static FSI_Control Main(double angle = 40, double distance = 3) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);

@@ -1449,7 +1449,8 @@ namespace BoSSS.Application.IBM_Solver {
                 //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
                 // Only CutCells are NoCoarseningCells 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)(this.GridData), CutCells);
+                bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {

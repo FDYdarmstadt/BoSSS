@@ -1459,11 +1459,12 @@ namespace BoSSS.Application.FSI_Solver {
             List<int> CellsToRefineList = new List<int>();
             List<int[]> Coarsening = new List<int[]>();
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
-                BitArray cutCells = LsTrk.Regions.GetCutCellMask().GetBitMask();
+                CellMask cutCells = LsTrk.Regions.GetCutCellMask();
+                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells);
                 if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
-                    AnyChangeInGrid = GridRefinementController.ComputeGridChange(gridData, cutCells, GetCellMaskWithRefinementLevelsStartUpSweeps(), out CellsToRefineList, out Coarsening);
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementForStartUpSweeps(), out CellsToRefineList, out Coarsening);
                 else
-                    AnyChangeInGrid = GridRefinementController.ComputeGridChange(gridData, cutCells, CHAOSGetCellMaskWithRefinementLevelsStartUpSweeps(), out CellsToRefineList, out Coarsening);
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementBasedOnParticleLength(), out CellsToRefineList, out Coarsening);
             } 
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
@@ -1482,38 +1483,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Finds all cells to be refined with the perssonsensor.
         /// </summary>
-        private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevelsWithPersson() {
-            int refinementLevel = ((FSI_Control)Control).RefinementLevel;
-            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            BitArray perssonCells = new BitArray(noOfLocalCells);
-            SpeciesId fluidSpeciesID = LsTrk.GetSpeciesId("A");
-            for (int p = 0; p < m_Particles.Count(); p++) {
-                for (int j = 0; j < noOfLocalCells; j++) {
-                    if (LsTrk.Regions.IsSpeciesPresentInCell(fluidSpeciesID, j)) {
-                        double perssonValue = perssonsensor.GetValue(j);
-                        double threshold = 1e-6;
-                        if (!perssonCells[j] && perssonValue > threshold) {
-                            Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                            perssonCells[j] = m_Particles[p].Contains(cellCenter, m_Particles[p].GetLengthScales().Max());
-                        }
-                        else if (!perssonCells[j]) {
-                            Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                            perssonCells[j] = m_Particles[p].Contains(cellCenter, GetMinGridLength() * 4);
-                        }
-                    }
-                    if (!perssonCells[j] && ((FSI_Control)Control).pureDryCollisions) {
-                        Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        perssonCells[j] = m_Particles[p].Contains(cellCenter, MaxGridLength / 2);
-                    }
-                }
-            }
-            
-            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, perssonCells), };
-        }
-        /// <summary>
-        /// Finds all cells to be refined with the perssonsensor.
-        /// </summary>
-        private List<Tuple<int, BitArray>> CHAOSGetCellMaskWithRefinementLevelsStartUpSweeps() {
+        private List<Tuple<int, BitArray>> GetCellMaskRefinementBasedOnParticleLength() {
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
             int refinementLevel2 = refinementLevel >= 2 ? ((FSI_Control)Control).RefinementLevel / 2 : 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -1538,7 +1508,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Finds all cells to be refined with the perssonsensor.
         /// </summary>
-        private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevelsStartUpSweeps() {
+        private List<Tuple<int, BitArray>> GetCellMaskRefinementForStartUpSweeps() {
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             BitArray particleNearRegionCells = new BitArray(noOfLocalCells);
