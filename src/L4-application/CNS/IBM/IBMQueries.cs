@@ -90,7 +90,7 @@ namespace CNS.IBM {
 
                 DGField dgField = app.IOFields.Single(f => f.Identification == fieldName);
 
-                return DGField.IntegralOverEx(scheme, new Func((X,U,j) => (U[0])), 2 , dgField);
+                return DGField.IntegralOverEx(scheme, ((X,U,j) => (U[0])), 2 , dgField);
             };
         }
 

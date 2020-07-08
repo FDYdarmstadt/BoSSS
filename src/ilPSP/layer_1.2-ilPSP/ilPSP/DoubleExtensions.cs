@@ -83,6 +83,15 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// <see cref="double.IsInfinity"/>
+        /// </summary>
+        /// <param name="d"><see cref="double.IsInfinity"/></param>
+        /// <returns><see cref="double.IsInfinity"/></returns>
+        public static bool IsInfinity(this double d) {
+            return double.IsInfinity(d);
+        }
+
+        /// <summary>
         /// <see cref="Math.Sign(double)"/>
         /// </summary>
         /// <param name="d"><see cref="Math.Sign(double)"/></param>

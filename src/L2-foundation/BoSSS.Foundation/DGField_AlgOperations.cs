@@ -25,6 +25,7 @@ using ilPSP;
 
 namespace BoSSS.Foundation {
 
+    /*
     /// <summary>
     /// used by <see cref="DGField.ProjectFunction"/>
     /// </summary>
@@ -39,7 +40,7 @@ namespace BoSSS.Foundation {
     /// </param>
     /// <returns></returns>
     public delegate double Func(double[] X, double[] U, int jCell);
-
+    */
     partial class DGField {
 
         /// <summary>
@@ -514,7 +515,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// The function to be applied.
             /// </summary>
-            private Func m_f;
+            private Func<Vector,double[],int,double> m_f;
 
             /// <summary>
             /// Constructs a new source
@@ -525,7 +526,7 @@ namespace BoSSS.Foundation {
             /// <param name="f">
             /// The function to be applied.
             /// </param>
-            public ProjectFunctionSource(string[] _Dom, Func f) {
+            public ProjectFunctionSource(string[] _Dom, Func<Vector,double[],int,double> f) {
                 Dom = _Dom;
                 m_f = f;
             }
@@ -570,7 +571,7 @@ namespace BoSSS.Foundation {
                 int N = _x.GetLength(1);
                 int Lambda = Dom.Length;
 
-                Func f = m_f;
+                Func<Vector,double[],int,double> f = m_f;
                 double[] U = new double[Lambda];
                 double[] X = new double[D];
 
@@ -596,14 +597,20 @@ namespace BoSSS.Foundation {
         /// to this field;
         /// </summary>
         /// <param name="alpha">scaling</param>
-        /// <param name="f">some function</param>
+        /// <param name="f">
+        /// some function
+        /// - 1st argument: position in physical space
+        /// - 2nd argument: values of fields in <paramref name="U"/> at respective position
+        /// - 3rd argument: cell index
+        /// - return value: value of function that should be projected at the respective position
+        /// </param>
         /// <param name="cqs">
         /// cell quadrature scheme: domain and quadrature rule
         /// </param>
         /// <param name="U">
         /// arguments for <paramref name="f"/>
         /// </param>
-        public void ProjectFunction(double alpha, Func f, CellQuadratureScheme cqs, params DGField[] U) {
+        public void ProjectFunction(double alpha, Func<Vector,double[],int,double> f, CellQuadratureScheme cqs, params DGField[] U) {
 
             string[] Dom = new string[U.Length];
             for (int i = 0; i < Dom.Length; i++)
