@@ -216,7 +216,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 5) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 2) {
             //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian2(8,3,deg:2)
 
 

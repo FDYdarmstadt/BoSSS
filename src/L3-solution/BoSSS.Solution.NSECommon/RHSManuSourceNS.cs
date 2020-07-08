@@ -31,7 +31,7 @@ namespace BoSSS.Solution.NSECommon {
     /// See also ControlManuSol() control function.
     /// </summary>
     //public class RHSManuSourceNS : BoSSS.Solution.Utils.LinearSource {
-    public class RHSManuSourceNS : IVolumeForm, ISupportsJacobianComponent {
+    public class RHSManuSourceNS : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
         double[] MolarMasses;
         string direction;
         double Reynolds;
@@ -39,6 +39,7 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode physMode;
         double phystime;
         bool rhoOne;
+        public Func<double[], double, double> SourceTerm;
         /// <summary>
         /// <param name="Reynolds"></param>
         /// <param name="Froude"></param>
@@ -47,7 +48,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="direction">Can be "x" or "y".</param>
         /// <param name="physMode"></param>        
         /// </summary>
-        public RHSManuSourceNS(double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, bool rhoOne) {
+        public RHSManuSourceNS(double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, bool rhoOne, Func<double[], double, double> _SourceTerm) {
             this.MolarMasses = MolarMasses;
             this.direction = direction;
             this.Reynolds = Reynolds;
@@ -55,7 +56,7 @@ namespace BoSSS.Solution.NSECommon {
             this.physMode = physMode;
             this.Froude = Froude;
             this.rhoOne = rhoOne;
-
+            this.SourceTerm = _SourceTerm;
         }
 
 
@@ -91,7 +92,15 @@ namespace BoSSS.Solution.NSECommon {
         }
 
 
+        double time;
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("time"))
+                time = (double)cs.UserDefinedValues["time"];
+        }
+
+
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
 
 
             ////Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = cos(x*y), v = cos(x*y), p = sin(x*y).
@@ -116,31 +125,42 @@ namespace BoSSS.Solution.NSECommon {
 
             double convectionSwitch = 1.0;
             double viscoustermSwitch = 1.0;
-
+            double res;
             if (direction == "x") {
                 switch (physMode) {
                     case PhysicsMode.Incompressible:
                     ConvectionTerm = -0.20e1 * Math.Cos(x_) * Math.Sin(x_) - 0.10e1 * Math.Cos(x_) * Math.Sin(y_);
-                    break;
+                        ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(x_) / Reynolds; // OK
+                        PressureGradientTerm = y_ * Math.Cos(x_ * y_); // OK
+                        BouyancyTerm = 0.0;
+                        res = ConvectionTerm * convectionSwitch + ViscTerm * viscoustermSwitch + PressureGradientTerm - BouyancyTerm;
+                        break;
 
                     case PhysicsMode.LowMach:
                     ConvectionTerm = p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Pow(Math.Cos(x_), 0.2e1) * y_ * Math.Sin(x_ * y_) - 0.2e1 * p0 / Math.Cos(x_ * y_) * Math.Cos(x_) * Math.Sin(x_) + p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) - p0 / Math.Cos(x_ * y_) * Math.Cos(x_) * Math.Sin(y_); // conti, mom and energy
-                    break;
+                        ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(x_) / Reynolds; // OK
+                        PressureGradientTerm = y_ * Math.Cos(x_ * y_); // OK
+                        BouyancyTerm = 0.0;
+                        res = ConvectionTerm * convectionSwitch + ViscTerm * viscoustermSwitch + PressureGradientTerm - BouyancyTerm;
+                        break;
                     case PhysicsMode.Combustion:
                     ConvectionTerm = p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Pow(Math.Cos(x_), 0.2e1) * y_ * Math.Sin(x_ * y_) - p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5, -0.2e1) * Math.Pow(Math.Cos(x_), 0.2e1) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 - alpha4 * y_ * Math.Sin(x_ * y_) / M4 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_) + alpha4 * y_ * Math.Sin(x_ * y_)) / M5) - 0.2e1 * p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Cos(x_) * Math.Sin(x_) + p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Cos(x_) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) - p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5, -0.2e1) * Math.Cos(x_) * Math.Cos(y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 - alpha4 * x_ * Math.Sin(x_ * y_) / M4 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_) + alpha4 * x_ * Math.Sin(x_ * y_)) / M5) - p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Cos(x_) * Math.Sin(y_);
 
                     if (rhoOne)
                         ConvectionTerm = -0.20e1 * Math.Cos(x_) * Math.Sin(x_) - 0.10e1 * Math.Cos(x_) * Math.Sin(y_);
-
-
-                    break;
+                        ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(x_) / Reynolds; // OK
+                        PressureGradientTerm = y_ * Math.Cos(x_ * y_); // OK
+                        BouyancyTerm = 0.0;
+                        res = ConvectionTerm * convectionSwitch + ViscTerm * viscoustermSwitch + PressureGradientTerm - BouyancyTerm;
+                        break;
+                    case PhysicsMode.MixtureFraction:
+                        res = SourceTerm(x, time);
+                        break;
                     default:
                     throw new NotImplementedException("should not happen");
                 }
 
-                ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(x_) / Reynolds; // OK
-                PressureGradientTerm = y_ * Math.Cos(x_ * y_); // OK
-                BouyancyTerm = 0.0;
+            
 
 
 
@@ -149,11 +169,17 @@ namespace BoSSS.Solution.NSECommon {
                     case PhysicsMode.Incompressible:
                     ConvectionTerm = -0.10e1 * Math.Cos(y_) * Math.Sin(x_) - 0.20e1 * Math.Cos(y_) * Math.Sin(y_);
                     BouyancyTerm = 0.0;
-                    break;
+                        ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(y_) / Reynolds; // 
+                        PressureGradientTerm = x_ * Math.Cos(x_ * y_);
+                        res = ConvectionTerm * convectionSwitch + ViscTerm * viscoustermSwitch + PressureGradientTerm - BouyancyTerm;
+                        break;
                     case PhysicsMode.LowMach:
                     ConvectionTerm = p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * Math.Cos(y_) * y_ * Math.Sin(x_ * y_) - p0 / Math.Cos(x_ * y_) * Math.Sin(x_) * Math.Cos(y_) + p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Pow(Math.Cos(y_), 0.2e1) * x_ * Math.Sin(x_ * y_) - 0.2e1 * p0 / Math.Cos(x_ * y_) * Math.Cos(y_) * Math.Sin(y_); // conti, mom and energy
                     BouyancyTerm = -1 / (Froude * Froude) * p0 / Math.Cos(x_ * y_);  // -1/Fr*p0/T, bouyancy term 
-                    break;
+                        ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(y_) / Reynolds; // 
+                        PressureGradientTerm = x_ * Math.Cos(x_ * y_);
+                        res = ConvectionTerm * convectionSwitch + ViscTerm * viscoustermSwitch + PressureGradientTerm - BouyancyTerm;
+                        break;
                     case PhysicsMode.Combustion:
                     ConvectionTerm = p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Cos(x_) * Math.Cos(y_) * y_ * Math.Sin(x_ * y_) - p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5, -0.2e1) * Math.Cos(x_) * Math.Cos(y_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 - alpha4 * y_ * Math.Sin(x_ * y_) / M4 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_) + alpha4 * y_ * Math.Sin(x_ * y_)) / M5) - p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Sin(x_) * Math.Cos(y_) + p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Pow(Math.Cos(y_), 0.2e1) * x_ * Math.Sin(x_ * y_) - p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5, -0.2e1) * Math.Pow(Math.Cos(y_), 0.2e1) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 - alpha4 * x_ * Math.Sin(x_ * y_) / M4 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_) + alpha4 * x_ * Math.Sin(x_ * y_)) / M5) - 0.2e1 * p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5) * Math.Cos(y_) * Math.Sin(y_);
                     BouyancyTerm = -Math.Pow(Froude, -0.2e1) * p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + alpha4 * Math.Cos(x_ * y_) / M4 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_) - alpha4 * Math.Cos(x_ * y_)) / M5);
@@ -162,18 +188,22 @@ namespace BoSSS.Solution.NSECommon {
                         ConvectionTerm = -0.10e1 * Math.Cos(y_) * Math.Sin(x_) - 0.20e1 * Math.Cos(y_) * Math.Sin(y_);
                         BouyancyTerm = -0.10e1 * Math.Pow(Froude, -0.2e1); ;
                     }
-
-                    break;
+                        ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(y_) / Reynolds; // 
+                        PressureGradientTerm = x_ * Math.Cos(x_ * y_);
+                        res = ConvectionTerm * convectionSwitch + ViscTerm * viscoustermSwitch + PressureGradientTerm - BouyancyTerm;
+                        break;
+                    case PhysicsMode.MixtureFraction:
+                        res = SourceTerm(x, time);
+                        break;
                     default:
                     throw new NotImplementedException("should not happen");
                 }
-                ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(y_) / Reynolds; // 
-                PressureGradientTerm = x_ * Math.Cos(x_ * y_);
+             
             } else
                 throw new ArgumentException("Specified direction not supported");
 
 
-            return -(ConvectionTerm * convectionSwitch + ViscTerm * viscoustermSwitch + PressureGradientTerm + BouyancyTerm * -1) * V;
+            return -res * V;
         }
     }
 }

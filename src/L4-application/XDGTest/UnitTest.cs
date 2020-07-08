@@ -207,7 +207,13 @@ namespace BoSSS.Application.XDGTest {
                 DatabaseInfo.Close(TestDb3);
             }
 
-            Directory.Delete(TestDbFullPath, true);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            if(rank == 0) {
+                Console.WriteLine($"Deleting test database at {TestDbFullPath} ...");
+                Directory.Delete(TestDbFullPath, true);
+                Console.WriteLine("done.");
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
         }
 
 

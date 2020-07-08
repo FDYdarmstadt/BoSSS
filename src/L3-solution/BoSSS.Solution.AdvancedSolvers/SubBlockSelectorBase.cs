@@ -47,7 +47,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="map"></param>
         public SubBlockSelectorBase(MultigridMapping map) {
             if (map == null)
-                throw new Exception("empty mapping! This will not end well ...");
+                throw new ArgumentNullException("empty mapping! This will not end well ...");
             m_map = map;
             this.CellSelector();
             this.VariableSelector();

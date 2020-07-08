@@ -330,6 +330,8 @@ namespace BoSSS.Application.BoSSSpad {
                 } else {
                     Console.WriteLine("No alternative paths specified.");
                 }
+            } else {
+                Console.WriteLine("");
             } 
 
             // check grid & restart info
