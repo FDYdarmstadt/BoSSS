@@ -55,10 +55,11 @@ namespace BoSSS.Solution.NSECommon {
 
         public override double getDensityFromZ(double Z) {
             double res;
-            //rhoOne = true;
+
+            if(Q > 0) { 
             if (!rhoOne) {
-                Debug.Assert(Z - 1.0 < 1e-4 && Z > -1e-4);
-                double T, Y0, Y1, Y2, Y3, Y4;
+                //Debug.Assert(Z - 1.0 < 1e-4 && Z > -1e-4);
+                double T, Y0, Y1, Y2, Y3, Y4;                
                 if (Z >= zst) { // Fuel side
                     T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
                     Y0 = YF0 * (Z - zst) / (1 - zst);
@@ -77,12 +78,18 @@ namespace BoSSS.Solution.NSECommon {
                 } else {
                     throw new Exception("out of bounds");
                 }
+
+                    Debug.Assert(Math.Abs(1.0 - (Y0 + Y1 + Y2 + Y3 + Y4)) <= 1e-1);
                 double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
 
-                res = GetDensity(densityArguments);
+                res = base.GetDensity(densityArguments);
             } else {
                 res = 1.0;
             }
+            }else {
+                res = base.GetDensity(new double[] { 1.0, Z, 1.0-Z, 0.0, 0.0});
+            }
+
 
             return res;
 
@@ -123,8 +130,8 @@ namespace BoSSS.Solution.NSECommon {
 
                         break;
                     case VariableNames.MassFraction4:
-                        double YNOxi0 = 1.0 - YF0;
-                        double YNFuel0 = 1.0 - YO0;
+                        double YNOxi0 = 1.0 - YO0;
+                        double YNFuel0 = 1.0 - YF0;
                         res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
                         break;
                     default:
@@ -149,8 +156,8 @@ namespace BoSSS.Solution.NSECommon {
                         res = -YF0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_CH4 * CC.PM_CH4) * Z;
                         break;
                     case VariableNames.MassFraction4:
-                        double YNOxi0 = 1.0 - YF0;
-                        double YNFuel0 = 1.0 - YO0;
+                        double YNOxi0 = 1.0 - YO0;
+                        double YNFuel0 = 1.0 - YF0;
                         res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
                         break;
                     default:
@@ -187,8 +194,9 @@ namespace BoSSS.Solution.NSECommon {
                     VariableNames.MassFraction0_0, 
                     VariableNames.MassFraction1_0, 
                     VariableNames.MassFraction2_0, 
-                    VariableNames.MassFraction3_0, 
-                    VariableNames.MassFraction4_0 };
+                    VariableNames.MassFraction3_0                     
+                    //,VariableNames.MassFraction4_0
+                };
             }
         }
     }
