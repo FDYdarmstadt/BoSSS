@@ -629,6 +629,9 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(tsi.Session.ID, tsi.TimeStepNumber);
+            
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -638,6 +641,10 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, default(TimestepNumber));
+
+            var tsi = si.Timesteps.Last();
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -647,6 +654,10 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, idx);
+
+            var tsi = si.Timesteps.Single(_tsi => _tsi.TimeStepNumber.Equals(idx));
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
 

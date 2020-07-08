@@ -980,7 +980,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
             int L = i.Length;
-            int[] result = new int[L * size];
+            int[] result = new int[size*L];
 
 
             unsafe {
@@ -988,10 +988,10 @@ namespace MPI.Wrappers {
                     
                     csMPI.Raw.Allgather(
                         (IntPtr)sendbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.INT,
                         (IntPtr)recvbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.INT,
                         comm);
                 }
@@ -1015,7 +1015,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
             int L = i.Length;
-            double[] result = new double[L * size];
+            double[] result = new double[size*L];
 
 
             unsafe {
@@ -1023,10 +1023,10 @@ namespace MPI.Wrappers {
 
                     csMPI.Raw.Allgather(
                         (IntPtr)sendbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.DOUBLE,
                         (IntPtr)recvbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.DOUBLE,
                         comm);
                 }
