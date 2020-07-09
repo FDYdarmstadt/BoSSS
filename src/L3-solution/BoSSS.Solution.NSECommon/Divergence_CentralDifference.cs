@@ -104,11 +104,11 @@ namespace BoSSS.Solution.NSECommon {
                                 }
                             case PhysicsMode.Combustion:
                                 // opt1:
-                                TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                 double[] args = new double[NumberOfReactants + 1];
                                 args[0] = TemperatureOut;
                                 for(int n = 1; n < NumberOfReactants + 1; n++) {
-                                    args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
+                                    args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
                                 }
                                 res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
                                 break;
@@ -293,7 +293,7 @@ namespace BoSSS.Solution.NSECommon {
                                 break;
                             case PhysicsMode.MixtureFraction:
                                 // opt1:
-                                double Zout = Bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, 0);                                
+                                double Zout = Bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);                                
                                 res = EoS.getDensityFromZ(Zout) * Uout * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
@@ -309,11 +309,11 @@ namespace BoSSS.Solution.NSECommon {
                                 }
                             case PhysicsMode.Combustion: {
                                     // opt1:
-                                    TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                     double[] argsa = new double[NumberOfSpecies - 1 + 1];
                                     argsa[0] = TemperatureOut;
                                     for (int n = 1; n < NumberOfSpecies; n++) {
-                                        argsa[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
+                                        argsa[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
                                     }
                                     res = EoS.GetDensity(argsa) * Uout * inp.Normal[Component];
                                     break;

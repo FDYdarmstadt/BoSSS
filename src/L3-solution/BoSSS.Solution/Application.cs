@@ -1431,45 +1431,63 @@ namespace BoSSS.Solution {
                 if (this.Control != null) {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
+                    if (this.Control.GridFunc != null && this.Control.RestartInfo != null)
+                        throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.RestartInfo' are exclusive, cannot be unequal null at the same time.");
                     if (this.Control.GridFunc == null && this.Control.GridGuid == Guid.Empty && this.Control.RestartInfo == null)
                         throw new ApplicationException("Control object error: No grid specified -- either 'AppControl.GridFunc' or 'AppControl.GridGuid' or 'AppControl.RestartInfo' must be specified.");
 
-                    if (this.Control.GridFunc != null) {
-                        var g = this.Control.GridFunc();
-                        return g;
-                    } else if (this.Control.GridGuid != null) {
-                        if (this.Control.RestartInfo != null) {
-                            ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);
-                            TimestepNumber timestep = this.Control.RestartInfo.Item2;
-                            ITimestepInfo tsi_toLoad;
-                            if (timestep == null || timestep.MajorNumber < 0) {
-                                tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
-                            } else {
-                                tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
-                            }
-                            var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
+                    if (this.Control.RestartInfo != null) {
+                        // +++++++++++++++++++++++++++++++++++++++++++
+                        // restart - use grid guid from last time-step
+                        // +++++++++++++++++++++++++++++++++++++++++++
 
-                            if (_Grid is GridCommons) {
-                                GridCommons __Grid = (GridCommons)_Grid;
-                                foreach (string oldBndy in this.Control.BoundaryValueChanges.Keys) {
-                                    int bndyInd = __Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
-                                    if (bndyInd > -1) {
-                                        __Grid.EdgeTagNames[__Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
-                                    } else {
-                                        throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
-                                    }
+                        ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);
+                        TimestepNumber timestep = this.Control.RestartInfo.Item2;
+                        ITimestepInfo tsi_toLoad;
+                        if (timestep == null || timestep.MajorNumber < 0) {
+                            tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
+                        } else {
+                            tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
+                        }
+
+                        if(this.Control.GridGuid != null && this.Control.GridGuid != default(Guid) && this.Control.GridGuid != Guid.Empty) {
+                            if (this.Control.GridGuid != tsi_toLoad.GridID)
+                                throw new ArgumentException($"Grid Guid mismatch for restart: 'Control.GridGuid' is set to {this.Control.GridGuid}, but grid for restart-timestep has id {tsi_toLoad.GridID}.");
+                        }
+
+
+                        var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
+
+                        if (_Grid is GridCommons) {
+                            GridCommons __Grid = (GridCommons)_Grid;
+                            foreach (string oldBndy in this.Control.BoundaryValueChanges.Keys) {
+                                int bndyInd = __Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
+                                if (bndyInd > -1) {
+                                    __Grid.EdgeTagNames[__Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
+                                } else {
+                                    throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
                                 }
                             }
-
-                            ht.LogMemoryStat();
-                            return _Grid;
-                        } else {
-                            var _Grid = DatabaseDriver.LoadGrid(this.Control.GridGuid, m_Database);
-                            ht.LogMemoryStat();
-                            return _Grid;
                         }
+
+                        ht.LogMemoryStat();
+                        return _Grid;
+                    } else if (this.Control.GridGuid != null && this.Control.GridGuid != default(Guid)) {
+                        // ++++++++++++++++++++
+                        // load grid by GridID
+                        // ++++++++++++++++++++
+                        var _Grid = DatabaseDriver.LoadGrid(this.Control.GridGuid, m_Database);
+                        ht.LogMemoryStat();
+                        return _Grid;
+
+                    } else if (this.Control.GridFunc != null) {
+                        // ++++++++++++++++++++++++++++
+                        // use grid-generating function
+                        // ++++++++++++++++++++++++++++
+                        var g = this.Control.GridFunc();
+                        return g;
                     } else {
-                        throw new ApplicationException("Unable to create grid from control object. 'AppControl.GridFunc' and 'AppControl.GridGuid' are both null.");
+                        throw new ApplicationException("Unable to create grid from control object. 'AppControl.GridFunc' and 'AppControl.GridGuid' and 'AppControl.RestartInfo' are all null.");
                     }
                 }
 
