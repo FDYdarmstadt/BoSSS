@@ -5574,7 +5574,7 @@ namespace ilPSP.LinSolvers {
                     }
 
                     // serialize blocks & send them
-                    int* SendSize = stackalloc int[NoOfRecv];
+                    int* SendSize = stackalloc int[NoOfSend];
                     for(int i = 0; i < RanksToSendTo.Length; i++) {
                         int DestinationProc = RanksToSendTo[i];
 
