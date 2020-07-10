@@ -39,6 +39,43 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
+            if(!base.Equals(obj))
+                return false;
+            var other = obj as AppControlSolver;
+            if(other == null)
+                return false;
+
+            if(this.LinearSolver != null) {
+                if(!this.LinearSolver.Equals(other.LinearSolver))
+                    return false;
+            } else {
+                if(other.LinearSolver != null)
+                    return false;
+            }
+
+            if(this.NonLinearSolver != null) {
+                if(!this.NonLinearSolver.Equals(other.NonLinearSolver))
+                    return false;
+            } else {
+                if(other.NonLinearSolver != null)
+                    return false;
+            }
+
+
+            return true;
+        }
 
     }
 }

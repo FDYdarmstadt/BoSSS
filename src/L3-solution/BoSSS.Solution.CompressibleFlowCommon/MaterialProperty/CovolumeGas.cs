@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using System;
 using System.Diagnostics;
 
@@ -127,7 +128,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
         /// \f$ 
         /// </returns>
         public double GetSpeedOfSound(StateVector state) {
-            return Math.Sqrt(HeatCapacityRatio * state.Pressure / state.Density / (1.0 - state.Density * Covolume));
+            double r = Math.Sqrt(HeatCapacityRatio * state.Pressure / state.Density / (1.0 - state.Density * Covolume));
+            Debug.Assert(r > 0, "speed of sound smaller or equal to 0.0");
+            Debug.Assert(!r.IsNaNorInf(), "speed of sound is NAN or INF");
+            return r;
         }
 
         /// <summary>
@@ -150,3 +154,4 @@ namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
         #endregion
     }
 }
+

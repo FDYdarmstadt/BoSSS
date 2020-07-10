@@ -292,6 +292,17 @@ namespace BoSSS.Foundation {
             return vals[0].Sqrt() / Math.Max(vals[1], vals[2]).Sqrt();
 
         }
+
+        /// <summary>
+        /// Relative Errors for all known columns
+        /// </summary>
+        public IDictionary<string, double> AllRelErr() {
+            var R = new Dictionary<string, double>();
+            foreach(string col in this.ColumnNames) {
+                R.Add(col, RelError(col));
+            }
+            return R;
+        }
         
         /*
         /// <summary>

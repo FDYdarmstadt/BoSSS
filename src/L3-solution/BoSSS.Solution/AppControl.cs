@@ -1232,7 +1232,7 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
-        /// 
+        /// always -1
         /// </summary>
         public override int GetHashCode() {
             return -1;

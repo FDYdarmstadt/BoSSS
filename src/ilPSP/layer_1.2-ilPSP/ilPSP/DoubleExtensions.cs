@@ -76,17 +76,20 @@ namespace ilPSP {
         /// <summary>
         /// <see cref="double.IsNaN"/>
         /// </summary>
-        /// <param name="d"><see cref="double.IsNaN"/></param>
-        /// <returns><see cref="double.IsNaN"/></returns>
         public static bool IsNaN(this double d) {
             return double.IsNaN(d);
         }
 
         /// <summary>
+        /// <see cref="double.IsNaN"/> or <see cref="double.IsInfinity"/>
+        /// </summary>
+        public static bool IsNaNorInf(this double d) {
+            return double.IsNaN(d) || double.IsInfinity(d);
+        }
+
+        /// <summary>
         /// <see cref="double.IsInfinity"/>
         /// </summary>
-        /// <param name="d"><see cref="double.IsInfinity"/></param>
-        /// <returns><see cref="double.IsInfinity"/></returns>
         public static bool IsInfinity(this double d) {
             return double.IsInfinity(d);
         }

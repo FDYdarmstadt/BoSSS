@@ -213,6 +213,9 @@ namespace BoSSS.Solution.Control {
         /// <param name="compareto"></param>
         /// <returns></returns>
         public bool Equals(LinearSolverConfig compareto) {
+            if(compareto == null)
+                return false;
+
             return this.verbose == compareto.verbose &&
                 this.MaxKrylovDim == compareto.MaxKrylovDim &&
                 this.MaxSolverIterations == compareto.MaxSolverIterations &&
