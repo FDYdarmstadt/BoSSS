@@ -40,6 +40,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         MovingInterface = 1
     }
 
+    /*
     public enum TimeSteppingScheme {
         ExplicitEuler = 0,
 
@@ -73,6 +74,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         RK_IMEX3 = 203
     }
+    */
 
     public enum Equation {
         ScalarTransport = 1,

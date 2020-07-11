@@ -45,6 +45,7 @@
     <Compile Include="TimeSteppingUtils.cs" />
     <Compile Include="XdgBDFTimestepping.cs" />
     <Compile Include="XdgRKTimestepping.cs" />
+    <Compile Include="XdgTimestepper.cs" />
     <Compile Include="XdgTimesteppingBase.cs" />
   </ItemGroup>
   <ItemGroup>

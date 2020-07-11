@@ -174,6 +174,8 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public TimesteppingScheme Timestepper_Scheme = TimesteppingScheme.ImplicitEuler;
 
+
+        /*
         /// <summary>
         /// Timestepping schemes for the XdgTimestepper
         /// Either implicit timestepping using Backward-Differentiation-Formulas (BDF) formulas by <see cref="XdgBDFTimestepping"/> 
@@ -199,7 +201,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             RK_CrankNicolson = 202
         }
-
+        */
 
 
 

@@ -662,9 +662,6 @@ namespace BoSSS.Application.IBM_Solver {
             return 0.0;
         }
 
-        //public virtual CutCellMetrics DelUpdateCutCellMetrics() {
-        //    return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
-        //}
 
         //protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] Test_Force = new double[3];
@@ -676,26 +673,10 @@ namespace BoSSS.Application.IBM_Solver {
         //SinglePhaseField blocking = null;
 
         /// <summary>
-        /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
+        /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computes either one timestep or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
-
-                /*
-                //Es folgt: die Analyse des Operators
-                if (this.Control.OperatorMatrixAnalysis == true && AnalyseCounter!=0)
-                {
-                    // 'Notlösung' -- no actual agglomeration available - use length scales form a temporary agglomerator.
-                    //
-                    var agg = this.LevsetTracker.GetAgglomerator(this.FluidSpecies, this.HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
-                    var AggCLS = agg.CellLengthScales;
-
-                    Console.WriteLine("Starting OpAnal ...");
-                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), AggCLS, phystime);
-                    myAnalysis.Analyse();
-                    AnalyseCounter--;
-                }
-                */
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
@@ -788,38 +769,6 @@ namespace BoSSS.Application.IBM_Solver {
 
         MultidimensionalArray m_LenScales;
 
-
-        /*
-        /// <summary>
-        /// Custom Function to compute penalty factor for viscous terms, for bulk terms
-        /// </summary>
-        /// <param name="jCellIn"></param>
-        /// <param name="jCellOut"></param>
-        /// <param name="cj"></param>
-        /// <param name="penalty">base factor</param>
-        /// <returns></returns>
-        protected double ComputePenaltyBulk(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
-            double muFactor; // the WTF factor
-            if (jCellOut >= 0)
-                muFactor = 1.0;
-            else
-                //muFactor = Math.Max(1, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
-                muFactor = Math.Max(this.Control.PhysicalParameters.mu_A, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
-            double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
-            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
-
-            //if(once <= 0) {
-            //    once++;
-            //    Console.WriteLine("penalty: " + penalty);
-            //    Console.WriteLine("penaltySizeFactor: " + penaltySizeFactor);
-            //    Console.WriteLine("muFactor: " + muFactor);
-            //    Console.WriteLine("total penalty: " + (penalty * penaltySizeFactor * muFactor));
-            //}
-
-            return penalty * penaltySizeFactor * muFactor;
-        }
-        */
 
         /// <summary>
         /// Custom Function to compute penalty factor for viscous terms at the immersed boundary

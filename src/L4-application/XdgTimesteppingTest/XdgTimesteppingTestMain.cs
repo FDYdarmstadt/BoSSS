@@ -415,8 +415,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        XdgBDFTimestepping m_BDF_Timestepper;
-        XdgRKTimestepping m_RK_Timestepper;
+        //XdgBDFTimestepping m_BDF_Timestepper;
+        //XdgRKTimestepping m_RK_Timestepper;
+        XdgTimestepper m_Timestepper;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
@@ -430,14 +431,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotSupportedException();
             }
 
-            if ((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
-                throw new ApplicationException();
-
-            if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.Solve(phystime, dt);
-            } else {
-                m_RK_Timestepper.Solve(phystime, dt);
-            }
+            m_Timestepper.Solve(phystime, dt);
 
             // return
             // ------
