@@ -2831,8 +2831,9 @@ namespace ilPSP {
 
             if(ColNo < 0 || ColNo >= inp.NoOfCols)
                 throw new IndexOutOfRangeException("ColNo out of range");
-            if((col.Count() - ReadOffset) < inp.NoOfRows * ReadInc)
-                throw new ArgumentException("array to short", "row");
+            //if((col.Count() - ReadOffset) < inp.NoOfRows * ReadInc)
+            //    throw new ArgumentException("array to short", "row");
+            // there will be an index exception anyway...
 
             int i = 0;
             if(ReadInc == 1 && ReadOffset == 0) {
