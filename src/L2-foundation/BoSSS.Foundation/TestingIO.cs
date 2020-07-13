@@ -256,8 +256,6 @@ namespace BoSSS.Foundation {
             return err.L2Norm();
         }
 
-
-
         /// <summary>
         /// Absolute L2 error between columns
         /// </summary>
@@ -270,6 +268,21 @@ namespace BoSSS.Foundation {
 
             return CurGid.L2Distance(RefGid).Pow2().MPISum(GridDat.CellPartitioning.MPI_Comm).Sqrt();
         }
+
+        /// <summary>
+        /// Difference between data in file and data in <paramref name="vec"/>
+        /// </summary>
+        public double[] LocError(string Colname, IEnumerable<double> vec) {
+            
+            double[] RefData = ReferenceData[Colname];
+            double[] LoclErr = vec.ToArray();
+
+            LoclErr.AccV(-1.0, RefData);
+
+            return LoclErr;
+        }
+
+
 
         /// <summary>
         /// Relative L2 error between columns
@@ -477,6 +490,26 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Adds a DG field
+        /// </summary>
+        public ConventionalDGField LocalError(ConventionalDGField f) {
+            if(!object.ReferenceEquals(GridDat, f.GridDat))
+                throw new ArgumentException("DG field is defined on different mesh");
+
+            var Error = f.CloneAs();
+            Error.Clear();
+            OverwriteDGField(Error);
+            Error.Scale(-1);
+            Error.Acc(1.0, f);
+
+            Error.Identification = "Error-" + f.Identification;
+            return Error;
+        }
+
+
+
+
         static string ColName_DGfield(DGField f, int n) {
             return f.Identification + "_mode" + n;
         }
@@ -498,8 +531,9 @@ namespace BoSSS.Foundation {
 
             for(int n = 0; n < N; n++) {
                 var col = ReferenceData[ColName_DGfield(f, n)];
-                for(int j = 0; j < J; j++)
-                    f.Coordinates[j, n] = col[j];
+                //for(int j = 0; j < J; j++)
+                //    f.Coordinates[j, n] = col[j];
+                f.Coordinates.SetColumn(n, col);
             }
         }
 

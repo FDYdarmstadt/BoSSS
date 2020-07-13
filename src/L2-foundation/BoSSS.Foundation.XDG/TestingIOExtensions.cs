@@ -23,6 +23,39 @@ namespace BoSSS.Foundation.XDG {
                 t.AddDGField(fs);
             }
         }
+        
+        /// <summary>
+        /// Adds an XDG field.
+        /// </summary>
+        public static XDGField LocalError(this TestingIO t, XDGField f) {
+            var trk = f.Basis.Tracker;
+
+            var ErrLoc = f.CloneAs();
+            ErrLoc.Clear();
+
+            foreach(string spc in trk.SpeciesNames) {
+                var fs = ErrLoc.GetSpeciesShadowField(spc);
+                t.OverwriteDGField(fs);
+            }
+
+            ErrLoc.Scale(-1);
+            ErrLoc.Acc(1.0, f);
+            
+            ErrLoc.Identification = "Error-" + ErrLoc.Identification;
+            return ErrLoc;
+        }
+
+        /// <summary>
+        /// Overwrites the memory of a XDG field with the reference data 
+        /// </summary>
+        static public void OverwriteDGField(this TestingIO t, XDGField f) {
+             var trk = f.Basis.Tracker;
+
+            foreach(string spc in trk.SpeciesNames) {
+                var fs = f.GetSpeciesShadowField(spc);
+                t.OverwriteDGField(fs);
+            }
+        }
 
     }
 }
