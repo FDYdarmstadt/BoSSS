@@ -795,11 +795,7 @@ namespace BoSSS.Foundation.XDG {
                 this.InitCouplingMatrices(Brow.Max(basis => basis.Degree));
 
                 DGField[] DgFlds = DgFields.Fields.ToArray();
-
-                DGField[] ArschField = DgFlds.Select(f => new SinglePhaseField(f.Basis)).ToArray();
-                for(int i = 0; i < DgFlds.Length; i++) {
-                    ArschField[i].Acc(1.0, DgFlds[i]);
-                }
+                                
 
                 Transceiver trx = null;
                 int mpiRank = this.GridDat.CellPartitioning.MpiRank;
@@ -807,10 +803,7 @@ namespace BoSSS.Foundation.XDG {
                     trx = new Transceiver(DgFlds);
                 }
 
-                var trx2 = new Transceiver(ArschField);
-                trx2.TransceiveStartImReturn();
-                trx2.TransceiveFinish();
-
+                
                 CellAgglomerator.AgglomerationPair[] AggPairs = this.AggInfo.AgglomerationPairs;
 
                 // loop over agglomeration levels: 
@@ -852,24 +845,14 @@ namespace BoSSS.Foundation.XDG {
                             for (int n = 0; n < N; n++) {
                                 double acc0 = 0;
                                 for (int m = 0; m < N; m++) {
-                                    double warts = DgCoord[jCellTarget, m];
-                                    double check = ArschField[ii].Coordinates[jCellTarget, m];
-                                    double a = warts - check;
-                                    Debug.Assert(warts == 0 || Math.Abs(a) < 0.001);
-
                                     //acc0 += V[i0_j0 + m] * M_tmp[n, m];
                                     acc0 += DgCoord[jCellTarget, m] * M_tmp[n, m];
                                 }
 
                                 DgCoord[jCellSource, n] = acc0;
-
-
                             }
                         }
-
                     }
-
-                   
                 }
 
                 // MPI exchange
@@ -877,7 +860,6 @@ namespace BoSSS.Foundation.XDG {
                     trx.TransceiveStartImReturn();
                     trx.TransceiveFinish();
                 }
-
             }
         }
 

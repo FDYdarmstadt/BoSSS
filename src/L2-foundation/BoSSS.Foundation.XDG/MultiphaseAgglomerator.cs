@@ -505,10 +505,6 @@ namespace BoSSS.Foundation.XDG {
                         throw new NotImplementedException();
                 }
 
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rnk);
-                if(rnk == 1 && Tracker.GetSpeciesName(Species) == "R")
-                    Debugger.Launch();
-
                 if(m_Agglomerator != null) {
                     m_Agglomerator.Extrapolate(new CoordinateMapping(SubFields));
                 }
