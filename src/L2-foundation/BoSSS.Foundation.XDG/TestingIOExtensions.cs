@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BoSSS.Foundation.Grid;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,7 +21,12 @@ namespace BoSSS.Foundation.XDG {
 
             foreach(string spc in trk.SpeciesNames) {
                 var fs = f.GetSpeciesShadowField(spc);
-                t.AddDGField(fs);
+                SinglePhaseField fsFatClone = new SinglePhaseField(fs.Basis, fs.Identification);
+                CellMask msk = trk.Regions.GetSpeciesMask(spc);
+
+                fsFatClone.Acc(1.0, fs, msk);
+
+                t.AddDGField(fsFatClone);
             }
         }
         

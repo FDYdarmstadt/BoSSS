@@ -272,10 +272,10 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Difference between data in file and data in <paramref name="vec"/>
         /// </summary>
-        public double[] LocError(string Colname, IEnumerable<double> vec) {
+        public double[] LocError(string Colname) {
             
             double[] RefData = ReferenceData[Colname];
-            double[] LoclErr = vec.ToArray();
+            double[] LoclErr = m_CurrentData[Colname].CloneAs();
 
             LoclErr.AccV(-1.0, RefData);
 
@@ -302,7 +302,7 @@ namespace BoSSS.Foundation {
 
             vals = vals.MPISum(GridDat.CellPartitioning.MPI_Comm);
 
-            return vals[0].Sqrt() / Math.Max(vals[1], vals[2]).Sqrt();
+            return vals[0].Sqrt() / Math.Max(Math.Max(vals[1], vals[2]), double.Epsilon*1.0e20).Sqrt();
 
         }
 

@@ -487,26 +487,29 @@ namespace BoSSS.Foundation.XDG {
         public void Extrapolate(CoordinateMapping Map) {
             //var vecS = GetFrameVectors(vec, Map);
 
-            foreach (var kv in DictAgglomeration) {
+            foreach(var kv in DictAgglomeration) {
                 var Species = kv.Key;
                 var m_Agglomerator = kv.Value;
 
                 var DgFields = Map.Fields.ToArray();
 
                 DGField[] SubFields = new DGField[DgFields.Count()];
-                for (int iFld = 0; iFld < SubFields.Length; iFld++) {
+                for(int iFld = 0; iFld < SubFields.Length; iFld++) {
                     DGField f = DgFields[iFld];
 
-                    if (f is ConventionalDGField)
+                    if(f is ConventionalDGField)
                         SubFields[iFld] = (ConventionalDGField)(f);
-                    else if (f is XDGField)
+                    else if(f is XDGField)
                         SubFields[iFld] = ((XDGField)f).GetSpeciesShadowField(Species);
                     else
                         throw new NotImplementedException();
                 }
 
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rnk);
+                if(rnk == 1 && Tracker.GetSpeciesName(Species) == "R")
+                    Debugger.Launch();
 
-                if (m_Agglomerator != null) {
+                if(m_Agglomerator != null) {
                     m_Agglomerator.Extrapolate(new CoordinateMapping(SubFields));
                 }
 
