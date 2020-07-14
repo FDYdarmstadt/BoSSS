@@ -154,7 +154,6 @@ namespace BoSSS.Application.FSI_Solver {
             double[][] residual = new double[variable.Length][];
             double[] residualDiff = new double[variable.Length];
             double residualScalar = 0;
-            double sumVariable = 0;
             for (int i = 0; i < variable.Length; i++) {
                 if (variable[i] == 0) {// ghost particle
                     residualDiff[i] = 0;
@@ -163,7 +162,6 @@ namespace BoSSS.Application.FSI_Solver {
                 residual[i] = new double[] { (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]), (m_ForcesAndTorqueWithoutRelaxation[1][i] - m_ForcesAndTorquePreviousIteration[1][i]) };
                 residualDiff[i] = residual[i][0] - residual[i][1];
                 residualScalar += residual[i][1] * residualDiff[i];
-                sumVariable += variable[i];
             }
             Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
             double[] outVar = variable.CloneAs();

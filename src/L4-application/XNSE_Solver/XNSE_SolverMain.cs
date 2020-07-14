@@ -1667,8 +1667,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, BlockedCells);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {

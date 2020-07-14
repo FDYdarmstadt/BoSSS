@@ -21,10 +21,10 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(double angle = 40, double distance = 3) {
+        public static FSI_Control Main(double angle = 100, double distance = 5) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
-            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
+            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             //C.AlternateDbPaths = new[] { new ValueTuple<string, string>(@"/work/scratch/ij83requ/default_bosss_db", ""), new ValueTuple<string, string>(@"U:\default_bosss_db", "") };
             // Domain
             // =============================
@@ -32,7 +32,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 4.1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 4.2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(4);
 
             // Coupling Properties

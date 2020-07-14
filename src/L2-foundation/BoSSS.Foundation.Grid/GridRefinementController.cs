@@ -57,9 +57,11 @@ namespace BoSSS.Foundation.Grid {
             GlobalIndexOfFirstLocalCell = CellPartitioning.i0;
             GlobalNumberOfCells = CellPartitioning.TotalLength;
             CutCells = cutCells;
+            if (CutCells == null)
+                CutCells = CellMask.GetEmptyMask(CurrentGrid);
             if (cellsNotOK2Coarsen == null)
-                cellsNotOK2Coarsen = CellMask.GetEmptyMask(currentGrid);
-            CellsNotOK2Coarsen = cellsNotOK2Coarsen.Union(cutCells).GetBitMask();
+                cellsNotOK2Coarsen = CellMask.GetEmptyMask(CurrentGrid);
+            CellsNotOK2Coarsen = cellsNotOK2Coarsen.Union(CutCells).GetBitMask();
         }
 
         /// <summary>

@@ -1597,8 +1597,8 @@ namespace BoSSS.Application.Rheology {
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
             if (this.Control.AdaptiveMeshRefinement) {
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 ChangeMesh = AnyChange;
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
