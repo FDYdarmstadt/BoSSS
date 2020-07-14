@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Resources;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,25 +25,35 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 
         public (IEnumerator<Edge<T>>, IntersectionCase ) CutOut(
             IEnumerator<Edge<T>> edgeEnum,
-            Edge<T> outerEdge)
+            Edge<T> outerEdge,
+            CutterState<Edge<T>> state)
         {
             bool keepOnRunning = true;
             Edge<T> activeEdge = default(Edge<T>);
-            BoundaryLine activeLine = default(BoundaryLine);
             IntersectionCase intersectionCase = IntersectionCase.NotIntersecting;
             while (keepOnRunning)
             {
                 keepOnRunning = false;
                 double alphaCut = 0;
-                activeLine = boundary.Current;
+                state.ActiveLine = boundary.Current;
                 while (edgeEnum.MoveNext() && !keepOnRunning)
                 {
                     activeEdge = edgeEnum.Current;
-                    keepOnRunning = LineIntersect.Find(activeEdge, activeLine, ref intersectionCase, out alphaCut);
+                    keepOnRunning = LineIntersect.Find(activeEdge, state.ActiveLine, ref intersectionCase, out alphaCut);
+                    if(alphaCut < LineIntersect.accuracy)
+                    {
+                        intersectionCase = IntersectionCase.NotIntersecting;
+                        keepOnRunning = false;
+                    }
                 }
                 switch (intersectionCase)
                 {
                     case IntersectionCase.NotIntersecting:
+                    case IntersectionCase.InMiddle:
+                        //keepOnRunning = false;
+                        //IEnumerator<Edge<T>> cellEnum = meshIntersecter.GetAfterCutEdgeEnumerator(state.ActiveEdge.Cell.Edges, state.ActiveEdge);
+                        //return (cellEnum, intersectionCase);
+                        keepOnRunning = false;
                         break;
                     case IntersectionCase.EndOfLine:
                         activeEdge = meshIntersecter.AddLineSegment(activeEdge, alphaCut, boundary.LineIndex());
@@ -55,6 +67,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                     case IntersectionCase.EndOfEdge:
                         meshIntersecter.AddEdge(activeEdge, boundary.LineIndex());
                         edgeEnum = meshIntersecter.GetConnectedEdgeEnum(activeEdge);
+                        //edgeEnum.MoveNext();
                         outerEdge = activeEdge;
                         break;
                     case IntersectionCase.EndOfEdgeAndLine:
@@ -67,13 +80,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                         }
                         break;
                     case IntersectionCase.StartOfLine:
-                    case IntersectionCase.InMiddle:
                     default:
                         throw new InvalidOperationException();
                 }
             }
-            edgeEnum = meshIntersecter.GetNeighborFromLineDirection(outerEdge, activeLine);
-            return (edgeEnum, intersectionCase);
+            MeshIntersecter<T>.AfterCutEdgeEnumerator cellEnumerator = meshIntersecter.GetNeighborFromLineDirection(outerEdge, state.ActiveLine);
+            cellEnumerator.Cell.IntersectionVertex = outerEdge.End.ID;
+            return (cellEnumerator, intersectionCase);
         }
     }
 }

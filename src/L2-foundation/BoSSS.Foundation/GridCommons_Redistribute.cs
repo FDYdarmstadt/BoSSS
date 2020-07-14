@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             break;
                         }
 
-                    case GridPartType.Hilbert: {
+                    case GridPartType.clusterHilbert: {
                             part = ComputePartitionHilbert(Functype:0);
 #if DEBUG
                             CheckPartitioning(part);
@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             break;
                         }
 
-                    case GridPartType.directHilbert: {
+                    case GridPartType.Hilbert: {
                             part = ComputePartitionHilbert(Functype:1);
 #if DEBUG
                             CheckPartitioning(part);
@@ -803,7 +803,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             // Step 1: Compute some global indexing pattern for all cells
             // according to space-filling curve
             long globalNumberOfCells = long.MaxValue;
-            int[] localToGlobalIndexMap = null; // Maps local cell index to global index in Hilbert curve
+            int[] localToGlobalIndexMap = null; // Maps local cell index to global index in clusterHilbert curve
 
             // Step 2: Compute numbers of cells per process (TODO: obey weighting!)
             int size = this.Size;
@@ -1050,13 +1050,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                         case 1:
                             //direct cost mapping
                             if (cellCosts.Count > 1)
-                                throw new ArgumentOutOfRangeException("Only one CellCost map allowed for directHilbert! Select Hilbert if you want to use Clusters!");
+                                throw new ArgumentOutOfRangeException("Only one CellCost map allowed for Hilbert! Select clusterHilbert if you want to use Clusters!");
                             CostClustermap = cellCosts[0];
                             Array.Sort(HilbertIndex_tmp, CostClustermap);
                             int CellCostSum = 0;
                             for (int cell = 0; cell < CostClustermap.Length; cell++)
                                 CellCostSum += CostClustermap[cell];
                             int CostPerRank = CellCostSum / numproc;
+                            int RestSum = CellCostSum % CostPerRank;
                             Debug.Assert(CostPerRank > 0);
                             int MPIrank = 0;
                             int CostCount = 0;
@@ -1066,12 +1067,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 } else {
                                     RankIndex[cell] = MPIrank;
                                     CostCount += CostClustermap[cell];
-                                    if (CostCount >= CostPerRank) {
+                                    int penalty = RestSum > 0 ? 1 : 0;
+                                    if (CostCount >= CostPerRank + penalty) {
                                         MPIrank++;
+                                        RestSum -= CostCount - CostPerRank;
                                         CostCount = 0;
                                     }
                                 }
                             }
+                            Debug.Assert(RestSum == 0);
                             Debug.Assert(MPIrank <= numproc - 1);
                             break;
                         default:

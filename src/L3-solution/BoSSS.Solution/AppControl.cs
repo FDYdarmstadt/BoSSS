@@ -629,6 +629,9 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(tsi.Session.ID, tsi.TimeStepNumber);
+            
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -638,6 +641,10 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, default(TimestepNumber));
+
+            var tsi = si.Timesteps.Last();
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -647,6 +654,10 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, idx);
+
+            var tsi = si.Timesteps.Single(_tsi => _tsi.TimeStepNumber.Equals(idx));
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
 
@@ -674,17 +685,16 @@ namespace BoSSS.Solution.Control {
         public void SetGrid(IGridInfo grd) {
             this.GridGuid = grd.ID;
 
-            if(grd.Database == null || grd.Database.Path == null) {
+            if(grd.Database == null) {
                 Console.WriteLine("Warning: grid seems not to be saved in a database");
             } else {
-                if(this.DbPath == null) {
-                    this.DbPath = grd.Database.Path;
-                    Console.WriteLine("Info: setting database path to: " + this.DbPath);
-                } else {
-                    if(!this.DbPath.Equals(grd.Database.Path)) {
-                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
-                    }
+                SetDatabase(grd.Database);
+
+                if (grd.Database.PathMatch(this.DbPath)) {
+                    Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
                 }
+
+
             }
         }
 

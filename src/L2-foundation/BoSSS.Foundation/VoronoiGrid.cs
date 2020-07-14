@@ -87,6 +87,40 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             var velocity = new Vector(Nodes.Velocity[jCellIn, 0], Nodes.Velocity[jCellIn, 1]);
             return velocity;
         }
+
+        public Vector DistanceBetweenNodes(int jEdge)
+        {
+            int sourceCell = GridData.iLogicalEdges.CellIndices[jEdge,0];
+            int targetCell = GridData.iLogicalEdges.CellIndices[jEdge, 1];
+            if(sourceCell < 0 || targetCell < 0)
+            {
+                throw new Exception("Boundary edge does not have two connected nodes.");
+            }
+            Vector sourceNode = new Vector(nodes.Positions[sourceCell, 0], nodes.Positions[sourceCell, 1]);
+            Vector targetNode = new Vector(nodes.Positions[targetCell, 0], nodes.Positions[targetCell, 1]);
+
+            //transform if Edge is periodic
+            int jGeomEdge = GridData.iLogicalEdges.EdgeToParts[jEdge][0];
+            if (this.iGridData.iGeomEdges.EdgeTags[jGeomEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG)
+            {
+                int periodicEdgeTag = this.iGridData.iGeomEdges.EdgeTags[jGeomEdge] - GridCommons.FIRST_PERIODIC_BC_TAG;
+                AffineTrafo PerT = ((GridCommons)ParentGrid).PeriodicTrafo[periodicEdgeTag];
+                targetNode = PerT.Transform(targetNode);
+            };
+            Vector distance = targetNode - sourceNode;
+            
+            return distance;
+        }
+
+        public double GetSurfaceVolume(int jCell)
+        {
+            double surfaceVolume = 0.0;
+            foreach (int jEdge in GridData.iLogicalCells.Cells2Edges[jCell])
+            {
+                surfaceVolume += GridData.iLogicalEdges.GetEdgeArea(Math.Abs(jEdge) - 1);
+            }
+            return surfaceVolume;
+        }
     }
 
     public class VoronoiBoundary

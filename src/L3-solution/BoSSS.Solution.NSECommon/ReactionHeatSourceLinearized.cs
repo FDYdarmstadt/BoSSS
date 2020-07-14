@@ -188,7 +188,7 @@ namespace BoSSS.Solution.NSECommon {
             //if (ReactionRate < 0)
             //    ReactionRate = 0;
             //return HeatReleaseFactor * ReactionRate;
-            return -HeatReleaseFactor * ReactionRate * PM_CH4;
+            return -HeatReleaseFactor * ReactionRate/* * PM_CH4*/;
 
         }
     }

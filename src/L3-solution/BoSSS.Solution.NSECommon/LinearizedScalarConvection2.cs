@@ -238,7 +238,7 @@ namespace BoSSS.Solution.NSECommon {
                         switch (m_bcmap.PhysMode) {
                             case PhysicsMode.LowMach: {
                                     // opt1:
-                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                     // opt2: inner values
                                     //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension];
                                     // Use inner value for TemperatureMean, i.e. LambdaIn is used.
@@ -247,7 +247,7 @@ namespace BoSSS.Solution.NSECommon {
                                 }
                             case PhysicsMode.Combustion: {
                                     // opt1: (using Dirichlet values)
-                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                     for (int n = 1; n < NumberOfReactants + 1; n++) {
                                         //Using inner values
                                         inp2.Parameters_OUT[2 * m_SpatialDimension + n] = inp.Parameters_IN[2 * m_SpatialDimension + n];
@@ -312,7 +312,7 @@ namespace BoSSS.Solution.NSECommon {
                         switch (m_bcmap.PhysMode) {
                             case PhysicsMode.LowMach: {
                                     // opt1:
-                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                     // opt2: inner values
                                     //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension];
                                     // Use inner value for TemperatureMean, i.e. LambdaIn is used.
@@ -321,10 +321,10 @@ namespace BoSSS.Solution.NSECommon {
                                 }
                             case PhysicsMode.Combustion: {
                                     // opt1: (using Dirichlet values)
-                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                     for (int n = 1; n < NumberOfReactants + 1; n++) {
                                         // opt1: (using Dirichlet values)
-                                        inp2.Parameters_OUT[2 * m_SpatialDimension + n] = m_bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
+                                        inp2.Parameters_OUT[2 * m_SpatialDimension + n] = m_bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
                                     }
                                     for (int n = 0; n < NumberOfReactants + 1; n++) {
                                         // Use inner value for mean scalar input parameters, i.e. LambdaIn is used.
@@ -718,22 +718,22 @@ namespace BoSSS.Solution.NSECommon {
                         switch(m_bcmap.PhysMode) {
                             case PhysicsMode.MixtureFraction: {
                                     // opt1:
-                                    Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, 0);
+                                    Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
                                     break;
                                 }
                             case PhysicsMode.LowMach: {
                                     // opt1:
-                                    Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                     // opt2: inner values
                                     //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension]; 
                                     break;
                                 }
                             case PhysicsMode.Combustion: {
                                     // opt1: (using Dirichlet values)
-                                    Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
+                                    Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                     for(int n = 1; n < NumberOfReactants; n++) {
                                         // opt1: (using Dirichlet values)
-                                        Uout[m_SpatialDimension+n]= m_bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
+                                        Uout[m_SpatialDimension+n]= m_bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
                                     }                             
                                     break;
                                 }

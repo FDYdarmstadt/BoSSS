@@ -48,28 +48,28 @@ namespace HilbertTest {
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
-   
+
         [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
-        [Test]
+        [Test]       
         public static void Test() {
             //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             //Testing coordinate samples
             bool coordresult = TestingCoordinateSamples();
             Assert.IsTrue(coordresult, "Code of HilbertCurve is corrupted");
 
-            //Testing Partition without any Constraints, even distribution of cells among processes
+            //Testing partitioning with clusters, even distribution of cells among processes
             bool gridevenresult = TestingGridDistributionEven();
             Assert.IsTrue(gridevenresult, "HilbertCurve or mapping (rank->Hilbertcurve) is corrupted");
 
-            //Testing Partition without any Constraints, uneven distribution of cells among processes
+            //Testing partitioning with clusters, uneven distribution of cells among processes
             bool gridunevenresult = TestingGridDistributionUneven();
             Assert.IsTrue(gridunevenresult, "Distribution pattern along HilbertCurve is corrupted");
 
-            //Testing Partition yield from directHilbert without any Constraints, even distribution of cells among processes
+            //Testing bare Hilbert partitioning, even distribution of cells among processes
             bool directHilbert_E = TestingdirectHilbertEven();
-            Assert.IsTrue(directHilbert_E, "HilbertCurve or mapping of directHilbert (rank->Hilbertcurve) is corrupted");
+            Assert.IsTrue(directHilbert_E, "HilbertCurve or mapping of Hilbert (rank->Hilbertcurve) is corrupted");
 
-            //Testing Partition yield from directHilbert without any Constraints, uneven distribution of cells among processes
+            //Testing bare Hilbert partitioning, uneven distribution of cells among processes
             bool directHilbert_UE = TestingdirectHilbertUneven();
             Assert.IsTrue(directHilbert_UE, "Distribution pattern along HilbertCurve is corrupted");
 
@@ -151,7 +151,7 @@ namespace HilbertTest {
                             break;
                     }
                 }
-                Console.WriteLine("Test directHilbert: Grid Distribution even");
+                Console.WriteLine("Test Hilbert: Grid Distribution even");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
                 return result;
             }
@@ -209,20 +209,21 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                            result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
+                            result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67) ||
+                            (xC > 0.33) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67);
                             break;
                         case 1:
-                            result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
+                            result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
                             break;
                         case 2:
-                            result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
+                            result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
                             break;
                         case 3:
-                            result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
+                            result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
                             break;
                     }
                 }
-                Console.WriteLine("Test directHilbert: Grid Distribution uneven");
+                Console.WriteLine("Test Hilbert: Grid Distribution uneven");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
                 return result;
             }
@@ -386,7 +387,7 @@ namespace HilbertTest {
         }
 
         static private bool TestingCoordinateSamples() {
-            //Validation of H-Curve-Code, Coordsamples taken from "Convergence with Hilbert's Space Filling Curve" by ARTHUR R. BUTZ, p.133
+            //Validation of H-Curve-Code, Coordsamples taken from "Convergence with clusterHilbert's Space Filling Curve" by ARTHUR R. BUTZ, p.133
             bool[] testresult = new bool[3];
             bool result = true;
             testresult[0] = test_both(4, 654508, new ulong[] { 4, 12, 6, 12, 12 });
@@ -437,7 +438,7 @@ namespace HilbertTest {
             c.savetodb = dbPath != null && saveToDb;
 
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
-            c.GridPartType = GridPartType.Hilbert;
+            c.GridPartType = GridPartType.clusterHilbert;
 
             bool AV = false;
 
@@ -530,7 +531,7 @@ namespace HilbertTest {
             c.savetodb = dbPath != null && saveToDb;
 
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
-            c.GridPartType = GridPartType.directHilbert;
+            c.GridPartType = GridPartType.Hilbert;
 
             bool AV = false;
 
@@ -624,7 +625,7 @@ namespace HilbertTest {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
 
-            c.GridPartType = GridPartType.Hilbert;
+            c.GridPartType = GridPartType.clusterHilbert;
 
             bool AV = false;
 

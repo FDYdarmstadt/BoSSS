@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace BoSSS.Foundation.IO {
 
@@ -39,27 +40,30 @@ namespace BoSSS.Foundation.IO {
         /// Otherwise, creates a new database and opens it.
         /// </summary>
         public static DatabaseInfo CreateOrOpen(string path) {
-            if(File.Exists(path) || Directory.Exists(path))
-                return Open(path);
+
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MpiRank);
             if(MpiRank == 0) {
-                DirectoryInfo targetDirectory = new DirectoryInfo(path);
-                if(!targetDirectory.Exists) {
-                    targetDirectory.Create();
-                } else {
-                    if(targetDirectory.GetFiles().Length > 0)
-                        throw new ArgumentException("Must be empty.");
-                    if(targetDirectory.GetDirectories().Length > 0)
-                        throw new ArgumentException("Must be empty.");
-                }
+                if(!File.Exists(path) && !Directory.Exists(path)) {
+                    DirectoryInfo targetDirectory = new DirectoryInfo(path);
+                    if(!targetDirectory.Exists) {
+                        targetDirectory.Create();
+                    } else {
+                        if(targetDirectory.GetFiles().Length > 0)
+                            throw new ArgumentException("Must be empty.");
+                        if(targetDirectory.GetDirectories().Length > 0)
+                            throw new ArgumentException("Must be empty.");
+                    }
 
-                // Create structure
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "data"));
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "timesteps"));
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "grids"));
-                Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "sessions"));
+                    // Create structure
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "data"));
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "timesteps"));
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "grids"));
+                    Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "sessions"));
+                }
             }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            Thread.Sleep(5000); // allow Network file systems to catch up
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
             return Open(path);
@@ -141,6 +145,18 @@ namespace BoSSS.Foundation.IO {
             }
 
             if(dbPath == null) {
+                Console.Error.WriteLine("Unable to open database: ");
+                Console.Error.WriteLine($"primary path: {_path}");
+                if (AlternateDbPaths == null || AlternateDbPaths.Length <= 0) {
+                    Console.Error.WriteLine("No alternative paths specified.");
+                } else {
+                    Console.Error.WriteLine("Got " + AlternateDbPaths.Length + " all other paths: ");
+                    for(int i = 0; i < AlternateDbPaths.Length; i++) {
+                        Console.Error.WriteLine($"  #{i}: {AlternateDbPaths[i].DbPath}, filter is {AlternateDbPaths[i].MachineFilter}");
+                    }
+
+                }
+
                 throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
             }
 

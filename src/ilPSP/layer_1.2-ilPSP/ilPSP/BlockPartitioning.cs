@@ -126,7 +126,7 @@ namespace ilPSP {
                 Debug.Assert(NE == _SubblkLen2[iBlockType]);
                 BlockType[iBlock] = iBlockType;
             }
-            int gFrameBlockSize = FrameBlockSize.MPIMin();
+            int gFrameBlockSize = FrameBlockSize.MPIMin(MpiComm);
 
             //
 
@@ -173,7 +173,7 @@ namespace ilPSP {
             int LocalLength = base.LocalLength;
 
             // If there are multiple blocktypes, but not on all proc
-            FrameBlockSize = (FrameBlockSize == -1).MPIOr() ? -1 : FrameBlockSize;
+            FrameBlockSize = (FrameBlockSize == -1).MPIOr(MpiComm) ? -1 : FrameBlockSize;
 
             // ===============
             // check arguments

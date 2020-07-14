@@ -149,7 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return grd;
             };
 
-            C.GridPartType = GridPartType.Hilbert;
+            C.GridPartType = GridPartType.clusterHilbert;
 
             C.AddBoundaryValue("Wall_left");
             C.AddBoundaryValue("Wall_right");
@@ -294,7 +294,7 @@ namespace BoSSS.Application.FSI_Solver {
         //                return grd;
         //            };
 
-        //            C.GridPartType = GridPartType.Hilbert;
+        //            C.GridPartType = GridPartType.clusterHilbert;
 
         //            C.AddBoundaryValue("Wall_left");
         //            C.AddBoundaryValue("Wall_right");
@@ -439,7 +439,7 @@ namespace BoSSS.Application.FSI_Solver {
         //                return grd;
         //            };
 
-        //            C.GridPartType = GridPartType.Hilbert;
+        //            C.GridPartType = GridPartType.clusterHilbert;
 
         //            C.AddBoundaryValue("Wall_left");
         //            C.AddBoundaryValue("Wall_right");

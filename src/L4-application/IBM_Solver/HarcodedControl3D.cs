@@ -345,7 +345,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             C.AdaptiveMeshRefinement = false;
 
-            //C.GridPartType = GridPartType.Hilbert;
+            //C.GridPartType = GridPartType.clusterHilbert;
 
 
             C.TimeStepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
@@ -1045,7 +1045,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             C.AdaptiveMeshRefinement = false;
 
-            //C.GridPartType = GridPartType.Hilbert;
+            //C.GridPartType = GridPartType.clusterHilbert;
 
 
             //#region Creates grid () and sets BC
@@ -1224,7 +1224,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             C.AdaptiveMeshRefinement = false;
 
-            //C.GridPartType = GridPartType.Hilbert;
+            //C.GridPartType = GridPartType.clusterHilbert;
 
 
             //#region Creates grid () and sets BC
