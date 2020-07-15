@@ -1,4 +1,7 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Timestepping;
 using ilPSP.LinSolvers;
 using System;
@@ -65,28 +68,31 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         public XdgTimestepper(
+            XSpatialOperatorMk2 op,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
-            TimeSteppingScheme __Scheme,
-            LevelSetTracker LsTrk,
-            bool DelayInit,
-            DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            DelComputeMassMatrix _ComputeMassMatrix,
-            DelUpdateLevelset _UpdateLevelset,
-            int BDForder,
+            TimeSteppingScheme __Scheme = TimeSteppingScheme.ImplicitEuler,
+            //bool DelayInit,
+            //DelComputeOperatorMatrix _ComputeOperatorMatrix,
+            //DelComputeMassMatrix _ComputeMassMatrix,
+            //DelUpdateLevelset _UpdateLevelset,
             LevelSetHandling _LevelSetHandling,
-            MassMatrixShapeandDependence _MassMatrixShapeandDependence,
-            SpatialOperatorType _SpatialOperatorType,
+            //MassMatrixShapeandDependence _MassMatrixShapeandDependence,
+            SpatialOperatorType _SpatialOperatorType = SpatialOperatorType.Nonlinear,
             IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
-            double _AgglomerationThreshold, bool _useX, Control.NonLinearSolverConfig nonlinconfig,
+            double _AgglomerationThreshold, 
+            bool _useX, 
+            Control.NonLinearSolverConfig nonlinconfig,
             Control.LinearSolverConfig linearconfig) 
         {
             this.Scheme = __Scheme;
 
+            LevelSetTracker LsTrk;
+            
 
             RungeKuttaScheme rksch = null;
             int bdfOrder= -1000;
@@ -121,7 +127,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (bdfOrder > -1000) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(Fields, IterationResiduals, 
                     LsTrk, true,
-                    DelComputeOperatorMatrix, null, DelUpdateLevelset,
+                    myDelComputeOperatorMatrix, null, DelUpdateLevelset,
                     bdfOrder,
                     lsh,
                     MassMatrixShapeandDependence.IsTimeDependent,
@@ -133,9 +139,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     this.Control.NonLinearSolver,
                     this.Control.LinearSolver);
             } else {
-                m_RK_Timestepper = new XdgRKTimestepping(Fields, IterationResiduals,
+                m_RK_Timestepper = new XdgRKTimestepping(Fields.ToArray(), IterationResiduals.ToArray(),
                     LsTrk,
-                    DelComputeOperatorMatrix, DelUpdateLevelset,
+                    myDelComputeOperatorMatrix, DelUpdateLevelset,
                     rksch,
                     lsh,
                     MassMatrixShapeandDependence.IsTimeDependent,
@@ -151,7 +157,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
+        void myDelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
 
         }
 
