@@ -795,6 +795,7 @@ namespace BoSSS.Foundation.XDG {
                 this.InitCouplingMatrices(Brow.Max(basis => basis.Degree));
 
                 DGField[] DgFlds = DgFields.Fields.ToArray();
+                                
 
                 Transceiver trx = null;
                 int mpiRank = this.GridDat.CellPartitioning.MpiRank;
@@ -802,6 +803,7 @@ namespace BoSSS.Foundation.XDG {
                     trx = new Transceiver(DgFlds);
                 }
 
+                
                 CellAgglomerator.AgglomerationPair[] AggPairs = this.AggInfo.AgglomerationPairs;
 
                 // loop over agglomeration levels: 
@@ -826,19 +828,6 @@ namespace BoSSS.Foundation.XDG {
                         if (AggPairs[iPair].OwnerRank4Source != mpiRank)
                             continue;
 
-                        //int offset = int.MinValue, DestProc = 0;
-                        //long jCell1Glob = 0;
-                        //double[] Vtmp = null;
-                        //if (iPair < EsubLoc) {
-                        //    Debug.Assert(jCellSource < Jup);
-                        //} else {
-                        //    Debug.Assert(jCellSource >= Jup);
-                        //    offset = RowMap.LocalUniqueCoordinateIndex(0, jCellSource, 0);
-                        //    Vtmp = new double[Bsum];
-                        //    jCell1Glob = GidxExtCells[jCellSource - Jup];
-                        //    DestProc = CellPart.FindProcess(jCell1Glob);
-                        //}
-
                         Debug.Assert(jCellSource < this.GridDat.Cells.NoOfLocalUpdatedCells);
 
 
@@ -861,47 +850,9 @@ namespace BoSSS.Foundation.XDG {
                                 }
 
                                 DgCoord[jCellSource, n] = acc0;
-
-                                //if (iPair < EsubLoc) {
-                                //    V[i0_j1 + n] = acc0;
-                                //} else {
-                                //    Vtmp[i0_j1 + n - offset] = acc0;
-                                //}
                             }
                         }
-
-                        //if (iPair >= EsubLoc) {
-                        //    List<Tuple<long, double[]>> destList;
-                        //    if (!SendData.TryGetValue(DestProc, out destList)) {
-                        //        destList = new List<Tuple<long, double[]>>();
-                        //        SendData.Add(DestProc, destList);
-                        //    }
-                        //    destList.Add(new Tuple<long, double[]>(jCell1Glob, Vtmp));
-                        //}
                     }
-
-                    //// MPI communication
-                    //// =================
-
-                    //if (this.AggInfo.InterProcessAgglomeration) {
-                    //    var RcvData = SerialisationMessenger.ExchangeData(SendData);
-
-                    //    foreach (var rcvPacket in RcvData.Values) {
-                    //        foreach (var t in rcvPacket) {
-                    //            long jGlobCell1 = t.Item1;
-                    //            Debug.Assert(CellPart.IsInLocalRange(jGlobCell1));
-                    //            int jCell1 = (int)(jGlobCell1 - CellPart.i0);
-
-                    //            double[] data_jCell1 = t.Item2;
-                    //            int iIns = RowMap.LocalUniqueCoordinateIndex(0, jCell1, 0);
-                    //            for (int i = 0; i < data_jCell1.Length; i++) {
-                    //                V[iIns + i] = data_jCell1[i];
-                    //            }
-                    //        }
-                    //    }
-                    //} else {
-                    //    Debug.Assert(EsubLoc == EsubTot);
-                    //}
                 }
 
                 // MPI exchange
@@ -909,7 +860,6 @@ namespace BoSSS.Foundation.XDG {
                     trx.TransceiveStartImReturn();
                     trx.TransceiveFinish();
                 }
-
             }
         }
 

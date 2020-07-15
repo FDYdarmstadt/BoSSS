@@ -347,6 +347,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         bool OneTimeMgInit = false;
 
+        //public Action<double[]> ChangeRate;
+        //public Action<double[]> BeforeBlockSol;
+        //public Action<double[]> AfterBlockSol;
+
         /// <summary>
         /// Performs one timestep, on the DG fields in <see cref="XdgTimesteppingBase.CurrentStateMapping"/>.
         /// </summary>
@@ -436,8 +440,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     ((XDGField)f).UpdateBehaviour = BehaveUnder_LevSetMoovement.PreserveMemory;
                 }
             }
-
-          
 
             // loop over Runge-Kutta stages...
             double[][] k = new double[m_RKscheme.Stages][];
@@ -668,8 +670,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (updateAgglom || m_CurrentAgglomeration == null) {
                 this.UpdateAgglom(m_ImplStParams.m_IterationCounter > 0);
 
-
-
                 // update Multigrid-XDG basis
                 base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
             }
@@ -866,6 +866,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (Ms != null) {
                         System = Ms.CloneAs();
                         System.Scale(1.0 / dt);
+                        
                     } else {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         System = null;
@@ -879,8 +880,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                         RHS.SetV(u0, 1.0 / dt);
                     }
                     for (int l = 0; l < s; l++) {
-                        if (RK_as[l] != 0.0)
+                        if(RK_as[l] != 0.0) {
+                            Debug.Assert(l == 0);
                             RHS.AccV(-RK_as[l], k[l]);
+                        }
                     }
 
                 } else {
@@ -900,6 +903,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, this.CurrentStateMapping, this.CurrentStateMapping);
                     BlockSol(System, m_CurrentState, RHS);
+                    //m_CurrentAgglomeration.PlotAgglomerationPairs($"agglo.{m_CurrentState.Mapping.MpiRank + 1}of{this.CurrentStateMapping.MpiSize}");
                     m_CurrentAgglomeration.Extrapolate(this.CurrentStateMapping);
                 } else {
                     // system is diagonal: 1/dt
