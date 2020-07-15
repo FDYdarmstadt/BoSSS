@@ -1112,7 +1112,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// User given string identification for this field;
         /// </summary>
-        public string Identification {
+        virtual public string Identification {
             get {
                 return m_Identification;
             }

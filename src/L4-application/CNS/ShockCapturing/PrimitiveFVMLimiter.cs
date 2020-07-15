@@ -104,7 +104,7 @@ namespace CNS.ShockCapturing {
             Energy.Clear(shockedCells);
             Energy.ProjectFunction(
                 1.0,
-                delegate (double[] X, double[] U, int jCell) {
+                delegate (ilPSP.Vector X, double[] U, int jCell) {
                     double K = 0.0;
                     for (int d = 0; d < D; d++) {
                         K += U[d + 1] * U[d + 1];

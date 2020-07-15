@@ -241,7 +241,7 @@ namespace BoSSS.Foundation.IO {
         /// The names of the variables to plot the read out.
         /// </param>
         public static ResidualLog Residuals(
-            this ISessionInfo session, string norm, int stride = 1, params string[] variables) {
+            this ISessionInfo session, string norm = null, int stride = 1, params string[] variables) {
 
             return new ResidualLog(session, norm, variables, stride);
         }

@@ -220,5 +220,30 @@ namespace BoSSS.Application.IBM_Solver {
         public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
 
         public bool OperatorMatrixAnalysis = false;
+
+
+        public override bool Equals(object obj) {
+            if(!base.Equals(obj))
+                return false;
+
+            var other = obj as IBM_Control;
+            if(other == null)
+                return false;
+
+            if(this.PhysicalParameters != null) {
+                if(!this.PhysicalParameters.Equals(other.PhysicalParameters))
+                    return false;
+            }else {
+                if(other.PhysicalParameters != null)
+                    return false;
+            }
+
+
+            return true;
+        }
+
+        public override int GetHashCode() {
+            return (int) Math.Round(1.0/this.PhysicalParameters.mu_A);
+        }
     }
 }

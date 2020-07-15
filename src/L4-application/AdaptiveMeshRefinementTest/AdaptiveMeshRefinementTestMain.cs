@@ -177,7 +177,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             MagGrad_u.Clear();
             MagGrad_u.ProjectFunction(1.0,
-                (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
+                (ilPSP.Vector X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
                 new Foundation.Quadrature.CellQuadratureScheme(),
                 Grad_u.ToArray());
 
