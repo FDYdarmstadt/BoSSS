@@ -158,7 +158,7 @@ namespace BoSSS.Foundation.XDG {
                 var trk = this.Basis.Tracker;
 
                 int NdgStore = (int) coords_j[3];
-                int NdgAct = this.Basis.GetLength(j);
+                int NdgAct = this.Basis.NonX_Basis.GetLength(j);
                 int Ndg = Math.Min(NdgAct, NdgStore);
                 int Ptr = 4;
 
@@ -191,7 +191,7 @@ namespace BoSSS.Foundation.XDG {
                 int NoSpc = trk.Regions.GetNoOfSpecies(j);
 
                 int NdgStore = coords_j.Length / NoSpc;
-                int NdgAct = this.Basis.GetLength(j);
+                int NdgAct = this.Basis.NonX_Basis.GetLength(j);
                 int Nload = Math.Min(NdgAct, NdgStore);
                 int Ptr = 0;
 
