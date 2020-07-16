@@ -1109,6 +1109,40 @@ namespace BoSSS.Foundation {
             get;
         }
 
+
+        /// <summary>
+        /// Used to store this field in database, not for direct user interaction
+        /// </summary>
+        /// <param name="j">local cell index</param>
+        public virtual double[] SerializeDGcoords(int j) {
+            int J = this.GridDat.CellPartitioning.LocalLength;
+            if(j < 0 || j >= J)
+                throw new IndexOutOfRangeException("local cell index out of range");
+            return Coordinates.GetRow(j);
+        }
+
+        /// <summary>
+        /// Used to load this field from database, not for direct user interaction
+        /// </summary>
+        /// <param name="j">local cell index</param>
+        /// <param name="coords_">DG data for cell <paramref name="j"/></param>
+        public virtual void DeserializeDGcoords(int j, double[] coords_j) {
+            int J = this.GridDat.CellPartitioning.LocalLength;
+            if(j < 0 || j >= J)
+                throw new IndexOutOfRangeException("local cell index out of range");
+
+            int Nt = this.Basis.GetLength(j);
+            int N = Math.Min(coords_j.Length, Nt);
+
+            int n = 0;
+            for(; n < N; n++) {
+                this.Coordinates[j, n] = coords_j[n];
+            }
+            for(; n < Nt; n++) {
+                this.Coordinates[j, n] = 0.0;
+            }
+        }
+
         /// <summary>
         /// User given string identification for this field;
         /// </summary>

@@ -96,23 +96,14 @@ namespace BoSSS.Foundation.IO
                 var _fields = fields.ToArray();
                 int NF = _fields.Length;
                 var Permutation = GridDat.CurrentGlobalIdPermutation.Values;
-                for (int j = 0; j < J; j++)
-                { // loop over cells
+                for(int j = 0; j < J; j++) { // loop over cells
                     vec[j] = new CellFieldDataSet();
                     vec[j].GlobalID = Permutation[j];
                     //vec[j].DGCoordinateData = new CellFieldDataSet.CellFieldData[NF];
-                    for (int idxF = 0; idxF < NF; idxF++)
-                    { // loop over fields
+                    for(int idxF = 0; idxF < NF; idxF++) { // loop over fields
                         var field = _fields[idxF];
                         int N = field.Basis.GetLength(j);
-                        double[] Coords = new double[N];
-                        for (int n = 0; n < N; n++)
-                        {
-                            Coords[n] = field.Coordinates[j, n];
-                        }
-                        //vec[j].DGCoordinateData[idxF] = new CellFieldDataSet.CellFieldData() {
-                        //    Data = Coords
-                        //};
+                        double[] Coords = field.SerializeDGcoords(j);
                         vec[j].AppendDGCoordinates(Coords);
                         Debug.Assert(ArrayTools.ListEquals(Coords, vec[j].GetDGCoordinates(idxF)));
                     }
