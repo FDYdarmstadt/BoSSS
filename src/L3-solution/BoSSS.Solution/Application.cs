@@ -1878,7 +1878,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual int BurstSave {
             get {
-                return 1;
+                return Math.Max(1, this.Control.BurstSave);
             }
         }
 

@@ -180,7 +180,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // create Operator
             // ===============
-            m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
+            m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesNames);
 
             // add Navier-Stokes components
             // ============================

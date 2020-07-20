@@ -210,6 +210,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         BDFSchemeCoeffs[] m_TSCchain;
 
+        /// <summary>
+        /// 1 for implicit/explicit Euler, Crank-Nicholson; 2 for BDF2, 3 for BDF3, etc. 
+        /// </summary>
         public int GetNumberOfStages {
             get {
                 return m_TSCchain[0].S;
@@ -219,7 +222,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// DG coefficient mapping for the test- and trial-space.
         /// </summary>
-        protected override CoordinateMapping CurrentStateMapping {
+        public override CoordinateMapping CurrentStateMapping {
             get {
                 return m_Stack_u[0].Mapping;
             }

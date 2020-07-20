@@ -70,14 +70,17 @@ namespace BoSSS.Foundation {
     }
 
 
+
+
+
     /// <summary>
     /// This class represents a spatial operator which maps
     /// from (DG-) variables in the domain, identified and ordered by <see cref="DomainVar"/>
     /// to variables in the co-domain, identified and ordered by <see cref="CodomainVar"/>.
     /// </summary>
-    public class SpatialOperator {
+    public class SpatialOperator : ISpatialOperator {
 
- 
+
 
         /// <summary>
         /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
@@ -101,7 +104,7 @@ namespace BoSSS.Foundation {
                 return m_ParameterUpdate;
             }
             set {
-                if (IsCommited)
+                if(IsCommited)
                     throw new NotSupportedException("unable to change after 'Commit()'");
                 m_ParameterUpdate = value;
             }
@@ -331,9 +334,8 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// for each variable in <see cref="CodomainVar"/>, a
         /// collection of equation components that define the operator.
-        /// 
         /// </summary>
-        public _EquationComponents EquationComponents {
+        public IEquationComponents EquationComponents {
             get {
                 return m_EquationComponentsHelper;
             }
@@ -380,7 +382,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// implementation of <see cref="EquationComponents" />;
         /// </summary>
-        public class _EquationComponents : IEnumerable<KeyValuePair<string, IEnumerable<IEquationComponent>>> {
+        public class _EquationComponents : IEquationComponents {
 
             internal _EquationComponents(SpatialOperator owner) {
                 m_owner = owner;
@@ -600,15 +602,15 @@ namespace BoSSS.Foundation {
                 if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_UxV)) >= 0)
                     return true;
 
-                if (Array.IndexOf<Type>(interfaces, typeof(IVolumeSource_GradV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeSource_GradV)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IVolumeSource_V)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeSource_V)) >= 0)
                     return true;
 
 
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxGradV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxGradV)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxV)) >= 0)
                     return true;
                 if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxGradV)) >= 0)
                     return true;
@@ -760,7 +762,7 @@ namespace BoSSS.Foundation {
         {
 
             using(new FuncTrace()) {
-                if (DomainFields == null)
+                if(DomainFields == null)
                     DomainFields = new DGField[0];
 
                 /// This is already done in the constructor of Evaluator
@@ -825,23 +827,23 @@ namespace BoSSS.Foundation {
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap) //
             {
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-                    if (DomainVarMap.NoOfVariables != owner.DomainVar.Count) {
+                    if(DomainVarMap.NoOfVariables != owner.DomainVar.Count) {
                         throw new ArgumentException("wrong number of domain variables provided.");
                     }
                     this.m_Parameters = new DGField[owner.ParameterVar.Count];
-                    if (CodomainVarMap.NoOfVariables != owner.CodomainVar.Count) {
+                    if(CodomainVarMap.NoOfVariables != owner.CodomainVar.Count) {
                         throw new ArgumentException("wrong number of codomain variables provided.");
                     }
 
-                    if (!object.ReferenceEquals(DomainVarMap.GridDat, CodomainVarMap.GridDat))
+                    if(!object.ReferenceEquals(DomainVarMap.GridDat, CodomainVarMap.GridDat))
                         throw new ArgumentException("Domain and Codomain map must be assigned to the same grid");
 
                     foreach(var f in Parameters) {
                         if(f != null) {
-                            if (!object.ReferenceEquals(DomainVarMap.GridDat, f.GridDat))
+                            if(!object.ReferenceEquals(DomainVarMap.GridDat, f.GridDat))
                                 throw new ArgumentException("Parameter fields, domain and codomain basis must be assigned to the same grid");
                         }
                     }
@@ -865,7 +867,7 @@ namespace BoSSS.Foundation {
                     //    }
                     //}
 
-                    if (!m_Owner.IsCommited)
+                    if(!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
                     order = owner.GetOrderFromQuadOrderFunction(DomainMapping, ParameterMap, CodomainVarMap);
@@ -878,7 +880,7 @@ namespace BoSSS.Foundation {
                     if(this.GridData is Grid.Classic.GridData) {
                         m_OperatorCoefficients.CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.CellLengthScale;
                         m_OperatorCoefficients.EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge;
-                       
+
                     } else {
                         Console.WriteLine("Rem: still missing cell length scales");
                     }
@@ -890,7 +892,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
             /// </summary>
-            virtual public CoefficientSet OperatorCoefficients  {
+            virtual public CoefficientSet OperatorCoefficients {
                 get {
                     return m_OperatorCoefficients;
                 }
@@ -939,7 +941,7 @@ namespace BoSSS.Foundation {
                 get;
                 private set;
             }
-                       
+
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
 
             /// <summary>
@@ -968,9 +970,9 @@ namespace BoSSS.Foundation {
             /// but the other neighboring cell is *not* part of the cell mask <paramref name="Mask"/>.
             /// </param>
             public void ActivateSubgridBoundary(CellMask Mask, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
-                if (!object.ReferenceEquals(Mask.GridData, this.GridData))
+                if(!object.ReferenceEquals(Mask.GridData, this.GridData))
                     throw new ArgumentException("grid mismatch");
-                if (Mask != null && Mask.MaskType != MaskType.Logical)
+                if(Mask != null && Mask.MaskType != MaskType.Logical)
                     throw new ArgumentException("expecting logical mask");
                 m_SubGrid_InCells = Mask;
                 m_SubGridBoundaryTreatment = subGridBoundaryTreatment;
@@ -985,7 +987,7 @@ namespace BoSSS.Foundation {
                 private set;
             }
 
-            
+
 
             /// <summary>
             /// <see cref="Parameters"/>
@@ -1062,7 +1064,7 @@ namespace BoSSS.Foundation {
                     //    ArrayTools.ListEquals(m_TRX.)
                     //}
                     var RealTrxFields = this.GetTrxFields().Where(f => f != null).ToArray();
-                    
+
                     if((value == true) && (RealTrxFields.Length > 0)) {
                         // + + + + + + + + + +
                         // create transceiver
@@ -1151,7 +1153,7 @@ namespace BoSSS.Foundation {
             {
 
                 var grdDat = base.GridData;
-                if (DomainVarMap != null & DomainVarMap.Count > 0)
+                if(DomainVarMap != null & DomainVarMap.Count > 0)
                     DomainFields = new CoordinateMapping(DomainVarMap);
                 else
                     DomainFields = new CoordinateMapping(grdDat);
@@ -1167,7 +1169,7 @@ namespace BoSSS.Foundation {
                                                             CodomainVarMap,
                                                             edgeQrCtx.SaveCompile(grdDat, order));
 
-                    
+
 
                 }
 
@@ -1192,7 +1194,7 @@ namespace BoSSS.Foundation {
                 get;
                 private set;
             }
-            
+
             /// <summary>
             /// evaluates the differential operator (<see cref="Owner"/>)
             /// for the domain variables/fields in <see cref="DomainMapping"/>, i.e.
@@ -1252,7 +1254,7 @@ namespace BoSSS.Foundation {
                             m_NonlinearVolume.m_Output = null;
                             m_NonlinearVolume.m_alpha = 1.0;
 
-                           
+
                         }
 
                     }
@@ -1269,7 +1271,7 @@ namespace BoSSS.Foundation {
 
 
 
-                    if (m_NonlinearEdge != null) {
+                    if(m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
 
                             m_NonlinearEdge.m_Output = output;
@@ -1280,14 +1282,14 @@ namespace BoSSS.Foundation {
 
                             m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
 
-                           
+
                             m_NonlinearEdge.Execute();
 
                             m_NonlinearEdge.m_Output = null;
                             m_NonlinearEdge.m_outputBndEdge = null;
                             m_NonlinearEdge.m_alpha = 1.0;
                             m_NonlinearEdge.SubGridCellsMarker = null;
-                          
+
 
                         }
                     }
@@ -1297,7 +1299,7 @@ namespace BoSSS.Foundation {
                 }
             }
         }
-      
+
 
         /// <summary>
         /// matrix assembly for linear or linearized operators
@@ -1321,11 +1323,11 @@ namespace BoSSS.Foundation {
 
                     //if (comps.Where(cmp => cmp is INonlinearFlux).Count() > 0)
                     //    throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
-                    if (comps.Where(cmp => cmp is INonlinearFluxEx).Count() > 0)
+                    if(comps.Where(cmp => cmp is INonlinearFluxEx).Count() > 0)
                         throw new NotSupportedException("'INonlinearFluxEx' is not supported for linearization; (codomain variable '" + codVarName + "')");
                     //if (comps.Where(cmp => cmp is IDualValueFlux).Count() > 0)
                     //    throw new NotSupportedException("'IDualValueFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
-                    if (comps.Where(cmp => cmp is INonlinearSource).Count() > 0)
+                    if(comps.Where(cmp => cmp is INonlinearSource).Count() > 0)
                         throw new NotSupportedException("'INonlinearSource' is not supported for linearization; (codomain variable '" + codVarName + "')");
                 }
 
@@ -1388,9 +1390,9 @@ namespace BoSSS.Foundation {
                         if(ff != null)
                             FieldsForTransciever.Add(ff);
                     return FieldsForTransciever.ToArray();
-                }          
+                }
             }
-            
+
 
             /// <summary>
             /// matrix evaluation
@@ -1406,7 +1408,7 @@ namespace BoSSS.Foundation {
                     // check arguments
                     // ===============
                     {
-                        if (AffineOffset != null && AffineOffset.Count < base.CodomainMapping.LocalLength)
+                        if(AffineOffset != null && AffineOffset.Count < base.CodomainMapping.LocalLength)
                             throw new ArgumentException("vector to short", "AffineOffset");
                         if(OnlyAffine == false) {
                             if(!Matrix.RowPartitioning.EqualsPartition(base.CodomainMapping))
@@ -1427,7 +1429,7 @@ namespace BoSSS.Foundation {
                     // do work
                     // =======
                     // transceiver is only needed for parameters
-                    if (base.MPITtransceive) {
+                    if(base.MPITtransceive) {
                         if(GetTrxFields().Length > 0) {
                             base.m_TRX.TransceiveStartImReturn();
                             base.m_TRX.TransceiveFinish();
@@ -1437,7 +1439,7 @@ namespace BoSSS.Foundation {
 
                     // volume integration
                     // ------------------
-                    if (volRule.Any()
+                    if(volRule.Any()
                         && Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(this.Owner);
@@ -1455,9 +1457,9 @@ namespace BoSSS.Foundation {
 
                     // edge integration
                     // ----------------
-                    if (!(edgeRule.IsNullOrEmpty())
+                    if(!(edgeRule.IsNullOrEmpty())
                          && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
-                        using (new BlockTrace("Edge_Integration_(new)", tr)) {
+                        using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
                             mxtbuilder2 = null;
@@ -1472,7 +1474,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
-        public virtual IEvaluatorLinear_ GetFDJacobianBuilder(
+        public virtual IEvaluatorLinear GetFDJacobianBuilder(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             DelParameterUpdate __delParameterUpdate,
             EdgeQuadratureScheme edgeQrCtx = null,
@@ -1494,11 +1496,11 @@ namespace BoSSS.Foundation {
 
 
                 var e = new FDJacobianBuilder(new EvaluatorNonLin(
-                    this, 
-                    new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, 
+                    this,
+                    new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
                     edgeQrCtx, volQrCtx),
                     __delParameterUpdate);
-                    //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+                //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
             }
@@ -1516,14 +1518,14 @@ namespace BoSSS.Foundation {
             internal protected FDJacobianBuilder(IEvaluatorNonLin __Eval, DelParameterUpdate __delParameterUpdate) {
 
                 eps = 1.0;
-                while( 1.0 + eps > 1.0) {
-                    eps = eps /2;
+                while(1.0 + eps > 1.0) {
+                    eps = eps / 2;
                 }
                 eps = Math.Sqrt(eps);
 
                 Eval = __Eval;
                 Eval.MPITtransceive = true;
-                if (__delParameterUpdate != null)
+                if(__delParameterUpdate != null)
                     DelParamUpdate = __delParameterUpdate;
                 else
                     DelParamUpdate = EmptyParamUpdate;
@@ -1615,7 +1617,7 @@ namespace BoSSS.Foundation {
             /// </summary>
             public SpatialOperator Owner {
                 get {
-                    if (Eval is IEvaluator_) {
+                    if(Eval is IEvaluator_) {
                         return ((IEvaluator_)Eval).Owner;
                     } else {
                         throw new NotSupportedException();
@@ -1636,14 +1638,14 @@ namespace BoSSS.Foundation {
             /// </summary>
             virtual public CoefficientSet OperatorCoefficients {
                 get {
-                    if (Eval is IEvaluator_) {
+                    if(Eval is IEvaluator_) {
                         return ((IEvaluator_)Eval).OperatorCoefficients;
                     } else {
                         throw new NotSupportedException();
                     }
                 }
                 set {
-                    if (Eval is IEvaluator_) {
+                    if(Eval is IEvaluator_) {
                         ((IEvaluator_)Eval).OperatorCoefficients = value;
                     } else {
                         throw new NotSupportedException();
@@ -1652,7 +1654,7 @@ namespace BoSSS.Foundation {
             }
 
             IEvaluatorNonLin Eval;
-            
+
             DelParameterUpdate DelParamUpdate;
 
             /// <summary>
@@ -1669,7 +1671,7 @@ namespace BoSSS.Foundation {
             /// - content: some external cell index; this determines the column index of the finite difference result into the Jacobian matrix
             /// </summary>
             int[][] ExternalColorLists;
-            
+
             /// <summary>
             /// - 1st index: correlates to 1st index of <see cref="ColorLists"/>
             /// - 2nd index: correlates with 2nd index of <see cref="ExternalColorLists"/>
@@ -1703,7 +1705,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 #endif
-             
+
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
                 int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
@@ -1729,9 +1731,9 @@ namespace BoSSS.Foundation {
                     ColoredPass.SetAll(false);
 
                     for(int j = 0; j < J; j++) {
-                        if (Colored[j] == true)
+                        if(Colored[j] == true)
                             continue;
-                        if (LocalMarker[j] != 0)
+                        if(LocalMarker[j] != 0)
                             continue;
 
                         int[] Neighs_j = Neighs[j];
@@ -1747,7 +1749,7 @@ namespace BoSSS.Foundation {
                             continue;
 
                         // if we reached this point, we finally found a cell which we are allowed to add to the current color set.
-                        ColoredPass[j] = true;                        
+                        ColoredPass[j] = true;
                         LocalMarker[j] = myMarkerToken;
                         LocalColorCause[j] = j;
                         foreach(int jn in Neighs_j) {
@@ -1773,8 +1775,8 @@ namespace BoSSS.Foundation {
 
                             int LocalConflicts = 0;
 
-                            for (int je = J; je < JE; je++) {
-                                if (LocalMarker[je] != 0 && ExchangedMarker[je] != 0) {
+                            for(int je = J; je < JE; je++) {
+                                if(LocalMarker[je] != 0 && ExchangedMarker[je] != 0) {
                                     Debug.Assert(LocalMarker[je] != ExchangedMarker[je]);
                                     LocalConflicts++;
 
@@ -1786,7 +1788,7 @@ namespace BoSSS.Foundation {
                                     //    // the other rank should yield
                                     //} else {
                                     //    // this rank has to yield
-                                    if (rndVal >= 0.5) {
+                                    if(rndVal >= 0.5) {
                                         int jToRemove = LocalColorCause[je];
                                         Debug.Assert(jToRemove < J);
                                         Debug.Assert(ColoredPass[jToRemove] == true);
@@ -1796,7 +1798,7 @@ namespace BoSSS.Foundation {
                                         ColoredPass[jToRemove] = false;
                                         LocalMarker[jToRemove] = 0;
                                         int[] Neighs_jToRemove = Neighs[jToRemove];
-                                        foreach (int jn in Neighs_jToRemove) {
+                                        foreach(int jn in Neighs_jToRemove) {
                                             LocalMarker[jn] = 0;
                                         }
 
@@ -1807,7 +1809,7 @@ namespace BoSSS.Foundation {
 
                             GlobalConflicts = LocalConflicts.MPISum();
 
-                        } while (GlobalConflicts > 0);
+                        } while(GlobalConflicts > 0);
 
 #if DEBUG
                         Array.Copy(LocalMarker, ExchangedMarker, JE);
@@ -1835,7 +1837,7 @@ namespace BoSSS.Foundation {
 
                     int GlobColoredPass = LocColoredPass.MPISum();
                     //Console.WriteLine("Colored in pass {0}: {1}", ColorListsTmp.Count, GlobColoredPass);
-                    if (GlobColoredPass <= 0) {
+                    if(GlobColoredPass <= 0) {
                         DeadlockWatch++;
                         if(DeadlockWatch >= 1000)
                             throw new ApplicationException("Deadlock in parallel coloring.");
@@ -1849,7 +1851,7 @@ namespace BoSSS.Foundation {
                     // communicate external lists
                     // ==========================
 
-                    if (gDat.MpiSize > 1) {
+                    if(gDat.MpiSize > 1) {
 
                         //Debugger.Launch();
 
@@ -1857,10 +1859,10 @@ namespace BoSSS.Foundation {
 
                         foreach(int j in CellList) {
                             int[] Neighs_j = Neighs[j];
-                            foreach (int jN in Neighs_j) {
+                            foreach(int jN in Neighs_j) {
                                 if(jN >= J) {
-                                    
-                                    int Gl_jN = (int) GlidxExt[jN - J];
+
+                                    int Gl_jN = (int)GlidxExt[jN - J];
                                     int iProc = CellPart.FindProcess(Gl_jN);
                                     int Gl_j = j + CellPart.i0;
 
@@ -1878,7 +1880,7 @@ namespace BoSSS.Foundation {
 
                         var ExtColor = new Dictionary<int, List<int>>();
 
-                        foreach (var kv in RcvData) {
+                        foreach(var kv in RcvData) {
                             int iProc = kv.Key;
                             var list = kv.Value;
 
@@ -1926,7 +1928,7 @@ namespace BoSSS.Foundation {
                     // ==========================
                     Debug.Assert(locColoredCells <= J);
                     int bRunLoc = 0xFFFFFF;
-                    if(locColoredCells >= J) 
+                    if(locColoredCells >= J)
                         bRunLoc = 0;
                     bRun = bRunLoc.MPIMax();
                 }
@@ -2029,7 +2031,7 @@ namespace BoSSS.Foundation {
                     // communicate external lists
                     // ==========================
 
-                    if (gDat.MpiSize > 1) {
+                    if(gDat.MpiSize > 1) {
 
                         //Debugger.Launch();
 
@@ -2037,10 +2039,10 @@ namespace BoSSS.Foundation {
 
                         if(jLoc >= 0) {
                             int[] Neighs_j = Neighs[jLoc];
-                            foreach (int jN in Neighs_j) {
+                            foreach(int jN in Neighs_j) {
                                 if(jN >= J) {
-                                    
-                                    int Gl_jN = (int) GlidxExt[jN - J];
+
+                                    int Gl_jN = (int)GlidxExt[jN - J];
                                     int iProc = CellPart.FindProcess(Gl_jN);
                                     int Gl_j = jClGlob;
 
@@ -2058,7 +2060,7 @@ namespace BoSSS.Foundation {
 
                         var ExtColor = new Dictionary<int, List<int>>();
 
-                        foreach (var kv in RcvData) {
+                        foreach(var kv in RcvData) {
                             int iProc = kv.Key;
                             var list = kv.Value;
 
@@ -2176,7 +2178,7 @@ namespace BoSSS.Foundation {
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
-                
+
                 // init locals
                 // ===========
                 var codMap = Eval.CodomainMapping;
@@ -2257,7 +2259,7 @@ namespace BoSSS.Foundation {
                     throw new NotSupportedException();
                 MultidimensionalArray Buffer = MultidimensionalArray.Create(Lout, domMap.GetBlockLen(domMap.FirstBlock));
 
-                for (int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
+                for(int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
                     int[] CellList = this.ColorLists[iCellPass];
                     int[] ExtCellList = this.ExternalColorLists[iCellPass];
 
@@ -2265,7 +2267,7 @@ namespace BoSSS.Foundation {
                     int[] FieldCounter = new int[JE];
 
                     int maxNj = 0;
-                    foreach (int j in CellList) {
+                    foreach(int j in CellList) {
                         int Nj = domMap.GetTotalNoOfCoordinatesPerCell(j);
                         maxNj = Math.Max(Nj, maxNj);
                     }
@@ -2273,7 +2275,7 @@ namespace BoSSS.Foundation {
 
                     Buffer.Clear();
 
-                    for (int n = 0; n < maxNj; n++) { // loop over DG coordinates in cell
+                    for(int n = 0; n < maxNj; n++) { // loop over DG coordinates in cell
 
                         // backup DG coordinates
                         // ---------------------
@@ -2282,10 +2284,10 @@ namespace BoSSS.Foundation {
                         // apply distortions
                         // -----------------
                         int AnyLoc = 0;
-                        foreach (int j in CellList) {
+                        foreach(int j in CellList) {
                             int iFld = FieldCounter[j];
                             int nFld = CoordCounter[j];
-                            if (iFld >= NoOfDomFields)
+                            if(iFld >= NoOfDomFields)
                                 continue; // finished with cell 'j'
 
                             AnyLoc = -1;
@@ -2299,7 +2301,7 @@ namespace BoSSS.Foundation {
                             Debug.Assert(domFields[iFld].Coordinates[j, nFld] != oldVal);
                         }
                         int AnyGlob = AnyLoc.MPIMin();
-                        if (AnyGlob >= 0)
+                        if(AnyGlob >= 0)
                             break; // finished with entire cell list on all processors
 
                         // evaluate operator
@@ -2311,9 +2313,9 @@ namespace BoSSS.Foundation {
 
                         // ------------------------------
 
-                        for (int IntExt = 0; IntExt < 2; IntExt++) {
+                        for(int IntExt = 0; IntExt < 2; IntExt++) {
                             int[] __CellList;
-                            switch (IntExt) {
+                            switch(IntExt) {
                                 case 0: __CellList = CellList; break;
                                 case 1: __CellList = ExtCellList; break;
                                 default: throw new ApplicationException();
@@ -2323,9 +2325,9 @@ namespace BoSSS.Foundation {
                             // save results
                             // -------------------------------
                             int cnt = 0;
-                            foreach (int _j in __CellList) {
+                            foreach(int _j in __CellList) {
                                 int[] Neighs_j; // = Neighs[_j];
-                                switch (IntExt) {
+                                switch(IntExt) {
                                     case 0: Neighs_j = Neighs[_j]; break;
                                     case 1: Neighs_j = this.ExternalColorListsNeighbors[iCellPass][cnt]; break;
                                     default: throw new ApplicationException();
@@ -2336,28 +2338,28 @@ namespace BoSSS.Foundation {
 
                                 int iFldCol = FieldCounter[jCol];
                                 int nFldCol = CoordCounter[jCol];
-                                if (iFldCol >= NoOfDomFields)
+                                if(iFldCol >= NoOfDomFields)
                                     continue; // finished with cell
 
                                 int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, jCol, nFldCol);
                                 int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
                                 int iRelCol = iCol - i0Col;
 
-                                for (int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                                for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
                                     int jRow;
-                                    if (k == 0) {
+                                    if(k == 0) {
                                         jRow = _j;
                                     } else {
                                         jRow = Neighs_j[k - 1];
                                     }
 
-                                    if (jRow >= J) { 
+                                    if(jRow >= J) {
                                         continue; // external cell; should be treated on other proc.
                                     }
                                     int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
                                     int NoOfRows = codMap.GetBlockLen(jRow);
 
-                                    for (int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
+                                    for(int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
                                         int iRow = i0Row + iRelRow;
 
                                         double u1 = EvalBuf[iRow];
@@ -2373,14 +2375,14 @@ namespace BoSSS.Foundation {
 
                             // increase counters
                             // ------------------
-                            foreach (int j in __CellList) {
+                            foreach(int j in __CellList) {
                                 int iFld = FieldCounter[j];
-                                if (iFld >= NoOfDomFields)
+                                if(iFld >= NoOfDomFields)
                                     continue; // finished with cell 'j'
 
                                 int Nj = domMap.BasisS[iFld].GetLength(j);
                                 CoordCounter[j]++;
-                                if (CoordCounter[j] >= Nj) {
+                                if(CoordCounter[j] >= Nj) {
                                     CoordCounter[j] = 0;
                                     FieldCounter[j]++;
                                 }
@@ -2396,18 +2398,18 @@ namespace BoSSS.Foundation {
                     // save to matrix
                     // --------------
 
-                    for (int IntExt = 0; IntExt < 2; IntExt++) {
+                    for(int IntExt = 0; IntExt < 2; IntExt++) {
                         int[] __CellList;
-                        switch (IntExt) {
+                        switch(IntExt) {
                             case 0: __CellList = CellList; break;
                             case 1: __CellList = ExtCellList; break;
                             default: throw new ApplicationException();
                         }
 
                         int cnt = 0;
-                        foreach (int _j in __CellList) {
+                        foreach(int _j in __CellList) {
                             int[] Neighs_j; // = Neighs[_j];
-                            switch (IntExt) {
+                            switch(IntExt) {
                                 case 0: Neighs_j = Neighs[_j]; break;
                                 case 1: Neighs_j = this.ExternalColorListsNeighbors[iCellPass][cnt]; break;
                                 default: throw new ApplicationException();
@@ -2418,15 +2420,15 @@ namespace BoSSS.Foundation {
                             int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
                             int iECol = domMap.LocalUniqueCoordinateIndex(NoOfDomFields - 1, jCol, lastDomB.GetLength(jCol) - 1);
 
-                            for (int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                            for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
                                 int jRow;
-                                if (k == 0) {
+                                if(k == 0) {
                                     jRow = _j;
                                 } else {
                                     jRow = Neighs_j[k - 1];
                                 }
 
-                                if (jRow >= J)
+                                if(jRow >= J)
                                     continue; // external cell; should be treated on other proc.
 
 
@@ -2491,7 +2493,7 @@ namespace BoSSS.Foundation {
             /// <param name="sgrd"></param>
             /// <param name="subGridBoundaryTreatment"></param>
             public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
-                if (sgrd != null && sgrd.MaskType != MaskType.Logical)
+                if(sgrd != null && sgrd.MaskType != MaskType.Logical)
                     throw new ArgumentException("expecting logical mask");
                 Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
             }
@@ -2502,24 +2504,33 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public SpatialOperator GetJacobiOperator(int SpatialDimension) {
-            if (!this.IsCommited)
+        public ISpatialOperator GetJacobiOperator(int SpatialDimension) {
+            return _GetJacobiOperator(SpatialDimension);
+        }
+
+
+        /// <summary>
+        /// An operator which computes the Jacobian matrix of this operator.
+        /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
+        /// </summary>
+        public SpatialOperator _GetJacobiOperator(int SpatialDimension) {
+            if(!this.IsCommited)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
             // parameters and activation flags
             // ===============================
 
             var allcomps = new List<IEquationComponent>();
-            foreach (var cdo in this.CodomainVar)
+            foreach(var cdo in this.CodomainVar)
                 allcomps.AddRange(this.EquationComponents[cdo]);
 
             TermActivationFlags extractTaf(IEquationComponent c) {
                 TermActivationFlags ret = default(TermActivationFlags);
-                if (c is IVolumeForm vf) {
+                if(c is IVolumeForm vf) {
                     ret = ret | vf.VolTerms;
                 }
 
-                if (c is IEdgeForm ef) {
+                if(c is IEdgeForm ef) {
                     ret = ret | ef.BoundaryEdgeTerms;
                     ret = ret | ef.InnerEdgeTerms;
                 }
@@ -2528,7 +2539,7 @@ namespace BoSSS.Foundation {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
-            
+
             // create derivative operator
             // ==========================
 
@@ -2538,16 +2549,16 @@ namespace BoSSS.Foundation {
                    this.CodomainVar,
                    this.QuadOrderFunction);
 
-            foreach (string CodNmn in this.CodomainVar) {
-                foreach (var eq in this.EquationComponents[CodNmn]) {
+            foreach(string CodNmn in this.CodomainVar) {
+                foreach(var eq in this.EquationComponents[CodNmn]) {
 
-                    if (!(eq is ISupportsJacobianComponent _eq))
+                    if(!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
                     bool eq_suppCoeffUpd = eq is IEquationComponentCoefficient;
 
-                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
+                    foreach(var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
                         bool eqj_suppCoeffUpd = eqj is IEquationComponentCoefficient;
-                        if (eq_suppCoeffUpd && !eqj_suppCoeffUpd)
+                        if(eq_suppCoeffUpd && !eqj_suppCoeffUpd)
                             throw new NotSupportedException("Form '" + eq.GetType().Name + "' supports '" + typeof(IEquationComponentCoefficient).Name + "', but Jacobian Form '" + eqj.GetType().Name + "' does not!");
 
                         JacobianOp.EquationComponents[CodNmn].Add(eqj);
@@ -2562,7 +2573,7 @@ namespace BoSSS.Foundation {
             return JacobianOp;
         }
 
-        
+
 
 
 

@@ -74,6 +74,9 @@ namespace BoSSS.Foundation.XDG {
                 throw new ArgumentException();
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
+            if(!m_XOp.Species.SetEquals(SpcToCompute.Select(spcId => LsTrk.GetSpeciesName(spcId)))) {
+                throw new ArgumentException("mismatch between species of operator and length scales.");
+            }
 
             if(OpMatrix != null) {
 
@@ -89,8 +92,7 @@ namespace BoSSS.Foundation.XDG {
 
             } else {
                 XSpatialOperatorMk2.XEvaluatorNonlin eval = m_XOp.GetEvaluatorEx(this.LsTrk,
-                    CurrentState.ToArray(), ParamsMap, RowMapping,
-                    SpcToCompute);
+                    CurrentState.ToArray(), ParamsMap, RowMapping);
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;

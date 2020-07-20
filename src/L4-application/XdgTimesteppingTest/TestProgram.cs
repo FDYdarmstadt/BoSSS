@@ -21,6 +21,7 @@ using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System.Diagnostics;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
 

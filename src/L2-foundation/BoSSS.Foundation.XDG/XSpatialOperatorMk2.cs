@@ -41,7 +41,19 @@ namespace BoSSS.Foundation.XDG {
     /// it can have components which couple the phases.
     /// Mk2: enables the definition of different equation components for each phase 
     /// </summary>
-    public partial class XSpatialOperatorMk2 {
+    public partial class XSpatialOperatorMk2 : ISpatialOperator {
+
+        /// <summary>
+        /// active species in this operator; all species that will try to find solutions for.
+        /// </summary>
+        public ICollection<string> Species {
+            get {
+                return m_SpeciesList.AsReadOnly();
+            }
+           
+        }
+
+        List<string> m_SpeciesList = new List<string>();
 
 
         /// <summary>
@@ -67,15 +79,15 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            Dictionary<SpeciesId, SpatialOperator> m_SpeciesOperator;
+            Dictionary<string, SpatialOperator> m_SpeciesOperator;
 
             internal SpeciesOperatorHelper(XSpatialOperatorMk2 owner) {
                 m_owner = owner;
 
                 m_SpatialOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
 
-                m_SpeciesOperator = new Dictionary<SpeciesId, SpatialOperator>();
-                foreach(SpeciesId spcId in m_owner.m_Species) {
+                m_SpeciesOperator = new Dictionary<string, SpatialOperator>();
+                foreach(string spcId in m_owner.Species) {
                     SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
                     m_SpeciesOperator.Add(spcId, spcOperator);
                 }
@@ -96,7 +108,7 @@ namespace BoSSS.Foundation.XDG {
 
             //internal const int ___SpeciesIDOffest = 11111;  // not to be changed!!!
 
-            public SpatialOperator this[SpeciesId spcId] {
+            public SpatialOperator this[string spcId] {
                 get {
                     return m_SpeciesOperator[spcId];
                 }
@@ -107,19 +119,13 @@ namespace BoSSS.Foundation.XDG {
                 foreach(string comps in m_owner.m_EquationComponents.Keys) {
                     foreach(IEquationComponent iec in m_owner.m_EquationComponents[comps]) {
                         m_SpatialOperator.EquationComponents[comps].Add(iec);
-                        if(iec is ISpeciesFilter) {
-                            SpeciesId spcId = ((ISpeciesFilter)iec).validSpeciesId;
-                            //if(spcId != null) {
-                            //    if(m_owner.m_Species == null) {
-                            //        throw new ArgumentException("error in equation components for key \"" + comps + "\" ISpeciesFilter was defined but not m_Species");
-                            //    } else {
-                            //        m_SpeciesOperator[spcId].EquationComponents[comps].Add(iec);
-                            //    }
-                            //}
-                            if(!m_owner.m_Species.Contains(spcId)) {
+                        if(iec is ISpeciesFilter fiec) {
+                            string spcNmn = fiec.validSpeciesId;
+
+                            if(!m_owner.Species.Contains(spcNmn)) {
                                 throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
                             } else {
-                                m_SpeciesOperator[spcId].EquationComponents[comps].Add(iec);
+                                m_SpeciesOperator[spcNmn].EquationComponents[comps].Add(iec);
                             }
                         } else {
                             foreach(var spcOp in m_SpeciesOperator.Values) {
@@ -137,10 +143,7 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-        SpeciesId[] m_Species;
-
-        internal const int ___SpeciesIDOffest = 11111;  // not to be changed!!! -> value defined by levelSetTracker
-
+  
 
         //==========================================================================================================================
         // Taken from old XSpatialOperator
@@ -179,12 +182,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        IEvaluatorNonLin_ GetSpeciesEvaluatorExBase(SpeciesId spcId, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpeciesOperator[spcId].GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+        IEvaluatorNonLin_ GetSpeciesEvaluatorExBase(string spcName, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            return m_SpeciesOperator[spcName].GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
         }
 
-        IEvaluatorLinear_ GetSpeciesMatrixBuilderBase(SpeciesId spcId, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpeciesOperator[spcId].GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+        IEvaluatorLinear_ GetSpeciesMatrixBuilderBase(string spcName, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            return m_SpeciesOperator[spcName].GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
         }
 
         /// <summary>
@@ -258,25 +261,29 @@ namespace BoSSS.Foundation.XDG {
                 SpeciesSchemes);
         }
 
+
+        /// <summary>
+        /// explicit evaluation of the operator
+        /// </summary>
+        public IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            throw new NotImplementedException();
+        }
+
+
+
         /// <summary>
         /// explicit evaluation of the operator
         /// </summary>
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            params SpeciesId[] whichSpecies
-            ) {
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
 
+            var whichSpecies = this.Species.Select(spcNmn => lsTrk.GetSpeciesId(spcNmn)).ToArray();
             Dictionary<SpeciesId, QrSchemPair> SpeciesSchemes = new Dictionary<SpeciesId, QrSchemPair>();
-            if(whichSpecies == null | whichSpecies.Length <= 0) {
-                foreach(var s in lsTrk.SpeciesIdS) {
-                    SpeciesSchemes.Add(s, new QrSchemPair());
-                }
-            } else {
-                foreach(var s in whichSpecies) {
-                    SpeciesSchemes.Add(s, new QrSchemPair());
-                }
+            foreach(var s in whichSpecies) {
+                SpeciesSchemes.Add(s, new QrSchemPair());
             }
+            
 
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
@@ -307,11 +314,10 @@ namespace BoSSS.Foundation.XDG {
         public XFDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate,
-            params SpeciesId[] whichSpecies
-            ) {
+            DelParameterUpdate __delParameterUpdate) //
+        {
 
-            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, whichSpecies);
+            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
 
             return new XFDJacobianBuilder(xeval, __delParameterUpdate);
         }
@@ -914,7 +920,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,int,Func{int[],int[],int[],int},string[])"/>
         /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species, params string[] __varnames)
+        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species, params string[] __varnames)
             : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc, __Species) {
             if(NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain, parameter and codomain fields.");
@@ -924,7 +930,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,Func{int[],int[],int[],int},string[])"/>
         /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species, params string[] __varnames)
+        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species, params string[] __varnames)
            : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc, __Species) {
             if(NoOfCodomFields + NoOfDomFields != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain and codomain fields.");
@@ -933,20 +939,28 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},Func{int[],int[],int[],int})"/>
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species)
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc,  IEnumerable<string> __Species)
             : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc, __Species) {
         }
 
+       
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},IList{string},Func{int[],int[],int[],int})"/>
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species) {
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species) {
             m_DomainVar = new string[__DomainVar.Count];
             for(int i = 0; i < m_DomainVar.Length; i++) {
                 if(Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
                     throw new ArgumentException("error in domain variables list; identifier \"" + __DomainVar[i] + "\" appears twice.", "__DomainVar");
                 m_DomainVar[i] = __DomainVar[i];
             }
+
+            if(__Species == null || __Species.Count() <= 0)
+                throw new ArgumentException("Empty species list.");
+            if(!__Species.IsSet())
+                throw new ArgumentException("Some species seems to appear more than once.");
+
+            this.m_SpeciesList.AddRange(__Species);
 
             if(__ParameterVar != null) {
                 m_ParameterVar = new string[__ParameterVar.Count];
@@ -978,14 +992,6 @@ namespace BoSSS.Foundation.XDG {
             this.QuadOrderFunction = QuadOrderFunc;
 
 
-            if(__Species == null) {
-                SpeciesId nullSpcId;
-                nullSpcId.cntnt = ___SpeciesIDOffest;   // actually SpcId for "A"
-                m_Species = new SpeciesId[] { nullSpcId };
-            } else {
-                m_Species = __Species;
-            }
-
             GhostEdgesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
             SurfaceElementOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
             //SpeciesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
@@ -1003,7 +1009,7 @@ namespace BoSSS.Foundation.XDG {
         /// collection of equation components that define the operator.
         /// 
         /// </summary>
-        public _XEquationComponents EquationComponents {
+        public IEquationComponents EquationComponents {
             get {
                 return m_EquationComponentsHelper;
             }
@@ -1013,7 +1019,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// implementation of <see cref="EquationComponents" />;
         /// </summary>
-        public class _XEquationComponents : IEnumerable<KeyValuePair<string, IEnumerable<IEquationComponent>>> {
+        public class _XEquationComponents : IEquationComponents {
 
             internal _XEquationComponents(XSpatialOperatorMk2 owner) {
                 m_owner = owner;
@@ -1151,11 +1157,36 @@ namespace BoSSS.Foundation.XDG {
 
         #endregion
 
+        IParameterUpdate m_ParameterUpdate;
+
+        /// <summary>
+        /// If set, used to update parameters before evaluation.
+        /// </summary>
+        public IParameterUpdate ParameterUpdate {
+            get {
+                return m_ParameterUpdate;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("unable to change after 'Commit()'");
+                m_ParameterUpdate = value;
+            }
+        }
+
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public (XSpatialOperatorMk2,DelParameterUpdate) GetJacobiOperator(int SpatialDimension) {
+        public ISpatialOperator GetJacobiOperator(int SpatialDimension) {
+            return _GetJacobiOperator(SpatialDimension);
+        }
+
+
+        /// <summary>
+        /// An operator which computes the Jacobian matrix of this operator.
+        /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
+        /// </summary>
+        public XSpatialOperatorMk2 _GetJacobiOperator(int SpatialDimension) {
             if (!this.IsCommited)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
@@ -1192,7 +1223,7 @@ namespace BoSSS.Foundation.XDG {
                    h.JacobianParameterVars,
                    this.CodomainVar,
                    this.QuadOrderFunction,
-                   this.m_Species);
+                   this.Species.ToArray());
 
             void CheckCoeffUpd(IEquationComponent eq, IEquationComponent eqj) {
                 bool eq_suppCoeffUpd = eq is IEquationComponentCoefficient;
@@ -1232,8 +1263,10 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
+            JacobianOp.ParameterUpdate = h;
+
             JacobianOp.Commit();
-            return (JacobianOp, h.ParameterUpdate);
+            return JacobianOp;
         }
 
         //==========================================================================================================================

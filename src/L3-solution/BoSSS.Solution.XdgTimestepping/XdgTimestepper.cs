@@ -2,10 +2,14 @@
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.Timestepping;
+using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -60,98 +64,163 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <summary>
     /// Driver class which provides a simplified interface to <see cref="XdgBDFTimestepping"/> and <see cref="XdgRKTimestepping"/>
     /// </summary>
-    public class XdgTimestepper {
+    public class XdgTimestepping {
 
         public TimeSteppingScheme Scheme {
             get;
             private set;
         }
 
-        public XdgTimestepper(
+        public XSpatialOperatorMk2 Operator {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// <see cref="XSpatialOperatorMk2.Species"/>
+        /// </summary>
+        public SpeciesId[] UsedSpecies {
+            get {
+                return Operator.Species.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Initial Value
+        /// </summary>
+        public CoordinateMapping CurrentState {
+            get {
+                return TimesteppingBase.CurrentStateMapping;
+            }
+            
+        }
+
+        /// <summary>
+        /// Residual vector during/after linear/nonlinear solver iterations
+        /// </summary>
+        public CoordinateMapping IterationResiduals {
+            get {
+                return TimesteppingBase.Residuals.Mapping;
+            }
+        }
+
+        public LevelSetTracker LsTrk {
+            get;
+            private set;
+        }
+             
+
+
+        public XdgTimestepping(
             XSpatialOperatorMk2 op,
             IEnumerable<DGField> Fields,
+            IEnumerable<DGField> Parameters,
             IEnumerable<DGField> IterationResiduals,
-            TimeSteppingScheme __Scheme = TimeSteppingScheme.ImplicitEuler,
+            TimeSteppingScheme __Scheme,
             //bool DelayInit,
             //DelComputeOperatorMatrix _ComputeOperatorMatrix,
             //DelComputeMassMatrix _ComputeMassMatrix,
-            //DelUpdateLevelset _UpdateLevelset,
+            DelUpdateLevelset _UpdateLevelset,
             LevelSetHandling _LevelSetHandling,
             //MassMatrixShapeandDependence _MassMatrixShapeandDependence,
-            SpatialOperatorType _SpatialOperatorType = SpatialOperatorType.Nonlinear,
             IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGridData[] _MultigridSequence,
-            SpeciesId[] _SpId,
-            int _CutCellQuadOrder,
-            double _AgglomerationThreshold, 
-            bool _useX, 
-            Control.NonLinearSolverConfig nonlinconfig,
-            Control.LinearSolverConfig linearconfig) 
-        {
+            double _AgglomerationThreshold,
+            AppControlSolver control) {
             this.Scheme = __Scheme;
+            this.Operator = op;
 
-            LevelSetTracker LsTrk;
-            
+            if(Parameters == null)
+                Parameters = new DGField[0];
+
+
+            foreach(var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
+                if(f is XDGField xf) {
+                    if(LsTrk == null) {
+                        LsTrk = xf.Basis.Tracker;
+                    } else {
+                        if(!object.ReferenceEquals(LsTrk, xf.Basis.Tracker))
+                            throw new ArgumentException();
+                    }
+                }
+            }
+            if(LsTrk == null)
+                throw new ArgumentException("unable to get Level Set Tracker reference");
 
             RungeKuttaScheme rksch = null;
-            int bdfOrder= -1000;
-            if (this.Scheme == TimeSteppingScheme.CrankNicolson)
+            int bdfOrder = -1000;
+            if(this.Scheme == TimeSteppingScheme.CrankNicolson)
                 bdfOrder = -1;
-            else if (this.Scheme == TimeSteppingScheme.ExplicitEuler)
+            else if(this.Scheme == TimeSteppingScheme.ExplicitEuler)
                 bdfOrder = 0;
-            else if (this.Scheme == TimeSteppingScheme.ImplicitEuler)
+            else if(this.Scheme == TimeSteppingScheme.ImplicitEuler)
                 bdfOrder = 1;
-            else if (this.Scheme.ToString().StartsWith("BDF"))
+            else if(this.Scheme.ToString().StartsWith("BDF"))
                 bdfOrder = Convert.ToInt32(this.Scheme.ToString().Substring(3));
-            else if (this.Scheme == TimeSteppingScheme.RK1)
+            else if(this.Scheme == TimeSteppingScheme.RK1)
                 rksch = RungeKuttaScheme.ExplicitEuler;
-            else if (this.Scheme == TimeSteppingScheme.RK1u1)
+            else if(this.Scheme == TimeSteppingScheme.RK1u1)
                 rksch = RungeKuttaScheme.ExplicitEuler2;
-            else if (this.Scheme == TimeSteppingScheme.RK2)
+            else if(this.Scheme == TimeSteppingScheme.RK2)
                 rksch = RungeKuttaScheme.Heun2;
-            else if (this.Scheme == TimeSteppingScheme.RK3)
+            else if(this.Scheme == TimeSteppingScheme.RK3)
                 rksch = RungeKuttaScheme.TVD3;
-            else if (this.Scheme == TimeSteppingScheme.RK4)
+            else if(this.Scheme == TimeSteppingScheme.RK4)
                 rksch = RungeKuttaScheme.RungeKutta1901;
-            else if (this.Scheme == TimeSteppingScheme.RK_ImplicitEuler)
+            else if(this.Scheme == TimeSteppingScheme.RK_ImplicitEuler)
                 rksch = RungeKuttaScheme.ImplicitEuler;
-            else if (this.Scheme == TimeSteppingScheme.RK_CrankNic)
+            else if(this.Scheme == TimeSteppingScheme.RK_CrankNic)
                 rksch = RungeKuttaScheme.CrankNicolson;
             else if(this.Scheme == TimeSteppingScheme.RK_IMEX3)
                 rksch = RungeKuttaScheme.IMEX3;
             else
                 throw new NotImplementedException();
-            
 
-            if (bdfOrder > -1000) {
-                m_BDF_Timestepper = new XdgBDFTimestepping(Fields, IterationResiduals, 
+
+
+            bool UseX = true;
+            SpatialOperatorType _SpatialOperatorType = SpatialOperatorType.Nonlinear;
+
+
+            int quadOrder = op.QuadOrderFunction(
+                Fields.Select(f => f.Basis.Degree).ToArray(),
+                Parameters.Select(f => f != null ? f.Basis.Degree : 0).ToArray(),
+                IterationResiduals.Select(f => f.Basis.Degree).ToArray());
+
+
+            if(bdfOrder > -1000) {
+                m_BDF_Timestepper = new XdgBDFTimestepping(Fields, IterationResiduals,
                     LsTrk, true,
-                    myDelComputeOperatorMatrix, null, DelUpdateLevelset,
+                    myDelComputeOperatorMatrix, null, _UpdateLevelset,
                     bdfOrder,
-                    lsh,
+                    _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
-                    SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
-                    null, base.MultigridSequence,
+                    _SpatialOperatorType,
+                    _MassScale,
+                    _MultigridOperatorConfig, _MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
-                    this.Control.AgglomerationThreshold, false,
-                    this.Control.NonLinearSolver,
-                    this.Control.LinearSolver);
+                    control.AgglomerationThreshold, UseX,
+                    control.NonLinearSolver,
+                    control.LinearSolver);
+
+                m_BDF_Timestepper.Config_AgglomerationThreshold = _AgglomerationThreshold;
             } else {
                 m_RK_Timestepper = new XdgRKTimestepping(Fields.ToArray(), IterationResiduals.ToArray(),
                     LsTrk,
-                    myDelComputeOperatorMatrix, DelUpdateLevelset,
+                    myDelComputeOperatorMatrix, _UpdateLevelset,
                     rksch,
-                    lsh,
+                    _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
-                    SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
-                    null, base.MultigridSequence,
+                    _SpatialOperatorType,
+                    _MassScale,
+                    _MultigridOperatorConfig, _MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
-                    this.Control.AgglomerationThreshold, false,
-                    this.Control.NonLinearSolver,
-                    this.Control.LinearSolver);
+                    control.AgglomerationThreshold, UseX,
+                    control.NonLinearSolver,
+                    control.LinearSolver);
+
+                m_RK_Timestepper.Config_AgglomerationThreshold = _AgglomerationThreshold;
             }
 
         }
@@ -161,14 +230,23 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
+        XdgTimesteppingBase TimesteppingBase {
+            get {
+                Debug.Assert((m_BDF_Timestepper == null) != (m_RK_Timestepper == null));
+                if(m_BDF_Timestepper != null)
+                    return m_BDF_Timestepper;
+                if(m_RK_Timestepper != null)
+                    return m_RK_Timestepper;
+                throw new ApplicationException("internal error");
+            }
+        }
+
+
+        public XdgBDFTimestepping m_BDF_Timestepper;
 
 
 
-        XdgBDFTimestepping m_BDF_Timestepper;
-
-
-
-        XdgRKTimestepping m_RK_Timestepper;
+        public XdgRKTimestepping m_RK_Timestepper;
 
 
         public void Solve(double phystime, double dt) {
@@ -182,5 +260,59 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
         }
+
+        /// <summary>
+        /// Step 2 of 2 for dynamic load balancing: restore this objects 
+        /// status after the grid has been re-distributed.
+        /// </summary>
+        public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
+            IEnumerable<DGField> Fields,
+            IEnumerable<DGField> IterationResiduals,
+            LevelSetTracker LsTrk,
+            AggregationGridData[] _MultigridSequence) //
+        {
+            if(m_BDF_Timestepper != null) {
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, IterationResiduals, LsTrk, _MultigridSequence);
+            } else if(m_RK_Timestepper != null) {
+                throw new NotImplementedException("Load balancing and adaptive mesh refinement are not supported for Runge-Kutta XDG timestepping.");
+            } else {
+                throw new NotImplementedException();
+            }
+
+        }
+
+        /// <summary>
+        /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
+        /// status in the load-balancing thing <paramref name="L"/>
+        /// </summary>
+        public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+            if(m_BDF_Timestepper != null) {
+                m_BDF_Timestepper.DataBackupBeforeBalancing(L);
+            } else if(m_RK_Timestepper != null) {
+                throw new NotImplementedException("Load balancing and adaptive mesh refinement are not supported for Runge-Kutta XDG timestepping.");
+            } else {
+                throw new NotImplementedException();
+            }
+        }
+
+        
+        // <summary>
+        /// Number of timesteps required for restart, e.g. 1 for Runge-Kutta and implicit/explicit Euler, 2 for BDF2, etc.
+        /// </summary>
+        public int BurstSave {
+            get {
+                if(m_RK_Timestepper != null) {
+                    Debug.Assert(m_BDF_Timestepper == null);
+                    return 1;
+                } else if(m_BDF_Timestepper != null) {
+                    return m_BDF_Timestepper.GetNumberOfStages;
+                } else {
+                    throw new NotImplementedException();
+                }
+
+            }
+        }
+
+
     }
 }

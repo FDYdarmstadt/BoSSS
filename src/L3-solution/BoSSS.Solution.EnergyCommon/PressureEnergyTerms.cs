@@ -337,9 +337,9 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        SpeciesId m_spcId;
+        string m_spcId;
 
-        public SpeciesId validSpeciesId {
+        public string validSpeciesId {
             get { return m_spcId; }
         }
 
@@ -713,9 +713,9 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        SpeciesId m_spcId;
+        string m_spcId;
 
-        public SpeciesId validSpeciesId {
+        public string validSpeciesId {
             get { return m_spcId; }
         }
 

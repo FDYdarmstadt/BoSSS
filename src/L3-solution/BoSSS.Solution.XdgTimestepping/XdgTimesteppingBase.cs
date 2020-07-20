@@ -591,7 +591,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Coordinate mapping of the current solution.
         /// </summary>
-        abstract protected CoordinateMapping CurrentStateMapping {
+        abstract public CoordinateMapping CurrentStateMapping {
             get;
         }
 
