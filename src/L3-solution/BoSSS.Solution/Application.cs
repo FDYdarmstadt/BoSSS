@@ -2022,7 +2022,11 @@ namespace BoSSS.Solution {
                             PlotCurrentState(physTime, i0, this.Control.SuperSampling);
                     }
 
-                    for (int i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
+                    bool RunLoop(int i) {
+                        return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
+                    }
+
+                    for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
                         this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
@@ -2038,7 +2042,7 @@ namespace BoSSS.Solution {
                         }
 
                         for(int sb = 0; sb < this.BurstSave; sb++) {
-                            if((i + sb) % SavePeriod == 0) {
+                            if((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
                                 tsi = SaveToDatabase(i, physTime);
                                 this.ProfilingLog();
                                 break;
@@ -2070,11 +2074,6 @@ namespace BoSSS.Solution {
                         if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
-                    //i--;
-                    //if (i % SavePeriod != 0) {
-                    //    SaveToDatabase(i, physTime);
-                    //}
-
 
                     // Evaluate queries and write log file (either to session directory
                     // or current directory)
