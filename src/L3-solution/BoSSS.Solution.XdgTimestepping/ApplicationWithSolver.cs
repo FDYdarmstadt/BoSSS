@@ -236,6 +236,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             CurrentStateVector = null;
             CurrentResidualVector = null;
             CurrentParameters = null;
+            ClearOperator();
         }
 
         /// <summary>
@@ -269,7 +270,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-
+        /// <summary>
+        /// sets <see cref="Operator"/> to null.
+        /// </summary>
+        internal abstract void ClearOperator();
     }
 
     /// <summary>
@@ -392,6 +396,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
+        /// <summary>
+        /// releases the operator
+        /// </summary>
+        internal override void ClearOperator() {
+            m_XOperator = null;
+        }
+
     }
 
 
@@ -437,6 +448,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 return m_SOperator;
             }
+        }
+
+        /// <summary>
+        /// releases the operator
+        /// </summary>
+        internal override void ClearOperator() {
+            m_SOperator = null;
         }
 
     }
