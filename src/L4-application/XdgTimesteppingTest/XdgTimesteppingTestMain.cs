@@ -53,10 +53,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         static void Main(string[] args) {
 
             InitMPI();
-            //TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
-            //TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.RK1, 0.2d, 8);
-            //Assert.AreEqual(1, 2, "remove me");
+            DeleteOldPlotFiles();
             BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
 
             FinalizeMPI();
@@ -332,34 +329,17 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-
-        /*
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
-
-            DGField[] Params = null;
+        protected override IEnumerable<DGField> InstantiateParameterFields() {
             if (this.Control.Eq == Equation.ScalarTransport)
-                Params = this.V.ToArray();
+                return this.V.ToArray();
             else if (this.Control.Eq == Equation.HeatEq)
-                Params = null;
+                return null;
             else if (this.Control.Eq == Equation.Burgers)
-                Params = CurrentState;
+                return CurrentState;
             else
                 throw new NotImplementedException();
-
-            // compute operator
-            Debug.Assert(OpMtx.InfNorm() == 0.0);
-            Debug.Assert(OpAffine.L2Norm() == 0.0);
-            //Operator.ComputeMatrixEx(this.LsTrk,
-            //    Mapping, Params, Mapping,
-            //    OpMtx, OpAffine, false, phystime, true,
-            //    AgglomeratedCellLengthScales, null, null,
-            //    AgglomeratedCellLengthScales.Keys.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator.GetMatrixBuilder(this.LsTrk, Mapping, Params, Mapping, AgglomeratedCellLengthScales.Keys.ToArray());
-            mtxBuilder.time = phystime;
-            mtxBuilder.MPITtransceive = true;
-            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
         }
-        */
+
 
         public override double UpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
             LevsetEvo(phystime, dt, null);

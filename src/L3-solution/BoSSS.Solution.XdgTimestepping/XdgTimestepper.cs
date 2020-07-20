@@ -104,6 +104,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        public IList<DGField> Parameters {
+            get;
+            private set;
+        }
+
+
         public LevelSetTracker LsTrk {
             get;
             private set;
@@ -114,11 +120,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         public XdgTimestepping(
             XSpatialOperatorMk2 op,
             IEnumerable<DGField> Fields,
-            IEnumerable<DGField> Parameters,
+            IEnumerable<DGField> __Parameters,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
             //bool DelayInit,
-            //DelComputeOperatorMatrix _ComputeOperatorMatrix,
             //DelComputeMassMatrix _ComputeMassMatrix,
             DelUpdateLevelset _UpdateLevelset,
             LevelSetHandling _LevelSetHandling,
@@ -131,8 +136,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             this.Scheme = __Scheme;
             this.Operator = op;
 
-            if(Parameters == null)
-                Parameters = new DGField[0];
+            if(__Parameters == null)
+                this.Parameters = new DGField[0];
+            else
+                this.Parameters = __Parameters.ToArray();
 
 
             foreach(var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
@@ -227,7 +234,15 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         void myDelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
+            // compute operator
+            Debug.Assert(OpMtx.InfNorm() == 0.0);
+            Debug.Assert(OpAffine.L2Norm() == 0.0);
 
+            
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator.GetMatrixBuilder(this.LsTrk, Mapping, this.Parameters, Mapping, AgglomeratedCellLengthScales.Keys.ToArray());
+            mtxBuilder.time = time;
+            mtxBuilder.MPITtransceive = true;
+            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
         }
 
         XdgTimesteppingBase TimesteppingBase {
@@ -267,10 +282,19 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
+            IEnumerable<DGField> Params,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence) //
         {
+            this.LsTrk = LsTrk;
+            
+            if(Params != null) {
+                Parameters = Params.ToArray();
+            } else {
+                Parameters = new DGField[0];
+            }
+            
             if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, IterationResiduals, LsTrk, _MultigridSequence);
             } else if(m_RK_Timestepper != null) {
@@ -279,6 +303,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new NotImplementedException();
             }
 
+
         }
 
         /// <summary>
@@ -286,6 +311,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
         public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+            
             if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.DataBackupBeforeBalancing(L);
             } else if(m_RK_Timestepper != null) {
@@ -293,6 +319,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             } else {
                 throw new NotImplementedException();
             }
+                        
+            this.LsTrk = null;
+            this.Parameters = null;
         }
 
         
