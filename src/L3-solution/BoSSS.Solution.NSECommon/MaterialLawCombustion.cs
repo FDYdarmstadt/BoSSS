@@ -44,11 +44,13 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="T_ref">Reference temperature - used in Sutherland's law.</param>
         /// <param name="MatParamsMode">The selected material parameter mode.</param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
-        public MaterialLawCombustion(double T_ref, double[] MolarMasses, bool rhoOne, MaterialParamsMode MatParamsMode = MaterialParamsMode.Constant)
-            : base(T_ref, MatParamsMode, rhoOne) {
+        public MaterialLawCombustion(double T_ref, double[] MolarMasses, bool rhoOne, MaterialParamsMode MatParamsMode, double Prandtl)
+            : base(T_ref, MatParamsMode, rhoOne, Prandtl) {
             this.MatParamsMode = MatParamsMode;
+            this.Prandtl = Prandtl;
             this.MolarMasses = MolarMasses;
             this.rhoOne = rhoOne;
+           
         }
 
 
@@ -100,6 +102,8 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; 
             }
         }
+
+        public double Prandtl { get; }
 
         /// <summary>
         /// Calculates heat capacity of air for a given temperature and composition.

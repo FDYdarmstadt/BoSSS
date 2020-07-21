@@ -49,7 +49,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         Burgers = 3
     }
 
-        
+    /// <summary>
+    /// Control object.
+    /// </summary>
     [Serializable]
     public class XdgTimesteppingTestControl : AppControlSolver {
 
