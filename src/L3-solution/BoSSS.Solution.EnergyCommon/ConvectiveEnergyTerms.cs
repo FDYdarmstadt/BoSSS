@@ -227,6 +227,7 @@ namespace BoSSS.Solution.EnergyCommon {
                 base.VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
 
             this.lsTrk = _lsTrk;
+            this.validSpeciesId = spcName;
             m_spcId = spcId;
             SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(spcId).VolumeMask.GetBitMaskWithExternal();
         }
@@ -239,8 +240,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string validSpeciesId {
+            get;
+            private set;
         }
 
 
@@ -483,7 +485,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
             this.rho = _rho;
             this.m_spcId = spcId;
-
+            this.validSpeciesId = spcName;
             this.m_bcmap = _bcmap;
 
             this.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
@@ -496,8 +498,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string validSpeciesId {
+            get;
+            private set;
         }
 
 

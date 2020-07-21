@@ -269,55 +269,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool TestMode = false;
 
-        /// <summary>
-        /// Timestepping schemes for the XdgTimestepper
-        /// Either implicit timestepping using Backward-Differentiation-Formulas (BDF) formulas by <see cref="XdgBDFTimestepping"/> 
-        /// or explicit/implicit using Runge-Kutta schemes <see cref="XdgRKTimestepping"/>
-        /// </summary>
-        public enum TimesteppingScheme {
-           
-            ImplicitEuler = 1,
-
-            CrankNicolson = 2,
-
-            BDF2 = 3,
-
-            BDF3 = 4,
-
-            BDF4 = 5,
-
-            BDF5 = 6,
-
-            BDF6 = 7,
-
-            RK_ImplicitEuler = 201,
-
-            RK_CrankNicolson = 202
-        }
-
-        /// <summary>
-        /// See <see cref="TimesteppingScheme"/>
-        /// </summary>
-        [DataMember]
-        public TimesteppingScheme Timestepper_Scheme = TimesteppingScheme.ImplicitEuler;
-
-        ///// <summary>
-        ///// switch for the initialization of the <see cref="XdgBDFTimestepping"/> 
-        ///// </summary>
-        //public enum TimestepperInit {
-
-        //    /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
-        //    /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.
-        //    SingleInit,
-
-        //    /// same initialization for SingleInit, but the first timesteps 
-        //    /// are computed with a smaller timestepsize
-        //    IncrementInit,
-
-        //    /// Initialization for a multi-step method, e.g. BDF4 requires 4 timesteps.
-        //    /// can be used if an analytic solution is known or simulation is restarted form another session
-        //    MultiInit
-        //}
 
         /// <summary>
         /// See <see cref="TimestepperInit"/>

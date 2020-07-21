@@ -616,7 +616,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             } else {
                 ParameterUpdate(CurrentState, Params);
-                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, FluidSpecies);
+                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping);
                 eval.time = phystime;
                 eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 

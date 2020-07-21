@@ -636,8 +636,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             } else {
                 XSpatialOperatorMk2.XEvaluatorNonlin eval = this.m_XOp.GetEvaluatorEx(this.LsTrk,
-                    CurrentState.ToArray(), Params, RowMapping,
-                    SpcToCompute);
+                    CurrentState.ToArray(), Params, RowMapping);
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;

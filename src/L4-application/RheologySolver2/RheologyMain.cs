@@ -533,7 +533,7 @@ namespace BoSSS.Application.Rheology {
                     // Build spatial operator
                     XOP.Commit();
 
-                    JacobiOp = XOP.GetJacobiOperator(2);
+                    JacobiOp = XOP._GetJacobiOperator(2);
 
                     // create timestepper
                     //===============================================================
@@ -1008,7 +1008,7 @@ namespace BoSSS.Application.Rheology {
             Assert.IsTrue(codMap.EqualsPartition(this.CurrentResidual.Mapping));
 
             // Finite Difference Linearization
-            var FDbuilder = XOP.GetFDJacobianBuilder(domMap, null, codMap, null);
+            var FDbuilder = XOP.GetFDJacobianBuilder_(domMap, null, codMap, null);
             FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
             var JacobianFD = new BlockMsrMatrix(codMap, domMap);
             var AffineFD = new double[JacobianFD.NoOfRows];
@@ -1139,7 +1139,7 @@ namespace BoSSS.Application.Rheology {
                     }
 
                 SkipToEnd:
-                    var FDbuilder = XOP.GetFDJacobianBuilder(domMap, Params, codMap, this.ParameterUpdate);
+                    var FDbuilder = XOP.GetFDJacobianBuilder_(domMap, Params, codMap, this.ParameterUpdate);
 
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);

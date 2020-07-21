@@ -1470,11 +1470,23 @@ namespace BoSSS.Foundation {
         }
 
 
-
         /// <summary>
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
         public virtual IEvaluatorLinear GetFDJacobianBuilder(
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            DelParameterUpdate __delParameterUpdate,
+            EdgeQuadratureScheme edgeQrCtx = null,
+            CellQuadratureScheme volQrCtx = null) //
+        {
+            return GetFDJacobianBuilder(DomainFields, ParameterMap, CodomainVarMap, __delParameterUpdate, edgeQrCtx, volQrCtx);
+        }
+
+
+        /// <summary>
+        /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
+        /// </summary>
+        public virtual IEvaluatorLinear_ GetFDJacobianBuilder_(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             DelParameterUpdate __delParameterUpdate,
             EdgeQuadratureScheme edgeQrCtx = null,
@@ -1638,15 +1650,17 @@ namespace BoSSS.Foundation {
             /// </summary>
             virtual public CoefficientSet OperatorCoefficients {
                 get {
-                    if(Eval is IEvaluator_) {
-                        return ((IEvaluator_)Eval).OperatorCoefficients;
+                    //return Eval.OperatorCoefficients;
+                    if(Eval is IEvaluator_ eval_) {
+                        return eval_.OperatorCoefficients;
                     } else {
                         throw new NotSupportedException();
                     }
                 }
                 set {
-                    if(Eval is IEvaluator_) {
-                        ((IEvaluator_)Eval).OperatorCoefficients = value;
+                    //Eval.OperatorCoefficients = value;
+                    if(Eval is IEvaluator_ eval_) {
+                        eval_.OperatorCoefficients = value;
                     } else {
                         throw new NotSupportedException();
                     }
