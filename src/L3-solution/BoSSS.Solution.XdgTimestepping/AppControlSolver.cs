@@ -47,6 +47,13 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public double AgglomerationThreshold = 0.1;
 
+
+        /// <summary>
+        /// In the case of multi-step methods (e.g. BDF2 and higher), multiple initial values, resp. 
+        /// </summary>
+        [DataMember]
+        public bool MultiStepInit = true;
+
         /// <summary>
         /// Kind of timestepping to use
         /// </summary>

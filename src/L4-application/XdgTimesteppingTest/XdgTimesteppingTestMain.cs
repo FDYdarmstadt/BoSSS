@@ -96,7 +96,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return MyLsTrk;
         }
 
-
         protected override IEnumerable<DGField> InstantiateSolutionFields() {
             this.u.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
             return new DGField[] { this.u };
@@ -245,8 +244,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        
-
         protected override LevelSetHandling LevelSetHandling {
             get {
                 LevelSetHandling lsh;
@@ -342,14 +339,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotImplementedException();
         }
 
-
         public override double UpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
             LevsetEvo(phystime, dt, null);
 
             return 0.0;
         }
-
-
         
         protected override IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {

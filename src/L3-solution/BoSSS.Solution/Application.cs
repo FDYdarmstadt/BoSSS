@@ -1981,11 +1981,12 @@ namespace BoSSS.Solution {
                             throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
                                 + " both cannot be unequal null at the same time.");
 
-                        if (this.Control.RestartInfo != null) {
+                        if(this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
                             TimeStepNoRestart = i0;
-                        } else
+                        } else {
                             SetInitial();
+                        }
                     }
                 }
 
@@ -2013,13 +2014,14 @@ namespace BoSSS.Solution {
                 bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
+                    if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
+                            PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
                 }
                 {
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
                         ResetInitial();
-                        if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
-                            PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+                        
                     }
 
                     bool RunLoop(int i) {

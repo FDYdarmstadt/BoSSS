@@ -1365,15 +1365,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
-
-
-            //if (this.Control.ClearVelocitiesOnRestart) {
-            //    Console.WriteLine("clearing all velocities");
-            //    this.XDGvelocity.Velocity.Clear();
-            //}
-             
-
+           
             // Load the sample Points for the restart of the Fourier LevelSet
             if (this.Control.FourierLevSetControl != null) {
 

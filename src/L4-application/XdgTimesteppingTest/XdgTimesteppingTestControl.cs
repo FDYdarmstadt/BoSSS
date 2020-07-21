@@ -141,9 +141,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// </summary>
         public Func<double, double> CircleRadius;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public bool MultiStepInit = true;
+
     }
 }

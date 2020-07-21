@@ -168,11 +168,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool RefineNavierSlipBoundary = false;
 
-        /// <summary>
-        /// option for clearing the velocities for restart
-        /// </summary>
-        //[DataMember]
-        //public bool ClearVelocitiesOnRestart = false;
 
         [DataMember]
         public int ReInitPeriod = 0;
@@ -311,17 +306,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double[] AdditionalParameters;
 
-        ///// <summary>
-        ///// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        ///// that are used to construct the accelerated solution.
-        ///// </summary>
-        //public int Solver_MaxKrylovDim = 100;
-
-        ///// <summary>
-        ///// If iterative saddle-point solvers are used, the termination criterion. 
-        ///// </summary>
-        //[DataMember]
-        //public double Solver_ConvergenceCriterion = 1.0e-10;
 
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
@@ -329,28 +313,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double LevelSet_ConvergenceCriterion = 1.0e-6;
 
-        ///// <summary>
-        ///// If iterative solvers are used, the maximum number of iterations.
-        ///// </summary>
-        //[DataMember]
-        //public int Solver_MaxIterations = 2000;
-
-        ///// <summary>
-        ///// If iterative solvers are used, the minimum number of iterations.
-        ///// </summary>
-        //[DataMember]
-        //public int Solver_MinIterations = 4;
-
-        ///// <summary>
-        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        ///// </summary>
-        //[DataMember]
-        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-
-        ///// <summary>
-        ///// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        ///// </summary>
-        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
+      
 
         /// <summary>
         /// See <see cref="ContinuityProjection"/>
@@ -363,25 +326,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
-
-        ///// <summary>
-        ///// Switch for selection of linear Solvers library
-        ///// </summary>
-        //[DataMember]
-        //public DirectSolver._whichSolver LinearSolver = DirectSolver._whichSolver.MUMPS;
-
-        ///// <summary>
-        ///// Switch for selection of linear Solvers library
-        ///// </summary>
-        //[DataMember]
-        //public NonlinearSolverMethod NonLinearSolver = NonlinearSolverMethod.Picard;
-
-
-        /// <summary>
-        /// If true, kinetic and surface energy will be evaluated in every cycle.
-        /// </summary>
-        //[DataMember]
-        //public bool ComputeEnergy = false;
 
         /// <summary>
         /// if true, kinetic energy equation will be solved 
@@ -468,18 +412,22 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// An explicit expression of the Level-set over time.
         /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
         public Func<double[], double, double> Phi;
 
         /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>[]> ExactSolutionVelocity;
 
         /// <summary>
         /// Exact solution, pressure, for each species (either A or B).
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
         /// <summary>
@@ -531,6 +479,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// function for the disjoining pressure
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public Func<double[], double> DisjoiningPressureFunc;
 
         /// <summary>

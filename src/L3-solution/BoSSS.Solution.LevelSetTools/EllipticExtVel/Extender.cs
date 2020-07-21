@@ -459,7 +459,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             DefineBulkOperator(LSTrck, InterfaceFlux, D, PenaltyBase);
 
-            Operator_interface = InterfaceFlux.XOperator(QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2) );
+            Operator_interface = InterfaceFlux.XOperator(LSTrck.SpeciesNames, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2) );
         }
 
         private void DefineBulkOperator(LevelSetTracker LSTrck, ILevelSetForm InterfaceFlux, int D, double PenaltyBase) {
