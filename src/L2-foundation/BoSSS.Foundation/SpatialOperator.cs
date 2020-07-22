@@ -80,12 +80,21 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class SpatialOperator : ISpatialOperator {
 
-
+        Func<int[], int[], int[], int> m_QuadOrderFunction;
 
         /// <summary>
         /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
         /// </summary>
-        public Func<int[], int[], int[], int> QuadOrderFunction;
+        public Func<int[], int[], int[], int> QuadOrderFunction {
+            get {
+                return m_QuadOrderFunction;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_QuadOrderFunction = value;
+            }
+        }
 
         static string[] GetSubarray(string[] A, int i0, int len) {
             string[] r = new string[len];

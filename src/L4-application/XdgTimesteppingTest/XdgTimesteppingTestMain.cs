@@ -265,7 +265,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance() {
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
             // create operator
             // ---------------
 

@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
@@ -71,17 +72,38 @@ namespace BoSSS.Solution.XdgTimestepping {
             private set;
         }
 
-        public XSpatialOperatorMk2 Operator {
+        public XSpatialOperatorMk2 XdgOperator {
             get;
             private set;
         }
+        
+        public SpatialOperator DgOperator {
+            get;
+            private set;
+        }
+
+        public ISpatialOperator Operator {
+            get {
+
+                if(XdgOperator != null)
+                    return XdgOperator;
+                if(DgOperator != null)
+                    return DgOperator;
+
+                throw new NotImplementedException();
+            }
+        }
+
 
         /// <summary>
         /// <see cref="XSpatialOperatorMk2.Species"/>
         /// </summary>
         public SpeciesId[] UsedSpecies {
             get {
-                return Operator.Species.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
+                if(XdgOperator != null)
+                    return XdgOperator.Species.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
+                else
+                    return null;
             }
         }
 
@@ -134,7 +156,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             double _AgglomerationThreshold,
             AppControlSolver control) {
             this.Scheme = __Scheme;
-            this.Operator = op;
+            this.XdgOperator = op;
 
             if(__Parameters == null)
                 this.Parameters = new DGField[0];
@@ -155,6 +177,22 @@ namespace BoSSS.Solution.XdgTimestepping {
             if(LsTrk == null)
                 throw new ArgumentException("unable to get Level Set Tracker reference");
 
+            bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
+
+            ConstructorCommon(op, UseX,
+                Fields, IterationResiduals, 
+                myDelComputeXOperatorMatrix, 
+                _UpdateLevelset, 
+                _LevelSetHandling, 
+                _MassScale, 
+                _MultigridOperatorConfig, 
+                _MultigridSequence, 
+                _AgglomerationThreshold, 
+                control);
+
+        }
+
+        private void ConstructorCommon(ISpatialOperator op, bool UseX, IEnumerable<DGField> Fields, IEnumerable<DGField> IterationResiduals, DelComputeOperatorMatrix __delComputeOperatorMatrix, DelUpdateLevelset _UpdateLevelset, LevelSetHandling _LevelSetHandling, IDictionary<SpeciesId, IEnumerable<double>> _MassScale, MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, double _AgglomerationThreshold, AppControlSolver control) {
             RungeKuttaScheme rksch = null;
             int bdfOrder = -1000;
             if(this.Scheme == TimeSteppingScheme.CrankNicolson)
@@ -184,9 +222,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             else
                 throw new NotImplementedException();
 
-
-
-            bool UseX = true;
             SpatialOperatorType _SpatialOperatorType = SpatialOperatorType.Nonlinear;
 
 
@@ -195,11 +230,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters.Select(f => f != null ? f.Basis.Degree : 0).ToArray(),
                 IterationResiduals.Select(f => f.Basis.Degree).ToArray());
 
+       
 
             if(bdfOrder > -1000) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(Fields, IterationResiduals,
                     LsTrk, true,
-                    myDelComputeOperatorMatrix, null, _UpdateLevelset,
+                    __delComputeOperatorMatrix, null, _UpdateLevelset,
                     bdfOrder,
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
@@ -215,7 +251,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             } else {
                 m_RK_Timestepper = new XdgRKTimestepping(Fields.ToArray(), IterationResiduals.ToArray(),
                     LsTrk,
-                    myDelComputeOperatorMatrix, _UpdateLevelset,
+                    __delComputeOperatorMatrix, _UpdateLevelset,
                     rksch,
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
@@ -229,21 +265,86 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 m_RK_Timestepper.Config_AgglomerationThreshold = _AgglomerationThreshold;
             }
+        }
 
+        /// <summary>
+        /// Constructor for conventional (single-phase, non-X) DG
+        /// </summary>
+        public XdgTimestepping(
+            SpatialOperator op,
+            IEnumerable<DGField> Fields,
+            IEnumerable<DGField> __Parameters,
+            IEnumerable<DGField> IterationResiduals,
+            TimeSteppingScheme __Scheme,
+            IEnumerable<double> _MassScale,
+            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
+            AggregationGridData[] _MultigridSequence,
+            AppControlSolver control) {
+            this.Scheme = __Scheme;
+            this.DgOperator = op;
+
+            if(__Parameters == null)
+                this.Parameters = new DGField[0];
+            else
+                this.Parameters = __Parameters.ToArray();
+
+            CreateDummyTracker(Fields);
+
+            var __MassScale = new Dictionary<SpeciesId, IEnumerable<double>>();
+            __MassScale.Add(LsTrk.GetSpeciesId("A"), _MassScale);
+            __MassScale.Add(LsTrk.GetSpeciesId("B"), _MassScale);
+
+
+            ConstructorCommon(op, false,
+                Fields, IterationResiduals,
+                myDelComputeDgOperatorMatrix,
+                UpdateLevelsetWithNothing,
+                LevelSetHandling.None,
+                __MassScale,
+                _MultigridOperatorConfig,
+                _MultigridSequence,
+                0.0,
+                control);
+        }
+
+        private void CreateDummyTracker(IEnumerable<DGField> Fields) {
+            var gDat = Fields.First().GridDat as GridData;
+            var DummyLevSet = new LevelSet(new Basis(gDat, 1), "DummyPhi");
+            DummyLevSet.AccConstant(-1.0);
+            LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new[] { "A", "B" }, DummyLevSet);
+        }
+
+        double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+            this.LsTrk.UpdateTracker(incremental: true);
+            return 0.0;
         }
 
 
-        void myDelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
+        void myDelComputeXOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
             // compute operator
             Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
 
             
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator.GetMatrixBuilder(this.LsTrk, Mapping, this.Parameters, Mapping, AgglomeratedCellLengthScales.Keys.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = XdgOperator.GetMatrixBuilder(this.LsTrk, Mapping, this.Parameters, Mapping, AgglomeratedCellLengthScales.Keys.ToArray());
             mtxBuilder.time = time;
             mtxBuilder.MPITtransceive = true;
             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
         }
+
+        void myDelComputeDgOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
+            // compute operator
+            Debug.Assert(OpMtx.InfNorm() == 0.0);
+            Debug.Assert(OpAffine.L2Norm() == 0.0);
+
+
+            var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
+            mtxBuilder.time = time;
+            mtxBuilder.MPITtransceive = true;
+            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+        }
+
+
 
         XdgTimesteppingBase TimesteppingBase {
             get {
@@ -287,7 +388,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence) //
         {
-            this.LsTrk = LsTrk;
+            if(LsTrk != null) {
+                this.LsTrk = LsTrk;
+            } else {
+                CreateDummyTracker(Fields);
+            }
+
             
             if(Params != null) {
                 Parameters = Params.ToArray();

@@ -51,7 +51,7 @@ namespace BoSSS.Application.XNSE_Solver {
         int HMFDegree;
 
         /// <summary>
-        /// ctor for the operator factory, where the equation compnents are set
+        /// ctor for the operator factory, where the equation components are set
         /// </summary>
         /// <param name="config"></param>
         /// <param name="_LsTrk"></param>

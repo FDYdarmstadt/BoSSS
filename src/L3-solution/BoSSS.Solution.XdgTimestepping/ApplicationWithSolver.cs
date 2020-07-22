@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
@@ -26,9 +27,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
            
         }
-
-       
-
 
         /// <summary>
         /// DG coordinates of <see cref="CurrentState"/> in a single vector
@@ -64,12 +62,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get;
-        }
+      
 
 
         abstract internal void CreateTrackerHack();
@@ -274,6 +267,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// sets <see cref="Operator"/> to null.
         /// </summary>
         internal abstract void ClearOperator();
+
+        /// <summary>
+        /// Plot using Tecplot
+        /// </summary>
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot", physTime, superSampling);
+        }
     }
 
     /// <summary>
@@ -283,7 +283,12 @@ namespace BoSSS.Solution.XdgTimestepping {
          where T : AppControlSolver, new() //
     {
 
-        
+        /// <summary>
+        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// </summary>
+        abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+            get;
+        }
 
         /// <summary>
         /// Callback-template for level-set updates.
@@ -313,7 +318,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Instantiation of the spatial operator; cached in <see cref="XOperator"/>
         /// </summary>
         /// <returns></returns>
-        abstract protected XSpatialOperatorMk2 GetOperatorInstance();
+        /// <param name="D">spatial dimension</param>
+        abstract protected XSpatialOperatorMk2 GetOperatorInstance(int D);
 
         /// <summary>
         /// 
@@ -359,7 +365,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         virtual public XSpatialOperatorMk2 XOperator {
             get {
                 if(m_XOperator == null) {
-                    m_XOperator = GetOperatorInstance();
+                    m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
                 }
                 return m_XOperator;
             }
@@ -403,6 +409,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_XOperator = null;
         }
 
+    
+
     }
 
 
@@ -414,9 +422,16 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
+        /// Block scaling of the mass matrix: for each codomain variable (row) in the spatial operator, 
+        /// a single number..
+        /// </summary>
+        abstract protected IEnumerable<double> GetMassScale(int D);
+
+        /// <summary>
         /// initialization of the main spatial operator
         /// </summary>
-        abstract protected SpatialOperator GetOperatorInstance();
+        /// <param name="D">spatial dimension</param>
+        abstract protected SpatialOperator GetOperatorInstance(int D);
 
         /// <summary>
         /// empty in the DG case
@@ -444,7 +459,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         virtual public SpatialOperator SOperator {
             get {
                 if(m_SOperator == null) {
-                    m_SOperator = GetOperatorInstance();
+                    m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
                 }
                 return m_SOperator;
             }
@@ -455,6 +470,27 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         internal override void ClearOperator() {
             m_SOperator = null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected override void InitSolver() {
+             if(base.Timestepping != null)
+                return;
+
+            XdgTimestepping solver = new XdgTimestepping(
+                SOperator,
+                CurrentState.Fields,
+                CurrentParameters.Fields,
+                CurrentResidual.Fields,
+                Control.TimeSteppingScheme,
+                GetMassScale(this.Grid.SpatialDimension),
+                MultigridOperatorConfig,
+                MultigridSequence,
+                Control);
+
+            base.Timestepping = solver;
         }
 
     }

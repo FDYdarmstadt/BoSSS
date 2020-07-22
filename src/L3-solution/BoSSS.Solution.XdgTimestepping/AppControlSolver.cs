@@ -17,6 +17,14 @@ namespace BoSSS.Solution.Control {
     public class AppControlSolver : AppControl {
 
         /// <summary>
+        /// ctor
+        /// </summary>
+        public AppControlSolver() {
+            NoOfMultigridLevels = 1;
+        }
+
+
+        /// <summary>
         /// Linked to <see cref="LinearSolverConfig.NoOfMultigridLevels"/>.
         /// </summary>
         [DataMember]

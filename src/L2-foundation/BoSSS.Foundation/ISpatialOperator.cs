@@ -97,6 +97,13 @@ namespace BoSSS.Foundation {
         void Commit();
         
         
+        /// <summary>
+        /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
+        /// </summary>
+        Func<int[], int[], int[], int> QuadOrderFunction {
+            get;
+            set;
+        }
        
 
         /// <summary>
