@@ -207,7 +207,7 @@ namespace FSI_Solver {
                         ParticleCollidedWith.Add(new List<int>());
                         ParticleCollidedWith.Last().Add(p0);// 0-th entry: particle in question, following entries: particles collided with this particle
                         for (int w = 0; w < 4; w++) {
-                            if ((Distance[p0][ParticleOffset + w] <= distanceThreshold && SaveTimeStepArray[p0][ParticleOffset + w] > 0)) {
+                            if ((Distance[p0][ParticleOffset + w] <= distanceThreshold || AccDynamicTimestep < Dt) && SaveTimeStepArray[p0][ParticleOffset + w] > 0) {
                                 int insertAt = ParticleCollidedWith.Last().Count();
                                 for (int i = 1; i < ParticleCollidedWith.Last().Count(); i++) {
                                     if (SaveTimeStepArray[p0][ParticleCollidedWith.Last()[i]] > SaveTimeStepArray[p0][ParticleOffset + w])
@@ -217,7 +217,7 @@ namespace FSI_Solver {
                             }
                         }
                         for (int p1 = 0; p1 < particles.Length; p1++) {
-                            if (Distance[p0][p1] <= distanceThreshold && SaveTimeStepArray[p0][p1] > 0) {
+                            if ((Distance[p0][p1] <= distanceThreshold || AccDynamicTimestep < Dt) && SaveTimeStepArray[p0][p1] > 0) {
                                 int insertAt = ParticleCollidedWith.Last().Count();
                                 for (int i = 1; i < ParticleCollidedWith.Last().Count(); i++) {
                                     if (Distance[p0][ParticleCollidedWith.Last()[i]] > Distance[p0][p1])
@@ -844,8 +844,8 @@ namespace FSI_Solver {
                 detectCollisionVn_P1 = 0;
             if (detectCollisionVn_P1 - detectCollisionVn_P0 <= 0)
                 return;
-            if (distance > threshold)
-                return;
+            //if (distance > threshold)
+            //    return;
 
             Particles[p0].IsCollided = true;
             Particles[p1].IsCollided = true;

@@ -368,7 +368,7 @@ namespace BoSSS.Solution {
 
             SetNonLinItCallback(nonlinSolver);
 
-            Console.WriteLine("nonlinear solver code: {0}", nc.SolverCode.ToString());
+            //Console.WriteLine("nonlinear solver code: {0}", nc.SolverCode.ToString());
 
             return nonlinSolver;
         }
@@ -571,7 +571,7 @@ namespace BoSSS.Solution {
         private ISolverSmootherTemplate GenerateLinear_body(IEnumerable<AggregationGridBasis[]> MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, out ISolverSmootherTemplate[] precond) {
 
             var lc = m_lc;
-            Console.WriteLine("linear solver code : {0}", lc.SolverCode.ToString());
+            //Console.WriteLine("linear solver code : {0}", lc.SolverCode.ToString());
             ISolverSmootherTemplate templinearSolve = null;
             precond = GeneratePrecond(MultigridBasis, MultigridOperatorConfig);
 
