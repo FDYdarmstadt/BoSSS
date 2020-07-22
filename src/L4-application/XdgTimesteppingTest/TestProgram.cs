@@ -174,7 +174,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.TimeSteppingScheme = tsc;
             ctrl.InterfaceMode = InterfaceMode.MovingInterface;
 
-            
 
             // run
             // ------------------------------------------
