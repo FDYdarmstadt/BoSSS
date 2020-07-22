@@ -254,7 +254,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             //    phystime,
             //    false,
             //    base.LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping, base.LsTrk.SpeciesIdS.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping);
 
             foreach (var kv in AgglomeratedCellLengthScales) 
                 mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;

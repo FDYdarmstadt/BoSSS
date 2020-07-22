@@ -39,6 +39,28 @@ namespace BoSSS.Foundation {
         }
     }
 
+    /// <summary>
+    /// A hint for implicit solvers, which linearization of the operator should be used
+    /// </summary>
+    public enum LinearizationHint {
+
+        /// <summary>
+        /// Employ the <see cref="ISpatialOperator.GetJacobiOperator(int)"/>
+        /// </summary>
+        GetJacobiOperator = 1,
+
+        /// <summary>
+        /// Use the ad-hoc matrix builder (default)
+        /// </summary>
+        AdHoc = 0,
+
+        /// <summary>
+        /// compute a finite-differnce Jacobian of the operator
+        /// </summary>
+        FDJacobi = 2
+
+    }
+
 
     /// <summary>
     /// Common interface for spatial operators in the DG and the XDG context
@@ -112,6 +134,13 @@ namespace BoSSS.Foundation {
         /// </summary>
         ISpatialOperator GetJacobiOperator(int SpatialDimension);
 
+        /// <summary>
+        /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
+        /// </summary>
+        LinearizationHint LinearizationHint {
+            get;
+            set;
+        }
         /*
         
         /// <summary>

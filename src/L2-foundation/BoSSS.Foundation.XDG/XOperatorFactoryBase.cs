@@ -80,7 +80,7 @@ namespace BoSSS.Foundation.XDG {
 
             if(OpMatrix != null) {
 
-                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = m_XOp.GetMatrixBuilder(LsTrk, ColMapping, ParamsMap, RowMapping, SpcToCompute);
+                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = m_XOp.GetMatrixBuilder(LsTrk, ColMapping, ParamsMap, RowMapping);
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;

@@ -18,7 +18,7 @@ namespace BoSSS.Application.IncompressibleNSE {
     public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSollver<IncompressibleControl> {
         
         /// <summary>
-        /// Mass matrix diagoanl/Temporal operator for incompressible Navier-Stokes, i.e. <see cref="IncompressibleControl.Density"/> for the momentum equation and zero for the continuity equation
+        /// Mass matrix diagonal/temporal operator for incompressible Navier-Stokes, i.e. <see cref="IncompressibleControl.Density"/> for the momentum equation and zero for the continuity equation
         /// </summary>
         protected override IEnumerable<double> GetMassScale(int D) {
             double[] diag = new double[D + 1];

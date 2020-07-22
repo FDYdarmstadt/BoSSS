@@ -396,7 +396,7 @@ namespace AdvancedSolverTests {
 
             Agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_quadOrder, __AgglomerationTreshold: this.THRESHOLD);
 
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping, LsTrk.SpeciesIdS.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);

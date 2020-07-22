@@ -455,6 +455,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         int m_IterationCounter = 0;
 
+        bool initialized = false;
+
         /// <summary>
         /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
         /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.
@@ -465,7 +467,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </remarks>
         public void SingleInit() {
             using (new FuncTrace()) {
-
                 InitTimestepping(true);
 
                 if (Timestepper_Init == TimeStepperInit.IncrementInit) {
@@ -474,6 +475,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     InitIncrementStack();
                 }
+                initialized = true;
             }
         }
 
@@ -519,6 +521,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (iStage < (S - 1))
                         PushStack(TimestepNo);
                 }
+
+                initialized = true;
             }
         }
 
@@ -1443,6 +1447,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, no solution is performed; only the residual of the actual solution is computed.
         /// </param>
         public void Solve(double phystime, double dt, bool ComputeOnlyResidual = false) {
+            if(!initialized)
+                SingleInit();
+                        
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
             //if (m_CurrentDt_Timestep > 0 && Math.Abs(dt / m_CurrentDt_Timestep - 1.0) > 1.0e-14)

@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -76,11 +77,32 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             private set;
         }
+
+        XSpatialOperatorMk2 m_JacobiXdgOperator;
+
+        XSpatialOperatorMk2 GetJacobiXdgOperator() {
+            if(m_JacobiXdgOperator == null) {
+                m_JacobiXdgOperator = XdgOperator.GetJacobiOperator(GridDat.SpatialDimension) as XSpatialOperatorMk2;
+            }
+            return m_JacobiXdgOperator;
+        }
+
         
         public SpatialOperator DgOperator {
             get;
             private set;
         }
+
+        SpatialOperator m_JacobiDgOperator;
+
+        SpatialOperator GetJacobiDgOperator() {
+            if(m_JacobiDgOperator == null) {
+                m_JacobiDgOperator = DgOperator.GetJacobiOperator(GridDat.SpatialDimension) as SpatialOperator;
+            }
+            return m_JacobiDgOperator;
+        }
+
+
 
         public ISpatialOperator Operator {
             get {
@@ -137,6 +159,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             private set;
         }
              
+        public IGridData GridDat {
+            get {
+                return LsTrk.GridDat;
+            }
+        }
 
 
         public XdgTimestepping(
@@ -325,11 +352,37 @@ namespace BoSSS.Solution.XdgTimestepping {
             Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
 
-            
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = XdgOperator.GetMatrixBuilder(this.LsTrk, Mapping, this.Parameters, Mapping, AgglomeratedCellLengthScales.Keys.ToArray());
-            mtxBuilder.time = time;
-            mtxBuilder.MPITtransceive = true;
-            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+            switch(DgOperator.LinearizationHint) {
+
+                case LinearizationHint.AdHoc: {
+                    var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
+                    mtxBuilder.time = time;
+                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                    return;
+                }
+
+                case LinearizationHint.FDJacobi: {
+                    var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping, XdgOperator.ParameterUpdate.ParameterUpdate );
+                    mtxBuilder.time = time;
+                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                    return;
+                }
+
+                case LinearizationHint.GetJacobiOperator: {
+                    var op = GetJacobiXdgOperator();
+                    var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
+                    mtxBuilder.time = time;
+                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                    return;
+                }
+
+
+            }
+
+
         }
 
         void myDelComputeDgOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
@@ -337,11 +390,35 @@ namespace BoSSS.Solution.XdgTimestepping {
             Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
 
+            switch(DgOperator.LinearizationHint) {
 
-            var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
-            mtxBuilder.time = time;
-            mtxBuilder.MPITtransceive = true;
-            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                case LinearizationHint.AdHoc: {
+                    var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
+                    mtxBuilder.time = time;
+                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                    return;
+                }
+
+                case LinearizationHint.FDJacobi: {
+                    var mtxBuilder = DgOperator.GetFDJacobianBuilder_(CurrentState, this.Parameters, Mapping, DgOperator.ParameterUpdate.ParameterUpdate );
+                    mtxBuilder.time = time;
+                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                    return;
+                }
+
+                case LinearizationHint.GetJacobiOperator: {
+                    var op = GetJacobiDgOperator();
+                    var mtxBuilder = op.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
+                    mtxBuilder.time = time;
+                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                    return;
+                }
+
+
+            }
         }
 
 

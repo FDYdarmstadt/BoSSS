@@ -190,7 +190,19 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected override int BurstSave {
             get {
-                return Math.Max(Timestepping.BurstSave, this.Control.BurstSave);
+                int Timestepping_bs;
+                if(Timestepping != null) {
+                    Timestepping_bs = Timestepping.BurstSave;
+                } else {
+                    string schStr = Control.TimeSteppingScheme.ToString().ToLower();
+                    if(schStr.StartsWith("bdf")) {
+                        Timestepping_bs = Convert.ToInt32(schStr.Substring(3));
+                    } else {
+                        Timestepping_bs = 1;
+                    }
+                }
+
+                return Math.Max(Timestepping_bs, this.Control.BurstSave);
             }
         }
 
@@ -274,6 +286,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot", physTime, superSampling);
         }
+
+
+        
+        //protected override void SetInitial() {
+        //    base.SetInitial();
+        //}
     }
 
     /// <summary>
@@ -409,7 +427,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_XOperator = null;
         }
 
-    
+
 
     }
 
@@ -491,6 +509,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control);
 
             base.Timestepping = solver;
+            
         }
 
     }

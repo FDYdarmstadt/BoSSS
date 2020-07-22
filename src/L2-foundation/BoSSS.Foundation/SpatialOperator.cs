@@ -96,6 +96,15 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
+        /// </summary>
+        public LinearizationHint LinearizationHint {
+            get;
+            set;
+        }
+
+
         static string[] GetSubarray(string[] A, int i0, int len) {
             string[] r = new string[len];
             Array.Copy(A, i0, r, 0, len);

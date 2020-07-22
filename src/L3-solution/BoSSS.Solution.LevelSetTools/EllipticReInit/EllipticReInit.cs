@@ -265,7 +265,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 //    subGrid:Restriction,
                 //    whichSpc: LevelSetTracker.GetSpeciesId("A")
                 //    );
-                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, Phi.Mapping, null, Phi.Mapping, LevelSetTracker.GetSpeciesId("A"));
+                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, Phi.Mapping, null, Phi.Mapping);
 
                 MultiphaseCellAgglomerator dummy = LevelSetTracker.GetAgglomerator(LevelSetTracker.SpeciesIdS.ToArray(), Phi.Basis.Degree * 2 + 2, 0.0);
                 mtxBuilder.SpeciesOperatorCoefficients[LevelSetTracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")];
@@ -662,7 +662,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             InterfaceQuadOrder = QuadOrderFunc.FixedOrder(Phi.Basis.Degree * 2 + 2);
 
             // Generate Interface Operator
-            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface*PenaltyBase, LSTrck)).XOperator(LSTrck.SpeciesNames, InterfaceQuadOrder);
+            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface*PenaltyBase, LSTrck)).XOperator(new[] { "A" }, InterfaceQuadOrder);
             
             // Nonlinear Part on the RHS
             // switch for the potential functions

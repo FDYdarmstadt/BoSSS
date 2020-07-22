@@ -384,7 +384,7 @@ namespace BoSSS.Application.XRheology_Solver {
             if (OpMatrix != null) {
 
                 if (!useJacobianForOperatorMatrix) {
-                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
+                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping);
                     this.ParameterUpdate(CurrentState, Params, CutCellQuadOrder, AgglomeratedCellLengthScales);
 
                     foreach (var kv in AgglomeratedCellLengthScales) {

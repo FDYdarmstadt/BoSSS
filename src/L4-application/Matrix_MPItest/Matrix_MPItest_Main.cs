@@ -197,7 +197,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             //    OperatorMatrix, Affine, false, 0.0, true,
             //    Agg.CellLengthScales, null, null,
             //    LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, ProblemMapping, null, ProblemMapping, LsTrk.SpeciesIdS.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, ProblemMapping, null, ProblemMapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);

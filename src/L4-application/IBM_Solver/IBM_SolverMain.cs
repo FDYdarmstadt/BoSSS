@@ -570,7 +570,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
                 ParameterUpdate(CurrentState, Params);
-                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping);
                 mtxBuilder.time = phystime;
                 mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);

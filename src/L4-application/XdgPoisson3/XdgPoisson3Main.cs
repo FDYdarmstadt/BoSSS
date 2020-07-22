@@ -255,7 +255,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     //    M, b, false, 0.0, true,
                     //    agg.CellLengthScales, null, null, //out massFact,
                     //    this.LsTrk.SpeciesIdS.ToArray());
-                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(this.LsTrk, map, null, map, this.LsTrk.SpeciesIdS.ToArray());
+                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(this.LsTrk, map, null, map);
 
                     foreach (var s in this.LsTrk.SpeciesIdS)
                         mtxBuilder.SpeciesOperatorCoefficients[s].CellLengthScales = agg.CellLengthScales[s];

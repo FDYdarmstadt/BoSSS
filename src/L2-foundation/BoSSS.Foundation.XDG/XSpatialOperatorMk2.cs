@@ -44,6 +44,14 @@ namespace BoSSS.Foundation.XDG {
     public partial class XSpatialOperatorMk2 : ISpatialOperator {
 
         /// <summary>
+        /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
+        /// </summary>
+        public LinearizationHint LinearizationHint {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// active species in this operator; all species that will try to find solutions for.
         /// </summary>
         public ICollection<string> Species {
@@ -227,10 +235,10 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            params SpeciesId[] whichSpecies
-            ) {
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
 
+            SpeciesId[] whichSpecies = this.Species.Select(spcNmn => lsTrk.GetSpeciesId(spcNmn)).ToArray();
+            
             Dictionary<SpeciesId, QrSchemPair> SpeciesSchemes = new Dictionary<SpeciesId, QrSchemPair>();
             if(whichSpecies == null | whichSpecies.Length <= 0) {
                 foreach(var s in lsTrk.SpeciesIdS) {

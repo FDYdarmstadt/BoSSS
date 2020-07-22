@@ -997,7 +997,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 else
                     InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker);
 
-                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(Tracker.SpeciesNames, (int[] A, int[] B, int[] C) => HMForder);
+                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A" }, (int[] A, int[] B, int[] C) => HMForder);
 
                 var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 ,InterfaceFlux,Tracker, subMask.GetBitMaskWithExternal());
 
@@ -1043,7 +1043,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //    time: 0,
                     //    MPIParameterExchange:false,
                     //    whichSpc:Tracker.GetSpeciesId("A"));
-                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map, Tracker.GetSpeciesId("A"));
+                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
 
                     MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.0);
                     mtxBuilder.SpeciesOperatorCoefficients[Tracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[Tracker.GetSpeciesId("A")];
