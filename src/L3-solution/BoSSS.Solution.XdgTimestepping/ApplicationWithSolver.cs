@@ -284,7 +284,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot", physTime, superSampling);
+            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot-" + timestepNo, physTime, superSampling);
         }
 
 

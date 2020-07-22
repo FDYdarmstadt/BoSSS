@@ -104,7 +104,7 @@ namespace BoSSS.Application.IncompressibleNSE {
                 __DomainVar: VariableNames.VelocityVector(D).Cat(VariableNames.Pressure),
                 __ParameterVar: VariableNames.GravityVector(D),
                 __CoDomainVar: CodName,
-                QuadOrderFunc.NonLinear(2));
+                QuadOrderFunc: QuadOrderFunc.NonLinear(2));
 
 
             // convective part:
@@ -188,8 +188,12 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             dt = Control.dtFixed;
 
+            Console.WriteLine(" ");
+            Console.WriteLine($"Starting time-step #{TimestepNo}, dt = {dt}...");
+
             Solve(phystime, dt);
 
+            Console.WriteLine("done.");
             return dt;
         }
     }

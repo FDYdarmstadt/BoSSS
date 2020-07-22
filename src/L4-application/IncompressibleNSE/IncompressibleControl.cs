@@ -14,6 +14,15 @@ namespace BoSSS.Application.IncompressibleNSE {
     [Serializable]
     [DataContract]
     public class IncompressibleControl : AppControlSolver {
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public IncompressibleControl() {
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+        }
+
+
         //
         // add configuration options specific to your solver here
         //

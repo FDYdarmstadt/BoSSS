@@ -19,8 +19,14 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
-
+    /// <summary>
+    /// Codes for various time integration schemes of <see cref="XdgBDFTimestepping"/> and <see cref="XdgRKTimestepping"/>
+    /// </summary>
     public enum TimeSteppingScheme {
+        
+        /// <summary>
+        /// Explicit Euler using the <see cref="XdgBDFTimestepping"/> implementation
+        /// </summary>
         ExplicitEuler = 0,
 
         /// <summary>
@@ -40,26 +46,44 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         BDF6 = 6,
 
+        /// <summary>
+        /// explicit Runge-Kutta, <see cref="RungeKuttaScheme.RungeKutta1901"/>
+        /// </summary>
         RK4 = 104,
 
+        /// <summary>
+        /// explicit Runge-Kutta, <see cref="RungeKuttaScheme.TVD3"/>
+        /// </summary>
         RK3 = 103,
 
+        /// <summary>
+        /// explicit Runge-Kutta, <see cref="RungeKuttaScheme.Heun2"/> 
+        /// </summary>
         RK2 = 102,
 
+        /// <summary>
+        /// explicit Runge-Kutta, <see cref="RungeKuttaScheme.ExplicitEuler"/>
+        /// </summary>
         RK1 = 101,
 
+        /// <summary>
+        /// explicit Runge-Kutta, <see cref="RungeKuttaScheme.ExplicitEuler2"/>
+        /// </summary>
         RK1u1 = 110,
 
         /// <summary>
-        /// Implicit Euler using the implicit Runge-Kutta implementation
+        /// Implicit Euler using the implicit Runge-Kutta implementation, <see cref="RungeKuttaScheme.ImplicitEuler"/> 
         /// </summary>
         RK_ImplicitEuler = 201,
 
         /// <summary>
-        /// Crank Nicolson using the implicit Runge-Kutta implementation
+        /// (Implicit) Crank-Nicholson using the implicit Runge-Kutta implementation, <see cref="RungeKuttaScheme.CrankNicolson"/>
         /// </summary>
         RK_CrankNic = 202,
 
+        /// <summary>
+        /// Implicit, <see cref="RungeKuttaScheme.IMEX3"/>
+        /// </summary>
         RK_IMEX3 = 203
     }
 
@@ -166,23 +190,23 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
-
+        /// <summary>
+        /// Constructor for an XDG operator
+        /// </summary>
         public XdgTimestepping(
             XSpatialOperatorMk2 op,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> __Parameters,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
-            //bool DelayInit,
-            //DelComputeMassMatrix _ComputeMassMatrix,
             DelUpdateLevelset _UpdateLevelset,
             LevelSetHandling _LevelSetHandling,
-            //MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGridData[] _MultigridSequence,
             double _AgglomerationThreshold,
-            AppControlSolver control) {
+            AppControlSolver control) //
+        {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
 
@@ -221,34 +245,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         private void ConstructorCommon(ISpatialOperator op, bool UseX, IEnumerable<DGField> Fields, IEnumerable<DGField> IterationResiduals, DelComputeOperatorMatrix __delComputeOperatorMatrix, DelUpdateLevelset _UpdateLevelset, LevelSetHandling _LevelSetHandling, IDictionary<SpeciesId, IEnumerable<double>> _MassScale, MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, double _AgglomerationThreshold, AppControlSolver control) {
-            RungeKuttaScheme rksch = null;
-            int bdfOrder = -1000;
-            if(this.Scheme == TimeSteppingScheme.CrankNicolson)
-                bdfOrder = -1;
-            else if(this.Scheme == TimeSteppingScheme.ExplicitEuler)
-                bdfOrder = 0;
-            else if(this.Scheme == TimeSteppingScheme.ImplicitEuler)
-                bdfOrder = 1;
-            else if(this.Scheme.ToString().StartsWith("BDF"))
-                bdfOrder = Convert.ToInt32(this.Scheme.ToString().Substring(3));
-            else if(this.Scheme == TimeSteppingScheme.RK1)
-                rksch = RungeKuttaScheme.ExplicitEuler;
-            else if(this.Scheme == TimeSteppingScheme.RK1u1)
-                rksch = RungeKuttaScheme.ExplicitEuler2;
-            else if(this.Scheme == TimeSteppingScheme.RK2)
-                rksch = RungeKuttaScheme.Heun2;
-            else if(this.Scheme == TimeSteppingScheme.RK3)
-                rksch = RungeKuttaScheme.TVD3;
-            else if(this.Scheme == TimeSteppingScheme.RK4)
-                rksch = RungeKuttaScheme.RungeKutta1901;
-            else if(this.Scheme == TimeSteppingScheme.RK_ImplicitEuler)
-                rksch = RungeKuttaScheme.ImplicitEuler;
-            else if(this.Scheme == TimeSteppingScheme.RK_CrankNic)
-                rksch = RungeKuttaScheme.CrankNicolson;
-            else if(this.Scheme == TimeSteppingScheme.RK_IMEX3)
-                rksch = RungeKuttaScheme.IMEX3;
-            else
-                throw new NotImplementedException();
+            RungeKuttaScheme rksch;
+            int bdfOrder;
+            DecodeScheme(this.Scheme, out rksch, out bdfOrder);
 
             SpatialOperatorType _SpatialOperatorType = SpatialOperatorType.Nonlinear;
 
@@ -258,7 +257,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters.Select(f => f != null ? f.Basis.Degree : 0).ToArray(),
                 IterationResiduals.Select(f => f.Basis.Degree).ToArray());
 
-       
+
 
             if(bdfOrder > -1000) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(Fields, IterationResiduals,
@@ -296,6 +295,43 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Scheme"></param>
+        /// <param name="rksch">if <paramref name="Scheme"/> denotes a Runge-Kutta scheme, well, the Runge-Kutta scheme</param>
+        /// <param name="bdfOrder">if <paramref name="Scheme"/> denotes a BDF-scheme, its order</param>
+        static public void DecodeScheme(TimeSteppingScheme Scheme, out RungeKuttaScheme rksch, out int bdfOrder) {
+            rksch = null;
+            bdfOrder = -1000;
+            if(Scheme == TimeSteppingScheme.CrankNicolson)
+                bdfOrder = -1;
+            else if(Scheme == TimeSteppingScheme.ExplicitEuler)
+                bdfOrder = 0;
+            else if(Scheme == TimeSteppingScheme.ImplicitEuler)
+                bdfOrder = 1;
+            else if(Scheme.ToString().StartsWith("BDF"))
+                bdfOrder = Convert.ToInt32(Scheme.ToString().Substring(3));
+            else if(Scheme == TimeSteppingScheme.RK1)
+                rksch = RungeKuttaScheme.ExplicitEuler;
+            else if(Scheme == TimeSteppingScheme.RK1u1)
+                rksch = RungeKuttaScheme.ExplicitEuler2;
+            else if(Scheme == TimeSteppingScheme.RK2)
+                rksch = RungeKuttaScheme.Heun2;
+            else if(Scheme == TimeSteppingScheme.RK3)
+                rksch = RungeKuttaScheme.TVD3;
+            else if(Scheme == TimeSteppingScheme.RK4)
+                rksch = RungeKuttaScheme.RungeKutta1901;
+            else if(Scheme == TimeSteppingScheme.RK_ImplicitEuler)
+                rksch = RungeKuttaScheme.ImplicitEuler;
+            else if(Scheme == TimeSteppingScheme.RK_CrankNic)
+                rksch = RungeKuttaScheme.CrankNicolson;
+            else if(Scheme == TimeSteppingScheme.RK_IMEX3)
+                rksch = RungeKuttaScheme.IMEX3;
+            else
+                throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Constructor for conventional (single-phase, non-X) DG
         /// </summary>
         public XdgTimestepping(
@@ -307,7 +343,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<double> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGridData[] _MultigridSequence,
-            AppControlSolver control) {
+            AppControlSolver control) //
+        {
             this.Scheme = __Scheme;
             this.DgOperator = op;
 
@@ -350,77 +387,120 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         void myDelComputeXOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
             // compute operator
-            Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
 
-            switch(DgOperator.LinearizationHint) {
+            if(OpMtx != null) {
+                // +++++++++++++++++++++++++++++
+                // Solver requires linearization
+                // +++++++++++++++++++++++++++++
 
-                case LinearizationHint.AdHoc: {
-                    var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
-                    mtxBuilder.time = time;
-                    mtxBuilder.MPITtransceive = true;
-                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                    return;
+                Debug.Assert(OpMtx.InfNorm() == 0.0);
+                switch(DgOperator.LinearizationHint) {
+
+                    case LinearizationHint.AdHoc: {
+                        if(this.XdgOperator.ParameterUpdate != null) {
+                            this.XdgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
+                        }
+
+                        var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
+                        mtxBuilder.time = time;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+
+                    case LinearizationHint.FDJacobi: {
+                        var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping,
+                            XdgOperator.ParameterUpdate != null ? XdgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+                        mtxBuilder.time = time;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+
+                    case LinearizationHint.GetJacobiOperator: {
+                        var op = GetJacobiXdgOperator();
+                        var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
+                        mtxBuilder.time = time;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+
+
+                }
+            } else {
+                // ++++++++++++++++++++++++
+                // only operator evaluation
+                // ++++++++++++++++++++++++
+
+                if(this.XdgOperator.ParameterUpdate != null) {
+                    this.XdgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
                 }
 
-                case LinearizationHint.FDJacobi: {
-                    var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping, 
-                        XdgOperator.ParameterUpdate != null ? XdgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
-                    mtxBuilder.time = time;
-                    mtxBuilder.MPITtransceive = true;
-                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                    return;
-                }
-
-                case LinearizationHint.GetJacobiOperator: {
-                    var op = GetJacobiXdgOperator();
-                    var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
-                    mtxBuilder.time = time;
-                    mtxBuilder.MPITtransceive = true;
-                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                    return;
-                }
-
-
+                var eval = XdgOperator.GetEvaluatorEx(CurrentState, this.Parameters, Mapping);
+                eval.time = time;
+                eval.MPITtransceive = true;
+                eval.Evaluate(1.0, 0.0, OpAffine);
             }
-
 
         }
 
         void myDelComputeDgOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
             // compute operator
-            Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
 
-            switch(DgOperator.LinearizationHint) {
+            if(OpMtx != null) {
+                // +++++++++++++++++++++++++++++
+                // Solver requires linearization
+                // +++++++++++++++++++++++++++++
 
-                case LinearizationHint.AdHoc: {
-                    var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
-                    mtxBuilder.time = time;
-                    mtxBuilder.MPITtransceive = true;
-                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                    return;
+                Debug.Assert(OpMtx.InfNorm() == 0.0);
+                switch(DgOperator.LinearizationHint) {
+
+                    case LinearizationHint.AdHoc: {
+                        if(this.DgOperator.ParameterUpdate != null) {
+                            this.DgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
+                        }
+
+                        var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
+                        mtxBuilder.time = time;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+
+                    case LinearizationHint.FDJacobi: {
+                        var mtxBuilder = DgOperator.GetFDJacobianBuilder_(CurrentState, this.Parameters, Mapping,
+                            DgOperator.ParameterUpdate != null ? DgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+                        mtxBuilder.time = time;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+
+                    case LinearizationHint.GetJacobiOperator: {
+                        var op = GetJacobiDgOperator();
+                        var mtxBuilder = op.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
+                        mtxBuilder.time = time;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+                }
+            } else {
+                // ++++++++++++++++++++++++
+                // only operator evaluation
+                // ++++++++++++++++++++++++
+
+                if(this.DgOperator.ParameterUpdate != null) {
+                    this.DgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
                 }
 
-                case LinearizationHint.FDJacobi: {
-                    var mtxBuilder = DgOperator.GetFDJacobianBuilder_(CurrentState, this.Parameters, Mapping, 
-                        DgOperator.ParameterUpdate != null ? DgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
-                    mtxBuilder.time = time;
-                    mtxBuilder.MPITtransceive = true;
-                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                    return;
-                }
-
-                case LinearizationHint.GetJacobiOperator: {
-                    var op = GetJacobiDgOperator();
-                    var mtxBuilder = op.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
-                    mtxBuilder.time = time;
-                    mtxBuilder.MPITtransceive = true;
-                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                    return;
-                }
-
-
+                var eval = DgOperator.GetEvaluatorEx(CurrentState, this.Parameters, Mapping);
+                eval.time = time;
+                eval.MPITtransceive = true;
+                eval.Evaluate(1.0, 0.0, OpAffine);
             }
         }
 
@@ -439,8 +519,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         public XdgBDFTimestepping m_BDF_Timestepper;
-
-
 
         public XdgRKTimestepping m_RK_Timestepper;
 
