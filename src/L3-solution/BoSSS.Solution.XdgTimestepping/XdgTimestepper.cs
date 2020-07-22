@@ -11,6 +11,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -363,7 +364,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
                 case LinearizationHint.FDJacobi: {
-                    var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping, XdgOperator.ParameterUpdate.ParameterUpdate );
+                    var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping, 
+                        XdgOperator.ParameterUpdate != null ? XdgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
                     mtxBuilder.time = time;
                     mtxBuilder.MPITtransceive = true;
                     mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -401,7 +403,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
                 case LinearizationHint.FDJacobi: {
-                    var mtxBuilder = DgOperator.GetFDJacobianBuilder_(CurrentState, this.Parameters, Mapping, DgOperator.ParameterUpdate.ParameterUpdate );
+                    var mtxBuilder = DgOperator.GetFDJacobianBuilder_(CurrentState, this.Parameters, Mapping, 
+                        DgOperator.ParameterUpdate != null ? DgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
                     mtxBuilder.time = time;
                     mtxBuilder.MPITtransceive = true;
                     mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
