@@ -25,25 +25,43 @@ namespace BoSSS.Solution.XdgTimestepping {
     public enum TimeSteppingScheme {
         
         /// <summary>
-        /// Explicit Euler using the <see cref="XdgBDFTimestepping"/> implementation
+        /// Explicit Euler using the <see cref="XdgBDFTimestepping"/> implementation, <see cref="BDFSchemeCoeffs.ExplicitEuler"/>
         /// </summary>
         ExplicitEuler = 0,
 
         /// <summary>
-        /// equivalent of BDF1, using the BDF-implementation
+        /// equivalent of BDF1, using the BDF-implementation, <see cref="BDFSchemeCoeffs.BDF(int)"/>
         /// </summary>
         ImplicitEuler = 1,
 
+        /// <summary>
+        /// (Implicit) Crank-Nicholson using the BDF-implementation (<see cref="XdgBDFTimestepping"/>), <see cref="BDFSchemeCoeffs.CrankNicolson"/>
+        /// </summary>
         CrankNicolson = 2000,
 
+        /// <summary>
+        /// backward differentiation formula of order 2, <see cref="BDFSchemeCoeffs.BDF(int)"/>
+        /// </summary>
         BDF2 = 2,
 
+        /// <summary>
+        /// backward differentiation formula of order 3, <see cref="BDFSchemeCoeffs.BDF(int)"/>
+        /// </summary>
         BDF3 = 3,
 
+        /// <summary>
+        /// backward differentiation formula of order 4, <see cref="BDFSchemeCoeffs.BDF(int)"/>
+        /// </summary>
         BDF4 = 4,
 
+        /// <summary>
+        /// backward differentiation formula of order 5, <see cref="BDFSchemeCoeffs.BDF(int)"/>
+        /// </summary>
         BDF5 = 5,
 
+        /// <summary>
+        /// backward differentiation formula of order 6, <see cref="BDFSchemeCoeffs.BDF(int)"/>
+        /// </summary>
         BDF6 = 6,
 
         /// <summary>
@@ -77,7 +95,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         RK_ImplicitEuler = 201,
 
         /// <summary>
-        /// (Implicit) Crank-Nicholson using the implicit Runge-Kutta implementation, <see cref="RungeKuttaScheme.CrankNicolson"/>
+        /// (Implicit) Crank-Nicholson using the implicit Runge-Kutta (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.CrankNicolson"/>
         /// </summary>
         RK_CrankNic = 202,
 
@@ -384,6 +402,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return 0.0;
         }
 
+        DGField[] JacobiParameterVars = null;
 
         void myDelComputeXOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
             // compute operator
@@ -395,7 +414,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // +++++++++++++++++++++++++++++
 
                 Debug.Assert(OpMtx.InfNorm() == 0.0);
-                switch(DgOperator.LinearizationHint) {
+                switch(XdgOperator.LinearizationHint) {
 
                     case LinearizationHint.AdHoc: {
                         if(this.XdgOperator.ParameterUpdate != null) {
@@ -420,7 +439,13 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     case LinearizationHint.GetJacobiOperator: {
                         var op = GetJacobiXdgOperator();
-                        var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
+
+                        if(JacobiParameterVars == null)
+                            JacobiParameterVars = op.ParameterUpdate.AllocateParameters(this.CurrentState.Fields, this.Parameters);
+
+                        op.ParameterUpdate.ParameterUpdate(this.CurrentState.Fields, JacobiParameterVars);
+
+                        var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping);
                         mtxBuilder.time = time;
                         mtxBuilder.MPITtransceive = true;
                         mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -481,7 +506,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     case LinearizationHint.GetJacobiOperator: {
                         var op = GetJacobiDgOperator();
-                        var mtxBuilder = op.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
+
+                        if(JacobiParameterVars == null)
+                            JacobiParameterVars = op.ParameterUpdate.AllocateParameters(this.CurrentState.Fields, this.Parameters);
+                        op.ParameterUpdate.ParameterUpdate(this.CurrentState.Fields, JacobiParameterVars);
+
+                        var mtxBuilder = op.GetMatrixBuilder(Mapping, this.JacobiParameterVars, Mapping);
                         mtxBuilder.time = time;
                         mtxBuilder.MPITtransceive = true;
                         mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -523,6 +553,18 @@ namespace BoSSS.Solution.XdgTimestepping {
         public XdgRKTimestepping m_RK_Timestepper;
 
 
+        /// <summary>
+        /// Add logging of iteration residuals.
+        /// </summary>
+        public void RegisterResidualLogger(ResidualLogger _ResLogger) {
+            TimesteppingBase.m_ResidualNames = this.IterationResiduals.Fields.Select(f => f.Identification).ToArray();
+            TimesteppingBase.m_ResLogger = _ResLogger;
+        }
+
+
+        /// <summary>
+        /// driver for solver calls
+        /// </summary>
         public void Solve(double phystime, double dt) {
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
@@ -533,6 +575,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_RK_Timestepper.Solve(phystime, dt);
             }
 
+            JacobiParameterVars = null; 
         }
 
         /// <summary>

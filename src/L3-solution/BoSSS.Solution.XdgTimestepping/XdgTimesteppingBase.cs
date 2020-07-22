@@ -463,10 +463,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            double resiNorm = currentRes.MPI_L2Norm();
-            Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
-        }
+        //void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+        //    double resiNorm = currentRes.MPI_L2Norm();
+        //    Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
+        //}
 
 
         /// <summary>

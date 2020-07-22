@@ -813,6 +813,9 @@ namespace BoSSS.Foundation {
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 #endif
 
+                
+
+
 
                 var e = new EvaluatorLinear(this, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
@@ -871,19 +874,9 @@ namespace BoSSS.Foundation {
                     CodomainMapping = CodomainVarMap;
                     DomainMapping = DomainVarMap;
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
-
-
-                    //IEnumerable<Basis> allBasis = DomainVarMap.BasisS;
-                    //if (ParameterMap != null) {
-                    //    allBasis = allBasis.Union(ParameterMap.Select(f => f.Basis));
-                    //}
-                    //allBasis = allBasis.Union(CodomainVarMap.BasisS);
-                    //IGridData grdDat = allBasis.First().GridDat;
-                    //foreach (var b in allBasis) {
-                    //    if (!object.ReferenceEquals(grdDat, b.GridDat)) {
-                    //        throw new ArgumentException("all fields (domain, parameter, codomain) must be defined on the same grid.");
-                    //    }
-                    //}
+                    if(m_Parameters.Length != owner.ParameterVar.Count) {
+                        throw new ArgumentException("wrong number of parameter variables provided.");
+                    }
 
                     if(!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
@@ -2570,7 +2563,8 @@ namespace BoSSS.Foundation {
                 return ret;
             }
 
-            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension, 
+                this.ParameterUpdate != null ? this.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
 
             // create derivative operator
             // ==========================

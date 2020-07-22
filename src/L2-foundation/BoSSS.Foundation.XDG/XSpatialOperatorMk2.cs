@@ -1223,7 +1223,9 @@ namespace BoSSS.Foundation.XDG {
                 return ret;
             }
 
-            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension,
+                this.ParameterUpdate != null ? this.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+
 
 
             var JacobianOp = new XSpatialOperatorMk2(

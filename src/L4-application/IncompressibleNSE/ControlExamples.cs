@@ -34,7 +34,7 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// </summary>
     static public class ControlExamples {
 
-        static public IncompressibleControl ChannelFlow(int k = 2, int GridRes = 10) {
+        static public IncompressibleControl ChannelFlow(int k = 2, int GridRes = 10, bool transient = false) {
             //BoSSS.Application.IncompressibleNSE.ControlExamples.ChannelFlow(k:2,GridRes:4)
             IncompressibleControl C = new IncompressibleControl();
 
@@ -46,10 +46,15 @@ namespace BoSSS.Application.IncompressibleNSE {
 
 
             // Solver Options
-            C.NoOfTimesteps = 10;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
-            C.dtFixed = 0.01;
+            if(transient) {
+                C.NoOfTimesteps = 10;
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+                C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
+                C.dtFixed = 0.01;
+            } else {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
+            }
 
             // Re
             C.Density = 1.0;

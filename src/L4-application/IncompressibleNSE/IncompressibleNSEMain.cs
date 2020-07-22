@@ -106,6 +106,7 @@ namespace BoSSS.Application.IncompressibleNSE {
                 __CoDomainVar: CodName,
                 QuadOrderFunc: QuadOrderFunc.NonLinear(2));
 
+            op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
             // convective part:
             {

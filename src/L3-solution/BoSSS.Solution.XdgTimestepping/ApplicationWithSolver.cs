@@ -157,20 +157,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// Update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
-        /// Note: this matches the signature of <see cref="IParameterUpdate.ParameterUpdate"/>
-        /// </summary>
-        /// <param name="DomainVar">
-        /// Input fields, current state of domain variables
-        /// </param>
-        /// <param name="ParameterVar">
-        /// Output fields, updated states of parameter fields
-        /// </param>
-        virtual public void DelParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
-
-        }
-
-        /// <summary>
         /// initialization of <see cref="ApplicationWithSolver{T}.Timestepping"/>
         /// </summary>
         protected abstract void InitSolver();
@@ -216,13 +202,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
            
-
-
             if(L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Creation of time-integrator (initial, no balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
-                 InitSolver();
+                
+                InitSolver();
+                Timestepping.RegisterResidualLogger(this.ResLogger);
 
             } else {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -417,6 +403,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control);
 
             base.Timestepping = solver;
+
+            solver.m_BDF_Timestepper.m_ResidualNames = CurrentResidual.Fields.Select(f => f.Identification).ToArray();
+            solver.m_BDF_Timestepper.m_ResLogger = this.ResLogger;
         }
 
 
@@ -509,7 +498,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control);
 
             base.Timestepping = solver;
-            
         }
 
     }
