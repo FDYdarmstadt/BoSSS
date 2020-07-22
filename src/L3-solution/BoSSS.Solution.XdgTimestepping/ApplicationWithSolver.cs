@@ -403,9 +403,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control);
 
             base.Timestepping = solver;
-
-            solver.m_BDF_Timestepper.m_ResidualNames = CurrentResidual.Fields.Select(f => f.Identification).ToArray();
-            solver.m_BDF_Timestepper.m_ResLogger = this.ResLogger;
         }
 
 
