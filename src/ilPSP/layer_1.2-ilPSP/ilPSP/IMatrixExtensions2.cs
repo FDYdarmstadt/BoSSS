@@ -183,22 +183,26 @@ namespace ilPSP {
         /// <param name="outp">
         /// an array with length greater or equal to 1st length of <paramref name="inp"/>;
         /// </param>
-        /// <param name="i0">
+        /// <param name="WriteOffset">
         /// offset into <paramref name="outp"/>, coping starts from this index
         /// </param>
-        /// <param name="inc">
+        /// <param name="WriteInc">
         /// skip between to consecutive elements that are written in <paramref name="outp"/>
         /// </param>
-        public static void GetColumn<T>(this IMatrix inp, int ColNo, T outp, int i0 = 0, int inc = 1) where T : IList<double> {
+        /// <param name="NoOfElm">
+        /// Number of elements to take; if negative, ignored and the number of rows is extracted.
+        /// </param>
+        public static void GetColumn<T>(this IMatrix inp, int ColNo, T outp, int WriteOffset = 0, int WriteInc = 1, int NoOfElm = -1) where T : IList<double> {
+
+            int I1 = NoOfElm >= 0 ? NoOfElm : inp.NoOfRows;
 
             if (ColNo < 0 || ColNo >= inp.NoOfCols)
                 throw new IndexOutOfRangeException("ColNo out of range");
-            if (outp.Count - i0 < inp.NoOfRows*inc)
+            if (outp.Count - WriteOffset < I1*WriteInc)
                 throw new ArgumentException("output array to short", "outp");
 
-            int I1 = inp.NoOfRows;
             for (int i = 0; i < I1; i++)
-                outp[i*inc + i0] = inp[i, ColNo];
+                outp[i*WriteInc + WriteOffset] = inp[i, ColNo];
         }
 
 
@@ -216,9 +220,12 @@ namespace ilPSP {
         /// an array with length equal to 1st length of <paramref name="inp"/>, containing the
         /// <paramref name="ColNo"/>-th column of <paramref name="inp"/>
         /// </returns>
-        public static double[] GetColumn(this IMatrix inp, int ColNo) {
-            double[] ret = new double[inp.NoOfRows];
-            GetColumn(inp, ColNo, ret);
+        /// <param name="NoOfElm">
+        /// Number of elements to take; if negative, ignored and the number of rows is extracted.
+        /// </param>        
+        public static double[] GetColumn(this IMatrix inp, int ColNo, int NoOfElm = -1) {
+            double[] ret = new double[NoOfElm >= 0 ? NoOfElm : inp.NoOfRows];
+            GetColumn(inp, ColNo, ret, NoOfElm:NoOfElm);
             return ret;
         }
 

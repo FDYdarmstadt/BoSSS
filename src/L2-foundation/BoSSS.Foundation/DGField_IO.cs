@@ -88,19 +88,11 @@ namespace BoSSS.Foundation {
 
                     Debug.Assert(data[j].GlobalID == this.GridDat.iLogicalCells.GetGlobalID(j));
 
-                    int Nt = this.Basis.GetLength(j);
-                    int N = Math.Min(coords_j.Length, Nt);
-
-                    int n = 0;
-                    for (; n < N; n++) {
-                        this.Coordinates[j, n] = coords_j[n];
-                    }
-                    for (; n < Nt; n++) {
-                        this.Coordinates[j, n] = 0.0;
-                    }
+                    this.DeserializeDGcoords(j, coords_j);
                 }
             } else {
-                Console.WriteLine("Unable to load field '{0}'; initializing with zeros.", this.Identification);
+                Console.Error.WriteLine("Unable to load field '{0}'; initializing with zeros.", this.Identification);
+                this.Coordinates.Clear();
             }
             loadedObjects.Add(this);
         }

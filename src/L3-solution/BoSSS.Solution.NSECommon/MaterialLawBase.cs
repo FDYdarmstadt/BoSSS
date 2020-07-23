@@ -66,7 +66,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi">scalar</param>
         /// <param name="jCell">Not used.</param>
         /// <returns>Density</returns>
-        public double GetDensity(double[] X, double[] phi, int jCell) {
+        public double GetDensity(ilPSP.Vector X, double[] phi, int jCell) {
             return this.GetDensity(phi);
         }
 
@@ -101,7 +101,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi">scalar</param>
         /// <param name="jCell">Not used.</param>
         /// <returns>Dynamic viscosity</returns>
-        public double GetViscosity(double[] X, double[] phi, int jCell) {
+        public double GetViscosity(ilPSP.Vector X, double[] phi, int jCell) {
             if (phi.Length != 1)
                 throw new ArgumentException();
 

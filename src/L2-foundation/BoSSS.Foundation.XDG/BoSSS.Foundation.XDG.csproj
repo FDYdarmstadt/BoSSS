@@ -94,6 +94,7 @@
     <Compile Include="Quadrature\ScalarFieldLevelSetIntegrator.cs" />
     <Compile Include="Quadrature\SimplexSubdivisionTree.cs" />
     <Compile Include="SpeciesId.cs" />
+    <Compile Include="TestingIOExtensions.cs" />
     <Compile Include="XDGBasis.cs" />
     <Compile Include="XDGField.cs" />
     <Compile Include="FieldStorage.cs" />

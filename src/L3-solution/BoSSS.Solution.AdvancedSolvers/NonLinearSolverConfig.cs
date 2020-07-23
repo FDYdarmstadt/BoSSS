@@ -131,6 +131,9 @@ namespace BoSSS.Solution.Control {
         /// <param name="compareto"></param>
         /// <returns></returns>
         public bool Equals(NonLinearSolverConfig compareto) {
+            if(compareto == null)
+                return false;
+
             return this.constantNewtonIterations == compareto.constantNewtonIterations &&
                 this.ConvergenceCriterion == compareto.ConvergenceCriterion &&
                 this.MaxSolverIterations == compareto.MaxSolverIterations &&

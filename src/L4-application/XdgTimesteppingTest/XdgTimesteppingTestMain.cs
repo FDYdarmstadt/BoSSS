@@ -53,11 +53,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         static void Main(string[] args) {
 
             InitMPI();
-            //TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
-            TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.RK1, 0.2d, 8);
-            //Assert.AreEqual(1, 2, "remove me");
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 4);
             FinalizeMPI();
+            return;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
                 return new XdgTimesteppingMain();
