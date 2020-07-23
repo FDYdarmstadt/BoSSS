@@ -69,9 +69,12 @@ namespace FSI_Solver {
             int[] coloredCells = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
             int[] coloredCellsExchange = coloredCells.CloneAs();
             coloredCellsExchange.MPIExchange(GridData);
+            Console.WriteLine("ColorNeighbourCells");
             ColorNeighborCells(coloredCells, coloredCellsExchange);
             GridData gridData = (GridData)GridData;
+            Console.WriteLine("RecolorCellsOfNeighborParticles");
             RecolorCellsOfNeighborParticles(coloredCells, gridData);
+            Console.WriteLine("RecolorCellsOfNeighborParticles Ende ");
             return coloredCells;
         }
         
@@ -199,6 +202,7 @@ namespace FSI_Solver {
             int[] globalCellColor = GetGlobalCellColor(coloredCells, currentGrid);
             int[][] globalCellNeighbourship = GetGlobalCellNeigbourship(currentGrid);
             int maxColor = globalCellColor.Max().MPIMax();
+            Console.WriteLine("maxColor " + maxColor);
             int[] newColor = new int[maxColor + 1];
             for (int i = 0; i < globalCellColor.Length; i++) {
                 for (int j = 0; j < globalCellNeighbourship[i].Length; j++) {
@@ -224,8 +228,11 @@ namespace FSI_Solver {
             if (newColorArray[currentColor] != 0 && currentColor > newColor) {
                 for (int k = newColorArray.Length - 1; k > 0; k--) {
                     if (k == newColorArray[currentColor]) {
-                        RecolorAlreadyRecoloredCellsRecursive(newColorArray, k, newColor);
+                        Console.WriteLine("newColorArray[k] " + newColorArray[k]);
                         newColorArray[k] = newColor;
+                        Console.WriteLine("newColorArray[k] II " + newColorArray[k]);
+                        Console.WriteLine("current color " + k + " new color " + newColor);
+                        RecolorAlreadyRecoloredCellsRecursive(newColorArray, k, newColor);
                     }
                 }
             }
@@ -235,7 +242,6 @@ namespace FSI_Solver {
             Partitioning cellPartitioning = currentGrid.CellPartitioning;
             int globalJ = cellPartitioning.TotalLength;
             int[] i0 = cellPartitioning.GetI0s();
-            int local_i0 = cellPartitioning.i0;
             int[] globalCellColor = new int[globalJ];
 
             int[][] exchangeCellColor = localCellColor.MPIGatherO(0);
@@ -282,8 +288,10 @@ namespace FSI_Solver {
         }
 
         internal void RecolorCellsOfNeighborParticles(int[] coloredCells, GridData currentGrid) {
+            Console.WriteLine("FindCellsToRecolor");
             int[] newColor = FindCellsToRecolor(coloredCells, currentGrid);
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            Console.WriteLine("recolor....");
             for (int i = 1; i < newColor.Length; i++) {
                 if (newColor[i] != 0) {
                     for (int j = 0; j < J; j++) {
