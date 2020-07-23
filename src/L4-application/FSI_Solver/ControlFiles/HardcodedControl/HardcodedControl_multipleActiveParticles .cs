@@ -281,10 +281,14 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double aspectRatio = 0.5) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);// Fluid Properties
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            //string ID = "fdf48851-203e-4fda-a540-33b16244f6ee";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 5);
+            //C.IsRestart = true;
+            // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
@@ -294,15 +298,15 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 10;
-            double activeStress = 10;
-            double particleLength = 0.1;
+            double activeStress = 1;
             double position = 1;
             double distance = position / 2;
 
             C.SetGrid(lengthX: 2 * position + distance, lengthY: 2 * position + distance, cellsPerUnitLength: 30, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
-            C.minDistanceThreshold = 0.01;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.minDistanceThreshold = 0.03;
+            C.CoefficientOfRestitution = 0.01;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
 
@@ -352,7 +356,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 3.5 * distance, position - 4 * distance }, -45, activeStress));
 
             C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2.4 * distance, position - 1.1 * distance }, 99, activeStress));
-            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2.3 * distance, position - 1.4 * distance }, 184, activeStress));
+            C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2.3 * distance, position - 3 * distance }, 184, activeStress));
             C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2 * distance, position - 1.85 * distance }, -274, activeStress));
             C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2.25 * distance, position - 3.8 * distance }, -3, activeStress));
             C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { position - 2 * distance, position - 4.2 * distance }, 364, activeStress));
@@ -366,7 +370,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-2, int.MaxValue, true);
+            C.SetTimesteps(1e-2, int.MaxValue, false);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -383,11 +387,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.maxIterationsFullyCoupled = 100;
 
-            //string ID = "665207e0-7ed3-4acb-900d-570862dc38b5";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1240);
-            //C.IsRestart = true;
+           
             return C;
         }
 

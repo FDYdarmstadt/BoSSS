@@ -54,12 +54,12 @@ namespace BoSSS.Application.FSI_Solver {
             //BoSSS.Application.FSI_Solver.TestProgram.PeriodicTest();
             //BoSSS.Solution.Application.FinalizeMPI();
             //throw new ApplicationException( "remove me");
-            
+
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
                 return p;
             });
-            
+
         }
 
         /// <summary>
@@ -76,6 +76,8 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private readonly int spatialDim = 2;
+
+        private int iterationCounter = 0;
 
         /// <summary>
         /// A list for all particles
@@ -580,95 +582,106 @@ namespace BoSSS.Application.FSI_Solver {
         /// The current time.
         /// </param>
         private void UpdateLevelSetParticles(double phystime) {
-            levelSetUpdate = new FSI_LevelSetUpdate(GridData, GetMinGridLength());
-            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            // Step 0
-            // Check for periodic boundaries and create/delete
-            // additional particles, appearing at the other side of 
-            // the periodic domain
-            // =======================================================
-            DeleteParticlesOutsideOfDomain();
-            CreateGhostParticleAtPeriodicBoundary();
-            SwitchGhostAndMasterParticle();
-            ProcessColoring();
 
-            // Step 1
-            // Define an array with the respective cell colors
-            // =======================================================
-            cellColor = cellColor == null 
-                ? levelSetUpdate.InitializeColoring(GridData, LsTrk, m_Particles.ToArray(), MaxGridLength) 
-                : levelSetUpdate.UpdateColoring(GridData, LsTrk);
-            SetColorDGField(cellColor);
+            if (!IsFullyCoupled || iterationCounter <= 1) {
+                levelSetUpdate = new FSI_LevelSetUpdate(GridData, GetMinGridLength());
+                int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                Console.WriteLine("Start here I");
+                // Step 0
+                // Check for periodic boundaries and create/delete
+                // additional particles, appearing at the other side of 
+                // the periodic domain
+                // =======================================================
+                DeleteParticlesOutsideOfDomain();
+                Console.WriteLine("Start here II");
+                CreateGhostParticleAtPeriodicBoundary();
+                Console.WriteLine("Start here III");
+                SwitchGhostAndMasterParticle();
+                Console.WriteLine("Start here IV");
+                ProcessColoring();
 
-            // Step 2
-            // Delete the old level set
-            // =======================================================
-            DGLevSet.Current.Clear();
-            // Step 3
-            // Define level set per color
-            // =======================================================
-            CellMask allParticleMask = null;
-            CellMask coloredCellMask = null;
-            globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, cellColor, m_Particles);
-            for (int i = 0; i < globalParticleColor.Length; i++) {
-                if (globalParticleColor[i] == 0) {
-                    int masterID = m_Particles[i].MasterGhostIDs[0] - 1;
-                    globalParticleColor[i] = globalParticleColor[masterID];
-                }
-            }
-            int[] _globalParticleColor = globalParticleColor.CloneAs();
-            for (int p = 0; p < _globalParticleColor.Length; p++) {
-                // Search for current colour on current process
-                int currentColor = _globalParticleColor[p];
-                bool processContainsCurrentColor = false;
-                BitArray coloredCells = new BitArray(noOfLocalCells);
-                for (int j = 0; j < noOfLocalCells; j++) {
-                    if (cellColor[j] == currentColor && currentColor != 0) {
-                        processContainsCurrentColor = true;
-                        coloredCells[j] = true;
+                // Step 1
+                // Define an array with the respective cell colors
+                // =======================================================
+                Console.WriteLine("Start here V");
+                Console.WriteLine("UpdateColoring");
+                cellColor = cellColor == null ? levelSetUpdate.InitializeColoring(GridData, LsTrk, m_Particles.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(GridData, LsTrk);
+
+                Console.WriteLine("SetColorDGField");
+                SetColorDGField(cellColor);
+
+                // Step 2
+                // Delete the old level set
+                // =======================================================
+                Console.WriteLine("Start here VI");
+                DGLevSet.Current.Clear();
+                // Step 3
+                // Define level set per color
+                // =======================================================
+                CellMask allParticleMask = null;
+                CellMask coloredCellMask = null;
+                Console.WriteLine("Start here VII");
+                globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, cellColor, m_Particles);
+                for (int i = 0; i < globalParticleColor.Length; i++) {
+                    if (globalParticleColor[i] == 0) {
+                        int masterID = m_Particles[i].MasterGhostIDs[0] - 1;
+                        globalParticleColor[i] = globalParticleColor[masterID];
                     }
                 }
-                if (processContainsCurrentColor) {
-                    int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(_globalParticleColor, currentColor);
-                    coloredCellMask = new CellMask(GridData, coloredCells);
-                    // Save all colored cells of 
-                    // any color in one cellmask
-                    // -----------------------------
-                    allParticleMask = allParticleMask == null ? coloredCellMask : allParticleMask.Union(coloredCellMask);
-                    // Particle level set
-                    // -----------------------------
-                    double levelSetFunction(double[] X, double t) {
-                        double levelSetFunctionOneColor = -1;
-                        for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
-                            Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
-                            if (levelSetFunctionOneColor < currentParticle.LevelSetFunction(X))
-                                levelSetFunctionOneColor = currentParticle.LevelSetFunction(X);
-                            _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
+                int[] _globalParticleColor = globalParticleColor.CloneAs();
+                for (int p = 0; p < _globalParticleColor.Length; p++) {
+                    // Search for current colour on current process
+                    int currentColor = _globalParticleColor[p];
+                    bool processContainsCurrentColor = false;
+                    BitArray coloredCells = new BitArray(noOfLocalCells);
+                    for (int j = 0; j < noOfLocalCells; j++) {
+                        if (cellColor[j] == currentColor && currentColor != 0) {
+                            processContainsCurrentColor = true;
+                            coloredCells[j] = true;
                         }
-                        return levelSetFunctionOneColor;
                     }
-                    SetLevelSet(levelSetFunction, coloredCellMask, phystime);
+                    if (processContainsCurrentColor) {
+                        int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(_globalParticleColor, currentColor);
+                        coloredCellMask = new CellMask(GridData, coloredCells);
+                        // Save all colored cells of 
+                        // any color in one cellmask
+                        // -----------------------------
+                        allParticleMask = allParticleMask == null ? coloredCellMask : allParticleMask.Union(coloredCellMask);
+                        // Particle level set
+                        // -----------------------------
+                        double levelSetFunction(double[] X, double t) {
+                            double levelSetFunctionOneColor = -1;
+                            for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
+                                Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
+                                if (levelSetFunctionOneColor < currentParticle.LevelSetFunction(X))
+                                    levelSetFunctionOneColor = currentParticle.LevelSetFunction(X);
+                                _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
+                            }
+                            return levelSetFunctionOneColor;
+                        }
+                        SetLevelSet(levelSetFunction, coloredCellMask, phystime);
+                    }
                 }
+                // Step 4
+                // Define level set of the remaining cells ("Fluid-Cells")
+                // =======================================================
+                double phiFluid(double[] X, double t) {
+                    return -1;
+                }
+                CellMask fluidCells = allParticleMask != null ? allParticleMask.Complement() : CellMask.GetFullMask(GridData);
+                SetLevelSet(phiFluid, fluidCells, phystime);
+                // Step 5
+                // Smoothing
+                // =======================================================
+                PerformLevelSetSmoothing(allParticleMask, fluidCells, SetFarField: true);
+                // Step 6
+                // Update level set tracker
+                // =======================================================
             }
-            // Step 4
-            // Define level set of the remaining cells ("Fluid-Cells")
-            // =======================================================
-            double phiFluid(double[] X, double t) {
-                return -1;
-            }
-            CellMask fluidCells = allParticleMask != null ? allParticleMask.Complement() : CellMask.GetFullMask(GridData);
-            SetLevelSet(phiFluid, fluidCells, phystime);
-            // Step 5
-            // Smoothing
-            // =======================================================
-            PerformLevelSetSmoothing(allParticleMask, fluidCells, SetFarField: true);
-            // Step 6
-            // Update level set tracker
-            // =======================================================
             try {
                 LsTrk.UpdateTracker(__NearRegionWith: 2);
             }
-            catch(LevelSetCFLException e) {//hacky workaround
+            catch (LevelSetCFLException e) {//hacky workaround
                 if (AddedGhostParticle)
                     Console.WriteLine("Ghost particle added, exception thrown: " + e);
                 else
@@ -694,7 +707,7 @@ namespace BoSSS.Application.FSI_Solver {
             DGLevSet.Current.Clear(currentCells);
             DGLevSet.Current.ProjectField(1.0, Function, new CellQuadratureScheme(UseDefaultFactories: true, domain: currentCells));
         }
-        
+
         /// <summary>
         /// Color each process. To see the partitoning in exported sessions.
         /// </summary>
@@ -726,7 +739,7 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int d1 = 0; d1 < spatialDim; d1++) { // which direction?
                     if (!IsPeriodic[d1])
                         continue;
-                    for(int wallID = 0; wallID < spatialDim; wallID++) { // which wall?
+                    for (int wallID = 0; wallID < spatialDim; wallID++) { // which wall?
                         if (PeriodicOverlap(currentParticle, d1, wallID)) {
                             ghostHierachy[0] = p + 1;
                             Vector originNeighbouringDomain;
@@ -742,7 +755,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ghostParticle.Motion.SetGhostPosition(originNeighbouringDomain + particlePosition);
                                 ghostParticles.Add(ghostParticle.CloneAs());
                             }
-                            else{
+                            else {
                                 ghostParticle = m_Particles[ghostHierachy[1] - 1];
                             }
                             if (d1 == 0) {
@@ -766,7 +779,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                     }
                 }
-                if(ghostParticles.Count >= 1) {
+                if (ghostParticles.Count >= 1) {
                     AddedGhostParticle = true;
                     currentParticle.SetGhostHierachy(ghostHierachy);
                     for (int p2 = 0; p2 < ghostParticles.Count(); p2++) {
@@ -786,7 +799,7 @@ namespace BoSSS.Application.FSI_Solver {
                 if (!IsInsideOfDomain(currentParticle)) {
                     int oldMasterID = p + 1;
                     int[] ghostHierachy = currentParticle.MasterGhostIDs;
-                    for(int g = 1; g < ghostHierachy.Length; g++) {
+                    for (int g = 1; g < ghostHierachy.Length; g++) {
                         if (ghostHierachy[g] <= 0)
                             continue;
                         Particle currentGhost = m_Particles[ghostHierachy[g] - 1];
@@ -797,7 +810,7 @@ namespace BoSSS.Application.FSI_Solver {
                             newGhostHierachy[g] = oldMasterID;
                             currentGhost.SetMaster(currentParticle.Motion.CloneAs());
                             currentParticle.SetGhost();
-                            for(int i = 0; i < ghostHierachy.Length; i++) {
+                            for (int i = 0; i < ghostHierachy.Length; i++) {
                                 if (ghostHierachy[i] <= 0)
                                     continue;
                                 m_Particles[ghostHierachy[i] - 1].MasterGhostIDs = newGhostHierachy.CloneAs();
@@ -820,12 +833,12 @@ namespace BoSSS.Application.FSI_Solver {
                             if (!AnyOverlap(currentParticle)) {
                                 int[] ghostHierachy = currentParticle.MasterGhostIDs.CloneAs();
                                 for (int g = 0; g < ghostHierachy.Length; g++) {
-                                    if(ghostHierachy[g] == p + 1) {
+                                    if (ghostHierachy[g] == p + 1) {
                                         ghostHierachy[g] = 0;
                                     }
                                 }
                                 for (int g = 0; g < ghostHierachy.Length; g++) {
-                                    if(ghostHierachy[g] > 0)
+                                    if (ghostHierachy[g] > 0)
                                         m_Particles[ghostHierachy[g] - 1].MasterGhostIDs = ghostHierachy.CloneAs();
                                 }
                                 m_Particles.RemoveAt(p);
@@ -878,8 +891,8 @@ namespace BoSSS.Application.FSI_Solver {
                     FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
                     periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
-                        return true;    
-                }   
+                        return true;
+                }
             }
             return false;
         }
@@ -943,7 +956,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return dt;
             }
         }
-        
+
         //int postCollisionCounter = 0;
         /// <summary>
         /// runs solver one step?!
@@ -1001,7 +1014,7 @@ namespace BoSSS.Application.FSI_Solver {
                 // particle motion & collisions plus flow solver
                 // =================================================
                 else {
-                    int iterationCounter = 0;
+                    iterationCounter = 0;
                     double hydroDynForceTorqueResidual = double.MaxValue;
                     int minimumNumberOfIterations = 4;
                     ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
@@ -1019,11 +1032,10 @@ namespace BoSSS.Application.FSI_Solver {
                             InitializeParticlePerIteration(m_Particles, TimestepInt);
                         }
                         else {
+                            Console.WriteLine("Starting Fluid Solver");
                             m_BDF_Timestepper.Solve(phystime, dt, false);
+                            Console.WriteLine("Starting Force Solver");
                             CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
-                        }
-                        if (((FSI_Control)Control).UsePerssonSensor == true) {
-                            perssonsensor.Update(Pressure);
                         }
                         CalculateParticleVelocity(m_Particles, dt, iterationCounter);
 
@@ -1039,7 +1051,7 @@ namespace BoSSS.Application.FSI_Solver {
                         // print iteration status
                         // -------------------------------------------------
                         Auxillary.PrintResultToConsole(hydroDynForceTorqueResidual, iterationCounter);
-                        LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
+                        //LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
                     }
 
 
@@ -1049,7 +1061,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // particle position
                     // -------------------------------------------------
-                    if(!FixPosition)
+                    if (!FixPosition)
                         CalculateParticlePosition(dt);
 
                     // print
@@ -1060,7 +1072,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // level set tracker 
                     // -------------------------------------------------
                     if (IsFullyCoupled) {// in other branches, called by the BDF timestepper
-                        LsTrk.IncreaseHistoryLength(S+1);
+                        LsTrk.IncreaseHistoryLength(S + 1);
                         LsTrk.PushStacks();
                     }
                 }
@@ -1096,7 +1108,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
                 currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt, FluidViscosity, FluidDensity,DtMax);
+                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt, FluidViscosity, FluidDensity, DtMax);
             }
         }
 
@@ -1353,6 +1365,7 @@ namespace BoSSS.Application.FSI_Solver {
                         currentParticles[j] = m_Particles[ParticlesOfCurrentColor[j]];
                     }
                     FSI_Collision _Collision = new FSI_Collision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
+
                     _Collision.CalculateCollision(currentParticles);
                 }
                 // Remove already investigated particles/colours from array
@@ -1393,7 +1406,6 @@ namespace BoSSS.Application.FSI_Solver {
                 // the owning process.
                 // ===================================================
                 if (isCollidedReceive[i] != 0) {
-                    Console.WriteLine("collided on " + i + " length " + isCollidedReceive.Length);
                     double[] dataSend = currentParticle.Motion.BuildSendArray();
                     int noOfVars = dataSend.Length;
                     double[] dataReceive = new double[noOfVars * MPISize];
@@ -1451,7 +1463,7 @@ namespace BoSSS.Application.FSI_Solver {
                     AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementForStartUpSweeps(), out CellsToRefineList, out Coarsening);
                 else
                     AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementBasedOnParticleLength(), out CellsToRefineList, out Coarsening);
-            } 
+            }
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
                 int oldJ = GridData.CellPartitioning.TotalLength;

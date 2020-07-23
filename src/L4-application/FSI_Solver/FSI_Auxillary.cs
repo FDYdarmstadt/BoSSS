@@ -191,8 +191,17 @@ namespace FSI_Solver {
             if (Particles.Count() > 3) {
                 OutputBuilder.AppendLine();
                 OutputBuilder.AppendLine("Solving system with " + Particles.Count() + " particles. Time: " + phystime);
+                OutputBuilder.AppendLine("Particle type of first particle: " + Particles[0]);
+                OutputBuilder.AppendLine("Particle density of first particle: " + Particles[0].Motion.Density);
+                OutputBuilder.AppendLine("Maximum length of first particle: " + Particles[0].GetLengthScales().Max() + ", minimum length: " + Particles[0].GetLengthScales().Min());
+                OutputBuilder.AppendLine("Particle Reynolds number of first particle: " + ParticleReynoldsNumber[0]);
+                OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
                 OutputBuilder.AppendLine();
-            }
+                for (int p = 0; p < Particles.Count(); p++) {
+                    if (Particles[p].IsCollided)
+                        OutputBuilder.AppendLine("Particle " + p + " is collided. Position X: " + Particles[p].Motion.GetPosition(0)[0] + ", Position X: " + Particles[p].Motion.GetPosition(0)[1]);
+                }
+                }
             else {
                 for (int p = 0; p < Particles.Count(); p++) {
                     Particle CurrentParticle = Particles[p];

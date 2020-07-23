@@ -185,7 +185,9 @@ namespace FSI_Solver {
                                 }
                             }
                         }
-                        Console.WriteLine("Minimal distance " + minimalDistance + ", threshold " + distanceThreshold + ", current save time+step " + SaveTimeStep);
+                        if (SaveTimeStep < double.MaxValue) {
+                            Console.WriteLine("Minimal distance " + minimalDistance + ", threshold " + distanceThreshold + ", current save time+step " + SaveTimeStep);
+                        }
                         // Step 2.1.2
                         // Accumulate the current save timestep.
                         // -------------------------------------------------------
@@ -540,7 +542,7 @@ namespace FSI_Solver {
             closestPoints[0] = new Vector(spatialDim);
             closestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
-            int maxNoOfIterations = 10000;
+            int maxNoOfIterations = 50;
 
             // Step 2
             // Start the iteration
