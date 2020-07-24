@@ -328,7 +328,10 @@ namespace BoSSS.Application.FSI_Solver {
             if (IBM_Op_config.DomBlocks[1])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(spatialDim, 1));
 
-            IBM_Op = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => HMForder, null);
+            IBM_Op = new XSpatialOperatorMk2(
+                __DomainVar: DomNameSelected, __ParameterVar: Params, __CoDomainVar: CodNameSelected,
+                QuadOrderFunc:(A, B, C) => HMForder, 
+                __Species: FluidSpecies.Select(id => LsTrk.GetSpeciesName(id)));
 
             // Momentum equation
             // =============================

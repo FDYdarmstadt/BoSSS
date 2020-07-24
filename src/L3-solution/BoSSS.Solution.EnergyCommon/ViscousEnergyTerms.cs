@@ -198,6 +198,7 @@ namespace BoSSS.Solution.EnergyCommon {
             this.m_bcMap = bcMap;
             m_spcId = spcId;
             mu = _mu;
+            validSpeciesId = spcName;
 
             transposedTerm = transposed;
 
@@ -211,8 +212,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string validSpeciesId {
+            get;
+            private set;
         }
 
 
@@ -474,18 +476,20 @@ namespace BoSSS.Solution.EnergyCommon {
         bool transposedTerm;
 
 
-        public StressDivergence_Local(int SpatDim, double _mu, SpeciesId spcId, bool transposed = false) {
+        public StressDivergence_Local(int SpatDim, double _mu, string spcNmn, SpeciesId spcId, bool transposed = false) {
             m_D = SpatDim;
             mu = _mu;
             m_spcId = spcId;
             transposedTerm = transposed;
+            validSpeciesId = spcNmn;
         }
 
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string validSpeciesId {
+            get;
+            private set;
         }
 
         public IList<String> ArgumentOrdering {
@@ -592,18 +596,20 @@ namespace BoSSS.Solution.EnergyCommon {
 
         bool withPressure;
 
-        public Dissipation(int SpatDim, double _mu, SpeciesId spcId, bool _withPressure) {
+        public Dissipation(int SpatDim, double _mu, string spcNmn, SpeciesId spcId, bool _withPressure) {
             m_D = SpatDim;
             mu = _mu;
             m_spcId = spcId;
+            validSpeciesId = spcNmn;
             this.withPressure = _withPressure;
         }
 
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string validSpeciesId {
+            get;
+            private set;
         }
 
         public IList<String> ArgumentOrdering {

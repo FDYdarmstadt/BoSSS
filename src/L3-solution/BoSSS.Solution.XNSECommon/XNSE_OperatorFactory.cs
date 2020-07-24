@@ -51,7 +51,7 @@ namespace BoSSS.Application.XNSE_Solver {
         int HMFDegree;
 
         /// <summary>
-        /// ctor for the operator factory, where the equation compnents are set
+        /// ctor for the operator factory, where the equation components are set
         /// </summary>
         /// <param name="config"></param>
         /// <param name="_LsTrk"></param>
@@ -117,7 +117,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // create Operator
             // ===============
-            m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
+            m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesNames);
 
             // add components
             // ==============
@@ -322,7 +322,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // compute matrix
             if(OpMatrix != null) {
 
-                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
+                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping);
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
@@ -340,8 +340,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             } else {
                 XSpatialOperatorMk2.XEvaluatorNonlin eval = this.m_XOp.GetEvaluatorEx(this.LsTrk,
-                    CurrentState.ToArray(), Params, RowMapping,
-                    SpcToCompute);
+                    CurrentState.ToArray(), Params, RowMapping);
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;

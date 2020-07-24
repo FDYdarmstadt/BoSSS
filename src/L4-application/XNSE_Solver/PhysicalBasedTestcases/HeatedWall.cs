@@ -362,7 +362,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
@@ -760,7 +760,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -1044,7 +1044,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
@@ -1428,7 +1428,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -1711,7 +1711,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -1988,7 +1988,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -2228,7 +2228,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -2502,7 +2502,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -2777,7 +2777,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -3038,7 +3038,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -3323,7 +3323,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -3594,7 +3594,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -3866,7 +3866,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
