@@ -215,7 +215,11 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1, (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder, new SpeciesId[] { LsTrk.GetSpeciesId("B") }, "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1,
+                QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
+                __Species: new [] { "B" },
+                __varnames: new[] { "u", "c1" });
+
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             if(usePhi0)
@@ -620,7 +624,7 @@ namespace BoSSS.Application.ZwoLsTest {
             CheckExchange(false);
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping, LsTrk.GetSpeciesId("B"));
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);

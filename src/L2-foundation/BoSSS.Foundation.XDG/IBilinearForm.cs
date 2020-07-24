@@ -31,6 +31,10 @@ namespace BoSSS.Foundation.XDG {
     /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
     /// </summary>
     public interface IEquationComponentSpeciesNotification {
+
+        /// <summary>
+        /// called before the integration on respective species 
+        /// </summary>
         void SetParameter(string speciesName, SpeciesId SpcId);
     }
 
@@ -39,15 +43,11 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public interface ISpeciesFilter {
 
-        ///// <summary>
-        ///// name of the valid species
-        ///// </summary>
-        ////string SpeciesName { get; }
 
         /// <summary>
         /// the species in which the bulk equation component is valid
         /// </summary>
-        SpeciesId validSpeciesId { get; }
+        string validSpeciesId { get; }
     }
 
     /// <summary>

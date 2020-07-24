@@ -157,7 +157,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         CoordinateVector m_CurrentState;
 
-        protected override CoordinateMapping CurrentStateMapping {
+        public override CoordinateMapping CurrentStateMapping {
             get {
                 return m_CurrentState.Mapping;
             }

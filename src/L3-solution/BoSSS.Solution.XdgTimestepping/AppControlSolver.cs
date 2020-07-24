@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BoSSS.Solution.XdgTimestepping;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -13,6 +15,14 @@ namespace BoSSS.Solution.Control {
     [Serializable]
     [DataContract]
     public class AppControlSolver : AppControl {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public AppControlSolver() {
+            NoOfMultigridLevels = 1;
+        }
+
 
         /// <summary>
         /// Linked to <see cref="LinearSolverConfig.NoOfMultigridLevels"/>.
@@ -38,6 +48,37 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
+
+        /// <summary>
+        /// Cut-cell volume fraction threshold for cell agglomeration
+        /// </summary>
+        [DataMember]
+        public double AgglomerationThreshold = 0.1;
+
+
+        /// <summary>
+        /// In the case of multi-step methods (e.g. BDF2 and higher), multiple initial values, resp. 
+        /// </summary>
+        [DataMember]
+        public bool MultiStepInit = true;
+
+        /// <summary>
+        /// Kind of timestepping to use
+        /// </summary>
+        public TimeSteppingScheme TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+
+        [JsonIgnore]
+        public override _TimesteppingMode TimesteppingMode {
+            get {
+                return base.TimesteppingMode;
+            }
+            set {
+                base.TimesteppingMode = value;
+                if(value == _TimesteppingMode.Steady)
+                    TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            }
+        }
+
 
         /// <summary>
         /// 
@@ -72,6 +113,9 @@ namespace BoSSS.Solution.Control {
                 if(other.NonLinearSolver != null)
                     return false;
             }
+
+            if(other.AgglomerationThreshold != this.AgglomerationThreshold)
+                return false;
 
 
             return true;

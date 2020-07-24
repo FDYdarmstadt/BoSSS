@@ -323,8 +323,9 @@ namespace BoSSS.Solution.AdvancedSolvers
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
                         #region second criterium
-                        /// Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
-                        /// this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
+                        // Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
+                        // this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
+                        
                         /*
                         double[] WMat_s = new double[x.Length];
                         double psi_r = 1e-3;

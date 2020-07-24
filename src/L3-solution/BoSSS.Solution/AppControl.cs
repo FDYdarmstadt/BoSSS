@@ -844,7 +844,7 @@ namespace BoSSS.Solution.Control {
         /// For solvers which support both, stationary as well as transient simulations, the corresponding switch.
         /// </summary>
         [JsonIgnore]
-        public _TimesteppingMode TimesteppingMode {
+        virtual public _TimesteppingMode TimesteppingMode {
             get {
                 return m_TimesteppingMode;
             }
@@ -1238,6 +1238,12 @@ namespace BoSSS.Solution.Control {
             return -1;
         }
 
+        /// <summary>
+        /// Number of Consecutive timesteps which are saved -- this is intended to be used by BDF or Adams-Bashforth time integrators which require multiple time steps
+        /// (e.g. 3 to save time-step 98, 99, 100 for a save-period of 100;)
+        /// </summary>
+        [DataMember]
+        public int BurstSave = 1;
 
         /// <summary>
         /// Equality of control files - mostly relevant for the job manager

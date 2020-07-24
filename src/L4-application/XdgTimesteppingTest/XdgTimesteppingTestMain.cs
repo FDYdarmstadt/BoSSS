@@ -45,7 +45,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
-    public class XdgTimesteppingMain : BoSSS.Solution.Application<XdgTimesteppingTestControl> {
+    public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSollver<XdgTimesteppingTestControl> {
 
         /// <summary>
         /// Les main routine.
@@ -54,7 +54,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             InitMPI();
             DeleteOldPlotFiles();
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02(TimeSteppingScheme.RK1u1, 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 4);
             FinalizeMPI();
             return;
@@ -90,10 +93,25 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         SinglePhaseField DOFMarker;
 
 #pragma warning restore 649
-        protected override void CreateFields() {
-            base.CreateFields();
-            base.LsTrk = MyLsTrk;
+
+        protected override LevelSetTracker InstantiateTracker() {
+            return MyLsTrk;
+        }
+
+        protected override IEnumerable<DGField> InstantiateSolutionFields() {
             this.u.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+            return new DGField[] { this.u };
+        }
+
+        public override IEnumerable<DGField> InstantiateResidualFields() {
+            return new DGField[] { this.Residual };
+        }
+
+
+
+        protected override void CreateAdditionalFields() {
+            base.LsTrk = MyLsTrk;
+            
             if(Control.CutCellQuadratureType != base.LsTrk.CutCellQuadratureType)
                 throw new ApplicationException();
 
@@ -163,10 +181,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             if (this.Control.MultiStepInit == true) {
                 int CallCount = 0;
 
-                if (m_RK_Timestepper != null)
+                
+
+                if (base.Timestepping.m_RK_Timestepper != null)
                     throw new NotSupportedException();
                 
-                m_BDF_Timestepper.MultiInit(0.0, 0, this.Control.GetFixedTimestep(),
+                base.Timestepping.m_BDF_Timestepper.MultiInit(0.0, 0, this.Control.GetFixedTimestep(),
                     delegate (int TimestepIndex, double Time, DGField[] St) {
 
                         Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
@@ -207,19 +227,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, 0.0)));
                 u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, 0.0)));
 
-                if(m_BDF_Timestepper != null)
-                    m_BDF_Timestepper.SingleInit();
+                if(base.Timestepping.m_BDF_Timestepper != null)
+                    base.Timestepping.m_BDF_Timestepper.SingleInit();
             }
         }
 
-        protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
-            throw new NotSupportedException("schlecht für BDF");
-            //base.LoadRestart(out Time, out TimestepNo);
-            //PostInitial(Time);
-        }
 
-        XSpatialOperatorMk2 Operator;
-
+       
         int LinearQuadratureDegree {
             get {
                 return Math.Max(2, 2 * this.u.Basis.Degree + V[0].Basis.Degree);
@@ -232,10 +246,28 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            if (Operator != null)
-                return;
+        protected override LevelSetHandling LevelSetHandling {
+            get {
+                LevelSetHandling lsh;
+                switch(this.Control.InterfaceMode) {
+                    case InterfaceMode.MovingInterface:
+                    lsh = LevelSetHandling.Coupled_Once;
+                    break;
 
+                    case InterfaceMode.Splitting:
+                    lsh = LevelSetHandling.LieSplitting;
+                    break;
+
+                    default:
+                    throw new NotImplementedException();
+                }
+
+                return lsh;
+            }
+        }
+
+
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
             // create operator
             // ---------------
 
@@ -253,10 +285,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotImplementedException();
             }
 
-            int quadOrder;
-            if (this.Control.Eq == Equation.ScalarTransport) {
-                quadOrder = this.LinearQuadratureDegree; 
 
+             if (this.Control.Eq == Equation.ScalarTransport) {
+                
                 Func<double[], double, double>[] uBnd = new Func<double[], double, double>[this.Grid.EdgeTagNames.Keys.Max() + 1];
                 for (int iEdgeTag = 1; iEdgeTag < uBnd.Length; iEdgeTag++) {
                     string nameEdgeTag;
@@ -267,14 +298,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     }
                 }
 
-                Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => quadOrder, LsTrk.SpeciesIdS.ToArray() , "u", "Vx", "Vy", "Cod1");
+                var Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames , "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(this.LsTrk, S));
                 Operator.Commit();
-            } else if (this.Control.Eq == Equation.HeatEq) {
-                quadOrder = this.LinearQuadratureDegree;
 
-                Operator = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadOrder, LsTrk.SpeciesIdS.ToArray(), "u", "Cod1");
+                return Operator;
+            } else if (this.Control.Eq == Equation.HeatEq) {
+                
+                var Operator = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames, "u", "Cod1");
 
                 var bulkFlx = new HeatFlux_Bulk() { m_muA = this.Control.muA, m_muB = this.Control.muB, m_rhsA = this.Control.rhsA, m_rhsB = this.Control.rhsB };
                 var intfFlx = new HeatFlux_Interface(this.LsTrk, S) { m_muA = this.Control.muA, m_muB = this.Control.muB };
@@ -283,130 +315,39 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.EquationComponents["Cod1"].Add(intfFlx);
                 Operator.Commit();
 
-            } else if (this.Control.Eq == Equation.Burgers) {
-                quadOrder = this.NonlinearQuadratureDegree;
+                return Operator;
 
-                Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => quadOrder, LsTrk.SpeciesIdS.ToArray(), "u", "u0", "Cod1");
+            } else if (this.Control.Eq == Equation.Burgers) {
+                
+                var Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, LsTrk.SpeciesNames, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
                 Operator.Commit();
 
+                return Operator;
             } else {
                 throw new NotImplementedException();
-            }
-
-            // create timestepper
-            // ------------------
-
-            LevelSetHandling lsh;
-            switch (this.Control.InterfaceMode) {
-                case InterfaceMode.MovingInterface:
-                lsh = LevelSetHandling.Coupled_Once;
-                break;
-
-                case InterfaceMode.Splitting:
-                lsh = LevelSetHandling.LieSplitting;
-                break;
-
-                default:
-                throw new NotImplementedException();
-            }
-
-            RungeKuttaScheme rksch = null;
-            int bdfOrder= -1000;
-            if (this.Control.TimeSteppingScheme == TimeSteppingScheme.CrankNicolson)
-                bdfOrder = -1;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.ExplicitEuler)
-                bdfOrder = 0;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.ImplicitEuler)
-                bdfOrder = 1;
-            else if (this.Control.TimeSteppingScheme.ToString().StartsWith("BDF"))
-                bdfOrder = Convert.ToInt32(this.Control.TimeSteppingScheme.ToString().Substring(3));
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.RK1)
-                rksch = RungeKuttaScheme.ExplicitEuler;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.RK1u1)
-                rksch = RungeKuttaScheme.ExplicitEuler2;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.RK2)
-                rksch = RungeKuttaScheme.Heun2;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.RK3)
-                rksch = RungeKuttaScheme.TVD3;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.RK4)
-                rksch = RungeKuttaScheme.RungeKutta1901;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.RK_ImplicitEuler)
-                rksch = RungeKuttaScheme.ImplicitEuler;
-            else if (this.Control.TimeSteppingScheme == TimeSteppingScheme.RK_CrankNic)
-                rksch = RungeKuttaScheme.CrankNicolson;
-            else if(this.Control.TimeSteppingScheme == TimeSteppingScheme.RK_IMEX3)
-                rksch = RungeKuttaScheme.IMEX3;
-            else
-                throw new NotImplementedException();
-            
-
-            if (bdfOrder > -1000) {
-                m_BDF_Timestepper = new XdgBDFTimestepping(new DGField[] { this.u }, new DGField[] { this.Residual }, LsTrk, true,
-                    DelComputeOperatorMatrix, null, DelUpdateLevelset,
-                    bdfOrder,
-                    lsh,
-                    MassMatrixShapeandDependence.IsTimeDependent,
-                    SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
-                    null, base.MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
-                    this.Control.AgglomerationThreshold, false,
-                    this.Control.NonLinearSolver,
-                    this.Control.LinearSolver);
-            } else {
-                m_RK_Timestepper = new XdgRKTimestepping(new DGField[] { this.u }, new DGField[] { this.Residual }, LsTrk,
-                    DelComputeOperatorMatrix, DelUpdateLevelset,
-                    rksch,
-                    lsh,
-                    MassMatrixShapeandDependence.IsTimeDependent,
-                    SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
-                    null, base.MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
-                    this.Control.AgglomerationThreshold, false,
-                    this.Control.NonLinearSolver,
-                    this.Control.LinearSolver);
             }
         }
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
-
-            DGField[] Params = null;
+        protected override IEnumerable<DGField> InstantiateParameterFields() {
             if (this.Control.Eq == Equation.ScalarTransport)
-                Params = this.V.ToArray();
+                return this.V.ToArray();
             else if (this.Control.Eq == Equation.HeatEq)
-                Params = null;
+                return null;
             else if (this.Control.Eq == Equation.Burgers)
-                Params = CurrentState;
+                return CurrentState;
             else
                 throw new NotImplementedException();
-
-            // compute operator
-            Debug.Assert(OpMtx.InfNorm() == 0.0);
-            Debug.Assert(OpAffine.L2Norm() == 0.0);
-            //Operator.ComputeMatrixEx(this.LsTrk,
-            //    Mapping, Params, Mapping,
-            //    OpMtx, OpAffine, false, phystime, true,
-            //    AgglomeratedCellLengthScales, null, null,
-            //    AgglomeratedCellLengthScales.Keys.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator.GetMatrixBuilder(this.LsTrk, Mapping, Params, Mapping, AgglomeratedCellLengthScales.Keys.ToArray());
-            mtxBuilder.time = phystime;
-            mtxBuilder.MPITtransceive = true;
-            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
         }
 
-        
-
-        double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-
+        public override double UpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
             LevsetEvo(phystime, dt, null);
 
             return 0.0;
         }
-
-        IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        
+        protected override IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
                 var Ret = new Dictionary<SpeciesId, IEnumerable<double>>();
                 foreach (var s in this.LsTrk.SpeciesIdS)
@@ -415,8 +356,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        XdgBDFTimestepping m_BDF_Timestepper;
-        XdgRKTimestepping m_RK_Timestepper;
+        
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
@@ -430,14 +370,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotSupportedException();
             }
 
-            if ((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
-                throw new ApplicationException();
-
-            if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.Solve(phystime, dt);
-            } else {
-                m_RK_Timestepper.Solve(phystime, dt);
-            }
+            base.Timestepping.Solve(phystime, dt);
 
             // return
             // ------
@@ -524,6 +457,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             var Fields = new DGField[] { this.Phi, this.u, this.rhs, this.Residual, this.V[0], this.V[1], this.CutMarker, this.DOFMarker, this.NearMarker };
             Tecplot.PlotFields(Fields, "XdgTimesteppingTest" + timestepNo.ToString(), physTime, susamp);           
         }
+
 
     }
 }

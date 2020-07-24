@@ -69,7 +69,8 @@ namespace BoSSS.Foundation.XDG {
             /// creates a matrix builder
             /// </summary>
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
-                var BulkMtxBuilder = base.m_Xowner.GetSpeciesMatrixBuilderBase(SpeciesId, DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+                var BulkMtxBuilder = base.m_Xowner.GetSpeciesMatrixBuilderBase(spcName, DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                 Debug.Assert(((EvaluatorBase)BulkMtxBuilder).order == base.order);
                 BulkMtxBuilder.MPITtransceive = false;
@@ -538,7 +539,8 @@ namespace BoSSS.Foundation.XDG {
             /// creates an evaluator
             /// </summary>
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
-                var BulkEval = base.m_Xowner.GetSpeciesEvaluatorExBase(SpeciesId, DomFld, base.SpeciesParams[SpeciesId], CodomFrame.FrameMap,
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+                var BulkEval = base.m_Xowner.GetSpeciesEvaluatorExBase(spcName, DomFld, base.SpeciesParams[SpeciesId], CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                 Debug.Assert(((EvaluatorBase)BulkEval).order == base.order);
                 BulkEval.MPITtransceive = false;
@@ -678,7 +680,8 @@ namespace BoSSS.Foundation.XDG {
                     ((FixedOrder_SpatialOperator)(m_Xowner.GhostEdgesOperator)).m_Order = order;
                     ((FixedOrder_SpatialOperator)(m_Xowner.SurfaceElementOperator)).m_Order = order;
                     foreach (SpeciesId spcid in ReqSpecies) {
-                        ((FixedOrder_SpatialOperator)m_Xowner.m_SpeciesOperator[spcid]).m_Order = order;
+                        string spcName = m_lsTrk.GetSpeciesName(spcid);
+                        ((FixedOrder_SpatialOperator)m_Xowner.m_SpeciesOperator[spcName]).m_Order = order;
                     }
                     //((FixedOrder_SpatialOperator)(m_Xowner.SpeciesOperator)).m_Order = order;
                     tr.Info("XSpatialOperator.ComputeMatrixEx quad order: " + order);
@@ -930,12 +933,12 @@ namespace BoSSS.Foundation.XDG {
             abstract protected void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperator.GhostEdgesOperator"/>
+            /// Create integrator for <see cref="XSpatialOperatorMk2.GhostEdgesOperator"/>
             /// </summary>
             abstract protected void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperator.SurfaceElementOperator"/>
+            /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator"/>
             /// </summary>
             abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
 

@@ -309,7 +309,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XRheology_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
