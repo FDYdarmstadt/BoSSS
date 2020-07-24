@@ -263,7 +263,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 10;
+            C.NoOfTimesteps = 35;
 
             // haben fertig...
             // ===============
