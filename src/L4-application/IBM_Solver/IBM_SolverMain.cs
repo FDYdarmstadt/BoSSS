@@ -1094,7 +1094,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         /// <summary>
-        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true
+        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true. Note that this is not necessary if the order of the level-set function of the particles is equal to the polynomial DG order.
         /// </summary>
         protected void PerformLevelSetSmoothing(CellMask domain, CellMask NegMask, bool SetFarField) {
 
