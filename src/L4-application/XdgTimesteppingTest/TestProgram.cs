@@ -177,7 +177,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             ctrl.ImmediatePlotPeriod = 1;
             ctrl.SuperSampling = 3;
-            
 
             // run
             // ------------------------------------------
