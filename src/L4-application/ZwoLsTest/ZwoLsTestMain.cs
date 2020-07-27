@@ -33,33 +33,33 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.ZwoLsTest {
 
     /// <summary>
     /// This guy tests the basic functionality of the XDG framework
     /// if more than one level-set is involved.
-    /// It is mainly relevant for surface equations (Christina's work).
     /// </summary>
     class ZwoLsTestMain : BoSSS.Solution.Application {
 
-        private static readonly XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant
-            = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
             //AllUpTest.SetUp();
             //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, true);
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, XQuadFactoryHelper.MomentFittingVariants.Saye, false);
             //AllUpTest.Teardown();
             //Assert.IsTrue(false, "Remove me");
             //return;
 
-
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d,3,OneStepGaussAndStokes,False)
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.0 });
+                () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye, DYNAMIC_BALANCE = true });
         }
 
         protected override IGrid CreateOrLoadGrid() {
@@ -102,20 +102,36 @@ namespace BoSSS.Application.ZwoLsTest {
         SinglePhaseField Bmarker;
         SinglePhaseField Xmarker;
 
+        bool usePhi0 = true;
+        bool usePhi1 = true;
 
         protected override void CreateFields() {
             Phi0 = new LevelSet(new Basis(this.GridData, 2), "Phi_0");
             Phi1 = new LevelSet(new Basis(this.GridData, 2), "Phi_1");
 
 
-            {
+            if(usePhi0 && usePhi1) {
                 string[,] speciesTable = new string[2, 2];
                 speciesTable[0, 0] = "A"; // rechter Rand von A
                 speciesTable[0, 1] = "B"; // Species zwischen den LevelSets
                 speciesTable[1, 0] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
                 speciesTable[1, 1] = "A"; // linker Rand von A
-               
+
                 base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
+            } else if(!usePhi0 && usePhi1) {
+                string[] speciesTable = new string[2];
+                speciesTable[0] = "A"; 
+                speciesTable[1] = "B"; 
+
+                base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), MomentFittingVariant, 1, speciesTable, Phi1);
+            } else if(usePhi0 && !usePhi1) {
+                string[] speciesTable = new string[2];
+                speciesTable[0] = "B"; 
+                speciesTable[1] = "A"; 
+
+                base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), MomentFittingVariant, 1, speciesTable, Phi0);
+            } else {
+                throw new NotImplementedException();
             }
 
             u = new SinglePhaseField(new Basis(this.GridData, DEGREE), "U");
@@ -155,7 +171,13 @@ namespace BoSSS.Application.ZwoLsTest {
         /// <summary>
         /// Turn dynamic load balancing on/off
         /// </summary>
-        internal bool DYNAMIC_BALANCE = true;
+        internal bool DYNAMIC_BALANCE = true; 
+        
+        
+        /// <summary>
+        /// Triggers a comparison between single-core and MPI-parallel run, <see cref="TestLengthScales"/>
+        /// </summary>
+        internal bool SER_PAR_COMPARISON = false;
 
 
         void LsUpdate(double t) {
@@ -167,9 +189,11 @@ namespace BoSSS.Application.ZwoLsTest {
             Phi0.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.85).Pow2());
             Phi1.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (2.4).Pow2());
             LsTrk.UpdateTracker();
+            LsTrk.PushStacks();
 
-            if (LsTrk.Regions.GetSpeciesSubGrid("X").GlobalNoOfCells > 0)
-                throw new ApplicationException("there should be no X-species");
+            if(usePhi0 && usePhi1)
+                if (LsTrk.Regions.GetSpeciesSubGrid("X").GlobalNoOfCells > 0)
+                    throw new ApplicationException("there should be no X-species");
         }
 
 
@@ -184,12 +208,26 @@ namespace BoSSS.Application.ZwoLsTest {
         XSpatialOperatorMk2 Op;
 
 
+        int QuadOrder {
+            get {
+                return this.DEGREE * 2 + 2;
+            }
+        }
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), new SpeciesId[] { LsTrk.GetSpeciesId("B") }, "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1,
+                QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
+                __Species: new [] { "B" },
+                __varnames: new[] { "u", "c1" });
+
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
-            Op.EquationComponents["c1"].Add(new LevSetFlx_phi0(this.LsTrk)); // flux am lev-set 0
-            Op.EquationComponents["c1"].Add(new LevSetFlx_phi1(this.LsTrk)); // flux am lev-set 1
+            if(usePhi0)
+                Op.EquationComponents["c1"].Add(new LevSetFlx_phi0(this.LsTrk)); // flux am lev-set 0
+            if(usePhi1)
+                Op.EquationComponents["c1"].Add(new LevSetFlx_phi1(this.LsTrk)); // flux am lev-set 1
+
+            //Op.EquationComponents["c1"].Add(new DxBroken());
 
             Op.Commit();
         }
@@ -325,6 +363,240 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
+        /// <summary>
+        /// Mainly, comparison of single-core vs MPI-parallel run
+        /// </summary>
+        void TestLengthScales(int quadOrder, int TimestepNo) {
+            string name_disc = $"t{TimestepNo}-alpha{this.THRESHOLD}-p{this.DEGREE}-q{MomentFittingVariant}";
+            var spcA = LsTrk.GetSpeciesId("A");
+            var spcB = LsTrk.GetSpeciesId("B");
+
+            var species = new[] { spcA, spcB };
+            //MultiphaseCellAgglomerator.CheckFile = $"InsideMpagg-{name_disc}.csv";
+            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(species, quadOrder, this.THRESHOLD);
+
+            int RefMPIsize = 1;
+
+
+            // check level-set coordinates
+            // ===========================
+            {
+                var LsChecker = new TestingIO(this.GridData, $"LevelSets-{name_disc}.csv", RefMPIsize);
+                LsChecker.AddDGField(this.Phi0);
+                LsChecker.AddDGField(this.Phi1);
+                LsChecker.DoIOnow();
+
+                Assert.Less(LsChecker.AbsError(this.Phi0), 1.0e-8, "Mismatch in level-set 0 between single-core and parallel run.");
+                Assert.Less(LsChecker.AbsError(this.Phi1), 1.0e-8, "Mismatch in level-set 1 between single-core and parallel run.");
+
+            }
+
+           
+            // check equality of agglomeration
+            // ===============================
+
+            // Note: agglomeration in parallel and serial mode is not necessarily equal - but very often it is.
+            //       Therefore, we need to check whether the agglomeration is equal or not,
+            //       in order to know whether agglomerated length scales should be compared or not.
+
+            bool[] equalAggAsinReferenceRun;
+            {
+                var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", RefMPIsize);
+                long[] GiDs = GridData.CurrentGlobalIdPermutation.Values;
+                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                long[] extGiDs = GridData.iParallel.GlobalIndicesExternalCells;
+
+                for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                    var spc = species[iSpc];
+                    var spcN = LsTrk.GetSpeciesName(spc);
+                    var ai = Agg.GetAgglomerator(spc).AggInfo;
+                    var srcMask = ai.SourceCells.GetBitMask();
+                    var aggPairs = ai.AgglomerationPairs;
+
+                    aggoCheck.AddColumn($"SourceCells{spcN}", delegate (double[] X, int j, int jG) {
+                        if(srcMask[j]) {
+                            var pair = aggPairs.Single(cap => cap.jCellSource == j);
+                            if(pair.jCellTarget < J)
+                                return (double)GiDs[pair.jCellTarget];
+                            else
+                                return (double)extGiDs[pair.jCellTarget - J];
+                        }
+                        return 0.0;
+                    });
+
+                }
+
+                aggoCheck.DoIOnow();
+
+                equalAggAsinReferenceRun = new bool[species.Length];
+                for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                    var spc = species[iSpc];
+                    var spcN = LsTrk.GetSpeciesName(spc);
+
+                    equalAggAsinReferenceRun[iSpc] = aggoCheck.AbsError($"SourceCells{spcN}") < 0.1;
+                    if(equalAggAsinReferenceRun[iSpc] == false)
+                        Console.WriteLine("Different agglomeration between single-core and parallel run for species " + spcN + ".");
+                }
+            
+                //Agg.PlotAgglomerationPairs($"-aggPairs-{name_disc}-MPI{MPIRank + 1}of{MPISize}");
+            }
+
+
+            // compare length scales
+            // =====================
+
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+
+            foreach(ICutCellMetrics ccm in new ICutCellMetrics[] { Agg.NonAgglomeratedMetrics, Agg }) { // loop over non-agglom and agglomerated metrics
+                string name;
+                bool Agglom;
+                if(object.ReferenceEquals(ccm,Agg)) {
+                    name = "Agglomerated";
+                    Agglom = true;
+                } else {
+                    name = "Nonagglom";
+                    Agglom = false;
+                }
+
+                MultidimensionalArray CellSurfaceA = ccm.CellSurface[spcA];
+                MultidimensionalArray CellVolumeA = ccm.CutCellVolumes[spcA];
+                MultidimensionalArray CellSurfaceB = ccm.CellSurface[spcB];
+                MultidimensionalArray CellVolumeB = ccm.CutCellVolumes[spcB];
+
+
+                string FileName = $"{name}LengthScales-{name_disc}.csv";
+                var Checker = new TestingIO(this.GridData, FileName, RefMPIsize);
+                Checker.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
+                Checker.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
+                Checker.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
+                Checker.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
+                Checker.DoIOnow();
+
+                if(this.MPISize == 1) {
+                    var Checker2 = new TestingIO(this.GridData, FileName, int.MaxValue);
+                    Checker2.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
+                    Checker2.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
+                    Checker2.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
+                    Checker2.AddColumn("CellVolB", (double[] X, int j, int jG) => CellVolumeB[j]);
+                    Checker2.DoIOnow();
+
+                    foreach(string s in Checker2.ColumnNames) {
+                        Assert.Less(Checker2.RelError(s), 1.0e-10, "'TestingUtils.Compare' itself is fucked up.");
+                    }
+
+                }
+
+                double srfA = Checker.RelError("CellSurfA") * ((!Agglom || equalAggAsinReferenceRun[0]) ? 1.0 : 0.0);
+                double volA = Checker.RelError("CellVolA") * ((!Agglom || equalAggAsinReferenceRun[0]) ? 1.0 : 0.0);
+                double srfB = Checker.RelError("CellSurfB") * ((!Agglom || equalAggAsinReferenceRun[1]) ? 1.0 : 0.0);
+                double volB = Checker.RelError("CellVolB") * ((!Agglom || equalAggAsinReferenceRun[1]) ? 1.0 : 0.0);
+
+                if(srfA + volA + srfB + volB > 0.001) {
+                  
+                    Console.WriteLine($"Mismatch in {name} cell surface for species A between single-core and parallel run: {srfA}.");
+                    Console.WriteLine($"Mismatch in {name} cell volume  for species A between single-core and parallel run: {volA}.");
+                    Console.WriteLine($"Mismatch in {name} cell surface for species B between single-core and parallel run: {srfB}.");
+                    Console.WriteLine($"Mismatch in {name} cell volume  for species B between single-core and parallel run: {volB}.");
+
+                }
+
+
+                Assert.Less(srfA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species A between single-core and parallel run.");
+                Assert.Less(volA, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species A between single-core and parallel run.");
+                Assert.Less(srfB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell surface for species B between single-core and parallel run.");
+                Assert.Less(volB, BLAS.MachineEps.Sqrt(), $"Mismatch in {name} cell volume  for species B between single-core and parallel run.");
+            }
+        }
+
+
+        /// <summary>
+        /// Checks MPI exchange
+        /// </summary>
+        void CheckExchange(bool ExchangeShadow) {
+
+            // its important to test more than one field!
+            var xf = new XDGField(new XDGBasis(this.LsTrk, 0), "xf");
+            var xf2 = new XDGField(new XDGBasis(this.LsTrk, 0), "xf2");
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int JE = this.GridData.iLogicalCells.Count;
+            //long[] GiD = this.GridData.CurrentGlobalIdPermutation.Values;
+
+            long GetGid(int j) { 
+                return this.GridData.iLogicalCells.GetGlobalID(j);
+            }
+
+            {
+                var st = new SinglePhaseField(new Basis(this.GridData, 1), "muh");
+                for(int j = 0; j < J; j++) {
+                    st.Coordinates[j, 0] = GetGid(j);
+                }
+
+                var trx = new BoSSS.Foundation.Comm.Transceiver(st);
+                trx.TransceiveStartImReturn();
+                trx.TransceiveFinish();
+
+
+                for(int j = 0; j < JE; j++) {
+                    double should = GetGid(j);
+                    Assert.IsTrue(st.Coordinates[j, 0] == should, "everything is fucked");
+                }
+
+            }
+
+            // ---------------------
+            foreach(string s in this.LsTrk.SpeciesNames) {
+                double sv = s[0] * 0.01;
+                var xfs = xf.GetSpeciesShadowField(s);
+                var xfs2 = xf2.GetSpeciesShadowField(s);
+                for(int j = 0; j < J; j++) {
+                    xfs.Coordinates[j, 0] = GetGid(j) + sv;
+                    xfs2.Coordinates[j, 0] = 1.0e5 + GetGid(j) + sv;
+                }
+            }
+
+            double[] xfB4 = xf.CoordinateVector.ToArray();
+            double[] xf2B4 = xf2.CoordinateVector.ToArray();
+
+            // ---------------------
+            if(ExchangeShadow) {
+                // exchange shadow fields separately
+                foreach(string s in this.LsTrk.SpeciesNames) {
+                    var xfs = xf.GetSpeciesShadowField(s);
+                    var xfs2 = xf2.GetSpeciesShadowField(s);
+
+                    //var xfsCopy = new SinglePhaseField(xfs.Basis, "muh");
+                    //xfsCopy.Acc(1.0, xfs);
+                    //dd.Add(s, xfsCopy);
+
+                    var trx = new BoSSS.Foundation.Comm.Transceiver(xfs, xfs2);
+                    trx.TransceiveStartImReturn();
+                    trx.TransceiveFinish();
+                }
+            } else {
+                // exchange XDG fields
+                var trx2 = new BoSSS.Foundation.Comm.Transceiver(xf, xf2);
+                trx2.TransceiveStartImReturn();
+                trx2.TransceiveFinish();
+            }
+
+            foreach(string s in this.LsTrk.SpeciesNames) {
+                double sv = s[0] * 0.01;
+                var xfs = xf.GetSpeciesShadowField(s);
+                var xfs2 = xf2.GetSpeciesShadowField(s);
+                
+                for(int j = 0; j < JE; j++) {
+                    double should = GetGid(j) + sv;
+                    double should2 = 1.0e5 + GetGid(j) + sv;
+
+                    string nerv = ExchangeShadow ? "shadow" : "XDG";
+                    Assert.IsTrue(xfs.Coordinates[j, 0] == 0.0 || xfs.Coordinates[j, 0] == should, $"error in MPI exchange of {nerv} fields");
+                    Assert.IsTrue(xfs2.Coordinates[j, 0] == 0.0 || xfs2.Coordinates[j, 0] == should2, $"error in MPI exchange of {nerv} fields (2nd field)");
+                }
+            }
+        }
+
+
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
 
@@ -335,28 +607,30 @@ namespace BoSSS.Application.ZwoLsTest {
             // operator-matrix assemblieren
             MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
-            MultiphaseCellAgglomerator Agg;
-            MassMatrixFactory Mfact;
 
             // Agglomerator setup
-            int quadOrder = Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { u.Basis.Degree });
-            //Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, quadOrder, LsTrk, ), this.THRESHOLD, false);
-            Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, this.THRESHOLD);
+            MultiphaseCellAgglomerator Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, QuadOrder, this.THRESHOLD);
+
+            // plausibility of cell length scales 
+            if(SER_PAR_COMPARISON)
+                TestLengthScales(QuadOrder, TimestepNo);
 
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
             if (this.THRESHOLD > 0.01) {
                 TestAgglomeration_Extraploation(Agg);
-                TestAgglomeration_Projection(quadOrder, Agg);
+                TestAgglomeration_Projection(QuadOrder, Agg);
             }
+            CheckExchange(true);
+            CheckExchange(false);
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping, LsTrk.GetSpeciesId("B"));
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 
             // mass matrix factory
-            Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
+            var Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
                         
             // Mass matrix/Inverse Mass matrix
             //var MassInv = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, true, LsTrk.GetSpeciesId("B"));
@@ -381,12 +655,12 @@ namespace BoSSS.Application.ZwoLsTest {
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
             Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).Extrapolate(du_dx.Mapping);
 
-
             // markieren, wo ueberhaupt A und B sind
             Bmarker.AccConstant(1.0, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
             Amarker.AccConstant(+1.0, LsTrk.Regions.GetSpeciesSubGrid("A").VolumeMask);
-            Xmarker.AccConstant(+1.0, LsTrk.Regions.GetSpeciesSubGrid("X").VolumeMask);
-
+            if(usePhi0 && usePhi1)
+                Xmarker.AccConstant(+1.0, LsTrk.Regions.GetSpeciesSubGrid("X").VolumeMask);
+ 
             // compute error
             ERR.Clear();
             ERR.Acc(1.0, du_dx_Exact, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
@@ -402,21 +676,29 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
             // check error
-            if (TimestepNo > 1) {
-                if (this.THRESHOLD > 0.01) {
-                    // without agglomeration, the error in very tiny cut-cells may be large over the whole cell
-                    // However, the error in the XDG-space should be small under all circumstances
-                    Assert.LessOrEqual(L2Err, 1.0e-6);
-                }
-                Assert.LessOrEqual(xL2Err, 1.0e-6);
-            }
+            double ErrorThreshold = 1.0e-1;
+            if(this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
+                ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
-            bool IsPassed = ((L2Err <= 1.0e-6 || this.THRESHOLD <= 0.01) && xL2Err <= 1.0e-7);
+
+            bool IsPassed = ((L2Err <= ErrorThreshold || this.THRESHOLD <= ErrorThreshold) && xL2Err <= ErrorThreshold);
             if (IsPassed) {
                 Console.WriteLine("Test PASSED");
             } else {
                 Console.WriteLine("Test FAILED: check errors.");
+                //PlotCurrentState(phystime, TimestepNo, 3);
             }
+
+            if (TimestepNo > 1) {
+                if (this.THRESHOLD > ErrorThreshold) {
+                    // without agglomeration, the error in very tiny cut-cells may be large over the whole cell
+                    // However, the error in the XDG-space should be small under all circumstances
+                    Assert.LessOrEqual(L2Err, ErrorThreshold, "DG L2 error of computing du_dx");
+                }
+                Assert.LessOrEqual(xL2Err, ErrorThreshold, "XDG L2 error of computing du_dx");
+            }
+
+            
 
             // return/Ende
             base.NoOfTimesteps = 17;

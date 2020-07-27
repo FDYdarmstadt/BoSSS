@@ -1,7 +1,6 @@
 ﻿using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
-using MathNet.Numerics.Algorithms.LinearAlgebra;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -14,6 +13,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.AdvancedSolvers {
     static class Utils {
 
+        /*
         public static double rhoDinvA(MsrMatrix A, out MsrMatrix DinvA)
         {
             double rho;
@@ -61,11 +61,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return rho;
         }
 
+        /*
         /// <summary>
         /// Maximum of the absolute value of all Eigenvalues of <paramref name="H"/>.
         /// </summary>
-        static public double MaxAbsEigen(double[,] H)
-        {
+        static public double MaxAbsEigen(double[,] H) {
             var linalg = new ManagedLinearAlgebraProvider();
 
             double Eigen;
@@ -78,6 +78,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Eigen = EigenValues.Select(ev => Complex.Abs(ev)).Max();
             return Eigen;
         }
+        */
 
         /// <summary>
         /// Arnoldi iteration 

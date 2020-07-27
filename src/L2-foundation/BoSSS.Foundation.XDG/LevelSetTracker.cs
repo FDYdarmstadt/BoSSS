@@ -347,7 +347,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Detects whether a species in some cell 
+        /// Detects whether a species is present in some cell 
         /// </summary>
         /// <param name="id">
         /// species id;
@@ -1157,14 +1157,7 @@ namespace BoSSS.Foundation.XDG {
                 ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
                 int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 var msk = new BitArray(J);
-
-                //
-                // @Markus: undid your changes, because they caused thest to fail:
-                //
-
-                // check for cell color, necessary to prevent failing on periodic boundaries
-                //int[] coloredCells = Regions.ColorMap4Spc[GetSpeciesId("B")];
-
+           
                 CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
                 int fail_count = 0;
 
@@ -1172,15 +1165,14 @@ namespace BoSSS.Foundation.XDG {
                 // check whether they are in Near - region of the previous state;
                 foreach(int j in newCut.ItemEnum) {
                     int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
-                    if(Math.Abs(old_dist) > 1) {
-                        //if (Math.Abs(old_dist) > 1) {
+                if (Math.Abs(old_dist) > 1) {
                         fail_count++;
                         msk[j] = true;
                     }
                 }
 
                 int failCountGlobal = fail_count.MPISum();
-                if(failCountGlobal > 0)
+            if (failCountGlobal > 0 && GridDat.MpiRank == 0)
                     (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
 
                 return failCountGlobal;
@@ -1252,7 +1244,6 @@ namespace BoSSS.Foundation.XDG {
 
             // update tracker
             // ==============
-
             UpdateTracker();
             this.Regions.Version = VersionCounter;
             this.m_VersionCnt = VersionCounter;
@@ -1837,6 +1828,9 @@ namespace BoSSS.Foundation.XDG {
 
             // Remove obsolete observers from list...
             // ======================================
+
+            // MPI synchronization of observers...
+
             var ObserversRefs = new List<IObserver<LevelSetRegions>>();
             {
                 int NoObservers = m_Observers.Count;

@@ -18,10 +18,10 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.Residual;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
@@ -30,14 +30,12 @@ using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
-using CNS.Residual;
 using CNS.ShockCapturing;
 using CNS.Source;
 using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -2320,7 +2318,7 @@ namespace CNS {
             c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
 
-            c.GridPartType = GridPartType.Hilbert;
+            c.GridPartType = GridPartType.clusterHilbert;
             //c.GridPartType = GridPartType.none;
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
@@ -3433,11 +3431,11 @@ namespace CNS {
                     break;
                 case 2:
                     if (AVratio > 1) {
-                        c.GridPartType = GridPartType.directHilbert;
-                        Console.WriteLine("directHilbert is executed");
-                    } else {
                         c.GridPartType = GridPartType.Hilbert;
-                        Console.WriteLine("Hilbert with Clusters is executed");
+                        Console.WriteLine("Hilbert is executed");
+                    } else {
+                        c.GridPartType = GridPartType.clusterHilbert;
+                        Console.WriteLine("clusterHilbert with Clusters is executed");
                     }
                     break;
             }
@@ -3641,11 +3639,11 @@ namespace CNS {
                     break;
                 case 2:
                     if (AVratio > 1) {
-                        c.GridPartType = GridPartType.directHilbert;
-                        Console.WriteLine("directHilbert is executed");
-                    } else {
                         c.GridPartType = GridPartType.Hilbert;
-                        Console.WriteLine("Hilbert with Clusters is executed");
+                        Console.WriteLine("Hilbert is executed");
+                    } else {
+                        c.GridPartType = GridPartType.clusterHilbert;
+                        Console.WriteLine("clusterHilbert with Clusters is executed");
                     }
                     break;
             }

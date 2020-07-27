@@ -168,11 +168,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool RefineNavierSlipBoundary = false;
 
-        /// <summary>
-        /// option for clearing the velocities for restart
-        /// </summary>
-        //[DataMember]
-        //public bool ClearVelocitiesOnRestart = false;
 
         [DataMember]
         public int ReInitPeriod = 0;
@@ -269,55 +264,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool TestMode = false;
 
-        /// <summary>
-        /// Timestepping schemes for the XdgTimestepper
-        /// Either implicit timestepping using Backward-Differentiation-Formulas (BDF) formulas by <see cref="XdgBDFTimestepping"/> 
-        /// or explicit/implicit using Runge-Kutta schemes <see cref="XdgRKTimestepping"/>
-        /// </summary>
-        public enum TimesteppingScheme {
-           
-            ImplicitEuler = 1,
-
-            CrankNicolson = 2,
-
-            BDF2 = 3,
-
-            BDF3 = 4,
-
-            BDF4 = 5,
-
-            BDF5 = 6,
-
-            BDF6 = 7,
-
-            RK_ImplicitEuler = 201,
-
-            RK_CrankNicolson = 202
-        }
-
-        /// <summary>
-        /// See <see cref="TimesteppingScheme"/>
-        /// </summary>
-        [DataMember]
-        public TimesteppingScheme Timestepper_Scheme = TimesteppingScheme.ImplicitEuler;
-
-        ///// <summary>
-        ///// switch for the initialization of the <see cref="XdgBDFTimestepping"/> 
-        ///// </summary>
-        //public enum TimestepperInit {
-
-        //    /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
-        //    /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.
-        //    SingleInit,
-
-        //    /// same initialization for SingleInit, but the first timesteps 
-        //    /// are computed with a smaller timestepsize
-        //    IncrementInit,
-
-        //    /// Initialization for a multi-step method, e.g. BDF4 requires 4 timesteps.
-        //    /// can be used if an analytic solution is known or simulation is restarted form another session
-        //    MultiInit
-        //}
 
         /// <summary>
         /// See <see cref="TimestepperInit"/>
@@ -360,17 +306,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double[] AdditionalParameters;
 
-        ///// <summary>
-        ///// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        ///// that are used to construct the accelerated solution.
-        ///// </summary>
-        //public int Solver_MaxKrylovDim = 100;
-
-        ///// <summary>
-        ///// If iterative saddle-point solvers are used, the termination criterion. 
-        ///// </summary>
-        //[DataMember]
-        //public double Solver_ConvergenceCriterion = 1.0e-10;
 
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
@@ -378,28 +313,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double LevelSet_ConvergenceCriterion = 1.0e-6;
 
-        ///// <summary>
-        ///// If iterative solvers are used, the maximum number of iterations.
-        ///// </summary>
-        //[DataMember]
-        //public int Solver_MaxIterations = 2000;
-
-        ///// <summary>
-        ///// If iterative solvers are used, the minimum number of iterations.
-        ///// </summary>
-        //[DataMember]
-        //public int Solver_MinIterations = 4;
-
-        ///// <summary>
-        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        ///// </summary>
-        //[DataMember]
-        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-
-        ///// <summary>
-        ///// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        ///// </summary>
-        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
+      
 
         /// <summary>
         /// See <see cref="ContinuityProjection"/>
@@ -412,25 +326,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
-
-        ///// <summary>
-        ///// Switch for selection of linear Solvers library
-        ///// </summary>
-        //[DataMember]
-        //public DirectSolver._whichSolver LinearSolver = DirectSolver._whichSolver.MUMPS;
-
-        ///// <summary>
-        ///// Switch for selection of linear Solvers library
-        ///// </summary>
-        //[DataMember]
-        //public NonlinearSolverMethod NonLinearSolver = NonlinearSolverMethod.Picard;
-
-
-        /// <summary>
-        /// If true, kinetic and surface energy will be evaluated in every cycle.
-        /// </summary>
-        //[DataMember]
-        //public bool ComputeEnergy = false;
 
         /// <summary>
         /// if true, kinetic energy equation will be solved 
@@ -517,18 +412,22 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// An explicit expression of the Level-set over time.
         /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
         public Func<double[], double, double> Phi;
 
         /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>[]> ExactSolutionVelocity;
 
         /// <summary>
         /// Exact solution, pressure, for each species (either A or B).
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
         /// <summary>
@@ -580,6 +479,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// function for the disjoining pressure
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public Func<double[], double> DisjoiningPressureFunc;
 
         /// <summary>

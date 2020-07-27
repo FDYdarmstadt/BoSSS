@@ -333,7 +333,7 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("Creating database '" + dbDir + "'.");
             }
 
-            var dbi = new DatabaseInfo(dbDir);
+            var dbi = DatabaseInfo.Open(dbDir);
 
             List<IDatabaseInfo> mod_databases = new List<IDatabaseInfo>();
             if (databases != null) {
@@ -639,15 +639,15 @@ namespace BoSSS.Application.BoSSSpad {
             executionQueues = new List<BatchProcessorClient>();
 
             BatchProcessorConfig bpc;
-            //try {
+            try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
 
-            //} catch (Exception e) {
-            //    Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
+            } catch (Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
 
-            //    executionQueues.Add(new MiniBatchProcessorClient());
-            //    return;
-            //}
+                executionQueues.Add(new MiniBatchProcessorClient());
+                return;
+            }
 
             executionQueues.AddRange(bpc.AllQueues);
         }

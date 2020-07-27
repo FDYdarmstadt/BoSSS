@@ -5,10 +5,9 @@ restart
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
+List of 2 instances of IDatabaseInfo {
   0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
-  1: { Session Count = 45; Grid Count = 132; Path = G:\DB_Cube }
-  2: { Session Count = 4; Grid Count = 1; Path = G:\Performance_DB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
 }
 
  Console ready for input. Type 'help' for help.
@@ -19,19 +18,19 @@ using BoSSS.Application.XdgPoisson3;
 ==============
 **************
 ==============
-string WFlowName = "Xdg_SFB_Performance_r3";
+string WFlowName = "Xdg_SFB_select";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_SFB_Performance_r3'.
+Project name is set to 'Xdg_SFB_select'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 //var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
 //var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper");
-var tempDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
+var tempDB = OpenOrCreateDatabase(@"V:\SyncHPC\SFB_DB_rev1");
 **************
-Opening existing database '\\hpccluster\hpccluster-scratch\weber\SFB_DB'.
+Opening existing database 'V:\SyncHPC\SFB_DB_rev1'.
 
 ==============
 //var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
@@ -77,18 +76,17 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 8 instances of IGridInfo {
-  0: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
-  1: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
-  2: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
-  3: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-  4: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-  5: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-  6: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-  7: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
+List of 7 instances of IGridInfo {
+  0: { Guid = d1aad9a2-c985-43c2-9587-76aef630495e; Name = Xdg_SFB_Saye2_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = 9c36df4f-31f8-42e6-a25b-7703b43ce008; Name = Xdg_SFB_Saye2_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = 2f47c952-1e14-43d6-b565-153c9be43ecf; Name = Xdg_SFB_Saye2_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = a41759e5-1519-418c-b260-a073667a098e; Name = Xdg_SFB_Saye2_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = cfd47e89-e1c9-4f52-a061-6b744b21c3d9; Name = Xdg_SFB_Saye2_J4096; Cell Count = 4096; Dim = 3 }
+  5: { Guid = ee350b0c-8e1c-47bc-b12b-8faf63ebcacc; Name = Xdg_SFB_Saye2_J512; Cell Count = 512; Dim = 3 }
+  6: { Guid = 840e7663-9441-4de4-9fe9-7cbbb543890e; Name = Xdg_SFB_Saye2_J64; Cell Count = 64; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 2,4,8,16,24,32,48,64 };
+int[] Resolutions_3D = new int[] { 4,8,16,24,32,48,64 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -145,27 +143,25 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
-Found Grid: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-Found Grid: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-Found Grid: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-Found Grid: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
-Found Grid: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-Found Grid: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
-Found Grid: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
+Found Grid: { Guid = 840e7663-9441-4de4-9fe9-7cbbb543890e; Name = Xdg_SFB_Saye2_J64; Cell Count = 64; Dim = 3 }
+Found Grid: { Guid = ee350b0c-8e1c-47bc-b12b-8faf63ebcacc; Name = Xdg_SFB_Saye2_J512; Cell Count = 512; Dim = 3 }
+Found Grid: { Guid = cfd47e89-e1c9-4f52-a061-6b744b21c3d9; Name = Xdg_SFB_Saye2_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = a41759e5-1519-418c-b260-a073667a098e; Name = Xdg_SFB_Saye2_J13824; Cell Count = 13824; Dim = 3 }
+Found Grid: { Guid = 2f47c952-1e14-43d6-b565-153c9be43ecf; Name = Xdg_SFB_Saye2_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = 9c36df4f-31f8-42e6-a25b-7703b43ce008; Name = Xdg_SFB_Saye2_J110592; Cell Count = 110592; Dim = 3 }
+Found Grid: { Guid = d1aad9a2-c985-43c2-9587-76aef630495e; Name = Xdg_SFB_Saye2_J262144; Cell Count = 262144; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 8 instances of IGridInfo {
-  0: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-  2: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-  3: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
-  5: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-  6: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
-  7: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
+List of 7 instances of IGridInfo {
+  0: { Guid = 840e7663-9441-4de4-9fe9-7cbbb543890e; Name = Xdg_SFB_Saye2_J64; Cell Count = 64; Dim = 3 }
+  1: { Guid = ee350b0c-8e1c-47bc-b12b-8faf63ebcacc; Name = Xdg_SFB_Saye2_J512; Cell Count = 512; Dim = 3 }
+  2: { Guid = cfd47e89-e1c9-4f52-a061-6b744b21c3d9; Name = Xdg_SFB_Saye2_J4096; Cell Count = 4096; Dim = 3 }
+  3: { Guid = a41759e5-1519-418c-b260-a073667a098e; Name = Xdg_SFB_Saye2_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = 2f47c952-1e14-43d6-b565-153c9be43ecf; Name = Xdg_SFB_Saye2_J32768; Cell Count = 32768; Dim = 3 }
+  5: { Guid = 9c36df4f-31f8-42e6-a25b-7703b43ce008; Name = Xdg_SFB_Saye2_J110592; Cell Count = 110592; Dim = 3 }
+  6: { Guid = d1aad9a2-c985-43c2-9587-76aef630495e; Name = Xdg_SFB_Saye2_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -221,13 +217,13 @@ List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
 ==============
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-//int[] PolyDegS = new int[] {2, 3 ,5};
-int[] PolyDegS = new int[] {5};
+int[] PolyDegS = new int[] {2, 3 ,5};
+//int[] PolyDegS = new int[] {5};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    //LinearSolverCode.classic_pardiso,
+    LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
     LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
@@ -247,20 +243,15 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
 ==============
-//IGridInfo tmp_grd = 
-//IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(4)};
-IGridInfo[] t_grids = grids;
+//List<IGridInfo> t_grids=new List<IGridInfo>();
+//grids.Pick(6).ForEach(g => t_grids.Add(g));
+//t_grids.ToArray();
+//IGridInfo[] t_grids = grids;
+IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(6)};
 t_grids;
 **************
-List of 8 instances of IGridInfo {
-  0: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-  2: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-  3: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
-  5: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-  6: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
-  7: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = d1aad9a2-c985-43c2-9587-76aef630495e; Name = Xdg_SFB_Saye2_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 controls.Clear();
@@ -304,12 +295,11 @@ foreach(IGridInfo grd in t_grids) {
     });
     
     //provoke Multigrid descend ...
-    if(solver_name==LinearSolverCode.exp_Kcycle_schwarz){
-        ctrl.LinearSolver.TargetBlockSize = J*Np-1;
-    }
+    ctrl.LinearSolver.TargetBlockSize = Math.Min(J*Np/2,10000);
+
 
     ctrl.LinearSolver.SolverCode           = solver_name;
-    ctrl.LinearSolver.NoOfMultigridLevels  = 10;
+    ctrl.LinearSolver.NoOfMultigridLevels  = 5;
     ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
     
     double radius           = 0.7;
@@ -335,25 +325,16 @@ foreach(IGridInfo grd in t_grids) {
     ctrl.SessionName           = "XdgPoissonVelocity_"+caseName;
     ctrl.ProjectName           = WFlowName;
     
-    ctrl.AgglomerationThreshold = 0.3;
+    ctrl.AgglomerationThreshold = 0.1;
     
     controls.Add(ctrl);
 }
 }
 }
 **************
-setting up: J8_k5_exp_gmres_levelpmg
-setting up: J64_k5_exp_gmres_levelpmg
-setting up: J512_k5_exp_gmres_levelpmg
-setting up: J4096_k5_exp_gmres_levelpmg
-setting up: J13824_k5_exp_gmres_levelpmg
-setting up: J32768_k5_exp_gmres_levelpmg
-setting up: J8_k5_exp_Kcycle_schwarz
-setting up: J64_k5_exp_Kcycle_schwarz
-setting up: J512_k5_exp_Kcycle_schwarz
-setting up: J4096_k5_exp_Kcycle_schwarz
-setting up: J13824_k5_exp_Kcycle_schwarz
-setting up: J32768_k5_exp_Kcycle_schwarz
+setting up: J262144_k2_classic_pardiso
+setting up: J262144_k2_exp_gmres_levelpmg
+setting up: J262144_k2_exp_Kcycle_schwarz
 
 ==============
 **************
@@ -397,110 +378,29 @@ foreach(var ctrl in controls) {
     //ctrl.RunBatch(myBatch);
 }
 **************
- Submitting: XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg
+ Submitting: XdgPoissonVelocity_J262144_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-05-43
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32020Feb21_17-56-18
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
    copied 'amd64' runtime.
 deployment finished.
- Submitting: XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg
+ Submitting: XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-06-02
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32020Feb21_17-56-22
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
    copied 'amd64' runtime.
 deployment finished.
- Submitting: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg
+ Submitting: XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-06-22
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-06-41
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J13824_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-07-01
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-07-21
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-07-41
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-08-00
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-08-21
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-08-42
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J13824_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-09-02
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-09-22
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32020Feb21_17-56-24
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
    copied 'amd64' runtime.
@@ -511,11 +411,15 @@ deployment finished.
 ==============
 WorkflowMgm.AllJobs;
 **************
-List of 0 instances of KeyValuePair{String,Job} {
+setting up: J64_k5_exp_gmres_levelpmg
+List of 1 instances of KeyValuePair{String,Job} {
+  0: [XdgPoissonVelocity_J64_k2_classic_pardiso, XdgPoissonVelocity_J64_k2_classic_pardiso: InProgress (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
 }
 ==============
 WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
 **************
+setting up: J4096_k5_exp_gmres_levelpmg
+setting up: J64_k2_exp_Kcycle_schwarz
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -672,7 +576,7 @@ Session 9d684405-2826-4ba5-b33d-75a7dfe04725 deleted.
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-53
+27
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
@@ -680,7 +584,79 @@ WorkflowMgm.SessionTable.Rows.Count;
 ==============
 tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timesteps.Last().Fields.Pick(1).Coordinates.NoOfCols;
 **************
-112
+List of 71 instances of KeyValuePair{String,Object} {
+  0: [SessionName, XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz]
+  1: [DGdegree:Phi, 2]
+  2: [DGdegree:u, 5]
+  3: [NoOfMultigridLevels, 10]
+  4: [GeneratedFromCode, False]
+  5: [ControlFileText_Index, 0]
+  6: [dtFixed, -1]
+  7: [TimesteppingMode, 0]
+  8: [SetDefaultDiriBndCnd, True]
+  9: [ViscosityMode, 1]
+  10: [MU_A, -1]
+  11: [MU_B, -1000]
+  12: [ExcactSolSupported, False]
+  13: [PrePreCond, 4]
+  14: [AgglomerationThreshold, 0.1]
+  15: [penalty_multiplyer, 2]
+  16: [pOff, 2]
+  17: [SuppressExceptionPrompt, False]
+  18: [LinearSolver.verbose, True]
+  19: [LinearSolver.MaxKrylovDim, 30]
+  20: [LinearSolver.MaxSolverIterations, 2000]
+  21: [LinearSolver.MinSolverIterations, 2]
+  22: [LinearSolver.ConvergenceCriterion, 1E-08]
+  23: [LinearSolver.SolverCode, 41]
+  24: [LinearSolver.NoOfMultigridLevels, 10]
+  25: [LinearSolver.exp_localPrec_muA, 1]
+  26: [LinearSolver.exp_localPrec_Min_dt, 0]
+  27: [LinearSolver.TargetBlockSize, 10000]
+  28: [NonLinearSolver.verbose, False]
+  29: [NonLinearSolver.MaxSolverIterations, 2000]
+  30: [NonLinearSolver.MinSolverIterations, 2]
+  31: [NonLinearSolver.ConvergenceCriterion, 1E-08]
+  32: [NonLinearSolver.UnderRelax, 1]
+  33: [NonLinearSolver.SolverCode, 1]
+  34: [NonLinearSolver.constantNewtonIterations, 1]
+  35: [NonLinearSolver.UsePresRefPoint, True]
+  36: [GridPartType, 5]
+  37: [ProjectName, Xdg_SFB_Saye2_1]
+  38: [NoOfTimesteps, -1]
+  39: [Endtime, 1.79769313486232E+308]
+  40: [saveperiod, 1]
+  41: [rollingSaves, 0]
+  42: [dtMin, -1]
+  43: [dtMax, -1]
+  44: [ImmediatePlotPeriod, -1]
+  45: [SuperSampling, 0]
+  46: [savetodb, True]
+  47: [logFileDirectory, .]
+  48: [Paramstudy_ContinueOnError, True]
+  49: [DynamicLoadBalancing_RedistributeAtStartup, False]
+  50: [DynamicLoadBalancing_Period, -1]
+  51: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
+  52: [DynamicLoadBalancing_On, False]
+  53: [AdaptiveMeshRefinement, False]
+  54: [AMR_startUpSweeps, 1]
+  55: [CutCellQuadratureType, 5]
+  56: [ContinueOnIoError, True]
+  57: [Grid:NoOfCells, 512]
+  58: [Grid:hMax, 0.433012701892219]
+  59: [Grid:hMin, 0.25]
+  60: [UsedNoOfMultigridLevels, 4]
+  61: [maxBlkSize, 112]
+  62: [minBlkSize, 56]
+  63: [NumberOfMatrixBlox, 3200]
+  64: [NoOfCutCellBlocks, 80]
+  65: [DOFs, 33152]
+  66: [minSolRunT, 47.3939565]
+  67: [maxSolRunT, 47.3939565]
+  68: [Conv, 1]
+  69: [NoIter, 28]
+  70: [maxMultigridlvl, 0]
+}40
 ==============
 // =====================================
 // Session table
@@ -693,74 +669,78 @@ tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timest
 //tempDB.Projects.Pick(0).Value.Pick(0).KeysAndQueries;
 tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries
 **************
-List of 67 instances of KeyValuePair{String,Object} {
-  0: [SessionName, XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg]
+List of 71 instances of KeyValuePair{String,Object} {
+  0: [SessionName, XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz]
   1: [DGdegree:Phi, 2]
   2: [DGdegree:u, 5]
-  3: [GeneratedFromCode, False]
-  4: [ControlFileText_Index, 0]
-  5: [dtFixed, -1]
-  6: [SetDefaultDiriBndCnd, True]
-  7: [ViscosityMode, 1]
-  8: [MU_A, -1]
-  9: [MU_B, -1000]
-  10: [ExcactSolSupported, False]
-  11: [PrePreCond, 4]
-  12: [AgglomerationThreshold, 0.3]
-  13: [penalty_multiplyer, 2]
-  14: [pOff, 2]
-  15: [SuppressExceptionPrompt, False]
-  16: [GridPartType, 5]
-  17: [ProjectName, Xdg_SFB_Performance_r4_1]
-  18: [NoOfTimesteps, -1]
-  19: [Endtime, 1.79769313486232E+308]
-  20: [saveperiod, 1]
-  21: [rollingSaves, 0]
-  22: [dtMin, -1]
-  23: [dtMax, -1]
-  24: [CompMode, 0]
-  25: [ImmediatePlotPeriod, -1]
-  26: [SuperSampling, 0]
-  27: [savetodb, True]
-  28: [logFileDirectory, .]
-  29: [Paramstudy_ContinueOnError, True]
-  30: [LinearSolver.verbose, True]
-  31: [LinearSolver.MaxKrylovDim, 30]
-  32: [LinearSolver.MaxSolverIterations, 2000]
-  33: [LinearSolver.MinSolverIterations, 2]
-  34: [LinearSolver.ConvergenceCriterion, 1E-08]
-  35: [LinearSolver.SolverCode, 47]
-  36: [LinearSolver.NoOfMultigridLevels, 10]
-  37: [LinearSolver.exp_localPrec_muA, 1]
-  38: [LinearSolver.exp_localPrec_Min_dt, 0]
-  39: [LinearSolver.TargetBlockSize, 10000]
-  40: [NonLinearSolver.verbose, False]
-  41: [NonLinearSolver.PrecondSolver.verbose, False]
-  42: [NonLinearSolver.PrecondSolver.MaxKrylovDim, 30]
-  43: [NonLinearSolver.PrecondSolver.MaxSolverIterations, 2000]
-  44: [NonLinearSolver.PrecondSolver.MinSolverIterations, 2]
-  45: [NonLinearSolver.PrecondSolver.ConvergenceCriterion, 1E-10]
-  46: [NonLinearSolver.PrecondSolver.SolverCode, 1]
-  47: [NonLinearSolver.PrecondSolver.NoOfMultigridLevels, 1]
-  48: [NonLinearSolver.PrecondSolver.exp_localPrec_muA, 1]
-  49: [NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt, 0]
-  50: [NonLinearSolver.PrecondSolver.TargetBlockSize, 10000]
-  51: [NonLinearSolver.MaxSolverIterations, 2000]
-  52: [NonLinearSolver.MinSolverIterations, 2]
-  53: [NonLinearSolver.ConvergenceCriterion, 1E-08]
-  54: [NonLinearSolver.UnderRelax, 1]
-  55: [NonLinearSolver.SolverCode, 1]
-  56: [DynamicLoadBalancing_RedistributeAtStartup, False]
-  57: [DynamicLoadBalancing_Period, -1]
-  58: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
-  59: [DynamicLoadBalancing_On, False]
-  60: [AdaptiveMeshRefinement, False]
-  61: [AMR_startUpSweeps, 1]
-  62: [CutCellQuadratureType, 5]
-  63: [ContinueOnIoError, True]
-  64: [Grid:NoOfCells, 8]
-  65: [Grid:hMax, 1.73205080756888]
-  66: [Grid:hMin, 1]
+  3: [NoOfMultigridLevels, 10]
+  4: [GeneratedFromCode, False]
+  5: [ControlFileText_Index, 0]
+  6: [dtFixed, -1]
+  7: [TimesteppingMode, 0]
+  8: [SetDefaultDiriBndCnd, True]
+  9: [ViscosityMode, 1]
+  10: [MU_A, -1]
+  11: [MU_B, -1000]
+  12: [ExcactSolSupported, False]
+  13: [PrePreCond, 4]
+  14: [AgglomerationThreshold, 0.1]
+  15: [penalty_multiplyer, 2]
+  16: [pOff, 2]
+  17: [SuppressExceptionPrompt, False]
+  18: [LinearSolver.verbose, True]
+  19: [LinearSolver.MaxKrylovDim, 30]
+  20: [LinearSolver.MaxSolverIterations, 2000]
+  21: [LinearSolver.MinSolverIterations, 2]
+  22: [LinearSolver.ConvergenceCriterion, 1E-08]
+  23: [LinearSolver.SolverCode, 41]
+  24: [LinearSolver.NoOfMultigridLevels, 10]
+  25: [LinearSolver.exp_localPrec_muA, 1]
+  26: [LinearSolver.exp_localPrec_Min_dt, 0]
+  27: [LinearSolver.TargetBlockSize, 10000]
+  28: [NonLinearSolver.verbose, False]
+  29: [NonLinearSolver.MaxSolverIterations, 2000]
+  30: [NonLinearSolver.MinSolverIterations, 2]
+  31: [NonLinearSolver.ConvergenceCriterion, 1E-08]
+  32: [NonLinearSolver.UnderRelax, 1]
+  33: [NonLinearSolver.SolverCode, 1]
+  34: [NonLinearSolver.constantNewtonIterations, 1]
+  35: [NonLinearSolver.UsePresRefPoint, True]
+  36: [GridPartType, 5]
+  37: [ProjectName, Xdg_SFB_Saye2_1]
+  38: [NoOfTimesteps, -1]
+  39: [Endtime, 1.79769313486232E+308]
+  40: [saveperiod, 1]
+  41: [rollingSaves, 0]
+  42: [dtMin, -1]
+  43: [dtMax, -1]
+  44: [ImmediatePlotPeriod, -1]
+  45: [SuperSampling, 0]
+  46: [savetodb, True]
+  47: [logFileDirectory, .]
+  48: [Paramstudy_ContinueOnError, True]
+  49: [DynamicLoadBalancing_RedistributeAtStartup, False]
+  50: [DynamicLoadBalancing_Period, -1]
+  51: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
+  52: [DynamicLoadBalancing_On, False]
+  53: [AdaptiveMeshRefinement, False]
+  54: [AMR_startUpSweeps, 1]
+  55: [CutCellQuadratureType, 5]
+  56: [ContinueOnIoError, True]
+  57: [Grid:NoOfCells, 512]
+  58: [Grid:hMax, 0.433012701892219]
+  59: [Grid:hMin, 0.25]
+  60: [UsedNoOfMultigridLevels, 4]
+  61: [maxBlkSize, 112]
+  62: [minBlkSize, 56]
+  63: [NumberOfMatrixBlox, 3200]
+  64: [NoOfCutCellBlocks, 80]
+  65: [DOFs, 33152]
+  66: [minSolRunT, 47.3939565]
+  67: [maxSolRunT, 47.3939565]
+  68: [Conv, 1]
+  69: [NoIter, 28]
+  70: [maxMultigridlvl, 0]
 }
 ==============
 static class AddCols {
@@ -813,7 +793,7 @@ var SessTab = WorkflowMgm.SessionTable;
 ==============
 SessTab.Rows.Count;
 **************
-53
+48
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -842,6 +822,30 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

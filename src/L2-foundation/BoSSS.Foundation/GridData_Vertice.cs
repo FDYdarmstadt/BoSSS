@@ -230,7 +230,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// cell measure
             /// </param>
             /// <param name="IncludeExt">
-            /// true, if also external cells should be cnsidered
+            /// true, if also external cells should be considered
             /// </param>
             internal static void CollectVertices(GridData grdDat, out int[][] cellVertices, out MultidimensionalArray vertice, double[] h, bool IncludeExt = false) {
                 using (var tr = new FuncTrace()) {

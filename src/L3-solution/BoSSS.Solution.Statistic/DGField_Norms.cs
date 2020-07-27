@@ -29,6 +29,9 @@ namespace BoSSS.Solution.Statistic {
                 Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
+                int D = target.GridDat.SpatialDimension;
+
+
 
                 if (object.ReferenceEquals(source.GridDat, target.GridDat)) {
                     // +++++++++++++++++
@@ -42,17 +45,84 @@ namespace BoSSS.Solution.Statistic {
                     // different grid branch
                     // +++++++++++++++++++++
 
-                    var eval = new FieldEvaluation(GridHelper.ExtractGridData(source.GridDat));
-
-                    void SourceEval(MultidimensionalArray input, MultidimensionalArray output) {
-                        int L = input.GetLength(0);
-                        Debug.Assert(output.GetLength(0) == L);
-
-                        eval.Evaluate(1.0, new DGField[] { source }, input, 0.0, output.ResizeShallow(L, 1));
-
+                    if(source.GridDat.SpatialDimension != D) {
+                        throw new ArgumentException("Spatial Dimension Mismatch.");
                     }
 
-                    target.ProjectField(alpha, SourceEval, CompQuadRule);
+                    var eval = new FieldEvaluation(GridHelper.ExtractGridData(source.GridDat));
+
+
+                    // 
+                    // Difficulty with MPI parallelism:
+                    // While the different meshes may represent the same geometrical domain, 
+                    // their MPI partitioning may be different.
+                    //
+                    // Solution Approach: we circulate unlocated points among all MPI processes.
+                    //
+
+                    int MPIsize = target.GridDat.MpiSize;
+                    
+
+                    // pass 1: collect all points
+                    // ==========================
+                    MultidimensionalArray allNodes = null;
+                    void CollectPoints(MultidimensionalArray input, MultidimensionalArray output) {
+
+                        Debug.Assert(input.Dimension == 2);
+                        Debug.Assert(input.NoOfCols == D);
+
+                        if(allNodes == null) {
+                            allNodes = input.CloneAs();
+                        } else {
+                            /*
+                            var newNodes = MultidimensionalArray.Create(allNodes.NoOfRows + input.NoOfRows, D);
+                            newNodes.ExtractSubArrayShallow(new[] { 0, 0 }, new[] { allNodes.NoOfRows - 1, D - 1 })
+                                .Acc(1.0, allNodes);
+                            newNodes.ExtractSubArrayShallow(new[] {  allNodes.NoOfRows, 0 }, new[] { newNodes.NoOfRows - 1, D - 1 })
+                                .Acc(1.0, allNodes);
+                            */
+                            allNodes = allNodes.CatVert(input);
+                        }
+                        Debug.Assert(allNodes.NoOfCols == D);
+
+                    }
+                    target.ProjectField(alpha, CollectPoints, CompQuadRule);
+
+                    int L = allNodes != null ? allNodes.GetLength(0) : 0;
+
+                    // evaluate 
+                    // ========
+
+                    //allNodes = MultidimensionalArray.Create(2, 2);
+                    //allNodes[0, 0] = -1.5;
+                    //allNodes[0, 1] = 2.0;
+                    //allNodes[1, 0] = -0.5;
+                    //allNodes[1, 1] = 2.0;
+                    //L = 2;
+                    var Res = L > 0 ? MultidimensionalArray.Create(L, 1) : default(MultidimensionalArray);
+                    int NoOfUnlocated = eval.EvaluateParallel(1.0, new DGField[] { source }, allNodes, 0.0, Res);
+
+                    int TotalNumberOfUnlocated = NoOfUnlocated.MPISum();
+                    if(TotalNumberOfUnlocated > 0) {
+                        Console.Error.WriteLine($"WARNING: {TotalNumberOfUnlocated} unlocalized points in 'ProjectFromForeignGrid(...)'");
+                    }
+
+                    // perform the real projection
+                    // ===========================
+
+                    
+                    int lc = 0;
+                    void ProjectionIntegrand(MultidimensionalArray input, MultidimensionalArray output) {
+
+                        Debug.Assert(input.Dimension == 2);
+                        Debug.Assert(input.NoOfCols == D);
+
+                        int LL = input.GetLength(0);
+                        output.Set(Res.ExtractSubArrayShallow(new int[] { lc, 0 }, new int[] { lc + LL - 1, -1 }));
+                        lc += LL;
+                    }
+                    target.ProjectField(alpha, ProjectionIntegrand, CompQuadRule);
+
                 }
             }
         }

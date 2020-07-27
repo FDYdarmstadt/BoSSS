@@ -78,7 +78,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// The penalty at the interface enforcing phi=0 at the old position
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double NegCellLengthScale = NegCellLengthScaleS[inp.jCellIn];
             double PosCellLengthScale = (PosCellLengthScaleS != null) ? PosCellLengthScaleS[inp.jCellOut] : NegCellLengthScaleS[inp.jCellIn];
 
@@ -132,6 +132,18 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// </summary>
         public SpeciesId NegativeSpecies {
             get { return this.LSTrk.GetSpeciesId("A"); }
+        }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
         }
     }
 }

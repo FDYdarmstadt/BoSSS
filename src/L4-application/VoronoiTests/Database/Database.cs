@@ -32,7 +32,7 @@ namespace VoronoiTests.Database
             Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.GridsDir));
             Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.SessionsDir));
             Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.TimestepDir));
-            IDatabaseInfo emptyDatabase = new DatabaseInfo(basePath);
+            IDatabaseInfo emptyDatabase = BoSSS.Foundation.IO.DatabaseInfo.Open(basePath);
             return emptyDatabase;
         }
 

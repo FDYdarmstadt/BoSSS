@@ -16,7 +16,7 @@ namespace VoronoiTests.Grid
         }
 
         [Test]
-        static void TestRotationVelocity()
+        public static void TestRotationVelocity()
         {
             double rotation = VoronoiEdge.RotationVelocity(
                 new double[] { 1, 0 },

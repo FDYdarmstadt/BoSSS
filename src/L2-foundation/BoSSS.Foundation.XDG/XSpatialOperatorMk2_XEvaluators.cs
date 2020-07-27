@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.XDG {
     partial class XSpatialOperatorMk2 {
 
         /// <summary>
-        /// Assembly of matrices for XDG operators
+        /// Assembly of matrices for linear (or linearized) XDG operators
         /// </summary>
         public class XEvaluatorLinear : XEvaluatorBase, IXEvaluatorLinear {
 
@@ -69,7 +69,8 @@ namespace BoSSS.Foundation.XDG {
             /// creates a matrix builder
             /// </summary>
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
-                var BulkMtxBuilder = base.m_Xowner.GetSpeciesMatrixBuilderBase(SpeciesId, DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+                var BulkMtxBuilder = base.m_Xowner.GetSpeciesMatrixBuilderBase(spcName, DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                 Debug.Assert(((EvaluatorBase)BulkMtxBuilder).order == base.order);
                 BulkMtxBuilder.MPITtransceive = false;
@@ -131,9 +132,9 @@ namespace BoSSS.Foundation.XDG {
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
-                if (base.MPITtransceive == true)
+                if(base.MPITtransceive == true)
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     var lsTrk = base.m_lsTrk;
                     IGridData GridDat = lsTrk.GridDat;
 
@@ -157,10 +158,10 @@ namespace BoSSS.Foundation.XDG {
                     //        throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
                     //}
 
-                    if (OnlyAffine == false) {
-                        if (!Matrix.RowPartitioning.Equals(base.CodomainMapping))
+                    if(OnlyAffine == false) {
+                        if(!Matrix.RowPartitioning.Equals(base.CodomainMapping))
                             throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                        if (!Matrix.ColPartition.Equals(base.DomainMapping))
+                        if(!Matrix.ColPartition.Equals(base.DomainMapping))
                             throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                     }
 
@@ -176,30 +177,24 @@ namespace BoSSS.Foundation.XDG {
                     #region MPI exchange of parameter fields
                     // --------------------------------
                     Transceiver trx = base.m_TRX;
-                    if (trx != null) {
+                    if(trx != null) {
                         trx.TransceiveStartImReturn();
                     }
                     #endregion
 
-                    #region find quadrature instructions
-                    // ----------------------------
-
-
-
-                    #endregion
 
 
                     // build matrix, bulk
                     // ---------------------
                     //MsrMatrix BulkMatrix = null;
                     //double[] BulkAffineOffset = null;
-                    using (new BlockTrace("bulk_integration", tr)) {
+                    using(new BlockTrace("bulk_integration", tr)) {
 
                         // create the frame matrices & vectors...
                         // this is an MPI-collective operation, so it must be executed before the program may take different branches...
                         SpeciesFrameMatrix<M>[] mtx_spc = new SpeciesFrameMatrix<M>[ReqSpecies.Length];
                         SpeciesFrameVector<V>[] vec_spc = new SpeciesFrameVector<V>[ReqSpecies.Length];
-                        for (int i = 0; i < ReqSpecies.Length; i++) {
+                        for(int i = 0; i < ReqSpecies.Length; i++) {
                             SpeciesId SpId = ReqSpecies[i];
                             mtx_spc[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame[SpId], this.SpeciesDomainFrame[SpId]);
                             vec_spc[i] = (AffineOffset != null) ?
@@ -219,12 +214,10 @@ namespace BoSSS.Foundation.XDG {
                         //}
 
                         // do the Bulk integration...
-                        foreach (var SpeciesId in ReqSpecies) {
+                        foreach(var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
 
-                            //if(m_Xowner.OnIntegratingBulk != null)
-                            //    m_Xowner.OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId);
 
                             SpeciesFrameMatrix<M> mtx = mtx_spc[iSpecies];
                             var _mtx = Matrix != null ? mtx : default(SpeciesFrameMatrix<M>);
@@ -232,37 +225,22 @@ namespace BoSSS.Foundation.XDG {
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
 
-                            //DGField[] Params = 
+                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
 
-
-                            //#if DEBUG
-                            //                            // switch the diagnostic output on or off
-                            //                            bool SubGridRuleDiagnosis = false;
-                            //                            if (SubGrid == null && SubGridRuleDiagnosis == true) {
-                            //                                Console.WriteLine("Warning SubGrid Rule Diagnosis is Switched on!");
-                            //                            }
-                            //                            if (SubGridRuleDiagnosis) {
-                            //                                edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                            //                                volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysVol_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                            //                            }
-                            //#endif
-
-                            foreach (var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
-
-                                if (SpeciesBuilder.ContainsKey(SpeciesId)) {
+                                if(SpeciesBuilder.ContainsKey(SpeciesId)) {
 
                                     var builder = SpeciesBuilder[SpeciesId];
                                     builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
                                     NotifySpecies(builder.Owner, this.m_lsTrk, SpeciesId);
 
-                                    if (trx != null) {
+                                    if(trx != null) {
                                         trx.TransceiveFinish();
                                         trx = null;
                                     }
 
                                     builder.time = base.time;
 
-                                    if (OnlyAffine) {
+                                    if(OnlyAffine) {
                                         builder.ComputeAffine(vec);
                                     } else {
                                         builder.ComputeMatrix(_mtx, vec);
@@ -277,19 +255,33 @@ namespace BoSSS.Foundation.XDG {
                     // build matrix, coupling
                     ///////////////////
 
-                    using (new BlockTrace("surface_integration", tr)) {
-                        foreach (var tt in this.CouplingRules) {
+                    using(new BlockTrace("surface_integration", tr)) {
+#if DEBUG
+                        {
+                            // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
+                            int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                            for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                                Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                            }
+                        }
+#endif
+
+                        var allBuilders = new List<LECQuadratureLevelSet<M, V>>();
+                        foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
                             var SpeciesA = tt.Item2;
                             var SpeciesB = tt.Item3;
                             var rule = tt.Item4;
-
-
-
-                            if (trx != null) {
-                                trx.TransceiveFinish();
-                                trx = null;
+#if DEBUG
+                            int[] all_iLs = iLevSet.MPIAllGather();
+                            int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
+                            int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
+                            for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
+                                Debug.Assert(all_iLs[rnk] == iLevSet);
+                                Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
+                                Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
+#endif
 
                             var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
                                                              m_Xowner,
@@ -297,16 +289,29 @@ namespace BoSSS.Foundation.XDG {
                                                              CodomainMapping, Parameters, DomainMapping,
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
+                            allBuilders.Add(MtxBuilder);
+
+                            if(trx != null) {
+                                trx.TransceiveFinish();
+                                trx = null; // we only need to do comm once!
+                            }
+                        }
+
+                        // Note: this kind of deferred execution
+                        // (first, collecting all integrators in a list and second, executing them in a separate loop)
+                        // should prevent waiting for unevenly balanced level sets
+
+                        foreach(var MtxBuilder in allBuilders) {
                             MtxBuilder.time = time;
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            this.SpeciesOperatorCoefficients.TryGetValue(MtxBuilder.SpeciesA, out var csA);
+                            this.SpeciesOperatorCoefficients.TryGetValue(MtxBuilder.SpeciesB, out var csB);
                             UpdateLevelSetCoefficients(csA, csB);
                             MtxBuilder.Execute();
 
 #if DEBUG
-                            if (Matrix != null && OnlyAffine == false)
+                            if(Matrix != null && OnlyAffine == false)
                                 Matrix.CheckForNanOrInfM();
-                            if (AffineOffset != null)
+                            if(AffineOffset != null)
                                 GenericBlas.CheckForNanOrInfV(AffineOffset);
 #endif
 
@@ -315,7 +320,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // allow all processes to catch up
                     // -------------------------------
-                    if (trx != null) {
+                    if(trx != null) {
                         trx.TransceiveFinish();
                         trx = null;
                     }
@@ -332,6 +337,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
+        /// <summary>
+        /// Explicit evaluation of (nonlinear and linear) XDG operators
+        /// </summary>
         public class XEvaluatorNonlin : XEvaluatorBase, IXEvaluatorNonLin {
 
 
@@ -446,27 +454,59 @@ namespace BoSSS.Foundation.XDG {
                     //    SurfaceElement_Edge, SurfaceElement_volume, null);
 
 
+
                     using (new BlockTrace("surface_integration", tr)) {
-                        foreach (var tt in this.CouplingRules) {
+#if DEBUG
+                    {
+                        // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
+                        int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                        for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                            Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                        }
+                    }
+#endif
+                        var necList = new List<NECQuadratureLevelSet<Tout>> ();
+
+                        foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
                             var SpeciesA = tt.Item2;
                             var SpeciesB = tt.Item3;
                             var rule = tt.Item4;
-
-                            if (trx != null) {
-                                trx.TransceiveFinish();
-                                trx = null;
+#if DEBUG
+                            int[] all_iLs = iLevSet.MPIAllGather();
+                            int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
+                            int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
+                            for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
+                                Debug.Assert(all_iLs[rnk] == iLevSet);
+                                Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
+                                Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
+#endif
 
+
+                            // constructor is a collective operation
                             var LsEval = new NECQuadratureLevelSet<Tout>(GridDat,
                                                              m_Xowner,
                                                              output,
                                                              this.DomainFields.Fields, Parameters, base.CodomainMapping,
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
+                            necList.Add(LsEval);
+
+                            if(trx != null) {
+                                trx.TransceiveFinish();
+                                trx = null;
+                            }
+                        }
+
+                        // Note: this kind of deferred execution
+                        // (first, collecting all integrators in a list and second, executing them in a separate loop)
+                        // should prevent waiting for unevenly balanced level sets
+
+                        foreach(var LsEval in necList) { 
                             LsEval.time = time;
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            this.SpeciesOperatorCoefficients.TryGetValue(LsEval.SpeciesA, out var csA);
+                            this.SpeciesOperatorCoefficients.TryGetValue(LsEval.SpeciesB, out var csB);
                             UpdateLevelSetCoefficients(csA, csB);
                             LsEval.Execute();
 
@@ -499,7 +539,8 @@ namespace BoSSS.Foundation.XDG {
             /// creates an evaluator
             /// </summary>
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
-                var BulkEval = base.m_Xowner.GetSpeciesEvaluatorExBase(SpeciesId, DomFld, base.SpeciesParams[SpeciesId], CodomFrame.FrameMap,
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+                var BulkEval = base.m_Xowner.GetSpeciesEvaluatorExBase(spcName, DomFld, base.SpeciesParams[SpeciesId], CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                 Debug.Assert(((EvaluatorBase)BulkEval).order == base.order);
                 BulkEval.MPITtransceive = false;
@@ -639,7 +680,8 @@ namespace BoSSS.Foundation.XDG {
                     ((FixedOrder_SpatialOperator)(m_Xowner.GhostEdgesOperator)).m_Order = order;
                     ((FixedOrder_SpatialOperator)(m_Xowner.SurfaceElementOperator)).m_Order = order;
                     foreach (SpeciesId spcid in ReqSpecies) {
-                        ((FixedOrder_SpatialOperator)m_Xowner.m_SpeciesOperator[spcid]).m_Order = order;
+                        string spcName = m_lsTrk.GetSpeciesName(spcid);
+                        ((FixedOrder_SpatialOperator)m_Xowner.m_SpeciesOperator[spcName]).m_Order = order;
                     }
                     //((FixedOrder_SpatialOperator)(m_Xowner.SpeciesOperator)).m_Order = order;
                     tr.Info("XSpatialOperator.ComputeMatrixEx quad order: " + order);
@@ -735,8 +777,8 @@ namespace BoSSS.Foundation.XDG {
                             for (int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
                                 var SpeciesA = AllSpc[iSpcA];
                                 var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
-                                if (SpeciesADom.NoOfItemsLocally <= 0)
-                                    continue;
+                                //if (SpeciesADom.NoOfItemsLocally <= 0)
+                                //    continue;
 
                                 int _iSpcA = Array.IndexOf(ReqSpecies, SpeciesA);
 
@@ -761,30 +803,103 @@ namespace BoSSS.Foundation.XDG {
                                     int NoOfLs = lsTrk.LevelSets.Count;
                                     for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
 
-
-
                                         var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                        // Check removed since it can cause parallel problems
-                                        //if (IntegrationDom.NoOfItemsLocally > 0) {
+                                        Chunk c = IntegrationDom.FirstOrDefault();
+                                        if(c.Len > 0) {
+                                            Debug.Assert(IntegrationDom.IsEmptyOnRank == false);
+                                            int jtest = c.i0;
 
+                                            LevelsetCellSignCode csc = lsTrk.Regions.GetCellSignCode(jtest);
+
+                                            if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
+                                                throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
+
+                                            var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
+                                            var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
+
+
+                                            bool SpeciesA_inNeg = lsTrk.ContainesSpecies(SpeciesA, cscNeg);
+                                            bool SpeciesA_inPos = lsTrk.ContainesSpecies(SpeciesA, cscPos);
+                                            bool SpeciesB_inNeg = lsTrk.ContainesSpecies(SpeciesB, cscNeg);
+                                            bool SpeciesB_inPos = lsTrk.ContainesSpecies(SpeciesB, cscPos);
+
+                                            if(SpeciesA_inPos == SpeciesA_inNeg) {
+                                                throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                            }
+                                            if(SpeciesB_inPos == SpeciesB_inNeg) {
+                                                throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                            }
+
+
+                                            if(SpeciesA_inNeg && SpeciesB_inPos) {
+                                                // nothing to do
+
+                                                if(SpeciesA_inPos == true) {
+                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                }
+                                                if(SpeciesB_inNeg == true) {
+                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                }
+                                            } else if(SpeciesA_inPos && SpeciesB_inNeg) {
+                                                // flip species
+                                                
+                                                if(SpeciesA_inNeg == true) {
+                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                }
+                                                if(SpeciesB_inPos == true) {
+                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                }
+
+                                                SpeciesId tmp = SpeciesA;
+                                                SpeciesA = SpeciesB;
+                                                SpeciesB = tmp;
+
+
+                                            } else {
+                                                throw new ArgumentException($"Unable to determine negative (aka. In, A) and positive (aka. Out, B) species out of {m_lsTrk.GetSpeciesName(SpeciesA)}, {m_lsTrk.GetSpeciesName(SpeciesA)} w.r.t. Level-Set {iLevSet}.");
+                                            }
+
+
+
+                                            //if(lsTrk.ContainesSpecies(SpeciesA, cscNeg) == false)
+                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell MUST contain negative species
+                                            //if(lsTrk.ContainesSpecies(SpeciesA, cscNeg) == true)
+                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell should NOT contain positive species
+
+                                            //if(lsTrk.ContainesSpecies(SpeciesB, cscPos) == false)
+                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell MUST contain positive species
+                                            //if(lsTrk.ContainesSpecies(SpeciesB, cscPos) == true)
+                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell should NOT contain negative species
+
+                                        }
+
+                                        
                                         ICompositeQuadRule<QuadRule> rule;
                                         using (new BlockTrace("QuadRule-compilation", tr)) {
                                             CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
                                             rule = SurfIntegration.Compile(GridData, order);
 
                                             if (ruleDiagnosis) {
-                                                rule.SumOfWeightsToTextFileVolume(GridData, string.Format("Levset_{0}.csv", iLevSet));
+                                                //rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                                rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
                                             }
                                         }
 
-                                        CouplingRules.Add(new Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>(
-                                            iLevSet, SpeciesA, SpeciesB, rule));
+                                        LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, SpeciesA, SpeciesB, iLevSet);
+
+                                        CouplingRules.Add((iLevSet, SpeciesA, SpeciesB, rule));
                                         ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
                                     }
                                 }
                             }
+#if DEBUG
+                            int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                            for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                                Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                            }
+#endif
                         }
                     }
 
@@ -818,12 +933,12 @@ namespace BoSSS.Foundation.XDG {
             abstract protected void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperator.GhostEdgesOperator"/>
+            /// Create integrator for <see cref="XSpatialOperatorMk2.GhostEdgesOperator"/>
             /// </summary>
             abstract protected void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperator.SurfaceElementOperator"/>
+            /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator"/>
             /// </summary>
             abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
 
@@ -874,7 +989,7 @@ namespace BoSSS.Foundation.XDG {
             /// - 3rd item positive species/species B
             /// - 4th item respective quadrature rule
             /// </summary>
-            protected List<Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>> CouplingRules = new List<Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>>();
+            protected List<(int LsIdx, SpeciesId spcA, SpeciesId spcB, ICompositeQuadRule<QuadRule> quadRule)> CouplingRules = new List<(int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>)>();
 
 
 
@@ -894,9 +1009,14 @@ namespace BoSSS.Foundation.XDG {
                 for (int iCod = 0; iCod < CodDGdeg.Length; iCod++) {
                     var comps = Owner.EquationComponents[CodNames[iCod]];
                     foreach (var c in comps) {
-                        if (c is ILevelSetEquationComponentCoefficient) {
-                            var ce = c as ILevelSetEquationComponentCoefficient;
+                        if (c is ILevelSetFormSetup cs) {
 
+
+                            cs.Setup(this.m_lsTrk);
+                        }
+
+                        if (c is ILevelSetEquationComponentCoefficient ce) {
+                            
                             int[] DomDGdeg_cd = new int[ce.ArgumentOrdering.Count];
                             for (int i = 0; i < DomDGdeg_cd.Length; i++) {
                                 string domName = ce.ArgumentOrdering[i];
@@ -906,6 +1026,8 @@ namespace BoSSS.Foundation.XDG {
 
                             ce.CoefficientUpdate(csA, csB, DomDGdeg_cd, CodDGdeg[iCod]);
                         }
+
+
                     }
                 }
             }

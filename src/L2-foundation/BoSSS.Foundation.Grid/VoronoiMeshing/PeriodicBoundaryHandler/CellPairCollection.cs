@@ -15,16 +15,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             public EdgeCombo(int edgeNumber)
             {
                 EdgeNumber = edgeNumber;
-                Inner = new List<MeshCell<T>>();
-                Outer = new List<MeshCell<T>>();
-                GlueMap = new List<(int outerEdge, int innerEdge)>();
+                Inner = new List<(MeshCell<T>, bool)>();
+                Outer = new List<(MeshCell<T>, bool)>();
+                GlueMap = new List<(int outerEdge, int innerEdge, bool glue)>();
             }
 
-            public List<MeshCell<T>> Inner;
+            public List<(MeshCell<T> cell, bool isSplit)> Inner;
 
-            public List<MeshCell<T>> Outer;
+            public List<(MeshCell<T> cell, bool isSplit)> Outer;
 
-            public List<(int outerEdge, int innerEdge)> GlueMap;
+            public List<(int outerEdge, int innerEdge, bool glue)> GlueMap;
         }
 
         public CellPairCollection()
@@ -32,97 +32,67 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             periodicEdges = new LinkedListDictionary<int, EdgeCombo>();
         }
 
-        public void AddInnerCell(MeshCell<T> cell, int boundaryEdgeNumber)
+        public void AddInnerSplitCell(MeshCell<T> cell, int boundaryEdgeNumber)
         {
             EdgeCombo edgeCells;
             if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
             {
-                edgeCells.Inner.Add(cell);
+                edgeCells.Inner.Add((cell, true));
             }
             else
             {
                 edgeCells = new EdgeCombo(boundaryEdgeNumber);
                 periodicEdges.Add(boundaryEdgeNumber, edgeCells);
-                edgeCells.Inner.Add(cell);
+                edgeCells.Inner.Add((cell, true));
             }
         }
-
-        public void AddInnerCells(IEnumerable<MeshCell<T>> cells, int boundaryEdgeNumber)
+        
+        public void AddInnerUnsplitCell(MeshCell<T> cell, int boundaryEdgeNumber)
         {
             EdgeCombo edgeCells;
             if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
             {
-                edgeCells.Inner.AddRange(cells);
+                edgeCells.Inner.Add((cell, false));
             }
             else
             {
                 edgeCells = new EdgeCombo(boundaryEdgeNumber);
                 periodicEdges.Add(boundaryEdgeNumber, edgeCells);
-                edgeCells.Inner.AddRange(cells);
+                edgeCells.Inner.Add((cell, false));
             }
         }
 
-        public void AddOuterCell(MeshCell<T> cell, int boundaryEdgeNumber)
+        public void AddOuterSplitCell(MeshCell<T> cell, int boundaryEdgeNumber)
         {
             EdgeCombo edgeCells;
             if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
             {
-                edgeCells.Outer.Add(cell);
+                edgeCells.Outer.Add((cell, true));
             }
             else
             {
                 edgeCells = new EdgeCombo(boundaryEdgeNumber);
                 periodicEdges.Add(boundaryEdgeNumber, edgeCells);
-                edgeCells.Outer.Add(cell);
+                edgeCells.Outer.Add((cell, true));
             }
         }
 
-        public void AddOuterCells(IEnumerable<MeshCell<T>> cells, int boundaryEdgeNumber)
+        public void AddOuterUnsplitCell(MeshCell<T> cell, int boundaryEdgeNumber)
         {
             EdgeCombo edgeCells;
             if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
             {
-                edgeCells.Outer.AddRange(cells);
+                edgeCells.Outer.Add((cell, false));
             }
             else
             {
                 edgeCells = new EdgeCombo(boundaryEdgeNumber);
                 periodicEdges.Add(boundaryEdgeNumber, edgeCells);
-                edgeCells.Outer.AddRange(cells);
+                edgeCells.Outer.Add((cell, false));
             }
         }
 
-        public void AddGlueMap(IList<(int outerEdge, int innerEdge)> glueMap, int boundaryEdgeNumber)
-        {
-            EdgeCombo edgeCells;
-            if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
-            {
-                edgeCells.GlueMap.AddRange(glueMap);
-            }
-            else
-            {
-                edgeCells = new EdgeCombo(boundaryEdgeNumber);
-                periodicEdges.Add(boundaryEdgeNumber, edgeCells);
-                edgeCells.GlueMap.AddRange(glueMap);
-            }
-        }
-
-        public void AddGlueMapEntry((int outerEdge, int innerEdge) edge2EdgeMap, int boundaryEdgeNumber)
-        {
-            EdgeCombo edgeCells;
-            if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
-            {
-                edgeCells.GlueMap.Add(edge2EdgeMap);
-            }
-            else
-            {
-                edgeCells = new EdgeCombo(boundaryEdgeNumber);
-                periodicEdges.Add(boundaryEdgeNumber, edgeCells);
-                edgeCells.GlueMap.Add(edge2EdgeMap);
-            }
-        }
-
-        public bool TryGetOuterCells(int boundaryEdgeNumber, out List<MeshCell<T>> cells)
+        public bool TryGetOuterCells(int boundaryEdgeNumber, out List<(MeshCell<T>, bool)> cells)
         {
             EdgeCombo edgeCells;
             if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))

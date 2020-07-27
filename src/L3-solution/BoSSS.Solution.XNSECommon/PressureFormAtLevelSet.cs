@@ -50,7 +50,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
         double wA;
         double wB;
 
-        public double LevelSetForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             if (!weighted) {
                 return -(vB - vA) * inp.Normal[m_d] * 0.5 * (pB[0] + pA[0]);
@@ -90,7 +90,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             get { return null; }
         }
 
-
+     
     }
 
 

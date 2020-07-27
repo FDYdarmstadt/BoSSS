@@ -68,6 +68,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         bool MPITtransceive { get; set; }
 
+
        
     }
 
@@ -132,10 +133,12 @@ namespace BoSSS.Foundation {
         /// </summary>
         SpatialOperator Owner { get; }
 
+        
         /// <summary>
         /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
         /// </summary>
         CoefficientSet OperatorCoefficients { get; set; }
+        
     }
 
     /// <summary>

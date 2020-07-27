@@ -142,5 +142,13 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
             throw new NotImplementedException();
         }
+
+        public override double getVariableFromZ(double Z, string id) {
+            throw new NotImplementedException();
+        }
+
+        public override double getDensityFromZ(double Z) {
+            throw new NotImplementedException();
+        }
     }
 }

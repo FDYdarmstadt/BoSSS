@@ -10,7 +10,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     static class LineIntersect
     {
-        const double accuracy = 1e-10;
+        public const double accuracy = 1e-10;
 
         //Return end of edge if parallel and overlapping.
         public static bool FindFirst(Line edge, Line line, ref IntersectionCase intersectionCase, out double alpha)
@@ -110,14 +110,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 line.End.Position,
                 out alpha,
                 out double alpha2,
-                out Vector vector);
+                out _);
             if (notParallel)
             {
                 if (1 + accuracy >= alpha2)
                 {
                     if (accuracy <= alpha2)
                     {
-                        if (accuracy <= alpha && 1 + accuracy >= alpha)
+                        if (0 <= alpha && 1 + accuracy >= alpha)
                         {
                             if (alpha > 1 - accuracy)
                             {
@@ -151,14 +151,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             {
                 if (Math.Abs(alpha) <= accuracy)
                 {
-                    double absRidge = (edge.Start.Position - edge.End.Position).L2Norm();
-                    double absLine = (edge.Start.Position - line.End.Position).L2Norm();
                     //Only when in same direction!
-                    double add = (edge.Start.Position - edge.End.Position + edge.Start.Position - line.End.Position).L2Norm();
-                    if (add < absLine + absRidge)
+                    double add = (edge.End.Position - edge.Start.Position) * (line.End.Position - line.Start.Position);
+                    if (add < 0)
                     {
                         return false;
                     }
+                    double absRidge = (edge.Start.Position - edge.End.Position).L2Norm();
+                    double absLine = (edge.Start.Position - line.End.Position).L2Norm();
 
                     alpha = absLine / absRidge;
                     if (alpha >= 1 - accuracy && alpha <= 1)

@@ -133,6 +133,12 @@ namespace BoSSS.Application.SipPoisson {
 #endif
 
         /// <summary>
+        /// Ensures availability of <see cref="BoSSS.Solution.Statistic.ForeignGridValue"/>
+        /// </summary>
+        public Type EnsureReference = typeof(ForeignGridValue);
+
+
+        /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
@@ -151,6 +157,7 @@ namespace BoSSS.Application.SipPoisson {
             pp = pp != null ? pp : "NIX";
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
 
+            
 
 
             /*
@@ -1026,7 +1033,7 @@ namespace BoSSS.Application.SipPoisson {
                     //    Console.WriteLine("====================");
                     //}
                     
-                    SF.GenerateLinear(out solver, MgSeq, MgConfig, ItCallbacks_Kollekte);
+                    SF.GenerateLinear(out solver, AggBasis, MgConfig, ItCallbacks_Kollekte);
 
                     using (new BlockTrace("Solver_Init", tr)) {
                         solver.Init(MultigridOp);
@@ -1130,10 +1137,12 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override void Bye() {
             object SolL2err;
-            if (this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
-                Console.WriteLine("Value of Query 'SolL2err' " + SolL2err.ToString());
-            } else {
-                Console.WriteLine("query 'SolL2err' not found.");
+            if (this.QueryHandler != null) {
+                if (this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
+                    Console.WriteLine("Value of Query 'SolL2err' " + SolL2err.ToString());
+                } else {
+                    Console.WriteLine("query 'SolL2err' not found.");
+                }
             }
         }
 

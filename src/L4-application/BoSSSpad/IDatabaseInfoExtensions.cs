@@ -190,11 +190,13 @@ namespace BoSSS.Foundation.IO {
                 }
                 */
 
+                
+
                 // note: calling save grid would be easy,
                 // but that would require re-creation of the DG fields on the new grid,
                 // if 'SaveGrid' returns some *other* grid object that is already present in the database.
 
-                throw new ArgumentException("Grid is not stored in database; Save the grid to database in order to use this method.");
+                //throw new ArgumentException("Grid is not stored in database; Save the grid to database in order to use this method.");
             }
 
             SessionInfo dummySession = new SessionInfo(Guid.NewGuid(), database);

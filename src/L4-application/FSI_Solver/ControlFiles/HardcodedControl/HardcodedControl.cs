@@ -1466,7 +1466,7 @@
 //                return grd;
 //            };
 
-//            C.GridPartType = GridPartType.Hilbert;
+//            C.GridPartType = GridPartType.clusterHilbert;
 
 
 //            C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0);

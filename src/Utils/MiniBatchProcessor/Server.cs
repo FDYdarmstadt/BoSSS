@@ -277,7 +277,7 @@ namespace MiniBatchProcessor {
             // create mutex file and share it with no one!
             try {
                 ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-                LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite));
+                LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
                 var ServerMutexS = new StreamWriter(ServerMutex);
                 ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
                 ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");

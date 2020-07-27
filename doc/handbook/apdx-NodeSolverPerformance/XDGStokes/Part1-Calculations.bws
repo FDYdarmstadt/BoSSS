@@ -17,11 +17,11 @@ List of 2 instances of IDatabaseInfo {
 ==============
 **************
 ==============
-string WFlowName = "Xdg_Stokes_test";
+string WFlowName = "Xdg_Stokes_test_classicSwbs";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_test'.
+Project name is set to 'Xdg_Stokes_test_classicSwbs'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -86,14 +86,14 @@ static class Utils {
 tempDB.Grids;
 **************
 List of 8 instances of IGridInfo {
-  0: { Guid = 314372f8-0bc6-459f-8d61-3948b8502559; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = 6245df0d-25c6-4d53-a075-c5043fa92cbc; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
-  2: { Guid = 726eca76-7c3c-43a3-a910-960bc9fa9937; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
-  3: { Guid = 6d19bca7-cceb-4e07-ad5a-e50b1afb8872; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
-  4: { Guid = 6bdd9103-dfb4-47f9-99dd-fdfda820fcf0; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
-  5: { Guid = a19b67c9-233e-43c6-ac4c-fc63c5a68c09; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-  6: { Guid = d5b7275f-3408-4051-8642-1a724e838efa; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-  7: { Guid = c6b9a366-cff3-47bd-931c-d6fde6feded4; Name = Xdg_Stokes_test_J8; Cell Count = 8; Dim = 3 }
+  0: { Guid = 8d0dd161-a215-4804-a0a3-5df6c0c7e1c9; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = a3795cfa-ab58-426e-8ebc-2b4d24b38db8; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = 822526da-c513-484e-bc6e-6fc5b0a50d47; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = 39d94f37-9e91-4999-99c6-880ca69023ea; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
+  5: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
+  6: { Guid = 11764fd0-8383-436a-bda4-c040b1b59385; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
+  7: { Guid = 750cf569-94f1-42c3-96d2-c1e73d42744d; Name = Xdg_Stokes_test_J8; Cell Count = 8; Dim = 3 }
 }
 ==============
 int[] Resolutions_3D = new int[] { 2,4,8,16,24,32,48,64 };
@@ -157,27 +157,27 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = c6b9a366-cff3-47bd-931c-d6fde6feded4; Name = Xdg_Stokes_test_J8; Cell Count = 8; Dim = 3 }
-Found Grid: { Guid = a19b67c9-233e-43c6-ac4c-fc63c5a68c09; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-Found Grid: { Guid = d5b7275f-3408-4051-8642-1a724e838efa; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-Found Grid: { Guid = 6bdd9103-dfb4-47f9-99dd-fdfda820fcf0; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
-Found Grid: { Guid = 6d19bca7-cceb-4e07-ad5a-e50b1afb8872; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
-Found Grid: { Guid = 726eca76-7c3c-43a3-a910-960bc9fa9937; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
-Found Grid: { Guid = 6245df0d-25c6-4d53-a075-c5043fa92cbc; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
-Found Grid: { Guid = 314372f8-0bc6-459f-8d61-3948b8502559; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
+Found Grid: { Guid = 750cf569-94f1-42c3-96d2-c1e73d42744d; Name = Xdg_Stokes_test_J8; Cell Count = 8; Dim = 3 }
+Found Grid: { Guid = 11764fd0-8383-436a-bda4-c040b1b59385; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
+Found Grid: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
+Found Grid: { Guid = 39d94f37-9e91-4999-99c6-880ca69023ea; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
+Found Grid: { Guid = 822526da-c513-484e-bc6e-6fc5b0a50d47; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = a3795cfa-ab58-426e-8ebc-2b4d24b38db8; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
+Found Grid: { Guid = 8d0dd161-a215-4804-a0a3-5df6c0c7e1c9; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
 
 ==============
 grids;
 **************
 List of 8 instances of IGridInfo {
-  0: { Guid = c6b9a366-cff3-47bd-931c-d6fde6feded4; Name = Xdg_Stokes_test_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = a19b67c9-233e-43c6-ac4c-fc63c5a68c09; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-  2: { Guid = d5b7275f-3408-4051-8642-1a724e838efa; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-  3: { Guid = 6bdd9103-dfb4-47f9-99dd-fdfda820fcf0; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = 6d19bca7-cceb-4e07-ad5a-e50b1afb8872; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
-  5: { Guid = 726eca76-7c3c-43a3-a910-960bc9fa9937; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
-  6: { Guid = 6245df0d-25c6-4d53-a075-c5043fa92cbc; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
-  7: { Guid = 314372f8-0bc6-459f-8d61-3948b8502559; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
+  0: { Guid = 750cf569-94f1-42c3-96d2-c1e73d42744d; Name = Xdg_Stokes_test_J8; Cell Count = 8; Dim = 3 }
+  1: { Guid = 11764fd0-8383-436a-bda4-c040b1b59385; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
+  2: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 39d94f37-9e91-4999-99c6-880ca69023ea; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
+  5: { Guid = 822526da-c513-484e-bc6e-6fc5b0a50d47; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
+  6: { Guid = a3795cfa-ab58-426e-8ebc-2b4d24b38db8; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
+  7: { Guid = 8d0dd161-a215-4804-a0a3-5df6c0c7e1c9; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -202,19 +202,18 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping ;
 **************
 ==============
-Func<LinearSolverCode, int, IGridInfo, XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int p, IGridInfo grid){
+Func<LinearSolverCode, int, IGridInfo, XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int p, IGridInfo grid, int DOF){
     
     // ProjectName
     // ============
     
-    int Np = Utils.Np(p);
     int J  = grid.NumberOfCells;
     
     string caseName = string.Format("J{0}_p{1}_{2}", J, p, solver);
     Console.WriteLine("setting up: " + caseName);
     
     XNSE_Control C       = new XNSE_Control();
-    C.DbPath             = DBpathLinux;
+    C.DbPath             = @"/work/scratch/jw52xeqa/DB_SFB_Stokes";
     C.savetodb           = C.DbPath != null;
     C.ProjectName        = WFlowName;
     C.ProjectDescription = "static droplet";
@@ -282,9 +281,9 @@ Func<LinearSolverCode, int, IGridInfo, XNSE_Control> GenerateCObj = delegate (Li
     C.LinearSolver.NoOfMultigridLevels = 4;
     C.LinearSolver.MaxSolverIterations = 5000;
     
-    C.LinearSolver.TargetBlockSize = 200;
-    if(C.LinearSolver.TargetBlockSize>=J*Np){
-        C.LinearSolver.TargetBlockSize = J*Np-1;
+    C.LinearSolver.TargetBlockSize = 1000;
+    if(C.LinearSolver.TargetBlockSize>=J*DOF){
+        C.LinearSolver.TargetBlockSize = J*DOF-1;
     }
     C.LinearSolver.ConvergenceCriterion = 1e-8;
     C.LevelSet_ConvergenceCriterion     = 1e-6;
@@ -322,14 +321,14 @@ Func<LinearSolverCode, int, IGridInfo, XNSE_Control> GenerateCObj = delegate (Li
 **************
 ==============
 //int[] PolyDegS = new int[] {2, 3 ,5};
-int[] PolyDegS = new int[] {2};
+int[] PolyDegS = new int[] {2,5};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
     LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
-    LinearSolverCode.exp_gmres_levelpmg,
+    //LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
     LinearSolverCode.exp_Kcycle_schwarz,
     //LinearSolverConfig.Code.classic_mumps, 
@@ -339,17 +338,17 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 }; 
 **************
 ==============
-IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(2),grids.Pick(5)};
+IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(2),grids.Pick(4)};
 //IGridInfo[] t_grids = grids;
 t_grids;
 **************
 List of 2 instances of IGridInfo {
-  0: { Guid = d5b7275f-3408-4051-8642-1a724e838efa; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-  1: { Guid = 726eca76-7c3c-43a3-a910-960bc9fa9937; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
+  0: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
+  1: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
-int MaxDof = 5000000;
+int MaxDof = 2000000;
 **************
 ==============
 using BoSSS.Solution.XNSECommon;
@@ -367,12 +366,14 @@ foreach(LinearSolverCode solver_name in solver_nameS) {
 foreach(int k in PolyDegS) {
 foreach(IGridInfo grd in t_grids) {
 
-    int Np = Utils.Np(k);
-    int J  = grd.NumberOfCells;
-    if(J*Np > MaxDof)
+    int Np_V = Utils.Np(k);
+    int Np_p = Utils.Np(k-1);
+    int J    = grd.NumberOfCells;
+    int DOF  = Np_V*3+Np_p;
+    if(J*DOF > MaxDof)
         continue;
     
-    var Ctrl = GenerateCObj(solver_name,k,grd);
+    var Ctrl = GenerateCObj(solver_name,k,grd,DOF);
 
     controls.Add(Ctrl);
 }
@@ -380,11 +381,13 @@ foreach(IGridInfo grd in t_grids) {
 }
 **************
 setting up: J512_p2_classic_pardiso
-setting up: J32768_p2_classic_pardiso
-setting up: J512_p2_exp_gmres_levelpmg
-setting up: J32768_p2_exp_gmres_levelpmg
+setting up: J13824_p2_classic_pardiso
+setting up: J512_p5_classic_pardiso
+setting up: J13824_p5_classic_pardiso
 setting up: J512_p2_exp_Kcycle_schwarz
-setting up: J32768_p2_exp_Kcycle_schwarz
+setting up: J13824_p2_exp_Kcycle_schwarz
+setting up: J512_p5_exp_Kcycle_schwarz
+setting up: J13824_p5_exp_Kcycle_schwarz
 
 ==============
 **************
@@ -426,7 +429,7 @@ foreach(var ctrl in controls) {
     aJob.SetControlObject(ctrl);
     aJob.NumberOfMPIProcs         = 1;
     aJob.ExecutionTime            = "04:00:00";
-    aJob.HHLR_project             = "project00880";
+    aJob.HHLR_project             = "project01217";
     aJob.MemPerCPU                = "5000";
     aJob.UseComputeNodesExclusive = false;
     aJob.Activate(myBatch);
@@ -436,13 +439,179 @@ foreach(var ctrl in controls) {
  Submitting: J512_p2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb14_17-06-10
-Source directory: V:\BoSSS-jenkins\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-10
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 31 files.
    writing file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish...........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................Renci.SshNet.Common.SshConnectionException occurred: An existing connection was forcibly closed by the remote host. Type 'LastError' for details.
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-10/batch.sh to Unix format ...
+
+Submitted batch job 14164570
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: J13824_p2_classic_pardiso
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-27
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-27/batch.sh to Unix format ...
+
+Submitted batch job 14164571
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: J512_p5_classic_pardiso
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-31
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-31/batch.sh to Unix format ...
+
+Submitted batch job 14164572
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: J13824_p5_classic_pardiso
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-36
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-36/batch.sh to Unix format ...
+
+Submitted batch job 14164573
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: J512_p2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-41
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-41/batch.sh to Unix format ...
+
+Submitted batch job 14164574
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: J13824_p2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-46
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-46/batch.sh to Unix format ...
+
+Submitted batch job 14164575
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: J512_p5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-50
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-50/batch.sh to Unix format ...
+
+Submitted batch job 14164576
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: J13824_p5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XNSE_Solver2020Feb19_18-36-55
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb19_18-36-55/batch.sh to Unix format ...
+
+Submitted batch job 14164577
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
 
 ==============
 **************
@@ -830,6 +999,16 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

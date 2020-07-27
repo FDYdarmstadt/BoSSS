@@ -72,7 +72,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <param name="Grad_vA">not needed</param>
         /// <param name="Grad_vB">not needed</param>
         /// <returns>the evaluated penalty flux</returns>
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double NegCellLengthScale = NegCellLengthScaleS[inp.jCellIn];
             double PosCellLengthScale = (PosCellLengthScaleS != null) ? PosCellLengthScaleS[inp.jCellOut] : NegCellLengthScaleS[inp.jCellOut];
 
@@ -107,27 +107,34 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             }
         }
 
-        public int LevelSetIndex
-        {
+        public int LevelSetIndex {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies
-        {
+        public SpeciesId PositiveSpecies {
             get { return this.LSTrk.GetSpeciesId("B"); }
         }
 
-        public SpeciesId NegativeSpecies
-        {
+        public SpeciesId NegativeSpecies {
             get { return this.LSTrk.GetSpeciesId("A"); }
         }
 
-        public TermActivationFlags LevelSetTerms
-        {
-            get
-            {
+        public TermActivationFlags LevelSetTerms {
+            get {
                 return (TermActivationFlags.UxV | TermActivationFlags.V);
             }
+        }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
         }
     }
 }

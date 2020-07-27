@@ -64,9 +64,7 @@ namespace AdvancedSolverTests {
             int size;
             csMPI.Raw.Comm_Size(comm,out size);
 
-            base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
-
-            base.Control.GridPartOptions = "hallo";
+            
             double xMax = 1.0, yMax = 1.0;
             double xMin = -1.0, yMin = -1.0;
             Func<double[], int> MakeMyPartioning = delegate (double[] X) {
@@ -95,10 +93,13 @@ namespace AdvancedSolverTests {
 
             m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res + 1), GenericBlas.Linspace(-1, 1, m_Res + 1));
             if (size == 4) {
+                base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
+                base.Control.GridPartOptions = "hallo";
                 ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);
             } else {
                 if (size != 1)
                     throw new NotSupportedException("supported MPIsize is 1 or 4");
+                base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
             }
             return m_grid;
         }
@@ -115,7 +116,7 @@ namespace AdvancedSolverTests {
 
         public int m_Res;
 
-        AggregationGridData[] MgSeq;
+        public AggregationGridData[] MgSeq;
 
         MultigridMapping MG_Mapping;
 
@@ -195,7 +196,7 @@ namespace AdvancedSolverTests {
             //var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
             //var lap = new XLaplace_Bulk(this.LsTrk, 2.0 * penalty_base, "u1", xLaplaceBCs, 1.0, 1, 1000, lengthScales, XLaplace_Interface.Mode.SIP);
 
-            Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesIdS.ToArray(), "u1", "u2", "c1", "c2");
+            Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
             //Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, c) => m_quadOrder, LsTrk.SpeciesIdS.ToArray(), "u1","c1");
 
             switch (m_Mshape) {
@@ -395,7 +396,7 @@ namespace AdvancedSolverTests {
 
             Agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_quadOrder, __AgglomerationTreshold: this.THRESHOLD);
 
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping, LsTrk.SpeciesIdS.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);

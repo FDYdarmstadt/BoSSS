@@ -237,7 +237,7 @@ namespace BoSSS.Foundation {
                     int jins = j + j_insert;
 
                     for (int n = 0; n < N; n++) {
-                        m_Coordinates[jins, n] = Buffer[j * N + n];
+                        m_Coordinates[jins, n] = Buffer[i0 + j * N + n];
                     }
                 }
                 return Len * N;

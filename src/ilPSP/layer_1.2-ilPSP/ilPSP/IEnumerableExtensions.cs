@@ -701,5 +701,16 @@ namespace ilPSP {
             }
             return false;
         }
+
+        /// <summary>
+        /// Counts number of elements in non-generic enum.
+        /// </summary>
+        public static int Count(this System.Collections.IEnumerable ie) {
+            int r = 0;
+            foreach(object o in ie) {
+                r++;
+            }
+            return r;
+        }
     }
 }

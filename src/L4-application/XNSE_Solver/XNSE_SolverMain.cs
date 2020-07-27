@@ -72,17 +72,8 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
 
         static void Main(string[] args) {
-            // Tweaking to use OCTAVE instead of MATLAB
-            if(System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")) {
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
-            } else if(System.Environment.MachineName.ToLowerInvariant().Contains("stormbreaker")) { 
-                // This is Florians Laptop;
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
-            }
 
-            //Tests.UnitTest.OneTimeSetUp();
+            //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
             //Tests.UnitTest.OneTimeTearDown();
@@ -572,7 +563,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
                                 out filtLevSetGradient, this.LsTrk,
                                 this.DGLevSet.Current);
-                            if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmpty) || XOpConfig.isEvaporation) {
+                            if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmptyOnRank) || XOpConfig.isEvaporation) {
                                 VectorField<SinglePhaseField> filtLevSetGradient_dummy;
                                 CurvatureAlgorithms.CurvatureDriver(
                                     SurfaceStressTensor_IsotropicMode.Curvature_Projected,
@@ -860,29 +851,29 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void CreateTimestepper() {
 
-            switch (this.Control.Timestepper_Scheme) {
-                case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
+            switch (this.Control.TimeSteppingScheme) {
+                case TimeSteppingScheme.RK_ImplicitEuler: {
                         rksch = RungeKuttaScheme.ImplicitEuler;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
+                case TimeSteppingScheme.RK_CrankNic: {
                         rksch = RungeKuttaScheme.CrankNicolson;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.CrankNicolson: {
+                case TimeSteppingScheme.CrankNicolson: {
                         //do not instantiate rksch, use bdf instead
                         bdfOrder = -1;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
+                case TimeSteppingScheme.ImplicitEuler: {
                         //do not instantiate rksch, use bdf instead
                         bdfOrder = 1;
                         break;
                     }
                 default: {
-                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                        if (this.Control.TimeSteppingScheme.ToString().StartsWith("BDF")) {
                             //do not instantiate rksch, use bdf instead
-                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                            bdfOrder = Convert.ToInt32(this.Control.TimeSteppingScheme.ToString().Substring(3));
                             break;
                         } else
                             throw new NotImplementedException();
@@ -1374,15 +1365,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
-
-
-            //if (this.Control.ClearVelocitiesOnRestart) {
-            //    Console.WriteLine("clearing all velocities");
-            //    this.XDGvelocity.Velocity.Clear();
-            //}
-             
-
+           
             // Load the sample Points for the restart of the Fourier LevelSet
             if (this.Control.FourierLevSetControl != null) {
 

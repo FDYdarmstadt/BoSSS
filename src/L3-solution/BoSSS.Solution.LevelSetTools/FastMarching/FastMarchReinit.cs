@@ -150,10 +150,10 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
         /// Reinit on un-cut cells.
         /// </summary>
         /// <param name="Phi">The level set</param>
-        /// <param name="ReInitSpecies">Cell mask wich is to be reinitialized</param>
+        /// <param name="ReInitSpecies">Cell mask which is to be reinitialized</param>
         /// <param name="sign">Sign of the level set for this <paramref name="ReInitSpecies"/></param>
-        /// <param name="_Accepted">CellMask which is taken as boundray values</param>
-        /// <param name="GradPhi">LEvel Set gradient</param>
+        /// <param name="_Accepted">CellMask which is taken as boundary values</param>
+        /// <param name="GradPhi">Level Set gradient</param>
         /// <param name="callBack">A delegate, which might be called after the execution of the reinitialization</param>
         public void Reinitialize(SinglePhaseField Phi, CellMask ReInitSpecies, double sign,
             CellMask _Accepted,

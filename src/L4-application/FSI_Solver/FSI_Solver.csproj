@@ -57,9 +57,8 @@
     <StartupObject>BoSSS.Application.FSI_Solver.FSI_SolverMain</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
+    <Reference Include="MathNet.Numerics">
+      <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -102,9 +101,8 @@
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
-    <Compile Include="Particle\Motion\Motion.AllParticles.cs" />
-    <Compile Include="Particle\Motion\Motion.Fixed.withForces.cs" />
-    <Compile Include="Particle\Motion\Motion.Ghost.cs" />
+    <Compile Include="Particle\Motion\Motion.FixedWithVelocity.cs" />
+    <Compile Include="Particle\ParticleHydrodynamics.cs" />
     <Compile Include="Particle\Motion\Motion.Wet.NoTranslation.cs" />
     <Compile Include="Particle\Motion\Motion.Wet.NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion.AddedDamping.cs" />
@@ -112,9 +110,9 @@
     <Compile Include="Particle\Motion\Motion.Dry.NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion.Dry.cs" />
     <Compile Include="Particle\Motion\Motion.Fixed.cs" />
-    <Compile Include="Particle\Motion\ParticleMotionInit.cs" />
+    <Compile Include="Particle\Motion\InitializeMotion.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
-    <Compile Include="Particle\ParticleForceIntegration.cs" />
+    <Compile Include="Particle\ParticleHydrodynamicsIntegrator.cs" />
     <Compile Include="Particle\Motion\Motion.cs" />
     <Compile Include="Particle\Shapes\Particle_Shell.cs" />
     <Compile Include="Particle\Shapes\Particle_Rectangle.cs" />

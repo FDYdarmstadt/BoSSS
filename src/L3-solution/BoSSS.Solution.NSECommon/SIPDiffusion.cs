@@ -271,7 +271,7 @@ namespace BoSSS.Solution.NSECommon {
                         case DiffusionMode.Temperature:
                             // inhom. Dirichlet b.c.
                             // =====================
-                            u_D = ArgumentFunction[inp.EdgeTag](inp.X, 0);
+                            u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
                             for (int d = 0; d < inp.D; d++) {
                                 Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
                                 Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
@@ -601,7 +601,7 @@ namespace BoSSS.Solution.NSECommon {
                             case DiffusionMode.Temperature:
                                 // inhom. Dirichlet b.c.
                                 // =====================
-                                u_D = ArgumentFunction[inp.EdgeTag](inp.X, 0);
+                                u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
                                 for (int d = 0; d < inp.D; d++) {
                                     Acc += (DiffusivityA * _Grad_uA[0, d] ) * (_vA) * inp.Normal[d];
                                     Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];

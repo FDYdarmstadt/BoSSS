@@ -650,9 +650,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             if (hilbert) {
                 CNSControl hilbertControl = loadBalControl.CloneAs();
-                hilbertControl.GridPartType = GridPartType.directHilbert;
+                hilbertControl.GridPartType = GridPartType.Hilbert;
 
-                Console.WriteLine("\nRun WITH load balancing (Hilbert)");
+                Console.WriteLine("\nRun WITH load balancing (clusterHilbert)");
                 hilbertSolver = new ShockTubeLoadBalancingTests();
                 hilbertSolver.Init(hilbertControl);
                 hilbertSolver.RunSolverMode();

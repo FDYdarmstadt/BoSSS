@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -74,7 +75,8 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Computes a hash code based on 
             /// <see cref="FieldInitializer.Identification"/> and 
-            /// <see cref="FieldInitializer.BasisInfo"/>.
+            /// <see cref="FieldInitializer.Basi
+            /// sInfo"/>.
             /// </summary>
             public override int GetHashCode() {
                 // http://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
@@ -106,6 +108,109 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// stores XDG coordinates species-wise and retains backward compatibility using a mysterious magic header
+        /// </summary>
+        public override double[] SerializeDGcoords(int j) {
+
+            int Ndg = this.Basis.NonX_Basis.GetLength(j);
+            var trk = this.Basis.Tracker;
+            int NoOfSpc = trk.Regions.GetNoOfSpecies(j);
+            
+
+
+            double[] Ret = new double[4 + NoOfSpc*(Ndg +1)];
+
+            // write the magic header
+            Ret[0] = double.NegativeInfinity;
+            Ret[1] = double.MaxValue;
+            Ret[2] = double.NaN;
+            Ret[3] = Ndg;
+
+            int Ptr = 4;
+            for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
+                int n0 = iSpc * Ndg;
+                SpeciesId spc = trk.Regions.GetSpeciesIdFromIndex(j, iSpc);
+                if(trk.Regions.IsSpeciesPresentInCell(spc, j)) {
+                    Ret[Ptr] = spc.cntnt; Ptr++;
+                    for(int n = 0; n < Ndg; n++) {
+                        Ret[Ptr] = this.Coordinates[j, n + n0];
+                        Ptr++;
+                    }
+                }
+            }
+
+            if(Ptr < Ret.Length)
+                Array.Resize(ref Ret, Ptr);
+
+            return Ret;
+        }
+
+        /// <summary>
+        /// loads XDG coordinates species-wise and retains backward compatibility using a mysterious magic header
+        /// </summary>
+        public override void DeserializeDGcoords(int j, double[] coords_j) {
+            if(coords_j.Length >= 3 
+                && double.IsNegativeInfinity(coords_j[0]) && coords_j[1] == double.MaxValue && double.IsNaN(coords_j[2])) {
+                // ++++++++++++++++++
+                // magic header found
+                // ++++++++++++++++++
+
+                var trk = this.Basis.Tracker;
+
+                int NdgStore = (int) coords_j[3];
+                int NdgAct = this.Basis.NonX_Basis.GetLength(j);
+                int Ndg = Math.Min(NdgAct, NdgStore);
+                int Ptr = 4;
+
+                while(Ptr < coords_j.Length) {
+
+                    SpeciesId spc;
+                    spc.cntnt = (int)coords_j[Ptr]; Ptr++;
+                    int iSpc = trk.Regions.GetSpeciesIndex(spc, j);
+
+                    int n0 = iSpc * NdgAct;
+                    for(int n = 0; n < Ndg; n++) {
+                        this.Coordinates[j, n0 + n] = coords_j[Ptr];
+                        Ptr++;
+                    }
+
+                    for(int n = Ndg; n < NdgStore; n++)
+                        Ptr++;
+                    
+                }
+
+            } else {
+                // +++++++++++++++++++++++++++
+                // no magic header:
+                // seems to be the old version
+                // +++++++++++++++++++++++++++
+
+
+                var trk = this.Basis.Tracker;
+
+                int NoSpc = trk.Regions.GetNoOfSpecies(j);
+
+                int NdgStore = coords_j.Length / NoSpc;
+                int NdgAct = this.Basis.NonX_Basis.GetLength(j);
+                int Nload = Math.Min(NdgAct, NdgStore);
+                int Ptr = 0;
+
+                for(int iSpc = 0; iSpc < NoSpc; iSpc++) {
+                    int n0 = iSpc * NdgAct;
+                    for(int n = 0; n < Nload; n++) {
+                        this.Coordinates[j, n0 + n] = coords_j[Ptr];
+                        Ptr++;
+                    }
+
+                    for(int n = Nload; n < NdgStore; n++)
+                        Ptr++;
+                }
+            }
+            
+            
+        }
+
+        /// <summary>
         /// <see cref="DGField.FieldInitializer"/>
         /// </summary>
         /// <param name="tsi"></param>
@@ -122,6 +227,25 @@ namespace BoSSS.Foundation.XDG {
             XDGFieldInitializer myInfo = (XDGFieldInitializer)tsi.FieldInitializers.Single(info =>
                 info.Identification.Equals(this.Identification));
 
+
+            if (MyIndex >= 0) {
+                int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                for (int j = 0; j < J; j++) {
+                    //double[] coords_j = data[j].DGCoordinateData[MyIndex];
+                    //double[] coords_j = data[j].DGCoordinateData[MyIndex].Data;
+                    double[] coords_j = data[j].GetDGCoordinates(MyIndex);
+
+                    Debug.Assert(data[j].GlobalID == this.GridDat.iLogicalCells.GetGlobalID(j));
+
+                    this.DeserializeDGcoords(j, coords_j);
+                }
+            } else {
+                Console.Error.WriteLine("Unable to load field '{0}'; initializing with zeros.", this.Identification);
+                this.Coordinates.Clear();
+            }
+
+
+            /*
             if (this.Basis.Degree == myInfo.BasisInfo.Degree) {
                 XDGField dis = this;
                 LoadCoordinates(data, MyIndex, dis);
@@ -130,10 +254,12 @@ namespace BoSSS.Foundation.XDG {
                 LoadCoordinates(data, MyIndex, Temp);
                 this.Clear();
                 this.AccLaidBack(1.0, Temp);
-            }
+            }*/
+
             loadedObjects.Add(this);
         }
 
+        /*
         /// <summary>
         /// Loads the XDG coordinates for the given <paramref name="field"/>
         /// from the given block of <paramref name="data"/>.
@@ -158,6 +284,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
         }
+        */
 
         /// <summary>
         /// Depends on the level set(s)

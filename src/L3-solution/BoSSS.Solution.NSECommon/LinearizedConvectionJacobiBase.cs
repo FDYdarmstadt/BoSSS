@@ -5,7 +5,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
 
-namespace BoSSS.Application.NSECommon{
+namespace BoSSS.Solution.NSECommon{
     
     public abstract class LinearizedScalarConvectionJacobiBase : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 

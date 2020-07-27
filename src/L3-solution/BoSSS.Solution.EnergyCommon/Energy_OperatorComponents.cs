@@ -106,13 +106,13 @@ namespace BoSSS.Solution.EnergyCommon {
                         comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: !laplaceKinE));
 
                     if (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.local)
-                        comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: !laplaceKinE));
+                        comps.Add(new StressDivergence_Local(D, muSpc, spcName, spcId, transposed: !laplaceKinE));
                 }
 
                 // Dissipation
                 // ===========
                 {
-                    comps.Add(new Dissipation(D, muSpc, spcId, _withPressure: config.withPressureDissipation));
+                    comps.Add(new Dissipation(D, muSpc, spcName, spcId, _withPressure: config.withPressureDissipation));
                 }
 
             }
@@ -125,7 +125,7 @@ namespace BoSSS.Solution.EnergyCommon {
                     comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
                     //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
                 } else {
-                    comps.Add(new PressureGradientConvection(D, spcId));
+                    comps.Add(new PressureGradientConvection(D, spcName, spcId));
                 }
 
             }
@@ -133,7 +133,7 @@ namespace BoSSS.Solution.EnergyCommon {
             // gravity (volume forces)
             // =======================
             {
-                comps.Add(new PowerofGravity(D, spcId, rhoSpc));
+                comps.Add(new PowerofGravity(D, spcName, spcId, rhoSpc));
             }
 
 

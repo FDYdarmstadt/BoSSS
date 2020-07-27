@@ -57,16 +57,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Shell(ParticleMotionInit motionInit, double length = 4, double height = 1, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_Shell(InitializeMotion motionInit, double length = 4, double height = 1, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = length;
             m_Thickness = thickness;
             m_Height = height;
             Aux.TestArithmeticException(length, "Particle length");
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
-            Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleArea(Area);
-            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+            Motion.SetParticleMaxLengthscale(GetLengthScales().Max());
+            Motion.SetParticleArea(Area);
+            Motion.SetParticleMomentOfInertia(MomentOfInertia);
         }
 
         [DataMember]

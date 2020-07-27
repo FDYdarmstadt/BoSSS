@@ -97,7 +97,6 @@
     <Compile Include="EdgeInfo.cs" />
     <Compile Include="FormDifferentiator.cs" />
     <Compile Include="GridComparer.cs" />
-    <Compile Include="FileManager.cs" />
     <Compile Include="GridCommons_Comparer.cs" />
     <Compile Include="GridCommons_Merge.cs" />
     <Compile Include="GridCommons_Serialization.cs" />
@@ -112,6 +111,7 @@
     <Compile Include="IGridSerializationHandler.cs" />
     <Compile Include="IGrid_Extensions.cs" />
     <Compile Include="IParameterUpdate.cs" />
+    <Compile Include="ISpatialOperator.cs" />
     <Compile Include="JacobianParamUpdate.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="LinearFormVectorizer.cs" />
@@ -213,6 +213,7 @@
     <Compile Include="StandardDoubleEdgeRuleFactory.cs" />
     <Compile Include="StandardFsDriver.cs" />
     <Compile Include="SubGrid.cs" />
+    <Compile Include="TestingIO.cs" />
     <Compile Include="Tetra.cs" />
     <Compile Include="TimestepInfo.cs" />
     <Compile Include="TimestepNumber.cs" />

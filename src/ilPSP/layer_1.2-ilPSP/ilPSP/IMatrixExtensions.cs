@@ -1070,7 +1070,7 @@ namespace ilPSP {
             // copy data
             // =========
             int TotRows = RowOffsets[I - 1] + RowLengths[I - 1];
-            int TotCols = ColOffsets[I - 1] + ColLengths[I - 1];
+            int TotCols = ColOffsets[J - 1] + ColLengths[J - 1];
             var Ret = MultidimensionalArray.Create(TotRows, TotCols);
             for(int i = 0; i < block.GetLength(0); i++) { // loop over block rows...
                 for(int j = 0; j < block.GetLength(1); j++) { // loop over block columns...
@@ -2821,22 +2821,22 @@ namespace ilPSP {
         /// <param name="col">
         /// an array with length greater or equal to 1st length of <paramref name="inp"/>;
         /// </param>
-        /// <param name="i0">
+        /// <param name="ReadOffset">
         /// offset into <paramref name="col"/>, coping starts from this index
         /// </param>
-        /// <param name="inc">
+        /// <param name="ReadInc">
         /// skip between to consecutive elements that are taken from <paramref name="col"/>
         /// </param>
-        public static void SetColumn<T>(this IMatrix inp, int ColNo, T col, int i0 = 0, int inc = 1) where T : IEnumerable<double> {
+        public static void SetColumn<T>(this IMatrix inp, int ColNo, T col, int ReadOffset = 0, int ReadInc = 1) where T : IEnumerable<double> {
 
             if(ColNo < 0 || ColNo >= inp.NoOfCols)
-                throw new IndexOutOfRangeException("RowNo out of range");
-            if((col.Count() - i0) < inp.NoOfRows * inc)
-                throw new ArgumentException("array to short", "row");
+                throw new IndexOutOfRangeException("ColNo out of range");
+            //if((col.Count() - ReadOffset) < inp.NoOfRows * ReadInc)
+            //    throw new ArgumentException("array to short", "row");
+            // there will be an index exception anyway...
 
-            int I1 = inp.NoOfRows;
             int i = 0;
-            if(inc == 1 && i0 == 0) {
+            if(ReadInc == 1 && ReadOffset == 0) {
                 foreach(double col_i in col) {
                     inp[i, ColNo] = col_i;
                     i++;
@@ -2844,7 +2844,7 @@ namespace ilPSP {
             } else {
                 int j = 0;
                 foreach(double col_i in col) {
-                    if(i >= i0 && ((j - i0) % inc == 0)) {
+                    if(i >= ReadOffset && ((j - ReadOffset) % ReadInc == 0)) {
                         inp[i, ColNo] = col_i;
                         i++;
                     }

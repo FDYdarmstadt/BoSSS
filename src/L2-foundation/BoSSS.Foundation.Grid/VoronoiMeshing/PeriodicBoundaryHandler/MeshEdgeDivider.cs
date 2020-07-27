@@ -23,7 +23,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             this.mesh = mesh;
         }
 
-        public void DivideBoundary(IEnumerable<MeshCell<T>> cells)
+        public void DivideBoundary(IEnumerable<(MeshCell<T>, bool)> cells)
         {
             var corners = new Convolution<IndiceEdge>(BoundaryOfEachCellClockwise(cells));
             foreach (Pair<IndiceEdge> corner in corners)
@@ -88,33 +88,51 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        static IEnumerable<IndiceEdge> BoundaryOfEachCellClockwise(IEnumerable<MeshCell<T>> cells)
+        static IEnumerable<IndiceEdge> BoundaryOfEachCellClockwise(IEnumerable<(MeshCell<T>, bool)> cells)
         {
-            foreach (MeshCell<T> cell in cells)
+            foreach ((MeshCell<T> cell, bool clockwise) cell in cells)
             {
-                int first = FindFirstEdgeIndiceClockwise(cell);
-                for (int i = 0; i < cell.Edges.Length; ++i)
+                if (cell.clockwise)
                 {
-                    int indice = GoRound(first - i, cell.Edges.Length);
-                    if(indice < 0)
+                    foreach(IndiceEdge edge in BoundaryOfCellClockwise(cell.cell))
                     {
-                        break;
+                        yield return edge;
+                    }
+                }
+                else
+                {
+                    foreach (IndiceEdge edge in BoundaryOfCellCounterClockwise(cell.cell))
+                    {
+                        yield return edge;
+                    }
+                }
+            }
+        }
+
+        static IEnumerable<IndiceEdge> BoundaryOfCellClockwise(MeshCell<T> cell)
+        {
+            int first = FindFirstEdgeIndiceClockwise(cell);
+            for (int i = 0; i < cell.Edges.Length; ++i)
+            {
+                int indice = GoRound(first - i, cell.Edges.Length);
+                if(indice < 0)
+                {
+                    break;
+                }
+                else
+                {
+                    Edge<T> edge = cell.Edges[GoRound(first - i, cell.Edges.Length)];
+                    if (edge.IsBoundary)
+                    {
+                        yield return new IndiceEdge
+                        {
+                            Edge = edge,
+                            Indice = indice
+                        };
                     }
                     else
                     {
-                        Edge<T> edge = cell.Edges[GoRound(first - i, cell.Edges.Length)];
-                        if (edge.IsBoundary)
-                        {
-                            yield return new IndiceEdge
-                            {
-                                Edge = edge,
-                                Indice = indice
-                            };
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
             }
@@ -126,6 +144,49 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             foreach(var followingEdges in new Convolution<Edge<T>>(cell.Edges))
             {
                 if(followingEdges.Previous.IsBoundary && !followingEdges.Current.IsBoundary)
+                {
+                    return indice % cell.Edges.Length;
+                }
+                ++indice;
+            }
+            return -1;
+        }
+
+        static IEnumerable<IndiceEdge> BoundaryOfCellCounterClockwise(MeshCell<T> cell)
+        {
+            int first = FindFirstEdgeIndiceCounterClockwise(cell);
+            for (int i = 0; i < cell.Edges.Length; ++i)
+            {
+                int indice = GoRound(first + i, cell.Edges.Length);
+                if (indice < 0)
+                {
+                    break;
+                }
+                else
+                {
+                    Edge<T> edge = cell.Edges[GoRound(first + i, cell.Edges.Length)];
+                    if (edge.IsBoundary)
+                    {
+                        yield return new IndiceEdge
+                        {
+                            Edge = edge,
+                            Indice = indice
+                        };
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        static int FindFirstEdgeIndiceCounterClockwise(MeshCell<T> cell)
+        {
+            int indice = 0;
+            foreach (var followingEdges in new Convolution<Edge<T>>(cell.Edges))
+            {
+                if (!followingEdges.Previous.IsBoundary && followingEdges.Current.IsBoundary)
                 {
                     return indice % cell.Edges.Length;
                 }
