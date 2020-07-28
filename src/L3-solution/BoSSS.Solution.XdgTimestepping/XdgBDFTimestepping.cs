@@ -1576,7 +1576,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 int oldPushCount = m_LsTrk.PushCount;
                 int oldVersion = m_LsTrk.VersionCnt;
-                Console.WriteLine("MoveLevelSetAndRelatedStuff...");
                 this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime, ls_dt, 1.0);
 
                 int newPushCount = m_LsTrk.PushCount;
@@ -1590,7 +1589,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //var newCCM = this.UpdateCutCellMetrics();
                 //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
                 Debug.Assert(m_LsTrk.HistoryLength >= 1);
-                Console.WriteLine("SplittingAgg...");
                 var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                     __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
                     oldTs__AgglomerationTreshold: new double[] { 0.0 });

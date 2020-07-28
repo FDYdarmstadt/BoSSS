@@ -285,9 +285,9 @@ namespace BoSSS.Application.FSI_Solver {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            //string ID = "fdf48851-203e-4fda-a540-33b16244f6ee";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 5);
-            //C.IsRestart = true;
+            string ID = "ce29d360-b745-46cf-9ca8-d40a1be4ea0c";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1303);
+            C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -298,7 +298,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 10;
-            double activeStress = 1;
+            double activeStress = 10;
             double position = 1;
             double distance = position / 2;
 

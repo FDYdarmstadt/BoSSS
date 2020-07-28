@@ -710,7 +710,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ghostParticles.Add(ghostParticle.CloneAs());
                             }
                             else {
-                                ghostParticle = ParticleList[ghostHierachy[1] - 1];
+                                ghostParticle = ParticleList[ghostHierachy[d1 + 1] - 1];
                             }
                             if (d1 == 0) {
                                 idOffset = 1;
