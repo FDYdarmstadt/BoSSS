@@ -1878,7 +1878,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual int BurstSave {
             get {
-                return 1;
+                return Math.Max(1, this.Control.BurstSave);
             }
         }
 
@@ -1981,11 +1981,12 @@ namespace BoSSS.Solution {
                             throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
                                 + " both cannot be unequal null at the same time.");
 
-                        if (this.Control.RestartInfo != null) {
+                        if(this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
                             TimeStepNoRestart = i0;
-                        } else
+                        } else {
                             SetInitial();
+                        }
                     }
                 }
 
@@ -2013,13 +2014,14 @@ namespace BoSSS.Solution {
                 bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
+                    if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
+                            PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
                 }
                 {
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
                         ResetInitial();
-                        if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
-                            PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+                        
                     }
 
                     bool RunLoop(int i) {
@@ -2041,8 +2043,9 @@ namespace BoSSS.Solution {
                             throw new NotSupportedException("misconfiguration of burst save variable.");
                         }
 
-                        for (int sb = 0; sb < this.BurstSave; sb++) {
-                            if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
+
+                        for(int sb = 0; sb < this.BurstSave; sb++) {
+                            if((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
                                 tsi = SaveToDatabase(i, physTime);
                                 this.ProfilingLog();
                                 break;
@@ -2075,11 +2078,6 @@ namespace BoSSS.Solution {
                         if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
-                    //i--;
-                    //if (i % SavePeriod != 0) {
-                    //    SaveToDatabase(i, physTime);
-                    //}
-
 
                     // Evaluate queries and write log file (either to session directory
                     // or current directory)

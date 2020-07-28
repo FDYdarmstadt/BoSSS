@@ -67,7 +67,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregationGridBasis.cs" />
-    <Compile Include="AppControlSolver.cs" />
     <Compile Include="BlockJacobi.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConditionNumberScalingTest.cs" />

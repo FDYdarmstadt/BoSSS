@@ -40,39 +40,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         MovingInterface = 1
     }
 
-    public enum TimeSteppingScheme {
-        ExplicitEuler = 0,
-
-        ImplicitEuler = 1,
-
-        CrankNicolson = 2,
-
-        BDF2 = 3,
-
-        BDF3 = 4,
-
-        BDF4 = 5,
-
-        BDF5 = 6,
-
-        BDF6 = 7,
-
-        RK4 = 104,
-
-        RK3 = 103,
-
-        RK2 = 102,
-
-        RK1 = 101,
-
-        RK1u1 = 110,
-
-        RK_ImplicitEuler = 201,
-
-        RK_CrankNic = 202,
-
-        RK_IMEX3 = 203
-    }
 
     public enum Equation {
         ScalarTransport = 1,
@@ -82,7 +49,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         Burgers = 3
     }
 
-        
+    /// <summary>
+    /// Control object.
+    /// </summary>
     [Serializable]
     public class XdgTimesteppingTestControl : AppControlSolver {
 
@@ -167,25 +136,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         
         /// <summary>
-        /// 
-        /// </summary>
-        public TimeSteppingScheme TimeSteppingScheme;
-        
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public double AgglomerationThreshold = 0.0;
-
-        /// <summary>
         /// If <see cref="HMF"/>==<see cref="XQuadFactoryHelper.MomentFittingVariants.ExactCircle"/>, this is the 
         /// radius in dependence of time.
         /// </summary>
         public Func<double, double> CircleRadius;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public bool MultiStepInit = true;
+
     }
 }

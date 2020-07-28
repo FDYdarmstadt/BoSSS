@@ -77,11 +77,6 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
 
-    ///// <summary>
-    ///// Callback-template for to obtain cut-cell metrics.
-    ///// </summary>
-    //public delegate CutCellMetrics DelUpdateCutCellMetrics();
-
     /// <summary>
     /// Callback-template for pushing the level-set in case of increment timestepping
     /// </summary>
@@ -221,50 +216,21 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-        //public NonlinearSolverMethod Config_NonlinearSolver {
-        //    get;
-        //    set;
-        //}
-
+ 
         /// <summary>
-        /// in case of coupledIterative the fratro for under-relaxing the level set movement 
+        /// in case of <see cref="Config_LevelSetHandling"/> set to <see cref="LevelSetHandling.Coupled_Iterative"/>,
+        /// the factor for under-relaxing the level set movement 
         /// </summary>
         public double IterUnderrelax = 1.0;
 
 
-        ///// <summary>
-        ///// Convergence criterion if a nonlinear solver has to be used.
-        ///// </summary>
-        //public double Config_SolverConvergenceCriterion = 1.0e-8;
-
         public double Config_LevelSetConvergenceCriterion = 1.0e-6;
-
-        ///// <summary>
-        ///// Maximum number of iterations for an iterative solver (linear or nonlinear).
-        ///// </summary>
-        //public int Config_MaxIterations = 1000;
-
-        //public int Config_MaxKrylovDim = 100;
-
-        ///// <summary>
-        ///// Under relaxation factor for iterative solver.
-        ///// </summary>
-        //public double Config_UnderRelax = 1.0;
+            
 
         /// <summary>
         /// Session path for writing in database
         /// </summary>
         public string SessionPath = "";
-
-        ///// <summary>
-        ///// Minimum number of iterations for an iterative solver (linear or nonlinear).
-        ///// </summary>
-        //public int Config_MinIterations = 4;
-
-        ///// <summary>
-        ///// Default Solver for the linear system
-        ///// </summary>
-        //public ISolverSmootherTemplate Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
         /// <summary>
         /// Scaling of the mass matrix, for each species and each variable.
@@ -340,15 +306,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             protected set;
         }
-
-        ///// <summary>
-        ///// Callback routine to update the cut-cell metrics.
-        ///// </summary>
-        //public DelUpdateCutCellMetrics UpdateCutCellMetrics {
-        //    get;
-        //    protected set;
-        //}
-
+                
         /// <summary>
         /// As usual the threshold for cell agglomeration.
         /// </summary>
@@ -465,13 +423,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
-        //public delegate void DelGetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver);
-
-        //public DelComputeOperatorMatrix GetSolver {
-        //    get;
-        //    protected set;
-        //}
-
 
         /// <summary>
         /// Returns either a solver for the Navier-Stokes or the Stokes system.
@@ -512,10 +463,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            double resiNorm = currentRes.MPI_L2Norm();
-            Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
-        }
+        //void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+        //    double resiNorm = currentRes.MPI_L2Norm();
+        //    Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
+        //}
 
 
         /// <summary>
@@ -564,31 +515,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
-
-                        /*
-                        if (iterIndex >= 49) {
-                            var Ri = R.Mapping.Fields[i];
-                            var C = Ri.Coordinates;
-                            Console.Write($"per deg: {Ri.Identification} : ");
-                            double accacc = 0;
-                            for (int p = 0; p <= Ri.Basis.Degree; p++) {
-                                int n0 = Ri.Basis.GetPolynomialIndicesForDegree(0, p).Min();
-                                int n1 = Ri.Basis.GetPolynomialIndicesForDegree(0, p).Max();
-                                Console.Write($"({n0}-{n1}) ");
-
-
-                                double acc = 0;
-                                for(int n = n0; n <= n1; n++) {
-                                    acc += C.GetColumn(n).L2NormPow2();
-                                }
-                                accacc += acc;
-
-                                double Norm = acc.Sqrt();
-                                Console.Write($"p{p}: {Norm}  ");
-                            }
-                            Console.WriteLine("  " + accacc.Sqrt());
-                        }
-                        */
                     }
                 } else {
 
@@ -665,7 +591,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Coordinate mapping of the current solution.
         /// </summary>
-        abstract protected CoordinateMapping CurrentStateMapping {
+        abstract public CoordinateMapping CurrentStateMapping {
             get;
         }
 

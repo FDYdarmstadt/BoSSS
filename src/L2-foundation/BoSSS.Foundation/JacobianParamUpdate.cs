@@ -16,8 +16,9 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Not intended for direct user interaction, but for use by <see cref="SpatialOperator.GetJacobiOperator"/>
         /// </summary>
-        public JacobianParamUpdate(IEnumerable<string> __DomainVar, IEnumerable<string> __ParamterVar, List<IEquationComponent> comps, Func<IEquationComponent,TermActivationFlags> extractTaf, int SpatialDimension) {
+        public JacobianParamUpdate(IEnumerable<string> __DomainVar, IEnumerable<string> __ParamterVar, List<IEquationComponent> comps, Func<IEquationComponent,TermActivationFlags> extractTaf, int SpatialDimension, DelParameterUpdate __originalUpdate) {
             Components.AddRange(comps);
+            originalUpdate = __originalUpdate;
             DomainVar = __DomainVar.ToArray();
             var ParameterVar = __ParamterVar != null ? __ParamterVar.ToArray() : new string[0];
             FindJacobianParams(SpatialDimension, ParameterVar, extractTaf);
@@ -93,6 +94,8 @@ namespace BoSSS.Foundation {
             private set;
         }
 
+        DelParameterUpdate originalUpdate;
+
         int NoOfOrgParams;
 
         List<IEquationComponent> Components = new List<IEquationComponent>();
@@ -110,6 +113,11 @@ namespace BoSSS.Foundation {
         virtual public void ParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
             DGField[] __DomainVar = DomainVar.ToArray();
             DGField[] __ParameterVar = ParameterVar.ToArray();
+
+            if(originalUpdate != null) {
+                originalUpdate(DomainVar, __ParameterVar.GetSubVector(0, NoOfOrgParams));
+            }
+
 
             int D = __DomainVar[0].GridDat.SpatialDimension;
             if (D != DomainDerivToParam.GetLength(1))

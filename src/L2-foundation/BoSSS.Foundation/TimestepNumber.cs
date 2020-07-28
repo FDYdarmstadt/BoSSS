@@ -58,9 +58,9 @@ namespace BoSSS.Foundation.IO {
 
 
         /// <summary>
-        /// retuns a clone of the internal indices
+        /// returns a clone of the internal indices
         /// </summary>
-        public int[] GetNumbers {
+        public int[] Numbers {
             get {
                 return save_numbers.CloneAs();
             }
