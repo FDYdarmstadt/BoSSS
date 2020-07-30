@@ -64,6 +64,12 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         [InstantiateFromControlFile("RHS", "T", IOListOption.ControlFileDetermined)]
         protected SinglePhaseField RHS;
+
+        /// <summary>
+        /// MPI rank coloring
+        /// </summary>
+        [InstantiateFromControlFile("MPIrank", "MPIrank", IOListOption.ControlFileDetermined)]
+        protected SinglePhaseField MPIrank;
 #pragma warning restore 649
 
         /// <summary>
@@ -87,6 +93,10 @@ namespace BoSSS.Application.SipPoisson {
 
             Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
             base.m_IOFields.Add(Error);
+
+            // MPI rank coloring
+            MPIrank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
+            MPIrank.AccConstant(this.MPIRank);
 
             // mg coloring
             int iLevel = 0;
