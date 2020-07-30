@@ -129,11 +129,11 @@ namespace BoSSS.Application.FSI_Solver {
         internal double CalculateParticleResidual(ref int iterationCounter) {
             double residual = 0;
             double denom = 0;
-            if (iterationCounter < 2)
+            if (iterationCounter <= 2)
                 residual = double.MaxValue;
             else {
                 for (int i = 0; i < m_ForcesAndTorquePreviousIteration[1].Length; i++) {
-                    if (m_ForcesAndTorquePreviousIteration[0].Length < i) {
+                    if (m_ForcesAndTorquePreviousIteration[0].Length >= i) {
                         residual += (m_ForcesAndTorquePreviousIteration[0][i] - m_ForcesAndTorquePreviousIteration[1][i]).Pow2();
                         denom += m_ForcesAndTorquePreviousIteration[0][i].Pow2();
                     }

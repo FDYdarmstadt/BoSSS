@@ -582,7 +582,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
+            if (dt < 0)
+                Console.WriteLine("old Pos 0 " + Position[0][0]);
             Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 6;
+            if (dt < 0)
+                Console.WriteLine("new Pos 0 " + position[0]);
             Aux.TestArithmeticException(position, "particle position");
             return position;
         }

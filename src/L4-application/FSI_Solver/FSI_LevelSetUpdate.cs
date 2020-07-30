@@ -218,7 +218,7 @@ namespace FSI_Solver {
         }
 
         private void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
-            int neighbourSearchDepth = 1;
+            int neighbourSearchDepth = 2;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int k = 0; k < neighbourSearchDepth; k++) {
                 for (int j = 0; j < noOfLocalCells; j++) {
@@ -238,7 +238,6 @@ namespace FSI_Solver {
             int[] globalCellColor = GetGlobalCellColor(coloredCells, currentGrid);
             int[][] globalCellNeighbourship = GetGlobalCellNeigbourship(currentGrid);
             int maxColor = globalCellColor.Max().MPIMax();
-            Console.WriteLine("maxColor " + maxColor);
             int[] newColor = new int[maxColor + 1];
             for (int i = 0; i < globalCellColor.Length; i++) {
                 for (int j = 0; j < globalCellNeighbourship[i].Length; j++) {

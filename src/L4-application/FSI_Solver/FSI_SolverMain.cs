@@ -612,7 +612,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                         int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(globalParticleColor, currentColor);
                         double levelSetFunctionParticlesPerColor(double[] X, double t) {
-                            double levelSetFunction = -1;
+                            double levelSetFunction = -double.MaxValue;
                             for (int p = 0; p < particlesOfCurrentColor.Length; p++) {
                                 Particle currentParticle = ParticleList[particlesOfCurrentColor[p]];
                                 if (levelSetFunction < currentParticle.LevelSetFunction(X))
@@ -986,9 +986,7 @@ namespace BoSSS.Application.FSI_Solver {
                             InitializeParticlePerIteration(ParticleList, TimestepInt);
                         }
                         else {
-                            Console.WriteLine("Starting Fluid Solver");
                             m_BDF_Timestepper.Solve(phystime, dt, false);
-                            Console.WriteLine("Starting Force Solver");
                             CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                         }
                         CalculateParticleVelocity(ParticleList, dt, iterationCounter);
