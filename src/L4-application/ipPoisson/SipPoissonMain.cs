@@ -65,11 +65,7 @@ namespace BoSSS.Application.SipPoisson {
         [InstantiateFromControlFile("RHS", "T", IOListOption.ControlFileDetermined)]
         protected SinglePhaseField RHS;
 
-        /// <summary>
-        /// MPI rank coloring
-        /// </summary>
-        [InstantiateFromControlFile("MPIrank", "MPIrank", IOListOption.ControlFileDetermined)]
-        protected SinglePhaseField MPIrank;
+        
 #pragma warning restore 649
 
         /// <summary>
@@ -81,6 +77,11 @@ namespace BoSSS.Application.SipPoisson {
         /// error of the numerical solution
         /// </summary>
         private SinglePhaseField Error;
+
+        /// <summary>
+        /// MPI rank coloring
+        /// </summary>
+        private SinglePhaseField MPIrank;
 
         /// <summary>
         /// DG field instantiation

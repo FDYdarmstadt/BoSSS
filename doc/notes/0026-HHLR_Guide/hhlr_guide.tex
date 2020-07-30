@@ -562,9 +562,29 @@ NOTE: \$type is not a placeholder here!
 	\item[] \textbf{DeploymentBaseDirectoryAtRemote} default deploy directory at the cluster
 \end{itemize}
 
-After you created/configured your BatchProcessorConfig.json, we can proceed with the submission workflow via \emph{BoSSSpad},
-which is illustrated in \ref{lst:bps}. 
-Please note that this a example contains placeholders. First, 
+After you created/configured your BatchProcessorConfig.json, we can proceed with the submission workflow via \emph{BoSSSpad}.
+In our example \emph{BoSSSpad} worksheet (filetype .bws), which is shown in listing \ref{lst:bps}, we will submit a job, which is solving the SIP discretized Poisson problem.
+Please note that this example contains placeholders, it is not copy-paste-execution ready.
+You have to configure it for your usage.
+The \verb|restart| e.g. loads all databases, which are listed in DBE.xml.
+\verb|ExecutionQueques| will list all clients, which are configured in the BatchProcessorConfig.json, which is the one of \ref{lst:bpc} in our case.
+In line 3 the object \verb|myBatch| is instanced as SlurmClient type.
+We will use it later to finally submit the job.
+In the next paragraph (line 4 to 6) we load a database 'test\_DB', the drive 'W' is the mounted 'root' of the cluster.
+After the database is loaded, it can be handled as any other database on your local machine.
+The using directive in line 7 is for comfort. Otherwise you would have to type the full namespace dependencies everytime.
+Now we create the control object, which is of type 'SipControl' in this case.
+Lines 11 to 13 are important, there the path to the database is specified.
+Line 12 is the path on the cluster and line 13 is the path on your local machine.
+At execution these paths are tested to be existent.
+The one, who is, will be selected for saving the database.
+In addition you can specify a machine filter (second string).
+If a filter is specified only the paths are tested, where the filter matches the machine name.
+This is only a fragment of the control object configuration, grid, boundary conditions, etc. are left out for simplification.
+In the last paragraph the job is configured.
+The job attributes are basically the corresponding flags of the batch script, which are detailed in section \ref{sec:sbatch}.
+In line 15 the type of the executable is overgiven, that all dependant libraries can be determined for deployment on the cluster. 
+With \verb|aJob.Activate(myBatch)| the binaries are deployed and the job is quequed by the scheduler of the cluster. 
 
 \noindent
 \begin{minipage}{\linewidth}
@@ -581,8 +601,16 @@ Please note that this a example contains placeholders. First,
 \renewcommand{\BoSSSbwsName}{UsingSlurmClientStartupString}
 
 \include{UsingSlurmClientStartupString}
-	
-it can be necessary to use key-administration for later versions of \emph{BoSSSpad}
+
+
+
+\subsection{create private key for ssh}
+\label{sec:sshkey}
+Check if you really created a rsa key: Open the key-file. In the header you should read 'RSA', if this is not the case. You have to force your shell/bash to create a rsa key:
+\begin{verbatim}
+	ssh-keygen -m PEM -t rsa -b 4096
+\end{verbatim}
+
 
 \subsection{the batch-script}
 \label{sec:sbatch}
