@@ -407,7 +407,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             //C.Timestepper_MassMatrix = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;

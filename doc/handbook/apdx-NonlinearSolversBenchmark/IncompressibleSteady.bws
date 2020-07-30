@@ -1,0 +1,352 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Unable to open database: 
+primary path: X:\bosss_db_lichtenberg
+No alternative paths specified.
+IOException caught while opening database #1 at 'X:\bosss_db_lichtenberg': Unable to open database - all given paths either don't exist or are ruled out by the machine filter.
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 0; Path = C:\Users\flori\default_bosss_db }
+}
+Setting Matlab Connector to Octave...
+
+ Console ready for input. Type 'help' for help.
+
+==============
+var tempDB = OpenOrCreateDatabase("C:\\tmp\\Newton");
+**************
+Opening existing database 'C:\tmp\Newton'.
+
+==============
+databases;
+**************
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 0; Path = C:\Users\flori\default_bosss_db }
+  1: { Session Count = 4; Grid Count = 1; Path = C:\tmp\Newton }
+}
+==============
+ExecutionQueues;
+**************
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @C:\Users\flori\AppData\Local\BoSSS-LocalJobs
+  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01217
+  2: MS HPC client HPCCLUSTER, @\\dc1\userspace\kummer\cluster
+}
+==============
+var mainDB = tempDB;
+**************
+==============
+var mainQueue = ExecutionQueues[0];
+**************
+==============
+WorkflowMgm.Init("NonlinearSolverBenchmark");
+**************
+Project name is set to 'NonlinearSolverBenchmark'.
+
+==============
+WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+using BoSSS.Application.IBM_Solver;
+**************
+==============
+// --------------
+// specify meshes 
+// --------------
+**************
+==============
+// grid creation loop:
+**************
+==============
+IGridInfo[] grids = new IGridInfo[1];
+for(int i = 0; i < grids.Length; i++) {
+    var gDb = mainDB.Grids.SingleOrDefault(gi => gi.ID == new Guid("3572ea5c-3090-4c26-a479-260809a7c40c"));
+    if(gDb != null) {
+        // grid already created
+        Console.WriteLine("found " + gDb.ToString());
+        grids[i] = gDb;
+        continue;
+    }
+    
+    int nx = 21*5*(i+1);
+    int ny = 21*(i+1);
+    int nz = ny;
+    double[] xNodes = GenericBlas.Linspace(-5,+5, nx + 1);   
+    double[] yNodes = GenericBlas.Linspace(-1,+1, ny + 1);
+    double[] zNodes = GenericBlas.Linspace(-1,+1, nz + 1);
+    
+    
+    Console.WriteLine("Creating grid with " + (nx*ny*nz) + " cells ...");
+    
+    var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+    
+    
+    grd.DefineEdgeTags(delegate(double[] X) {
+       double x = X[0];
+       if(Math.Abs(x - (-5.0)) < 1e-8) {
+           return "Velocity_Inlet_front";    
+           
+       } else if(Math.Abs(x - (+5.0)) < 1.0e-8) {
+           return "Pressure_Outlet_back";    
+       } else {
+           return "walls";
+       }
+    });
+    
+    Console.WriteLine("done.");
+    Console.WriteLine("Saving to database ...");
+    mainDB.SaveGrid(ref grd);
+    grids[i] = grd;
+    Console.WriteLine("done.");
+}
+**************
+found { Guid = 3572ea5c-3090-4c26-a479-260809a7c40c; Name = ; Cell Count = 46305; Dim = 3 }
+
+==============
+// -------------------------
+// further parameter ranges
+// -------------------------
+**************
+==============
+var codes = new NonLinearSolverCode[]{NonLinearSolverCode.Picard, NonLinearSolverCode.Newton } ;
+**************
+==============
+var ReynoldsS = new double[] { 1, 2, 10, 20, 100, 200.0 };
+**************
+==============
+var DGdegree = new int[] { 1, 2, 3 };
+**************
+==============
+// -----------------------
+// specify control objects
+// -----------------------
+**************
+==============
+//grids[0].Describe();
+**************
+==============
+var controls = new List<IBM_Control>();
+**************
+==============
+controls.Clear();
+foreach(var g in grids) {
+foreach(var p in DGdegree) {
+foreach(var Rey in ReynoldsS) {
+    var c1 = new IBM_Control();
+    c1.SetDGdegree(p);
+    c1.SetGrid(g);
+    c1.SetDatabase(mainDB);
+    c1.SessionName = string.Format("IBMsphere-Rey{0}-J{0}p{1}", Rey, g.NumberOfCells, p);
+
+    c1.InitialValues.Add("Phi", 
+       new Formula("X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + 0.5"));
+    c1.AddBoundaryValue("Velocity_Inlet_front", "VelocityX", 
+       new Formula("X => 1.0"));
+    c1.AddBoundaryValue("walls", "VelocityX", 
+      new Formula("X => 1.0"));
+
+    c1.PhysicalParameters.rho_A = 1.0;
+    c1.PhysicalParameters.mu_A  = 1.0/Rey;
+    c1.TimesteppingMode         = AppControl._TimesteppingMode.Steady;
+}
+}
+}
+**************
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+
+==============
+**************
+Warning: database mismatch! (Grid is saved at C:\tmp\Newton, while DbPath of control object is C:\tmp\Newton)
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+foreach(var c1 in controls) {
+    var j1 = c1.CreateJob();
+    j1.Activate(mainQueue);
+}
+**************
+Empty job name - picking new name 'EmptyJobName_1'
+
+==============
+j1.RetryCount = 1;
+**************
+==============
+j1.Activate(mainQueue);
+**************
+Job not submitted yet, or no result session is known - starting submission.
+
+Deploying executables and additional files ...
+Deployment directory: C:\Users\flori\AppData\Local\BoSSS-LocalJobs\NonlinearSolverBenchmark-IBM_Solver2020Jul10_135444
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+==============
+j1.ShowOutput();
+**************
+Starting console...
+(You may close the new window at any time, the job will continue.)
+
+==============
+j1.Status;
+**************
+InProgress
+==============
+j1.Stdout;
+**************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 1 MPI process (single core)
+Node: stormbreaker (rank 0)
+arg #0 override from environment variable 'BOSSS_ARG_0': --control
+arg #1 override from environment variable 'BOSSS_ARG_1': control.obj
+arg #2 override from environment variable 'BOSSS_ARG_2': --prjnmn
+arg #3 override from environment variable 'BOSSS_ARG_3': NonlinearSolverBenchmark
+arg #4 override from environment variable 'BOSSS_ARG_4': --sesnmn
+arg #5 override from environment variable 'BOSSS_ARG_5': EmptyJobName_1
+
+==============
+j1.Stderr;
+**************
+==============
+j1.BatchProcessorIdentifierToken;
+**************
+2243
+==============
+j1.LatestSession.DeployPath;
+**************
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+j1.DeploymentDirectory;
+**************
+C:\Users\flori\AppData\Local\BoSSS-LocalJobs\NonlinearSolverBenchmark-IBM_Solver2020Jul10_135444
+==============
+//j1.LatestSession.OpenSessionDirectory();
+**************
+==============
+var rl = j1.LatestSession.Residuals();
+**************
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+rl;
+**************
+==============
+LastError;
+**************
+==============
+rl.GetType();
+**************
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+rl.Values.Keys
+**************
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+static class MyUtils {
+
+    public static int[] Indices4Ts(ResidualLog log, int Timestep) {
+        var r         = new List<int>();
+        var timesteps = log.Values["#Time"];
+        for(int a = 0; a < timesteps.Count; a++) {
+            if(timesteps[a] == Timestep) {
+                r.Add(a);
+            }
+        }
+        return r.ToArray();
+    }
+    
+    static public double[] TotResidual(ResidualLog log, int Timestep) {
+        string[] Cols = log.Values.Keys.Where(name => !name.StartsWith("#")).ToArray();
+        int[] lines = Indices4Ts(log, Timestep);
+        
+        double[] ret = new double[lines.Length];
+        foreach(var col in Cols) {
+            var colVals = log.Values[col];    
+            for(int i = 0; i < lines.Length; i++) {
+                ret[i] += colVals[lines[i]].Pow2();    
+            }
+        }
+        
+        for(int i = 0; i < lines.Length; i++) {
+            ret[i] = Math.Sqrt(ret[i]);
+        }
+        
+        return ret;
+    }
+}
+**************
+==============
+MyUtils.Indices4Ts(rl, 2);
+**************
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+MyUtils.TotResidual(rl, 1);
+**************
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

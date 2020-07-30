@@ -507,7 +507,7 @@ namespace BoSSS.Solution.XNSECommon {
             var comps = XOp.EquationComponents[CodName];
 
             for (int d = 0; d < D; d++) {
-                var src = new Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spcId, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
+                var src = new Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spcName, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
                 comps.Add(src);
                 var flx = new Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, spcId, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
                 comps.Add(flx);

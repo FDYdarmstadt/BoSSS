@@ -5592,9 +5592,6 @@ namespace ilPSP.LinSolvers {
                         secondWave_SendBuffers[i] = Buffer;
 
                         // assemble send buffer
-                        /*
-
-                        */
                         FillSendBuffer(DestinationProc, Buffer);
 
                         // send send buffer

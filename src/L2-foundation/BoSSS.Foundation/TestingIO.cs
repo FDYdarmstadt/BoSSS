@@ -256,8 +256,6 @@ namespace BoSSS.Foundation {
             return err.L2Norm();
         }
 
-
-
         /// <summary>
         /// Absolute L2 error between columns
         /// </summary>
@@ -270,6 +268,21 @@ namespace BoSSS.Foundation {
 
             return CurGid.L2Distance(RefGid).Pow2().MPISum(GridDat.CellPartitioning.MPI_Comm).Sqrt();
         }
+
+        /// <summary>
+        /// Difference between data in file and data in <paramref name="vec"/>
+        /// </summary>
+        public double[] LocError(string Colname) {
+            
+            double[] RefData = ReferenceData[Colname];
+            double[] LoclErr = m_CurrentData[Colname].CloneAs();
+
+            LoclErr.AccV(-1.0, RefData);
+
+            return LoclErr;
+        }
+
+
 
         /// <summary>
         /// Relative L2 error between columns
@@ -289,8 +302,19 @@ namespace BoSSS.Foundation {
 
             vals = vals.MPISum(GridDat.CellPartitioning.MPI_Comm);
 
-            return vals[0].Sqrt() / Math.Max(vals[1], vals[2]).Sqrt();
+            return vals[0].Sqrt() / Math.Max(Math.Max(vals[1], vals[2]), double.Epsilon*1.0e20).Sqrt();
 
+        }
+
+        /// <summary>
+        /// Relative Errors for all known columns
+        /// </summary>
+        public IDictionary<string, double> AllRelErr() {
+            var R = new Dictionary<string, double>();
+            foreach(string col in this.ColumnNames) {
+                R.Add(col, RelError(col));
+            }
+            return R;
         }
         
         /*
@@ -466,6 +490,26 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Adds a DG field
+        /// </summary>
+        public ConventionalDGField LocalError(ConventionalDGField f) {
+            if(!object.ReferenceEquals(GridDat, f.GridDat))
+                throw new ArgumentException("DG field is defined on different mesh");
+
+            var Error = f.CloneAs();
+            Error.Clear();
+            OverwriteDGField(Error);
+            Error.Scale(-1);
+            Error.Acc(1.0, f);
+
+            Error.Identification = "Error-" + f.Identification;
+            return Error;
+        }
+
+
+
+
         static string ColName_DGfield(DGField f, int n) {
             return f.Identification + "_mode" + n;
         }
@@ -487,8 +531,9 @@ namespace BoSSS.Foundation {
 
             for(int n = 0; n < N; n++) {
                 var col = ReferenceData[ColName_DGfield(f, n)];
-                for(int j = 0; j < J; j++)
-                    f.Coordinates[j, n] = col[j];
+                //for(int j = 0; j < J; j++)
+                //    f.Coordinates[j, n] = col[j];
+                f.Coordinates.SetColumn(n, col);
             }
         }
 

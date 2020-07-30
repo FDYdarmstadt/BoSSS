@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -95,13 +96,12 @@ namespace BoSSS.Application.BoSSSpad {
             this.Norm = norm;
 
             // Read the Data into the Logger
-            try {
-                ReadResiduals();
-            }
-            catch (Exception e) {
-                Console.WriteLine(e);
-                return;
-            }
+            //try {
+            ReadResiduals();
+            //} catch(Exception e) {
+            //    Console.WriteLine(e);
+            //    return;
+            //}
         }
 
         private void InitializeReaderAndValues() {
@@ -109,10 +109,23 @@ namespace BoSSS.Application.BoSSSpad {
             variables = variables.Where(v => !String.IsNullOrWhiteSpace(v)).ToArray();
 
             // Filename by convention
-            string logPath = Path.Combine(
-                DatabaseDriver.GetSessionDirectory(session),
-                "residual-" + Norm + ".txt");
-
+            string logPath;
+            if(Norm.IsEmptyOrWhite()) {
+                logPath = Directory.GetFiles(
+                    DatabaseDriver.GetSessionDirectory(session),
+                    "residual*.txt").FirstOrDefault();
+                if(logPath != null) {
+                    string f = Path.GetFileName(logPath);
+                    f = f.Replace("residual-", "");
+                    f = f.Replace("residual", "");
+                    f = f.Replace(".txt", "");
+                    Norm = f;
+                }
+            } else {
+                logPath = Path.Combine(
+                    DatabaseDriver.GetSessionDirectory(session),
+                    "residual-" + Norm + ".txt");
+            }
             reader = new StreamReader(new FileStream(
                     logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 
@@ -121,14 +134,14 @@ namespace BoSSS.Application.BoSSSpad {
             string[] headerParts = headerline.Split(new char[] { '\t', ',' },
                 StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < headerParts.Length; i++)
+            for(int i = 0; i < headerParts.Length; i++)
                 headerParts[i] = headerParts[i].TrimStart('\t', ' ').TrimEnd('\t', ' '); // remove leading and trailing whitespaces
 
             // This specifies the column numbers we need to parse in each line.
             columnIndices = new List<int> { 0 }; // always extract the iteration number
 
             // Determine columnIndices:
-            if (variables.Length == 0) {
+            if(variables.Length == 0) {
                 // No variables specified => use all columns
                 columnIndices = Enumerable.Range(0, headerParts.Length).ToArray();
             } else {
@@ -136,7 +149,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // Compare headerParts to variables and receive the column
                 // indices we need to parse.
-                for (int i = 0; i < variables.Length; i++) { // Loop over variables
+                for(int i = 0; i < variables.Length; i++) { // Loop over variables
                     string variable = variables[i];
 
                     // FindAll is useful if someone just wants to see all
@@ -145,9 +158,9 @@ namespace BoSSS.Application.BoSSSpad {
                         => col.Contains(variable))
                         .Select(entry => Array.IndexOf(headerParts, entry))
                         .ToArray();
-                    foreach (int idx in foundIndices) {
+                    foreach(int idx in foundIndices) {
                         // index cannot be first column or nonexisting
-                        if (idx > 0) {
+                        if(idx > 0) {
                             columnIndices.Add(idx);
                         } else {
                             throw new ArgumentException("Invalid variable identifiers detected.");
@@ -167,46 +180,66 @@ namespace BoSSS.Application.BoSSSpad {
             // Initialize data fields, now that we know the number of variables
             Values = new Dictionary<string, IList<double>>();
             Values.Add(headerParts[0], new List<double>());
-            for (int i = 1; i < columnIndices.Count; i++) {
+            for(int i = 1; i < columnIndices.Count; i++) {
                 Values.Add(variables[i - 1], new List<double>());
             }
         }
 
         /// <summary>
-        /// Read residuals from text file. Deletes previous Residuals.
+        /// Read residuals from text file. 
         /// </summary>        
         public void ReadResiduals() {
-            if (reader == null) {
+            if(reader == null) {
                 try {
                     InitializeReaderAndValues();
-                } catch (FileNotFoundException e) {
+                } catch(FileNotFoundException e) {
                     throw new FileNotFoundException("The logfile has not been created yet.", e);
-                }    
+                }
             }
 
             // delete previous residuals
-            if (Values.ElementAt(0).Value.Count() > 1) {
-                for (int col = 0; col < columnIndices.Count; col++) {
+            if(Values.ElementAt(0).Value.Count() > MaxLines) {
+                for(int col = 0; col < columnIndices.Count; col++) {
                     IList<double> CurrentCol = Values.ElementAt(col).Value;
-                    double recycled = CurrentCol.Last();
-                    CurrentCol.Clear();
-                    CurrentCol.Add(recycled);
+                    //double recycled = CurrentCol.Last();
+                    //CurrentCol.Clear();
+                    //CurrentCol.Add(recycled);
+
+                    while(CurrentCol.Count > MaxLines) {
+                        CurrentCol.RemoveAt(0);
+                    }
                 }
             }
 
             // Read new residuals
-            UpdateResiduals();
+            AppendResidualsFromFile();
+        }
+
+        int m_MaxLines = int.MaxValue - 1000;
+
+        /// <summary>
+        /// maximum number of lines in residual file which are kept in memory
+        /// </summary>
+        public int MaxLines {
+            get {
+                return m_MaxLines;
+            }
+            set {
+                if(value <= 0)
+                    throw new ArgumentOutOfRangeException("must be positive.");
+                m_MaxLines = value;
+            }
         }
 
         /// <summary>
-        /// Adds freshly computed Residuals without deleting previous Residuals.
+        /// Adds freshly added lines (of the residuals file) 
         /// </summary>
-        public void UpdateResiduals() {
-            if (reader == null) {
+        public void AppendResidualsFromFile() {
+            if(reader == null) {
                 try {
                     InitializeReaderAndValues();
-                } catch (FileNotFoundException e) {
-                    throw new FileNotFoundException("The logfile has not been created yet.",e);
+                } catch(FileNotFoundException e) {
+                    throw new FileNotFoundException("The logfile has not been created yet.", e);
                 }
             }
             // read new residuals
@@ -215,36 +248,44 @@ namespace BoSSS.Application.BoSSSpad {
 
             do {
                 NextChar = reader.Read();
-                if (NextChar >= 0) {
+                if(NextChar >= 0) {
                     CurrentLine += (char)NextChar;
-                    if (CurrentLine.Contains("\n")) {
+                    if(CurrentLine.Contains("\n")) {
                         NewLines.Add(CurrentLine);
                         CurrentLine = null;
                     }
                 }
-            } while (NextChar >= 0);
+            } while(NextChar >= 0);
 
             // add new residuals to values list
             int lineCount = 0;
 
-            foreach (string line in NewLines) {
+            foreach(string line in NewLines) {
                 IList<string> lineParts = line.Split('\t', ',');
-                if ((lineCount % stride == 0) || (lineCount == (NewLines.Count - 1))) {
-                    for (int col = 0; col < columnIndices.Count; col++) {
+                if((lineCount % stride == 0) || (lineCount == (NewLines.Count - 1))) {
+                    for(int col = 0; col < columnIndices.Count; col++) {
                         // avoid confusion about which decimal separator to use.
-                        Values.ElementAt(col).Value.Add(Double.Parse(
+                        var colList = Values.ElementAt(col).Value;
+                        colList.Add(Double.Parse(
                             lineParts[columnIndices[col]], CultureInfo.InvariantCulture));
+
+                        while(colList.Count > MaxLines) {
+                            colList.RemoveAt(0);
+                        }
                     }
                 }
                 lineCount++;
             }
+
+
+    
         }
 
         /// <summary>
         /// Closes the connection to the current file
         /// </summary>
         public void Dispose() {
-            if (reader != null) {
+            if(reader != null) {
                 reader.Dispose();
             }
         }
@@ -254,7 +295,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void Plot() {
             //Create a Plotter and start it in a new Thread.
-            
+
             //try {
             //    ReadResiduals();
             //} catch (Exception e) {
@@ -275,11 +316,11 @@ namespace BoSSS.Application.BoSSSpad {
             //Create a Plotter and run it in a new Thread.
             try {
                 ReadResiduals();
-            }catch(Exception e) {
+            } catch(Exception e) {
                 Console.WriteLine(e);
                 return;
             }
- 
+
             Func<Form> LivePlotter = () => new ResidualFormLive(this, millisecondsPolling);
             Thread threadLivePlotter = new Thread(() => AutonomuousPlotter.DisplayWindow(LivePlotter));
             threadLivePlotter.Start();
@@ -289,28 +330,38 @@ namespace BoSSS.Application.BoSSSpad {
         /// Displays the last line(s) of the residual log.
         /// </summary>
         /// <param name="lines">The number of lines to be printed, counting from end of file.</param>
-        public void Tail(int lines = 1) {
-            StringBuilder sb;
-            try {
-                sb = InitTail();
-            }catch(Exception e) {
-                Console.WriteLine(e);
-                return;
-            }
+        public string Tail(int lines = 1) {
+            StringBuilder sb = InitTail();
 
-            for (int line = Values.ElementAt(0).Value.Count - lines; line < Values.ElementAt(0).Value.Count; line++) {
+            int NoOfLines = Values.ElementAt(0).Value.Count;
+            int FirstLine = Math.Max(0, Values.ElementAt(0).Value.Count - lines);
+
+            for(int line = FirstLine; line < NoOfLines; line++) {
                 // iteration number
                 sb.Append(Values.ElementAt(0).Value[line] + "\t");
-                for (int col = 1; col < Values.Count; col++) {
+                for(int col = 1; col < Values.Count; col++) {
                     // residual value
-                    sb.Append(Values.ElementAt(col).Value[line].ToString(
-                        "E", NumberFormatInfo.InvariantInfo) + "\t");
+                    var kv = Values.ElementAt(col);
+                    if(kv.Key.StartsWith("#")) {
+                        int iNum = (int)Math.Round(kv.Value[line]);
+                        sb.Append(iNum.ToString() + "\t");
+                    } else { 
+                        sb.Append(kv.Value[line].ToString("E", NumberFormatInfo.InvariantInfo) + "\t");
+                    }
                 }
                 sb.Append("\n");
             }
 
-            Console.WriteLine(sb.ToString());
+            return sb.ToString();
         }
+    
+        /// <summary>
+        /// displays the residual log, but 201 lines at max. 
+        /// </summary>
+        public override string ToString() {
+            return Tail(201);
+        }
+
 
         /// <summary>
         /// Show residuals live during simulation.
@@ -344,6 +395,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
         }
+        
 
         /// <summary>
         /// Init header for tail and read residuals once.

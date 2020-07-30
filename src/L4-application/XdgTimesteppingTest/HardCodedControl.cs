@@ -28,6 +28,7 @@ using System.Linq;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
 

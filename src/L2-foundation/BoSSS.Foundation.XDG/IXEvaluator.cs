@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.XDG {
 
 
     /// <summary>
-    /// Explicit evaluation of  Xspatial operators, i.e. matrix assembly.
+    /// Explicit evaluation of <see cref="XSpatialOperatorMk2"/> operators, i.e. matrix assembly.
     /// </summary>
     public interface IXEvaluatorNonLin : IXEvaluator, IEvaluatorNonLin {
 

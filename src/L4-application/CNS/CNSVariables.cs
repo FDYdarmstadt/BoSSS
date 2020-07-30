@@ -557,7 +557,7 @@ namespace CNS {
                 DensityGradient.Gradient(1.0, Density, cellMask);
 
                 schlierenField.ProjectFunction(1.0,
-                    delegate (double[] X, double[] U, int jCell) {
+                    delegate (ilPSP.Vector X, double[] U, int jCell) {
                         double R;
                         R = 1.0;
                         if (D == 2) {

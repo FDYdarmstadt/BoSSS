@@ -46,7 +46,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
             rho = _rho;
             m_spcId = spcId;
-            //vorZeichen = _vorZeichen;
+            validSpeciesId = spcName;
+
             this.RescaleConti = _RescaleConti;
             scale = _vorZeichen / ((RescaleConti) ? rho : 1.0);
 
@@ -65,8 +66,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string validSpeciesId {
+            get;
+            private set;
         }
 
 
@@ -95,20 +97,19 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// </summary>
     public class DivergenceInSpeciesBulk_Volume : Divergence_DerivativeSource, ISpeciesFilter {
 
-        public DivergenceInSpeciesBulk_Volume(int _component, int _D, SpeciesId spcId, double _rho, double _vorZeichen, bool _RescaleConti)
+        public DivergenceInSpeciesBulk_Volume(int _component, int _D, string spcName, double _rho, double _vorZeichen, bool _RescaleConti)
             : base(_component, _D) {
 
-            m_spcId = spcId;
-
+            validSpeciesId = spcName;
             scale = _vorZeichen / ((_RescaleConti) ? _rho : 1.0);
         }
 
         double scale;
 
-        SpeciesId m_spcId;
-
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        
+        public string validSpeciesId {
+            get;
+            private set;
         }
 
 

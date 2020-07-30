@@ -253,13 +253,6 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer> MassBlocks;
 
-        ///// <summary>
-        ///// cached inverse mass-matrix blocks for cut-cells
-        ///// </summary>
-        //Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer> InverseMassBlocks;
-
-        
-
         /// <summary>
         /// computes the mass matrices for a given mapping and accumulates the mass matrix to some other matrix.
         /// </summary>
@@ -270,18 +263,6 @@ namespace BoSSS.Foundation.XDG {
                 var _basisS = mapping.BasisS.ToArray();
                 var ctx = _basisS[0].GridDat;
                 int J = ctx.iLogicalCells.NoOfLocalUpdatedCells;
-
-                //if (VariableAgglomerationSwitch == null) {
-                //    VariableAgglomerationSwitch = new bool[mapping.BasisS.Count];
-                //    VariableAgglomerationSwitch.SetAll(true);
-                //} else {
-                //    if (VariableAgglomerationSwitch.Length != mapping.BasisS.Count)
-                //        throw new ArgumentException();
-                //}
-
-                //if(VariableAgglomerationSwitch.Any() && (agg == null)) {
-                //    throw new ArgumentException("Cell Agglomerator is required.");
-                //}
 
                 if (!M.RowPartitioning.EqualsPartition(mapping))
                     throw new ArgumentException("Mismatch in row mapping.");
@@ -390,18 +371,6 @@ namespace BoSSS.Foundation.XDG {
                                     }
 
                                     var MassSub = Mass.ExtractSubArrayShallow(new int[] { jsub, 0, 0 }, new int[] { jsub - 1, N - 1, N - 1 });
-                                    //MultidimensionalArray MassSub;
-                                    //if (VariableAgglomerationSwitch[fld] || (Mass_B4Agglom[jsub] == null)) {
-                                    //    // block with agglomeration
-                                    //    MassSub = Mass.ExtractSubArrayShallow(new int[] { jsub, 0, 0 }, new int[] { jsub - 1, N - 1, N - 1 });
-                                    //} else {
-                                    //    // block without agglomeration
-
-                                    //    Debug.Assert(VariableAgglomerationSwitch[fld] == false);
-                                    //    Debug.Assert(Mass_B4Agglom[jsub] != null);
-                                    //    MassSub = Mass_B4Agglom[jsub].ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { N - 1, N - 1 });
-                                    //}
-
 
                                     int i0 = mapping.GlobalUniqueCoordinateIndex(fld, jCell, N * iSpc);
 
@@ -416,14 +385,6 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                //// cell-aglomeration
-                //// -----------------
-
-                //if (inverse == true)
-                //    //throw new ApplicationException("todo: double-check with agglomeration");
-                //    Console.WriteLine("todo: double-check with agglomeration");
-
-                //this.m_agglomerator.ManipulateMassMatrix_Mk2(M, mapping);
             }
         }
 

@@ -37,13 +37,13 @@ namespace BoSSS.Solution.Timestepping {
 
             switch (i) {
                 
-                case 1:
+                case 1: // implicit Euler/BDF1
                 R.theta1 = 1.0;
                 R.theta0 = 0.0;
                 R.beta = new[] { 1.0 };
                 break;
 
-                case 2:
+                case 2: // BDF2
                 R.theta1 = 2.0 / 3.0;
                 R.theta0 = 0.0;
                 R.beta = new[] { 4.0 / 3.0, -1.0 / 3.0 };
@@ -134,7 +134,7 @@ namespace BoSSS.Solution.Timestepping {
         public double[] beta;
 
         /// <summary>
-        /// Number of BDF-stages
+        /// Number of BDF-stages, i.e. 1 for BDF1, 2 for BDF2, etc.
         /// </summary>
         public int S {
             get {
