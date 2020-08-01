@@ -112,6 +112,30 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             return distance;
         }
 
+        public Vector DistanceBetweenCenters(int jEdge)
+        {
+            int sourceCell = GridData.iLogicalEdges.CellIndices[jEdge, 0];
+            int targetCell = GridData.iLogicalEdges.CellIndices[jEdge, 1];
+            if (sourceCell < 0 || targetCell < 0)
+            {
+                throw new Exception("Boundary edge does not have two connected nodes.");
+            }
+            Vector sourceNode = new Vector(GridData.iLogicalCells.GetCenter(sourceCell));
+            Vector targetNode = new Vector(GridData.iLogicalCells.GetCenter(targetCell));
+
+            //transform if Edge is periodic
+            int jGeomEdge = GridData.iLogicalEdges.EdgeToParts[jEdge][0];
+            if (this.iGridData.iGeomEdges.EdgeTags[jGeomEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG)
+            {
+                int periodicEdgeTag = this.iGridData.iGeomEdges.EdgeTags[jGeomEdge] - GridCommons.FIRST_PERIODIC_BC_TAG;
+                AffineTrafo PerT = ((GridCommons)ParentGrid).PeriodicTrafo[periodicEdgeTag];
+                targetNode = PerT.Transform(targetNode);
+            };
+            Vector distance = targetNode - sourceNode;
+
+            return distance;
+        }
+
         public double GetSurfaceVolume(int jCell)
         {
             double surfaceVolume = 0.0;
