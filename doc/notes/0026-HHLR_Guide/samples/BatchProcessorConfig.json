@@ -1,0 +1,27 @@
+{
+  "AllQueues": [
+    {
+      "$type": "BoSSS.Application.BoSSSpad.MiniBatchProcessorClient, BoSSSpad",
+      "DeploymentBaseDirectory": "C:\\Users\\username\\AppData\\Local\\BoSSS-LocalJobs",
+      "DeployRuntime": false
+    },
+    {
+      "$type": "BoSSS.Application.BoSSSpad.SlurmClient, BoSSSpad",
+      "Username": "TuID",
+      "ServerName": "lcluster4.hrz.tu-darmstadt.de",
+      "PrivateKeyFilePath": "C:\\Users\\username\\.ssh\\id_rsa",
+      "DeploymentBaseDirectory": "C:\\standard_deploy_dir",
+      "DeployRuntime": false,
+	  "AllowedDatabasesPaths": ,
+	  "SlurmAccount": "project12345",
+	  "DeploymentBaseDirectoryAtRemote": "/home/TuID/deploy_dir_at_HHLR"
+    },
+	{
+      "$type": "BoSSS.Application.BoSSSpad.MiniBatchProcessorClient, BoSSSpad",
+      "DeploymentBaseDirectory": "\\\\hpccluster\hpccluster-scratch\\username\\standard_deploy_dir",
+      "DeployRuntime": true,
+      "BatchInstructionDir": "\\\\hpccluster\\MiniBatchProcessor",
+      "AllowedDatabasesPaths": ,
+    }
+  ]
+}
