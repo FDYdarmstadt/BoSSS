@@ -690,7 +690,7 @@ namespace BoSSS.Solution.Control {
             } else {
                 SetDatabase(grd.Database);
 
-                if (grd.Database.PathMatch(this.DbPath)) {
+                if (!grd.Database.PathMatch(this.DbPath)) {
                     Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
                 }
 

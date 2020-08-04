@@ -217,7 +217,7 @@ namespace BoSSS.Solution.NSECommon {
                             if (!chemReactionOK)
                                 ReactionRate = 0.0;
                             DiffussionTerm = 1.0 / (ReynoldsNumber * PrandtlNumber) * Math.Cos(x_ * y_) * (Math.Pow(x_, 2) + Math.Pow(y_, 2)); // OK for lowmach AND combustion
-                            SourceTerm = -HeatRelease * ReactionRate /** M1*/;
+                            SourceTerm = -HeatRelease * ReactionRate * M1;
                             res = ConvectionTerm * ConvectionTermSwitch + DiffussionTerm * DiffussionTermSwitch + SourceTerm;
                             break;
                         case PhysicsMode.MixtureFraction:
