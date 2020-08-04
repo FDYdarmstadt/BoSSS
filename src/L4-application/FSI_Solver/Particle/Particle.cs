@@ -73,7 +73,10 @@ namespace BoSSS.Application.FSI_Solver {
             MotionInitializer = motionInit;
         }
 
+        [DataMember]
         public bool IsMaster = true;
+
+        [DataMember]
         public int[] MasterGhostIDs = new int[4];
 
         public void SetMaster(Motion newMotionType) {
