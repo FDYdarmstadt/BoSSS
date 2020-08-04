@@ -203,7 +203,7 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!(Yox < 0));
             double Z = getMixtureFraction(Yf, Yox);
             double phi = s * (YF0 / YO0) * (Z / (1.0 - Z));
-            Debug.Assert(phi >= 0);
+            Debug.Assert( phi >= -1e-1);
             if (phi.IsNaNorInf()) {
                 phi = double.MaxValue;
             }
