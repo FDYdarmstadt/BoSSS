@@ -594,22 +594,48 @@ With \verb|aJob.Activate(myBatch)| the binaries are deployed and the job is queq
 	\include{UsingSlurmClient}
 \end{minipage}
 
-\begin{lstlisting}[caption={Submission over Startup string}, label={lst:bps_ws}]
-\end{lstlisting}
-\setcounter{BoSSSblkCounter}{-1}
-\setcounter{BoSSSinblkCounter}{-1}
-\renewcommand{\BoSSSbwsName}{UsingSlurmClientStartupString}
+%\begin{lstlisting}[caption={Submission over Startup string}, label={lst:bps_ws}]
+%\end{lstlisting}
+%\setcounter{BoSSSblkCounter}{-1}
+%\setcounter{BoSSSinblkCounter}{-1}
+%\renewcommand{\BoSSSbwsName}{UsingSlurmClientStartupString}
+%
+%\include{UsingSlurmClientStartupString}
 
-\include{UsingSlurmClientStartupString}
+If you are not able to create a control object, which is not serializeable, e.g. because of Function delegates, there is another option.
+If you create your control object from source code, you can use a startup string instead:
 
+\lstinputlisting[basicstyle=\footnotesize\ttfamily\color{darkblue}, language=C, keywordstyle=\color{darkgreen}, stringstyle=\color{darkgrey}, commentstyle=\color{lightergray}]{UsingSlurmClientStartupString/in0-0.txt}
 
+The starup string will replace line 8 to 14 of \ref{lst:bps}. This startup string is overgiven to the client by:
+
+\lstinputlisting[basicstyle=\footnotesize\ttfamily\color{darkblue}, language=C, keywordstyle=\color{darkgreen}, stringstyle=\color{darkgrey}, commentstyle=\color{lightergray}]{UsingSlurmClientStartupString/in1-0.txt}
+
+which replaces line 16 of \ref{lst:bps}.
 
 \subsection{create private key for ssh}
 \label{sec:sshkey}
-Check if you really created a rsa key: Open the key-file. In the header you should read 'RSA', if this is not the case. You have to force your shell/bash to create a rsa key:
-\begin{verbatim}
-	ssh-keygen -m PEM -t rsa -b 4096
-\end{verbatim}
+
+You may want or need to create a private/public keypair for your ssh connections. The server checks if the client, which attempts to establish a connection, is in possession of a matching private key. If this turns out true, the connection is established, without an authentication from the user (password prompt). You can find plenty tutorials how to do this, so we stick to the basics here.
+
+\begin{enumerate}
+	\item open a ssh-capable bash/shell and start key generation by prompting:
+	\begin{verbatim}
+		ssh-keygen -m PEM -t rsa -b 4096
+	\end{verbatim}
+	\verb|ssh-keygen| should be sufficient, but with newer version an OPEN-SSH key is created by default, which is not supported by our implemented client.
+	So we have to force the creation of an rsa key.
+	You can check this by opening the .rsa file: the header should read 'BEGIN RSA PRIVATE KEY'.
+	A dialogue will follow.
+	\item the private key will be created in a path like \verb|C:\users\$username\.ssh\id_rsa| (linux: \verb|/home/username/.ssh/id_rsa|). If you created already a key, you are aksed, if you want to overwrite it. \\ NOTE: If you choose to overwrite the key on disk, you will not be able to authenticate using the previous key anymore.
+	\item You can enter a passphrase for your keys or leave it empty (press enter). Consider this as a master key to all your connections.
+	
+	\item Now you have to copy the public key to the server:
+	\begin{verbatim}
+		ssh-copy-id $TuID@$host
+	\end{verbatim}
+\end{enumerate}
+
 
 
 \subsection{the batch-script}

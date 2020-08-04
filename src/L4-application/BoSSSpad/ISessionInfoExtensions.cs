@@ -427,6 +427,66 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Gets a profiling tree for a given MPI-rank, of a session
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static MethodCallRecord GetProfilingOfRank(this ISessionInfo session, int rank) {
+
+            // check if within bounds
+            int MPISize = session.ComputeNodeNames.Count;
+            if (MPISize < rank) {
+                Console.WriteLine("WARNING: the searched rank (" + rank + ") is greater then MPI-size (" + MPISize + ").");
+            }
+
+            // check if exists
+            string sessDir = DatabaseDriver.GetSessionDirectory(session);
+            string pathf = String.Concat(sessDir, @"\profiling_bin.", rank, ".txt");
+            string namef = String.Concat("profiling_bin.", rank, ".txt");
+            if (!File.Exists(pathf))
+                throw new IOException("Unable to locate '" + pathf + "'.");
+
+            // check if unique
+            int many = Directory.GetFiles(sessDir, namef).Length;
+            if (many > 1)
+                throw new ArgumentException("profiling is not unique, occurances: " + many);
+
+            // load 
+            var f = pathf;
+            var JSON = File.ReadAllText(f);
+            var mcr = MethodCallRecord.Deserialize(JSON);
+
+            return mcr;
+        }
+
+        /// <summary>
+        /// Prints the methods with the highest Imbalance of runtime over MPI-ranks.
+        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// </summary>
+        /// <param name="SI"></param>
+        /// <param name="printcnt"></param>
+        public static void PrintMostImblancedCalls(this ISessionInfo SI, int printcnt = 0) {
+            var dictImbalances = MethodCallRecordExtension.GetProfilingStats(SI.GetProfiling());
+            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.Item1);
+            int i = 1;
+            var wrt = Console.Out;
+            foreach (var kv in mostimbalance) {
+                wrt.Write("#" + i + ": ");
+                wrt.WriteLine(string.Format(
+                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusivesec",
+                    kv.Key,
+                    kv.Value.Item3,
+                    kv.Value.Item1,
+                    kv.Value.Item2));
+                if (i == printcnt) return;
+                i++;
+            }
+            Console.Out.Flush();
+        }
+
+
+        /// <summary>
         /// Reads tabulated text files.
         /// </summary>
         /// <param name="session">
