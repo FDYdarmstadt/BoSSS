@@ -1466,7 +1466,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // solve timestep with incremental timestep size
                 double incTimestepSize = dt / (double)incrementTimesteps;
+
                 Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
+
                 phystime += incTimestepSize;
             }
         }
@@ -1541,7 +1543,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_IterationCounter = 0;
             m_CoupledIterations = 0;
             m_InnerCoupledIterations = 0;
-
             PushStack(increment);
             fsiOldPhystime = phystime;
             if (incrementTimesteps == 1)
@@ -1575,7 +1576,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 int oldPushCount = m_LsTrk.PushCount;
                 int oldVersion = m_LsTrk.VersionCnt;
-
                 this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime, ls_dt, 1.0);
 
                 int newPushCount = m_LsTrk.PushCount;

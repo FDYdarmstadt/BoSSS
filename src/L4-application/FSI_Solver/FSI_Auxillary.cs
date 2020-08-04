@@ -136,66 +136,6 @@ namespace FSI_Solver {
         /// </param>
         /// <param name="phystime"></param>
         /// <param name="IterationCounter"> </param>
-        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double residual, int IterationCounter) {
-            if (Particles.Count() == 0) {
-                return;
-            }
-            double[] TranslationalMomentum = new double[2] { 0, 0 };
-            double RotationalMomentum = 0;
-            double[] totalKE = new double[3] { 0, 0, 0 };
-
-            for (int p = 0; p < Particles.Count(); p++) {
-                Particle CurrentParticle = Particles[p];
-                double[] SingleParticleMomentum = CurrentParticle.Motion.CalculateParticleMomentum();
-                double[] SingleParticleKineticEnergy = CurrentParticle.Motion.CalculateParticleKineticEnergy();
-                TranslationalMomentum[0] += SingleParticleMomentum[0];
-                TranslationalMomentum[1] += SingleParticleMomentum[1];
-                RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
-                totalKE[0] += SingleParticleKineticEnergy[0];
-                totalKE[1] += SingleParticleKineticEnergy[1];
-                totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
-            }
-
-            StringBuilder OutputBuilder = new StringBuilder();
-
-            OutputBuilder.AppendLine("=======================================================");
-            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-            OutputBuilder.AppendLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-            for (int p = 0; p < Particles.Count(); p++) {
-                Particle CurrentParticle = Particles[p];
-                // only print particles with some action
-                if (CurrentParticle.Motion.IncludeTranslation || CurrentParticle.Motion.IncludeRotation) {
-                    int PrintP = p + 1;
-                    OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
-                    if (CurrentParticle.IsCollided)
-                        OutputBuilder.AppendLine("The particle is collided");
-                    OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[0]);
-                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[1]);
-                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.GetHydrodynamicTorque(0));
-                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[0]);
-                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
-                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.GetRotationalVelocity(0));
-                }
-            }
-            OutputBuilder.AppendLine();
-            OutputBuilder.AppendLine("=======================================================");
-            OutputBuilder.AppendLine("Force and torque residual: " + residual);
-            OutputBuilder.AppendLine("=======================================================");
-            OutputBuilder.AppendLine();
-            Console.WriteLine(OutputBuilder.ToString());
-        }
-
-        /// <summary>
-        /// Residual for fully coupled system
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
-        /// <param name="phystime"></param>
-        /// <param name="IterationCounter"> </param>
         internal void PrintResultToConsole(double residual, int IterationCounter) {
             Console.WriteLine("Iteration, Residual: {1}, {0}", residual, IterationCounter);
         }
@@ -248,34 +188,50 @@ namespace FSI_Solver {
             OutputBuilder.AppendLine("Fluid properties");
             OutputBuilder.AppendLine("Density: " + FluidDensity + ", viscosity: " + FluidViscosity);
 
-            for (int p = 0; p < Particles.Count(); p++) {
-                Particle CurrentParticle = Particles[p];
-                // only print particles with some action
-                if (CurrentParticle.Motion.IncludeTranslation || CurrentParticle.Motion.IncludeRotation) {
-                    int PrintP = p + 1;
-                    OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
-                    OutputBuilder.AppendLine("Particle type: " + CurrentParticle);
-                    OutputBuilder.AppendLine("Particle density: " + CurrentParticle.Motion.Density);
-                    OutputBuilder.AppendLine("Maximum length: " + CurrentParticle.GetLengthScales().Max() + ", minimum length: " + CurrentParticle.GetLengthScales().Min());
-                    OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
-                    if (CurrentParticle.IsCollided)
-                        OutputBuilder.AppendLine("The particle is collided");
-                    OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[0]);
-                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[1]);
-                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.GetHydrodynamicTorque(0));
-                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[0]);
-                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
-                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.GetRotationalVelocity(0));
-                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.GetPosition(0)[0]);
-                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.GetPosition(0)[1]);
-                    OutputBuilder.AppendLine("Angle: " + CurrentParticle.Motion.GetAngle(0));
-                    OutputBuilder.AppendLine();
-                    OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
-                    OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
-                    OutputBuilder.AppendLine("=======================================================");
-                    OutputBuilder.AppendLine();
+            if (Particles.Count() > 3) {
+                OutputBuilder.AppendLine();
+                OutputBuilder.AppendLine("Solving system with " + Particles.Count() + " particles. Time: " + phystime);
+                OutputBuilder.AppendLine("Particle type of first particle: " + Particles[0]);
+                OutputBuilder.AppendLine("Particle density of first particle: " + Particles[0].Motion.Density);
+                OutputBuilder.AppendLine("Maximum length of first particle: " + Particles[0].GetLengthScales().Max() + ", minimum length: " + Particles[0].GetLengthScales().Min());
+                OutputBuilder.AppendLine("Particle Reynolds number of first particle: " + ParticleReynoldsNumber[0]);
+                OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
+                OutputBuilder.AppendLine();
+                for (int p = 0; p < Particles.Count(); p++) {
+                    if (Particles[p].IsCollided)
+                        OutputBuilder.AppendLine("Particle " + p + " is collided. Position X: " + Particles[p].Motion.GetPosition(0)[0] + ", Position X: " + Particles[p].Motion.GetPosition(0)[1]);
+                }
+                }
+            else {
+                for (int p = 0; p < Particles.Count(); p++) {
+                    Particle CurrentParticle = Particles[p];
+                    // only print particles with some action
+                    if (CurrentParticle.Motion.IncludeTranslation || CurrentParticle.Motion.IncludeRotation) {
+                        int PrintP = p + 1;
+                        OutputBuilder.AppendLine("-------------------------------------------------------");
+                        OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
+                        OutputBuilder.AppendLine("Particle type: " + CurrentParticle);
+                        OutputBuilder.AppendLine("Particle density: " + CurrentParticle.Motion.Density);
+                        OutputBuilder.AppendLine("Maximum length: " + CurrentParticle.GetLengthScales().Max() + ", minimum length: " + CurrentParticle.GetLengthScales().Min());
+                        OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
+                        if (CurrentParticle.IsCollided)
+                            OutputBuilder.AppendLine("The particle is collided");
+                        OutputBuilder.AppendLine("-------------------------------------------------------");
+                        OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[0]);
+                        OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[1]);
+                        OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.GetHydrodynamicTorque(0));
+                        OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[0]);
+                        OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
+                        OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.GetRotationalVelocity(0));
+                        OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.GetPosition(0)[0]);
+                        OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.GetPosition(0)[1]);
+                        OutputBuilder.AppendLine("Angle: " + CurrentParticle.Motion.GetAngle(0));
+                        OutputBuilder.AppendLine();
+                        OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
+                        OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
+                        OutputBuilder.AppendLine("=======================================================");
+                        OutputBuilder.AppendLine();
+                    }
                 }
             }
             Console.WriteLine(OutputBuilder.ToString());
