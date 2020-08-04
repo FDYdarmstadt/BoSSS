@@ -597,6 +597,9 @@ namespace BoSSS.Application.FSI_Solver {
                 SwitchGhostAndMasterParticle();
                 
                 CellColor = CellColor == null ? levelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(LsTrk);
+                for (int i = 0; i < CellColor.Length; i++) {
+                    CellColor[i] = 1;
+                }
                 SetColorDGField(CellColor);
 
                 DGLevSet.Current.Clear();

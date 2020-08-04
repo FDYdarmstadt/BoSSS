@@ -239,18 +239,59 @@ namespace FSI_Solver {
             int[][] globalCellNeighbourship = GetGlobalCellNeigbourship(currentGrid);
             int maxColor = globalCellColor.Max().MPIMax();
             int[] newColor = new int[maxColor + 1];
+            //for (int i = 0; i < globalCellColor.Length; i++) {
+            //    for (int j = 0; j < globalCellNeighbourship[i].Length; j++) {
+            //        if (globalCellColor[i] != globalCellColor[globalCellNeighbourship[i][j]] && globalCellColor[globalCellNeighbourship[i][j]] != 0) {
+            //            if (newColor[globalCellColor[globalCellNeighbourship[i][j]]] != 0) {
+            //                if (newColor[globalCellColor[i]] != 0) {// && newColor[globalCellColor[i]] > globalCellColor[globalCellNeighbourship[i][j]]) {
+            //                    for (int k = newColor.Length - 1; k > 0; k--) {
+            //                        if (k == newColor[globalCellColor[i]]) {
+            //                            RecolorAlreadyRecoloredCellsRecursive(newColor, newColor[globalCellColor[i]], newColor[globalCellColor[globalCellNeighbourship[i][j]]]);
+            //                            newColor[k] = newColor[globalCellColor[globalCellNeighbourship[i][j]]];
+            //                        }
+            //                    }
+            //                }
+            //                newColor[globalCellColor[i]] = newColor[globalCellColor[globalCellNeighbourship[i][j]]];
+            //            }
+            //            else {
+            //                if (newColor[globalCellColor[i]] != 0) {// && newColor[globalCellColor[i]] > globalCellColor[globalCellNeighbourship[i][j]]) {
+            //                    for (int k = newColor.Length - 1; k > 0; k--) {
+            //                        if (k == newColor[globalCellColor[i]]) {
+            //                            RecolorAlreadyRecoloredCellsRecursive(newColor, newColor[globalCellColor[i]], globalCellColor[globalCellNeighbourship[i][j]]);
+            //                            newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
+            //                        }
+            //                    }
+            //                }
+            //                newColor[globalCellColor[i]] = globalCellColor[globalCellNeighbourship[i][j]];
+            //            }
+            //        }
+            //    }
+            //}
             for (int i = 0; i < globalCellColor.Length; i++) {
                 for (int j = 0; j < globalCellNeighbourship[i].Length; j++) {
-                    if (globalCellColor[i] > globalCellColor[globalCellNeighbourship[i][j]] && globalCellColor[globalCellNeighbourship[i][j]] != 0) {
-                        if (newColor[globalCellColor[i]] != 0 && newColor[globalCellColor[i]] > globalCellColor[globalCellNeighbourship[i][j]]) {
-                            for (int k = newColor.Length - 1; k > 0; k--) {
-                                if (k == newColor[globalCellColor[i]]) {
-                                    RecolorAlreadyRecoloredCellsRecursive(newColor, newColor[globalCellColor[i]], globalCellColor[globalCellNeighbourship[i][j]]);
+                    if (globalCellColor[i] != globalCellColor[globalCellNeighbourship[i][j]] && globalCellColor[globalCellNeighbourship[i][j]] != 0 && globalCellColor[i] != 0) {
+                        if(newColor[globalCellColor[i]] != 0) {
+                            for(int k = 1; k < newColor.Length; k++) {
+                                if(newColor[k] == newColor[globalCellColor[i]]) {
+                                    newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
+                                }
+                                if(k == newColor[globalCellColor[i]]) {
                                     newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
                                 }
                             }
                         }
                         newColor[globalCellColor[i]] = globalCellColor[globalCellNeighbourship[i][j]];
+                        if(newColor[globalCellColor[globalCellNeighbourship[i][j]]] != 0) {
+                            for (int k = 1; k < newColor.Length; k++) {
+                                if (newColor[k] == newColor[globalCellColor[globalCellNeighbourship[i][j]]]) {
+                                    newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
+                                }
+                                if (k == newColor[globalCellColor[globalCellNeighbourship[i][j]]]) {
+                                    newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
+                                }
+                            }
+                        }
+                        newColor[globalCellColor[globalCellNeighbourship[i][j]]] = globalCellColor[globalCellNeighbourship[i][j]];
                     }
                 }
             }
@@ -260,7 +301,7 @@ namespace FSI_Solver {
         private void RecolorAlreadyRecoloredCellsRecursive(int[] newColorArray, int currentColor, int newColor) {
             if (newColor == newColorArray[currentColor])
                 return;
-            if (newColorArray[currentColor] != 0 && currentColor > newColor) {
+            if (newColorArray[currentColor] != 0){// && currentColor > newColor) {
                 for (int k = newColorArray.Length - 1; k > 0; k--) {
                     if (k == newColorArray[currentColor]) {
                         newColorArray[k] = newColor;

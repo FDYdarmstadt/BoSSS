@@ -282,13 +282,13 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.09, double aspectRatio = 0.5) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.095, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            //string ID = "0053de4c-0754-461f-bcb7-a3ff241dc283";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
-            //C.IsRestart = true;
+            string ID = "ad6c038b-8fb8-4d4d-8bb0-e214856d3061";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -300,23 +300,28 @@ namespace BoSSS.Application.FSI_Solver {
             double particleDensity = 10;
             double activeStress = 10;
             double domainLength = 2.5;
-            C.SetGrid(lengthX: domainLength, lengthY: domainLength, cellsPerUnitLength: 30, periodicX: true, periodicY: true);
+            C.SetGrid(lengthX: domainLength, lengthY: domainLength, cellsPerUnitLength: 35, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
-            C.minDistanceThreshold = 0.01;
-            C.CoefficientOfRestitution = 0.01;
+            C.minDistanceThreshold = 0.015;
+            C.CoefficientOfRestitution = 0.5;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             double leftCorner = -1.1;
             double nextParticleDistance = 0.20;
             Random angle = new Random();
+            Random insertParticle = new Random();
             int j = 0;
             while(leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
                 while (leftCorner + i * nextParticleDistance < domainLength / 2) {
-                    double temp_angle = angle.Next(0, 360);
-                    temp_angle = temp_angle.MPIBroadcast(0);
-                    C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, temp_angle, activeStress));
+                    double temp_insertParticle = insertParticle.Next(0, 3);
+                    temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
+                    if (temp_insertParticle != 0) {
+                        double temp_angle = angle.Next(0, 360);
+                        temp_angle = temp_angle.MPIBroadcast(0);
+                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, temp_angle, activeStress, new double[] { 0.05 * Math.Cos(temp_angle * Math.PI / 180), 0.05 * Math.Sin(temp_angle * Math.PI / 180) }));
+                    }
                     i += 1;
                 }
                 j += 1;
