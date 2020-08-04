@@ -1,0 +1,16 @@
+\BoSSScmd{
+string StartupString = string.Format("cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian1(\{0\},\{1\},\{2\},\{3\},\{4\})", 32, 1.0, 16, 1.01, 2);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var aJob = new Job(ctrl.SessionName, typeof(SipPoissonMain));\newline 
+oneJob.SetCommandLineArguments(StartupString);\newline 
+((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project12345";\newline 
+aJob.NumberOfMPIProcs         = 2;\newline 
+aJob.ExecutionTime            = "01:00:00";\newline 
+aJob.HHLR\_project             = "project12345";\newline 
+aJob.MemPerCPU                = "5000";\newline 
+aJob.UseComputeNodesExclusive = true;\newline 
+aJob.Activate(myBatch);
+ }
+\BoSSSexeSilent

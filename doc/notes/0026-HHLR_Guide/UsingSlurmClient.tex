@@ -1,0 +1,44 @@
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ExecutionQueues;
+ }
+\BoSSSexe
+\BoSSScmd{
+var myBatch = (SlurmClient)ExecutionQueues[0];
+ }
+\BoSSSexe
+\BoSSScmd{
+string path = @"W:\textbackslash work\textbackslash scratch\textbackslash TuID\textbackslash test\_DB";\newline 
+var tempDB  = OpenOrCreateDatabase(path);\newline 
+tempDB.Sessions;
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Application.SipPoisson;
+ }
+\BoSSSexe
+\BoSSScmd{
+var ctrl         = new SipControl();\newline 
+ctrl.savetodb    = true;\newline 
+ctrl.SessionName = "SIP\_test";\newline 
+ctrl.AlternateDbPaths = new[]\{\newline 
+\btab \btab new ValueTuple<string,string>(@"/work/scratch/TuID/test\_DB", ""),\newline 
+\btab \btab new ValueTuple<string,string>(@"W:\textbackslash work\textbackslash scratch\textbackslash TuID\textbackslash test\_DB", "")\newline 
+\btab \};
+ }
+\BoSSSexe
+\BoSSScmd{
+var aJob = new Job(ctrl.SessionName, typeof(SipPoissonMain));\newline 
+aJob.SetControlObject(ctrl);\newline 
+((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project12345";\newline 
+aJob.NumberOfMPIProcs         = 2;\newline 
+aJob.ExecutionTime            = "01:00:00";\newline 
+aJob.HHLR\_project             = "project12345";\newline 
+aJob.MemPerCPU                = "5000";\newline 
+aJob.UseComputeNodesExclusive = true;\newline 
+aJob.Activate(myBatch);
+ }
+\BoSSSexe
