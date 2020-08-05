@@ -145,7 +145,7 @@ namespace BoSSS.Application.XNSE_Solver {
         ExtensionVelocityBDFMover ExtVelMover;
 
         /// <summary>
-        /// Corrector used when employing <see cref="SemiLagrangianLevelSet"/>
+        /// Corrector used when employing <see cref="BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet"/>
         /// </summary>
         LagrangianCorrectors Corrector;
 #pragma warning restore 649

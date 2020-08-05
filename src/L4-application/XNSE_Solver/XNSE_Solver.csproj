@@ -114,10 +114,6 @@
     <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\private-meir\SemiLagrangianLevelSet\SemiLagrangianLevelSet.csproj">
-      <Project>{D4B36D38-A08E-4202-BB8A-DC891EDFAA6E}</Project>
-      <Name>SemiLagrangianLevelSet</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>
