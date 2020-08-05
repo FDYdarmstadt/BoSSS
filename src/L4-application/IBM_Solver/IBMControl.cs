@@ -166,6 +166,8 @@ namespace BoSSS.Application.IBM_Solver {
         [DataMember]
         public double particleRadius;
 
+        public bool IsStationary = false;
+
 
         /// <summary>
         /// 

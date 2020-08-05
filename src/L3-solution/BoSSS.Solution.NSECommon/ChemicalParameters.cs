@@ -36,51 +36,51 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         // Molar Masses
         [DataMember]
-        public double PM_CH4 = 16;
+        public double MW_CH4 = 16;
         /// <summary>
         /// Molar mass of oxygen, in Kg/Kmol
         /// </summary>
         [DataMember]
-        public double PM_O2 = 32;
+        public double MW_O2 = 32;
         /// <summary>
         /// Molar mass of carbon dioxyd , in Kg/Kmol
         /// </summary>
         [DataMember]
-        public double PM_CO2 = 44;
+        public double MW_CO2 = 44;
         /// <summary>
         /// Molar mass of water, in Kg/Kmol
         /// </summary>
         [DataMember]
-        public double PM_H2O = 18;
+        public double MW_H2O = 18;
         /// <summary>
         /// Molar mass of nytrogen, in Kg/Kmol
         /// </summary>
         [DataMember]
-        public double PM_N2 = 28;
+        public double MW_N2 = 28;
 
         /// <summary>
         /// Stoichiometric coefficient in one-step kinetic combustion
         /// </summary>
         [DataMember]
-        public double s_CH4 = -1;
+        public double nu_CH4 = -1;
 
         /// <summary>
         /// Stoichiometric coefficient in one-step kinetic combustion
         /// </summary>
         [DataMember]
-        public double s_O2 = -2;
+        public double nu_O2 = -2;
 
         /// <summary>
         /// Stoichiometric coefficient in one-step kinetic combustion
         /// </summary>
         [DataMember]
-        public double s_CO2 = 1;
+        public double nu_CO2 = 1;
 
         /// <summary>
         /// Stoichiometric coefficient in one-step kinetic combustion
         /// </summary>
         [DataMember]
-        public double s_H2O = 2;
+        public double nu_H2O = 2;
 
         /// <summary>
         /// Average molecular weight from air for 23%O_2, 77%N_2

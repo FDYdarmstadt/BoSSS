@@ -92,6 +92,7 @@
     <Compile Include="LAPACK.cs" />
     <Compile Include="MatrixOp.cs" />
     <Compile Include="MethodCallRecord.cs" />
+    <Compile Include="MethodCallRecordExtension.cs" />
     <Compile Include="MPICollectiveWatchDog.cs" />
     <Compile Include="MPIEnviroment.cs" />
     <Compile Include="MultidimensionalArray_CodeGenMultiply.cs" />
