@@ -496,7 +496,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-
+        /*
         /// <summary>
         /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
         /// </summary>
@@ -530,7 +530,7 @@ namespace BoSSS.Foundation {
 
             return ret;
         }
-
+        */
 
 
         /// <summary>
@@ -632,7 +632,7 @@ namespace BoSSS.Foundation {
                     return true;
                 if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxGradV)) >= 0)
                     return true;
-                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeForm_UxV)) >= 0)
                     return true;
 
                 if(Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_GradV)) >= 0)
@@ -833,7 +833,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// the operator used to construct this object
             /// </summary>
-            public SpatialOperator Owner {
+            public ISpatialOperator Owner {
                 get {
                     return m_Owner;
                 }
@@ -1170,11 +1170,11 @@ namespace BoSSS.Foundation {
                     DomainFields = new CoordinateMapping(grdDat);
 
 
-                if(Owner.RequiresEdgeQuadrature) {
+                if(owner.RequiresEdgeQuadrature) {
 
 
                     m_NonlinearEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
-                                                            Owner,
+                                                            (SpatialOperator) Owner,
                                                             DomainVarMap,
                                                             ParameterMap,
                                                             CodomainVarMap,
@@ -1184,9 +1184,9 @@ namespace BoSSS.Foundation {
 
                 }
 
-                if(Owner.RequiresVolumeQuadrature) {
+                if(owner.RequiresVolumeQuadrature) {
                     m_NonlinearVolume = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume(grdDat,
-                                                                Owner,
+                                                                (SpatialOperator) Owner,
                                                                 DomainVarMap,
                                                                 ParameterMap,
                                                                 CodomainVarMap,
@@ -1450,10 +1450,11 @@ namespace BoSSS.Foundation {
 
                     // volume integration
                     // ------------------
+                    SpatialOperator _Owner = (SpatialOperator)this.Owner;
                     if(volRule.Any()
-                        && Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
+                        && _Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
-                            var mtxBuilder = new LECVolumeQuadrature2<M, V>(this.Owner);
+                            var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
 
                             mtxBuilder.Execute(volRule,
                                 CodomainMapping, Parameters, DomainMapping,
@@ -1469,9 +1470,9 @@ namespace BoSSS.Foundation {
                     // edge integration
                     // ----------------
                     if(!(edgeRule.IsNullOrEmpty())
-                         && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
+                         && _Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeForm_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeForm_UxV), typeof(IEdgeSource_V))) {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
-                            var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
+                            var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
                             mxtbuilder2 = null;
                         }
@@ -1638,13 +1639,9 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// 
             /// </summary>
-            public SpatialOperator Owner {
+            public ISpatialOperator Owner {
                 get {
-                    if(Eval is IEvaluator_) {
-                        return ((IEvaluator_)Eval).Owner;
-                    } else {
-                        throw new NotSupportedException();
-                    }
+                    return Eval.Owner;
                 }
             }
 

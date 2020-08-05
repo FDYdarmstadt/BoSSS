@@ -43,7 +43,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// Current state of the solution
     /// </param>
     public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization);
-    
+              
 
     /// <summary>
     /// base-class for non-linear solvers

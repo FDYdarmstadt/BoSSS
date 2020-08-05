@@ -1129,39 +1129,6 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        /// <summary>
-        /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="CatParams">
-        /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
-        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
-        /// </param>
-        /// <param name="F">
-        /// optional filter;
-        /// should return true, if the component should be added, false if not; 
-        /// </param>
-        /// <param name="vectorizer">
-        /// vectorizer option: translate some equation component to another one
-        /// </param>
-        public EquationComponentArgMapping<T>[] GetArgMapping<T>(bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
-            if(!IsCommited)
-                throw new ApplicationException("Commit() has to be called prior to this method.");
-
-            int Gamma = CodomainVar.Count;
-
-            var ret = new EquationComponentArgMapping<T>[Gamma];
-            for(int i = 0; i < Gamma; i++) {
-                var codName = this.m_CodomainVar[i];
-                ret[i] = new EquationComponentArgMapping<T>(m_SpatialOperator,
-                    codName,
-                    this.m_DomainVar,
-                    CatParams ? this.ParameterVar : null,
-                    F, vectorizer);
-            }
-
-            return ret;
-        }
 
         #endregion
 

@@ -34,12 +34,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
     {
         public LECVolumeQuadrature2(SpatialOperator op) {
             Operator = op;
-            m_VolumeForm_UxV = op.GetArgMapping<IVolumeForm_UxV>(true, eq => ((eq.VolTerms & TermActivationFlags.UxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeForm_UxGradV = op.GetArgMapping<IVolumeForm_UxGradV>(true, eq => ((eq.VolTerms & TermActivationFlags.UxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeForm_GradUxV = op.GetArgMapping<IVolumeForm_GradUxV>(true, eq => ((eq.VolTerms & TermActivationFlags.GradUxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeForm_GradUxGradV = op.GetArgMapping<IVolumeForm_GradUxGradV>(true, eq => ((eq.VolTerms & TermActivationFlags.GradUxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeSource_V = op.GetArgMapping<IVolumeSource_V>(true, eq => ((eq.VolTerms & TermActivationFlags.V) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeSource_GradV = op.GetArgMapping<IVolumeSource_GradV>(true, eq => ((eq.VolTerms & TermActivationFlags.GradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+            m_VolumeForm_UxV = EquationComponentArgMapping<IVolumeForm_UxV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.UxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+            m_VolumeForm_UxGradV = EquationComponentArgMapping<IVolumeForm_UxGradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.UxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+            m_VolumeForm_GradUxV = EquationComponentArgMapping<IVolumeForm_GradUxV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.GradUxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+            m_VolumeForm_GradUxGradV = EquationComponentArgMapping<IVolumeForm_GradUxGradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.GradUxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+            m_VolumeSource_V = EquationComponentArgMapping<IVolumeSource_V>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.V) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+            m_VolumeSource_GradV = EquationComponentArgMapping<IVolumeSource_GradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.GradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
         }
 
         SpatialOperator Operator;

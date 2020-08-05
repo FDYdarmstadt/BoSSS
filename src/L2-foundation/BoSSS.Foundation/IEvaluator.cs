@@ -69,7 +69,10 @@ namespace BoSSS.Foundation {
         bool MPITtransceive { get; set; }
 
 
-       
+        /// <summary>
+        /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
+        /// </summary>
+        ISpatialOperator Owner { get; }
     }
 
     /// <summary>
@@ -128,11 +131,12 @@ namespace BoSSS.Foundation {
     /// temporary hack; methods/properties which are specific for the single-phase evaluators, but not for XDG
     /// </summary>
     public interface IEvaluator_ {
+        /*
         /// <summary>
         /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
         /// </summary>
         SpatialOperator Owner { get; }
-
+        */
         
         /// <summary>
         /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.

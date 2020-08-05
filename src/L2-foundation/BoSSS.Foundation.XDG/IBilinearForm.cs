@@ -114,7 +114,7 @@ namespace BoSSS.Foundation.XDG {
     }
 
     /// <summary>
-    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeform_UxV"/>
+    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeForm_UxV"/>
     /// </summary>
     public interface ILevelSetForm_UxV : ILevelSetForm, IInnerEdgeform_UxV {
        
@@ -122,7 +122,7 @@ namespace BoSSS.Foundation.XDG {
     }
 
     /// <summary>
-    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeform_UxV"/>
+    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeForm_UxV"/>
     /// </summary>
     public interface ILevelSetForm_GradUxV : ILevelSetForm, IInnerEdgeform_GradUxV {
         //void LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxV);

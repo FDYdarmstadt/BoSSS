@@ -117,7 +117,11 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 int itc;
                 itc = 0;
-                double[] x, xt, xOld, f0, deltaX, ft;
+                double[] CurSol, // "current (approximate) solution", i.e. 
+                    TempSol, 
+                    PrevSol, // previous iteration  (approximate) solution
+                    CurRes, // residual associated with 'CurSol'
+                    deltaX, TempRes;
                 double rat;
                 double alpha = 1E-4;
                 //double sigma0 = 0.1;
@@ -128,31 +132,31 @@ namespace BoSSS.Solution.AdvancedSolvers
                 // Eval_F0 
 
                 using (new BlockTrace("Slv Init", tr)) {
-                    base.Init(SolutionVec, RHS, out x, out f0);
+                    base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
                 //Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
 
 
-                deltaX = new double[x.Length];
-                xt = new double[x.Length];
-                ft = new double[x.Length];
+                deltaX = new double[CurSol.Length];
+                TempSol = new double[CurSol.Length];
+                TempRes = new double[CurSol.Length];
 
 
-                this.CurrentLin.TransformSolFrom(SolutionVec, x);
-                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), f0);
+                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
+                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes);
 
-                Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
+                Console.WriteLine("Residual base.init:   " + CurRes.L2NormPow2().MPISum().Sqrt());
                 //base.EvalResidual(x, ref f0);
 
                 // fnorm
-                double fnorm = f0.L2NormPow2().MPISum().Sqrt();
+                double fnorm = CurRes.L2NormPow2().MPISum().Sqrt();
                 double fNormo = 1;
                 double errstep;
-                double[] step = new double[x.Length];
-                double[] stepOld = new double[x.Length];
+                double[] step = new double[CurSol.Length];
+                double[] stepOld = new double[CurSol.Length];
                 //BlockMsrMatrix CurrentJac;
-                bool secondCriteriumConverged = false;
-                OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
+                //bool secondCriteriumConverged = false;
+                OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
                 double fnorminit = fnorm;
                 using (new BlockTrace("Slv Iter", tr)) {
                     while (
@@ -177,48 +181,26 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 Precond.Init(CurrentLin);
                             }
                             //base.EvalResidual(x, ref f0); 
-                            f0.ScaleV(-1.0);
-                            step = Krylov(SolutionVec, x, f0, out errstep);
+                            CurRes.ScaleV(-1.0);
+                            step = Krylov(SolutionVec, CurSol, CurRes, out errstep);
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                             // +++++++++++++++++++++++++++++
                             // Option: use 'external' solver
                             // +++++++++++++++++++++++++++++
 
 
-                            /*
-                            double[] _step = step.ToArray();
-                            double[] _f0 = f0.ToArray();
-                            double _check_norm;
-                            {
-                                var CurrentJac = CurrentLin.OperatorMatrix;
-                                var _solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();      // .MUMPS.MUMPSSolver();
-                                _solver.DefineMatrix(CurrentJac);
-                                _step.ClearEntries();
-                                var _check = _f0.CloneAs();
-                                _f0.ScaleV(-1.0);
-                                _solver.Solve(_step, _f0);
 
-                                CurrentLin.OperatorMatrix.SpMV(-1.0, _step, -1.0, _check);
-                                _check_norm = _check.L2Norm();
-                            }
-                            */
-
-                            var solver = linsolver;
-                            //var mgo = new MultigridOperator(m_AggBasisSeq, SolutionVec.Mapping, CurrentJac, null, m_MultigridOperatorConfig);
-                            //if (Precond != null) {
-                            //    Precond.Init(CurrentLin);
-                            //}
-
+                            var solver = this.linsolver;
                             solver.Init(CurrentLin);
                             step.ClearEntries();
-                            var check = f0.CloneAs();
-                            f0.ScaleV(-1.0);
+                            var check = CurRes.CloneAs();
+                            CurRes.ScaleV(-1.0);
                             solver.ResetStat();
 
                             if(solver is IProgrammableTermination pt) {
                                 // iterative solver with programmable termination is used - 
                                 
-                                double f0_L2 = f0.MPI_L2Norm();
+                                double f0_L2 = CurRes.MPI_L2Norm();
                                 double thresh = f0_L2 * 1e-5;
                                 Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                                 pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
@@ -229,30 +211,29 @@ namespace BoSSS.Solution.AdvancedSolvers
                             }
 
                             
-                            solver.Solve(step, f0);
+                            solver.Solve(step, CurRes);
                             
                         } else {
-                            throw new NotImplementedException("Your approximation option for the Jacobian seems not to be existent.");
+                            throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
                         }
 
                         // Start line search
-                        xOld = x;
+                        PrevSol = CurSol;
                         double lambda = 1;
                         double lamm = 1;
                         double lamc = lambda;
                         double iarm = 0;
-                        xt = x.CloneAs();
-                        xt.AccV(lambda, step);
-                        this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+                        TempSol = CurSol.CloneAs();
+                        TempSol.AccV(lambda, step);
+                        this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes);
                         
-                        double nft = ft.L2NormPow2().MPISum().Sqrt();
-                        double nf0 = f0.L2NormPow2().MPISum().Sqrt();
-                        double ff0 = nf0 * nf0;
-                        double ffc = nft * nft;
-                        double ffm = nft * nft;
+                        double nft = TempRes.L2NormPow2().MPISum().Sqrt();
+                        double nf0 = CurRes.L2NormPow2().MPISum().Sqrt();
+                        double ff0 = nf0 * nf0; // residual norm of current solution ^2
+                        double ffc = nft * nft; // 
+                        double ffm = nft * nft; //
 
-                    //    Console.WriteLine("    Residuum 0:" + nf0);
 
                         // Control of the the step size
                         while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -261,18 +242,18 @@ namespace BoSSS.Solution.AdvancedSolvers
                             if (iarm == 0)
                                 lambda = sigma1 * lambda;
                             else
-                                lambda = parab3p(lamc, lamm, ff0, ffc, ffm);
+                                lambda = parab3p(lamc, lamm, ff0, ffc, ffm); // ff0: curent sol, ffc: most recent reduction, ffm: previous reduction
 
                             // Update x;
-                            xt = x.CloneAs();
-                            xt.AccV(lambda, step);
+                            TempSol = CurSol.CloneAs();
+                            TempSol.AccV(lambda, step);
                             lamm = lamc;
                             lamc = lambda;
 
-                            this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                            EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+                            this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
+                            EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes);
 
-                            nft = ft.L2NormPow2().MPISum().Sqrt();
+                            nft = TempRes.L2NormPow2().MPISum().Sqrt();
                             ffm = ffc;
                             ffc = nft * nft;
                             iarm++;
@@ -284,7 +265,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
                         // (and for Level-Set-Updates ...)
-                        this.CurrentLin.TransformSolFrom(SolutionVec, xt);
+                        this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
 
                         if (UsePresRefPoint == false) {
 
@@ -304,27 +285,27 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         // update linearization
                         if (itc  % constant_newton_it == 0) {
-                            base.Update(SolutionVec.Mapping.Fields, ref xt);
+                            base.Update(SolutionVec.Mapping.Fields, ref TempSol);
                             if(constant_newton_it !=1) { 
                             Console.WriteLine("Jacobian is updated: it {0}", itc);
                             }
                         }
 
                         // residual evaluation & callback
-                        base.EvalResidual(xt, ref ft);
+                        base.EvalResidual(TempSol, ref TempRes);
 
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes);
 
-                        fnorm = ft.L2NormPow2().MPISum().Sqrt();
+                        fnorm = TempRes.L2NormPow2().MPISum().Sqrt();
 
-                        x = xt;
-                        f0 = ft.CloneAs();
+                        CurSol = TempSol;
+                        CurRes = TempRes.CloneAs();
 
-                        OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
+                        OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
 
                         #region second criterium
                         // Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
-                        // this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
+                        // this criterium is useful to "ensure that even finer physical details of the flow and are resolved"
                         
                         /*
                         double[] WMat_s = new double[x.Length];
@@ -355,7 +336,6 @@ namespace BoSSS.Solution.AdvancedSolvers
                     }
                 }
 
-                SolutionVec = m_SolutionVec;
 
             }
         }

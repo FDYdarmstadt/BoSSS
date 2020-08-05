@@ -231,7 +231,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var builder = SpeciesBuilder[SpeciesId];
                                     builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
-                                    NotifySpecies(builder.Owner, this.m_lsTrk, SpeciesId);
+                                    NotifySpecies((SpatialOperator)(builder.Owner), this.m_lsTrk, SpeciesId);
 
                                     if(trx != null) {
                                         trx.TransceiveFinish();
@@ -424,7 +424,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var eval = SpeciesEval[SpeciesId];
                                     eval.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
-                                    NotifySpecies(eval.Owner, this.m_lsTrk, SpeciesId);
+                                    NotifySpecies((SpatialOperator)(eval.Owner), this.m_lsTrk, SpeciesId);
 
                                     if (trx != null) {
                                         trx.TransceiveFinish();
@@ -585,12 +585,15 @@ namespace BoSSS.Foundation.XDG {
 
         abstract public class XEvaluatorBase : IXEvaluator {
 
-            XSpatialOperatorMk2 m_Owner;
+            /// <summary>
+            /// equal to <see cref="Owner"/>
+            /// </summary>
+            internal XSpatialOperatorMk2 m_Owner;
 
             /// <summary>
             /// the operator used to construct this object
             /// </summary>
-            public XSpatialOperatorMk2 Owner {
+            public ISpatialOperator Owner {
                 get {
                     return m_Owner;
                 }

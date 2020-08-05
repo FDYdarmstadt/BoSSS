@@ -24,10 +24,13 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public interface IXEvaluator : IEvaluator {
 
+        /*
         /// <summary>
         /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
         /// </summary>
         XSpatialOperatorMk2 Owner { get; }
+        */
+
 
         /// <summary>
         /// Operator coefficients for each species
