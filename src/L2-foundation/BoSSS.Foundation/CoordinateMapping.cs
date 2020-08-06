@@ -305,5 +305,19 @@ namespace BoSSS.Foundation {
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
             return this.Fields.GetEnumerator();
         }
+
+        /// <summary>
+        /// implicit conversion
+        /// </summary>
+        public static implicit operator CoordinateMapping(DGField[] flds) {
+            return new CoordinateMapping(flds);
+        }
+
+        /// <summary>
+        /// implicit conversion
+        /// </summary>
+        public static implicit operator DGField[](CoordinateMapping cm) {
+            return cm.Fields.ToArray();
+        }
     }
 }

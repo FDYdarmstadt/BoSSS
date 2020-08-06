@@ -484,7 +484,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
 
 
-                /// Apply underrelaxation
+                // Apply underrelaxation
 
                 Phi.Clear(RestrictionMask);
                 Phi.Acc(1 - underrelaxation, OldPhi, RestrictionMask);
@@ -552,15 +552,15 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                         OpMatrix_bulk, OpAffine_bulk,
                         OnlyAffine: false, sgrd: Restriction);
 
-                /// Compose the Matrix
-                /// This is symmetric due to the symmetry of the SIP and the penalty term
+                // Compose the Matrix
+                // This is symmetric due to the symmetry of the SIP and the penalty term
                 OpMatrix.Clear();
                 OpMatrix.Acc(1.0, OpMatrix_bulk);
                 OpMatrix.Acc(1.0, OpMatrix_interface);
                 OpMatrix.AssumeSymmetric = false;
 
-                /// Compose the RHS of the above operators. (-> Boundary Conditions)
-                /// This does NOT include the Nonlinear RHS, which will be added later
+                // Compose the RHS of the above operators. (-> Boundary Conditions)
+                // This does NOT include the Nonlinear RHS, which will be added later
                 OpAffine.Clear();
                 OpAffine.AccV(1.0, OpAffine_bulk);
                 OpAffine.AccV(1.0, OpAffine_interface);
@@ -610,7 +610,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             double PenaltyBase = ((double)((Phi.Basis.Degree + 1) * (Phi.Basis.Degree + D))) / ((double)D);
 
 
-            /// Choose Forms according to Upwinding or Central Fluxes
+            // Choose Forms according to Upwinding or Central Fluxes
             string[] paramNames;
             int noOfParamFields;
             

@@ -444,16 +444,7 @@ namespace BoSSS.Foundation.XDG {
                     ///////////////////
 
 
-                    //if(OnIntegratingSurfaceElement != null)
-                    //    OnIntegratingSurfaceElement(lsTrk.GetSpeciesName(SpeciesId), SpeciesId, InterfaceLengths[SpeciesId]);
-
-
-                    //SurfaceElementOperator.ComputeMatrixEx(
-                    //    mtx.ColMapping, Params, mtx.RowMapping,
-                    //    _mtx, vec, OnlyAffine, time,
-                    //    SurfaceElement_Edge, SurfaceElement_volume, null);
-
-
+         
 
                     using (new BlockTrace("surface_integration", tr)) {
 #if DEBUG

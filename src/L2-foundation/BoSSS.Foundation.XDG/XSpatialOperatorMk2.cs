@@ -221,9 +221,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
-            ) {
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
 
             return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap,
                 1, // based on actual level-set tracker state
@@ -260,9 +258,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
-            ) {
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
                 1,
@@ -273,7 +269,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// explicit evaluation of the operator
         /// </summary>
-        public IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+        public IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
             throw new NotImplementedException();
         }
 
@@ -306,10 +302,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XFDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate,
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
-            ) {
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, SpeciesSchemes);
 
@@ -321,8 +314,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XFDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate) //
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
@@ -1052,11 +1044,11 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            /// <summary>
-            /// filters the equation components for the required species
-            /// </summary>
-            /// <param name="spcId">required species</param>
-            /// <returns></returns>
+            // <summary>
+            // filters the equation components for the required species
+            // </summary>
+            // <param name="spcId">required species</param>
+            // <returns></returns>
             //public SortedList<string, List<IEquationComponent>> GetSpeciesEquationComponents(SpeciesId spcId) {
 
             //    SortedList<string, List<IEquationComponent>> SpeciesEquationComponent = new SortedList<string, List<IEquationComponent>>(m_owner.CodomainVar.Count);

@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
     /// </summary>
-    public interface IEquationComponentSpeciesNotification {
+    public interface IEquationComponentSpeciesNotification : IEquationComponent {
 
         /// <summary>
         /// called before the integration on respective species 
@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// this interface should be implemented by bulk equation components which are only valid in one species
     /// </summary>
-    public interface ISpeciesFilter {
+    public interface ISpeciesFilter : IEquationComponent {
 
 
         /// <summary>

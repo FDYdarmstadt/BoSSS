@@ -96,6 +96,118 @@ namespace BoSSS.Foundation {
             }
         }
 
+        Func<IGridData, EdgeQuadratureScheme> m_EdgeQuadraturSchemeProvider = (IGridData g) => new EdgeQuadratureScheme(true, null);
+
+        /// <summary>
+        /// User-customizable factory, to specify the edge quadrature, see also <see cref="QuadOrderFunction"/>
+        /// </summary>
+        public Func<IGridData,EdgeQuadratureScheme> EdgeQuadraturSchemeProvider {
+            get {
+                return m_EdgeQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_EdgeQuadraturSchemeProvider = value;
+            }
+        }
+
+        Func<IGridData, CellQuadratureScheme> m_VolumeQuadraturSchemeProvider = (IGridData g) => new CellQuadratureScheme(true, null);
+        
+
+
+
+        /// <summary>
+        /// User-customizable factory, to specify the cell/volume quadrature, see also <see cref="QuadOrderFunction"/>
+        /// </summary>
+        public Func<IGridData,CellQuadratureScheme> VolumeQuadraturSchemeProvider {
+            get {
+                return m_VolumeQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_VolumeQuadraturSchemeProvider = value;
+            }
+        }
+
+        /// <summary>
+        /// Dirty hack in order to support legacy interfaces: modify quad scheme providers after commit
+        /// </summary>
+        internal (Func<IGridData, EdgeQuadratureScheme>,Func<IGridData,CellQuadratureScheme>) LegacySupport_ModifyQuadSchemProvider(EdgeQuadratureScheme es, CellQuadratureScheme cs) {
+            var r = (EdgeQuadraturSchemeProvider, VolumeQuadraturSchemeProvider); // backup
+
+            this.m_EdgeQuadraturSchemeProvider = g => es;
+            this.m_VolumeQuadraturSchemeProvider = g => cs;
+
+            return r;
+        }
+
+        /// <summary>
+        /// Dirty hack to support legacy interface
+        /// </summary>
+        internal void LegacySupport_RestoreQuadSchemeProvider((Func<IGridData, EdgeQuadratureScheme> es,Func<IGridData,CellQuadratureScheme> cs) tt) {
+            this.m_EdgeQuadraturSchemeProvider = tt.es;
+            this.m_VolumeQuadraturSchemeProvider = tt.cs;
+        }
+
+        /// <summary>
+        /// Employs <see cref="EdgeQuadraturSchemeProvider"/>, <see cref="VolumeQuadraturSchemeProvider"/>, <see cref="QuadOrderFunc"/>
+        /// to generate quadrature rules for the operator evaluation.
+        /// </summary>
+        public (ICompositeQuadRule<QuadRule> edgeRule, ICompositeQuadRule<QuadRule> volRule) CompileQuadratureRules(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
+            var order = GetOrderFromQuadOrderFunction(DomainBasis, ParameterBasis, CodomainBasis);
+            IGridData gdat = DomainBasis.Any() ? DomainBasis.First().GridDat : CodomainBasis.First().GridDat;
+
+            var edgeScheme = this.EdgeQuadraturSchemeProvider(gdat);
+            var volScheme = this.VolumeQuadraturSchemeProvider(gdat);
+
+            ICompositeQuadRule<QuadRule> _edgeRule = edgeScheme.SaveCompile(gdat, order);
+            ICompositeQuadRule<QuadRule> _volRule = volScheme.SaveCompile(gdat, order);
+
+            return (_edgeRule, _volRule);
+        }
+
+
+
+
+        Func<IGridData, double, CoefficientSet> m_OperatorCoefficientsProvider = delegate (IGridData g, double time) {
+
+            var r = new CoefficientSet() {
+                GrdDat = g
+            };
+
+            if(g is Grid.Classic.GridData cgdat) {
+                r.CellLengthScales = cgdat.Cells.CellLengthScale;
+                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
+
+            } else {
+                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
+            }
+
+            return r;
+        };
+
+        /// <summary>
+        /// User-customizable factory, to modify single values (e.g. Reynolds numbers)
+        /// within the operator components (those implementing <see cref="IEquationComponentCoefficient"/>)
+        /// Auxiliary data passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
+        /// - 1st argument: grid
+        /// - 2nd argument: time
+        /// - return value: instance of <see cref="CoefficientSet"/> (or some derivative class)
+        /// </summary>
+        public Func<IGridData,double,CoefficientSet> OperatorCoefficientsProvider {
+            get {
+                return m_OperatorCoefficientsProvider;
+            }
+            set {
+                 if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_OperatorCoefficientsProvider = value;
+            }
+        }
+
+
         /// <summary>
         /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
         /// </summary>
@@ -275,14 +387,14 @@ namespace BoSSS.Foundation {
         /// <param name="Parameters"></param>
         /// <param name="CodomainMap"></param>
         /// <returns></returns>
-        public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
+        public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
             /// Compute Quadrature Order
             int order;
-            int[] DomainDegrees = DomainMap.BasisS.Select(f => f.Degree).ToArray();
-            int[] CodomainDegrees = CodomainMap.BasisS.Select(f => f.Degree).ToArray();
+            int[] DomainDegrees = DomainBasis.Select(f => f.Degree).ToArray();
+            int[] CodomainDegrees = CodomainBasis.Select(f => f.Degree).ToArray();
             int[] ParameterDegrees;
-            if(Parameters != null && Parameters.Count != 0) {
-                ParameterDegrees = Parameters.Select(f => f == null ? 0 : f.Basis.Degree).ToArray();
+            if(ParameterBasis != null && ParameterBasis.Count() != 0) {
+                ParameterDegrees = ParameterBasis.Select(b => b == null ? b.Degree : 0).ToArray();
             } else {
                 ParameterDegrees = new int[] { 0 };
             };
@@ -773,24 +885,26 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
         /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
-        public virtual IEvaluatorNonLin_ GetEvaluatorEx(
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            EdgeQuadratureScheme edgeQrCtx = null,
-            CellQuadratureScheme volQrCtx = null) //
+        public virtual IEvaluatorNonLin GetEvaluatorEx(
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
 
             using(new FuncTrace()) {
                 if(DomainFields == null)
                     DomainFields = new DGField[0];
+                if(ParameterMap == null)
+                    ParameterMap = new DGField[0];
 
                 /// This is already done in the constructor of Evaluator
 #if DEBUG
                 if(!m_IsCommited)
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 #endif
+                var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
+                    ParameterMap.Select(f => f != null ? f.Basis : default(Basis)), 
+                    CodomainVarMap.BasisS);
 
-
-                var e = new EvaluatorNonLin(this, DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+                var e = new EvaluatorNonLin(this, DomainFields, ParameterMap, CodomainVarMap, rulz.edgeRule, rulz.volRule);
 
                 return e;
             }
@@ -799,10 +913,8 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Creator of a <see cref="EvaluatorLinear"/> object.
         /// </summary>
-        public virtual IEvaluatorLinear_ GetMatrixBuilder(
-            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            EdgeQuadratureScheme edgeQrCtx = null,
-            CellQuadratureScheme volQrCtx = null) //
+        public virtual IEvaluatorLinear GetMatrixBuilder(
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
 
             using(new FuncTrace()) {
@@ -813,11 +925,13 @@ namespace BoSSS.Foundation {
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 #endif
 
-                
+                var rulz = CompileQuadratureRules((Basis[])DomainVarMap, 
+                    ParameterMap.Select(f => f != null ? f.Basis : default(Basis)), 
+                    (Basis[])CodomainVarMap);
 
 
 
-                var e = new EvaluatorLinear(this, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+                var e = new EvaluatorLinear(this, DomainVarMap, ParameterMap, CodomainVarMap, rulz.edgeRule, rulz.volRule);
 
                 return e;
             }
@@ -826,7 +940,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
-        abstract public class EvaluatorBase : IEvaluator_ {
+        abstract public class EvaluatorBase : IEvaluator {
 
             SpatialOperator m_Owner;
 
@@ -881,8 +995,9 @@ namespace BoSSS.Foundation {
                     if(!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
-                    order = owner.GetOrderFromQuadOrderFunction(DomainMapping, ParameterMap, CodomainVarMap);
+                    //order = owner.GetOrderFromQuadOrderFunction(DomainMapping, ParameterMap, CodomainVarMap);
 
+                    /*
                     m_OperatorCoefficients = new CoefficientSet() {
                         UserDefinedValues = new Dictionary<string, object>(),
                         GrdDat = this.GridData
@@ -895,9 +1010,11 @@ namespace BoSSS.Foundation {
                     } else {
                         Console.WriteLine("Rem: still missing cell length scales");
                     }
+                    */
                 }
             }
 
+            /*
             CoefficientSet m_OperatorCoefficients;
 
             /// <summary>
@@ -911,7 +1028,7 @@ namespace BoSSS.Foundation {
                     m_OperatorCoefficients = value;
                 }
             }
-
+            */
 
             /// <summary>
             /// Sets the coefficients for all equation components of the operator which implement <see cref="IEquationComponentCoefficient"/>.
@@ -921,6 +1038,8 @@ namespace BoSSS.Foundation {
                 int[] CodDGdeg = this.CodomainMapping.BasisS.Select(b => b.Degree).ToArray();
                 string[] DomNames = m_Owner.DomainVar.ToArray();
                 string[] CodNames = m_Owner.CodomainVar.ToArray();
+
+                var _OperatorCoefficients = ((SpatialOperator)Owner).OperatorCoefficientsProvider(this.GridData, this.time);
 
 
                 Debug.Assert(CodNames.Length == CodDGdeg.Length);
@@ -938,13 +1057,13 @@ namespace BoSSS.Foundation {
                             }
 
 
-                            ce.CoefficientUpdate(m_OperatorCoefficients, DomDGdeg_cd, CodDGdeg[iCod]);
+                            ce.CoefficientUpdate(_OperatorCoefficients, DomDGdeg_cd, CodDGdeg[iCod]);
                         }
                     }
                 }
             }
 
-
+            /*
             /// <summary>
             /// Quadrature order to compile quadrature schemes
             /// </summary>
@@ -952,6 +1071,7 @@ namespace BoSSS.Foundation {
                 get;
                 private set;
             }
+            */
 
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
 
@@ -1108,7 +1228,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// evaluation of operators
         /// </summary>
-        protected class EvaluatorNonLin : EvaluatorBase, IEvaluatorNonLin_ {
+        protected class EvaluatorNonLin : EvaluatorBase, IEvaluatorNonLin {
 
             /// <summary>
             /// Returns domain fields and parameters.
@@ -1158,8 +1278,8 @@ namespace BoSSS.Foundation {
                 IList<DGField> DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap,
-                EdgeQuadratureScheme edgeQrCtx,
-                CellQuadratureScheme volQrCtx) //
+                ICompositeQuadRule<QuadRule> edgeQuadRule,
+                ICompositeQuadRule<QuadRule> volQuadRule) //
              : base(owner, Helper(DomainVarMap, ParameterMap), ParameterMap, CodomainVarMap) //
             {
 
@@ -1178,7 +1298,7 @@ namespace BoSSS.Foundation {
                                                             DomainVarMap,
                                                             ParameterMap,
                                                             CodomainVarMap,
-                                                            edgeQrCtx.SaveCompile(grdDat, order));
+                                                            edgeQuadRule);
 
 
 
@@ -1190,7 +1310,7 @@ namespace BoSSS.Foundation {
                                                                 DomainVarMap,
                                                                 ParameterMap,
                                                                 CodomainVarMap,
-                                                                volQrCtx.SaveCompile(grdDat, order));
+                                                                volQuadRule);
 
                 }
 
@@ -1315,7 +1435,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// matrix assembly for linear or linearized operators
         /// </summary>
-        protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear_ {
+        protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear {
 
             /// <summary>
             /// Not for direct user interaction
@@ -1325,8 +1445,8 @@ namespace BoSSS.Foundation {
                 UnsetteledCoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap,
-                EdgeQuadratureScheme edgeQrCtx,
-                CellQuadratureScheme volQrCtx) //
+                ICompositeQuadRule<QuadRule> edgeQr,
+                ICompositeQuadRule<QuadRule> volQr) //
                  : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
                 foreach(string codVarName in owner.CodomainVar) {
@@ -1342,8 +1462,8 @@ namespace BoSSS.Foundation {
                         throw new NotSupportedException("'INonlinearSource' is not supported for linearization; (codomain variable '" + codVarName + "')");
                 }
 
-                this.edgeRule = edgeQrCtx.SaveCompile(base.GridData, order);
-                this.volRule = volQrCtx.SaveCompile(base.GridData, order);
+                this.edgeRule = edgeQr;
+                this.volRule = volQr;
                 base.MPITtransceive = true;
             }
 
@@ -1486,23 +1606,23 @@ namespace BoSSS.Foundation {
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
         public virtual IEvaluatorLinear GetFDJacobianBuilder(
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate,
-            EdgeQuadratureScheme edgeQrCtx = null,
-            CellQuadratureScheme volQrCtx = null) //
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
-            return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, __delParameterUpdate, edgeQrCtx, volQrCtx);
+            DelParameterUpdate __delParameterUpdate = null;
+            if(this.ParameterUpdate != null) {
+                __delParameterUpdate = this.ParameterUpdate.ParameterUpdate;
+            }
+            
+            return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, __delParameterUpdate);
         }
 
 
         /// <summary>
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
-        public virtual IEvaluatorLinear_ GetFDJacobianBuilder_(
+        public virtual FDJacobianBuilder GetFDJacobianBuilder_(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate,
-            EdgeQuadratureScheme edgeQrCtx = null,
-            CellQuadratureScheme volQrCtx = null) //
+            DelParameterUpdate __delParameterUpdate) //
         {
 
             using(new FuncTrace()) {
@@ -1518,11 +1638,15 @@ namespace BoSSS.Foundation {
                     }
                 }
 
+                var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
+                    ParameterMap.Select(f => f != null ? f.Basis : default(Basis)), 
+                    CodomainVarMap.BasisS);
+
 
                 var e = new FDJacobianBuilder(new EvaluatorNonLin(
                     this,
                     new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
-                    edgeQrCtx, volQrCtx),
+                    rulz.edgeRule, rulz.volRule),
                     __delParameterUpdate);
                 //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
@@ -1534,7 +1658,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
         /// </summary>
-        public class FDJacobianBuilder : IEvaluatorLinear_ {
+        public class FDJacobianBuilder : IEvaluatorLinear {
 
             /// <summary>
             /// Not for direct user interaction
@@ -1653,12 +1777,13 @@ namespace BoSSS.Foundation {
                 set => throw new NotImplementedException();
             }
 
+            /*
             /// <summary>
             /// 
             /// </summary>
             virtual public CoefficientSet OperatorCoefficients {
                 get {
-                    //return Eval.OperatorCoefficients;
+                    return Eval.OperatorCoefficients;
                     if(Eval is IEvaluator_ eval_) {
                         return eval_.OperatorCoefficients;
                     } else {
@@ -1674,6 +1799,7 @@ namespace BoSSS.Foundation {
                     }
                 }
             }
+            */
 
             IEvaluatorNonLin Eval;
 
