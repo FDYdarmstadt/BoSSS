@@ -463,6 +463,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Prints the methods with the highest Imbalance of runtime over MPI-ranks.
         /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// NOTE: this consideres no idle time within methods!
         /// </summary>
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>

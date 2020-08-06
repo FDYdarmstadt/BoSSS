@@ -1,0 +1,9 @@
+>   BoSSSpad C# interpreter
+>   _______________________
+> 
+> Databases loaded:
+> List of 1 instances of IDatabaseInfo {
+>   0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+> }
+> 
+>  Console ready for input. Type 'help' for help.
