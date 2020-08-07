@@ -1504,6 +1504,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             // an internal edge, but on the boundary of the subgrid
                             // ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                            __Len = 1; // turn off vectorization
 
                             Debug.Assert(jCell1 >= 0 && jCell2 >= 0); // must be an internal edge !
                             Debug.Assert(SubGrdBnd);  // must be a subgrid boundary

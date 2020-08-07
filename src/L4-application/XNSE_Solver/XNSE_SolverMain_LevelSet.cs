@@ -57,6 +57,7 @@ using NUnit.Framework;
 using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -125,6 +126,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         EllipticReInit ReInitPDE;
 
+        /// <summary>
+        /// Phasefield object
+        /// </summary>
+        Phasefield PhaseField;
 
         /// <summary>
         /// The velocity for the level-set evolution; 
@@ -319,6 +324,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                             break;
                         }
+                    case LevelSetEvolution.Phasefield:
+                        this.DGLevSet.Current.Clear();
+                        this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
+                        PhaseField = new Phasefield(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        PhaseField.InitCH();
+                        break;
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.ScalarConvection:
@@ -340,14 +351,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 // =========================================
                 // Enforcing the continuity of the level-set
                 // =========================================
-
+                
                 ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
                     Option: Control.LSContiProjectionMethod
                     );
-
+                
                 //var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
                 var Near1 = this.LsTrk.Regions.GetNearMask4LevSet(0, 1);
                 var Near = this.LsTrk.Regions.GetNearMask4LevSet(0, this.Control.LS_TrackerWidth);
@@ -357,11 +368,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
 
                 ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near, PosFF);
-
+                
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
 
                 this.LsTrk.UpdateTracker();
-
+                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 3 }), 3);
             }
 
         }
@@ -721,6 +732,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
                             break;
                         }
+                    case LevelSetEvolution.Phasefield:
+                        ExtensionVelocity.Push();
+                        for (int g = 0; g < meanVelocity.Length; g++)
+                        {
+                            ExtensionVelocity.Current[g].Clear();
+                            ExtensionVelocity.Current[g].Acc(1.0, meanVelocity[g]);
+                        }
+                        PhaseField.MovePhasefield(iTimestep, dt, Phystime);
+                        break;
                     default:
                         throw new ApplicationException();
                 }
