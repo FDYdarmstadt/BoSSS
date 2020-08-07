@@ -402,6 +402,7 @@ namespace BoSSS.Foundation {
             return order;
         }
 
+        /*
         private static IGridData CheckArguments(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
             var GridDat = DomainMap.GridDat;
             if(!object.ReferenceEquals(GridDat, CodomainMap.GridDat))
@@ -412,6 +413,7 @@ namespace BoSSS.Foundation {
                         throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
             return GridDat;
         }
+        */
 
         /// <summary>
         /// for some codomain variable <paramref name="CodomVar"/>,
@@ -901,7 +903,7 @@ namespace BoSSS.Foundation {
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 #endif
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
-                    ParameterMap.Select(f => f != null ? f.Basis : default(Basis)), 
+                    GetBasisS(ParameterMap),
                     CodomainVarMap.BasisS);
 
                 var e = new EvaluatorNonLin(this, DomainFields, ParameterMap, CodomainVarMap, rulz.edgeRule, rulz.volRule);
@@ -926,7 +928,7 @@ namespace BoSSS.Foundation {
 #endif
 
                 var rulz = CompileQuadratureRules((Basis[])DomainVarMap, 
-                    ParameterMap.Select(f => f != null ? f.Basis : default(Basis)), 
+                    GetBasisS(ParameterMap),
                     (Basis[])CodomainVarMap);
 
 
@@ -1616,6 +1618,12 @@ namespace BoSSS.Foundation {
             return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, __delParameterUpdate);
         }
 
+        static Basis[] GetBasisS(IList<DGField> ParameterMap) {
+            if(ParameterMap == null)
+                return new Basis[0];
+
+            return ParameterMap.Select(f => f != null ? f.Basis : default(Basis)).ToArray();
+        }
 
         /// <summary>
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
@@ -1639,7 +1647,7 @@ namespace BoSSS.Foundation {
                 }
 
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
-                    ParameterMap.Select(f => f != null ? f.Basis : default(Basis)), 
+                    GetBasisS(ParameterMap),
                     CodomainVarMap.BasisS);
 
 
@@ -1663,7 +1671,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            internal protected FDJacobianBuilder(IEvaluatorNonLin __Eval, DelParameterUpdate __delParameterUpdate) {
+            public FDJacobianBuilder(IEvaluatorNonLin __Eval, DelParameterUpdate __delParameterUpdate) {
 
                 eps = 1.0;
                 while(1.0 + eps > 1.0) {
@@ -2721,10 +2729,5 @@ namespace BoSSS.Foundation {
             JacobianOp.Commit();
             return JacobianOp;
         }
-
-
-
-
-
     }
 }
