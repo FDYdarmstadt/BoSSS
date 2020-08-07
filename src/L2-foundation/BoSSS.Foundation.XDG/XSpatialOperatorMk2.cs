@@ -63,85 +63,6 @@ namespace BoSSS.Foundation.XDG {
 
         List<string> m_SpeciesList = new List<string>();
 
-        /*
-        /// <summary>
-        /// for constructing evaluators of the species terms
-        /// </summary>
-        SpeciesOperatorHelper m_SpeciesOperator; 
-
-        /*
-        SpatialOperator m_SpatialOperator {
-            get {
-                return m_SpeciesOperator.SpatialOp;
-            }
-        }
-        */
-
-        /*
-        /// <summary>
-        /// 
-        /// </summary>
-        class SpeciesOperatorHelper {
-
-            XSpatialOperatorMk2 m_owner;
-
-            SpatialOperator m_SpatialOperator;  // so far only needed for iLevelSet terms, may be removed
-
-            internal SpatialOperator SpatialOp {
-                get {
-                    return m_SpatialOperator;
-                }
-            }
-
-            Dictionary<string, SpatialOperator> m_SpeciesOperator;
-
-            internal SpeciesOperatorHelper(XSpatialOperatorMk2 owner) {
-                m_owner = owner;
-
-                m_SpatialOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
-
-                m_SpeciesOperator = new Dictionary<string, SpatialOperator>();
-                foreach(string spcId in m_owner.Species) {
-                    SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
-                    m_SpeciesOperator.Add(spcId, spcOperator);
-                }
-            }
-
-            public SpatialOperator this[string spcId] {
-                get {
-                    return m_SpeciesOperator[spcId];
-                }
-            }
-
-            internal void Commit() {
-
-                foreach(string comps in m_owner.m_EquationComponents.Keys) {
-                    foreach(IEquationComponent iec in m_owner.m_EquationComponents[comps]) {
-                        m_SpatialOperator.EquationComponents[comps].Add(iec);
-                        if(iec is ISpeciesFilter fiec) {
-                            string spcNmn = fiec.validSpeciesId;
-
-                            if(!m_owner.Species.Contains(spcNmn)) {
-                                throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
-                            } else {
-                                m_SpeciesOperator[spcNmn].EquationComponents[comps].Add(iec);
-                            }
-                        } else {
-                            foreach(var spcOp in m_SpeciesOperator.Values) {
-                                spcOp.EquationComponents[comps].Add(iec);
-                            }
-                        }
-                    }
-                }
-
-                m_SpatialOperator.Commit();
-                foreach(var spcOp in m_SpeciesOperator.Values) {
-                    spcOp.Commit();
-                }
-            }
-        }
-        */
-
         private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs) {
 
             var r = new SpatialOperator(op.DomainVar, op.ParameterVar, (degDom, degParam, degCod) => order);
@@ -220,16 +141,6 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
-
-        /*
-        IEvaluatorNonLin GetSpeciesEvaluatorExBase(string spcName, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpeciesOperator[spcName].GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        }
-
-        IEvaluatorLinear GetSpeciesMatrixBuilderBase(string spcName, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpeciesOperator[spcName].GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        }
-        */
 
         /// <summary>
         /// edge and cell scheme for a certain species
@@ -920,23 +831,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-
-        /*
-        class FixedOrder_SpatialOperator : SpatialOperator {
-            public FixedOrder_SpatialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar)
-                : base(__DomainVar, __ParameterVar, __CoDomainVar, null) //
-            {
-                base.QuadOrderFunction = this.QOF;
-            }
-
-            int QOF(int[] A, int[] B, int[] C) {
-                return m_Order;
-            }
-
-            internal int m_Order;
-        }
-        */
-
         #endregion
 
 
@@ -1024,13 +918,7 @@ namespace BoSSS.Foundation.XDG {
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
             SurfaceElementOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
-            //SpeciesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
-            //m_SpeciesOperator = new SpeciesOperatorHelper(this);
-
-
         }
-
-
 
         _XEquationComponents m_EquationComponentsHelper;
 
@@ -1399,26 +1287,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
         #endregion
-
-        /*
-        /// <summary>
-        /// Employs <see cref="EdgeQuadraturSchemeProvider"/>, <see cref="VolumeQuadraturSchemeProvider"/>, <see cref="QuadOrderFunc"/>
-        /// to generate quadrature rules for the operator evaluation.
-        /// </summary>
-        public (ICompositeQuadRule<QuadRule> edgeRule, ICompositeQuadRule<QuadRule> volRule) CompileQuadratureRules(LevelSetTracker lsTrk, SpeciesId spc, int quadOrder, int TrackerHistory) {
-            
-
-            var edgeScheme = this.EdgeQuadraturSchemeProvider(lsTrk, spc, quadOrder, TrackerHistory);
-            var volScheme = this.VolumeQuadraturSchemeProvider(lsTrk, spc, quadOrder, TrackerHistory);
-
-            ICompositeQuadRule<QuadRule> _edgeRule = edgeScheme.SaveCompile(lsTrk.GridDat, quadOrder);
-            ICompositeQuadRule<QuadRule> _volRule = volScheme.SaveCompile(lsTrk.GridDat, quadOrder);
-
-            return (_edgeRule, _volRule);
-        }
-        */
-
-
 
 
         DelOperatorCoefficientsProvider m_OperatorCoefficientsProvider = delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {

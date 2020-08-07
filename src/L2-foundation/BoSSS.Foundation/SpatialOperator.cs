@@ -402,19 +402,6 @@ namespace BoSSS.Foundation {
             return order;
         }
 
-        /*
-        private static IGridData CheckArguments(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
-            var GridDat = DomainMap.GridDat;
-            if(!object.ReferenceEquals(GridDat, CodomainMap.GridDat))
-                throw new ArgumentException("Domain and codomain map must be assigend to the same grid.");
-            if(Parameters != null)
-                foreach(var prm in Parameters)
-                    if(prm != null && (!object.ReferenceEquals(prm.GridDat, GridDat)))
-                        throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
-            return GridDat;
-        }
-        */
-
         /// <summary>
         /// for some codomain variable <paramref name="CodomVar"/>,
         /// this method collects 
@@ -609,43 +596,6 @@ namespace BoSSS.Foundation {
                 return (string[])m_ParameterVar.Clone();
             }
         }
-
-        /*
-        /// <summary>
-        /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="CatParams">
-        /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
-        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
-        /// </param>
-        /// <param name="F">
-        /// optional filter;
-        /// should return true, if the component should be added, false if not; 
-        /// </param>
-        /// <param name="vectorizer">
-        /// vectorizer option: translate some equation component to another one
-        /// </param>
-        public EquationComponentArgMapping<T>[] GetArgMapping<T>(bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
-            if(!IsCommited)
-                throw new ApplicationException("Commit() has to be called prior to this method.");
-
-            int Gamma = CodomainVar.Count;
-
-            var ret = new EquationComponentArgMapping<T>[Gamma];
-            for(int i = 0; i < Gamma; i++) {
-                var codName = this.m_CodomainVar[i];
-                ret[i] = new EquationComponentArgMapping<T>(this,
-                    codName,
-                    this.m_DomainVar,
-                    CatParams ? this.ParameterVar : null,
-                    F, vectorizer);
-            }
-
-            return ret;
-        }
-        */
-
 
         /// <summary>
         /// returns true, if this spatial differential operator contains any 
@@ -996,41 +946,8 @@ namespace BoSSS.Foundation {
 
                     if(!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-
-                    //order = owner.GetOrderFromQuadOrderFunction(DomainMapping, ParameterMap, CodomainVarMap);
-
-                    /*
-                    m_OperatorCoefficients = new CoefficientSet() {
-                        UserDefinedValues = new Dictionary<string, object>(),
-                        GrdDat = this.GridData
-                    };
-
-                    if(this.GridData is Grid.Classic.GridData) {
-                        m_OperatorCoefficients.CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.CellLengthScale;
-                        m_OperatorCoefficients.EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge;
-
-                    } else {
-                        Console.WriteLine("Rem: still missing cell length scales");
-                    }
-                    */
                 }
             }
-
-            /*
-            CoefficientSet m_OperatorCoefficients;
-
-            /// <summary>
-            /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
-            /// </summary>
-            virtual public CoefficientSet OperatorCoefficients {
-                get {
-                    return m_OperatorCoefficients;
-                }
-                set {
-                    m_OperatorCoefficients = value;
-                }
-            }
-            */
 
             /// <summary>
             /// Sets the coefficients for all equation components of the operator which implement <see cref="IEquationComponentCoefficient"/>.
@@ -1065,15 +982,6 @@ namespace BoSSS.Foundation {
                 }
             }
 
-            /*
-            /// <summary>
-            /// Quadrature order to compile quadrature schemes
-            /// </summary>
-            public int order {
-                get;
-                private set;
-            }
-            */
 
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
 
@@ -1784,30 +1692,6 @@ namespace BoSSS.Foundation {
                 get => throw new NotImplementedException();
                 set => throw new NotImplementedException();
             }
-
-            /*
-            /// <summary>
-            /// 
-            /// </summary>
-            virtual public CoefficientSet OperatorCoefficients {
-                get {
-                    return Eval.OperatorCoefficients;
-                    if(Eval is IEvaluator_ eval_) {
-                        return eval_.OperatorCoefficients;
-                    } else {
-                        throw new NotSupportedException();
-                    }
-                }
-                set {
-                    //Eval.OperatorCoefficients = value;
-                    if(Eval is IEvaluator_ eval_) {
-                        eval_.OperatorCoefficients = value;
-                    } else {
-                        throw new NotSupportedException();
-                    }
-                }
-            }
-            */
 
             IEvaluatorNonLin Eval;
 
