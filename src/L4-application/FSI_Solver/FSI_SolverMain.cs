@@ -707,6 +707,7 @@ namespace BoSSS.Application.FSI_Solver {
                             Particle ghostParticle;
                             if (ghostHierachy[d1 + 1] == 0) {
                                 ghostHierachy[d1 + 1] = ParticleList.Count() + idOffset + 1;
+                                idOffset += 1;
                                 ghostParticle = currentParticle.CloneAs();
                                 ghostParticle.SetGhost();
                                 ghostParticle.Motion.SetGhostPosition(originNeighbouringDomain + particlePosition);
@@ -716,19 +717,18 @@ namespace BoSSS.Application.FSI_Solver {
                                 ghostParticle = ParticleList[ghostHierachy[d1 + 1] - 1];
                             }
                             if (d1 == 0) {
-                                idOffset = 1;
                                 if (ghostHierachy[3] != 0)
                                     continue;
                                 // test for periodic boundaries in y - direction for the newly created ghost
                                 for (int wallID2 = 0; wallID2 < spatialDim; wallID2++) {
-                                    idOffset += 1;
                                     if (PeriodicOverlap(ghostParticle, 1, wallID2)) {
                                         originNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID2]);
-                                        ghostHierachy[3] = ParticleList.Count() + d1 + idOffset;
-                                        ghostParticle = currentParticle.CloneAs();
-                                        ghostParticle.SetGhost();
-                                        ghostParticle.Motion.SetGhostPosition(originNeighbouringDomain + ghostParticles[0].Motion.GetPosition());
-                                        ghostParticles.Add(ghostParticle.CloneAs());
+                                        ghostHierachy[3] = ParticleList.Count() + idOffset + 1;
+                                        idOffset += 1;
+                                        Particle ghostParticleOfGhostParticle = currentParticle.CloneAs();
+                                        ghostParticleOfGhostParticle.SetGhost();
+                                        ghostParticleOfGhostParticle.Motion.SetGhostPosition(originNeighbouringDomain + ghostParticle.Motion.GetPosition());
+                                        ghostParticles.Add(ghostParticleOfGhostParticle.CloneAs());
                                         break;
                                     }
                                 }

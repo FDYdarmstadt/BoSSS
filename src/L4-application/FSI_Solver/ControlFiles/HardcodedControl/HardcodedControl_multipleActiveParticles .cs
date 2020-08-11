@@ -286,25 +286,25 @@ namespace BoSSS.Application.FSI_Solver {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "ad6c038b-8fb8-4d4d-8bb0-e214856d3061";
+            string ID = "9ce8b962-1cc9-4bfe-b658-7aa0e14f1cc0";
             C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 0.1;
             C.PhysicalParameters.IncludeConvection = false;
 
             // Particle Properties
             // =============================
-            double particleDensity = 10;
+            double particleDensity = 100;
             double activeStress = 10;
             double domainLength = 2.5;
             C.SetGrid(lengthX: domainLength, lengthY: domainLength, cellsPerUnitLength: 35, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
-            C.minDistanceThreshold = 0.015;
-            C.CoefficientOfRestitution = 0.5;
+            C.hydrodynamicsConvergenceCriterion = 1e-6;
+            C.minDistanceThreshold = 0;
+            C.CoefficientOfRestitution = 1;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             double leftCorner = -1.1;

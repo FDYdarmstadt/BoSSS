@@ -467,6 +467,9 @@ namespace BoSSS.Application.FSI_Solver {
             if (CollisionTimestep < 0)
                 CollisionTimestep = 0;
             SavePositionAndAngleOfPreviousTimestep();
+            if(CollisionTimestep> dt) {
+                throw new Exception("Collision timestep: " + CollisionTimestep);
+            }
             Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
             Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
             CollisionTimestep = 0;
@@ -493,6 +496,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         internal virtual void SetGhostPosition(Vector position) {
+            Console.WriteLine("GhostPosition");
             for (int h = 0; h<NumberOfHistoryEntries; h++) {
                 Position[h] = new Vector(position);
             }
@@ -582,11 +586,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
-            if (dt < 0)
-                Console.WriteLine("old Pos 0 " + Position[0][0]);
             Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 6;
-            if (dt < 0)
-                Console.WriteLine("new Pos 0 " + position[0]);
             Aux.TestArithmeticException(position, "particle position");
             return position;
         }
