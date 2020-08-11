@@ -572,7 +572,7 @@ namespace BoSSS.Application.IBM_Solver {
                 ParameterUpdate(CurrentState, Params);
                 var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping);
                 mtxBuilder.time = phystime;
-                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using finite difference Jacobi:
@@ -619,7 +619,7 @@ namespace BoSSS.Application.IBM_Solver {
                 ParameterUpdate(CurrentState, Params);
                 var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping);
                 eval.time = phystime;
-                eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                eval.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
 

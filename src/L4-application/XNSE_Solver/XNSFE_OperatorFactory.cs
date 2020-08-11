@@ -613,20 +613,20 @@ namespace BoSSS.Application.XNSE_Solver {
                 XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping);
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                    this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
+                    this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["EvapMicroRegion"] = EvapMicroRegion;
                     if (config.prescribedMassflux != null) {
                         double[] dummyX = new double[] { 0.0, 0.0 };
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(dummyX, time));
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["prescribedMassflux"] = config.prescribedMassflux(dummyX, time);
                     }
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("lambda_interface", lambdaI);
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("mu_interface", muI);
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["lambda_interface"] = lambdaI;
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["mu_interface"] = muI;
                     }
                 }
 
@@ -639,20 +639,20 @@ namespace BoSSS.Application.XNSE_Solver {
                     CurrentState.ToArray(), Params, RowMapping);
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    eval.CellLengthScales[kv.Key] = kv.Value;
+                    this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
+                    this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["EvapMicroRegion"] = EvapMicroRegion;
                     if (config.prescribedMassflux != null) {
                         double[] dummyX = new double[] { 0.0, 0.0 };
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(dummyX, time));
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["prescribedMassflux"] = config.prescribedMassflux(dummyX, time);
                     }
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("lambda_interface", lambdaI);
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("mu_interface", muI);
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["lambda_interface"] = lambdaI;
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["mu_interface"] = muI;
                     }
                 }
 

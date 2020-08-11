@@ -154,7 +154,7 @@ namespace BoSSS.Foundation {
             return LocalUniqueCoordinateIndex(find, j, n);
         }
 
-        /*
+        
         /// <summary>
         /// computes a global unique coordinate index ("global" means over all MPI processors);
         /// this index is unique over all fields (in this mapping), over all cells, over all basis functions;
@@ -169,7 +169,7 @@ namespace BoSSS.Foundation {
             int iloc = LocalUniqueCoordinateIndex(f, j, n);
             return Local2GlobalIndex(iloc);
         }
-        */
+        
 
         /// <summary>
         /// inverse mapping of <see cref="LocalUniqueCoordinateIndex"/>;
@@ -305,13 +305,15 @@ namespace BoSSS.Foundation {
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
             return this.Fields.GetEnumerator();
         }
-
+        
+        /*
         /// <summary>
         /// implicit conversion
         /// </summary>
         public static implicit operator CoordinateMapping(DGField[] flds) {
             return new CoordinateMapping(flds);
         }
+        */
 
         /// <summary>
         /// implicit conversion

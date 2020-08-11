@@ -70,7 +70,8 @@ namespace BoSSS.Foundation.XDG {
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld4Species) {
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, spcName, quadOrder, edgeScheme, cellScheme);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, this.m_lsTrk, spcName, quadOrder, edgeScheme, cellScheme, this.TrackerHistory, CellLengthScales, EdgeLengthScales);
 
                 var BulkMtxBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 BulkMtxBuilder.MPITtransceive = false;
@@ -83,12 +84,13 @@ namespace BoSSS.Foundation.XDG {
             protected override void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme nullvolumeScheme, EdgeQuadratureScheme ghostEdgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params4Spc, DGField[] DomFld4Species) {
                 Debug.Assert(m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme);
+
+                
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, this.m_lsTrk, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme, this.TrackerHistory, CellLengthScales, EdgeLengthScales);
 
                 var GhostEdgeBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params4Spc, CodomFrame.FrameMap);
                 GhostEdgeBuilder.MPITtransceive = false;
                 SpeciesGhostEdgeBuilder.Add(SpeciesId, GhostEdgeBuilder);
-
             }
 
             /// <summary>
@@ -97,8 +99,11 @@ namespace BoSSS.Foundation.XDG {
             protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
                 Debug.Assert(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume);
 
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator, this.m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistory, CellLengthScales, EdgeLengthScales);
 
                 var SurfElmBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 SurfElmBuilder.MPITtransceive = false;
@@ -299,6 +304,13 @@ namespace BoSSS.Foundation.XDG {
                             //this.SpeciesOperatorCoefficients.TryGetValue(MtxBuilder.SpeciesB, out var csB);
                             var csA = m_Xowner.OperatorCoefficientsProvider(lsTrk, MtxBuilder.SpeciesA, base.UsedQuadOrder, base.TrackerHistory, time);
                             var csB = m_Xowner.OperatorCoefficientsProvider(lsTrk, MtxBuilder.SpeciesB, base.UsedQuadOrder, base.TrackerHistory, time);
+
+                            // hackedihack: i hate this shit
+                            this.CellLengthScales.TryGetValue(MtxBuilder.SpeciesA, out var clsA); csA.CellLengthScales = clsA;
+                            this.CellLengthScales.TryGetValue(MtxBuilder.SpeciesB, out var clsB); csB.CellLengthScales = clsB;
+                            this.EdgeLengthScales.TryGetValue(MtxBuilder.SpeciesA, out var elsA); csA.EdgeLengthScales = elsA;
+                            this.EdgeLengthScales.TryGetValue(MtxBuilder.SpeciesB, out var elsB); csB.EdgeLengthScales = elsB;
+
                             UpdateLevelSetCoefficients(csA, csB);
                             MtxBuilder.Execute();
 
@@ -482,6 +494,13 @@ namespace BoSSS.Foundation.XDG {
                             //this.SpeciesOperatorCoefficients.TryGetValue(LsEval.SpeciesB, out var csB);
                             var csA = m_Xowner.OperatorCoefficientsProvider(lsTrk, LsEval.SpeciesA, base.UsedQuadOrder, base.TrackerHistory, time);
                             var csB = m_Xowner.OperatorCoefficientsProvider(lsTrk, LsEval.SpeciesB, base.UsedQuadOrder, base.TrackerHistory, time);
+
+                            // hackedihack: i hate this shit
+                            this.CellLengthScales.TryGetValue(LsEval.SpeciesA, out var clsA); csA.CellLengthScales = clsA;
+                            this.CellLengthScales.TryGetValue(LsEval.SpeciesB, out var clsB); csB.CellLengthScales = clsB;
+                            this.EdgeLengthScales.TryGetValue(LsEval.SpeciesA, out var elsA); csA.EdgeLengthScales = elsA;
+                            this.EdgeLengthScales.TryGetValue(LsEval.SpeciesB, out var elsB); csB.EdgeLengthScales = elsB;
+
                             UpdateLevelSetCoefficients(csA, csB);
                             LsEval.Execute();
 
@@ -517,7 +536,11 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species) {
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
-                var tempOp = base.m_Xowner.FilterSpeciesOperator(base.m_Xowner, spcName, quadOrder, edgeScheme, cellScheme);
+
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = base.m_Xowner.FilterSpeciesOperator(base.m_Xowner, m_lsTrk, spcName, quadOrder, edgeScheme, cellScheme, TrackerHistory, CellLengthScales, EdgeLengthScales);
 
                 var BulkEval = tempOp.GetEvaluatorEx(DomFld4Species, Params_4Species, CodomFrame.FrameMap);
 
@@ -531,7 +554,11 @@ namespace BoSSS.Foundation.XDG {
             protected override void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme nullvolumeScheme, EdgeQuadratureScheme ghostEdgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld) {
                 Debug.Assert(m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme);
+
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme, TrackerHistory, CellLengthScales, EdgeLengthScales);
 
                 var GhostEdgeEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
                 GhostEdgeEval.MPITtransceive = false;
@@ -544,7 +571,11 @@ namespace BoSSS.Foundation.XDG {
             protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld) {
                 Debug.Assert(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume);
+
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistory, CellLengthScales, EdgeLengthScales);
 
                 var SurfElmEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
                 SurfElmEval.MPITtransceive = false;
@@ -575,6 +606,30 @@ namespace BoSSS.Foundation.XDG {
                     return m_Owner;
                 }
             }
+
+
+            Dictionary<SpeciesId, MultidimensionalArray> m_CellLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();
+
+            /// <summary>
+            /// Dirty hack to provide length scales for the operator evaluation/matrix assembly, <see cref="CoefficientSet.CellLengthScales"/>
+            /// </summary>
+            public Dictionary<SpeciesId, MultidimensionalArray> CellLengthScales {
+                get {
+                    return m_CellLengthScales;
+                }
+            }
+
+            Dictionary<SpeciesId, MultidimensionalArray> m_EdgeLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();
+
+            /// <summary>
+            /// Dirty hack to provide length scales for the operator evaluation/matrix assembly, <see cref="CoefficientSet.EdgeLengthScales"/>
+            /// </summary>
+            public Dictionary<SpeciesId, MultidimensionalArray> EdgeLengthScales {
+                get {
+                    return m_EdgeLengthScales;
+                }
+            }
+
 
             /// <summary>
             /// ctor

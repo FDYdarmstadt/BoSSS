@@ -63,10 +63,11 @@ namespace BoSSS.Foundation.XDG {
 
         List<string> m_SpeciesList = new List<string>();
 
-        private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs) {
+        private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
-            var r = new SpatialOperator(op.DomainVar, op.ParameterVar, (degDom, degParam, degCod) => order);
+            var r = new SpatialOperator(op.DomainVar, op.ParameterVar, op.CodomainVar, (degDom, degParam, degCod) => order);
 
+            r.UserDefinedValues.AddRange(this.UserDefinedValues[species]);
 
             foreach(string comps in op.CodomainVar) { // loop over rows
                 foreach(IEquationComponent iec in op.EquationComponents[comps]) {
@@ -91,11 +92,18 @@ namespace BoSSS.Foundation.XDG {
             r.VolumeQuadraturSchemeProvider = g => cqs;
 
             r.OperatorCoefficientsProvider = delegate (IGridData g, double time) {
-                throw new NotImplementedException("todo");
-                //this.OperatorCoefficientsProvider()
-                //
-                //todo();
-                //return default(CoefficientSet);
+
+                var c = this.OperatorCoefficientsProvider(lsTrk, lsTrk.GetSpeciesId(species), order, TrackerHistory, time);
+
+                SpeciesId id = lsTrk.GetSpeciesId(species);
+                CellLenScales.TryGetValue(id, out var cls);
+                EdgLenScales.TryGetValue(id, out var els);
+
+
+                c.CellLengthScales = cls;
+                c.EdgeLengthScales = els;
+
+                return c;
             };
 
             r.Commit();
@@ -175,6 +183,8 @@ namespace BoSSS.Foundation.XDG {
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            if(!IsCommited)
+                throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap,
                 1 // based on actual level-set tracker state
@@ -195,6 +205,8 @@ namespace BoSSS.Foundation.XDG {
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            if(!IsCommited)
+                throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
@@ -249,12 +261,14 @@ namespace BoSSS.Foundation.XDG {
             LevelSetTracker lsTrk,
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
+            if(!IsCommited)
+                throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
 
             DelParameterUpdate delParameterUpdate = null;
             if(this.ParameterUpdate != null) {
-                delParameterUpdate = this.ParameterUpdate.ParameterUpdate;
+                delParameterUpdate = this.ParameterUpdate.PerformUpdate;
             }
 
             return new FDJacobianBuilder(xeval, delParameterUpdate);
@@ -1074,7 +1088,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension,
-                this.ParameterUpdate != null ? this.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
 
 
 
@@ -1289,7 +1303,10 @@ namespace BoSSS.Foundation.XDG {
         #endregion
 
 
-        DelOperatorCoefficientsProvider m_OperatorCoefficientsProvider = delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+        DelOperatorCoefficientsProvider m_OperatorCoefficientsProvider; 
+        
+        
+        CoefficientSet DefaultOperatorCoefficientsProvider (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
 
             var r = new CoefficientSet() {
                 GrdDat = lstrk.GridDat
@@ -1306,10 +1323,35 @@ namespace BoSSS.Foundation.XDG {
             todo();
             */
 
-            throw new NotImplementedException("todo");
+            foreach(var kv in UserDefinedValues[lstrk.GetSpeciesName(spc)]) {
+                r.UserDefinedValues.Add(kv.Key, kv.Value);
+            }
 
-            //return r;
-        };
+            return r;
+        }
+
+        Dictionary<string, IDictionary<string, object>> m_UserDefinedValues;
+
+        /// <summary>
+        /// Modification of <see cref="CoefficientSet.UserDefinedValues"/>, **but only if** default setting for <see cref="OperatorCoefficientsProvider"/> is used
+        /// - 1st key: species
+        /// - 2nd key: user-defined name 
+        /// - value: object to pass to <see cref="IEquationComponentCoefficient.CoefficientUpdate"/>
+        /// </summary>
+        public IReadOnlyDictionary<string, IDictionary<string, object>> UserDefinedValues {
+            get {
+                if(m_UserDefinedValues == null) {
+                    m_UserDefinedValues = new Dictionary<string, IDictionary<string, object>>();
+                    foreach(string spcName in this.Species) {
+                        m_UserDefinedValues.Add(spcName, new Dictionary<string, object>());
+                    }
+                }
+                return m_UserDefinedValues;
+            }
+            
+        }
+
+
 
         /// <summary>
         /// 
@@ -1329,11 +1371,13 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public DelOperatorCoefficientsProvider OperatorCoefficientsProvider {
             get {
+                if(m_OperatorCoefficientsProvider == null)
+                    m_OperatorCoefficientsProvider = DefaultOperatorCoefficientsProvider;
                 return m_OperatorCoefficientsProvider;
             }
             set {
-                 if(IsCommited)
-                    throw new NotSupportedException("not allowed to change after Commit");
+                //if(IsCommited)
+                //    throw new NotSupportedException("not allowed to change after Commit");
                 m_OperatorCoefficientsProvider = value;
             }
         }

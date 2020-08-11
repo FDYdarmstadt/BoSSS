@@ -268,7 +268,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, Phi.Mapping, null, Phi.Mapping);
 
                 MultiphaseCellAgglomerator dummy = LevelSetTracker.GetAgglomerator(LevelSetTracker.SpeciesIdS.ToArray(), Phi.Basis.Degree * 2 + 2, 0.0);
-                mtxBuilder.SpeciesOperatorCoefficients[LevelSetTracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")];
+                //mtxBuilder.SpeciesOperatorCoefficients[LevelSetTracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")];
+                mtxBuilder.CellLengthScales.Add(LevelSetTracker.GetSpeciesId("A"), dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")]);
+
 
                 mtxBuilder.time = 0;
                 mtxBuilder.MPITtransceive = false;

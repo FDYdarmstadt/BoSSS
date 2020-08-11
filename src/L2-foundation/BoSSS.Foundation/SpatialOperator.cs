@@ -90,31 +90,34 @@ namespace BoSSS.Foundation {
                 return m_QuadOrderFunction;
             }
             set {
-                if(IsCommited)
-                    throw new NotSupportedException("not allowed to change after Commit");
+                // deactivated due to legacy code issues:
+                //if(IsCommited)
+                //    throw new NotSupportedException("not allowed to change after Commit");
                 m_QuadOrderFunction = value;
             }
         }
 
-        Func<IGridData, EdgeQuadratureScheme> m_EdgeQuadraturSchemeProvider = (IGridData g) => new EdgeQuadratureScheme(true, null);
+        Func<IGridData, EdgeQuadratureScheme> m_EdgeQuadraturSchemeProvider;
 
         /// <summary>
         /// User-customizable factory, to specify the edge quadrature, see also <see cref="QuadOrderFunction"/>
         /// </summary>
         public Func<IGridData,EdgeQuadratureScheme> EdgeQuadraturSchemeProvider {
             get {
+                if(m_EdgeQuadraturSchemeProvider == null)
+                    m_EdgeQuadraturSchemeProvider = (IGridData g) => new EdgeQuadratureScheme(true, null);
                 return m_EdgeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
-                    throw new NotSupportedException("not allowed to change after Commit");
+                // deactivated due to legacy code issues:
+                //if(IsCommited) 
+                //    throw new NotSupportedException("not allowed to change after Commit");
                 m_EdgeQuadraturSchemeProvider = value;
             }
         }
 
-        Func<IGridData, CellQuadratureScheme> m_VolumeQuadraturSchemeProvider = (IGridData g) => new CellQuadratureScheme(true, null);
+        Func<IGridData, CellQuadratureScheme> m_VolumeQuadraturSchemeProvider;
         
-
 
 
         /// <summary>
@@ -122,11 +125,13 @@ namespace BoSSS.Foundation {
         /// </summary>
         public Func<IGridData,CellQuadratureScheme> VolumeQuadraturSchemeProvider {
             get {
+                if(m_VolumeQuadraturSchemeProvider == null)
+                    m_VolumeQuadraturSchemeProvider = (IGridData g) => new CellQuadratureScheme(true, null);
                 return m_VolumeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
-                    throw new NotSupportedException("not allowed to change after Commit");
+                //if(IsCommited)
+                //    throw new NotSupportedException("not allowed to change after Commit");
                 m_VolumeQuadraturSchemeProvider = value;
             }
         }
@@ -168,10 +173,34 @@ namespace BoSSS.Foundation {
             return (_edgeRule, _volRule);
         }
 
+        Dictionary<string, object> m_UserDefinedValues;
+
+        /// <summary>
+        /// Modification of <see cref="CoefficientSet.UserDefinedValues"/>, **but only if** default setting for <see cref="OperatorCoefficientsProvider"/> is used
+        /// </summary>
+        public IDictionary<string, object> UserDefinedValues {
+            get {
+                if(m_UserDefinedValues == null)
+                    m_UserDefinedValues = new Dictionary<string, object>();
+                return m_UserDefinedValues;
+            }
+            
+        }
 
 
+        /// <summary>
+        /// <see cref="OperatorCoefficientsProvider"/>
+        /// </summary>
+        /// <param name="g">grid on which the operator is evaluated</param>
+        /// <param name="time">current physical time</param>
+        /// <returns>instance of <see cref="CoefficientSet"/> (or some derivative class)</returns>
+        public delegate CoefficientSet DelOperatorCoefficientsProvider(IGridData g, double time);
 
-        Func<IGridData, double, CoefficientSet> m_OperatorCoefficientsProvider = delegate (IGridData g, double time) {
+
+        DelOperatorCoefficientsProvider m_OperatorCoefficientsProvider;
+        
+        
+        CoefficientSet DefaultOperatorCoefficientsProvider(IGridData g, double time) {
 
             var r = new CoefficientSet() {
                 GrdDat = g
@@ -185,19 +214,22 @@ namespace BoSSS.Foundation {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
 
+            foreach(var kv in UserDefinedValues) {
+                r.UserDefinedValues[kv.Key] = kv.Value;
+            }
+
             return r;
-        };
+        }
 
         /// <summary>
         /// User-customizable factory, to modify single values (e.g. Reynolds numbers)
         /// within the operator components (those implementing <see cref="IEquationComponentCoefficient"/>)
         /// Auxiliary data passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
-        /// - 1st argument: grid
-        /// - 2nd argument: time
-        /// - return value: instance of <see cref="CoefficientSet"/> (or some derivative class)
         /// </summary>
-        public Func<IGridData,double,CoefficientSet> OperatorCoefficientsProvider {
+        public DelOperatorCoefficientsProvider OperatorCoefficientsProvider {
             get {
+                if(m_OperatorCoefficientsProvider == null)
+                    m_OperatorCoefficientsProvider = DefaultOperatorCoefficientsProvider;
                 return m_OperatorCoefficientsProvider;
             }
             set {
@@ -840,18 +872,15 @@ namespace BoSSS.Foundation {
         public virtual IEvaluatorNonLin GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
-
             using(new FuncTrace()) {
                 if(DomainFields == null)
                     DomainFields = new DGField[0];
                 if(ParameterMap == null)
                     ParameterMap = new DGField[0];
 
-                /// This is already done in the constructor of Evaluator
-#if DEBUG
-                if(!m_IsCommited)
-                    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-#endif
+                if(!IsCommited)
+                    throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
+
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
                     GetBasisS(ParameterMap),
                     CodomainVarMap.BasisS);
@@ -870,12 +899,8 @@ namespace BoSSS.Foundation {
         {
 
             using(new FuncTrace()) {
-
-                /// This is already done in the constructor of Evaluator
-#if DEBUG
-                if(!m_IsCommited)
-                    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-#endif
+                if(!IsCommited)
+                    throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
                 var rulz = CompileQuadratureRules((Basis[])DomainVarMap, 
                     GetBasisS(ParameterMap),
@@ -1520,7 +1545,7 @@ namespace BoSSS.Foundation {
         {
             DelParameterUpdate __delParameterUpdate = null;
             if(this.ParameterUpdate != null) {
-                __delParameterUpdate = this.ParameterUpdate.ParameterUpdate;
+                __delParameterUpdate = this.ParameterUpdate.PerformUpdate;
             }
             
             return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, __delParameterUpdate);
@@ -1540,14 +1565,10 @@ namespace BoSSS.Foundation {
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             DelParameterUpdate __delParameterUpdate) //
         {
-
             using(new FuncTrace()) {
+                if(!IsCommited)
+                    throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-                /// This is already done in the constructor of Evaluator
-#if DEBUG
-                if(!m_IsCommited)
-                    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-#endif
                 if(__delParameterUpdate == null) {
                     if(this.ParameterVar.Count > 0) {
                         throw new ArgumentException("Provided parameter update delegate '__delParameterUpdate' is null, but this operator contains " + this.ParameterVar.Count + " parameters.", "__delParameterUpdate");
@@ -2579,7 +2600,7 @@ namespace BoSSS.Foundation {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension, 
-                this.ParameterUpdate != null ? this.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
 
             // create derivative operator
             // ==========================
