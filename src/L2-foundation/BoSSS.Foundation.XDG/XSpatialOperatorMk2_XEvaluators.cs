@@ -300,18 +300,7 @@ namespace BoSSS.Foundation.XDG {
 
                         foreach(var MtxBuilder in allBuilders) {
                             MtxBuilder.time = time;
-                            //this.SpeciesOperatorCoefficients.TryGetValue(MtxBuilder.SpeciesA, out var csA);
-                            //this.SpeciesOperatorCoefficients.TryGetValue(MtxBuilder.SpeciesB, out var csB);
-                            var csA = m_Xowner.OperatorCoefficientsProvider(lsTrk, MtxBuilder.SpeciesA, base.UsedQuadOrder, base.TrackerHistory, time);
-                            var csB = m_Xowner.OperatorCoefficientsProvider(lsTrk, MtxBuilder.SpeciesB, base.UsedQuadOrder, base.TrackerHistory, time);
-
-                            // hackedihack: i hate this shit
-                            this.CellLengthScales.TryGetValue(MtxBuilder.SpeciesA, out var clsA); csA.CellLengthScales = clsA;
-                            this.CellLengthScales.TryGetValue(MtxBuilder.SpeciesB, out var clsB); csB.CellLengthScales = clsB;
-                            this.EdgeLengthScales.TryGetValue(MtxBuilder.SpeciesA, out var elsA); csA.EdgeLengthScales = elsA;
-                            this.EdgeLengthScales.TryGetValue(MtxBuilder.SpeciesB, out var elsB); csB.EdgeLengthScales = elsB;
-
-                            UpdateLevelSetCoefficients(csA, csB);
+                            UpdateLevelSetCoefficients(MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
                             MtxBuilder.Execute();
 
 #if DEBUG
@@ -334,6 +323,8 @@ namespace BoSSS.Foundation.XDG {
 
                 }
             }
+
+            
 
             /// <summary>
             /// nix
@@ -490,18 +481,7 @@ namespace BoSSS.Foundation.XDG {
 
                         foreach(var LsEval in necList) { 
                             LsEval.time = time;
-                            //this.SpeciesOperatorCoefficients.TryGetValue(LsEval.SpeciesA, out var csA);
-                            //this.SpeciesOperatorCoefficients.TryGetValue(LsEval.SpeciesB, out var csB);
-                            var csA = m_Xowner.OperatorCoefficientsProvider(lsTrk, LsEval.SpeciesA, base.UsedQuadOrder, base.TrackerHistory, time);
-                            var csB = m_Xowner.OperatorCoefficientsProvider(lsTrk, LsEval.SpeciesB, base.UsedQuadOrder, base.TrackerHistory, time);
-
-                            // hackedihack: i hate this shit
-                            this.CellLengthScales.TryGetValue(LsEval.SpeciesA, out var clsA); csA.CellLengthScales = clsA;
-                            this.CellLengthScales.TryGetValue(LsEval.SpeciesB, out var clsB); csB.CellLengthScales = clsB;
-                            this.EdgeLengthScales.TryGetValue(LsEval.SpeciesA, out var elsA); csA.EdgeLengthScales = elsA;
-                            this.EdgeLengthScales.TryGetValue(LsEval.SpeciesB, out var elsB); csB.EdgeLengthScales = elsB;
-
-                            UpdateLevelSetCoefficients(csA, csB);
+                            UpdateLevelSetCoefficients(LsEval.SpeciesA, LsEval.SpeciesB);
                             LsEval.Execute();
 
 #if DEBUG
@@ -954,11 +934,34 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             protected List<(int LsIdx, SpeciesId spcA, SpeciesId spcB, ICompositeQuadRule<QuadRule> quadRule)> CouplingRules = new List<(int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>)>();
 
+            /// <summary>
+            /// 
+            /// </summary>
+            private void GetCoefficients(SpeciesId spcA, SpeciesId spcB, out CoefficientSet csA, out CoefficientSet csB) {
+                
+                void FF(SpeciesId spc, out CoefficientSet cs) {
+                    if(this.ReqSpecies.Contains(spc)) {
+                        cs = m_Xowner.OperatorCoefficientsProvider(m_lsTrk, spc, UsedQuadOrder, TrackerHistory, time);
+
+                        // hackedihack: i hate this shit
+                        this.CellLengthScales.TryGetValue(spc, out var cls); cs.CellLengthScales = cls;
+                        this.EdgeLengthScales.TryGetValue(spc, out var els); cs.EdgeLengthScales = els;
+                    } else {
+                        cs = null;
+                    }
+                }
+                
+                FF(spcA, out csA);
+                FF(spcB, out csB);
+            }
 
             /// <summary>
             /// calls all <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate"/> methods
             /// </summary>
-            protected void UpdateLevelSetCoefficients(CoefficientSet csA, CoefficientSet csB) {
+            protected void UpdateLevelSetCoefficients(SpeciesId spcA, SpeciesId spcB) {
+                GetCoefficients(spcA, spcB, out var csA, out var csB);
+
+
                 int[] DomDGdeg = this.DomainMapping.BasisS.Select(b => b.Degree).ToArray();
                 int[] CodDGdeg = this.CodomainMapping.BasisS.Select(b => b.Degree).ToArray();
                 string[] DomNames = Owner.DomainVar.ToArray();

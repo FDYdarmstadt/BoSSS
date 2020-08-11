@@ -426,7 +426,7 @@ namespace BoSSS.Foundation {
             int[] CodomainDegrees = CodomainBasis.Select(f => f.Degree).ToArray();
             int[] ParameterDegrees;
             if(ParameterBasis != null && ParameterBasis.Count() != 0) {
-                ParameterDegrees = ParameterBasis.Select(b => b == null ? b.Degree : 0).ToArray();
+                ParameterDegrees = ParameterBasis.Select(b => b != null ? b.Degree : 0).ToArray();
             } else {
                 ParameterDegrees = new int[] { 0 };
             };
