@@ -67,7 +67,34 @@ namespace BoSSS.Application.IBM_Solver {
             cl.Material = this.Material;
             return cl;
         }
-        
+
+        /// <summary>
+        /// Equality
+        /// </summary>
+        public override bool Equals(object obj) {
+            var other = obj as PhysicalParameters;
+            if(other == null)
+                return false;
+
+            if(other.Material != this.Material)
+                return false;
+            if(other.IncludeConvection != this.IncludeConvection)
+                return false;
+            if(other.mu_A != this.mu_A)
+                return false;
+            if(other.rho_A != this.rho_A)
+                return false;
+
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return (int) Math.Round(1.0 / mu_A);
+        }
     }
 }
 

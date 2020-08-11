@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 
+
 namespace BoSSS.Solution.NSECommon {
 
 
@@ -31,19 +32,23 @@ namespace BoSSS.Solution.NSECommon {
     /// See also ControlManuSol() control function.
     /// </summary>
     //public class RHSManuSourceDivKonti : BoSSS.Solution.Utils.LinearSource {
-    public class RHSManuSourceDivKonti : IVolumeForm, ISupportsJacobianComponent {
+    public class RHSManuSourceDivKonti : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
         double ReynoldsNumber;
         double[] MolarMasses;
         PhysicsMode physicsMode;
         bool rhoOne;
+        Func<double[], double, double> sourceFunc;
+     
         /// <summary>
         /// Ctor.
         /// </summary>
-        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, bool rhoOne) {
+        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, bool rhoOne, Func<double[], double, double> _sourceFunc = null) {
+         
             this.ReynoldsNumber = Reynolds;
             this.MolarMasses = MolarMasses;
             this.physicsMode = physicsMode;
             this.rhoOne = rhoOne;
+            this.sourceFunc = _sourceFunc;
         }
 
 
@@ -71,6 +76,11 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        double time;
+        public   void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("time"))
+                time = (double)cs.UserDefinedValues["time"];
+        }
         /// <summary>
         /// Linear component - returns this object itself.
         /// </summary>
@@ -85,7 +95,6 @@ namespace BoSSS.Solution.NSECommon {
             double x_ = x[0];
             double y_ = x[1];
             double p0 = 1.0; 
-
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3]; double M5 = MolarMasses[4];
             double alpha1 = 0.3;
             double alpha2 = 0.4;
@@ -121,13 +130,16 @@ namespace BoSSS.Solution.NSECommon {
 
                         man1 = -1 * ( dRhoUdx + dRhoVdy);
                     break;
-
+                case PhysicsMode.MixtureFraction:                    
+                    man1 = -1 * sourceFunc(x, time);
+                    
+                    break;
                 default:
                     throw new NotImplementedException("should not happen");
             }
 
 
-
+      
 
 
             return man1 * V;

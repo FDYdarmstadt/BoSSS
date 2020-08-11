@@ -75,7 +75,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.OneTimeSetUp();
             ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
-            ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
+            ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, TimeSteppingScheme.ImplicitEuler, 0.5);
             //Assert.IsFalse(true, "remove me");
 
 
@@ -502,29 +502,29 @@ namespace BoSSS.Application.XRheology_Solver {
             // =======================
             if (L == null) {
 
-                switch (this.Control.Timestepper_Scheme) {
-                    case XRheology_Control.TimesteppingScheme.RK_ImplicitEuler: {
+                switch (this.Control.TimeSteppingScheme) {
+                    case TimeSteppingScheme.RK_ImplicitEuler: {
                             rksch = RungeKuttaScheme.ImplicitEuler;
                             break;
                         }
-                    case XRheology_Control.TimesteppingScheme.RK_CrankNicolson: {
+                    case TimeSteppingScheme.RK_CrankNic: {
                             rksch = RungeKuttaScheme.CrankNicolson;
                             break;
                         }
-                    case XRheology_Control.TimesteppingScheme.CrankNicolson: {
+                    case TimeSteppingScheme.CrankNicolson: {
                             //do not instantiate rksch, use bdf instead
                             bdfOrder = -1;
                             break;
                         }
-                    case XRheology_Control.TimesteppingScheme.ImplicitEuler: {
+                    case TimeSteppingScheme.ImplicitEuler: {
                             //do not instantiate rksch, use bdf instead
                             bdfOrder = 1;
                             break;
                         }
                     default: {
-                            if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                            if (this.Control.TimesteppingMode.ToString().StartsWith("BDF")) {
                                 //do not instantiate rksch, use bdf instead
-                                bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                                bdfOrder = Convert.ToInt32(this.Control.TimesteppingMode.ToString().Substring(3));
                                 break;
                             } else
                                 throw new NotImplementedException();
@@ -1972,8 +1972,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-
-                    bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData)this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, BlockedCells);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                     int NoOfCellsToRefine = 0;
                     int NoOfCellsToCoarsen = 0;
                     if (AnyChange) {

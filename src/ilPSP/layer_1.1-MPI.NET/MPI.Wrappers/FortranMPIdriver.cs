@@ -800,6 +800,45 @@ namespace MPI.Wrappers {
         }
 
 #pragma warning disable 649
+        delegate void _MPI_GET_COUNT(ref MPI_Status status, ref MPI_Datatype datatype, out int count, out int ierr);
+        _MPI_GET_COUNT MPI_GET_COUNT;
+#pragma warning restore 649
+
+        /// <summary>
+        /// probably gets the count, who knows ...
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="datatype"></param>
+        /// <returns></returns>
+        public int GetCount(MPI_Status status, MPI_Datatype datatype) {
+            int cnt, ierr;
+            MPI_GET_COUNT(ref status, ref datatype, out cnt, out ierr);
+            MPIException.CheckReturnCode(ierr);
+            return cnt;
+        }
+
+#pragma warning disable 649
+        delegate void _MPI_REQUEST_GET_STATUS(ref MPI_Request request, out int flag, out MPI_Status status, out int ierr);
+        _MPI_REQUEST_GET_STATUS MPI_REQUEST_GET_STATUS;
+#pragma warning restore 649
+
+        /// <summary>
+        /// Gets the Status of a Request, which is only meaningful, if request is freed.
+        /// Probably that's not the case, when this method is invoked.
+        /// <paramref name="isSetted"/> indicates completed request.
+        /// </summary>
+        /// <param name="request">input</param>
+        /// <param name="isSetted">states if status is available</param>
+        /// <param name="status">output</param>
+        public void MPI_GetStatusOfRequest(MPI_Request request, out bool isSetted, out MPI_Status status) {
+            int ierr, flag;
+            MPI_REQUEST_GET_STATUS(ref request, out flag, out status, out ierr);
+            isSetted = flag != 0;
+            MPIException.CheckReturnCode(ierr);
+        }
+
+
+#pragma warning disable 649
         delegate void _MPI_CANCEL(ref MPI_Request r, out int ierr);
         _MPI_CANCEL MPI_CANCEL;
 #pragma warning restore 649

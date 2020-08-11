@@ -376,7 +376,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XRheology_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -644,7 +644,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XRheology_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -669,7 +669,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// </summary>
         /// <returns></returns>
         public static XRheology_Control CF_LevelSetMovementTest(int boundarySetup = 2, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching, 
-            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XRheology_Control.TimesteppingScheme tsScheme = XRheology_Control.TimesteppingScheme.ImplicitEuler) {
+            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, TimeSteppingScheme tsScheme = TimeSteppingScheme.ImplicitEuler) {
 
             int p = 2;
             int kelem = 16;
@@ -954,7 +954,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
-            C.Timestepper_Scheme = tsScheme;
+            C.TimeSteppingScheme = tsScheme;
 
             double dt = 1e-2;
             C.dtMax = dt;
@@ -974,7 +974,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// </summary>
         /// <returns></returns>
         public static XRheology_Control CF_LevelSetRotationTest(int boundarySetup = 1, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching,
-            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XRheology_Control.TimesteppingScheme tsScheme = XRheology_Control.TimesteppingScheme.ImplicitEuler)
+            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, TimeSteppingScheme tsScheme = TimeSteppingScheme.ImplicitEuler)
         {
 
             int p = 2;
@@ -1237,7 +1237,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
-            C.Timestepper_Scheme = tsScheme;
+            C.TimeSteppingScheme = tsScheme;
 
             double dt = 1e-2;
             C.dtMax = dt;

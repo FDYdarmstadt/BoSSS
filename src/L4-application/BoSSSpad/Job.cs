@@ -84,15 +84,41 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
 
-        
+        string m_BatchProcessorIdentifierToken;
 
         /// <summary>
         /// (Optional) object used by batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
         /// in order to identify the job.
         /// </summary>
         public string BatchProcessorIdentifierToken {
-            private set;
-            get;
+            private set {
+                m_BatchProcessorIdentifierToken = value;
+            }
+            get {
+                var bpcToken = m_BatchProcessorIdentifierToken;
+
+                if(m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
+                    var directories = GetAllDeploymantDirectories();
+
+                    if(directories == null || directories.Length <= 0) {
+                        return null;
+                    }
+                    Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
+                    DirectoryInfo _DD = directories.Last();
+                    var DD = _DD.FullName;
+
+                    try {
+                        var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
+                        m_BatchProcessorIdentifierToken = l.Trim();
+
+                    } catch(Exception) {
+                        // job was probably deployed, but never submitted
+                        // ignore this.
+                    }
+                }
+
+                return m_BatchProcessorIdentifierToken;
+            }
         }
 
         /// <summary>
@@ -547,13 +573,22 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
+        string m_DeploymentDirectory;
+
         /// <summary>
         /// The deployment directory, accessible from the local machine (e.g. a mounted path if the job is deployed to another computer);
         /// This should be an absolute path.
         /// </summary>
         public string DeploymentDirectory {
-            get;
-            private set;            
+            get {
+                if(m_DeploymentDirectory == null && LatestSession != null) {
+                    m_DeploymentDirectory = LatestSession.DeployPath;
+                }
+                return m_DeploymentDirectory;
+            }
+            private set {
+                m_DeploymentDirectory = value;
+            }           
         }
 
 
@@ -646,10 +681,22 @@ namespace BoSSS.Application.BoSSSpad {
                     if(AssignedBatchProc == null)
                         throw new NotSupportedException("Job is not activated.");
 
+                    
+
                     string stdout = "";
 
                     Exception op(int itry) {
-                        string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
+
+                        string StdoutFile = null;
+                        if(this.Status == JobStatus.FinishedSuccessful) {
+                            if(this.LatestSession != null) {
+                                StdoutFile = this.LatestSession.FilesInSessionDir("stdout.0.txt").FirstOrDefault();
+                            }
+                        }
+                        if(StdoutFile == null) {
+                            StdoutFile = AssignedBatchProc.GetStdoutFile(this);
+                        }
+    
                         if(StdoutFile != null && File.Exists(StdoutFile)) {
                             using(FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                                 using(StreamReader reader = new StreamReader(stream)) {
@@ -681,7 +728,16 @@ namespace BoSSS.Application.BoSSSpad {
                     string stderr = "";
 
                     Exception op(int itry) {
-                        string StderrFile = AssignedBatchProc.GetStderrFile(this);
+                        string StderrFile = null;
+                        if(this.Status == JobStatus.FinishedSuccessful) {
+                            if(this.LatestSession != null) {
+                                StderrFile = this.LatestSession.FilesInSessionDir("stderr.0.txt").FirstOrDefault();
+                            }
+                        }
+                        if(StderrFile == null) {
+                            StderrFile = AssignedBatchProc.GetStderrFile(this);
+                        }
+
                         if(StderrFile != null && File.Exists(StderrFile)) {
                             using(FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                                 using(StreamReader reader = new StreamReader(stream)) {
@@ -773,67 +829,52 @@ namespace BoSSS.Application.BoSSSpad {
             using (new FuncTrace()) {
                 SubmitCount = 0;
                 DD = null;
-                if (AssignedBatchProc == null)
+                if(AssignedBatchProc == null)
                     return JobStatus.PreActivation;
 
                 // test if session exists
                 ISessionInfo[] RR = this.AllSessions;
                 ISessionInfo R = RR.Length > 0 ? RR.OrderBy(si => si.CreationTime).Last() : null;
 
-                if (RR.Any(si => !si.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
+                if(RR.Any(si => !si.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG))) {
+                    SubmitCount = RR.Length;
                     return JobStatus.FinishedSuccessful;
-
-                // find the deployment directory
-                var directories = AssignedBatchProc.GetAllExistingDeployDirectories(this);
-                if (this.DeploymentDirectory != null) {
-                    DirectoryInfo diAdd = new DirectoryInfo(this.DeploymentDirectory);
-                    if (diAdd.Exists) {
-                        if (directories == null)
-                            directories = new DirectoryInfo[0];
-
-                        diAdd.AddToArray(ref directories);
-                    }
                 }
 
-                if (directories == null || directories.Length <= 0) {
+                // find the deployment directory
+                DirectoryInfo[] directories;
+                directories = GetAllDeploymantDirectories();
+
+                if(directories == null || directories.Length <= 0) {
                     return JobStatus.PreActivation;
                     //throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
                 }
                 Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
                 DirectoryInfo _DD = directories.Last();
                 DD = _DD.FullName;
-                SubmitCount = DD.Length;
+                SubmitCount = directories.Length;
 
                 // Obtain token
                 string bpcToken = this.BatchProcessorIdentifierToken;
-                if (bpcToken.IsNullOrEmpty()) {
-                    try {
-                        var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                        bpcToken = l.Trim();
-                        this.BatchProcessorIdentifierToken = bpcToken;
-                    } catch (Exception) {
-                        // job was probably deployed, but never submitted
-                        // ignore this.
-                    }
-                }
+                
 
-                if (bpcToken.IsEmptyOrWhite())
+                if(bpcToken.IsEmptyOrWhite())
                     return JobStatus.PreActivation;
 
                 // ask the batch processor
                 AssignedBatchProc.EvaluateStatus(bpcToken, this.BatchProcessorObject, DD, out bool isRunning, out bool isTerminated, out int ExitCode);
                 bool isPending = (isRunning == false) && (isTerminated == false);
 
-                if (isPending)
+                if(isPending)
                     return JobStatus.PendingInExecutionQueue;
-                if (isRunning)
+                if(isRunning)
                     return JobStatus.InProgress;
 
-                if (isTerminated) {
-                    if (R != null && R.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG))
+                if(isTerminated) {
+                    if(R != null && R.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG))
                         return JobStatus.Failed;
 
-                    if (ExitCode != 0)
+                    if(ExitCode != 0)
                         return JobStatus.Failed;
 
                     return JobStatus.FinishedSuccessful;
@@ -841,6 +882,27 @@ namespace BoSSS.Application.BoSSSpad {
 
                 throw new IOException("Unable to determine job status.");
             }
+        }
+
+        /// <summary>
+        /// All directories which can be found to which this job has ever been deployed
+        /// </summary>
+        public DirectoryInfo[] GetAllDeploymantDirectories() {
+            DirectoryInfo[] directories = AssignedBatchProc.GetAllExistingDeployDirectories(this);
+            if(this.DeploymentDirectory != null) {
+                DirectoryInfo diAdd = new DirectoryInfo(this.DeploymentDirectory);
+                if(diAdd.Exists) {
+                    if(directories == null)
+                        directories = new DirectoryInfo[0];
+
+                    diAdd.AddToArray(ref directories);
+                }
+            }
+
+            if(directories == null)
+                directories = new DirectoryInfo[0];
+
+            return directories;
         }
 
         /// <summary>

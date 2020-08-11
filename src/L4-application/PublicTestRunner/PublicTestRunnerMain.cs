@@ -708,8 +708,12 @@ namespace PublicTestRunner {
                 } catch (Exception e) {
                     ot.WriteLine($"{e.GetType().Name} during reading of stdout stream: {e.Message}");
                     ot.WriteLine(e.StackTrace);
+                    stdout = "";
                 }
                 ot.WriteLine("]]]");
+
+                if(stdout == null)
+                    stdout = "";
 
                 using (var str = new StringReader(stdout)) {
                     string magic = "arg #3 override from environment variable 'BOSSS_ARG_3': --result=";

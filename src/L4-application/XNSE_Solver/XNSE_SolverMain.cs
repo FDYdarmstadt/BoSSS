@@ -851,29 +851,29 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void CreateTimestepper() {
 
-            switch (this.Control.Timestepper_Scheme) {
-                case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
+            switch (this.Control.TimeSteppingScheme) {
+                case TimeSteppingScheme.RK_ImplicitEuler: {
                         rksch = RungeKuttaScheme.ImplicitEuler;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
+                case TimeSteppingScheme.RK_CrankNic: {
                         rksch = RungeKuttaScheme.CrankNicolson;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.CrankNicolson: {
+                case TimeSteppingScheme.CrankNicolson: {
                         //do not instantiate rksch, use bdf instead
                         bdfOrder = -1;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
+                case TimeSteppingScheme.ImplicitEuler: {
                         //do not instantiate rksch, use bdf instead
                         bdfOrder = 1;
                         break;
                     }
                 default: {
-                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                        if (this.Control.TimeSteppingScheme.ToString().StartsWith("BDF")) {
                             //do not instantiate rksch, use bdf instead
-                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                            bdfOrder = Convert.ToInt32(this.Control.TimeSteppingScheme.ToString().Substring(3));
                             break;
                         } else
                             throw new NotImplementedException();
@@ -1365,15 +1365,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
-
-
-            //if (this.Control.ClearVelocitiesOnRestart) {
-            //    Console.WriteLine("clearing all velocities");
-            //    this.XDGvelocity.Velocity.Clear();
-            //}
-             
-
+           
             // Load the sample Points for the restart of the Fourier LevelSet
             if (this.Control.FourierLevSetControl != null) {
 
@@ -1658,8 +1650,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, BlockedCells);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {

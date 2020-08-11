@@ -215,7 +215,11 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1, (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder, new SpeciesId[] { LsTrk.GetSpeciesId("B") }, "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1,
+                QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
+                __Species: new [] { "B" },
+                __varnames: new[] { "u", "c1" });
+
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             if(usePhi0)
@@ -504,6 +508,95 @@ namespace BoSSS.Application.ZwoLsTest {
             }
         }
 
+
+        /// <summary>
+        /// Checks MPI exchange
+        /// </summary>
+        void CheckExchange(bool ExchangeShadow) {
+
+            // its important to test more than one field!
+            var xf = new XDGField(new XDGBasis(this.LsTrk, 0), "xf");
+            var xf2 = new XDGField(new XDGBasis(this.LsTrk, 0), "xf2");
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int JE = this.GridData.iLogicalCells.Count;
+            //long[] GiD = this.GridData.CurrentGlobalIdPermutation.Values;
+
+            long GetGid(int j) { 
+                return this.GridData.iLogicalCells.GetGlobalID(j);
+            }
+
+            {
+                var st = new SinglePhaseField(new Basis(this.GridData, 1), "muh");
+                for(int j = 0; j < J; j++) {
+                    st.Coordinates[j, 0] = GetGid(j);
+                }
+
+                var trx = new BoSSS.Foundation.Comm.Transceiver(st);
+                trx.TransceiveStartImReturn();
+                trx.TransceiveFinish();
+
+
+                for(int j = 0; j < JE; j++) {
+                    double should = GetGid(j);
+                    Assert.IsTrue(st.Coordinates[j, 0] == should, "everything is fucked");
+                }
+
+            }
+
+            // ---------------------
+            foreach(string s in this.LsTrk.SpeciesNames) {
+                double sv = s[0] * 0.01;
+                var xfs = xf.GetSpeciesShadowField(s);
+                var xfs2 = xf2.GetSpeciesShadowField(s);
+                for(int j = 0; j < J; j++) {
+                    xfs.Coordinates[j, 0] = GetGid(j) + sv;
+                    xfs2.Coordinates[j, 0] = 1.0e5 + GetGid(j) + sv;
+                }
+            }
+
+            double[] xfB4 = xf.CoordinateVector.ToArray();
+            double[] xf2B4 = xf2.CoordinateVector.ToArray();
+
+            // ---------------------
+            if(ExchangeShadow) {
+                // exchange shadow fields separately
+                foreach(string s in this.LsTrk.SpeciesNames) {
+                    var xfs = xf.GetSpeciesShadowField(s);
+                    var xfs2 = xf2.GetSpeciesShadowField(s);
+
+                    //var xfsCopy = new SinglePhaseField(xfs.Basis, "muh");
+                    //xfsCopy.Acc(1.0, xfs);
+                    //dd.Add(s, xfsCopy);
+
+                    var trx = new BoSSS.Foundation.Comm.Transceiver(xfs, xfs2);
+                    trx.TransceiveStartImReturn();
+                    trx.TransceiveFinish();
+                }
+            } else {
+                // exchange XDG fields
+                var trx2 = new BoSSS.Foundation.Comm.Transceiver(xf, xf2);
+                trx2.TransceiveStartImReturn();
+                trx2.TransceiveFinish();
+            }
+
+            foreach(string s in this.LsTrk.SpeciesNames) {
+                double sv = s[0] * 0.01;
+                var xfs = xf.GetSpeciesShadowField(s);
+                var xfs2 = xf2.GetSpeciesShadowField(s);
+                
+                for(int j = 0; j < JE; j++) {
+                    double should = GetGid(j) + sv;
+                    double should2 = 1.0e5 + GetGid(j) + sv;
+
+                    string nerv = ExchangeShadow ? "shadow" : "XDG";
+                    Assert.IsTrue(xfs.Coordinates[j, 0] == 0.0 || xfs.Coordinates[j, 0] == should, $"error in MPI exchange of {nerv} fields");
+                    Assert.IsTrue(xfs2.Coordinates[j, 0] == 0.0 || xfs2.Coordinates[j, 0] == should2, $"error in MPI exchange of {nerv} fields (2nd field)");
+                }
+            }
+        }
+
+
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
 
@@ -526,11 +619,12 @@ namespace BoSSS.Application.ZwoLsTest {
             if (this.THRESHOLD > 0.01) {
                 TestAgglomeration_Extraploation(Agg);
                 TestAgglomeration_Projection(QuadOrder, Agg);
-
             }
+            CheckExchange(true);
+            CheckExchange(false);
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping, LsTrk.GetSpeciesId("B"));
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);

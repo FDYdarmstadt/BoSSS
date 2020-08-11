@@ -84,6 +84,7 @@
     <Compile Include="Quadrature\NestedVertexSet.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Algorithm.cs" />
     <Compile Include="Quadrature\SayeGaussRule_ComboAlgorithm.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_ComboFactories.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Cube.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Factories.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Helper.cs" />
@@ -93,6 +94,7 @@
     <Compile Include="Quadrature\ScalarFieldLevelSetIntegrator.cs" />
     <Compile Include="Quadrature\SimplexSubdivisionTree.cs" />
     <Compile Include="SpeciesId.cs" />
+    <Compile Include="TestingIOExtensions.cs" />
     <Compile Include="XDGBasis.cs" />
     <Compile Include="XDGField.cs" />
     <Compile Include="FieldStorage.cs" />

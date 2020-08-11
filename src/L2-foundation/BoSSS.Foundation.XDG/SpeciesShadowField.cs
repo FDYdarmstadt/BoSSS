@@ -58,6 +58,20 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
+            /// <summary>
+            /// Setting is forbidden for shadow fields.
+            /// </summary>
+            public override string Identification {
+                get {
+                    var specId = this.m_Coordinates._SpecisId;
+                    return m_Owner.Identification + "-" + m_Owner.m_CCBasis.Tracker.GetSpeciesName(specId);
+                }
+                set {
+                    throw new NotSupportedException("Setting is forbidden -- name of shadow field is implied by owner field.");
+                }
+            }
+
+
             private XDGField m_Owner;
 
             /// <summary>
@@ -172,7 +186,20 @@ namespace BoSSS.Foundation.XDG {
                     } else {
                         // multiphase cell
                         L = 1;
-                        m_Owner.Evaluate_ithSpecies(j0 + j, NodeSet, result, ResultCellindexOffset + j, ResultPreScale, ispec, ev);
+                        if(ispec >= 0) { // only if species is present
+                            m_Owner.Evaluate_ithSpecies(j0 + j, NodeSet, result, ResultCellindexOffset + j, ResultPreScale, ispec, ev);
+                        } else {
+                            // species is not present in given cell -> just apply prescaling to next L cells
+
+                            int[] I0 = new int[result.Dimension];
+                            I0[0] = j + ResultCellindexOffset;
+                            int[] IE = result.Lengths;
+                            IE[0] = I0[0] + L;
+                            for (int kk = IE.Length - 1; kk >= 0; kk--)
+                                IE[kk]--;
+
+                            result.ExtractSubArrayShallow(I0, IE).Scale(ResultPreScale);
+                        }
                     }
                     j += L;
                 }

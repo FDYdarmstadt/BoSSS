@@ -135,6 +135,10 @@
       <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
       <Name>BoSSS.Solution.Tecplot</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
+      <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
+      <Name>BoSSS.Solution.XdgTimestepping</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
       <Project>{0D8F577E-316D-4362-816B-9F610C5EB4A5}</Project>
       <Name>BoSSS.Solution.XNSECommon</Name>

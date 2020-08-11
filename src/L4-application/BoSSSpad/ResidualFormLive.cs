@@ -75,7 +75,7 @@ namespace BoSSS.Application.BoSSSpad {
             if (local) {
                 log.ReadResiduals();
             } else {
-                log.UpdateResiduals();
+                log.AppendResidualsFromFile();
             }
 
             Image graph = drawGnuplotGraph();

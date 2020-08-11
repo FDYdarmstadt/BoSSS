@@ -588,6 +588,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                     int[] iaClone = m_PardisoMatrix.ia.CloneAs();
                     int[] jaClone = m_PardisoMatrix.ja.CloneAs();
 #endif
+                   
                     unsafe
                     {
                         fixed (double* px = _x, pb = _b, dparam = m_PardInt.m_dparam) {

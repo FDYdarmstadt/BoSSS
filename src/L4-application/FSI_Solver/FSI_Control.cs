@@ -123,6 +123,8 @@ namespace BoSSS.Application.FSI_Solver {
             BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
             BoundaryIsPeriodic[0] = periodicX;
             BoundaryIsPeriodic[1] = periodicY;
+            if (IsRestart)
+                return;
             if (m_BoundaryValues.IsNullOrEmpty() && !BoundaryIsPeriodic[0] && !BoundaryIsPeriodic[1])
                 SetBoundaries(new List<string> { "Wall" });
             GridFunc = delegate {
