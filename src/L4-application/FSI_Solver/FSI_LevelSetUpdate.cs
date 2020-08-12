@@ -47,10 +47,10 @@ namespace FSI_Solver {
             for (int p = 0; p < Particles.Length; p++) {
                 for (int j = 0; j < J; j++) {
                     if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength))
-                        coloredCells[j] = p + 1;
+                        coloredCells[j] = 1;
                 }
             }
-            RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
+            //RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
             return coloredCells;
         }
 
@@ -62,7 +62,7 @@ namespace FSI_Solver {
             int[] coloredCellsExchange = coloredCells.CloneAs();
             coloredCellsExchange.MPIExchange(GridData);
             ColorNeighborCells(coloredCells, coloredCellsExchange);
-            RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
+            //RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
             return coloredCells;
         }
 
@@ -218,7 +218,7 @@ namespace FSI_Solver {
         }
 
         private void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
-            int neighbourSearchDepth = 2;
+            int neighbourSearchDepth = 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int k = 0; k < neighbourSearchDepth; k++) {
                 for (int j = 0; j < noOfLocalCells; j++) {
@@ -239,34 +239,6 @@ namespace FSI_Solver {
             int[][] globalCellNeighbourship = GetGlobalCellNeigbourship(currentGrid);
             int maxColor = globalCellColor.Max().MPIMax();
             int[] newColor = new int[maxColor + 1];
-            //for (int i = 0; i < globalCellColor.Length; i++) {
-            //    for (int j = 0; j < globalCellNeighbourship[i].Length; j++) {
-            //        if (globalCellColor[i] != globalCellColor[globalCellNeighbourship[i][j]] && globalCellColor[globalCellNeighbourship[i][j]] != 0) {
-            //            if (newColor[globalCellColor[globalCellNeighbourship[i][j]]] != 0) {
-            //                if (newColor[globalCellColor[i]] != 0) {// && newColor[globalCellColor[i]] > globalCellColor[globalCellNeighbourship[i][j]]) {
-            //                    for (int k = newColor.Length - 1; k > 0; k--) {
-            //                        if (k == newColor[globalCellColor[i]]) {
-            //                            RecolorAlreadyRecoloredCellsRecursive(newColor, newColor[globalCellColor[i]], newColor[globalCellColor[globalCellNeighbourship[i][j]]]);
-            //                            newColor[k] = newColor[globalCellColor[globalCellNeighbourship[i][j]]];
-            //                        }
-            //                    }
-            //                }
-            //                newColor[globalCellColor[i]] = newColor[globalCellColor[globalCellNeighbourship[i][j]]];
-            //            }
-            //            else {
-            //                if (newColor[globalCellColor[i]] != 0) {// && newColor[globalCellColor[i]] > globalCellColor[globalCellNeighbourship[i][j]]) {
-            //                    for (int k = newColor.Length - 1; k > 0; k--) {
-            //                        if (k == newColor[globalCellColor[i]]) {
-            //                            RecolorAlreadyRecoloredCellsRecursive(newColor, newColor[globalCellColor[i]], globalCellColor[globalCellNeighbourship[i][j]]);
-            //                            newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
-            //                        }
-            //                    }
-            //                }
-            //                newColor[globalCellColor[i]] = globalCellColor[globalCellNeighbourship[i][j]];
-            //            }
-            //        }
-            //    }
-            //}
             for (int i = 0; i < globalCellColor.Length; i++) {
                 for (int j = 0; j < globalCellNeighbourship[i].Length; j++) {
                     if (globalCellColor[i] != globalCellColor[globalCellNeighbourship[i][j]] && globalCellColor[globalCellNeighbourship[i][j]] != 0 && globalCellColor[i] != 0) {

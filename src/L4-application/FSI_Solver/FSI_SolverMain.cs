@@ -592,13 +592,16 @@ namespace BoSSS.Application.FSI_Solver {
                 CellMask allParticleMask = null;
                 CellMask coloredCellMask = null;
 
-                DeleteParticlesOutsideOfDomain();
-                CreateGhostParticleAtPeriodicBoundary();
-                SwitchGhostAndMasterParticle();
-                
+                if (CellColor != null) {
+                    DeleteParticlesOutsideOfDomain();
+                    CreateGhostParticleAtPeriodicBoundary();
+                    SwitchGhostAndMasterParticle();
+                }
+
                 CellColor = CellColor == null ? levelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(LsTrk);
                 for (int i = 0; i < CellColor.Length; i++) {
-                    CellColor[i] = 1;
+                    if (CellColor[i] != 0)
+                        CellColor[i] = 1;
                 }
                 SetColorDGField(CellColor);
 
@@ -825,11 +828,14 @@ namespace BoSSS.Application.FSI_Solver {
             Vector particlePosition = currentParticle.Motion.GetPosition();
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
+            double additionalWallThreshold = 1.5 * GetMinGridLength();
+            if (d2 == 0)
+                additionalWallThreshold *= -1;
             if (Math.Abs(distance) < particleMaxLength) {
                 if (d1 == 0)
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2] - additionalWallThreshold, particlePosition[1]);
                 else
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2] - additionalWallThreshold);
                 FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
                 periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
@@ -838,13 +844,16 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private bool AnyOverlap(Particle currentParticle) {
+            double additionalWallThreshold = 1.5 * GetMinGridLength();
             for (int d = 0; d < spatialDim; d++) {
                 for (int wallID = 0; wallID < spatialDim; wallID++) {
+                    if (wallID == 0)
+                        additionalWallThreshold *= -1;
                     Vector particlePosition = currentParticle.Motion.GetPosition();
                     if (d == 0)
-                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID], particlePosition[1]);
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID] - additionalWallThreshold, particlePosition[1]);
                     else
-                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID]);
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID] - additionalWallThreshold);
                     FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
                     periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
