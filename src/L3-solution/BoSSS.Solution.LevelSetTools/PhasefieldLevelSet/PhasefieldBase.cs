@@ -120,6 +120,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         double Diff;
 
         /// <summary>
+        /// Peclet number, ratio of convective to diffusive timescale has to be set so that diffusive timescale is smaller
+        /// </summary>
+        double Peclet;
+
+        /// <summary>
         /// Control for Bulk vs Surface Diffusion
         /// </summary>
         double Lambda;
@@ -157,7 +162,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Phasefield instantiation, constructor
         /// </summary>
-        public Phasefield(LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq)
+        public Phasefield(LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq, double _peclet = 1e3)
         {
             LevSet = _LevSet;
             LsTrk = _LsTrk;
@@ -166,6 +171,29 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             GridData = _GridData;
             ParentControl = _control;
             mgSeq = _mgSeq;
+            Peclet = _peclet;
+        }
+
+        /// <summary>
+        /// Updating Phasefield after changes in Grid and/or Basis
+        /// </summary>
+        public void UpdateFields(LevelSet _LevSet, SinglePhaseField _DGLevSet, LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq)
+        {
+            // check if signature of external and local Grid changed
+            if (this.GridData != _GridData)
+            {
+                Console.WriteLine("Grid changed, adapting Phasefield");
+                LevSet = _LevSet;
+                LsTrk = _LsTrk;
+                DGLevSet = _DGLevSet;
+                Velocity = _Velocity;
+                GridData = _GridData;
+                ParentControl = _control;
+                mgSeq = _mgSeq;
+
+                CreateFields();
+                CreateEquationsAndSolvers(null);
+            }
         }
 
         /// <summary>
@@ -173,12 +201,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// </summary>
         protected override void CreateFields()
         {
-            phi0 = new SinglePhaseField(DGLevSet.Basis);
-            phi = new SinglePhaseField(DGLevSet.Basis);
+            phi0 = new SinglePhaseField(DGLevSet.Basis, "phi0");
+            phi = new SinglePhaseField(DGLevSet.Basis, "phi");
             phi.Acc(1.0, DGLevSet);
-            mu = new SinglePhaseField(DGLevSet.Basis);
-            phi_Resi = new SinglePhaseField(DGLevSet.Basis);
-            mu_Resi = new SinglePhaseField(DGLevSet.Basis);
+            mu = new SinglePhaseField(DGLevSet.Basis, "mu");
+            phi_Resi = new SinglePhaseField(DGLevSet.Basis, "phi_Resi");
+            mu_Resi = new SinglePhaseField(DGLevSet.Basis, "mu_Resi");
 
             DummyLevSet = new LevelSet(new Basis(this.GridData, 1), "Levset");
             DummyLevSet.AccConstant(-1);
@@ -234,7 +262,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     SetCHCoefficents(out Cahn, out Diff, out Lambda);
 
                     CHOp.EquationComponents["Res_phi"].Add(
-                    new phi_Diffusion(penalty_factor, LengthScales, Diff, Lambda, m_bcMap)
+                    new phi_Diffusion(D, penalty_factor, LengthScales, Diff, Lambda, m_bcMap)
                     );
 
 
@@ -244,7 +272,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
 
                     CHOp.EquationComponents["Res_mu"].Add(
-                        new mu_Diffusion(penalty_factor, LengthScales, Cahn, m_bcMap)
+                        new mu_Diffusion(D, penalty_factor, LengthScales, Cahn, m_bcMap)
                         );
 
                     CHOp.EquationComponents["Res_mu"].Add(
@@ -327,12 +355,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// </summary>
         void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time)
         {
-            SinglePhaseField Current_c = (SinglePhaseField)(CurrentState[0]);
-            SinglePhaseField Current_phi = (SinglePhaseField)(CurrentState[1]);
+            SinglePhaseField Current_phi = (SinglePhaseField)(CurrentState[0]);
+            SinglePhaseField Current_mu = (SinglePhaseField)(CurrentState[1]);
 
             phi0.Clear();
-            phi0.Acc(1.0, Current_c);
-
+            phi0.Acc(1.0, Current_phi);
+            
             OpMtx.Clear();
             OpAffine.ClearEntries();
             var mb = CHOp.GetMatrixBuilder(Mapping, this.Velocity.ToArray().Cat(phi0), Mapping);
@@ -375,9 +403,10 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     class phi_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
-        public phi_Diffusion(double penalty_const, MultidimensionalArray cj, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+        public phi_Diffusion(int D, double penalty_const, MultidimensionalArray cj, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
             : base(penalty_const, cj, "mu") // note: in the equation for 'phi', we have the Laplacian of 'mu'
         {
+            m_D = D;
             m_diff = __diff;
             m_boundaryCondMap = __boundaryCondMap;
             m_lambda = __lambda;
@@ -387,12 +416,28 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         double m_lambda;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
 
-        public override IList<string> ParameterOrdering => new[] { "phi0" };
+        int m_D;
+        public override IList<string> ParameterOrdering => new[] { "phi0" }.Cat(VariableNames.VelocityVector(m_D));
 
         protected override double g_Diri(ref CommonParamsBnd inp)
         {
-            // no value given for the gradient, what to insert here?
-            return 0.0;
+            double UxN = 0;
+            for (int d = 0; d < m_D; d++)
+            {
+                UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
+            }
+
+            double v;
+            if (UxN >= 0)
+            {
+                v = 1.0;
+            }
+            else
+            {
+                v = 0.0;
+            }
+
+            return v;
         }
 
         protected override double g_Neum(ref CommonParamsBnd inp)
@@ -428,12 +473,64 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             }
             else if (m_lambda > 0.0 && m_lambda <= 1.0)
             {
-                return -m_diff * (1 - m_lambda * Math.Pow(p[0], 2.0));
+                return -m_diff * Math.Max(1 - m_lambda * Math.Pow(p[0], 2.0),0.0);
             }
             else
             {
                 throw new ArgumentOutOfRangeException();
             }
+        }
+
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
+        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
+        {
+            double Acc = 0.0;
+
+            double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+
+            if (this.IsDirichlet(ref inp))
+            {
+                // inhom. Dirichlet b.c.
+                // +++++++++++++++++++++
+
+                double g_D = this.g_Diri(ref inp);
+
+                // inflow / outflow
+                if (g_D == 0)
+                {
+                    for (int d = 0; d < inp.D; d++)
+                    {
+                        double nd = inp.Normal[d];
+                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                        Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
+                    }
+                    Acc *= this.m_alpha;
+
+                    Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+                }
+                else
+                {
+                    for (int d = 0; d < inp.D; d++)
+                    {
+                        double nd = inp.Normal[d];
+                        //Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency 
+                        //Acc += (nuA * 0.0) * (_vA) * nd;        // consistency, homogenous Neumann
+                    }
+                    Acc *= this.m_alpha;
+
+                }
+            }
+            else
+            {
+
+                double g_N = this.g_Neum(ref inp);
+
+                Acc += nuA * g_N * _vA * this.m_alpha;
+            }
+            return Acc;
         }
     }
 
@@ -465,7 +562,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
         {
-            // is this correct?
+            // expand for treatment of input functions, for now hardcode to -1.0
             double UxN = 0;
             for (int d = 0; d < m_D; d++)
             {
@@ -479,7 +576,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             }
             else
             {
-                phi = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+                phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             }
 
             return phi * UxN * _vIN;
@@ -525,22 +622,39 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
-        public mu_Diffusion(double penalty_const, MultidimensionalArray cj, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+        public mu_Diffusion(int D, double penalty_const, MultidimensionalArray cj, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
             : base(penalty_const, cj, "phi") // note: in the equation for 'mu', we have the Laplacian of 'phi'
         {
+            m_D = D;
             m_cahn = __cahn * __cahn;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap.bndFunction["phi"];
         }
 
         double m_cahn;
+        int m_D;
+        public override IList<string> ParameterOrdering => VariableNames.VelocityVector(m_D).Cat("phi0");
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         Func<double[], double, double>[] m_bndFunc;
 
         protected override double g_Diri(ref CommonParamsBnd inp)
         {
-            // not sure if this is correct
-            double v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+            double UxN = 0;
+            for (int d = 0; d < m_D; d++)
+            {
+                UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
+            }
+
+            double v;
+            if (UxN >= 0)
+            {
+                v = 0.0;
+            }
+            else
+            {
+                // for now set inflow value to -1.0
+                v = -1.0; // m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+            }
             return v;
         }
 
@@ -572,6 +686,62 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         public override double Nu(double[] x, double[] p, int jCell)
         {
             return -m_cahn;
+        }
+
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
+        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
+        {
+            double Acc = 0.0;
+
+            double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+
+            if (this.IsDirichlet(ref inp))
+            {
+                // inhom. Dirichlet b.c.
+                // +++++++++++++++++++++
+
+                double g_D = this.g_Diri(ref inp);                
+
+                // inflow / outflow
+                if (g_D != 0)
+                {
+                    for (int d = 0; d < inp.D; d++)
+                    {
+                        double nd = inp.Normal[d];
+                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                        Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
+                    }
+                    Acc *= this.m_alpha;
+
+                    Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+                }
+                else
+                {
+                    for (int d = 0; d < inp.D; d++)
+                    {
+                        double nd = inp.Normal[d];
+                        //Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency 
+                        //Acc += (nuA * 0.0) * (_vA) * nd;        // consistency Neumann
+                    }
+
+                    //double D0 = 1.0;
+                    //Acc -= (nuA * _vA) * D0 * (_uA[0]-inp.Parameters_IN[inp.D])/ 0.01;        // Outflow boundary condition see S. Dong
+
+                    Acc *= this.m_alpha;
+
+                }
+            }
+            else
+            {
+
+                double g_N = this.g_Neum(ref inp);
+
+                Acc += nuA * g_N * _vA * this.m_alpha;
+            }
+            return Acc;
         }
     }
 

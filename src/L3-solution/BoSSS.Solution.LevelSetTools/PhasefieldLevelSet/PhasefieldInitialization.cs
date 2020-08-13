@@ -7,6 +7,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using BoSSS.Foundation;
 
 namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 {
@@ -20,19 +21,20 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Initialize Cahn Hilliard Level Set
         /// </summary>
-        public void InitCH()
+        public void InitCH(double _dt)
         {
             CreateFields();
             CreateEquationsAndSolvers(null);
-            RelaxationStep();
+            RelaxationStep(_dt: _dt);
         }
 
         
         /// <summary>
         /// Locally refine p-Order in Cutcells
         /// </summary>
-        private void AdaptP()
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid)
         {
+
             throw new NotImplementedException();
         }
 
@@ -62,13 +64,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 throw new NotImplementedException();
             }
             
-            _Cahn = dInterface * (1/4.164) * hmin;
+            _Cahn = dInterface * (1.0/4.164) * hmin;
 
-            // mobility coefficient
-            _Diff = 1.0;
+            // mobility coefficient, for now inverse of Pe = Re*Sc
+            _Diff = 1.0 / this.Peclet;
 
-            // 0.0 = bulk diffusion, 1.0 = surface diffusion
+            // 0.0 = pure bulk diffusion, 1.0 = pure surface diffusion
             _Lambda = 0.0;
         }
+        
     }
 }

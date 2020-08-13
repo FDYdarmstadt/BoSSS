@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <param name="_TimestepNo"></param>
         /// <param name="_dt"></param>
         /// <param name="_phystime"></param>
-        public void RelaxationStep(int _TimestepNo = -1, double _dt = 10.0, double _phystime = 0.0)
+        public void RelaxationStep(int _TimestepNo = -1, double _dt = 0.01, double _phystime = 0.0)
         {
             this.Velocity.Clear();
             RunSolverOneStep(_TimestepNo, _dt, _phystime);
@@ -53,12 +54,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // Perform timestep
                 // ================
 
-                this.m_Timestepper.m_ResLogger = base.ResLogger;
+                this.m_Timestepper.m_ResLogger = new ResidualLogger(this.MPIRank, null, new Guid());
                 this.m_Timestepper.m_ResidualNames = new string[] { "Res_phi", "Res_mu" };
 
-                //PlotCurrentState(_phystime, _TimestepNo, 2);
+                //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo , 0}), 2);
                 this.m_Timestepper.Solve(_phystime, _dt);
-                //PlotCurrentState(_phystime, _TimestepNo, 2);
+                //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo, 1 }), 2);
 
                 // update DG LevelSet
                 DGLevSet.Clear();
@@ -67,7 +68,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // return
                 // ======
 
-                Console.WriteLine("done with timestep #{0}.", _TimestepNo);
+                Console.WriteLine("done moving Phasefield in timestep #{0}.", _TimestepNo);
 
                 return _dt;
             }
