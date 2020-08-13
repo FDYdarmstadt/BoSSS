@@ -219,21 +219,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // globalization
                         // -------------
-                        //double[] TempSol = DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
-                        LineSearch(SolutionVec, CurSol, CurRes, step);
+                        DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
+                        //LineSearch(SolutionVec, CurSol, CurRes, step);
 
-#if DEBUG
-                        {
-                            // test is the globalization routines above 
-                            var test = new double[TempSol.Length];
-                            CurrentLin.TransformSolInto(SolutionVec, test);
-                            double l2_dist = test.L2Distance(TempSol);
-                            double l2_thresh = TempSol.L2Norm() * 1e-7;
 
-                            Debug.Assert(l2_dist <= l2_thresh, "Globalization routine missed update of SolutionVec.");
+                        // fix the pressure 
+                        // ----------------
+                        if(UsePresRefPoint == false) {
 
+                            if(SolutionVec.Mapping.Fields[2] is XDGField Xpres) {
+                                DGField presSpA = Xpres.GetSpeciesShadowField("A");
+                                DGField presSpB = Xpres.GetSpeciesShadowField("B");
+                                var meanpres = presSpB.GetMeanValueTotal(null);
+                                presSpA.AccConstant(-1.0 * meanpres);
+                                presSpB.AccConstant(-1.0 * meanpres);
+                            } else {
+                                DGField pres = SolutionVec.Mapping.Fields[2];
+                                var meanpres = pres.GetMeanValueTotal(null);
+                                pres.AccConstant(-1.0 * meanpres);
+                            }
                         }
-#endif
+
 
 
                         // update linearization
@@ -369,20 +375,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // (and for Level-Set-Updates ...)
             this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
 
-            if(UsePresRefPoint == false) {
-
-                if(SolutionVec.Mapping.Fields[2] is XDGField Xpres) {
-                    DGField presSpA = Xpres.GetSpeciesShadowField("A");
-                    DGField presSpB = Xpres.GetSpeciesShadowField("B");
-                    var meanpres = presSpB.GetMeanValueTotal(null);
-                    presSpA.AccConstant(-1.0 * meanpres);
-                    presSpB.AccConstant(-1.0 * meanpres);
-                } else {
-                    DGField pres = SolutionVec.Mapping.Fields[2];
-                    var meanpres = pres.GetMeanValueTotal(null);
-                    pres.AccConstant(-1.0 * meanpres);
-                }
-            }
+            
         }
 
         /// <summary>
@@ -479,24 +472,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
             void PointOnDogleg(double _TrustRegionDelta) {
                 if(l2_stepIN <= _TrustRegionDelta) {
                     // use Newton Step
+                    Console.WriteLine($"       -------- using Newton step (delta = {_TrustRegionDelta})");
                     step.SetV(stepIN);
                 } else {
                     if(l2_stepCP < _TrustRegionDelta) {
                         // interpolate between Cauchy-point and Newton-step
+                        Console.WriteLine($"       -------- between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
                         Debug.Assert(l2_stepCP * 0.99999 <= _TrustRegionDelta); // Cauchy Point is INSIDE   trust region
                         Debug.Assert(l2_stepIN * 1.00001 >= _TrustRegionDelta); // Newton Step  is OUTSIDE  trust region
                         Debug.Assert(l2_stepCP <= l2_stepIN * 1.00001); // consequently, the Newton Step must be larger than the Cauchy point
 
-                        double tau = (l2_stepCP - _TrustRegionDelta) / (l2_stepCP - l2_stepIN); // nominator and denominator must be negative!
-                                                                                                //double tau2 = (l2_stepCP + TrustRegionDelta) / (l2_stepCP - l2_stepIN); // other solution of quadratic problem, probably negative
-                        Debug.Assert(tau >= -0.00001 && tau <= 1.00001);
-
+                        //double tau = (l2_stepCP - _TrustRegionDelta) / (l2_stepCP - l2_stepIN); // nominator and denominator must be negative!
+                        //                                                                        //double tau2 = (l2_stepCP + TrustRegionDelta) / (l2_stepCP - l2_stepIN); // other solution of quadratic problem, probably negative
+                        double tau;
+                        {
+                            double A = l2_stepCP, B = l2_stepIN, C = stepCP.MPI_ddot(stepIN);
+                            tau = (A.Pow2() - C + Math.Sqrt((A.Pow2() + B.Pow2() - 2 * C) * _TrustRegionDelta.Pow2() - A.Pow2() * B.Pow2() + C.Pow2()))
+                                / (A.Pow2() + B.Pow2() - 2 * C);
+                            if(!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
+                                throw new ArithmeticException();
+                        }
                         // do interpolation
                         step.SetV(stepCP, (1 - tau));
                         step.AccV(tau, stepIN);
                         Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "interpolation step went wrong");
                     } else {
                         // use reduced Cauchy point
+                        Console.WriteLine($"       -------- using Cauchy point (delta = {_TrustRegionDelta})");
                         Debug.Assert(l2_stepCP * 1.00001 >= _TrustRegionDelta); // Cauchy Point is outside trust region
                         step.SetV(stepCP, alpha: (_TrustRegionDelta / l2_stepCP));
                         Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "scaling step went wrong");
@@ -508,6 +510,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             PointOnDogleg(TrustRegionDelta);
+            Debug.Assert(false);
 
             // check and adapt trust region
             // ============================
@@ -533,7 +536,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             // trust region adaptation loop
-            while(ared() < t * pred()) {
+            double last_ared = ared();
+            double last_pred = pred();
+            while(last_ared < t * last_pred) {
                 double newTrustRegionDelta = TrustRegionDelta * 0.5;
                 if(newTrustRegionDelta < TrustRegionDelta)
                     break;
@@ -541,7 +546,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 PointOnDogleg(TrustRegionDelta);
 
                 TrustRegionDelta = Math.Min(delta_min, newTrustRegionDelta);
+
+
+                last_ared = ared();
+                last_pred = pred();
             }
+
+            // final trust region update
+            // =========================
+            {
+                // 1:1 from Pawlovski et.al. 2006,
+                
+                
+                const double rho_s = 0.1;
+                const double rho_e = 0.75;
+                const double beta_s = 0.25;
+                const double beta_e = 4.0;
+                /*
+                if(last_ared/last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
+                    TrustRegionDelta = Math.Max(l2_stepIN, delta_min);
+                } else if(last_ared/last_pred < rho_s) {
+                    TrustRegionDelta = Math.Max(beta_s * TrustRegionDelta, delta_min); // shrinking
+                } else if(last_ared/last_pred > rho_e) {
+                    TrustRegionDelta = Math.Min(beta_e * TrustRegionDelta, delta_max); // enhancing
+                }
+                */
+
+
+            }
+
 
 
             // return updated solution
