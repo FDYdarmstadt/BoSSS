@@ -287,7 +287,7 @@ namespace BoSSS.Solution {
                             maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.MatrixFreeGMRES,
                             Precond = precondonly,
                             GMRESConvCrit = lc.ConvergenceCriterion,
                             ConvCrit = nc.ConvergenceCriterion,

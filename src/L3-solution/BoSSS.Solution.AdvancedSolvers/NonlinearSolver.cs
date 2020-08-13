@@ -114,7 +114,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // ... and evaluate its residual
             Res1 = new double[Ltrf];
-            this.EvalResidual(Sol1, ref Res1);
+            this.EvalLinearizedResidual(Sol1, ref Res1);
         }
 
 
@@ -207,7 +207,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             CoordinateVector u0Raw = new CoordinateVector(CurrentState.ToArray());
             int Ltrf = this.CurrentLin.Mapping.LocalLength;
-            if (U0.Length != Ltrf)
+            if (U0 == null || U0.Length != Ltrf)
                 U0 = new double[Ltrf];
             CurrentLin.TransformSolInto(u0Raw, U0);
         }
@@ -252,9 +252,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
+        /// Residual of linearized system, i.e.
         /// <paramref name="out_Resi"/> := RHS - M*<paramref name="in_U"/>
         /// </summary>
-        protected void EvalResidual(double[] in_U, ref double[] out_Resi) {
+        protected void EvalLinearizedResidual(double[] in_U, ref double[] out_Resi) {
             if (this.LinearizationRHS.Length != in_U.Length)
                 throw new ApplicationException("internal error");
             if (out_Resi.Length != in_U.Length)
