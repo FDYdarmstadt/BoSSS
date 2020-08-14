@@ -118,10 +118,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int itc = 0;
                 double[] CurSol, // "current (approximate) solution", i.e. 
-                                 //TempSol, 
-                                 //PrevSol, // previous iteration  (approximate) solution
-                    CurRes, // residual associated with 'CurSol'
-                    deltaX;
+                    CurRes; // residual associated with 'CurSol'
                 //TempRes;
                 double rat;
 
@@ -131,11 +128,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 using(new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
-                //Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
-
-
-                deltaX = new double[CurSol.Length];
-
 
                 this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
                 EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes);
@@ -175,14 +167,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // Option: Matrix-Free GMRES
                             // ++++++++++++++++++++++++++
 
-
-
                             if(Precond != null) {
                                 Precond.Init(CurrentLin);
                             }
                             //base.EvalResidual(x, ref f0); 
-                            CurRes.ScaleV(-1.0);
                             step = Krylov(SolutionVec, CurSol, CurRes, out errstep);
+                            step.ScaleV(-1);
                         } else if(ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                             // +++++++++++++++++++++++++++++
                             // Option: use 'external' solver
@@ -194,7 +184,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             solver.Init(CurrentLin);
                             step.ClearEntries();
                             var check = CurRes.CloneAs();
-                            CurRes.ScaleV(-1.0);
                             solver.ResetStat();
 
                             if(solver is IProgrammableTermination pt) {
@@ -210,8 +199,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             }
 
-
                             solver.Solve(step, CurRes);
+                            step.ScaleV(-1);
 
                         } else {
                             throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
@@ -451,7 +440,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 stepCP.ScaleV(lambda);
                 dk = null; // invalidate
 
-
                 // test:
                 double[] ResAtCP = CurRes.CloneAs();
                 this.CurrentLin.OperatorMatrix.SpMV(1.0, stepCP, 1.0, ResAtCP);
@@ -462,13 +450,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Assert.LessOrEqual(ResNormAtCP, ResNormAtX0, "Something wrong in calculation of Cauchy Point -- residual of linear model increased.");
             }
 
+            // using only Cauchy-Point
+            //var _NewSol = CurSol.CloneAs();
+            //_NewSol.AccV(1.0, stepCP);
+            //this.CurrentLin.TransformSolFrom(SolutionVec, _NewSol);
+            //return;
+           
             // find point on Dogleg curve, within the trust region
             // ===================================================
             double[] step = new double[stepIN.Length];
-            double[] NewSol = new double[stepIN.Length];
             double l2_stepCP = stepCP.MPI_L2Norm();
             double l2_stepIN = stepIN.MPI_L2Norm();
-
+            double[] NewSol;
             void PointOnDogleg(double _TrustRegionDelta) {
                 if(l2_stepIN <= _TrustRegionDelta) {
                     // use Newton Step
@@ -510,7 +503,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             PointOnDogleg(TrustRegionDelta);
-            Debug.Assert(false);
 
             // check and adapt trust region
             // ============================
@@ -555,14 +547,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // final trust region update
             // =========================
             {
-                // 1:1 from Pawlovski et.al. 2006,
-                
-                
+                // taken from [Pawlovski et.al. 2006], section 2.4
+                                
                 const double rho_s = 0.1;
                 const double rho_e = 0.75;
                 const double beta_s = 0.25;
                 const double beta_e = 4.0;
-                /*
+                                
                 if(last_ared/last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
                     TrustRegionDelta = Math.Max(l2_stepIN, delta_min);
                 } else if(last_ared/last_pred < rho_s) {
@@ -570,10 +561,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else if(last_ared/last_pred > rho_e) {
                     TrustRegionDelta = Math.Min(beta_e * TrustRegionDelta, delta_max); // enhancing
                 }
-                */
-
-
-            }
+           }
 
 
 
