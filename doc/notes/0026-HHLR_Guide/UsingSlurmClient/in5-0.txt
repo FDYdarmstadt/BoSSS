@@ -1,0 +1,7 @@
+8: var ctrl         = new SipControl();
+9: ctrl.savetodb    = true;
+10: ctrl.SessionName = "SIP_test";
+11: ctrl.AlternateDbPaths = new[]{
+12:         new ValueTuple<string,string>(@"/work/scratch/TuID/test_DB", ""),
+13:         new ValueTuple<string,string>(@"W:\work\scratch\TuID\test_DB", "")
+14:     };

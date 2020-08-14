@@ -500,6 +500,7 @@ namespace ilPSP.Tracing {
 
         /// <summary>
         /// time spend in this method, relative to the
+        /// note: not usable in case of recursive calls
         /// <see cref="MethodCallRecord.Root"/>;
         /// </summary>
         public double TimeFractionOfRoot {

@@ -280,8 +280,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="initalRotation">
         /// The initial rotational velocity.
         /// </param>
-        internal void InitializeParticleVelocity(double[] initalTranslation, double initalRotation) {
-            for (int i = 0; i < NumberOfHistoryEntries; i++) {
+        internal void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0) {
+            if (historyLength == 0)
+                historyLength = NumberOfHistoryEntries;
+            for (int i = 0; i < historyLength; i++) {
                 TranslationalVelocity[i] = initalTranslation == null ? new Vector(SpatialDim) : new Vector(initalTranslation);
                 RotationalVelocity[i] = initalRotation;
                 Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
@@ -298,10 +300,36 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="initalRotation">
         /// The initial rotational velocity.
         /// </param>
-        internal void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration) {
-            for (int i = 0; i < NumberOfHistoryEntries; i++) {
+        internal void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0) {
+            if (historyLength == 0)
+                historyLength = NumberOfHistoryEntries;
+            for (int i = 0; i < historyLength; i++) {
                 TranslationalAcceleration[i] = new Vector(initalTranslationAcceleration);
                 RotationalAcceleration[i] = initalRotationAcceleration;
+                Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
+                Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
+            }
+        }
+
+        /// <summary>
+        /// Used during init of the particle. Sets the translational and rotational velocity.
+        /// </summary>
+        /// <param name="initalTranslation">
+        /// The initial translational velocity.
+        /// </param>
+        /// <param name="initalRotation">
+        /// The initial rotational velocity.
+        /// </param>
+        internal void InitializeParticleForceAndTorque(double[] initalForce, double initalTorque, int historyLength = 0, double dt = 0) {
+            if (historyLength == 0)
+                historyLength = NumberOfHistoryEntries;
+            for (int i = 0; i < historyLength; i++) {
+                HydrodynamicForces[i] = new Vector(initalForce);
+                HydrodynamicTorque[i] = initalTorque;
+                if(dt != 0) {
+                    TranslationalAcceleration[i] = CalculateTranslationalAcceleration(dt);
+                    RotationalAcceleration[i] = CalculateRotationalAcceleration(dt);
+                }
                 Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
                 Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
             }
@@ -554,7 +582,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
+            if (dt < 0)
+                Console.WriteLine("old Pos 0 " + Position[0][0]);
             Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 6;
+            if (dt < 0)
+                Console.WriteLine("new Pos 0 " + position[0]);
             Aux.TestArithmeticException(position, "particle position");
             return position;
         }

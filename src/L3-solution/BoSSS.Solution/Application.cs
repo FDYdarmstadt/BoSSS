@@ -3177,13 +3177,7 @@ namespace BoSSS.Solution {
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
             wrt.WriteLine("=========================================================");
 
-            int i = 1;
-            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTicks);
-            foreach (var cr in mostExpensive) {
-                wrt.Write("Rank " + i + ": ");
-                wrt.WriteLine(cr.ToString());
-                i++;
-            }
+            MethodCallRecordExtension.GetMostExpensiveCalls(wrt, R);
 
             wrt.WriteLine();
             wrt.WriteLine("Details on nonlinear operator evaluation:");

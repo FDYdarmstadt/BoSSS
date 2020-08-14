@@ -31,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// particle state (<see cref="FSI_SolverMain.m_Particles"/>)
+        /// particle state (<see cref="FSI_SolverMain.ParticleList"/>)
         /// </summary>
         [DataMember]
         public Particle[] Particles;
