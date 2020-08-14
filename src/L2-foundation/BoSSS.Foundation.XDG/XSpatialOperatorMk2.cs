@@ -74,11 +74,13 @@ namespace BoSSS.Foundation.XDG {
                     //m_SpatialOperator.EquationComponents[comps].Add(iec);
                     
                     if(iec is ISpeciesFilter fiec) {
-                        string spcNmn = fiec.validSpeciesId;
+                        string spcNmn = fiec.ValidSpecies;
 
                         if(!this.Species.Contains(spcNmn)) {
                             throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
-                        } else {
+                        } 
+                        
+                        if(species.Equals(fiec.ValidSpecies)){
                             r.EquationComponents[comps].Add(iec);
                         }
                     } else {

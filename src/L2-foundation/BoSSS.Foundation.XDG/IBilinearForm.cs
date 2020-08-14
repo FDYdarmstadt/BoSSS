@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// the species in which the bulk equation component is valid
         /// </summary>
-        string validSpeciesId { get; }
+        string ValidSpecies { get; }
     }
 
     /// <summary>

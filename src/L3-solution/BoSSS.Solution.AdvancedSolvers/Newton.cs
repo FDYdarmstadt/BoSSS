@@ -88,16 +88,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Convergence for Krylov and GMRES iterations
         /// </summary>
         public double GMRESConvCrit = 1e-6;
+               
+        /// <summary>
+        /// Options for (approximate) solution to the linearizes system
+        /// </summary>
+        public enum ApproxInvJacobianOptions { 
+            
+            /// <summary>
+            /// Using a matrix-free GMRES implementation, optionally employing <see cref="Newton.linsolver"/> (typically not matrix-free) as a preconditioner.
+            /// </summary>
+            MatrixFreeGMRES = 1, 
+            
+            /// <summary>
+            /// Using the solver <see cref="Newton.linsolver"/> for computing Newton corrections
+            /// </summary>
+            ExternalSolver = 2 
+        }
 
-        //public CoordinateVector m_SolutionVec;
-
-        public enum ApproxInvJacobianOptions { MatrixFreeGMRES = 1, DirectSolver = 2 }
-
+        /// <summary>
+        /// Options for (approximate) solution to the linearizes system
+        /// </summary>
         public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.MatrixFreeGMRES;
+
+        /// <summary>
+        /// Options for Globalization, i.e. means to ensure convergence of Newton iterations 
+        /// when the initial guess is far away from the solution.
+        /// </summary>
+        public enum GlobalizationOption {
+            
+            /// <summary>
+            /// Dogleg method according to 
+            /// Pawlowski et. al., 2006, Globalization Techniques for Newton–Krylov Methods and Applications to the Fully Coupled Solution of the Navier–Stokes Equations, SIAM Review, Vol. 48, No. 4, pp 700-721.
+            /// </summary>
+            Dogleg = 1,
+
+            /// <summary>
+            /// Parabolic line search according to 
+            /// Kelley, C., Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
+            /// </summary>
+            LineSearch = 2
+        }
+
+        /// <summary>
+        /// Options for Globalization, i.e. means to ensure convergence of Newton iterations 
+        /// when the initial guess is far away from the solution.
+        /// </summary>
+        GlobalizationOption Globalization = GlobalizationOption.LineSearch;
 
 
         public string m_SessionPath;
 
+        /// <summary>
+        /// Optional external solver for computation of Newton corrections
+        /// </summary>
         public ISolverSmootherTemplate linsolver;
 
         public bool UsePresRefPoint;
@@ -173,7 +216,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //base.EvalResidual(x, ref f0); 
                             step = Krylov(SolutionVec, CurSol, CurRes, out errstep);
                             step.ScaleV(-1);
-                        } else if(ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
+                        } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                             // +++++++++++++++++++++++++++++
                             // Option: use 'external' solver
                             // +++++++++++++++++++++++++++++
@@ -208,9 +251,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // globalization
                         // -------------
-                        DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
-                        //LineSearch(SolutionVec, CurSol, CurRes, step);
+                        switch(Globalization) {
+                            case GlobalizationOption.Dogleg:
+                            DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
+                            break;
 
+                            case GlobalizationOption.LineSearch:
+                            LineSearch(SolutionVec, CurSol, CurRes, step);
+                            break;
+
+                            default:
+                            throw new NotImplementedException();
+                        }
 
                         // fix the pressure 
                         // ----------------
@@ -547,7 +599,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // final trust region update
             // =========================
             {
-                // taken from [Pawlovski et.al. 2006], section 2.4
+                // taken from [Pawlovski et.al. 2006], section 2.4;
+                // originally from J. E. Dennis, Jr. and R. B. Schnabel. Numerical Methods for Unconstrained Optimization and Nonlinear Equations. Series in Automatic Computation. Prentice-Hall, Englewood Cliffs, NJ, 1983.
                                 
                 const double rho_s = 0.1;
                 const double rho_e = 0.75;
