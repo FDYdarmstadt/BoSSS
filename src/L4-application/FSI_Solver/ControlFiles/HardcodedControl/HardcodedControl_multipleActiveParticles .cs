@@ -282,12 +282,12 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.6) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.25) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "dce6c5d4-243a-4428-8941-96df0ad5f17e";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 760);
+            string ID = "bd195dca-163c-4230-b52b-6153eff391ec";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             C.IsRestart = true;
             // Fluid Properties
             // =============================
@@ -303,7 +303,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetGrid(lengthX: domainLength, lengthY: domainLength, cellsPerUnitLength: 35, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-3;
-            C.minDistanceThreshold = 0.01;
+            C.minDistanceThreshold = 0.005;
             C.CoefficientOfRestitution = 1;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);

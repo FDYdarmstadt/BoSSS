@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         public static FSI_Control TwoParticleCollision(int k = 2, int amrLevel = 2) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
-            //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             // Domain
             // =============================
@@ -117,8 +117,8 @@ namespace BoSSS.Application.FSI_Solver {
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, true, false, false);
             double particleRadius = 0.1;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }),
-                new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0 },0, 0, new double[] {0,0.1 })
+                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }, 0),
+                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] {-0.1,0 },0, 0, new double[] {0,0.1 }, 0.1)
             };
 
             // misc. solver options
@@ -135,7 +135,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 100);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 300);
 
             return C;
         }
