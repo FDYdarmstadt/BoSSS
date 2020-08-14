@@ -822,7 +822,8 @@ namespace BoSSS.Foundation {
 
             SpatialOperator fracOp = new SpatialOperator(new string[] { "a", "b" },
                                                           new string[] { "res" },
-                                                          QuadOrderFunc.NonLinear(2));
+                                                          QuadOrderFunc.Linear());
+                                                          //QuadOrderFunc.NonLinear(2));
             fracOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
             fracOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, cm);
             fracOp.EquationComponents["res"].Add(new QuotientSource());
