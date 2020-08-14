@@ -1294,7 +1294,7 @@ namespace BoSSS.Foundation.XDG {
             get {
                 if(m_SurfaceElement_VolumeQuadraturSchemeProvider == null)
                     m_SurfaceElement_VolumeQuadraturSchemeProvider = DefaultSurfElmCQSprovider;
-                return m_VolumeQuadraturSchemeProvider;
+                return m_SurfaceElement_VolumeQuadraturSchemeProvider;
             }
             set {
                 if(IsCommited)
