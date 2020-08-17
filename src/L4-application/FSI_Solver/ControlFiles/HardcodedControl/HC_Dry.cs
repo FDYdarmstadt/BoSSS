@@ -117,8 +117,8 @@ namespace BoSSS.Application.FSI_Solver {
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, true, false, false);
             double particleRadius = 0.1;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }, 0),
-                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] {-0.1,0 },0, 0, new double[] {0,0.1 }, 0.1)
+                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] { -0.1, 0.0 },0, 0, new double[] {0,0.05 }, 1),
+                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] {-0,0.125 },0, 0, new double[] {0,-0.1 }, 1)
             };
 
             // misc. solver options

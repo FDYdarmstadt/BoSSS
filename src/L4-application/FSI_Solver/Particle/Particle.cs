@@ -236,9 +236,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculates the eccentricity of a collision
         /// </summary>
-        internal void CalculateEccentricity(Vector tangentialVector) {
-            CalculateRadialVector(ClosestPointToOtherObject, out Vector RadialVector, out _);
-            Eccentricity = RadialVector * tangentialVector;
+        internal void CalculateEccentricity(Vector normalVector) {
+            CalculateRadialVector(ClosestPointToOtherObject, out Vector RadialVector, out double radialLength);
+            Vector tangentialVector = new Vector(-normalVector[1], normalVector[0]);
+            Eccentricity = radialLength * RadialVector * tangentialVector;
             Aux.TestArithmeticException(Eccentricity, "particle eccentricity");
         }
 
