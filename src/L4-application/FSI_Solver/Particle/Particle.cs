@@ -222,25 +222,29 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         /// <param name="RadialLength">
         /// </param>
-        internal void CalculateRadialVector(Vector SurfacePoint, out Vector RadialVector, out double RadialLength) {
+        internal Vector CalculateRadialVector(Vector SurfacePoint) {
             Aux = new FSI_Auxillary();
-            RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
+            Vector RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
                 throw new ArithmeticException("The radial vector has no length");
-            RadialLength = RadialVector.Abs();
-            RadialVector.ScaleV(1 / RadialLength);
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
-            Aux.TestArithmeticException(RadialLength, "particle radial length");
+            return RadialVector;
         }
 
         /// <summary>
         /// Calculates the eccentricity of a collision
         /// </summary>
-        internal void CalculateEccentricity(Vector normalVector) {
-            CalculateRadialVector(ClosestPointToOtherObject, out Vector RadialVector, out double radialLength);
-            Vector tangentialVector = new Vector(-normalVector[1], normalVector[0]);
-            Eccentricity = radialLength * RadialVector * tangentialVector;
-            Aux.TestArithmeticException(Eccentricity, "particle eccentricity");
+        internal double CalculateEccentricity(Vector normalVector) {
+            Vector radialVector = CalculateRadialVector(ClosestPointToOtherObject);
+            Vector normalRadialVector = new Vector(-radialVector[1], radialVector[0]);
+            return normalRadialVector * normalVector;
+        }
+
+        internal double CalculateSecondOrderEccentricity(Vector NormalVector) {
+            Vector radialVector = CalculateRadialVector(ClosestPointToOtherObject);
+            double firstCrossProduct2D = radialVector[0] * NormalVector[1] - radialVector[1] * NormalVector[0];
+            Vector secondCrossProduct2D = new Vector(-firstCrossProduct2D * radialVector[1], firstCrossProduct2D * radialVector[0]);
+            return secondCrossProduct2D * NormalVector;
         }
 
         /// <summary>

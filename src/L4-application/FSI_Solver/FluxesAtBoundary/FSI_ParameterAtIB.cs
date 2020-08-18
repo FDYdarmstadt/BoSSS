@@ -26,25 +26,20 @@ namespace FSI_Solver {
         /// <param name="currentPoint">The current point</param>
         public FSI_ParameterAtIB(Particle currentParticle, Vector currentPoint) {
             m_CurrentParticle = currentParticle;
-            if (currentParticle == null)
-                Console.WriteLine("ndsngosdng");
             if (m_CurrentParticle.Area <= 0)
                 throw new ArithmeticException("no particle with an positive domain assigned.");
-            m_CurrentParticle.CalculateRadialVector(currentPoint, out m_RadialVector, out m_radialLength);
-            if (m_radialLength <= 0)
-                throw new ArithmeticException("negative or zero length of radial vector");
+            m_RadialVector = m_CurrentParticle.CalculateRadialVector(currentPoint);
         }
 
         private readonly Particle m_CurrentParticle;
         private Vector m_RadialVector;
-        private readonly double m_radialLength;
 
         /// <summary>
         /// Veloctiy of the point X
         /// </summary>
         public Vector VelocityAtPointOnLevelSet() {
-            return new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0] - m_radialLength * m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[1],
-                              m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1] + m_radialLength * m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[0]);
+            return new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0] - m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[1],
+                              m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1] + m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[0]);
         }
 
         /// <summary>
