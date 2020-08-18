@@ -37,6 +37,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Application.MultigridTest {
 
@@ -45,10 +46,18 @@ namespace BoSSS.Application.MultigridTest {
 
         [OneTimeSetUp]
         public static void Init() {
-            
+
             //GridCommons grd = Grid2D.Cartesian2DGrid(RandomSpacing(), RandomSpacing());
             //grid = new GridData(Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-7, 7, 8), GenericBlas.Linspace(-1, 1, 2)));
             //grid = new GridData(Grid2D.Cartesian2DGrid(new double[] { -6, -4, -2, 2, 4, 6 }, GenericBlas.Linspace(-1, 1, 2)));
+            //if (curved)
+            //{
+            //    grid = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 5), GenericBlas.Linspace(0, 1, 17), CellType.Square_9, true).GridData;
+            //}
+            //else
+            //{
+            //    grid = (Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1.5, 1.5, 17), GenericBlas.Linspace(-1.5, 1.5, 17))).GridData;
+            //}
             grid = (Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1.5, 1.5, 17), GenericBlas.Linspace(-1.5, 1.5, 17))).GridData;
             MgSeq = CoarseningAlgorithms.CreateSequence(grid);
 
@@ -245,13 +254,18 @@ namespace BoSSS.Application.MultigridTest {
             double[] RestVec2 = new double[RestVec.Length];
             RestOp.SpMV(1.0, OrigVec, 0.0, RestVec2);
 
+            //// ? obviously the vector before and after a grid cycle is not equal, as through the restriction and then prolongation high frequency information is lost
+            //Test.Clear();
+            //Test.CoordinateVector.Acc(1.0, PrlgVec);
 
-            Test.Clear();
-            Test.CoordinateVector.Acc(1.0, PrlgVec);
 
+            //Test.Acc(-1.0, Orig);
+            //double ErrNorm = Test.L2Norm();
 
-            Test.Acc(-1.0, Orig);
-            double ErrNorm = Test.L2Norm();
+            // it needs to be checked, that a prolongation followed by a restriction does not alter the vector
+
+            RestVec.AccV(-1.0, RestVec2);
+            double ErrNorm = RestVec.L2Norm();
             Console.WriteLine("Polynomial Restriction/Prolongation test (p={1}, level={2}): {0}", ErrNorm, p, -MgMapSeq.Length);
             Assert.Less(ErrNorm, 1.0e-8);
 

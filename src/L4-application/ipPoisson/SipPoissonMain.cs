@@ -38,6 +38,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
 using System.IO;
+using BoSSS.Platform.Utils.Geom;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -1071,6 +1072,7 @@ namespace BoSSS.Application.SipPoisson {
                         
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
+
                         MultigridOp.UseSolver(solver, T2, RHSvec);
                         T.CoordinateVector.SetV(T2);
                     }

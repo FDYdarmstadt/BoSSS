@@ -29,6 +29,11 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP;
 using ilPSP.Utils;
+using System.IO;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.Statistic;
+using BoSSS.Foundation.IO;
 using static BoSSS.Solution.AdvancedSolvers.MultigridOperator;
 
 namespace BoSSS.Solution {
@@ -1088,18 +1093,54 @@ namespace BoSSS.Solution {
             }
             return solver;
         }
+            
+        private int MGOcc = 0;
+        private Stopwatch MGTimer = new Stopwatch();
+        private void MultigridAnalysis(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
+        {
+            if (Mgop.LevelIndex == 0 && Mgop.GridData.MpiRank == 0)
+            {
+                string file = "MG-Analysis.txt";
+                if (MGOcc == 0) { MultigridAnalysisHeader(file); MGTimer.Start(); }
+                if (iterIndex == 0) { MGOcc++; MGTimer.Restart(); }
+                StreamWriter sw = new StreamWriter(file, true);
+                // IMPLEMENT A WAY TO KNOW IF THIS IS A SEPERATE MG OCCURRENCE
+                var time = MGTimer.Elapsed;
+                sw.Write(MGOcc);
+                sw.Write(",");
+                sw.Write(iterIndex);
+                sw.Write(",");
+                sw.Write(time);
+                sw.Write(",");
+                sw.Write(currentRes.L2Norm());
+                sw.WriteLine();
+                sw.Flush();
+                sw.Close();
+            }
+        }
 
+        private void MultigridAnalysisHeader(string file)
+        {
+            StreamWriter sw = new StreamWriter(file, false);
+            sw.Write("MG-Occurrence");
+            sw.Write(",");
+            sw.Write("MG-Iteration");
+            sw.Write(",");
+            sw.Write("Time");
+            sw.Write(",");
+            sw.Write("Residual");
+            sw.WriteLine();
+            sw.Flush();
+            sw.Close();
+        }
 
+        private ISolverSmootherTemplate My_MG_Precond(LinearSolverConfig _lc, int[] _LocalDOF, int MGLength, ISolverSmootherTemplate[] prechain, ISolverSmootherTemplate[] postchain, ISolverSmootherTemplate toplevelpre, ISolverSmootherTemplate toplevelpst)
+        {
 
-        
-
-
-
-        private ISolverSmootherTemplate My_MG_Precond(LinearSolverConfig _lc, int[] _LocalDOF, int MGLength, ISolverSmootherTemplate[] prechain, ISolverSmootherTemplate[] postchain, ISolverSmootherTemplate toplevelpre, ISolverSmootherTemplate toplevelpst) {
-
-            int MGDepth = Math.Min(MGLength,_lc.NoOfMultigridLevels);
+            int MGDepth = Math.Min(MGLength, _lc.NoOfMultigridLevels);
 
             bool isLinPrecond = true;
+            
 
             int DirectKickIn = _lc.TargetBlockSize;
             if (DirectKickIn < _LocalDOF.Last()) {
@@ -1132,6 +1173,7 @@ namespace BoSSS.Solution {
                     };
 
                     ((ISolverWithCallback)MgLevel).IterationCallback += MultigridCallback;
+
 
                     MultigridChain[iLevel] = MgLevel;
 
@@ -1348,7 +1390,6 @@ namespace BoSSS.Solution {
             if (MaxMGDepth < 1)
                 throw new ArgumentException("At least one multigrid level is required.");
 
-
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
             if (DirectKickIn < _LocalDOF.Last()) {
@@ -1416,6 +1457,8 @@ namespace BoSSS.Solution {
                             Console.WriteLine("      OrthoMg " +iter  + " : " + renorm);
                         };
 
+                    // Extended Multigrid Analysis
+                    ((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
 
                 }
                 SolverChain.Add(levelSolver);

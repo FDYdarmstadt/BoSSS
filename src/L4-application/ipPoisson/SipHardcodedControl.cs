@@ -31,6 +31,7 @@ using System.Diagnostics;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.GridImport;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -49,11 +50,16 @@ namespace BoSSS.Application.SipPoisson {
             R.ProjectName = "ipPoison/curved";
             R.savetodb = false;
 
+            //R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 15 });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.LinearSolver.TargetBlockSize = 1000;
+            R.SuperSampling = 2;
+            R.NoOfMultigridLevels = 4;            
 
             R.GridFunc = delegate ()
             {
@@ -197,8 +203,98 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+        /// <summary>
+        /// Test channel flow around a cylinder (half domain with symmetry condition)
+        /// </summary>
+        public static SipControl ConfinedCylinder(int k = 3)
+        {
+            var C = new SipControl();
 
+            #region other settings
 
+            // Miscellaneous Solver Settings
+            C.ExactSolution_provided = false;
+            C.savetodb = false;
+            C.DbPath = @"D:\bosss_db_masterthesis";
+            C.ProjectName = "ConfinedCylinderipPoisson";
+            C.SessionName = "Confined Cylinder MG with ipPoisson";
+            //C.WriteMeSomeAnalyse = @"C:\Users\Matth\Desktop";
+
+            #endregion
+
+            #region grid instantiation
+
+            // GUID's to confined cylinder grids (half)
+            List<string> grids = new List<string>();
+            grids.Add("a8370a9b-86b6-4dda-8147-b30f897b2320");
+            grids.Add("462f3f2e-8cd9-4563-a62f-191629ffd155");
+            grids.Add("6270aeda-0ae8-4197-939b-4018cd9500fe");
+            grids.Add("f97ff88f-8980-4760-ba54-76bd7071cdbd");
+            /*grids.Add("0f6132db-a263-4140-b0b4-cca275f3af3c");*/ //half_0
+            /*grids.Add("282f25a2-bb4e-4549-96c6-e5d8d806a607");*/ //half_1
+            /*grids.Add("e174a74c-d2fc-40a1-af12-a16356264911");*/ //half_2
+            /*grids.Add("de43ee58-c3b3-41bd-9df3-7deb883de36b");*/ //half_3
+
+            Guid gridGuid;
+            if (Guid.TryParse(grids[1], out gridGuid))
+            {
+                C.GridGuid = gridGuid;
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+
+            #endregion
+
+            #region dgfields and bc
+
+            // Setup DGFields
+            C.FieldOptions.Add("T", new FieldOpts()
+            {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Tex", new FieldOpts()
+            {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
+            });
+
+            // Boundary Values
+            C.AddBoundaryValue("Dirichlet_inlet", "T", "X => 0", false);
+            C.AddBoundaryValue("Dirichlet_top", "T", "X => 0", false);
+            C.AddBoundaryValue("Dirichlet_outlet", "T", "X => 0", false);
+            C.AddBoundaryValue("Dirichlet_bottom", "T", "X => 0", false);
+            C.AddBoundaryValue("Dirichlet_cylinder", "T", "X => -10", false);
+
+            #endregion
+
+            #region RHS
+
+            //Func<double[], double> exRhs = X => -1;
+
+            //C.InitialValues_Evaluators.Add("RHS", exRhs);
+
+            #endregion
+
+            #region linear solver config
+
+            // Linear Solver Settings
+            C.LinearSolver.MaxKrylovDim = 5000;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.SolverMode = LinearSolverMode.Solve;
+            C.SuperSampling = 2;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
+            //C.LinearSolver.SolverMode = LinearSolverMode.SpectralAnalysis;
+
+            #endregion
+
+            return C;
+        }
 
 
         /// <summary>

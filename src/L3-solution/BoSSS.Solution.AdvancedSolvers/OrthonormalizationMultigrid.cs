@@ -30,6 +30,9 @@ using System.Diagnostics;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -132,7 +135,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate CoarserLevelSolver;
         public ISolverSmootherTemplate PreSmoother;
         public ISolverSmootherTemplate PostSmoother;
-
+        public int MaxKrylovDimension;
+        public bool SpectralAnalysis;
         /// <summary>
         /// 
         /// </summary>
@@ -302,7 +306,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(Sol0.Length == m_MgOperator.Mapping.LocalLength);
                 Debug.Assert(Res0.Length == m_MgOperator.Mapping.LocalLength);
                 Debug.Assert(outRes.Length == m_MgOperator.Mapping.LocalLength);
-
+                
                 int KrylovDim = SolHistory.Count;
                 int L = outX.Length;
 
@@ -312,7 +316,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     alpha[i] = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1);
                 }
                 alpha = alpha.MPISum();
-
 
 
                 //outX.SetV(Sol0);
@@ -395,7 +398,63 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        // extract the Fields from the solution, Resample them equally spaced and ready to use in an fft
+        private void Resample(int iterIndex, double[] currentSol, MultigridOperator Mgop, string component)
+        {
+            if (Mgop.GridData.SpatialDimension == 2 && Mgop.LevelIndex == 0)
+            {
+                MultidimensionalArray SamplePoints;
 
+                GridData GD = (GridData)Mgop.Mapping.AggGrid.AncestorGrid;
+
+                BoundingBox BB = GD.GlobalBoundingBox;
+
+                double xDist = BB.Max[0] - BB.Min[0];
+                double yDist = BB.Max[1] - BB.Min[1];
+                double aspectRatio = xDist / yDist;
+
+                MGViz viz = new MGViz(Mgop);
+                DGField[] Fields = viz.ProlongateToDg(currentSol, "Error");
+
+                for (int p = 0; p < Fields.Length; p++)
+                {
+                    var field = Fields[p];
+
+                    int DOF = field.DOFLocal;
+                    double N = Math.Sqrt(DOF);
+                    int Nx = (int)Math.Round(Math.Sqrt(aspectRatio) * N);
+                    int Ny = (int)Math.Round(1 / Math.Sqrt(aspectRatio) * N);
+
+                    SamplePoints = MultidimensionalArray.Create(Ny, Nx);
+
+                    for (int i = 0; i < Nx; i++)
+                    {
+                        MultidimensionalArray points = MultidimensionalArray.Create(Ny, 2);
+
+                        for (int k = 0; k < Ny; k++)
+                        {
+                            points[k, 0] = BB.Min[0] + (i + 1) * xDist / (Nx + 1);
+                            points[k, 1] = BB.Min[1] + (k + 1) * yDist / (Ny + 1);
+                        }
+
+                        List<DGField> fields = new List<DGField>();
+                        fields.Add(field);
+
+                        FieldEvaluation FE = new FieldEvaluation(GD);
+
+                        MultidimensionalArray Result = MultidimensionalArray.Create(Ny, 1);
+
+                        FE.Evaluate(1.0, fields, points, 1.0, Result);
+
+                        SamplePoints.ExtractSubArrayShallow(-1, i).Acc(1.0, Result.ExtractSubArrayShallow(-1, 0));
+                    }
+
+                    SamplePoints.SaveToTextFile("ResampleFFT_lvl" + Mgop.LevelIndex + "_" + iterIndex + "_" + component + "_" + field.Identification + ".txt");
+                }
+                
+            }
+
+        }
 
         /// <summary>
         /// the multigrid iterations for a linear problem
@@ -417,6 +476,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     X = _xl.ToArray();
 
+                // clear history
+                MxxHistory.Clear();
+                SolHistory.Clear();
+
+
+                // in case of spectral analysis
+                if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
+                {
+                    // Set RHS to zero and introduce random intitial guess respectively error
+                    Console.WriteLine("Performing Spectral Analysis, inserting initial error ...");
+                    B.Clear();
+                    X.Clear();
+                    var rand = new Random();
+                    X = Enumerable.Repeat(0, X.Length).Select(i => rand.NextDouble() * 2 - 1).ToArray();                    
+                }
 
                 int L = X.Length;
                 int Lc;
@@ -470,12 +544,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double iter0_resNorm = Res0.MPI_L2Norm();
                 double resNorm = iter0_resNorm;
-                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
+                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);                
 
-                for (int iIter = 1; true; iIter++) {
+                for (int iIter = 1; true; iIter++) {                    
                     if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
+                    }
+                    if (this.m_MgOperator.LevelIndex == 0 && iIter == 1 && SpectralAnalysis)
+                    {
+                        Resample(0, X, this.m_MgOperator, "initial");
+                    }
+                    // Restart?
+                    if (SolHistory.Count >= MaxKrylovDimension)
+                    {
+                        Restart(X, Sol0, rl, Res0, B, L);
                     }
 
                     // pre-smoother
@@ -491,6 +574,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
                         } 
 #endif
+                        
                         // compute correction
                         double[] PreCorr = new double[L];
                         PreSmoother.Solve(PreCorr, rl); // Vorglättung
@@ -502,70 +586,90 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if (Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                        if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
+                        {
+                            Resample(iIter, X, this.m_MgOperator, "pre");
+                        }
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }
                     }
-
+                    //Console.WriteLine("Residual after Presmoother:" + rl.L2Norm());
                     PlottyMcPlot(rl, X, Xprev, Corr);
 
 
                     // coarse grid correction
                     // ----------------------
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
-#if DEBUG
+                    
+
+                    // W-cycle (gamma=2)
+                    int gamma = 1;
+                    for (int i = 0; i < gamma; i++)
                     {
-                        double[] rTest = new double[rl.Length];
-                        Residual(rTest, X, B); // Residual on this level; 
-                        Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
-                    } 
+#if DEBUG
+                        {
+                            double[] rTest = new double[rl.Length];
+                            Residual(rTest, X, B); // Residual on this level; 
+                            // Test also fails if convergence criterium is to strict because then machine accuracy is reached
+                            Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                        }
 #endif
-                    bool usedCoarse = false;
-                    if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel) {
+                        bool usedCoarse = false;
+                        if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
+                        {
 
-                        this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
+                            this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
-                        // Berechnung der Grobgitterkorrektur
-                        double[] vlc = new double[Lc];
-                        this.CoarserLevelSolver.Solve(vlc, rlc);
+                            // Berechnung der Grobgitterkorrektur
+                            double[] vlc = new double[Lc];
+                            this.CoarserLevelSolver.Solve(vlc, rlc);
 
-                        // Prolongation der Grobgitterkorrektur
-                        double[] vl = new double[L];
-                        this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
-                        if (Corr != null)
-                            Corr.SetV(vl);
+                            // Prolongation der Grobgitterkorrektur
+                            double[] vl = new double[L];
+                            this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+                            if (Corr != null)
+                                Corr.SetV(vl);
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref vl);
-                        if (Xprev != null)
-                            Xprev.SetV(X);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                            Converged = true;
-                            break;
+                            // orthonormalization and residual minimization
+                            AddSol(ref vl);
+                            if (Xprev != null)
+                                Xprev.SetV(X);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                            if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
+                            {
+                                Resample(iIter, X, this.m_MgOperator, "cgc"+i);
+                            }
+                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
+                            {
+                                Converged = true;
+                                break;
+                            }
+
+                            usedCoarse = true;
                         }
+                        else
+                        {
+                            // Berechnung der Grobgitterkorrektur
+                            double[] vl = new double[L];
+                            this.CoarserLevelSolver.Solve(vl, rl);
 
-                        usedCoarse = true;
-                    } else {
-                        // Berechnung der Grobgitterkorrektur
-                        double[] vl = new double[L];
-                        this.CoarserLevelSolver.Solve(vl, rl);
+                            // orthonormalization and residual minimization
+                            AddSol(ref vl);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
+                            {
+                                Converged = true;
+                                break;
+                            }
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref vl);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                            Converged = true;
-                            break;
+                            usedCoarse = true;
                         }
-
-                        usedCoarse = true;
                     }
 
-
                     PlottyMcPlot(rl, X, Xprev, Corr);
-
+                    //Console.WriteLine("Residual after CGC:" + rl.L2Norm());
                     // post-smoother
                     // -------------
 
@@ -589,6 +693,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if (Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                        if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
+                        {
+                            Resample(iIter, X, this.m_MgOperator, "post"+g);
+                        }
                         if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
@@ -596,7 +704,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         PlottyMcPlot(rl, X, Xprev, Corr);
                     }
-
+                    //Console.WriteLine("Residual after Postsmoother:" + rl.L2Norm());
                     // iteration callback
                     // ------------------
 
@@ -616,7 +724,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-       
+        private void Restart(double[] X, double[] Sol0, double[] rl, double[] Res0, double[] B, int L)
+        {
+            MxxHistory.Clear();
+            SolHistory.Clear();
+            Array.Copy(X, Sol0, L);
+            Residual(rl, X, B);
+            Array.Copy(rl, Res0, L);
+            Console.WriteLine("      restarted with residual = " + rl.L2Norm() + " on MG level " + m_MgOperator.LevelIndex);
+        }
+
+
 
         /// <summary>
         /// ~
