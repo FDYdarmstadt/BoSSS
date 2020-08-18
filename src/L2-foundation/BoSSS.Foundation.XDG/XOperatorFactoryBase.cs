@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-
+        /*
         /// <summary>
         /// base matrix assembly
         /// </summary>
@@ -104,7 +104,7 @@ namespace BoSSS.Foundation.XDG {
 
             }
         }
-
+        */
 
         public void AssembleMatrix<T>(BlockMsrMatrix OpMatrix, double[] OpAffine,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,

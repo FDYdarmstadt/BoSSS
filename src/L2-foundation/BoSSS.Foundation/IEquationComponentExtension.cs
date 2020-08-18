@@ -36,30 +36,35 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static SpatialOperator Operator(this IEquationComponent c, int DegreeOfNonlinearity = 1)
+        public static SpatialOperator Operator(this IEquationComponent c, int DegreeOfNonlinearity = 1, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null)
         {
-            return Operator(c, QuadOrderFunc.NonLinear(DegreeOfNonlinearity));
+            return Operator(c, QuadOrderFunc.NonLinear(DegreeOfNonlinearity), edgeSchemeProvider, cellSchemeProvider);
         }
 
 
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static SpatialOperator Operator(this IEquationComponent c, Func<int[], int[], int[], int> quadOrderFunc) {
+        public static SpatialOperator Operator(this IEquationComponent c, Func<int[], int[], int[], int> quadOrderFunc, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null) {
 
             string[] Codomain = new string[] { "v1" };
             string[] Domain = c.ArgumentOrdering.ToArray();
             string[] Param = (c.ParameterOrdering != null) ? c.ParameterOrdering.ToArray() : new string[0];
 
             SpatialOperator ret = new SpatialOperator(Domain, Param, Codomain, quadOrderFunc);
+            if(edgeSchemeProvider != null)
+                ret.EdgeQuadraturSchemeProvider = edgeSchemeProvider;
+            if(cellSchemeProvider != null)
+                ret.VolumeQuadraturSchemeProvider = cellSchemeProvider;
+
             ret.EquationComponents[Codomain[0]].Add(c);
             ret.Commit();
 
             return ret;
         }
 
-       
 
+     
         /// <summary>
         /// computes the affine offset and/or matrix of the operator, expert
         /// version;
@@ -125,7 +130,7 @@ namespace BoSSS.Foundation {
         /// <param name="op"></param>
         static public void ComputeMatrixEx<M, V>(this SpatialOperator op,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset,bool OnlyAffine = false,
+            M Matrix, V AffineOffset, bool OnlyAffine = false,
             double time = 0.0, 
             EdgeQuadratureScheme edgeQuadScheme = null, CellQuadratureScheme volQuadScheme = null,
             //ICompositeQuadRule<QuadRule> edgeRule = null, ICompositeQuadRule<QuadRule> volRule = null,
@@ -134,8 +139,10 @@ namespace BoSSS.Foundation {
             where M : IMutableMatrixEx
             where V : IList<double> //
         {
-           
-            var ev = op.GetMatrixBuilder(DomainMap, Parameters, CodomainMap, edgeQuadScheme, volQuadScheme);
+
+            var bkup = op.LegacySupport_ModifyQuadSchemProvider(edgeQuadScheme, volQuadScheme);
+
+            var ev = op.GetMatrixBuilder(DomainMap, Parameters, CodomainMap);
             ev.time = time;
             ev.MPITtransceive = ParameterMPIExchange;
             if(SubGridBoundaryMask != null) {
@@ -147,6 +154,8 @@ namespace BoSSS.Foundation {
                 ev.ComputeAffine(AffineOffset);
             else
                 ev.ComputeMatrix(Matrix, AffineOffset);
+
+            op.LegacySupport_RestoreQuadSchemeProvider(bkup);
         }
 
         /// <summary>
@@ -265,8 +274,9 @@ namespace BoSSS.Foundation {
                 if(sgrd != null && (qInsEdge != null || qInsVol != null))
                     throw new ArgumentException("Specification of Subgrid and quadrature schemes is exclusive: not allowed to specify both at the same time.", "sgrd");
 #if DEBUG
-                op.Verify(); //this has already been done during this.Commit()
+                op.Verify(); 
 #endif
+                
 
                 IList<DGField> _DomainFields = DomainMapping.Fields;
                 IList<DGField> _CodomainFields = CodomainMapping.Fields;
@@ -300,16 +310,19 @@ namespace BoSSS.Foundation {
                     qInsVol = new CellQuadratureScheme(true, cm);
                 }
 
+                var bkup = op.LegacySupport_ModifyQuadSchemProvider(qInsEdge, qInsVol);
+
+
                 var ev = op.GetEvaluatorEx(
-                    domainMappingRevisited, Params, CodomainMapping,
-                    qInsEdge,
-                    qInsVol);
+                    domainMappingRevisited, Params, CodomainMapping);
 
                 if(sgrd != null)
                     ev.ActivateSubgridBoundary(sgrd.VolumeMask, bndMode);
                 CoordinateVector outp = new CoordinateVector(CodomainMapping);
                 ev.time = time;
                 ev.Evaluate<CoordinateVector>(alpha, beta, outp);
+
+                op.LegacySupport_RestoreQuadSchemeProvider(bkup);
             }
         }
 
@@ -413,12 +426,13 @@ namespace BoSSS.Foundation {
             where M : IMutableMatrixEx
             where V : IList<double> {
 
-            var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
-
-
-            var ev = op.GetMatrixBuilder(DomainMap, Parameters, CodomainMap,
+            var bkup = op.LegacySupport_ModifyQuadSchemProvider(
                 new EdgeQuadratureScheme(true, sgrd == null ? null : sgrd.AllEdgesMask),
-                 new CellQuadratureScheme(true, sgrd == null ? null : sgrd.VolumeMask));
+                new CellQuadratureScheme(true, sgrd == null ? null : sgrd.VolumeMask));
+
+
+
+            var ev = op.GetMatrixBuilder(DomainMap, Parameters, CodomainMap);
 
             ev.time = time;
 
@@ -427,6 +441,8 @@ namespace BoSSS.Foundation {
             } else {
                 ev.ComputeMatrix(Matrix, AffineOffset);
             }
+
+            op.LegacySupport_RestoreQuadSchemeProvider(bkup);
         }
 
         private static IGridData CheckArguments(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
@@ -485,54 +501,6 @@ namespace BoSSS.Foundation {
             return RHS;
         }
 
-        /// <summary>
-        /// Legacy interface
-        /// </summary>
-        static public IEvaluatorNonLin GetEvaluator(this SpatialOperator op, IList<DGField> DomainVarMap, UnsetteledCoordinateMapping CodomainVarMap) {
-            return op.GetEvaluatorEx(DomainVarMap, null, CodomainVarMap);
-        }
-
-
-        ///// <summary>
-        ///// Legacy interface
-        ///// </summary>
-        //static public void ComputeMatrixEx<M, V>(
-        //    this SpatialOperator op,
-        //    UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-        //    M Matrix, V AffineOffset, bool OnlyAffine = false,
-        //    double time = 0.0, 
-        //    EdgeQuadratureScheme edgeQuadScheme = null, CellQuadratureScheme volQuadScheme = null,
-        //    ICompositeQuadRule<QuadRule> edgeRule = null, ICompositeQuadRule<QuadRule> volRule = null,
-        //    BitArray SubGridBoundaryMask = null,
-        //    bool ParameterMPIExchange = true)
-        //    where M : IMutableMatrix
-        //    where V : IList<double> //
-        //{
-        //    //
-
-        //    if(edgeQuadScheme != null && edgeRule != null)
-        //        throw new ArgumentException();
-        //    if(volQuadScheme != null && volRule != null)
-        //        throw new ArgumentException();
-
-        //    //if (edgeQrCtx == null)
-        //    //    edgeQrCtx = new EdgeQuadratureScheme(true);
-
-        //    var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
-
-        //    int order = 0;
-        //    if(edgeRule == null || volRule == null) 
-        //        order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
-            
-        //    if(edgeRule == null)
-        //        edgeRule = edgeQuadScheme.SaveCompile(GridDat, order);
-        //    if(volRule == null)
-        //        volRule = volQuadScheme.SaveCompile(GridDat, order);
-
-        //    Internal_ComputeMatrixEx(GridDat, DomainMap, Parameters, CodomainMap, Matrix, AffineOffset, OnlyAffine, time,
-        //        edgeRule,
-        //        volRule,
-        //        SubGridBoundaryMask, ParameterMPIExchange);
-        //}
+       
     }
 }

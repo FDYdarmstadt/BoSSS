@@ -171,10 +171,10 @@ namespace BoSSS.Foundation.XDG {
 
             int Gamma = m_CodomainMap.NoOfVariables;
 
-            m_NonlinLsForm_V = DiffOp.GetArgMapping<INonlinLevelSetForm_V>(true,
+            m_NonlinLsForm_V = EquationComponentArgMapping<INonlinLevelSetForm_V>.GetArgMapping(DiffOp, true,
                eq => ((eq.LevelSetTerms & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0) && Compfilter(eq),
                eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
-            m_NonlinLsForm_GradV = DiffOp.GetArgMapping<INonlinLevelSetForm_GradV>(true,
+            m_NonlinLsForm_GradV = EquationComponentArgMapping<INonlinLevelSetForm_GradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0) && Compfilter(eq),
                 eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
 

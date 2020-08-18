@@ -103,7 +103,7 @@ namespace BoSSS.Foundation {
         public CoordinateVector(bool presentExternal, params DGField[] fields) :
             this(new CoordinateMapping(fields), presentExternal) {
         }
-
+        
         /// <summary>
         /// Constructs a new vector, based on the list of DG fields,
         /// <paramref name="fields"/>;
@@ -114,7 +114,7 @@ namespace BoSSS.Foundation {
         public CoordinateVector(params DGField[] fields) :
             this(false, fields) {
         }
-
+        
         /// <summary>
         /// Constructs a new vector, based on the list of DG fields,
         /// <paramref name="fields"/>;

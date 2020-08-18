@@ -34,8 +34,47 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
     /// </summary>
     public class EquationComponentArgMapping<T> where T : IEquationComponent {
 
+
         /// <summary>
-        /// 
+        /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="CatParams">
+        /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
+        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
+        /// </param>
+        /// <param name="F">
+        /// optional filter;
+        /// should return true, if the component should be added, false if not; 
+        /// </param>
+        /// <param name="vectorizer">
+        /// vectorizer option: translate some equation component to another one
+        /// </param>
+        static public EquationComponentArgMapping<T>[] GetArgMapping(ISpatialOperator op, bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) {
+//             public EquationComponentArgMapping<T>[] GetArgMapping<T>(                  bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
+
+            if(!op.IsCommited)
+                throw new ApplicationException("Commit() has to be called prior to this method.");
+
+            int Gamma = op.CodomainVar.Count;
+
+            var ret = new EquationComponentArgMapping<T>[Gamma];
+            for(int i = 0; i < Gamma; i++) {
+                var codName = op.CodomainVar[i];
+                ret[i] = new EquationComponentArgMapping<T>(op,
+                    codName,
+                    op.DomainVar,
+                    CatParams ? op.ParameterVar : null,
+                    F, vectorizer);
+            }
+
+            return ret;
+        }
+
+
+
+        /// <summary>
+        /// ctor
         /// </summary>
         /// <param name="DiffOp"></param>
         /// <param name="CoDomVarName">
@@ -54,7 +93,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// <param name="vectorizer">
         /// Function for the vectorization of the evaluation of <paramref name="F"/>
         /// </param>
-        public EquationComponentArgMapping(SpatialOperator DiffOp, string CoDomVarName,
+        public EquationComponentArgMapping(ISpatialOperator DiffOp, string CoDomVarName,
             IList<string> _fieldList, IList<string> _fieldList2, Func<T, bool> F, Func<IEquationComponent, IEquationComponent> vectorizer) {
             m_CoDomVarName = CoDomVarName;
             //m_DomainFields = DomainMapping.Fields;

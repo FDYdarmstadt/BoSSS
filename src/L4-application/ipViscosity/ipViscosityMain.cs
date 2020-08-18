@@ -304,8 +304,9 @@ namespace BoSSS.Application.ipViscosity {
                 NolResult.Clear();
                 nol.Start();
                 {
-                    var evaluator = Operator.GetEvaluatorEx(TestArgument.Mapping, new DGField[] { this.mu }, this.Residual.Mapping,
-                        volQrCtx: volQrSch, edgeQrCtx: edgQrSch);
+                    Operator.EdgeQuadraturSchemeProvider = g => edgQrSch;
+                    Operator.VolumeQuadraturSchemeProvider = g => volQrSch;
+                    var evaluator = Operator.GetEvaluatorEx(TestArgument.Mapping, new DGField[] { this.mu }, this.Residual.Mapping);
                     evaluator.Evaluate(1.0, 0.0, NolResult);
                 }
                 nol.Stop();

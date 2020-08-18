@@ -122,11 +122,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // sort equation components
             // ------------------------
 
-            m_EdgeForm_V = DiffOp.GetArgMapping<INonlinEdgeForm_V>(true,
+            m_EdgeForm_V = EquationComponentArgMapping<INonlinEdgeForm_V>.GetArgMapping(DiffOp, true,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
-            m_EdgeForm_GradV = DiffOp.GetArgMapping<INonlinEdgeForm_GradV>(true,
+            m_EdgeForm_GradV = EquationComponentArgMapping<INonlinEdgeForm_GradV>.GetArgMapping(DiffOp, true,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 

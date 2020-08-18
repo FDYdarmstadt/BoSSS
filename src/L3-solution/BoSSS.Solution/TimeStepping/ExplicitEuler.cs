@@ -166,10 +166,10 @@ namespace BoSSS.Solution.Timestepping {
 
                 Operator = spatialOp;
                 m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate() {
+                    spatialOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, em);
+                    spatialOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, cm);
                     var op = spatialOp.GetEvaluatorEx(
-                        Fieldsmap, ParameterFields, Fieldsmap,
-                        new EdgeQuadratureScheme(true, em),
-                        new CellQuadratureScheme(true, cm));
+                        Fieldsmap, ParameterFields, Fieldsmap);
                     op.ActivateSubgridBoundary(SubGrid.VolumeMask, sgrdBnd);
                     return op;
                     });

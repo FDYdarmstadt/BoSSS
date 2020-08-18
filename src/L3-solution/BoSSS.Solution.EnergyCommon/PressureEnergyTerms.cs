@@ -54,7 +54,7 @@ namespace BoSSS.Solution.EnergyCommon {
             m_D = SpatDim;
             m_bcMap = _bcmap;
             m_spcId = spcId;
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
 
             VelocFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
             for (int d = 0; d < m_D; d++)
@@ -69,7 +69,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -249,13 +249,13 @@ namespace BoSSS.Solution.EnergyCommon {
         public PressureGradientConvection(int SpatDim, string spcNmn, SpeciesId spcId) {
             m_D = SpatDim;
             m_spcId = spcId;
-            validSpeciesId = spcNmn;
+            ValidSpecies = spcNmn;
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -336,13 +336,13 @@ namespace BoSSS.Solution.EnergyCommon {
             PressFunction = m_bcmap.bndFunction[VariableNames.Pressure + "#" + spcName];
 
             this.m_spcId = spcId;
-            this.validSpeciesId = spcName;
+            this.ValidSpecies = spcName;
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -713,13 +713,13 @@ namespace BoSSS.Solution.EnergyCommon {
             PressFunction = m_bcmap.bndFunction[VariableNames.Pressure + "#" + spcName];
 
             this.m_spcId = spcId;
-            this.validSpeciesId = spcName;
+            this.ValidSpecies = spcName;
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

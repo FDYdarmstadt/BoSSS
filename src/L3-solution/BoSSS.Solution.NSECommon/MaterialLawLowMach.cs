@@ -359,8 +359,9 @@ namespace BoSSS.Solution.NSECommon {
                         rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
                     }
                 }
-                Debug.Assert(!double.IsNaN(rho));
-                Debug.Assert(!double.IsInfinity(rho));
+                
+                if(double.IsNaN(rho) || double.IsInfinity(rho))
+                    throw new ArithmeticException("Invalid value for density: " + rho);
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -380,6 +381,10 @@ namespace BoSSS.Solution.NSECommon {
             double T0 = 273.15; // 
             double viscosity0 = 1.716e-5; //kg/( m s) ==> viscosity at T = 273.15 for air
             double viscosity = viscosity0 * Math.Pow(T / T0, 1.5) * (T0 + S) / (T + S);
+
+            if(double.IsNaN(viscosity) || double.IsInfinity(viscosity) || viscosity <= 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + viscosity);
+
             return viscosity;
         }
 
@@ -392,6 +397,9 @@ namespace BoSSS.Solution.NSECommon {
         /// Dynamic viscosity
         /// </returns>
         public override double GetViscosity(double phi) {
+
+            phi = Math.Max(0.01, phi);
+
             double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
@@ -410,9 +418,8 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException();
             }
-            Debug.Assert(!double.IsNaN(visc));
-            Debug.Assert(!double.IsInfinity(visc));
-            Debug.Assert(visc > 0);
+            if(double.IsNaN(visc) || double.IsInfinity(visc) || visc <= 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + visc);
             return visc;
         }
 
@@ -424,8 +431,8 @@ namespace BoSSS.Solution.NSECommon {
         public virtual double GetHeatConductivity(double phi) {
 
             double res = GetViscosity(phi);
-            Debug.Assert(!double.IsNaN(res));
-            Debug.Assert(!double.IsInfinity(res));
+            if(double.IsNaN(res) || double.IsInfinity(res))
+                throw new ArithmeticException("Invalid value for viscosity: " + res);
             return res;
 
         }
