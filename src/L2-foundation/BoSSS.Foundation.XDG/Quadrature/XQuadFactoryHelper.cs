@@ -25,6 +25,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Foundation.XDG.Quadrature;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -122,6 +123,8 @@ namespace BoSSS.Foundation.XDG {
 #endif
 
         LevelSetTracker.LevelSetData[] m_LevelSetDatas;
+
+        CombinedLevelSetQuadrature doubleLevelSetQuadFactories;
 
         //LevelSetTracker lsTrk;
 
@@ -273,6 +276,18 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Generates an edge quadrature rule factory for edges cut by two level sets.
+        /// </summary>
+        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
+        {
+            if (doubleLevelSetQuadFactories == null)
+            {
+                doubleLevelSetQuadFactories = new CombinedLevelSetQuadrature(m_LevelSetDatas);
+            }
+            return doubleLevelSetQuadFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, KrefVol);
+        }
+
+        /// <summary>
         /// Generates a quadrature rule factory for the cut volume integrals.
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref) {
@@ -350,6 +365,19 @@ namespace BoSSS.Foundation.XDG {
             } else {
                 throw new ArgumentOutOfRangeException("unsupported jump type");
             }
+        }
+
+
+        /// <summary>
+        /// Generates a volume quadrature rule factory for cells cut by two level sets.
+        /// </summary>
+        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
+        {
+            if(doubleLevelSetQuadFactories == null)
+            {
+                doubleLevelSetQuadFactories = new CombinedLevelSetQuadrature(m_LevelSetDatas);
+            }
+            return doubleLevelSetQuadFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, KrefVol);
         }
 
         /// <summary>
@@ -460,6 +488,19 @@ namespace BoSSS.Foundation.XDG {
             return m_SurfaceFactory[levSetIndex];
         }
 
+
+        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
+        {
+            if (doubleLevelSetQuadFactories == null)
+            {
+                doubleLevelSetQuadFactories = new CombinedLevelSetQuadrature(m_LevelSetDatas);
+            }
+            return doubleLevelSetQuadFactories.GetSurfaceFactory(levSetIndex0, 
+                levSetIndex1, 
+                jmp1, 
+                KrefVol, 
+                GetSurfaceFactory(levSetIndex1, KrefVol));
+        }
 
         /// <summary>
         /// Integration orders of all quadrature rules for volume integrals that have been cached so far,

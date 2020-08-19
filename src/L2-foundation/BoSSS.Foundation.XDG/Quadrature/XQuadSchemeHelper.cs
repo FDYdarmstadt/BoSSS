@@ -188,7 +188,6 @@ namespace BoSSS.Foundation.XDG {
             int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref);
             return m_CutEdges[iKref, iLevSet];
         }
-        
 
         /// <summary>
         /// all edges of cells which are cut by level set #<paramref name="iLevSet"/> and which belong to a cell with
@@ -300,16 +299,37 @@ namespace BoSSS.Foundation.XDG {
                         if (difference.Count() > 0)
                             throw new ArithmeticException("Edges of the Cells" + difference.GetSummary() + " are detected as cut, but these cells are not contained in the cut Cell-Mask of the Level-Set-Tracker");
 #endif
-
-
                         var jmp = IdentifyWing(iLevSet, sp);
                         var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, Kref);
+
+                        //handle rules for cells/edges where two levelsets are present
+                        for (int jLevSet = iLevSet + 1; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet)
+                        {
+                            if (!IsSeparatedByLevSet(jLevSet, sp, sp))
+                            {
+                                EdgeMask doublyCut = GetCutEdges(Kref, iLevSet).Intersect(GetCutEdges(Kref, jLevSet));
+                                if (doublyCut.Count() > 0)
+                                {
+                                    cutEdges = cutEdges.Except(doublyCut);
+                                    var jmpJ = IdentifyWing(jLevSet, sp);
+                                    var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref);
+                                    edgeQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
+                                }
+                            }
+                        }
                         edgeQrIns.AddFactoryDomainPair(factory, cutEdges, fixedOrder);
                     }
                 }
 
                 return edgeQrIns;
             }
+        }
+
+        CellMask GetCutCells(int iLevSet, int jLevSet)
+        {
+            CellMask iCells = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
+            CellMask jCells = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(jLevSet);
+            return iCells.Intersect(jCells).ToGeometicalMask();    
         }
 
         /// <summary>
@@ -439,6 +459,36 @@ namespace BoSSS.Foundation.XDG {
             } else {
                 throw new NotImplementedException();
             }
+        }
+
+        /// <summary>
+        /// Does levSet separate species A and B?
+        /// </summary>
+        public bool IsSeparatedByLevSet(int levSet, SpeciesId A, SpeciesId B)
+        {
+            string nameA = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(A);
+            string nameB = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(B);
+           
+            string[,] speciesTable = (string[,])(this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable);
+
+            if(speciesTable.Length != 4)
+            {
+                throw new Exception("LevelSet separation algorithm only implemented for 2 levelSets");
+            } 
+
+            int j = levSet;
+
+            if (speciesTable[(0 + j) % 2, 0 ] == nameA && speciesTable[1, (0 + j) % 2] == nameB
+                || speciesTable[(0 + j) % 2, 0] == nameB && speciesTable[1, (0 + j) % 2] == nameA)
+            {
+                return true;
+            }
+            else if( speciesTable[0, (1 + j) % 2] == nameA && speciesTable[(1 + j) % 2, 1] == nameB
+                || speciesTable[0, (1 + j) % 2] == nameB && speciesTable[(1 + j) % 2, 1] == nameA )
+            {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -578,8 +628,26 @@ namespace BoSSS.Foundation.XDG {
 
                 for (int iKref = 0; iKref < XDGSpaceMetrics.GridDat.Grid.RefElements.Length; iKref++) {
                     RefElement Kref = XDGSpaceMetrics.GridDat.Grid.RefElements[iKref];
-                    var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
                     var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
+                    
+                    var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
+                    
+                    //handle rules for cells/edges where two levelsets are present
+                    for (int jLevSet = iLevSet + 1; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet)
+                    {
+                        if (!IsSeparatedByLevSet(jLevSet, sp, sp))
+                        {
+                            CellMask doublyCut = GetCutCells(iLevSet, jLevSet).Intersect(_cutDom);
+                            if (doublyCut.Count() > 0)
+                            {
+                                _cutDom = _cutDom.Except(doublyCut);
+                                var jmpJ = IdentifyWing(jLevSet, sp);
+                                var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref);
+                                volQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
+                            }
+                        }
+                    }
+
                     volQrIns.AddFactoryDomainPair(factory, _cutDom, fixedOrder);
                 }
             }
@@ -616,14 +684,16 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="IntegrationDom"></param>
         /// <param name="fixedOrder"></param>
         /// <returns></returns>
-        public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
+        public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null)
+        {
 
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
 
             CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
 
-            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements)
+            {
                 var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
                 LevSetQrIns.AddFactoryDomainPair(surfaceFactory, (CellMask)null, fixedOrder);
             }
@@ -631,7 +701,42 @@ namespace BoSSS.Foundation.XDG {
             return LevSetQrIns;
         }
 
+        public CellQuadratureScheme GetLevelSetquadScheme( int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom, int? fixedOrder = null)
+        {
+            if (IntegrationDom.MaskType == MaskType.Logical)
+                IntegrationDom = IntegrationDom.ToGeometicalMask();
 
+            CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
+
+            
+
+            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements)
+            {
+                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
+
+                //handle rules for cells/edges where two levelsets are present
+                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet)
+                {
+                    if(jLevSet != iLevSet)
+                    {
+                        CellMask doublyCut = GetCutCells(iLevSet, jLevSet);
+                        if (doublyCut.Count() > 0)
+                        {
+                            IntegrationDom = IntegrationDom.Except(doublyCut);
+
+                            var jmpA = IdentifyWing(jLevSet, spA);
+                            Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
+
+                            var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref);
+                            LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
+                        }
+                    }
+                }
+
+                LevSetQrIns.AddFactoryDomainPair(surfaceFactory, IntegrationDom, fixedOrder);
+            }
+            return LevSetQrIns;
+        }
 
         
 
