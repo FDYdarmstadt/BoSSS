@@ -1173,7 +1173,38 @@ namespace BoSSS.Foundation.XDG {
         /// todo
         /// </summary>
         public override void ProjectAbs(double alpha, CellMask em, params DGField[] vec) {
-            throw new NotImplementedException("todo");
+
+            var tracker = this.m_CCBasis.Tracker;
+            int D = vec.Length;
+            for (int d = 0; d < D; d++) {
+                DGField vec_comp = vec[d];
+                if (vec_comp is XDGField) {
+                    if (!object.ReferenceEquals(((XDGField)vec_comp).Basis.Tracker, tracker))
+                        throw new ArgumentException("XDG field component may not be assigned to a different tracker.");
+                }
+            }
+
+            foreach (SpeciesId sp in tracker.SpeciesIdS) {
+                var Grd = tracker.Regions.GetSpeciesSubGrid(sp);
+
+                DGField[] vec_sp = new DGField[D];
+                for (int d = 0; d < D; d++) {
+                    DGField vec_comp = vec[d];
+                    if (vec_comp is XDGField) {
+                        vec_sp[d] = ((XDGField)vec_comp).GetSpeciesShadowField(sp);
+                    } else {
+                        vec_sp[d] = vec_comp;
+                    }
+                }
+
+                CellMask ExeMask;
+                if (em == null)
+                    ExeMask = Grd.VolumeMask;
+                else
+                    ExeMask = CellMask.Intersect(Grd.VolumeMask, em);
+
+                this.GetSpeciesShadowField(sp).ProjectAbs(alpha, em, vec_sp);
+            }
         }
 
         /// <summary>
