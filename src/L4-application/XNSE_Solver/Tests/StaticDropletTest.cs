@@ -35,8 +35,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public Func<double[], double, double> GetPhi() {
             if (quadratic) {
-                //return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
-                return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + ((y + (3.0/2.0)) * (y + (3.0 / 2.0))) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
+                return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
+                //return ((_3D)((time, x, y) => (x * x) / (0.816 * 0.816) + ((y + (3.0/2.0)) * (y + (3.0 / 2.0))) / (0.784 * 0.784) - 1.0)).Convert_txy2Xt();
             } else
                 return ((_3D)((time, x, y) => Math.Sqrt((x * x) / (0.816 * 0.816) + (y * y) / (0.784 * 0.784)) - 1.0)).Convert_txy2Xt();
         }
@@ -59,7 +59,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double dt {
             get {
-                return 0.0;
+                return 0.05;
             }
         }
 
@@ -67,13 +67,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             if (Resolution < 1)
                 throw new ArgumentException();
 
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3.0/2.0, 3.0 / 2.0, 4 * Resolution + 1), GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 4 * Resolution + 1));
+            //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 9 * Resolution + 1),
+                                                 //GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 9 * Resolution + 1));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 16 * Resolution + 1),
+                                                GenericBlas.Linspace(0.0, 3.0 / 2.0, 8 * Resolution + 1));
             //var grd = Grid2D.UnstructuredTriangleGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 5));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3), GenericBlas.Linspace(-2, 2, 3));
 
             //grd.EdgeTagNames.Add(1, "wall");
             //grd.EdgeTagNames.Add(1, "freeslip");
             grd.EdgeTagNames.Add(1, "navierslip_linear");
+            //grd.EdgeTagNames.Add(1, "pressure_outlet");
             grd.DefineEdgeTags(delegate (double[] _X) {
                 return 1;
             });
@@ -87,6 +91,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //config.Add("wall", new AppControl.BoundaryValueCollection());
             //config.Add("freeslip", new AppControl.BoundaryValueCollection());
             config.Add("navierslip_linear", new AppControl.BoundaryValueCollection());
+            //config.Add("pressure_outlet", new AppControl.BoundaryValueCollection());
 
             //config["Velocity_Inlet"].Evaluators.Add(
             //    VariableNames.Velocity_d(0) + "#A",

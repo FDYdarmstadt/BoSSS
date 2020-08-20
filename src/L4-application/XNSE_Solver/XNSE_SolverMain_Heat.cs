@@ -99,6 +99,16 @@ namespace BoSSS.Application.XNSE_Solver {
         VectorField<XDGField> ResidualAuxHeatFlux;
 
         /// <summary>
+        /// 
+        /// </summary>
+        SinglePhaseField MassFluxField;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        SinglePhaseField MassFluxExtension;
+
+        /// <summary>
         /// prescribed disjoining pressure field for evaporation near wall 
         /// </summary>
         SinglePhaseField DisjoiningPressure;
@@ -123,6 +133,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.ResidualAuxHeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.ResidualAuxHeatFluxVectorComponent(d))));
                 base.RegisterField(this.ResidualAuxHeatFlux);
             }
+
+            this.MassFluxField = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree), "MassFluxField");
+            base.RegisterField(MassFluxField);
+            this.MassFluxExtension = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree), VariableNames.MassFluxExtension);
+            base.RegisterField(MassFluxExtension);
 
             this.DisjoiningPressure = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree), "DisjoiningPressure");
             if (this.Control.DisjoiningPressureFunc != null) {
@@ -182,6 +197,90 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
+
+        public void ComputeMassFluxField() {
+
+            double kA = this.Control.ThermalParameters.k_A;
+            double kB = this.Control.ThermalParameters.k_B;
+
+            int order = MassFluxExtension.Basis.Degree * MassFluxExtension.Basis.Degree + 2;
+
+            MassFluxField.Clear();
+
+            MassFluxField.ProjectField(1.0,
+                delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    int D = this.LsTrk.GridDat.SpatialDimension;
+
+                    MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
+
+                    this.Temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
+                    this.Temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
+
+                    MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
+                    if (XOpConfig.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                        for (int dd = 0; dd < D; dd++) {
+                            this.HeatFlux[dd].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                            this.HeatFlux[dd].GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        }
+                    }
+
+                    var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
+
+                    for (int j = 0; j < Len; j++) {
+
+                        MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
+                        this.GridData.TransformLocal2Global(NS, globCoord, j);
+
+                        for (int k = 0; k < K; k++) {
+
+                            double qEvap = 0.0;
+                            //macro region
+                            for (int dd = 0; dd < D; dd++) {
+                                if (XOpConfig.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                                    qEvap += ((-kB) * GradTempB_Res[j, k, dd] - (-kA) * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
+                                } else {
+                                    qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
+                                }
+                            }
+
+                            //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
+                            double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                            double mEvap = (this.XOpConfig.prescribedMassflux != null) ? this.XOpConfig.prescribedMassflux(globX, hack_Phystime) 
+                                                                                            : qEvap / this.Control.ThermalParameters.hVap; // mass flux
+
+                            //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
+                            result[j, k] = mEvap;  
+                        }
+                    }
+                }, (new CellQuadratureScheme(false, LsTrk.Regions.GetCutCellMask())).AddFixedOrderRules(LsTrk.GridDat, order));
+
+        }
+
+
+        public void ConstructMassFluxExtensionField() {
+
+            SubGrid CCgrid = LsTrk.Regions.GetCutCellSubGrid();
+            CellMask CC = LsTrk.Regions.GetCutCellMask();
+            CellMask NEAR = LsTrk.Regions.GetNearFieldMask(1);
+            int J = this.LsTrk.GridDat.Cells.NoOfLocalUpdatedCells;
+            double[][] MassFluxMin = new double[1][];
+            double[][] MassFluxMax = new double[1][];
+            MassFluxMin[0] = new double[J];
+            MassFluxMax[0] = new double[J];
+
+            NarrowMarchingBand.ConstructExtVel_PDE(this.LsTrk, CCgrid, new SinglePhaseField[] { MassFluxExtension }, new SinglePhaseField[] { MassFluxField },
+                this.DGLevSet.Current, this.DGLevSetGradient, MassFluxMin, MassFluxMax, this.m_HMForder);
+
+            var marcher = new FastMarchReinit(this.DGLevSet.Current.Basis);
+            marcher.ConstructExtension(this.DGLevSet.Current, NEAR.Except(CC), CC, new SinglePhaseField[] { MassFluxExtension },
+                MassFluxMin, MassFluxMax, this.DGLevSetGradient, this.hack_TimestepIndex);
+
+            MassFluxExtension.CheckForNanOrInf(true, true, true);
+            
+        }
 
     }
 

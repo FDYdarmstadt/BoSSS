@@ -1984,8 +1984,23 @@ namespace BoSSS.Foundation.IO {
                             valueData[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
                             iL++;
                         }
-                        times[j] = time;
-                        valueDatas[j] = valueData;
+
+                        // remove doubled time steps 
+                        List<double> rTime = new List<double>();
+                        List<double> rValDat = new List<double>();
+                        rTime.Add(time[len-1]);
+                        rValDat.Add(valueData[len-1]);
+                        for(int i = len-2; i >= 0; i--) {
+                            if (time[i] < rTime.Last()) {
+                                rTime.Add(time[i]);
+                                rValDat.Add(valueData[i]);
+                            }
+                        }
+                        rTime.Reverse();
+                        rValDat.Reverse();
+
+                        times[j] = rTime.ToArray();
+                        valueDatas[j] = rValDat.ToArray();
 
                     }
                 }
@@ -2075,34 +2090,48 @@ namespace BoSSS.Foundation.IO {
         }
 
 
-        public static List<Plot2Ddata> LogDataToConvergenceData(List<Plot2Ddata> LogData, double[] abscissas) {
+        public static List<Plot2Ddata> LogDataToConvergenceData(List<Plot2Ddata> LogData, double[] abscissa, double[] _refAbs = null, double[] _refVal = null) {
 
             List<Plot2Ddata> convData = new List<Plot2Ddata>();
 
             foreach (var p2d in LogData) {
 
-                // set reference data [0] (log data in ascending order)
-                double[] refAbs = p2d.dataGroups[0].Abscissas;
-                double[] refVal = p2d.dataGroups[0].Values;
+                int numSess = p2d.dataGroups.Length;
+                int i0;
+
+                double[] refAbs;
+                double[] refVal;
+                if (_refAbs != null && _refVal != null) {
+                    if (abscissa.Length != numSess)
+                        throw new ArgumentException("wrong length of abscissa");
+                    refAbs = _refAbs;
+                    refVal = _refVal;
+                    i0 = 0;
+                } else {
+                    if (abscissa.Length != numSess - 1)
+                        throw new ArgumentException("wrong length of abscissa");
+                    // set reference data [0] (log data in ascending order)
+                    refAbs = p2d.dataGroups[0].Abscissas;
+                    refVal = p2d.dataGroups[0].Values;
+                    i0 = 1;
+                }
                 int numRefVal = refVal.Length;
 
-                int numSess = p2d.dataGroups.Length;
-                if (abscissas.Length != numSess - 1)
-                    throw new ArgumentException();
-
-                double[] l1Norm = new double[numSess - 1];
-                double[] l2Norm = new double[numSess - 1];
-                double[] linfNorm = new double[numSess - 1];
+                double[] l1Norm = new double[numSess - i0];
+                double[] l2Norm = new double[numSess - i0];
+                double[] linfNorm = new double[numSess - i0];
                 KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[3];
                 //foreach (var datgrp in p2d.dataGroups.Skip(1)) {
-                for (int i = 0; i < numSess - 1; i++) {
+                for (int i = i0; i < numSess; i++) {
 
-                    double[] abs = p2d.dataGroups[i + 1].Abscissas;
-                    double[] val = p2d.dataGroups[i + 1].Values;
+                    double[] abs = p2d.dataGroups[i].Abscissas;
+                    double[] val = p2d.dataGroups[i].Values;
                     int numVal = val.Length;
 
                     double[] diff = new double[numRefVal];
                     if (numVal != numRefVal) {
+                        if (numRefVal < numVal)
+                            throw new ArgumentException("reference data should have at least the same length as comparison data");
                         // interpolate solution
                         LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
                         LinSpline.Initialize(abs, val);
@@ -2112,19 +2141,38 @@ namespace BoSSS.Foundation.IO {
                             val[p] = LinSpline.Interpolate(refAbs[p]);
                         }
                     }
-
                     diff = refVal.Zip(val, (r, v) => Math.Abs(v - r)).ToArray();
 
-                    l1Norm[i] = diff.Sum() / refVal.Sum();
-                    l2Norm[i] = (diff.L2NormPow2() / refVal.L2NormPow2()).Sqrt();
-                    linfNorm[i] = diff.Max() / refVal.Max();
+                    l1Norm[i - i0] = diff.Sum() / refVal.Sum();
+                    l2Norm[i - i0] = (diff.L2NormPow2() / refVal.L2NormPow2()).Sqrt();
+                    linfNorm[i - i0] = diff.Max() / refVal.Max();
+
+                    //double[] diff = new double[numVal];
+                    //double[] refValCom = new double[numVal];
+                    //if (numVal != numRefVal) {
+                    //    if (numRefVal < numVal)
+                    //        throw new ArgumentException("reference data should have at least the same length as comparison data");
+                    //    // interpolate solution
+                    //    LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
+                    //    LinSpline.Initialize(refAbs, refVal);
+
+                    //    for (int p = 0; p < numVal; p++) {
+                    //        refValCom[p] = LinSpline.Interpolate(abs[p]);
+                    //    }
+                    //}
+                    //diff = refValCom.Zip(val, (r, v) => Math.Abs(v - r)).ToArray();
+
+                    //l1Norm[i - i0] = diff.Sum() / refValCom.Sum();
+                    //l2Norm[i - i0] = (diff.L2NormPow2() / refValCom.L2NormPow2()).Sqrt();
+                    //linfNorm[i - i0] = diff.Max() / refValCom.Max();
                 }
 
-                dataRowsValue[0] = new KeyValuePair<string, double[][]>("l_1 error norm", new double[][] { abscissas, l1Norm });
-                dataRowsValue[1] = new KeyValuePair<string, double[][]>("l_2 error norm", new double[][] { abscissas, l2Norm });
-                dataRowsValue[2] = new KeyValuePair<string, double[][]>("l_{inf} error norm", new double[][] { abscissas, linfNorm });
+                dataRowsValue[0] = new KeyValuePair<string, double[][]>("l_1 error norm", new double[][] { abscissa, l1Norm });
+                dataRowsValue[1] = new KeyValuePair<string, double[][]>("l_2 error norm", new double[][] { abscissa, l2Norm });
+                dataRowsValue[2] = new KeyValuePair<string, double[][]>("l_{inf} error norm", new double[][] { abscissa, linfNorm });
 
                 convData.Add(new Plot2Ddata(dataRowsValue).WithLogX().WithLogY());
+
             }
 
             return convData;
@@ -2216,7 +2264,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="pSessions">List of sessions to be evaluated</param> 
         /// <param name="energytype"> Energytypes to be plotted, can be partial</param>
-        public static void EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype, bool singlePlot) {
+        public static Plot2Ddata[] EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype, bool singlePlot) {
             int numberSessions = pSessions.Count();
             //List<Gnuplot> Plots = new List<Gnuplot>();
 
@@ -2290,6 +2338,8 @@ namespace BoSSS.Foundation.IO {
                     gp.Execute();
                 }
             }
+
+            return Time_Energies;
 
         }
 

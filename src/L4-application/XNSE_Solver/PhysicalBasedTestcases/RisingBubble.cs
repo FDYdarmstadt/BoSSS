@@ -646,28 +646,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_Test(int p = 2, int kelem = 30, int method = 4) {
+        public static XNSE_Control RB_Test(int p = 2, int kelem = 20, int method = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            string _DbPath = null; // @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            //_DbPath = @"D:\local\local_XNSE_StudyDB";
-            //_DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
-            string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
+            //string _DbPath = null; // @"D:\local\local_XNSE_StudyDB";
+            //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
 
             // basic database options
             // ======================
             #region db
 
-            C.DbPath = _DbPath;
+            C.DbPath = _DbPath; 
             C.savetodb = C.DbPath != null;
             C.ProjectName = "RisingBubble";
             //C.SessionName = "RisingBubble_ConvStudy2_k2_mesh2_AMR1_restart";
-            //C.SessionName = "RisingBubble_ConvStudy_k3_mesh0_restart";
-            C.SessionName = "RisingBubble_methodStudy_k2_method"+method;
+            //C.SessionName = "RisingBubble_ConvStudy_k3_mesh02_rerunWithReInit";
+            //C.SessionName = "RisingBubble_methodStudy_k2_method"+method;
+            //C.SessionName = "RisingBubble_pStudy_k3_mesh60_restart";
+            C.SessionName = "RisingBubble_tc2_k2_mesh20_AMR4";
 
             C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
             C.LogPeriod = 3;
@@ -717,12 +719,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
-            C.Tags.Add("Testcase 1");
-            C.PhysicalParameters.rho_A = 100;
-            C.PhysicalParameters.rho_B = 1000;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 10;
-            C.PhysicalParameters.Sigma = 24.5;
+            //C.Tags.Add("Testcase 1");
+            //C.PhysicalParameters.rho_A = 100;
+            //C.PhysicalParameters.rho_B = 1000;
+            //C.PhysicalParameters.mu_A = 1;
+            //C.PhysicalParameters.mu_B = 10;
+            //C.PhysicalParameters.Sigma = 24.5;
 
 
             //C.Tags.Add("Testcase 1 - higher parameters");
@@ -732,12 +734,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_B = 100;
             //C.PhysicalParameters.Sigma = 245;
 
-            //C.Tags.Add("Testcase 2");
-            //C.PhysicalParameters.rho_A = 1;
-            //C.PhysicalParameters.rho_B = 1000;
-            //C.PhysicalParameters.mu_A = 0.1;
-            //C.PhysicalParameters.mu_B = 10;
-            //C.PhysicalParameters.Sigma = 1.96;
+            C.Tags.Add("Testcase 2");
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1000;
+            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.mu_B = 10;
+            C.PhysicalParameters.Sigma = 1.96;
 
             // Re = 3.5 ; Bo(Eo) = 1
             //C.PhysicalParameters.rho_A = 1;
@@ -860,8 +862,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid("747456a3-d5bc-4d03-a8e3-03d2785dcccf");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            //Guid restartID = new Guid("63a6754e-7500-4db0-94c6-c03da73a9d78");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 1890);
 
             #endregion
 
@@ -902,7 +904,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.SetLevelSetMethod(method, Fouriercontrl);
-            C.SessionName = "RisingBubble_methodStudy_k2_" + C.methodTagLS + "_rerun";
+            //C.SessionName = "RisingBubble_methodStudy_k2_" + C.methodTagLS + "_withVolumeCorrection";
+            //C.EnforceLevelSetConservation = true;
 
             #endregion
 
@@ -924,11 +927,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
 
-            //C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.RefinementLevel = 1;
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.BaseRefinementLevel = 4;
+            C.AMR_startUpSweeps = 4;
 
-            //C.ReInitPeriod = 10;
+            C.ReInitOnRestart = true;
+            //C.ReInitPeriod = 100;
 
             #endregion
 
@@ -944,7 +949,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
-            double dt = 2e-3; // (1.0 / (double)kelem) / 16.0;
+            double dt = 0.001; // (1.0 / (double)kelem) / 16.0;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 3;

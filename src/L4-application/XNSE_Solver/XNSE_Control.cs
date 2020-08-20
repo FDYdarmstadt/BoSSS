@@ -185,9 +185,10 @@ namespace BoSSS.Application.XNSE_Solver {
                         methodTagLS = "ExtVelLB";
                         Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
                         EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                        //AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-                        EllipticExtVelAlgoControl.IsotropicViscosity = 1e-1;
-                        fullReInit = true;
+                        EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+                        //fullReInit = true;
                         break;
                     }
                 case 3: {
@@ -244,6 +245,11 @@ namespace BoSSS.Application.XNSE_Solver {
             constantInterface,
 
             /// <summary>
+            /// additional refinement on cells in pashe A
+            /// </summary>
+            PhaseARefined,
+
+            /// <summary>
             /// additional refinement on cells with high curvature
             /// </summary>
             CurvatureRefined,
@@ -256,7 +262,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// additional refinement at navier slip boundary
             /// </summary>
-            NavierSlipRefined
+            NavierSlipRefined,
+
+            /// <summary>
+            /// additional refinement on near band cells for high velocity gradients
+            /// </summary>
+            VelocityGradient
         }
 
         /// <summary>
@@ -291,7 +302,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool ClearVelocitiesOnRestart = false;
 
         [DataMember]
+        public bool ReInitOnRestart = false;
+
+        [DataMember]
         public int ReInitPeriod = 0;
+
+        [DataMember]
+        public bool InitSignedDistance = true;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -468,6 +485,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public double LSunderrelax = 1.0;
 
+        [DataMember]
+        public bool useFiltLevSetGradientForEvolution = false;
 
         /// <summary>
         /// See <see cref="LevelSetEvolution"/>.

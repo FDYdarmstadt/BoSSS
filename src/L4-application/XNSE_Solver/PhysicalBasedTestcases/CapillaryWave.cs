@@ -610,7 +610,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="xkelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control CW_Test(int p = 2, int xkelem = 32, int method = 0) {
+        public static XNSE_Control CW_Test(int p = 3, int xkelem = 16, int method = 0) {
 
             //int p = 2;
             //int xkelem = 32;
@@ -623,20 +623,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CWp3_spatialConv";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
-            //string _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB";
-            string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
+            string _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "CapillaryWave";
-            C.SessionName = "CapillaryWave_Setup0_methodStudy_k2_method" + method;
+            C.SessionName = "CapillaryWave_Setup0_convStudy_k3_mesh1_AMR1";
             //C.SessionName = "CapillaryWave_Setup0_convStudy_k2_mesh3_restart"; //"6f816774-8c9c-44f6-afe3-98f77d1764f6"
             //Guid restart = new Guid("6f816774-8c9c-44f6-afe3-98f77d1764f6");
             //C.SessionName = "CapillaryWave_Setup0_convStudy_k3_mesh2_restart"; //"7f9130d3-eaab-4ac2-9844-fd91be6f1edf"
-            //Guid restart = new Guid("7f9130d3-eaab-4ac2-9844-fd91be6f1edf");
+            //Guid restart = new Guid("7f9130d3-eaab-4ac2-9844-fd91be6f1edf");      
 
             C.LogValues = XNSE_Control.LoggingValues.Wavelike;
-            C.LogPeriod = 4;
+            C.LogPeriod = 10;
 
             #endregion
 
@@ -656,18 +656,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("GravityY", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("GravityY", new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
             C.FieldOptions.Add("PhiDG", new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 4,
+                Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = 4,
+                Degree = 2*p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
@@ -726,7 +726,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, xkelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-3.0 * L / 2.0, 3.0 * L / 2.0, (3 * xkelem) + 1);
+                double[] Ynodes = GenericBlas.Linspace(-3.0 * L / 2.0, 3.0 * L / 2.0, (3 * xkelem) + 0);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: !(method == 2 || method == 3));
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
@@ -811,6 +811,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.BaseRefinementLevel = 1;
+            C.InitSignedDistance = false;
+
+
             #endregion
 
 
@@ -824,7 +830,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             };
 
             C.SetLevelSetMethod(method, FourierContrl);
-            C.SessionName = "RisingBubble_methodStudy_k2_" + C.methodTagLS;
+            //C.SessionName = "RisingBubble_methodStudy_k2_" + C.methodTagLS;
 
 
             // Timestepping
@@ -840,7 +846,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //double rho = rho_l;         // Testcase1
             //double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma));             // !!!
-            double dt = 1e-4;
+            double dt = 2e-5;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 0.4;

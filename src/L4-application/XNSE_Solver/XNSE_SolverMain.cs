@@ -589,16 +589,17 @@ namespace BoSSS.Application.XNSE_Solver {
                     default: throw new NotImplementedException("Unknown SurfaceTensionMode");
                 }
 
-                if (filtLevSetGradient != null) {
-                    if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
-                        //this.LevSetGradient.Clear();
-                        //this.LevSetGradient.Acc(1.0, filtLevSetGradient);
-                        this.LevSetGradient = filtLevSetGradient;
+
+                if (this.Control.useFiltLevSetGradientForEvolution) {
+                    this.DGLevSetGradient.Clear();
+                    if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) {
+                        this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
                     } else {
-                        //this.DGLevSetGradient.Clear();
-                        //this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
-                        this.DGLevSetGradient = filtLevSetGradient;
+                        this.DGLevSetGradient.AccLaidBack(1.0, filtLevSetGradient);
                     }
+                } else {
+                    this.DGLevSetGradient.Clear();
+                    this.DGLevSetGradient.Gradient(1.0, this.DGLevSet.Current); 
                 }
 
                 // =================================================
@@ -650,12 +651,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 var codMap = Mapping;
                 var domMap = Mapping;
 
-                using (new BlockTrace("XdgMatrixAssembly",tr)) {
+                using (new BlockTrace("XdgMatrixAssembly", tr)) {
                     this.XNSFE_Operator.AssembleMatrix(
                        OpMtx, OpAffine, codMap, domMap,
-                       CurrentState, AgglomeratedCellLengthScales, phystime,
+                       CurrentState, AgglomeratedCellLengthScales, phystime, this.Control.dtFixed, 
                        this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
-                       updateSolutionParams, this.XDGvelocity.Gravity.ToArray()); //, HeatFluxExtParam);
+                       updateSolutionParams, new DGField[] { MassFluxExtension }); //, HeatFluxExtParam);
                                                                                   //(this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
                                                                                   //(this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));                   
                 }
@@ -1549,6 +1550,46 @@ namespace BoSSS.Application.XNSE_Solver {
             //    FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
             //}
 
+            if (this.Control.ReInitOnRestart) {
+
+                this.Control.ReInitControl.Potential = ReInitPotential.BastingSingleWell;
+                //this.Control.ReInitControl.Upwinding = true;
+                ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
+                ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
+
+                CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
+                if (this.Control.AdaptiveMeshRefinement) {
+                    var cDat = ((GridData)this.GridData).Cells;
+                    int nC = cDat.Count;
+                    BitArray constI = new BitArray(nC);
+                    foreach (Chunk cnk in ActiveField) {
+                        for (int i = cnk.i0; i < cnk.Len; i++) {
+                            if (((GridData)this.GridData).Cells.GetCell(i).RefinementLevel == this.Control.BaseRefinementLevel)
+                                constI[i] = true;
+                        }
+                    }
+                    ActiveField = new CellMask(this.GridData, constI);
+                }
+
+                FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
+                CellMask Accepted = LsTrk.Regions.GetCutCellMask();
+                //CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
+                CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
+
+            }
+
+
+            // hack for restarting rising bubble
+            //Console.WriteLine("Warning! set gravity for rising bubble restart");
+            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("A").AccConstant(-9.81e-1);
+            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("B").AccConstant(-9.81e-1);
+
+
+            if (this.Control.ClearVelocitiesOnRestart) {
+                Console.WriteLine("clearing all velocities");
+                this.XDGvelocity.Velocity.Clear();
+            }
 
             //this.LsTrk.UpdateTracker();
 
@@ -1569,38 +1610,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current,
                     new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
             }
-
-
-            // =========================================
-            // XDG BDF Timestepper initialization
-            // =========================================
-
-            if (m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.DelayedTimestepperInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
-                    // delegate for the initialization of previous timesteps from restart session
-                    BDFDelayedInitLoadRestart );
-            }
-
-            After_SetInitialOrLoadRestart(Time, TimestepNo.MajorNumber);
-
-        }
-
-
-        public override void PostRestart(double time, TimestepNumber timestep) {
-            base.PostRestart(time, timestep);
-
-            //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
-
-            // hack for restarting rising bubble
-            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("A").AccConstant(-9.81e-1);
-            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("B").AccConstant(-9.81e-1);
-
-
-            if (this.Control.ClearVelocitiesOnRestart) {
-                Console.WriteLine("clearing all velocities");
-                this.XDGvelocity.Velocity.Clear();
-            }
-
 
             // Load the sample Points for the restart of the Fourier LevelSet
             if (this.Control.FourierLevSetControl != null) {
@@ -1640,7 +1649,30 @@ namespace BoSSS.Application.XNSE_Solver {
                 } else {
                     this.Control.FourierLevSetControl.samplP = samplP;
                 }
+
+                InitFourier();
             }
+
+
+            // =========================================
+            // XDG BDF Timestepper initialization
+            // =========================================
+
+            if (m_BDF_Timestepper != null) {
+                m_BDF_Timestepper.DelayedTimestepperInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
+                    // delegate for the initialization of previous timesteps from restart session
+                    BDFDelayedInitLoadRestart );
+            }
+
+            After_SetInitialOrLoadRestart(Time, TimestepNo.MajorNumber);
+
+        }
+
+
+        public override void PostRestart(double time, TimestepNumber timestep) {
+            base.PostRestart(time, timestep);
+
+            //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
 
         }
 
@@ -1734,25 +1766,33 @@ namespace BoSSS.Application.XNSE_Solver {
 
         int LevelIndicator(int j, int CurrentLevel) {
 
-            if (this.Control.BaseRefinementLevel == 0)
-                return 0;
 
             CellMask ccm = this.LsTrk.Regions.GetCutCellMask();
             CellMask near = this.LsTrk.Regions.GetNearFieldMask(1);
             CellMask nearBnd = near.AllNeighbourCells();
             CellMask buffer = nearBnd.AllNeighbourCells().Union(nearBnd).Except(near);
 
-            CellMask neg = this.LsTrk.Regions.GetSpeciesMask("A");
-            CellMask pos = this.LsTrk.Regions.GetSpeciesMask("B");
-
             int DesiredLevel_j = CurrentLevel;
 
             if (near.Contains(j)) {
                 if (CurrentLevel < this.Control.BaseRefinementLevel) {
+                    Console.WriteLine("DesiredLevel +1 in cell {0}", j);
                     DesiredLevel_j++;
                 } else {
                     // additional refinement
                     switch (this.Control.RefineStrategy) {
+                        case XNSE_Control.RefinementStrategy.VelocityGradient: {
+                                double minGrad, maxGrad;
+                                this.GradMagnitudeVelocAbs.GetExtremalValuesInCell(out minGrad, out maxGrad, j);
+                                double grdSz = ((GridData)this.GridData).Cells.h_min[j];
+                                double gradThrshld = 1e3;
+                                if ((maxGrad / grdSz) > gradThrshld && CurrentLevel < this.Control.RefinementLevel) {
+                                    DesiredLevel_j++;
+                                } else if ((maxGrad / grdSz) > (gradThrshld / 10.0) && CurrentLevel < this.Control.RefinementLevel) {
+                                    DesiredLevel_j--;
+                                }
+                                break;
+                            }
                         case XNSE_Control.RefinementStrategy.CurvatureRefined: {
                                 double curv_max = 1.0 / (2.0 * ((GridData)this.GridData).Cells.h_min[j]);
                                 double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
@@ -1770,7 +1810,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             }
                         case XNSE_Control.RefinementStrategy.ContactLineRefined: {
                                 CellMask BCells = ((GridData)this.GridData).BoundaryCells.VolumeMask;
-                                if (ccm.Contains(j) && BCells.Contains(j) && CurrentLevel < this.Control.RefinementLevel) {
+                                if (near.Contains(j) && BCells.Contains(j) && CurrentLevel < this.Control.RefinementLevel) {
                                     DesiredLevel_j++;
                                 } else if (!BCells.Contains(j)) { // && CurrentLevel == this.Control.RefinementLevel + 1) {
                                     DesiredLevel_j--;
@@ -1786,6 +1826,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             }
                             break;
                         case XNSE_Control.RefinementStrategy.constantInterface:
+                        case XNSE_Control.RefinementStrategy.PhaseARefined:
                         default:
                             break;
                     }
@@ -1795,17 +1836,21 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (CurrentLevel < this.Control.RefinementLevel)
                     DesiredLevel_j++;
 
-            } else if (buffer.Contains(j) || NSbuffer.Contains(j)) {
-                if (CurrentLevel < this.Control.BaseRefinementLevel - 1)
-                    DesiredLevel_j++;
+                //} else if (buffer.Contains(j) || NSbuffer.Contains(j)) {
+                //    if (CurrentLevel < this.Control.BaseRefinementLevel - 1)
+                //        DesiredLevel_j++;
 
             } else {
-                //if (!pos.Contains(j)) 
-                    DesiredLevel_j = 0;
+                if (CurrentLevel > 0) {
+                    Console.WriteLine("DesiredLevel -1 in cell {0}", j);
+                    DesiredLevel_j--;
+                }
             }
 
-            //if (neg.Contains(j) && CurrentLevel < this.Control.RefinementLevel)
-            //    DesiredLevel_j = CurrentLevel + 1;
+            //if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.PhaseARefined) {
+            //    if (neg.Contains(j) && CurrentLevel < this.Control.RefinementLevel)
+            //        DesiredLevel_j = CurrentLevel + 1;
+            //}
 
             //CellMask pos = this.LsTrk.Regions.GetSpeciesMask("B");
             //if ((pos.Contains(j))) {
@@ -1911,7 +1956,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         //CellMask refinedInterfaceCells;
-        SinglePhaseField GradVelNorm;
+        XDGField MagnitudeVeloc;
+        VectorField<XDGField> GradMagnitudeVeloc;
+        XDGField GradMagnitudeVelocAbs;
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             using(new FuncTrace()) {
@@ -1923,16 +1970,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     // Check grid changes
                     // ==================
 
-                    CellMask BlockedCells;
-                    if (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Once
-                        || this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                        int prevInd = LsTrk.PopulatedHistoryLength;
-                        CellMask prevNear = LsTrk.RegionsHistory[-prevInd + 1].GetNearFieldMask(1);
-                        BlockedCells = (TimestepNo > 1) ? prevNear : null; // CellMask.Union(currNear, prevNear);
-                    } else {
-                        CellMask currNear = LsTrk.Regions.GetNearFieldMask(1);
-                        BlockedCells = currNear;
-                    }
+                    CellMask BlockedCells = this.LsTrk.Regions.GetCutCellMask();
+                    //if (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Once
+                    //|| this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                    //    int prevInd = LsTrk.PopulatedHistoryLength;
+                    //    CellMask prevNear = LsTrk.RegionsHistory[-prevInd + 1].GetNearFieldMask(1);
+                    //    BlockedCells = (TimestepNo > 1) ? prevNear : null; // CellMask.Union(currNear, prevNear);
+                    //} else {
+                    //    CellMask currNear = LsTrk.Regions.GetNearFieldMask(1);
+                    //    BlockedCells = currNear;
+                    //}
 
                     // compute curvature for levelindicator 
                     if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.CurvatureRefined) {
@@ -1944,23 +1991,26 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
                     // compute gradient norm for levelindicator 
-                    if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.CurvatureRefined) {
-                        GradVelNorm = new SinglePhaseField(this.XDGvelocity.Velocity[0].Basis.NonX_Basis);
+                    if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.VelocityGradient) {
                         int D = this.GridData.SpatialDimension;
-                        for (int d = 0; d < D; d++) {
-                            DGField f_Spc = this.XDGvelocity.Velocity[d].GetSpeciesShadowField("B");
-                            //SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid("B");
-                            for (int d2 = 0; d2 < D; d2++) {
-                                SinglePhaseField grad = new SinglePhaseField(this.XDGvelocity.Velocity[0].Basis.NonX_Basis);
-                                grad.Derivative(1.0, f_Spc, d);
-                                SinglePhaseField gradNorm = new SinglePhaseField(this.XDGvelocity.Velocity[0].Basis.NonX_Basis);
-                                gradNorm.ProjectPow(1.0, grad, 2);
-                                GradVelNorm.Acc(1.0, gradNorm);
+
+                        MagnitudeVeloc = new XDGField(this.XDGvelocity.Velocity[0].Basis, "MagnitudeVelocity");
+                        GradMagnitudeVeloc = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.XDGvelocity.Velocity[0].Basis, "MagnitudeVelocityGradient_" + d)));
+                        GradMagnitudeVelocAbs = new XDGField(this.XDGvelocity.Velocity[0].Basis, "MagnitudeVelocityGradientAbs");
+
+                        MagnitudeVeloc.ProjectAbs(1.0, null, this.XDGvelocity.Velocity.ToArray());
+                        for (int d = 0; d < D; d++) { 
+                            foreach (var spc in this.LsTrk.SpeciesIdS) {
+                                DGField mv_spc = MagnitudeVeloc.GetSpeciesShadowField(spc); 
+                                CellMask smsk = this.LsTrk.Regions.GetSpeciesMask(spc);
+                                (GradMagnitudeVeloc[d] as XDGField).GetSpeciesShadowField(spc).Derivative(1.0, mv_spc, d, smsk);
                             }
                         }
-                        GradVelNorm.Scale(1.0 / (D * D));
+                        GradMagnitudeVelocAbs.ProjectAbs(1.0, null, GradMagnitudeVeloc.ToArray());
+
+                        //Tecplot.PlotFields(new DGField[] { this.LevSet, MagnitudeVeloc, GradMagnitudeVeloc[0], GradMagnitudeVeloc[1], GradMagnitudeVelocAbs }, "MagnitudeVelocity" + hack_TimestepIndex, hack_Phystime, 2);
                     }
-                    //Tecplot.PlotFields(new DGField[] { GradVelNorm }, "GradVelNorm" + hack_TimestepIndex, hack_Phystime, 2);
+                    
 
                     // navier slip boundary cells
                     NScm = new CellMask(this.GridData);

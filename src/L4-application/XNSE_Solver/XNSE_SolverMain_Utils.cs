@@ -239,6 +239,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 // momentum balance
                 XNSEUtils.ProjectMomentumBalanceAtInterface(this.MomentumBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
                     this.Control.PhysicalParameters);
+                //XNSEUtils.ProjectMomentumBalanceNorm(this.MomentumBalanceAtInterface, this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
+                //   this.Control.PhysicalParameters, true);
 
                 //double[] momBal_Norm = XNSEUtils.MomentumBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
                 //    this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, this.m_HMForder);
@@ -425,29 +427,28 @@ namespace BoSSS.Application.XNSE_Solver {
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
 
-            CurvatureAlgorithms.CurvatureDriver(
-                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                CurvatureAlgorithms.FilterConfiguration.NoFilter,   // fromC0
-                this.Curvature, out this.LevSetGradient, this.LsTrk,
-                this.m_HMForder, this.DGLevSet.Current);
+            //CurvatureAlgorithms.CurvatureDriver(
+            //    SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+            //    CurvatureAlgorithms.FilterConfiguration.NoFilter,   // fromC0
+            //    this.Curvature, out this.LevSetGradient, this.LsTrk,
+            //    this.m_HMForder, this.DGLevSet.Current);
 
 
-            CurvatureAlgorithms.CurvatureDriver(
-                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                new CurvatureAlgorithms.FilterConfiguration() {
-                    gradOpt = CurvatureAlgorithms.GradientOption.LevSet,
-                    hessOpt = CurvatureAlgorithms.HessianOption.LevSetGrad,
-                    useFiltLevSetGrad = false,
-                    useFiltLevSetHess = false,
-                    FilterCurvatureCycles = 0,
-                    LevelSetSource = CurvatureAlgorithms.LevelSetSource.fromDG,
-                    PatchRecoveryDomWidth = 0,
-                    NoOfPatchRecoverySweeps = 0,
-                    CurvatureLimiting = false
-                },
-                this.DGCurvature, out this.DGLevSetGradient, this.LsTrk,
-                this.m_HMForder, this.DGLevSet.Current);
-
+            //CurvatureAlgorithms.CurvatureDriver(
+            //    SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+            //    new CurvatureAlgorithms.FilterConfiguration() {
+            //        gradOpt = CurvatureAlgorithms.GradientOption.LevSet,
+            //        hessOpt = CurvatureAlgorithms.HessianOption.LevSetGrad,
+            //        useFiltLevSetGrad = false,
+            //        useFiltLevSetHess = false,
+            //        FilterCurvatureCycles = 0,
+            //        LevelSetSource = CurvatureAlgorithms.LevelSetSource.fromDG,
+            //        PatchRecoveryDomWidth = 0,
+            //        NoOfPatchRecoverySweeps = 0,
+            //        CurvatureLimiting = false
+            //    },
+            //    this.DGCurvature, out this.DGLevSetGradient, this.LsTrk,
+            //    this.m_HMForder, this.DGLevSet.Current);
 
 
             // ====================================

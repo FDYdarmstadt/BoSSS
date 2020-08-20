@@ -1088,21 +1088,20 @@ namespace BoSSS.Solution.NSECommon {
 
 
                 }
-                    //case IncompressibleBcType.NavierSlip_localized: {
+                //case IncompressibleBcType.InnerValues: {
 
-                    //        double ls = Lslip[inp.jCellIn];
-                    //        if(ls > 0.0) {
-                    //            m_beta = muA / ls;
-                    //            goto case IncompressibleBcType.NavierSlip_Linear;
-                    //        } else {
-                    //            goto case IncompressibleBcType.Velocity_Inlet;
-                    //        }
-                    //    }
-                case IncompressibleBcType.Pressure_Dirichlet:
+                //        for (int i = 0; i < inp.D; i++) {
+                //            Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                //        }
+                //        Acc *= base.m_alpha;
+
+                //        break;
+                //    }
+                case IncompressibleBcType.Pressure_Dirichlet: 
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
-                    if(base.g_Neu_Override == null) {
+                    if (base.g_Neu_Override == null) {
                         // Inner values of velocity gradient are taken, i.e.
                         // no boundary condition for the velocity (resp. velocity gradient) is imposed.
                         for(int i = 0; i < inp.D; i++) {

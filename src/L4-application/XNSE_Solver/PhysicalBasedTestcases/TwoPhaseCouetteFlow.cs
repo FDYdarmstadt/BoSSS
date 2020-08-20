@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control Couette_GNBC(int tc = 1, int p = 2, int kelem = 16, double dt = 0.2, string _DbPath = null) {
+        public static XNSE_Control Couette_GNBC(int tc = 2, int p = 3, int kelem = 12, double dt = 0.02, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -164,7 +164,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double H = 13.6;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(0, 4 * L, 8 * kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(0, 4 * L, 8 * kelem + 0);
                 double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
 
@@ -218,6 +218,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
+            C.InitSignedDistance = false;
+
             //double U_slip = 0.16;
 
             C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0); // -U_slip + 2 * U_slip * X[1] / H);
@@ -270,11 +272,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             //C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
@@ -283,11 +285,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
 
-            
-            //C.AdaptiveMeshRefinement = true;
-            //C.RefinementLevel = 1;
 
-            //C.LS_TrackerWidth = 2;
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
+            C.RefineNavierSlipBoundary = false;
+            C.BaseRefinementLevel = 0;
+            C.RefinementLevel = 1;
 
             #endregion
 
@@ -296,7 +299,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
@@ -451,7 +454,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
