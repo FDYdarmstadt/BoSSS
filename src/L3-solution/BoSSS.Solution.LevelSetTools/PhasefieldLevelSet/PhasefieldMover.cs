@@ -59,7 +59,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                 //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo , 0}), 2);
                 this.m_Timestepper.Solve(_phystime, _dt);
-                //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo, 1 }), 2);
+                PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo }), 2);
 
                 // update DG LevelSet
                 DGLevSet.Clear();

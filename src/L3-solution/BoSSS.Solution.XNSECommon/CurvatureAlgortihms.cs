@@ -91,6 +91,29 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             /// <summary>
+            /// Returns a configuration with all filters turned off.
+            /// </summary>
+            public static FilterConfiguration Phasefield
+            {
+                get
+                {
+                    FilterConfiguration r = new FilterConfiguration();
+                    r.gradOpt = GradientOption.FiltLevSet;
+                    r.hessOpt = HessianOption.FiltLevSetH;
+                    r.useFiltLevSetGrad = true;
+                    r.useFiltLevSetHess = true;
+                    r.FilterCurvatureCycles = 3;
+                    r.LevelSetSource = LevelSetSource.fromDG;
+                    r.PatchRecoveryDomWidth = 0;
+                    r.NoOfPatchRecoverySweeps = 3;
+                    r.CurvatureLimiting = true;
+                    r.UseWholeField = true;
+
+                    return r;
+                }
+            }
+
+            /// <summary>
             /// Returns a recommended filter configuration.
             /// </summary>
             public static FilterConfiguration Default {
@@ -100,6 +123,8 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             }
 
+            [DataMember]
+            public bool UseWholeField = false;
 
             [DataMember]
             public GradientOption gradOpt = GradientOption.FiltLevSet;
@@ -164,8 +189,17 @@ namespace BoSSS.Solution.XNSECommon {
             SinglePhaseField DG_LevSet) //
        {
 
-            
-            CellMask CC = LsTrk.Regions.GetNearFieldMask(config.PatchRecoveryDomWidth);
+            CellMask CC;
+            if (config.UseWholeField)
+            {
+                CC = LsTrk.Regions.GetSpeciesMask("A").Union(LsTrk.Regions.GetSpeciesMask("B"));
+            }
+            else
+            {
+                CC = LsTrk.Regions.GetNearFieldMask(config.PatchRecoveryDomWidth);
+            }
+
+                
 
             CurvatureBasedSurfaceTension.hmin = LsTrk.GridDat.Cells.h_minGlobal;
 

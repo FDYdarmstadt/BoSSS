@@ -63,6 +63,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         protected SinglePhaseField phi0;
 
         /// <summary>
+        /// Transport velocity
+        /// </summary>
+        protected VectorField<SinglePhaseField> gradPhi0;
+
+        /// <summary>
         /// chemical potential
         /// </summary>
         protected SinglePhaseField mu;
@@ -120,9 +125,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         double Diff;
 
         /// <summary>
-        /// Peclet number, ratio of convective to diffusive timescale has to be set so that diffusive timescale is smaller
+        /// effective viscosity Sqrt(mu_a*mu_b)
         /// </summary>
-        double Peclet;
+        double Viscosity;
 
         /// <summary>
         /// Control for Bulk vs Surface Diffusion
@@ -162,7 +167,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Phasefield instantiation, constructor
         /// </summary>
-        public Phasefield(LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq, double _peclet = 1e3)
+        public Phasefield(LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq, double _viscosity = 1.0)
         {
             LevSet = _LevSet;
             LsTrk = _LsTrk;
@@ -171,7 +176,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             GridData = _GridData;
             ParentControl = _control;
             mgSeq = _mgSeq;
-            Peclet = _peclet;
+            Viscosity = _viscosity;
         }
 
         /// <summary>
@@ -202,6 +207,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         protected override void CreateFields()
         {
             phi0 = new SinglePhaseField(DGLevSet.Basis, "phi0");
+            gradPhi0 = new VectorField<SinglePhaseField>(DGLevSet.GridDat.SpatialDimension.ForLoop(d => new SinglePhaseField(DGLevSet.Basis, "dPhiDG_dx[" + d + "]")));
             phi = new SinglePhaseField(DGLevSet.Basis, "phi");
             phi.Acc(1.0, DGLevSet);
             mu = new SinglePhaseField(DGLevSet.Basis, "mu");
@@ -238,7 +244,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                     CHOp = new SpatialOperator(
                         new string[] { "phi", "mu" },
-                        VariableNames.VelocityVector(D).Cat("phi0"),
+                        VariableNames.VelocityVector(D).Cat("phi0").Cat(VariableNames.LevelSetGradient(D)),
                         new string[] { "Res_phi", "Res_mu" },
                         QuadOrderFunc.NonLinear(3)
                         );
@@ -360,10 +366,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
             phi0.Clear();
             phi0.Acc(1.0, Current_phi);
+            gradPhi0.Clear();
+            gradPhi0.Gradient(1.0, phi0);
             
             OpMtx.Clear();
             OpAffine.ClearEntries();
-            var mb = CHOp.GetMatrixBuilder(Mapping, this.Velocity.ToArray().Cat(phi0), Mapping);
+            var mb = CHOp.GetMatrixBuilder(Mapping, this.Velocity.ToArray().Cat(phi0).Cat(gradPhi0.ToArray()), Mapping);
             mb.ComputeMatrix(OpMtx, OpAffine);
         }
 
@@ -417,7 +425,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
 
         int m_D;
-        public override IList<string> ParameterOrdering => new[] { "phi0" }.Cat(VariableNames.VelocityVector(m_D));
+        public override IList<string> ParameterOrdering => new[] { "phi0" }.Cat(VariableNames.VelocityVector(m_D)).Cat(VariableNames.LevelSetGradient(m_D));
 
         protected override double g_Diri(ref CommonParamsBnd inp)
         {
@@ -467,13 +475,25 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public override double Nu(double[] x, double[] p, int jCell)
         {
+
+            //double n = 0.0;
+            //double D = 0.0;
+
+            //for (int d = 0; d < m_D; d++)
+            //{
+            //    n += p[1 + m_D + d].Pow2();
+            //}
+
+            //D = 0.01 * Math.Exp(-8.0 * n * m_diff.Pow2());
+            //D = 1e-7;
+
             if (m_lambda == 0.0)
             {
-                return -m_diff;
+                return -m_diff; // -D;
             }
             else if (m_lambda > 0.0 && m_lambda <= 1.0)
             {
-                return -m_diff * Math.Max(1 - m_lambda * Math.Pow(p[0], 2.0),0.0);
+                return -m_diff * Math.Max(1 - m_lambda * Math.Pow(p[0], 2.0), 0.0);//-D * Math.Max(1 - m_lambda * Math.Pow(p[0], 2.0),0.0);
             }
             else
             {
