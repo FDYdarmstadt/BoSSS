@@ -9,9 +9,9 @@ List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
-  5: { Session Count = 21; Grid Count = 21; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+  3: { Session Count = 483; Grid Count = 12423; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 156; Grid Count = 151; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -21,27 +21,27 @@ using BoSSS.Application.XNSE_Solver;
 **************
 ==============
 //var myDb = OpenOrCreateDefaultDatabase();
-//var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
 **************
 ==============
 ExecutionQueues;
 **************
-List of 2 instances of BatchProcessorClient {
+List of 3 instances of BatchProcessorClient {
   0: MiniBatchProcessor client @D:\local\binaries
-  1: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\smuda\binaries
+  2: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
 }
 ==============
-ExecutionQueues[0].AllowedDatabases;
+ExecutionQueues[1].AllowedDatabases;
 **************
-List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
+List of 0 instances of IDatabaseInfo {
 }
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
 var myBatch = ExecutionQueues[1];
 **************
 ==============
-var myDb = ExecutionQueues[1].AllowedDatabases[0];
+//var myDb = ExecutionQueues[1].AllowedDatabases[0];
 **************
 ==============
 **************
@@ -198,13 +198,14 @@ foreach(var sess in WorkflowMgm.Sessions) {
 }
 restartStudySess
 **************
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
 Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
 List of 2 instances of ISessionInfo {
   0: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh3*	04/18/2020 13:26:29	d3a3171d...
   1: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2*	04/18/2020 13:26:07	7f9130d3...
 }
 ==============
-bool restart = false;
+bool restart = true;
 Guid[] restartID = new Guid[3];
 //restartID[1] = restartStudySess.ElementAt(2).ID;
 restartID[2] = restartStudySess.ElementAt(1).ID;
@@ -301,30 +302,36 @@ CapillaryWave_Setup0_convStudy_k3_mesh2_restart
 **************
 ==============
 foreach(var cntrl in controls) {
-    Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
+    Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
     var job = cntrl.GetJob();
     job.Activate(myBatch);
 }
 **************
-Submitting Sessions: CapillaryWave_Setup0_convStudy_k3_mesh2_restart
-System.ArgumentException occurred: Unable to find job with id '24038'.. Type 'LastError' for details.
+Submitting Session: CapillaryWave_Setup0_convStudy_k3_mesh2_restart
+Microsoft.Hpc.Scheduler.Properties.SchedulerException occurred: The specified Job ID is not valid. Check your Job ID and try again.. Type 'LastError' for details.
 
 ==============
 LastError
 **************
-System.ArgumentException: Unable to find job with id '24038'.
-   at MiniBatchProcessor.ClientAndServer.GetStatusFromID(Int32 JobId, Int32& ExitCode) in D:\BoSSS-experimental\public\src\Utils\MiniBatchProcessor\Common.cs:line 175
-   at BoSSS.Application.BoSSSpad.MiniBatchProcessorClient.EvaluateStatus(String idToken, Object optInfo, String DeployDir, Boolean& isRunning, Boolean& isTerminated, Int32& ExitCode) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\MiniBatchProcessorClient.cs:line 159
-   at BoSSS.Application.BoSSSpad.Job.GetStatus(Int32& SubmitCount, String& DD) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\Job.cs:line 823
-   at BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\Job.cs:line 869
+System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection.
+Parameter name: index
+   at System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument argument, ExceptionResource resource)
+   at System.Collections.Generic.List`1.get_Item(Int32 index)
+   at System.Linq.Enumerable.ElementAt[TSource](IEnumerable`1 source, Int32 index)
    at <InteractiveExpressionClass>.Host(Object& $retval)
    at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
 ==============
-//WorkflowMgm.Sessions
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Activate(myBatch)
 **************
+System.Collections.Generic.KeyNotFoundException occurred: The given key was not present in the dictionary.. Type 'LastError' for details.
+
 ==============
+GridSeq
 **************
+List of 1 instances of IGridInfo {
+  0: { Guid = 052b658a-8c52-4239-9c05-e7e3c3bc8c35; Name = CapillaryWave_studyMesh8; Cell Count = 184; Dim = 2 }
+}
 ==============
 **************
 ==============
@@ -338,6 +345,16 @@ System.ArgumentException: Unable to find job with id '24038'.
 **************
 ==============
 //databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

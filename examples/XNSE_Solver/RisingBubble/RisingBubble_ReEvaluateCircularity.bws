@@ -1,0 +1,145 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 25; Grid Count = 37; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Application.XNSE_Solver;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Foundation' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+WorkflowMgm.Init("RisingBubble")
+**************
+Project name is set to 'RisingBubble'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+
+==============
+string studyName = "ExtVel";
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            evalSess.Add(sess);  
+        else 
+            evalSessNT.Add(sess);
+    }        
+}
+evalSess
+**************
+List of 2 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_isoVisc1e-1	05/13/2020 10:55:50	a1473653...
+  1: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_nofullReinit	05/12/2020 09:29:40	d5b0db0c...
+}
+==============
+**************
+==============
+// ======================
+// reevaluate circularity
+// ======================
+**************
+==============
+var sess = evalSess.Pick(0);
+**************
+==============
+int timesteps = sess.Timesteps.Count;
+**************
+==============
+double[] time = new double[timesteps];
+double[] circ = new double[timesteps];
+**************
+==============
+for(int ts = 0; ts < timesteps; ts++) {
+    
+    time[ts] = sess.Timesteps.Pick(ts).PhysicalTime;
+    
+    var phi    = sess.Timesteps.Pick(ts).Fields.ElementAt(0);
+    var LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+    LevSet.Acc(1.0, phi);
+    var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+    LsTrk.UpdateTracker();
+    
+    int order        = 6; 
+    var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
+    // area of bubble
+    double area     = 0.0;
+    SpeciesId spcId = LsTrk.SpeciesIdS[0];
+    var vqs         = SchemeHelper.GetVolumeQuadScheme(spcId);
+    CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+        vqs.Compile(LsTrk.GridDat, order),
+        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+             EvalResult.SetAll(1.0);
+        },
+        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+            for (int i = 0; i < Length; i++)
+                area += ResultsOfIntegration[i, 0];
+        }
+    ).Execute();
+    
+    // perimeter of bubble
+    double perimtr_b         = 0.0;
+    CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+    CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+        cqs.Compile(LsTrk.GridDat, order),
+        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+            EvalResult.SetAll(1.0);
+        },
+        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+            for (int i = 0; i < Length; i++)
+                perimtr_b += ResultsOfIntegration[i, 0];
+        }
+    ).Execute();
+    
+    circ[ts] = Math.Sqrt(4*Math.PI*area)/perimtr_b;
+    
+}
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+PlotFormat pltForm = new PlotFormat();
+pltForm.LineColor  = LineColors.Black;
+pltForm.Style      = Styles.Lines;
+**************
+==============
+plt.PlotXY(time, circ, format:pltForm);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+WorkflowMgm.Sessions.Pick(40).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\RisingBubble__RisingBubble_ConvStudy_k2_mesh12__4510aed9-cf30-46c0-bf45-9a104103929e
+==============
+**************
+==============

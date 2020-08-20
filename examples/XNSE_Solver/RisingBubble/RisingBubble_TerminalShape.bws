@@ -9,9 +9,9 @@ List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
-  5: { Session Count = 21; Grid Count = 21; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+  3: { Session Count = 510; Grid Count = 12624; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 156; Grid Count = 151; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -32,15 +32,57 @@ WorkflowMgm.Init("RisingBubble")
 Project name is set to 'RisingBubble'.
 
 ==============
-var sess = WorkflowMgm.Sessions.Pick(8);
+//string studyName = "RisingBubble_ConvStudy_k3";
+//string studyName = "methodStudy_k2_";
+string studyName = "RisingBubble_tc2_ConvStudy_k2";
+//string studyName = "ExtVel";
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            evalSess.Add(sess);  
+        else 
+            evalSessNT.Add(sess);
+    }        
+}
+evalSessNT
+**************
+List of 5 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart4*	06/03/2020 22:12:02	22177ad6...
+  1: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart3*	06/01/2020 16:00:14	42b883f6...
+  2: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart2*	05/31/2020 20:10:24	97a64a0d...
+  3: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart*	04/17/2020 14:43:50	7a7385d1...
+  4: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2*	03/23/2020 22:05:28	931391e0...
+}
+==============
+//evalSess.RemoveAt(3);
+evalSess
+**************
+List of 3 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart5	06/05/2020 21:21:58	6e3cf7d8...
+  1: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh1	03/23/2020 22:05:22	44504bf6...
+  2: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh0	03/23/2020 22:05:20	d3c1cfe5...
+}
+==============
+evalSess = evalSess.OrderBy(s => s.KeysAndQueries["Grid:hMax"]).ToList();
+evalSess
+**************
+List of 3 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart5	06/05/2020 21:21:58	6e3cf7d8...
+  1: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh1	03/23/2020 22:05:22	44504bf6...
+  2: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh0	03/23/2020 22:05:20	d3c1cfe5...
+}
+==============
+string[] setupName = new string[]{ "mesh3", "mesh1", "mesh0" };
+int stpInd = 0;
+var sess = evalSess.Pick(stpInd)
 **************
 ==============
-sess
+var terminalStep = sess.Timesteps.Last();
+terminalStep
 **************
-RisingBubble	RisingBubble_ConvStudy2_k2_mesh2	04/18/2020 11:55:54	a10b325a...
-==============
-var terminalStep = sess.Timesteps.Last()
-**************
+ { Time-step: 3000; Physical time: 2.99999999999978s; Fields: Phi, PhiDG, Pressure, VelocityX, VelocityY; Name:  }
 ==============
 DGField phi = terminalStep.Fields.ElementAt(0);
 **************
@@ -60,7 +102,7 @@ LsTrk.UpdateTracker();
 MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, quadRuleOrderForNodeSet:10);
 **************
 ==============
-MultidimensionalArray interPcontour = MultidimensionalArray.Create(interP.Lengths);
+//MultidimensionalArray interPcontour = MultidimensionalArray.Create(interP.Lengths);
 **************
 ==============
 **************
@@ -83,7 +125,19 @@ pltForm.PointType  = PointTypes.Dot;
 **************
 ==============
 plt.PlotXY(x, y, format: pltForm);
-//plt.PlotNow();
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, x, y);
+dat.AddDataGroup(xyVal);
+string name = "RB_convStudy_tc2_k2_"+setupName[stpInd]+"_terminalShape.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
 **************
 ==============
 **************
@@ -95,7 +149,7 @@ plt.PlotXY(x, y, format: pltForm);
 ==============
 WorkflowMgm.Sessions
 **************
-List of 72 instances of ISessionInfo {
+List of 77 instances of ISessionInfo {
   0: RisingBubble	RisingBubble_test5_k2_mesh0	03/20/2020 17:05:24	d42334d4...
   1: RisingBubble	RisingBubble_test3_k2_mesh0*	03/20/2020 11:32:38	93ed2247...
   2: RisingBubble	RisingBubble_test2_k2_mesh0*	03/19/2020 20:50:14	aed2439e...
@@ -157,17 +211,22 @@ List of 72 instances of ISessionInfo {
   58: RisingBubble	RisingBubble_ConvStudy_k3_mesh0_rerun*	05/12/2020 10:14:17	1cb27342...
   59: RisingBubble	RisingBubble_ConvStudy_k3_mesh0_restart	05/09/2020 08:49:47	4c450744...
   60: RisingBubble	RisingBubble_ConvStudy_k3_mesh0_rerun*	05/08/2020 18:45:50	8351c0ba...
-  61: RisingBubble	RisingBubble_methodStudy_k2_Fourier_rerun*	05/13/2020 11:08:59	11e26d91...
-  62: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_isoVisc1e-1*	05/13/2020 10:55:50	a1473653...
-  63: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_nofullReinit	05/12/2020 09:29:40	d5b0db0c...
-  64: RisingBubble	RisingBubble_methodStudy_k2_Fourier*	05/12/2020 09:47:09	747456a3...
-  65: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_defaultFilter*	05/12/2020 09:30:05	d3792020...
-  66: RisingBubble	RisingBubble_methodStudy_k2_Fourier*	05/11/2020 13:45:14	cc5da5b4...
-  67: RisingBubble	RisingBubble_methodStudy_k2_ExtVelCurv*	05/11/2020 13:44:27	9b3e12c5...
-  68: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB*	05/11/2020 13:43:21	c2ffe833...
-  69: RisingBubble	RisingBubble_methodStudy_k2_FastMarchCurv*	05/11/2020 13:41:59	8854c134...
-  70: RisingBubble	RisingBubble_methodStudy_k2_FastMarchLB*	05/11/2020 13:40:08	c7166386...
-  71: RisingBubble	RisingBubble_methodStudy_k2_FastMarchLB*	05/11/2020 13:33:02	ddeb14e7...
+  61: RisingBubble	RisingBubble_methodStudy_k2_Fourier_rerun	05/15/2020 10:25:19	6f660807...
+  62: RisingBubble	RisingBubble_methodStudy_k2_FastMarchLB_withVolumeCorrection	05/15/2020 11:21:03	eb662c34...
+  63: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_rerun*	05/15/2020 10:35:54	71195b6e...
+  64: RisingBubble	RisingBubble_methodStudy_k2_Fourier_restart	05/14/2020 14:35:32	6490aaec...
+  65: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_DissUtz*	05/14/2020 14:07:26	c56de7aa...
+  66: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_isoVisc1e-1	05/13/2020 10:55:50	a1473653...
+  67: RisingBubble	RisingBubble_methodStudy_k2_Fourier_rerun*	05/13/2020 11:08:59	11e26d91...
+  68: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_nofullReinit	05/12/2020 09:29:40	d5b0db0c...
+  69: RisingBubble	RisingBubble_methodStudy_k2_Fourier*	05/12/2020 09:47:09	747456a3...
+  70: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_defaultFilter*	05/12/2020 09:30:05	d3792020...
+  71: RisingBubble	RisingBubble_methodStudy_k2_Fourier*	05/11/2020 13:45:14	cc5da5b4...
+  72: RisingBubble	RisingBubble_methodStudy_k2_ExtVelCurv*	05/11/2020 13:44:27	9b3e12c5...
+  73: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB*	05/11/2020 13:43:21	c2ffe833...
+  74: RisingBubble	RisingBubble_methodStudy_k2_FastMarchCurv*	05/11/2020 13:41:59	8854c134...
+  75: RisingBubble	RisingBubble_methodStudy_k2_FastMarchLB*	05/11/2020 13:40:08	c7166386...
+  76: RisingBubble	RisingBubble_methodStudy_k2_FastMarchLB*	05/11/2020 13:33:02	ddeb14e7...
 }
 ==============
 List<ISessionInfo> evalSess = new List<ISessionInfo>();
@@ -334,6 +393,12 @@ double circC = Math.Sqrt(4*Math.PI*areaC)/perimtr_bC;
 circC
 **************
 0.903150533573688
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

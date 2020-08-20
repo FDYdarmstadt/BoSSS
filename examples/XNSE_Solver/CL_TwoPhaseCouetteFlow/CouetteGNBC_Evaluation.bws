@@ -5,12 +5,13 @@ restart
   _______________________
 
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
+List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 412; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 130; Grid Count = 60; Path = D:\local\local_XNSE_StudyDB }
+  3: { Session Count = 462; Grid Count = 10110; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 152; Grid Count = 150; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 69; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -22,8 +23,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Application.XNSE_Solver;
 **************
 (1,2): warning CS0105: The using directive for `BoSSS.Foundation' appeared previously in this namespace
-(4,1): warning CS0105: The using directive for `BoSSS.Application.XNSE_Solver' appeared previously in this namespace
-No. of errors|warnings: 0|2.
+No. of errors|warnings: 0|1.
 
 ==============
 WorkflowMgm.Init("TwoPhaseCouetteFlow")
@@ -33,22 +33,47 @@ Project name is set to 'TwoPhaseCouetteFlow'.
 ==============
 WorkflowMgm.Sessions;
 **************
-List of 5 instances of ISessionInfo {
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 11 instances of ISessionInfo {
   0: TwoPhaseCouetteFlow	CouetteGNBC_test5_k2_mesh0	03/21/2020 15:49:11	8cb14238...
   1: TwoPhaseCouetteFlow	CouetteGNBC_test4_k2_mesh0	03/21/2020 12:17:07	46777807...
-  2: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid2_k2_mesh02	03/31/2020 11:45:51	6843b387...
-  3: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid2_k2_mesh0*	03/31/2020 11:33:31	250e0104...
-  4: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid_k2_mesh0	03/24/2020 09:41:28	6df5eec4...
+  2: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k4_mesh0	05/22/2020 16:00:56	6a7e9d71...
+  3: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_asymmetric_k4_mesh0	05/22/2020 16:08:34	5c8e5ab3...
+  4: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k3_mesh1	05/22/2020 16:00:56	7bc14576...
+  5: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_asymmetric_k3_mesh1	05/22/2020 16:08:34	978101ac...
+  6: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k2_mesh2	05/22/2020 16:01:05	765e6d5e...
+  7: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_asymmetric_k2_mesh2	05/22/2020 16:08:43	5e921ddc...
+  8: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid2_k2_mesh02	03/31/2020 11:45:51	6843b387...
+  9: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid2_k2_mesh0*	03/31/2020 11:33:31	250e0104...
+  10: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid_k2_mesh0	03/24/2020 09:41:28	6df5eec4...
 }
 ==============
-List<ISessionInfo> evalSess = new List<ISessionInfo>();
-evalSess.Add(WorkflowMgm.Sessions.Skip(2).Take(1).Pick(0));
+evalSess.Pick(0).OpenSessionDirectory(); //.KeysAndQueries["Grid:NoOfCells"]
 **************
+==============
+string studyName = "compDOFstudy_asymmetric_k";
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            evalSess.Add(sess);  
+        else 
+            evalSessNT.Add(sess);
+    }        
+}
+evalSessNT
+**************
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 0 instances of ISessionInfo {
+}
 ==============
 evalSess
 **************
-List of 1 instances of ISessionInfo {
-  0: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid2_k2_mesh02	03/31/2020 11:45:51	6843b387...
+List of 3 instances of ISessionInfo {
+  0: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_asymmetric_k4_mesh0	05/22/2020 16:08:34	5c8e5ab3...
+  1: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_asymmetric_k3_mesh1	05/22/2020 16:08:34	978101ac...
+  2: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_asymmetric_k2_mesh2	05/22/2020 16:08:43	5e921ddc...
 }
 ==============
 **************
@@ -56,7 +81,7 @@ List of 1 instances of ISessionInfo {
 var data = evalSess.ReadLogDataForMovingContactLine();
 //var data = evalSess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.MovingContactLine);
 **************
-number of contact lines: 2
+number of contact lines: 4
 Element at 0: time vs contact-pointX
 Element at 1: time vs contact-pointY
 Element at 2: time vs contact-VelocityX
@@ -79,10 +104,25 @@ ISessionInfoExtensions.PlotData(data[0].ElementAt(2), "time", "contact-velocity 
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
-ISessionInfoExtensions.PlotData(data[1].ElementAt(4), "time", "contact-angle")
+ISessionInfoExtensions.PlotData(data[3].ElementAt(4), "time", "contact-angle")
 **************
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
+==============
+**************
+==============
+// ==================================
+// reevaluate contact line properties
+// ==================================
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
@@ -144,22 +184,22 @@ System.Drawing.Bitmap
 // ===================
 **************
 ==============
-DGField VelocityX = terminalStep.Fields.ElementAt(3);
+DGField VelocityX = terminalStep.Fields.ElementAt(4);
 VelocityX 
 **************
 VelocityX
 ==============
-DGField VelocityY = terminalStep.Fields.ElementAt(4);
+DGField VelocityY = terminalStep.Fields.ElementAt(5);
 VelocityY
 **************
 VelocityY
 ==============
-int N = 1000;
-double[] yValues = new double[N-1];
+int N = 2000;
+double[] xValues = new double[N-1];
 double[] VmagValues = new double[N-1];
 for(int n = 1; n < N; n++) {
-    double[] probe = new double[] { 12.0, (13.6/(double)N)*n };
-    yValues[n-1] = (13.6/(double)N)*n;
+    double[] probe = new double[] {(2*27.2/(double)N)*n, 13.6 };
+    xValues[n-1] = (2*27.2/(double)N)*n;
     try {
         double velX = VelocityX.ProbeAt(probe); 
         double velY = VelocityY.ProbeAt(probe); 
@@ -175,10 +215,23 @@ var plt = new Gnuplot();
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
-plt.PlotXY(VmagValues, yValues);
+plt.PlotXY(xValues, VmagValues);
 plt.PlotNow();
 **************
 System.Drawing.Bitmap
+==============
+**************
+==============
+evalSess.Pick(2).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\TwoPhaseCouetteFlow__CouetteGNBC_compDOFstudy_k2_mesh2__765e6d5e-5ea5-4798-815d-2ec15851cce1
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

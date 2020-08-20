@@ -5,12 +5,13 @@ restart
   _______________________
 
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
+List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 408; Grid Count = 8681; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 121; Grid Count = 7; Path = D:\local\local_XNSE_StudyDB }
+  3: { Session Count = 731; Grid Count = 13257; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -26,34 +27,58 @@ Project name is set to 'CapillaryWave'.
 ==============
 WorkflowMgm.Sessions;
 **************
-List of 20 instances of ISessionInfo {
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 38 instances of ISessionInfo {
   0: CapillaryWave	CapillaryWave_test_k2_mesh0	03/18/2020 21:27:41	7126f6b4...
-  1: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh1	04/18/2020 13:25:46	06def218...
-  2: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh2	04/18/2020 12:45:40	714dcbb2...
-  3: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh1	04/18/2020 12:45:23	05b5ea49...
-  4: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh3*	04/18/2020 13:26:29	d3a3171d...
-  5: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2*	04/18/2020 13:26:07	7f9130d3...
-  6: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh3*	04/18/2020 12:54:23	6f816774...
-  7: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh0	04/14/2020 22:51:49	b2161c12...
-  8: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh0	04/14/2020 22:49:55	b0bb4911...
-  9: CapillaryWave	CapillaryWave_Setup3_k2_mesh2	03/26/2020 11:08:20	836becc2...
-  10: CapillaryWave	CapillaryWave_Setup2_k2_mesh2	03/26/2020 11:09:22	031ca6f7...
-  11: CapillaryWave	CapillaryWave_Setup0_k2_mesh2	03/26/2020 11:10:29	2c3771a5...
-  12: CapillaryWave	CapillaryWave_Setup1_k2_mesh2	03/26/2020 11:09:54	49c7f8d4...
-  13: CapillaryWave	CapillaryWave_Setup1_k2_mesh1	03/24/2020 14:28:10	28a39008...
-  14: CapillaryWave	CapillaryWave_Setup2_k2_mesh1	03/24/2020 14:28:51	eecc50f2...
-  15: CapillaryWave	CapillaryWave_Setup3_k2_mesh1	03/24/2020 14:29:40	eed03bcf...
-  16: CapillaryWave	CapillaryWave_Setup0_k2_mesh1	03/24/2020 12:10:51	14f70fbe...
-  17: CapillaryWave	CapillaryWave_Setup3_k2_mesh0	03/23/2020 21:35:37	bdd58f86...
-  18: CapillaryWave	CapillaryWave_Setup0_k2_mesh0	03/23/2020 21:34:01	0af8a853...
-  19: CapillaryWave	CapillaryWave_Setup2_k2_mesh0	03/23/2020 21:34:58	fcfecf85...
+  1: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2_restart	06/09/2020 13:36:19	5e418fff...
+  2: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh1_AMR1	06/09/2020 13:36:12	6d04d7af...
+  3: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh0_AMR2	06/09/2020 13:36:10	2dd9f2ed...
+  4: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh1_AMR1*	06/09/2020 13:20:49	7c31fb7d...
+  5: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh0_AMR2*	06/09/2020 13:20:45	37f968e5...
+  6: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh0_AMR2*	06/09/2020 13:15:15	d328a0b4...
+  7: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh1_AMR1*	06/09/2020 13:14:52	484a136b...
+  8: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2_restart*	06/09/2020 13:14:21	ec93756a...
+  9: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh1	04/18/2020 13:25:46	06def218...
+  10: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh2	04/18/2020 12:45:40	714dcbb2...
+  11: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh1	04/18/2020 12:45:23	05b5ea49...
+  12: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh3*	04/18/2020 13:26:29	d3a3171d...
+  13: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2*	04/18/2020 13:26:07	7f9130d3...
+  14: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh3*	04/18/2020 12:54:23	6f816774...
+  15: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh0	04/14/2020 22:51:49	b2161c12...
+  16: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh0	04/14/2020 22:49:55	b0bb4911...
+  17: CapillaryWave	CapillaryWave_Setup3_k2_mesh2	03/26/2020 11:08:20	836becc2...
+  18: CapillaryWave	CapillaryWave_Setup2_k2_mesh2	03/26/2020 11:09:22	031ca6f7...
+  19: CapillaryWave	CapillaryWave_Setup0_k2_mesh2	03/26/2020 11:10:29	2c3771a5...
+  20: CapillaryWave	CapillaryWave_Setup1_k2_mesh2	03/26/2020 11:09:54	49c7f8d4...
+  21: CapillaryWave	CapillaryWave_Setup1_k2_mesh1	03/24/2020 14:28:10	28a39008...
+  22: CapillaryWave	CapillaryWave_Setup2_k2_mesh1	03/24/2020 14:28:51	eecc50f2...
+  23: CapillaryWave	CapillaryWave_Setup3_k2_mesh1	03/24/2020 14:29:40	eed03bcf...
+  24: CapillaryWave	CapillaryWave_Setup0_k2_mesh1	03/24/2020 12:10:51	14f70fbe...
+  25: CapillaryWave	CapillaryWave_Setup3_k2_mesh0	03/23/2020 21:35:37	bdd58f86...
+  26: CapillaryWave	CapillaryWave_Setup0_k2_mesh0	03/23/2020 21:34:01	0af8a853...
+  27: CapillaryWave	CapillaryWave_Setup2_k2_mesh0	03/23/2020 21:34:58	fcfecf85...
+  28: CapillaryWave	RisingBubble_methodStudy_k2_FastMarchLB	05/11/2020 21:53:27	64d111fd...
+  29: CapillaryWave	RisingBubble_methodStudy_k2_Fourier	05/11/2020 21:54:47	24079dd1...
+  30: CapillaryWave	RisingBubble_methodStudy_k2_ExtVelCurv*	05/11/2020 21:54:33	25fb257f...
+  31: CapillaryWave	RisingBubble_methodStudy_k2_ExtVelLB*	05/11/2020 21:54:16	29b37ba7...
+  32: CapillaryWave	RisingBubble_methodStudy_k2_FastMarchCurv*	05/11/2020 21:53:59	73196dfa...
+  33: CapillaryWave	RisingBubble_methodStudy_k2_Fourier*	05/11/2020 14:22:47	77f86c91...
+  34: CapillaryWave	RisingBubble_methodStudy_k2_ExtVelCurv*	05/11/2020 14:21:50	acd160b5...
+  35: CapillaryWave	RisingBubble_methodStudy_k2_ExtVelLB*	05/11/2020 14:20:58	e7123802...
+  36: CapillaryWave	RisingBubble_methodStudy_k2_FastMarchCurv*	05/11/2020 14:19:52	efe95caf...
+  37: CapillaryWave	RisingBubble_methodStudy_k2_FastMarchLB*	05/11/2020 14:19:05	d879012c...
 }
 ==============
 var sess = WorkflowMgm.Sessions;
 **************
 ==============
-string studyName = "_Setup0_convStudy_k2";
+string studyName = "_Setup0_convStudy_k3";
+//string studyName = "_Setup0_k2";
 //string studyName = "_k2_mesh2";
+//string studyName = "methodStudy_k2_";
 List<ISessionInfo> studySess = new List<ISessionInfo>();
 List<ISessionInfo> studySessNT = new List<ISessionInfo>();
 foreach(var sess in WorkflowMgm.Sessions) {
@@ -66,211 +91,39 @@ foreach(var sess in WorkflowMgm.Sessions) {
 }
 studySessNT
 **************
-List of 1 instances of ISessionInfo {
-  0: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh3*	04/18/2020 12:54:23	6f816774...
+List of 7 instances of ISessionInfo {
+  0: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh1_AMR1*	06/09/2020 13:20:49	7c31fb7d...
+  1: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh0_AMR2*	06/09/2020 13:20:45	37f968e5...
+  2: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh0_AMR2*	06/09/2020 13:15:15	d328a0b4...
+  3: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh1_AMR1*	06/09/2020 13:14:52	484a136b...
+  4: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2_restart*	06/09/2020 13:14:21	ec93756a...
+  5: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh3*	04/18/2020 13:26:29	d3a3171d...
+  6: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2*	04/18/2020 13:26:07	7f9130d3...
 }
 ==============
-studySessNT.ElementAt(0).KeysAndQueries
+//studySess.ElementAt(3).KeysAndQueries["Grid:NoOfCells"];
+studySessNT.ElementAt(5).Timesteps.First().Export().WithSupersampling(2).Do();
+//studySess.ElementAt(0).OpenSessionDirectory()
 **************
-List of 187 instances of KeyValuePair{String,Object} {
-  0: [ProjectName, CapillaryWave]
-  1: [SessionName, CapillaryWave_Setup0_convStudy_k2_mesh3]
-  2: [DGdegree:Velocity*, 2]
-  3: [DGdegree:FilteredVelocity*, -1]
-  4: [DGdegree:SurfaceForceDiagnostic*, -1]
-  5: [DGdegree:Pressure, 1]
-  6: [DGdegree:PhiDG, -1]
-  7: [DGdegree:Phi, 2]
-  8: [DGdegree:Curvature, 4]
-  9: [Bndtype:wall, auto:wall]
-  10: [NoOfMultigridLevels, 1]
-  11: [GeneratedFromCode, False]
-  12: [ControlFileText_Index, 0]
-  13: [dtFixed, 4E-05]
-  14: [TimesteppingMode, 0]
-  15: [switchOffPlotting, False]
-  16: [LS_TrackerWidth, 1]
-  17: [RefineStrategy, 0]
-  18: [BaseRefinementLevel, 1]
-  19: [RefinementLevel, 1]
-  20: [RefineNavierSlipBoundary, False]
-  21: [ClearVelocitiesOnRestart, False]
-  22: [ReInitPeriod, 0]
-  23: [AdvancedDiscretizationOptions.ViscosityMode, 2]
-  24: [AdvancedDiscretizationOptions.UseGhostPenalties, False]
-  25: [AdvancedDiscretizationOptions.ContiSign, -1]
-  26: [AdvancedDiscretizationOptions.RescaleConti, False]
-  27: [AdvancedDiscretizationOptions.LFFA, 0.8]
-  28: [AdvancedDiscretizationOptions.LFFB, 0.8]
-  29: [AdvancedDiscretizationOptions.PenaltySafety, 4]
-  30: [AdvancedDiscretizationOptions.CellAgglomerationThreshold, 0.1]
-  31: [AdvancedDiscretizationOptions.SurfStressTensor, 0]
-  32: [AdvancedDiscretizationOptions.STFstabilization, 0]
-  33: [AdvancedDiscretizationOptions.UseWeightedAverages, False]
-  34: [AdvancedDiscretizationOptions.freeSurfaceFlow, False]
-  35: [AdvancedDiscretizationOptions.SST_isotropicMode, 6]
-  36: [AdvancedDiscretizationOptions.CurvatureNeeded, False]
-  37: [AdvancedDiscretizationOptions.FilterConfiguration.gradOpt, 1]
-  38: [AdvancedDiscretizationOptions.FilterConfiguration.hessOpt, 3]
-  39: [AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetGrad, False]
-  40: [AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetHess, False]
-  41: [AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles, 0]
-  42: [AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource, 1]
-  43: [AdvancedDiscretizationOptions.FilterConfiguration.PatchRecoveryDomWidth, 0]
-  44: [AdvancedDiscretizationOptions.FilterConfiguration.NoOfPatchRecoverySweeps, 0]
-  45: [AdvancedDiscretizationOptions.FilterConfiguration.CurvatureLimiting, False]
-  46: [AdvancedDiscretizationOptions.GNBC_Localization, 0]
-  47: [AdvancedDiscretizationOptions.GNBC_SlipLength, 0]
-  48: [AdvancedDiscretizationOptions.ObjectiveParam, 1]
-  49: [AdvancedDiscretizationOptions.alpha, 1]
-  50: [AdvancedDiscretizationOptions.Penalty1[0], 0]
-  51: [AdvancedDiscretizationOptions.Penalty1[1], 0]
-  52: [AdvancedDiscretizationOptions.Penalty2, 1]
-  53: [AdvancedDiscretizationOptions.PresPenalty1[0], 0]
-  54: [AdvancedDiscretizationOptions.PresPenalty1[1], 0]
-  55: [AdvancedDiscretizationOptions.PresPenalty2, 1]
-  56: [AdvancedDiscretizationOptions.StressPenalty, 1]
-  57: [PhysicalParameters.IncludeConvection, True]
-  58: [PhysicalParameters.rho_A, 0.001]
-  59: [PhysicalParameters.rho_B, 0.001]
-  60: [PhysicalParameters.mu_A, 1E-05]
-  61: [PhysicalParameters.mu_B, 1E-05]
-  62: [PhysicalParameters.reynolds_B, 0]
-  63: [PhysicalParameters.reynolds_A, 0]
-  64: [PhysicalParameters.Sigma, 0.03]
-  65: [PhysicalParameters.pFree, 0]
-  66: [PhysicalParameters.mu_I, 0]
-  67: [PhysicalParameters.lambda_I, 0]
-  68: [PhysicalParameters.lambdaI_tilde, -1]
-  69: [PhysicalParameters.betaS_A, 0]
-  70: [PhysicalParameters.betaS_B, 0]
-  71: [PhysicalParameters.betaL, 0]
-  72: [PhysicalParameters.theta_e, 1.5707963267949]
-  73: [PhysicalParameters.sliplength, 0]
-  74: [PhysicalParameters.beta_a, 1]
-  75: [PhysicalParameters.beta_b, 1]
-  76: [PhysicalParameters.Weissenberg_a, 0]
-  77: [PhysicalParameters.Weissenberg_b, 0]
-  78: [PhysicalParameters.giesekusfactor_a, 0]
-  79: [PhysicalParameters.giesekusfactor_b, 0]
-  80: [PhysicalParameters.Giesekus_a, False]
-  81: [PhysicalParameters.Giesekus_b, False]
-  82: [PhysicalParameters.Material, True]
-  83: [PhysicalParameters.useArtificialSurfaceForce, False]
-  84: [SkipSolveAndEvaluateResidual, False]
-  85: [LogValues, 3]
-  86: [LogPeriod, 10]
-  87: [WriteInterfaceP, False]
-  88: [TestMode, False]
-  89: [Timestepper_Scheme, 4]
-  90: [Timestepper_BDFinit, 0]
-  91: [incrementTimesteps, 1]
-  92: [Timestepper_LevelSetHandling, 3]
-  93: [LSunderrelax, 1]
-  94: [Option_LevelSetEvolution, 3]
-  95: [FastMarchingPenaltyTerms, 0]
-  96: [AdditionalParameters[0], 1]
-  97: [AdditionalParameters[1], 1]
-  98: [AdditionalParameters[2], 0.01]
-  99: [AdditionalParameters[3], 0]
-  100: [LevelSet_ConvergenceCriterion, 1E-06]
-  101: [LSContiProjectionMethod, 2]
-  102: [EnforceLevelSetConservation, False]
-  103: [solveKineticEnergyEquation, False]
-  104: [equalTimesteppingForKineticEnergy, True]
-  105: [kinEViscousDiscretization, 0]
-  106: [kinEPressureDiscretization, 0]
-  107: [withDissipativePressure, False]
-  108: [KineticEnergyeBlockPrecondMode, 4]
-  109: [ComputeEnergyProperties, False]
-  110: [CheckJumpConditions, False]
-  111: [CheckInterfaceProps, False]
-  112: [RegisterUtilitiesToIOFields, False]
-  113: [InterVelocAverage, 1]
-  114: [ReInitControl.ConvergenceCriterion, 0.0001]
-  115: [ReInitControl.MaxIt, 1000]
-  116: [ReInitControl.Potential, 1]
-  117: [ReInitControl.FastMarchingPrecond, False]
-  118: [ReInitControl.underrelaxation, 1]
-  119: [ReInitControl.Upwinding, False]
-  120: [ReInitControl.PenaltyMultiplierFlux, 1]
-  121: [ReInitControl.PenaltyMultiplierInterface, 1]
-  122: [ReInitControl.PrintIterations, False]
-  123: [EllipticExtVelAlgoControl.FluxVariant, 0]
-  124: [EllipticExtVelAlgoControl.subGridRestriction, False]
-  125: [EllipticExtVelAlgoControl.PenaltyMultiplierFlux, 1]
-  126: [EllipticExtVelAlgoControl.PenaltyMultiplierInterface, 1]
-  127: [EllipticExtVelAlgoControl.IsotropicViscosity, 0]
-  128: [solveCoupledHeatEquation, False]
-  129: [useSolutionParamUpdate, False]
-  130: [conductMode, 0]
-  131: [ThermalParameters.IncludeConvection, False]
-  132: [ThermalParameters.rho_A, 1]
-  133: [ThermalParameters.rho_B, 1]
-  134: [ThermalParameters.c_A, 1]
-  135: [ThermalParameters.c_B, 1]
-  136: [ThermalParameters.k_A, 1]
-  137: [ThermalParameters.k_B, 1]
-  138: [ThermalParameters.hVap, 0]
-  139: [ThermalParameters.T_sat, -1]
-  140: [ThermalParameters.p_sat, 0]
-  141: [ThermalParameters.fc, 0]
-  142: [ThermalParameters.Rc, 0]
-  143: [ThermalParameters.pc, -1]
-  144: [LinearSolver.verbose, False]
-  145: [LinearSolver.MaxKrylovDim, 100]
-  146: [LinearSolver.MaxSolverIterations, 100]
-  147: [LinearSolver.MinSolverIterations, 4]
-  148: [LinearSolver.ConvergenceCriterion, 1E-08]
-  149: [LinearSolver.SolverCode, 1]
-  150: [LinearSolver.NoOfMultigridLevels, 1]
-  151: [LinearSolver.exp_localPrec_muA, 1]
-  152: [LinearSolver.exp_localPrec_Min_dt, 0]
-  153: [LinearSolver.TargetBlockSize, 10000]
-  154: [LinearSolver.Parallelism, SEQ]
-  155: [NonLinearSolver.verbose, False]
-  156: [NonLinearSolver.MaxSolverIterations, 100]
-  157: [NonLinearSolver.MinSolverIterations, 4]
-  158: [NonLinearSolver.ConvergenceCriterion, 1E-08]
-  159: [NonLinearSolver.UnderRelax, 1]
-  160: [NonLinearSolver.SolverCode, 1]
-  161: [NonLinearSolver.constantNewtonIterations, 1]
-  162: [NonLinearSolver.UsePresRefPoint, True]
-  163: [GridPartType, 5]
-  164: [NoOfTimesteps, 10000]
-  165: [Endtime, 1000]
-  166: [saveperiod, 10]
-  167: [rollingSaves, 0]
-  168: [dtMin, 4E-05]
-  169: [dtMax, 4E-05]
-  170: [ImmediatePlotPeriod, -1]
-  171: [SuperSampling, 0]
-  172: [savetodb, True]
-  173: [logFileDirectory, .]
-  174: [Paramstudy_ContinueOnError, True]
-  175: [DynamicLoadBalancing_RedistributeAtStartup, False]
-  176: [DynamicLoadBalancing_Period, -1]
-  177: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
-  178: [DynamicLoadBalancing_On, False]
-  179: [AdaptiveMeshRefinement, False]
-  180: [AMR_startUpSweeps, 1]
-  181: [CutCellQuadratureType, 5]
-  182: [ContinueOnIoError, False]
-  183: [Grid:NoOfCells, 8064]
-  184: [Grid:SpatialDimension, 2]
-  185: [Grid:hMax, 0.0350501802121617]
-  186: [Grid:hMin, 0.015625]
-}
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\CapillaryWave__CapillaryWave_Setup0_convStudy_k3_mesh3__d3a3171d-809b-4013-b8ee-fdd1fa712120
 ==============
+//studySess.Add(WorkflowMgm.Sessions.Pick(11));
+//studySess.Add(studySessNT.Pick(1));
+//studySess.RemoveAt(1);
 studySess
 **************
 List of 3 instances of ISessionInfo {
-  0: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh2	04/18/2020 12:45:40	714dcbb2...
-  1: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh1	04/18/2020 12:45:23	05b5ea49...
-  2: CapillaryWave	CapillaryWave_Setup0_convStudy_k2_mesh0	04/14/2020 22:51:49	b2161c12...
+  0: CapillaryWave  CapillaryWave_Setup0_convStudy_k3_mesh2_restart 06/09/2020 13:36:19 5e418fff...
+  1: CapillaryWave  CapillaryWave_Setup0_convStudy_k3_mesh1 04/18/2020 13:25:46 06def218...
+  2: CapillaryWave  CapillaryWave_Setup0_convStudy_k3_mesh0 04/14/2020 22:49:55 b0bb4911...
 }
 ==============
+int stpInd = 0;
+**************
+==============
 //studySess.Pick(3).OpenSessionDirectory()
+studySess = studySess.OrderBy(s => s.KeysAndQueries["Grid:hMax"]).ToList();
 **************
 ==============
 var data = studySess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.Wavelike);
@@ -285,20 +138,22 @@ ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "amplitude")
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
-var prop = ISessionInfoExtensions.ComputeOscillationProperties(data.ElementAt(0).dataGroups[3], false)
+
+Plot2Ddata dat = new Plot2Ddata();
+//Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+dat.AddDataGroup(data.ElementAt(0).dataGroups[0]);
+string name = "CW_Setup0_fixts_k3_Amplitude.txt";
+dat.SaveToTextFile(name);
+
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+//var prop = ISessionInfoExtensions.ComputeOscillationProperties(data.ElementAt(0).dataGroups[3], false)
 **************
 ==============
-prop.Item1
+//prop.Item1
 **************
-List of 7 instances of Double {
-  0: 9.25925925925952
-  1: 9.25925925925969
-  2: 9.25925925925737
-  3: 9.32835820895244
-  4: 9.25925925925875
-  5: 9.25925925926286
-  6: 9.25925925926286
-}
 ==============
 **************
 ==============
@@ -314,7 +169,7 @@ using System.IO;
 Plot2Ddata[] dataRef = new Plot2Ddata[4];
 for (int j = 0; j < 4; j++) {
     // Read all data
-    string dat  = "CWrefDat_"+refData[j]+".txt";
+    string dat  = "CWrefDatConv_"+refData[j]+".txt";
     string path = @"D:\BoSSS-experimental\public\examples\XNSE_Solver\CapillaryWave\RefData_Prosperetti\"+dat;
     string[] lines = File.ReadAllLines(path);
     double[] time = new double[lines.Length];
@@ -324,7 +179,7 @@ for (int j = 0; j < 4; j++) {
         //var datString = lines[i].Split(new string[] {" "}, StringSplitOptions.RemoveEmptyEntries);
         //Console.WriteLine("num split strings at 0: {0}", datString[0]);
         time[i] = Convert.ToDouble(lines[i].Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)[0]);            
-        val[i] = Convert.ToDouble(lines[i].Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)[1]);
+        val[i] = Math.Abs(Convert.ToDouble(lines[i].Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)[1]));
     }        
     // Build DataSet
     dataRef[j] = new Plot2Ddata(new KeyValuePair<string, double[][]>(refData[j], new double[][] { time, val }));
@@ -334,8 +189,18 @@ for (int j = 0; j < 4; j++) {
 //ISessionInfoExtensions.PlotData(dataRef[0], "time", "amplitude")
 **************
 ==============
+/*
 List<Plot2Ddata> dataRefm = data;
-dataRefm[0] = dataRefm.ElementAt(0).Merge(dataRef[0]);
+for (int i = 0; i < 4; i++) {
+    dataRefm[0] = dataRefm.ElementAt(0).Merge(dataRef[i]);
+}
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+List<Plot2Ddata> dataRefm = data;
+dataRefm[0] = dataRefm.ElementAt(0).Merge(dataRef[stpInd]);
 **************
 ==============
 ISessionInfoExtensions.PlotData(dataRefm[0], "time", "amplitude")
@@ -345,13 +210,103 @@ Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp5
 ==============
 **************
 ==============
+// ===========
+// export data
+// ===========
 **************
+==============
+/*
+for(int stp = 0; stp < 4; stp++) {
+    Plot2Ddata dat            = new Plot2Ddata();
+    //Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+    dat.AddDataGroup(data.ElementAt(0).dataGroups[stp]);
+    string name = "CW_Setup"+stp+"_Amplitude.txt";
+    dat.SaveToTextFile(name);
+}
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+/*
+for(int stp = 4; stp < 8; stp++) {
+    Plot2Ddata dat            = new Plot2Ddata();
+    //Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+    dat.AddDataGroup(data.ElementAt(0).dataGroups[stp]);
+    string name = "CW_Setup"+stp+"_AmplitudeRef.txt";
+    dat.SaveToTextFile(name);
+}
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
 ==============
 **************
 ==============
+// ======================
+// convergence evaluation
+// ======================
 **************
 ==============
+string keyName = "Grid:hMax";
+double[] abscissa = studySess.Select(s => Convert.ToDouble(s.KeysAndQueries[keyName])).ToArray();
 **************
+==============
+double[] refAbs = dataRef[stpInd].dataGroups[0].Abscissas;
+double[] refVal = dataRef[stpInd].dataGroups[0].Values;
+**************
+==============
+var convData = ISessionInfoExtensions.LogDataToConvergenceData(data, abscissa, refAbs, refVal);
+**************
+==============
+ISessionInfoExtensions.PlotData(convData.ElementAt(0), keyName, "amplitude - norm", true)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+convData.ElementAt(0).Regression()
+**************
+List of 3 instances of KeyValuePair{String,Double} {
+  0: [l_1 error norm, 1.34407986986142]
+  1: [l_2 error norm, 1.33599245219531]
+  2: [l_{inf} error norm, 0.433354167489241]
+}
+==============
+//data.Pick(0)
+**************
+==============
+// ======
+// export
+// ======
+**************
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+var datGrp                = convData.ElementAt(0).dataGroups[0];
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, datGrp.Abscissas, datGrp.Values);
+dat.AddDataGroup(xyVal);
+string name = "CW_setup"+stpInd+"_k2_ErrConvl1.txt";
+//dat.SaveToTextFile(name);
+**************
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+var datGrp                = convData.ElementAt(0).dataGroups[1];
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, datGrp.Abscissas, datGrp.Values);
+dat.AddDataGroup(xyVal);
+string name = "CW_setup"+stpInd+"_k3_ErrConvl2.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+var datGrp                = convData.ElementAt(0).dataGroups[2];
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, datGrp.Abscissas, datGrp.Values);
+dat.AddDataGroup(xyVal);
+string name = "CW_setup"+stpInd+"_k2_ErrConvlinf.txt";
+//dat.SaveToTextFile(name);
+**************
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
 ==============
 **************
 ==============

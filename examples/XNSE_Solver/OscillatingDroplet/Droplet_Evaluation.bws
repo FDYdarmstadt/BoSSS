@@ -5,12 +5,13 @@ restart
   _______________________
 
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
+List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 408; Grid Count = 8681; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 121; Grid Count = 7; Path = D:\local\local_XNSE_StudyDB }
+  3: { Session Count = 733; Grid Count = 13280; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -19,117 +20,80 @@ List of 5 instances of IDatabaseInfo {
 using BoSSS.Application.XNSE_Solver;
 **************
 ==============
-WorkflowMgm.Init("Droplet");
+//WorkflowMgm.Init("Droplet");
 //WorkflowMgm.Init("StaticDroplet");
+WorkflowMgm.Init("OscillatingDroplet");
 **************
-Project name is set to 'Droplet'.
+Project name is set to 'OscillatingDroplet'.
 
 ==============
 var sess = WorkflowMgm.Sessions;
 **************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+
 ==============
-sess
+//sess
 **************
-List of 28 instances of ISessionInfo {
-  0: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_semiImplicit2	04/23/2020 12:59:01	75f92fef...
-  1: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_fullBS2*	04/23/2020 13:01:17	1308689a...
-  2: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_implEuler	03/31/2020 10:58:52	d6323d5d...
-  3: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_fastMarchCurv	03/31/2020 10:54:18	d821634c...
-  4: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_iterative	03/31/2020 11:02:07	efa11bc1...
-  5: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0_semiImplicit*	03/31/2020 11:04:46	a0190110...
-  6: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0_semiImplicit*	03/31/2020 11:03:39	28e61b00...
-  7: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0_iterative*	03/31/2020 11:01:32	be9f613c...
-  8: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0_implEuler*	03/31/2020 10:58:07	cb22adc2...
-  9: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0_fastMarchCurv*	03/31/2020 10:53:07	b680bb0f...
-  10: Droplet	Droplet_setupStudy3_muScl10000_k2_mesh0	03/30/2020 17:17:37	093549b8...
-  11: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0	03/30/2020 17:16:03	d853593d...
-  12: Droplet	Droplet_setupStudy3_muScl100000_k2_mesh0	03/30/2020 17:18:18	138e3c5c...
-  13: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0*	03/30/2020 17:14:16	d327163d...
-  14: Droplet	Droplet_setupStudy3_muScl10_k2_mesh0*	03/30/2020 17:11:07	55683280...
-  15: Droplet	Droplet_setupStudy0_k2_mesh0	03/29/2020 19:32:03	729b705f...
-  16: Droplet	Droplet_setupStudy2_k2_mesh0	03/29/2020 19:33:29	83d906ec...
-  17: Droplet	Droplet_setupStudy1_k2_mesh0	03/29/2020 19:32:53	d8c75976...
-  18: Droplet	Droplet_setupStudy3_k2_mesh0_implEuler*	03/29/2020 20:37:41	112cc2cd...
-  19: Droplet	Droplet_setupStudy3_k2_mesh0_CN*	03/29/2020 20:36:55	3745462a...
-  20: Droplet	Droplet_setupStudy3_k2_mesh0_iterative*	03/29/2020 20:36:25	05db544e...
-  21: Droplet	Droplet_setupStudy3_k2_mesh0_splitting*	03/29/2020 20:35:38	7c911c39...
-  22: Droplet	Droplet_setupStudy3_k2_mesh0_fullBS*	03/29/2020 20:34:54	01eec4e1...
-  23: Droplet	Droplet_setupStudy3_k2_mesh0_semiImplicit*	03/29/2020 20:34:07	7ee525da...
-  24: Droplet	Droplet_setupStudy3_k2_mesh0_fastMarchCurv*	03/29/2020 20:33:03	624cdace...
-  25: Droplet	Droplet_setupStudy3_k2_mesh0*	03/29/2020 20:30:36	3e8493d7...
-  26: Droplet	Droplet_testWithEnergy_k2_mesh0	03/20/2020 18:07:31	15f1afbc...
-  27: Droplet	Droplet_test_k2_mesh0	03/19/2020 16:58:46	08f185c3...
-}
 ==============
 //string studyName = "ConvStudyHysing";
-string studyName = "setupStudy3_k2_mesh0";
+//string studyName = "setupStudy3_k2_mesh0";
+//string studyName = "setup3_";
+//string studyName = "Hysing2_mesh";
+string studyName = "AirWater";
 List<ISessionInfo> studySess = new List<ISessionInfo>();
 List<ISessionInfo> studySessNT = new List<ISessionInfo>();
 foreach(var sess in WorkflowMgm.Sessions) {
     if(sess.Name.Contains(studyName)) {
-        //if(Convert.ToBoolean(sess.SuccessfulTermination))
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
             studySess.Add(sess);  
-        //else 
-          //  studySessNT.Add(sess);
+        else 
+            studySessNT.Add(sess);
     }        
 }
 studySessNT
 **************
-List of 0 instances of ISessionInfo {
+List of 6 instances of ISessionInfo {
+  0: OscillatingDroplet	OD_AirWater_Stokes*	06/24/2020 20:00:11	1837d6d4...
+  1: OscillatingDroplet	OD_AirWater_LFF09*	06/24/2020 19:56:08	95d1964d...
+  2: OscillatingDroplet	OD_AirWater_ReInit100*	06/24/2020 19:53:15	3c4d99c5...
+  3: OscillatingDroplet	OD_AirWater_ReInit1000*	06/15/2020 22:20:36	f6c2b7dc...
+  4: OscillatingDroplet	OD_AirWater10_ReInit100*	05/22/2020 21:42:19	6b0c82b5...
+  5: OscillatingDroplet	OD_AirWater10_halfdt*	05/22/2020 21:41:59	c84c394f...
 }
 ==============
-List<ISessionInfo> studySess = sess.Skip(10).Take(5).ToList();
+//studySess.Pick(0).KeysAndQueries
 **************
 ==============
+//var destination = databases.Pick(3);
+//databases.Pick(3).Sessions.Pick(45).ID
+**************
+==============
+//studySess.AddRange(studySessNT.Take(2));
+//studySess.Add(studySessNT.Pick(1));
+//studySess.RemoveRange(0,3);
+//studySess.RemoveAt(3);
 studySess
 **************
-List of 5 instances of ISessionInfo {
-  0: Droplet	Droplet_setupStudy3_muScl10000_k2_mesh0	03/30/2020 17:17:37	093549b8...
-  1: Droplet	Droplet_setupStudy3_muScl1000_k2_mesh0	03/30/2020 17:16:03	d853593d...
-  2: Droplet	Droplet_setupStudy3_muScl100000_k2_mesh0	03/30/2020 17:18:18	138e3c5c...
-  3: Droplet	Droplet_setupStudy3_muScl100_k2_mesh0*	03/30/2020 17:14:16	d327163d...
-  4: Droplet	Droplet_setupStudy3_muScl10_k2_mesh0*	03/30/2020 17:11:07	55683280...
+List of 9 instances of ISessionInfo {
+  0: OscillatingDroplet	OD_AirWater_LFF09	06/24/2020 19:58:46	79922c79...
+  1: OscillatingDroplet	OD_AirWater_ReInit100	06/24/2020 19:59:03	01f0020f...
+  2: OscillatingDroplet	OD_AirWater_halfdt	06/17/2020 23:13:48	9daae965...
+  3: OscillatingDroplet	OD_AirWater_ReInit1000	06/15/2020 22:20:21	2d14ee6a...
+  4: OscillatingDroplet	OD_AirWater_ReInit1000	06/15/2020 22:19:59	b057ceaf...
+  5: OscillatingDroplet	OD_AirWater_ReInit1000	06/12/2020 19:44:44	b0f6b079...
+  6: OscillatingDroplet	OD_AirWater_ReInit1000	06/10/2020 20:58:58	59d04913...
+  7: OscillatingDroplet	OD_AirWater_noReInit	06/06/2020 22:44:19	c16b59d8...
+  8: OscillatingDroplet	OD_AirWater10_noReInit	06/03/2020 16:59:09	f8e832b7...
 }
 ==============
-studySess.CheckForEnergyLogging();
+//studySess.CheckForEnergyLogging();
+studySess.Pick(8).Export().WithSupersampling(2).Do()
 **************
-Session: 729b705f-9062-41da-8363-60e221ca5157
-Element at 0: #Line,#Time,#Iter
-Element at 1:  L2Norm PhysicalTime
-Element at 2:  L2Norm KineticEnergy
-Element at 3:  L2Norm SurfaceEnergy
-Element at 4:  L2Norm ChangerateKineticEnergy
-Element at 5:  L2Norm ChangerateSurfaceEnergy
-Element at 6:  L2Norm SurfaceDivergence
-Element at 7:  L2Norm KineticDissipationBulk
-Session: 83d906ec-8b0f-41a4-9ce5-439582bed553
-Element at 0: #Line,#Time,#Iter
-Element at 1:  L2Norm PhysicalTime
-Element at 2:  L2Norm KineticEnergy
-Element at 3:  L2Norm SurfaceEnergy
-Element at 4:  L2Norm ChangerateKineticEnergy
-Element at 5:  L2Norm ChangerateSurfaceEnergy
-Element at 6:  L2Norm SurfaceDivergence
-Element at 7:  L2Norm KineticDissipationBulk
-Session: d8c75976-5ebb-4dbe-9664-593c08f5b18c
-Element at 0: #Line,#Time,#Iter
-Element at 1:  L2Norm PhysicalTime
-Element at 2:  L2Norm KineticEnergy
-Element at 3:  L2Norm SurfaceEnergy
-Element at 4:  L2Norm ChangerateKineticEnergy
-Element at 5:  L2Norm ChangerateSurfaceEnergy
-Element at 6:  L2Norm SurfaceDivergence
-Element at 7:  L2Norm KineticDissipationBulk
-Session: 3e8493d7-787c-42cb-ba14-19b8aeda5305
-Element at 0: #Line,#Time,#Iter
-Element at 1:  L2Norm PhysicalTime
-Element at 2:  L2Norm KineticEnergy
-Element at 3:  L2Norm SurfaceEnergy
-Element at 4:  L2Norm ChangerateKineticEnergy
-Element at 5:  L2Norm ChangerateSurfaceEnergy
-Element at 6:  L2Norm SurfaceDivergence
-Element at 7:  L2Norm KineticDissipationBulk
-
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\OscillatingDroplet__OD_AirWater10_noReInit__f8e832b7-67e0-4bd2-9cc2-c2abb58a25a8
 ==============
 **************
 ==============
@@ -156,18 +120,40 @@ ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "perimeter")
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
+ISessionInfoExtensions.PlotData(data.ElementAt(2), "time", "area")
 **************
-==============
-string[] energyEval = new string[] { "SurfaceEnergy", "KineticEnergy" };
-**************
-==============
-studySess.EvalEnergy(energyEval, false)
-**************
-Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
 **************
+==============
+string[] energyEvalOpt = new string[] { "SurfaceEnergy", "KineticEnergy", "SurfaceDivergence", "KineticDissipationBulk" };
+string[] energyEval = new string[]{energyEvalOpt.Pick(2)};
+**************
+==============
+var energyData = studySess.EvalEnergy(energyEval, false)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+Plot2Ddata totalEnergy = new Plot2Ddata();
+for(int s = 0; s < studySess.Count(); s++) {    
+    var datGrpS = energyData[0].dataGroups[s];
+    var datGrpK = energyData[1].dataGroups[s];
+    double[] totE = new double[datGrpK.Values.Length];
+    for (int i = 0; i < datGrpS.Values.Length; i++) {
+        totE[i] = datGrpS.Values[i] + datGrpK.Values[i];
+    }
+    totalEnergy.AddDataGroup(datGrpK.Abscissas, totE);
+}
+**************
+==============
+ISessionInfoExtensions.PlotData(totalEnergy, "time", "totalEnergy")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
 ==============
 //sess.Pick(3).Export().WithSupersampling(2).Do()
 **************
@@ -182,6 +168,204 @@ Starting export process... Data will be written to the following directory:
 C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\StaticDroplet__StaticDroplet_ConvStudyHysing_k2_mesh3__924579fe-9980-45df-88cd-84c6c5bbd506
 ==============
 //studySess.Pick(3).OpenSessionDirectory()
+**************
+==============
+**************
+==============
+// ===========
+// export data
+// ===========
+**************
+==============
+**************
+==============
+string val = "semiAxisX"; //0
+//string val = "area"; //2
+int valInd = 0;
+for(int s = 0; s < studySess.Count(); s++) {    
+    Plot2Ddata dat = new Plot2Ddata();
+    dat.AddDataGroup(data.ElementAt(valInd).dataGroups[s]);
+    string name = studySess.Pick(s).Name+"_"+val+".txt";
+    dat.SaveToTextFile(name);
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+for(int e = 0; e < energyEval.Length; e++) {
+for(int s = 0; s < studySess.Count(); s++) {    
+    Plot2Ddata dat = new Plot2Ddata();
+    dat.AddDataGroup(energyData[e].dataGroups[s]);
+    string name = studySess.Pick(s).Name+"_"+energyEval[e]+".txt";
+    dat.SaveToTextFile(name);
+}
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+**************
+==============
+// ===================
+// eval terminal state
+// ===================
+**************
+==============
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
+**************
+==============
+studySess
+**************
+List of 3 instances of ISessionInfo {
+  0: StaticDroplet	CW_meshStudy_Hysing_mesh60	05/17/2020 21:40:06	1591dbb6...
+  1: StaticDroplet	CW_meshStudy_Hysing_mesh40	05/17/2020 21:40:01	3c3518f2...
+  2: StaticDroplet	SD_meshStudy_Hysing_mesh80_restart*	06/06/2020 21:55:26	74912a6d...
+}
+==============
+var terminalStep = studySess.Pick(2).Timesteps.Last();
+terminalStep
+**************
+ { Time-step: 15470; Physical time: 154.700000000004s; Fields: Phi, Curvature, PhiDG, Pressure, VelocityX, VelocityY; Name:  }
+==============
+DGField phi = terminalStep.Fields.ElementAt(0);
+phi
+**************
+Phi
+==============
+LevelSet LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+LevSet.Acc(1.0, phi); 
+**************
+==============
+LevelSetTracker LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+LsTrk.UpdateTracker();
+**************
+==============
+double sigma = 1.0;
+double r     = 0.25;
+**************
+==============
+DGField pressure = terminalStep.Fields.ElementAt(3);
+pressure
+**************
+Pressure
+==============
+// get pressure niveau outside droplet
+var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), 8, 1).XQuadSchemeHelper;
+SpeciesId spcId  = LsTrk.SpeciesIdS[1];
+var vqs          = SchemeHelper.GetVolumeQuadScheme(spcId);
+double p0L2      = ((XDGField)pressure).GetSpeciesShadowField("B").L2Error((ScalarFunction)null, vqs);
+double areaB     = XNSEUtils.GetSpeciesArea(LsTrk, spcId);
+double p0        = 0.0;
+CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+    vqs.Compile(LsTrk.GridDat, 8),
+    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+        for (int i = 0; i < Length; i++) {
+            double p0i = ((XDGField)pressure).GetSpeciesShadowField("B").GetMeanValue(i0+i);
+            for (int k = 0; k < QR.NoOfNodes; k++) {
+                EvalResult[i,k,0] = p0i;
+            }
+        }
+        //((XDGField)pressure).GetSpeciesShadowField("B").Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+    },
+    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        for (int i = 0; i < Length; i++) {
+            p0 += ResultsOfIntegration[i, 0]/areaB;
+        }
+    }
+).Execute();
+p0
+**************
+-8.21460658617223E-19
+==============
+spcId = LsTrk.SpeciesIdS[0];
+vqs   = SchemeHelper.GetVolumeQuadScheme(spcId);
+Func<double[], double> refA = (X => sigma/r);
+var pInN     = ((XDGField)pressure).GetSpeciesShadowField("A");
+pInN.AccConstant(-p0);
+double pInL2 = pInN.L2Error(refA.Vectorize(), vqs);
+//double pInL2     = ((XDGField)pressure).GetSpeciesShadowField("A").L2Error((ScalarFunction)null, vqs);
+//double areaA     = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[0]);
+//double pIn       = ((pInL2.Pow2())/areaA).Sqrt();
+pInL2
+**************
+0.000314179228026057
+==============
+SpeciesId spcId = LsTrk.SpeciesIdS[1];
+var vqs         = SchemeHelper.GetVolumeQuadScheme(spcId);
+var pOutN       = ((XDGField)pressure).GetSpeciesShadowField("B");
+pOutN.AccConstant(-p0);
+double pOutL2 = pOutN.L2Error((ScalarFunction)null, vqs);
+//double areaB    = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[1]);
+//double pOut     = ((pOutL2.Pow2())/areaB).Sqrt();
+pOutL2
+**************
+0.000270594888148735
+==============
+double pL2 = (pInL2.Pow2()+pOutL2.Pow2()).Sqrt();
+pL2
+**************
+0.000414644644020968
+==============
+**************
+==============
+DGField velocityX = terminalStep.Fields.ElementAt(4);
+velocityX
+**************
+VelocityX
+==============
+DGField velocityY = terminalStep.Fields.ElementAt(5);
+velocityY
+**************
+VelocityY
+==============
+double uL2 = velocityX.L2Norm();
+uL2
+**************
+9.5072904416242E-08
+==============
+double vL2 = velocityY.L2Norm();
+vL2
+**************
+9.50729037150997E-08
+==============
+**************
+==============
+double velocL2 = (uL2.Pow2()+vL2.Pow2()).Sqrt();
+velocL2
+**************
+1.34453390343868E-07
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

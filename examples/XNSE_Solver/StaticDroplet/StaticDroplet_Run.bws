@@ -5,12 +5,13 @@ restart
   _______________________
 
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
+List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 390; Grid Count = 8681; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 121; Grid Count = 7; Path = D:\local\local_XNSE_StudyDB }
+  3: { Session Count = 712; Grid Count = 13257; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 169; Grid Count = 295; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -19,7 +20,7 @@ List of 5 instances of IDatabaseInfo {
 using BoSSS.Application.XNSE_Solver;
 **************
 ==============
-//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB");
 **************
 ==============
 /*
@@ -41,21 +42,21 @@ Incomplete statement - missing closing parentheses?.
 ==============
 ExecutionQueues;
 **************
-List of 2 instances of BatchProcessorClient {
+List of 3 instances of BatchProcessorClient {
   0: MiniBatchProcessor client @D:\local\binaries
-  1: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\smuda\binaries
+  2: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
 }
 ==============
 ExecutionQueues[1].AllowedDatabases;
 **************
-List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 390; Grid Count = 8681; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+List of 0 instances of IDatabaseInfo {
 }
 ==============
 var myBatch = ExecutionQueues[1];
 **************
 ==============
-var myDb = ExecutionQueues[1].AllowedDatabases[0];
+//var myDb = ExecutionQueues[1].AllowedDatabases[0];
 **************
 ==============
 **************
@@ -91,11 +92,11 @@ if(hysing) {
 }
 **************
 ==============
-bool onWall = false;
+bool onWall = true;
 
 double theta0 = Math.PI/2.0;
-double thetaE = Math.PI/3.0;
-double beta   = 10; 
+double thetaE = 1.0 * Math.PI / 2.0;
+double beta   = 5.0;
 **************
 ==============
 **************
@@ -109,8 +110,9 @@ var GridSeq = new IGridInfo[6];
 int[] kelemSeq = new int[]{4, 8, 16, 32, 64, 128, 256};
 int[] NoProc;
 if(kummer) {
-    kelemSeq = new int[]{9, 18, 36, 72, 144, 288, 576};
-    NoProc   = new int[]{1, 1, 1, 2, 3, 3 };
+    //kelemSeq = new int[]{9, 18, 36, 72, 144, 288, 576};
+    kelemSeq = new int[]{8, 16, 32, 64, 128, 256, 512};
+    //NoProc   = new int[]{1, 1, 1, 2, 3, 3 };
 }
 if(hysing) {
     kelemSeq = new int[]{20, 40, 80, 160};
@@ -198,8 +200,8 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     
     } else {
     
-    double[] xNodes = GenericBlas.Linspace(-1.0, 1.0, kelem + 1);
-    double[] yNodes = GenericBlas.Linspace(0.0, 1.0, kelem/2 + 1);    
+    double[] xNodes = GenericBlas.Linspace(-3.0/2.0, 3.0/2.0, kelem + 1);
+    double[] yNodes = GenericBlas.Linspace(0.0, 3.0/2.0, kelem/2 + 1);    
     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
 
     grd.EdgeTagNames.Add(1, "navierslip_linear");
@@ -208,11 +210,11 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
         byte et = 0;
         if (Math.Abs(X[1] + 0.0) <= 1.0e-8)
             et = 1;
-        if (Math.Abs(X[1] - 1.0) <= 1.0e-8)
+        if (Math.Abs(X[1] - 3.0/2.0) <= 1.0e-8)
             et = 1;
-        if (Math.Abs(X[0] + 1.0) <= 1.0e-8)
+        if (Math.Abs(X[0] + 3.0/2.0) <= 1.0e-8)
             et = 1;
-        if (Math.Abs(X[0] - 1.0) <= 1.0e-8)
+        if (Math.Abs(X[0] - 3.0/2.0) <= 1.0e-8)
             et = 1;
         return et;
     });
@@ -226,17 +228,17 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 Grid Edge Tags changed.
-An equivalent grid (72e0c532-b2a9-47f8-a608-f8dbcca465a6) is already present in the database -- the grid will not be saved.
+An equivalent grid (88975bbe-32f6-41a5-8054-62f1207098f6) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid (b8a1292a-8237-44d9-872a-7f10d5d9f25f) is already present in the database -- the grid will not be saved.
+An equivalent grid (8655fb75-cd03-4994-8ca8-5c0ede669928) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid (72af1481-95c5-4179-9207-471e69b68b19) is already present in the database -- the grid will not be saved.
+An equivalent grid (94784d7e-e9c6-4e67-a8ae-9733ff7925f3) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid (9119ecbb-a2eb-485b-9828-8c31732c600f) is already present in the database -- the grid will not be saved.
+An equivalent grid (1eebce3f-a596-48dc-8f18-be72219e3036) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid (83f6be54-110e-41a6-b334-c52bec1edfe3) is already present in the database -- the grid will not be saved.
+An equivalent grid (f0b530a1-0f8c-4547-97de-dc97aaa3ef84) is already present in the database -- the grid will not be saved.
 Grid Edge Tags changed.
-An equivalent grid (6be15cea-9a3b-4307-94ff-ac2e70f58858) is already present in the database -- the grid will not be saved.
+An equivalent grid (ec7450eb-0a71-421f-857d-23c8a8753549) is already present in the database -- the grid will not be saved.
 
 ==============
 **************
@@ -277,6 +279,7 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
 
     //C.SetDGdegree(pDeg);
     C.SetFieldOptions(pDeg,2);
+    C.InitSignedDistance = false;
     
     C.SetGrid(grd);
     
@@ -284,7 +287,7 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
         C.PhysicalParameters.rho_A             = 1.0;
         C.PhysicalParameters.rho_B             = 1.0;
         C.PhysicalParameters.mu_A              = 0.5;
-        C.PhysicalParameters.mu_B              = 0.5;
+        C.PhysicalParameters.mu_B              = 0.05;
         C.PhysicalParameters.Sigma             = 0.1;
         C.PhysicalParameters.IncludeConvection = false;
         
@@ -329,7 +332,7 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
         
         C.SessionName = "StaticDroplet_ConvStudyPhi8HMF_k" + pDeg + "_mesh" + iGrd;
         if(kummer) {
-            C.SessionName = "StaticDroplet_newConvStudyKummer_dropIndef_k" + pDeg + "_mesh" + iGrd;
+            C.SessionName = "StaticDroplet_newConvStudySt_dropIndef_k" + pDeg + "_mesh" + iGrd;
         }
         if(hysing) {
             C.SessionName = "StaticDroplet_ConvStudyHysing_k" + pDeg + "_mesh" + iGrd;
@@ -338,18 +341,25 @@ for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
     } else {
         C.AddBoundaryValue("navierslip_linear");
         
-        double s     = 2 * radius * Math.Sin(theta0);
-        double h     = Math.Sqrt(radius.Pow2() - (0.25 * s.Pow2()));
-        string h_str = h.ToString();
-        string r_str = radius.ToString();
-        C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1] - "+h_str+").Pow2()).Sqrt() - "+r_str, false);
+        //double s     = 2 * radius * Math.Sin(theta0);
+        //double h     = Math.Sqrt(radius.Pow2() - (0.25 * s.Pow2()));
+        //string h_str = h.ToString();
+        //string r_str = radius.ToString();
+        //C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1] - "+h_str+").Pow2()).Sqrt() - "+r_str, false);
+        string a_str = a.ToString();
+        string b_str = b.ToString();
+        if(quadratic) {
+            C.AddInitialValue("Phi", "X => ((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2()) - 1.0", false);
+        } else { 
+            C.AddInitialValue("Phi", "X => Math.Sqrt(((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2())) - 1.0", false);   
+        }
             
         C.PhysicalParameters.betaS_A = beta;
         C.PhysicalParameters.betaS_B = beta;
         C.PhysicalParameters.betaL   = 0.0;
         C.PhysicalParameters.theta_e = thetaE;
         
-        C.SessionName = "StaticDropletOnWall_ConvStudy_k" + pDeg + "_mesh" + iGrd;
+        C.SessionName = "StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k" + pDeg + "_mesh" + iGrd;
     }
     
     //C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
@@ -399,7 +409,7 @@ controls.Count;
 //controls[0,0].SessionName
 controls.ElementAt(0).SessionName
 **************
-StaticDroplet_newConvStudyKummer_dropIndef_k2_mesh0
+StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k2_mesh0
 ==============
 LastError
 **************
@@ -422,7 +432,7 @@ LastError
 using System.Threading;
 **************
 ==============
-bool run      = false;
+bool run      = true;
 bool parallel = false;
 **************
 ==============
@@ -437,48 +447,160 @@ foreach(var cntrl in controls) {
         //}
         job.Activate(myBatch);
     } else {
-        Console.WriteLine("Session: {0}", cntrl.SessionName);
+        Console.WriteLine("Status Session: {0}", cntrl.SessionName);
         var jS = job.Status;
-        Console.WriteLine("Status: {0}", jS);
+        Console.WriteLine(jS);
     }
 }
 **************
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k2_mesh0
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k2_mesh1
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k2_mesh2
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k2_mesh3
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k2_mesh4
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k2_mesh5
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k3_mesh0
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k3_mesh1
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k3_mesh2
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k3_mesh3
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k3_mesh4
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k3_mesh5
-Status: InProgress
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k4_mesh0
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k4_mesh1
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k4_mesh2
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k4_mesh3
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k4_mesh4
-Status: FinishedSuccessful
-Session: StaticDroplet_newConvStudyKummer_dropIndef_k4_mesh5
-Status: InProgress
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k2_mesh0
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234717
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k2_mesh1
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234727
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k2_mesh2
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234736
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k2_mesh3
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234746
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k2_mesh4
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234755
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k2_mesh5
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234805
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k3_mesh0
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234816
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k3_mesh1
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234826
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k3_mesh2
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234834
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k3_mesh3
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234844
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k3_mesh4
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234859
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k3_mesh5
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234916
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k4_mesh0
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234936
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k4_mesh1
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_234953
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k4_mesh2
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_235009
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k4_mesh3
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_235025
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k4_mesh4
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_235040
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k4_mesh5
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Jun24_235052
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
 
 ==============
 LastError
@@ -517,6 +639,32 @@ Incomplete statement - missing closing parentheses?.
 **************
 ==============
 //databases.Pick(3).Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
