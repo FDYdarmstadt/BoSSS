@@ -160,15 +160,15 @@ namespace BoSSS.Solution.XheatCommon {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
-
-                ILevelSetForm conv;
-                conv = new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat);
-                //conv = new HeatConvectionAtLevelSet_WithEvaporation(D, LsTrk, LFFA, LFFB, thermParams, config.getPhysParams.Sigma);
+                Console.WriteLine("include heat convection");
+                //ILevelSetForm conv;
+                comps.Add(new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat));
+                //if (config.isMovingMesh)
+                //    comps.Add(new HeatConvectionAtLevelSet_MassFlux(D, LsTrk, thermParams, config.getPhysParams.Sigma));
                 //conv = new HeatConvectionAtLevelSet_Upwind(D, LsTrk, capA, capB, thermParams, config.isMovingMesh, config.isEvaporation, Tsat);
-
-                comps.Add(conv);
             }
 
+            //comps.Add(new HeatConvectionAtLevelSet_MassFlux(D, LsTrk, thermParams, config.getPhysParams.Sigma));
 
             // viscous operator (laplace)
             // ==========================

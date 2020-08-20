@@ -94,7 +94,7 @@ namespace BoSSS.Solution.XheatCommon {
             //Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
             Ret += 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[component];     // symmetry term
             Ret -= M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[component] * (vA - vB) * pnlty * muMax; // penalty term
-                                                                                                               // Transpose Term
+                                                                                                 // Transpose Term
             for (int i = 0; i < m_D; i++) {
                 //Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
                 Ret += 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * N[component] * M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[i];
