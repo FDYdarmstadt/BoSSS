@@ -37,7 +37,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
-            m_spcId = spcId;
+            ValidSpecies = spcName;
             switch (spcName) {
                 case "A": currentMu = _muA; complementMu = _muB; break;
                 case "B": currentMu = _muB; complementMu = _muA; break;
@@ -53,10 +53,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             m_beta = _betaS;
         }
 
-        SpeciesId m_spcId;
-
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+   
+        public string ValidSpecies {
+            get;
+            private set;
         }
 
         double currentMu;
@@ -82,6 +82,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_bcMap = bcMap;
 
             m_spcId = spcId;
+            ValidSpecies = spcName;
             switch (spcName) {
                 case "A": currentMu = _muA; complementMu = _muB; break;
                 case "B": currentMu = _muB; complementMu = _muA; break;
@@ -99,8 +100,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string ValidSpecies {
+            get;
+            private set;
         }
 
         double currentMu;
@@ -125,6 +127,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_bcMap = bcMap;
 
             m_spcId = spcId;
+            ValidSpecies = spcName;
             switch (spcName) {
                 case "A": base.m_reynolds = _reynoldsA; break;
                 case "B": base.m_reynolds = _reynoldsB; break;
@@ -137,8 +140,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string ValidSpecies {
+            get;
+            private set;
         }
 
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
@@ -155,6 +159,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_bcMap = bcMap;
 
             m_spcId = spcId;
+            ValidSpecies = spcName;
             switch (spcName) {
                 case "A": base.m_reynolds = _reynoldsA; break;
                 case "B": base.m_reynolds = _reynoldsB; break;
@@ -167,8 +172,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         SpeciesId m_spcId;
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string ValidSpecies {
+            get;
+            private set;
         }
 
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;

@@ -223,7 +223,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 int order = this.u.Basis.Degree * 2;
 
-                XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesIdS.ToArray(), "u", "c1");
+                XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
                 var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
                 var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
@@ -255,10 +255,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                     //    M, b, false, 0.0, true,
                     //    agg.CellLengthScales, null, null, //out massFact,
                     //    this.LsTrk.SpeciesIdS.ToArray());
-                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(this.LsTrk, map, null, map, this.LsTrk.SpeciesIdS.ToArray());
+                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(this.LsTrk, map, null, map);
 
-                    foreach (var s in this.LsTrk.SpeciesIdS)
-                        mtxBuilder.SpeciesOperatorCoefficients[s].CellLengthScales = agg.CellLengthScales[s];
+                    mtxBuilder.CellLengthScales.AddRange(agg.CellLengthScales);
 
                     mtxBuilder.time = 0.0;
                     mtxBuilder.MPITtransceive = true;
@@ -276,8 +275,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 var eval = Op.GetEvaluatorEx(LsTrk,
                     testDomainFieldS, null, map);
 
-                foreach (var s in this.LsTrk.SpeciesIdS)
-                    eval.SpeciesOperatorCoefficients[s].CellLengthScales = agg.CellLengthScales[s];
+                eval.CellLengthScales.AddRange(agg.CellLengthScales);
 
                 eval.time = 0.0;
                 int L = test.Count;
@@ -546,7 +544,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
                 var Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
                 Callbacks.Add(CustomItCallback);
-                SF.GenerateLinear(out exsolver, MultigridSequence, OpConfig, Callbacks);
+                SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
 
 
 

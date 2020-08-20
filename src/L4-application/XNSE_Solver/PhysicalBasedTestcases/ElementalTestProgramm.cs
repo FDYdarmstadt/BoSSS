@@ -47,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void LineMovementTest(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity, LevelSetEvolution.ScalarConvection, LevelSetEvolution.Fourier)]  LevelSetEvolution lsEvo,
             [Values(LevelSetHandling.Coupled_Once, LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Iterative)] LevelSetHandling lsHandl,
-            [Values(XNSE_Control.TimesteppingScheme.ImplicitEuler, XNSE_Control.TimesteppingScheme.CrankNicolson, XNSE_Control.TimesteppingScheme.BDF2)] XNSE_Control.TimesteppingScheme tsScheme,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)] TimeSteppingScheme tsScheme,
             [Values(0.5)] double cLength) {
 
             var C = PhysicalBasedTestcases.ChannelFlow.CF_LevelSetMovementTest(1, cLength, lsEvo, lsHandl, tsScheme);
@@ -79,7 +79,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void CircleMovementTest(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity, LevelSetEvolution.ScalarConvection, LevelSetEvolution.Fourier)]  LevelSetEvolution lsEvo,
             [Values(LevelSetHandling.Coupled_Once, LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Iterative)] LevelSetHandling lsHandl,
-            [Values(XNSE_Control.TimesteppingScheme.ImplicitEuler, XNSE_Control.TimesteppingScheme.CrankNicolson, XNSE_Control.TimesteppingScheme.BDF2)] XNSE_Control.TimesteppingScheme tsScheme,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)] TimeSteppingScheme tsScheme,
             [Values(0.25)] double cLength)
         {
 
@@ -135,7 +135,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void ElliptoidRotationTest(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity, LevelSetEvolution.ScalarConvection, LevelSetEvolution.Fourier)]  LevelSetEvolution lsEvo,
             [Values(LevelSetHandling.Coupled_Once, LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Iterative)] LevelSetHandling lsHandl,
-            [Values(XNSE_Control.TimesteppingScheme.ImplicitEuler, XNSE_Control.TimesteppingScheme.CrankNicolson, XNSE_Control.TimesteppingScheme.BDF2)] XNSE_Control.TimesteppingScheme tsScheme,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)] TimeSteppingScheme tsScheme,
             [Values(0.25)] double cLength)
         {
 
@@ -183,7 +183,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void SlottedDiskRotationTest(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity, LevelSetEvolution.ScalarConvection, LevelSetEvolution.Fourier)]  LevelSetEvolution lsEvo,
             [Values(LevelSetHandling.Coupled_Once, LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Iterative)] LevelSetHandling lsHandl,
-            [Values(XNSE_Control.TimesteppingScheme.ImplicitEuler, XNSE_Control.TimesteppingScheme.CrankNicolson, XNSE_Control.TimesteppingScheme.BDF2)] XNSE_Control.TimesteppingScheme tsScheme, 
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)] TimeSteppingScheme tsScheme, 
             [Values(0.25)] double cLength)
         {
 
@@ -236,7 +236,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void CircleMovementTest_WithSurfaceTension(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity)]  LevelSetEvolution lsEvo,
             [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once, LevelSetHandling.Coupled_Iterative)] LevelSetHandling lsHandl,
-            [Values(XNSE_Control.TimesteppingScheme.CrankNicolson, XNSE_Control.TimesteppingScheme.BDF2)] XNSE_Control.TimesteppingScheme tsScheme)
+            [Values(TimeSteppingScheme.CrankNicolson, TimeSteppingScheme.BDF2)] TimeSteppingScheme tsScheme)
         {
 
             var C = PhysicalBasedTestcases.ChannelFlow.CF_LevelSetMovementTest(2, 4,lsEvo, lsHandl, tsScheme);

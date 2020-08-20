@@ -161,7 +161,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
 
-            Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, LsTrk.SpeciesIdS.ToArray(), "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, LsTrk.SpeciesNames, "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
@@ -254,10 +254,9 @@ namespace BoSSS.Application.LoadBalancingTest {
             //    phystime,
             //    false,
             //    base.LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping, base.LsTrk.SpeciesIdS.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping);
 
-            foreach (var kv in AgglomeratedCellLengthScales) 
-                mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+            mtxBuilder.CellLengthScales.AddRange(AgglomeratedCellLengthScales);
 
             mtxBuilder.time = phystime;
             mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);

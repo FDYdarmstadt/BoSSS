@@ -102,19 +102,19 @@ namespace BoSSS.Solution.EnergyCommon {
                 // Divergence of stress tensor
                 // ===========================
                 {
-
                     comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: !laplaceKinE));
 
                     if (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.local) {
                         throw new ApplicationException("deprecated option");
                         //comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: !laplaceKinE));
                     }
+
                 }
 
                 // Dissipation
                 // ===========
                 {
-                    comps.Add(new Dissipation(D, muSpc, spcId, _withPressure: config.withPressureDissipation));
+                    comps.Add(new Dissipation(D, muSpc, spcName, spcId, _withPressure: config.withPressureDissipation));
                 }
 
             }
@@ -135,7 +135,7 @@ namespace BoSSS.Solution.EnergyCommon {
             // gravity (volume forces)
             // =======================
             {
-                comps.Add(new PowerofGravity(D, spcId, rhoSpc));
+                comps.Add(new PowerofGravity(D, spcName, spcId, rhoSpc));
             }
 
 

@@ -145,8 +145,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // ------------------------
             // sort equation components
             // ------------------------
-            m_NonlinFluxes = DiffOp.GetArgMapping<INonlinearFlux>(true);
-            m_NonlinFluxesEx = DiffOp.GetArgMapping<INonlinearFluxEx>(true);
+            m_NonlinFluxes = EquationComponentArgMapping<INonlinearFlux>.GetArgMapping(DiffOp, true);
+            m_NonlinFluxesEx = EquationComponentArgMapping<INonlinearFluxEx>.GetArgMapping(DiffOp, true);
         }
 
         

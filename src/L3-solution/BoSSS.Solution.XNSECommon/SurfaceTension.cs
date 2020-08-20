@@ -168,7 +168,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         */
         
 
-        public double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double curvature = cp.Parameters_OUT[0];
             Debug.Assert(cp.Parameters_OUT[0] == cp.Parameters_IN[0], "curvature must be continuous across interface");
             Debug.Assert(!double.IsNaN(curvature) || !double.IsInfinity(curvature));
@@ -243,6 +243,18 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         public TermActivationFlags LevelSetTerms {
             get { return TermActivationFlags.V; }
         }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
     }
 
 
@@ -272,7 +284,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         int m_D;
         int m_d;
 
-        public double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             //throw new NotImplementedException();
             double curvature = cp.Parameters_OUT[0];
             Debug.Assert(cp.Parameters_OUT[0] == cp.Parameters_IN[0], "curvature must be continuous across interface");
@@ -359,6 +371,18 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return TermActivationFlags.V;
             }
         }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
     }
     
 
@@ -402,6 +426,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //double[] SurfaceNormal = (new double[] { -inp.Xglobal[0], -inp.Xglobal[1] }).Normalize();
             double NX = SurfaceNormal[0];
             double NY = SurfaceNormal[1];
+            Debug.Assert(!NX.IsNaNorInf(), "Surface normal x NAN or INf");
+            Debug.Assert(!NY.IsNaNorInf(), "Surface normal y NAN or INf");
 
             switch (m_comp) {
                 case 0:
@@ -1811,7 +1837,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
 
 
-        public double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] Normal = cp.Normal;
 
@@ -1855,6 +1881,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return TermActivationFlags.GradUxGradV;
             }
         }
+
+        
     }
 
 

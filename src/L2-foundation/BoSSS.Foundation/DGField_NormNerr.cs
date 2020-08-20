@@ -872,7 +872,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         class IntegralOverExQuadrature : BoSSS.Foundation.Quadrature.CellQuadrature {
 
-            internal IntegralOverExQuadrature(IGridData dat, DGField[] fields, ICompositeQuadRule<QuadRule> qr, Func f)
+            internal IntegralOverExQuadrature(IGridData dat, DGField[] fields, ICompositeQuadRule<QuadRule> qr, Func<Vector,double[],int,double> f)
                 : base(new int[] { 1 }, dat, qr) {
                 m_fields = fields;
                 m_f = f;
@@ -897,7 +897,7 @@ namespace BoSSS.Foundation {
                 X = MultidimensionalArray.Create(NoOfItems, NoOfNodes, D);
             }
 
-            Func m_f;
+            Func<Vector,double[],int,double> m_f;
 
             protected override void Evaluate(int i0, int Length, QuadRule rule, MultidimensionalArray EvalResult) {
                 NodeSet Nodes = rule.Nodes;
@@ -955,7 +955,7 @@ namespace BoSSS.Foundation {
         /// <param name="OverIntegrationMultiplier">
         /// Multiplier for Quadrature Order
         /// </param>
-        public static double IntegralOverEx(CellQuadratureScheme scheme, Func f, int OverIntegrationMultiplier = 2, params DGField[] Fields) {
+        public static double IntegralOverEx(CellQuadratureScheme scheme, Func<Vector,double[],int,double> f, int OverIntegrationMultiplier = 2, params DGField[] Fields) {
             using (new FuncTrace()) {
                 ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
                 var g = Fields[0].Basis.GridDat;

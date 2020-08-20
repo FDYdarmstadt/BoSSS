@@ -78,7 +78,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// ReInitialization is done by fast marching, no ReInit on Cut Cells!
         /// -> TODO
         /// </summary>
-        ExtensionVelocity
+        ExtensionVelocity,
+
+        /// <summary>
+        /// Level Set is moved by advected particles.
+        /// This Evloution features three subtypes <see cref="BoSSS.Application.SemiLagrangianLevelSetTestSuite.LagrangianMode"/>
+        /// </summary>
+        SemiLagrangianLevelSet
     }
 
     public class LevelSetMover {

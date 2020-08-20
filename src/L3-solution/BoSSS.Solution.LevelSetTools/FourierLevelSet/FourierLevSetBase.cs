@@ -23,8 +23,8 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.IO;
 using MathNet.Numerics.IntegralTransforms;
-using MathNet.Numerics.IntegralTransforms.Algorithms;
-using MathNet.Numerics.Interpolation.Algorithms;
+//using MathNet.Numerics.IntegralTransforms.Algorithms;
+//using MathNet.Numerics.Interpolation.Algorithms;
 using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Platform;
@@ -34,12 +34,13 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Statistic;
 using BoSSS.Foundation.Grid.Classic;
+using MathNet.Numerics.Interpolation;
 
 namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
 
     /// <summary>
-    /// specifies the coordoniate system for the Fourier-Series, e.g. y-x or cylinder
+    /// specifies the coordinate system for the Fourier-Series, e.g. y-x or cylinder
     /// </summary>
     public enum FourierType {
 
@@ -96,11 +97,6 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     public static class DiscreteFourierTransformation {
 
         /// <summary>
-        /// class for the fast fourier transformation
-        /// </summary>
-        static DiscreteFourierTransform DFT = new DiscreteFourierTransform();
-
-        /// <summary>
         /// Defines how to interpolate the evolved sample points onto equidistant spacing
         /// </summary>
         static Interpolationtype InterpolationType = Interpolationtype.LinearSplineInterpolation;
@@ -114,10 +110,13 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
             int numSFp = samplFp.Length;
             Complex[] invDFT_coeff = new Complex[numSFp];
-            for (int sp = 0; sp < numSFp; sp++) {
+            for(int sp = 0; sp < numSFp; sp++) {
                 invDFT_coeff[sp] = (Complex)samplFp[sp];
             }
-            Complex[] DFT_coeff = DFT.NaiveForward(invDFT_coeff, FourierOptions.Matlab);
+
+            //Complex[] DFT_coeff = Fourier.Forward(invDFT_coeff, FourierOptions.Matlab);
+            Complex[] DFT_coeff = invDFT_coeff; // new MathNet.Numerics works in-place
+            Fourier.Forward(DFT_coeff, FourierOptions.Matlab);
 
             return DFT_coeff;
         }
@@ -131,17 +130,19 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// <returns></returns>
         public static Complex[] TransformForward_nonequidistant(MultidimensionalArray samplP, double DomainSize, int numSFp = 0) {
 
-            if (numSFp <= 0)
+            if(numSFp <= 0)
                 numSFp = samplP.Lengths[0];
 
             double[] samplFp = new double[numSFp];
             InterpolateOntoFourierPoints(samplP, DomainSize, samplFp);
 
             Complex[] invDFT_coeff = new Complex[numSFp];
-            for (int sp = 0; sp < numSFp; sp++) {
+            for(int sp = 0; sp < numSFp; sp++) {
                 invDFT_coeff[sp] = (Complex)samplFp[sp];
             }
-            Complex[] DFT_coeff = DFT.NaiveForward(invDFT_coeff, FourierOptions.Matlab);
+            //Complex[] DFT_coeff = DFT.NaiveForward(invDFT_coeff, FourierOptions.Matlab);
+            Complex[] DFT_coeff = invDFT_coeff;
+            Fourier.Forward(DFT_coeff, FourierOptions.Matlab);
 
             return DFT_coeff;
 
@@ -172,7 +173,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             double[] P2 = DFT_coeff.Select(c => c.Magnitude / (double)numFp).ToArray();
             double[] P1 = new double[numFp / 2];
             P1[0] = P2[0];
-            for (int i = 1; i < numFp / 2; i++) {
+            for(int i = 1; i < numFp / 2; i++) {
                 P1[i] = 2.0 * P2[i];
             }
 
@@ -191,8 +192,8 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             // set interpolation data (delete multiple independent values)
             ArrayList independentList = new ArrayList();
             ArrayList dependentList = new ArrayList();
-            for (int sp = 0; sp < numSp; sp++) {
-                if (independentList.Contains(samplP[sp, 0]) == false) {
+            for(int sp = 0; sp < numSp; sp++) {
+                if(independentList.Contains(samplP[sp, 0]) == false) {
                     independentList.Add(samplP[sp, 0]);
                     dependentList.Add(samplP[sp, 1]);
                 }
@@ -209,34 +210,37 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             // set Fourier points
             int numSFp = samplFp.Length;
             double[] FourierP = new double[numSFp];
-            for (int i = 0; i < numSFp; i++) {
+            for(int i = 0; i < numSFp; i++) {
                 FourierP[i] = (DomainSize / numSFp) * i;
             }
 
 
-            switch (InterpolationType) {
+            switch(InterpolationType) {
                 case Interpolationtype.LinearSplineInterpolation:
 
-                    LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
-                    LinSpline.Initialize(independentVal, dependentVal);
+                //LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
+                //LinSpline.Initialize(independentVal, dependentVal);
+                var LinSpline = LinearSpline.Interpolate(independentVal, dependentVal);
 
-                    for (int Fp = 0; Fp < numSFp; Fp++) {
-                        samplFp[Fp] = LinSpline.Interpolate(FourierP[Fp]);
-                    }
 
-                    break;
+                for(int Fp = 0; Fp < numSFp; Fp++) {
+                    samplFp[Fp] = LinSpline.Interpolate(FourierP[Fp]);
+                }
+
+                break;
+                
                 case Interpolationtype.CubicSplineInterpolation:
+                //CubicSplineInterpolation CubSpline = new CubicSplineInterpolation();
+                //CubSpline.Initialize(independentVal, dependentVal);
+                var CubSpline = CubicSpline.InterpolateNatural(independentVal, dependentVal);
 
-                    CubicSplineInterpolation CubSpline = new CubicSplineInterpolation();
-                    CubSpline.Initialize(independentVal, dependentVal);
+                for(int Fp = 0; Fp < numSFp; Fp++) {
+                    samplFp[Fp] = CubSpline.Interpolate(FourierP[Fp]);
+                }
 
-                    for (int Fp = 0; Fp < numSFp; Fp++) {
-                        samplFp[Fp] = CubSpline.Interpolate(FourierP[Fp]);
-                    }
-
-                    break;
+                break;
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
 
         }
@@ -251,11 +255,6 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     public abstract class FourierLevSetBase {
 
         readonly FourierLevSetControl control;
-
-        /// <summary>
-        /// class for the fast fourier transformation
-        /// </summary>
-        protected DiscreteFourierTransform DFT;
 
         /// <summary>
         /// Number of Fourier points for the fast Fourier transformation
@@ -354,8 +353,10 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             for (int sp = 0; sp < numFp; sp++) {
                 invDFT_coeff[sp] = (Complex)current_samplP[sp];
             }
-            DFT = new DiscreteFourierTransform();
-            DFT_coeff = DFT.NaiveForward(invDFT_coeff, FourierOptions.Matlab);
+            //DFT = new DiscreteFourierTransform();
+            //DFT_coeff = DFT.NaiveForward(invDFT_coeff, FourierOptions.Matlab);
+            DFT_coeff = invDFT_coeff.CloneAs();
+            Fourier.Forward(DFT_coeff, FourierOptions.Matlab); // works in-place
 
         }
 
@@ -462,7 +463,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             // set interpolation data
             double[] independentVal = new double[numP + 2];
             double[] dependentVal = new double[numP + 2];
-            for (int sp = 1; sp <= numP; sp++) {
+            for(int sp = 1; sp <= numP; sp++) {
                 independentVal[sp] = interP[sp - 1, 0];
                 dependentVal[sp] = interP[sp - 1, 1];
             }
@@ -472,31 +473,34 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             independentVal[numP + 1] = interP[0, 0] + DomainSize;
             dependentVal[numP + 1] = interP[0, 1];
 
-            switch (this.InterpolationType) {
+            switch(this.InterpolationType) {
                 case Interpolationtype.LinearSplineInterpolation:
 
-                    LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
-                    LinSpline.Initialize(independentVal, dependentVal);
+                //LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
+                //LinSpline.Initialize(independentVal, dependentVal);
+                var LinSpline = LinearSpline.Interpolate(independentVal, dependentVal);
 
-                    for (int sp = 0; sp < numFp; sp++) {
-                        samplP[sp] = LinSpline.Interpolate(FourierP[sp]);
-                        //invDFT_coeff[sp] = (Complex)samplP[sp];
-                    }
+                for(int sp = 0; sp < numFp; sp++) {
+                    samplP[sp] = LinSpline.Interpolate(FourierP[sp]);
+                    //invDFT_coeff[sp] = (Complex)samplP[sp];
+                }
 
-                    break;
+                break;
+
                 case Interpolationtype.CubicSplineInterpolation:
 
-                    CubicSplineInterpolation CubSpline = new CubicSplineInterpolation();
-                    CubSpline.Initialize(independentVal, dependentVal);
+                //CubicSplineInterpolation CubSpline = new CubicSplineInterpolation();
+                //CubSpline.Initialize(independentVal, dependentVal);
+                var CubSpline = CubicSpline.InterpolateNatural(independentVal, dependentVal);
 
-                    for (int sp = 0; sp < numFp; sp++) {
-                        samplP[sp] = CubSpline.Interpolate(FourierP[sp]);
-                        //invDFT_coeff[sp] = (Complex)samplP[sp];
-                    }
+                for(int sp = 0; sp < numFp; sp++) {
+                    samplP[sp] = CubSpline.Interpolate(FourierP[sp]);
+                    //invDFT_coeff[sp] = (Complex)samplP[sp];
+                }
 
-                    break;
+                break;
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
 
         }
@@ -769,7 +773,9 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             for (int sp = 0; sp < numFp; sp++) {
                 invDFT_coeff[sp] = (Complex)current_samplP[sp];
             }
-            DFT_coeff = DFT.NaiveForward(invDFT_coeff, FourierOptions.Matlab);
+            //DFT_coeff = DFT.NaiveForward(invDFT_coeff, FourierOptions.Matlab);
+            DFT_coeff = invDFT_coeff.CloneAs();
+            Fourier.Forward(DFT_coeff, FourierOptions.Matlab); // works in-place
         }
 
 

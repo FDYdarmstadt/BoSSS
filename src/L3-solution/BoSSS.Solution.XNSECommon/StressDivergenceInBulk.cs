@@ -36,7 +36,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// </summary>
         public StressDivergenceInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _Reynolds, double[] _Penalty1, double _Penalty2, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _Reynolds, _Penalty1, _Penalty2) {
             this.m_bcMap = _BcMap;
-            this.validSpeciesId = spcId;
+            this.ValidSpecies = spcName;
 
             base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 2];
             base.VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.VelocityX + "#" + spcName], 0);
@@ -44,6 +44,9 @@ namespace BoSSS.Solution.RheologyCommon {
 
         }
 
-    public SpeciesId validSpeciesId { get;}
+        public string ValidSpecies { 
+            get;
+            private set;
+        }
     }
 }

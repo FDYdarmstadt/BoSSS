@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -134,6 +133,40 @@ namespace ilPSP.LinSolvers {
     /// MSR stands for 'M'utuble 'S'parse 'R'ow;
     /// </remarks>
     public class BlockMsrMatrix : IMutableMatrixEx {
+
+        /*
+        static void Debug_Assert(bool cond) {
+            if(!cond) {
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+                string err = $"BlockMsrMatrix rank{rank} error";
+
+                
+                bool o = ilPSP.Environment.StdoutOnlyOnRank0;
+                ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                Console.Error.WriteLine(err);
+                ilPSP.Environment.StdoutOnlyOnRank0 = o;
+                
+
+                //throw new ApplicationException(err);
+
+            }
+        }
+
+        static void Debug_Assert(bool cond, string message) {
+            if(!cond) {
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+                string err = $"BlockMsrMatrix rank{rank} error: {message}";
+               
+                bool o = ilPSP.Environment.StdoutOnlyOnRank0;
+                ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                Console.Error.WriteLine(err);
+                ilPSP.Environment.StdoutOnlyOnRank0 = o;
+                
+
+                //throw new ApplicationException(err);
+            }
+        }
+        */
 
         /// <summary>
         /// MPI Communicator on which this object lives on
@@ -4909,21 +4942,21 @@ namespace ilPSP.LinSolvers {
         /// <param name="A">Left operand.</param>
         /// <param name="B">Right operand.</param>
         private static void __Multiply(BlockMsrMatrix C, BlockMsrMatrix A, BlockMsrMatrix B) {
-            using (new FuncTrace()) {
-                if (C.RowPartitioning.LocalLength != A.RowPartitioning.LocalLength)
+            using(new FuncTrace()) {
+                if(C.RowPartitioning.LocalLength != A.RowPartitioning.LocalLength)
                     throw new ArgumentException("Number of rows mismatch between C and A.");
-                if (C.RowPartitioning.i0 != A.RowPartitioning.i0)
+                if(C.RowPartitioning.i0 != A.RowPartitioning.i0)
                     throw new ArgumentException("Partitioning mismatch between C and A.");
-                if (A.ColPartition.LocalLength != B.RowPartitioning.LocalLength)
+                if(A.ColPartition.LocalLength != B.RowPartitioning.LocalLength)
                     throw new ArgumentException("Number of columns mismatch between A and B.");
-                if (B.ColPartition.LocalLength != C._ColPartitioning.LocalLength)
+                if(B.ColPartition.LocalLength != C._ColPartitioning.LocalLength)
                     throw new ArgumentException("Number of columns mismatch between C and B.");
                 MPI_Comm comm = C.MPI_Comm;
-                if (A.MPI_Comm != comm)
+                if(A.MPI_Comm != comm)
                     throw new ArgumentException("MPI communicator mismatch between C and A.");
-                if (B.MPI_Comm != comm)
+                if(B.MPI_Comm != comm)
                     throw new ArgumentException("MPI communicator mismatch between C and B.");
-
+                MPICollectiveWatchDog.Watch(comm);
                 int MpiRank = C.RowPartitioning.MpiRank;
                 int MpiSize = C.RowPartitioning.MpiSize;
 
@@ -4942,17 +4975,17 @@ namespace ilPSP.LinSolvers {
 
 
 
-                // collect list of blocks which has to be sent to other processors
-                // ---------------------------------------------------------------
+                // collect list of blocks which have to be sent to other processors
+                // ----------------------------------------------------------------
 
                 // key: target proc. / value: stuff to copy
                 Dictionary<int, List<Multiply_Helper_1>> MpiSendCollection = new Dictionary<int, List<Multiply_Helper_1>>();
                 {
-                    foreach (int iProc in A.ReceiveLists.Keys)
+                    foreach(int iProc in A.ReceiveLists.Keys)
                         MpiSendCollection.Add(iProc, new List<Multiply_Helper_1>());
 
-                    for (int iBlkRow = A_iBlk0; iBlkRow < A_IBlkE; iBlkRow++) {
-                        if (A.m_ExternalBlock[iBlkRow - A_iBlk0]) {
+                    for(int iBlkRow = A_iBlk0; iBlkRow < A_IBlkE; iBlkRow++) {
+                        if(A.m_ExternalBlock[iBlkRow - A_iBlk0]) {
                             var row = A.m_BlockRows[iBlkRow - A_iBlk0];
 
                             int BT = A._RowPartitioning.GetBlockType(iBlkRow);
@@ -4962,30 +4995,30 @@ namespace ilPSP.LinSolvers {
                             int NoOfSblk = Sbkl_i0.Length;
                             int RowOffset = A._RowPartitioning.GetBlockI0(iBlkRow);
 
-                            foreach (var kv in row) {
+                            foreach(var kv in row) {
                                 int jBlkCol = kv.Key;
                                 BlockEntry BE = kv.Value;
-                                Debug.Assert(BE.jBlkCol == jBlkCol);
-                                Debug.Assert(BE.MembnkIdx.GetLength(0) == NoOfSblk);
-                                Debug.Assert(BE.InMembnk.GetLength(0) == NoOfSblk);
+                                Debug.Assert(BE.jBlkCol == jBlkCol, "1");
+                                Debug.Assert(BE.MembnkIdx.GetLength(0) == NoOfSblk, "2");
+                                Debug.Assert(BE.InMembnk.GetLength(0) == NoOfSblk, "3");
 
-                                if (jBlkCol < A_coliBlk0 || jBlkCol >= A_colIBlkE) {
+                                if(jBlkCol < A_coliBlk0 || jBlkCol >= A_colIBlkE) {
                                     // external block
-                                    Debug.Assert(BE.MembnkIdx.GetLength(1) == 1);
-                                    Debug.Assert(BE.InMembnk.GetLength(1) == 1);
+                                    Debug.Assert(BE.MembnkIdx.GetLength(1) == 1, "4");
+                                    Debug.Assert(BE.InMembnk.GetLength(1) == 1, "5");
 
                                     int j0, jE;
                                     BlockMsrMatrix.GetExternalSubblockIndices(A._ColPartitioning, jBlkCol, out j0, out jE);
                                     int proc = A._ColPartitioning.FindProcess(j0);
                                     int[,] ReceiveList = A.ReceiveLists[proc];
 #if DEBUG
-                                    Debug.Assert(A.ReceiveLists.ContainsKey(proc));
+                                    Debug.Assert(A.ReceiveLists.ContainsKey(proc), "6");
 #endif
 
                                     List<Multiply_Helper_1> copyColection = MpiSendCollection[proc];
 
-                                    for (int iSblk = 0; iSblk < NoOfSblk; iSblk++) {
-                                        if (BE.MembnkIdx[iSblk, 0] >= 0) {
+                                    for(int iSblk = 0; iSblk < NoOfSblk; iSblk++) {
+                                        if(BE.MembnkIdx[iSblk, 0] >= 0) {
                                             // this sub-block must be sent to processor 'proc'
                                             Multiply_Helper_1 H;
                                             H.i0 = RowOffset + Sbkl_i0[iSblk];
@@ -5003,132 +5036,77 @@ namespace ilPSP.LinSolvers {
 
                 // sent external blocks to other processors
                 // ----------------------------------------
-                MPI_Request[] secondWave; // requests for the send *and* receive ops: [0 .. MpiSendCollection.Count[ : MPI_Issend     -- operations
-                                          //                                                                    [MpiSendCollection.Count .. Length[ : MPI_Irecv -- operations
-                IntPtr[] secondWave_SendBuffers; // need to free this memory blocks
-                IntPtr[] secondWave_ReceiveBuffer;
+
                 int[] RecvRanks = A.SendLists.Keys.ToArray(); // MPI ranks from which this processor receives data
-#if DEBUG
-                int[] _RecvSize; // for checking: number of bytes we receive from the respective rank, index correlates with 'RecvRanks'
-#endif
-                unsafe
+                int[] SendRanks = MpiSendCollection.Keys.ToArray(); //
+
+                MiniTransceiver miniTx1 = new MiniTransceiver(comm, SendRanks, RecvRanks);
+
                 {
-                    int NoOfSend = MpiSendCollection.Count;
-                    int NoOfRecv = RecvRanks.Length;
-                    MPI_Request[] firstWave = new MPI_Request[NoOfSend + NoOfRecv];
-                    secondWave = new MPI_Request[NoOfSend + NoOfRecv];
-                    secondWave_SendBuffers = new IntPtr[NoOfSend];
-
-                    // initiate receiving of buffer size
-                    int* RecvSize = stackalloc int[NoOfRecv];
-                    for (int i = 0; i < RecvRanks.Length; i++) {
-                        RecvSize[i] = int.MinValue;
-                        csMPI.Raw.Irecv((IntPtr)(RecvSize + i), 1, csMPI.Raw._DATATYPE.INT, RecvRanks[i], 567, comm, out firstWave[NoOfSend + i]);
-                    }
-
-                    // serialize blocks & send them
-                    int counter = -1;
-                    foreach (var kv in MpiSendCollection) {
-                        counter++;
-                        int DestinationProc = kv.Key;
-                        List<Multiply_Helper_1> copyColection = kv.Value;
-
-                        // calculate size of send buffer
+                    // calculate size of send buffer
+                    int GetSendBufferSize(int Rank) {
+                        List<Multiply_Helper_1> copyColection = MpiSendCollection[Rank];
                         int Sz = sizeof(int);
-                        foreach (var H in copyColection) {
+                        foreach(var H in copyColection) {
                             Membank Mbnk = A.m_Membanks[H.MembankIdx];
                             int I = Mbnk.Mem.GetLength(1);
                             int J = Mbnk.Mem.GetLength(2);
                             Sz += sizeof(int) * 4 + sizeof(double) * I * J;
                         }
-                        // send size of send buffer
-                        csMPI.Raw.Issend((IntPtr)(&Sz), 1, csMPI.Raw._DATATYPE.INT, DestinationProc, 567, comm, out firstWave[counter]);
+                        return Sz;
+                    }
 
-                        // allocate send buffer
-                        IntPtr Buffer = Marshal.AllocHGlobal(Sz);
-                        secondWave_SendBuffers[counter] = Buffer;
-                        void* pBuffer = (void*)Buffer;
+                    // assemble send buffer
+                    void FillSendBuffer(int Rank, IntPtr Buffer) {
+                        unsafe {
+                            List<Multiply_Helper_1> copyColection = MpiSendCollection[Rank];
+                            void* pBuffer = (void*)Buffer;
+                            int* pI = (int*)pBuffer;
+                            *pI = copyColection.Count;
+                            pI++;
+                            pBuffer = pI;
+                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == sizeof(int), "8");
+                            foreach(var H in copyColection) {
+                                Membank Mbnk = A.m_Membanks[H.MembankIdx];
+                                Debug.Assert(Mbnk.Occupied.Length == Mbnk.Mem.GetLength(0), "9");
+                                int I = Mbnk.Mem.GetLength(1);
+                                int J = Mbnk.Mem.GetLength(2);
 
-                        // assemble send buffer
-                        int* pI = (int*)pBuffer;
-                        *pI = copyColection.Count;
-                        pI++;
-                        pBuffer = pI;
-                        Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == sizeof(int));
-                        foreach (var H in copyColection) {
-                            Membank Mbnk = A.m_Membanks[H.MembankIdx];
-                            Debug.Assert(Mbnk.Occupied.Length == Mbnk.Mem.GetLength(0));
-                            int I = Mbnk.Mem.GetLength(1);
-                            int J = Mbnk.Mem.GetLength(2);
+                                int* pH = (int*)pBuffer;
+                                pH[0] = H.i0;
+                                pH[1] = H.j0;
+                                pH[2] = I;
+                                pH[3] = J;
 
-                            int* pH = (int*)pBuffer;
-                            pH[0] = H.i0;
-                            pH[1] = H.j0;
-                            pH[2] = I;
-                            pH[3] = J;
+                                double* pB = (double*)(pH + 4);
 
-                            double* pB = (double*)(pH + 4);
+                                double[] buf;
+                                int offset, Ci, Cj;
+                                bool isDense;
+                                Mbnk.GetFastBlockAccessInfo(out buf, out offset, out Ci, out Cj, out isDense, H.InMembank);
 
-                            double[] buf;
-                            int offset, Ci, Cj;
-                            bool isDense;
-                            Mbnk.GetFastBlockAccessInfo(out buf, out offset, out Ci, out Cj, out isDense, H.InMembank);
+                                for(int i = 0; i < I; i++) {
+                                    for(int j = 0; j < J; j++) {
+                                        Debug.Assert(i * Ci + j * Cj >= 0);
+                                        Debug.Assert(i * Ci + j * Cj < I * J);
 
-                            for (int i = 0; i < I; i++) {
-                                for (int j = 0; j < J; j++) {
-                                    Debug.Assert(i * Ci + j * Cj >= 0);
-                                    Debug.Assert(i * Ci + j * Cj < I * J);
-
-                                    pB[i * J + j] = buf[offset + i * Ci + j * Cj];
+                                        pB[i * J + j] = buf[offset + i * Ci + j * Cj];
+                                    }
                                 }
+
+                                double* _pB = pB;
+                                pB += I * J;
+                                pBuffer = pB;
+                                Debug.Assert((((byte*)pBuffer) - ((byte*)_pB)) == I * J * sizeof(double), "10");
                             }
-
-                            double* _pB = pB;
-                            pB += I * J;
-                            pBuffer = pB;
-                            Debug.Assert((((byte*)pBuffer) - ((byte*)_pB)) == I * J * sizeof(double));
-                        }
-                        Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == Sz);
-
-                        // send send buffer
-                        csMPI.Raw.Issend(Buffer, Sz, csMPI.Raw._DATATYPE.BYTE, DestinationProc, 32567, comm, out secondWave[counter]);
-                    }
-
-                    // initiate receiving of data
-                    secondWave_ReceiveBuffer = new IntPtr[NoOfRecv];
 #if DEBUG
-                    bool[] checker = new bool[NoOfRecv + NoOfSend];
+                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == GetSendBufferSize(Rank), "10");
 #endif
-                    for (int i = 0; i < NoOfRecv + NoOfSend; i++) {
-                        MPI_Status Stat;
-                        int index;
-                        csMPI.Raw.Waitany(NoOfSend + NoOfRecv, firstWave, out index, out Stat);
-
-#if DEBUG
-                        Debug.Assert(checker[index] == false);
-                        checker[index] = true;
-#endif
-                        if (index >= NoOfSend) {
-                            // received buffer size
-                            Debug.Assert(Stat.count == 1 * sizeof(int));
-                            Debug.Assert(RecvSize[index - NoOfSend] >= 0);
-                            Debug.Assert(Stat.MPI_TAG == 567);
-                            Debug.Assert(Stat.MPI_SOURCE == RecvRanks[index - NoOfSend]);
-                            IntPtr Buffer = Marshal.AllocHGlobal(RecvSize[index - NoOfSend]);
-                            secondWave_ReceiveBuffer[index - NoOfSend] = Buffer;
-                            csMPI.Raw.Irecv(Buffer, RecvSize[index - NoOfSend], csMPI.Raw._DATATYPE.BYTE, RecvRanks[index - NoOfSend], 32567, comm, out secondWave[index]);
-                        } else {
-                            // nop
                         }
                     }
-#if DEBUG
-                    _RecvSize = new int[NoOfRecv];
-                    for (int i44 = 0; i44 < NoOfRecv; i44++) {
-                        _RecvSize[i44] = RecvSize[i44];
-                    }
-#endif
+
+                    miniTx1.TransceiveStart(GetSendBufferSize, FillSendBuffer);
                 }
-
                 // perform local sparse matrix-matrix multiplication
                 // -------------------------------------------------
 
@@ -5136,20 +5114,19 @@ namespace ilPSP.LinSolvers {
                 int C_NoBlk = C._RowPartitioning.LocalNoOfBlocks;
                 int C_IBlkE = C_iBlk0 + C_NoBlk;
 
-                unsafe
-                {
+                unsafe {
                     IntPtr tempBuf = IntPtr.Zero;
                     int tempBuf_Length = -1;
 
-                    using (TempBlockRow rc1 = new TempBlockRow(), rc2 = new TempBlockRow(),
+                    using(TempBlockRow rc1 = new TempBlockRow(), rc2 = new TempBlockRow(),
                         rA1 = new TempBlockRow(), rA2 = new TempBlockRow(), rA3 = new TempBlockRow(), bR = new TempBlockRow()) {
 
-                        for (int iBlkRow = C_iBlk0; iBlkRow < C_IBlkE; iBlkRow++) { // loop over the rows of 'C'
+                        for(int iBlkRow = C_iBlk0; iBlkRow < C_IBlkE; iBlkRow++) { // loop over the rows of 'C'
 
                             // extract row from 'C'
                             int i0 = C._RowPartitioning.GetBlockI0(iBlkRow);
                             int iE = i0 + C._RowPartitioning.GetBlockLen(iBlkRow);
-                            if (iE == i0)
+                            if(iE == i0)
                                 // empty block row
                                 continue;
                             TempBlockRow Caccu = rc1, Cnext = rc2;
@@ -5161,7 +5138,7 @@ namespace ilPSP.LinSolvers {
                             int NoRows = Arow.iE - Arow.i0;
                             Debug.Assert(NoRows == C._RowPartitioning.GetBlockLen(iBlkRow));
 
-                            if (Arow.count > 0) {
+                            if(Arow.count > 0) {
                                 //int jBlk = 0;
                                 //while (jBlk < Arow.count) {
 
@@ -5174,18 +5151,18 @@ namespace ilPSP.LinSolvers {
                                 int jBlock = int.MinValue, j0 = int.MinValue, jE = int.MinValue;
                                 double* pAij = null;
                                 double AijSum = 0.0;
-                                while (_BlkCount < Arow.count) {
-                                    if (!_inBlock) {
+                                while(_BlkCount < Arow.count) {
+                                    if(!_inBlock) {
                                         _j0 = Arow.m_j0S[_BlkCount];
                                         _jE = Arow.m_JES[_BlkCount];
                                         _inBlock = true;
                                         jPointer = _j0;
 
-                                        Debug.Assert(_j0 >= A.ColPartition.i0);
-                                        Debug.Assert(_jE <= A.ColPartition.iE);
-                                        Debug.Assert(_j0 < _jE);
+                                        Debug.Assert(_j0 >= A.ColPartition.i0, "12");
+                                        Debug.Assert(_jE <= A.ColPartition.iE, "13");
+                                        Debug.Assert(_j0 < _jE, "14");
                                     }
-                                    if (!inBlock) {
+                                    if(!inBlock) {
                                         jBlock = B._RowPartitioning.GetBlockIndex(jPointer);
                                         j0 = B._RowPartitioning.GetBlockI0(jBlock);
                                         jE = B._RowPartitioning.GetBlockLen(jBlock) + j0;
@@ -5198,42 +5175,42 @@ namespace ilPSP.LinSolvers {
                                     int RelOffsetSource = jPointer - _j0;
                                     int RelOffsetDest = jPointer - j0;
                                     int Length = jNext - jPointer;
-                                    Debug.Assert(Length >= 0);
-                                    Debug.Assert(RelOffsetSource >= 0);
-                                    Debug.Assert(RelOffsetDest >= 0);
+                                    Debug.Assert(Length >= 0, "15");
+                                    Debug.Assert(RelOffsetSource >= 0, "16");
+                                    Debug.Assert(RelOffsetDest >= 0, "17");
                                     //Console.WriteLine("{0} {1}--{2} off: {3}  ===>  {4} {5}--{6} off: {7}", _BlkCount, j, jNext, RelOffsetSource,
                                     //    jBlock, j, jNext, RelOffsetDest);
                                     bool ExMatch = false;
-                                    if (Length > 0) {
+                                    if(Length > 0) {
                                         ExMatch = RelOffsetDest == 0 && RelOffsetSource == 0 && Length == (jE - j0);
-                                        Debug.Assert(ExMatch == (pAij == null));
+                                        Debug.Assert(ExMatch == (pAij == null), "18");
 
-                                        if (ExMatch) {
+                                        if(ExMatch) {
                                             int PointerOffset, ANoOfCols;
                                             Arow.AccessBlock(_BlkCount, out PointerOffset, out ANoOfCols);
                                             pAij = ((double*)(Arow.m_pMem)) + PointerOffset;
-                                            Debug.Assert(ANoOfCols == NoCols);
+                                            Debug.Assert(ANoOfCols == NoCols, "19");
 
                                             double* _pAij = pAij;
-                                            for (int l = NoRows * NoCols; l > 0; l--) {
+                                            for(int l = NoRows * NoCols; l > 0; l--) {
                                                 AijSum += Math.Abs(*_pAij);
                                                 _pAij++;
-                                                if (AijSum != 0.0)
+                                                if(AijSum != 0.0)
                                                     break;
                                             }
 
                                         } else {
-                                            if (pAij == null) {
+                                            if(pAij == null) {
                                                 int ReqSize = NoRows * NoCols;
-                                                if (ReqSize < tempBuf_Length) {
-                                                    if (tempBuf != IntPtr.Zero)
+                                                if(ReqSize < tempBuf_Length) {
+                                                    if(tempBuf != IntPtr.Zero)
                                                         Marshal.FreeHGlobal(tempBuf);
                                                     tempBuf_Length = ReqSize * 2;
                                                     tempBuf = Marshal.AllocHGlobal(tempBuf_Length * sizeof(double));
                                                 }
                                                 pAij = (double*)tempBuf;
                                                 double* pD = pAij;
-                                                for (int ii = NoCols * NoRows; ii > 0; ii--) {
+                                                for(int ii = NoCols * NoRows; ii > 0; ii--) {
                                                     *pD = 0;
                                                     pD++;
                                                 }
@@ -5244,8 +5221,8 @@ namespace ilPSP.LinSolvers {
                                             double* pAijSrc = (double*)(Arow.m_pMem);
                                             pAijSrc += PointerOffset;
 
-                                            for (int i = 0; i < NoRows; i++) {
-                                                for (int j = 0; j < Length; j++) {
+                                            for(int i = 0; i < NoRows; i++) {
+                                                for(int j = 0; j < Length; j++) {
                                                     double vl = pAijSrc[i * C_Ai + j + RelOffsetSource];
                                                     pAij[i * NoCols + j + RelOffsetDest] = vl;
                                                     AijSum += Math.Abs(vl);
@@ -5254,10 +5231,10 @@ namespace ilPSP.LinSolvers {
                                         }
                                     }
 
-                                    if (jNext == jE) {
+                                    if(jNext == jE) {
                                         // block complete
                                         //Console.WriteLine("destination block complete");
-                                        if (AijSum != 0) {
+                                        if(AijSum != 0) {
                                             bR.Clear(j0, jE);
                                             bR.Init(B, jBlock, true);
                                             Cnext.Clear(Caccu.i0, Caccu.iE);
@@ -5273,7 +5250,7 @@ namespace ilPSP.LinSolvers {
                                         pAij = null;
                                     }
 
-                                    if (jNext == _jE) {
+                                    if(jNext == _jE) {
                                         //Console.WriteLine("source block complete");
                                         _inBlock = false;
                                         _BlkCount++;
@@ -5292,16 +5269,14 @@ namespace ilPSP.LinSolvers {
                         }
                     }
 
-                    Debug.Assert((tempBuf_Length >= 0) == (tempBuf != IntPtr.Zero));
-                    if (tempBuf_Length >= 0) {
+                    Debug.Assert((tempBuf_Length >= 0) == (tempBuf != IntPtr.Zero), "20");
+                    if(tempBuf_Length >= 0) {
                         Marshal.FreeHGlobal(tempBuf);
                     }
                 } // end of local multiplication...
 
-
                 // receive external blocks & perform multiplication
                 // ------------------------------------------------
-
 
                 // data structure for external rows:
                 // 1st key: owner processor rank
@@ -5310,112 +5285,85 @@ namespace ilPSP.LinSolvers {
                 Dictionary<int, Dictionary<int, TempBlockRow>> ExternalRows = new Dictionary<int, Dictionary<int, TempBlockRow>>();
 
                 TempBlockRow CrowNext = new TempBlockRow();
-                using (TempBlockRow rt1 = new TempBlockRow(), rt2 = new TempBlockRow(), rt3 = new TempBlockRow()) {
-                    unsafe
-                    {
-                        int NoOfSend = secondWave_SendBuffers.Length;
-                        int NoOfRecv = secondWave_ReceiveBuffer.Length;
-                        Debug.Assert(secondWave.Length == NoOfSend + NoOfRecv);
+                using(TempBlockRow rt1 = new TempBlockRow(), rt2 = new TempBlockRow(), rt3 = new TempBlockRow()) {
 
-#if DEBUG
-                        bool[] checker = new bool[NoOfRecv + NoOfSend];
-#endif
-                        for (int i = 0; i < NoOfRecv + NoOfSend; i++) {
-                            MPI_Status Stat;
-                            int index;
-                            csMPI.Raw.Waitany(NoOfSend + NoOfRecv, secondWave, out index, out Stat);
-
-#if DEBUG
-                            Debug.Assert(checker[index] == false);
-                            checker[index] = true;
-#endif
-                            if (index >= NoOfSend) {
-                                // received buffer
-                                Debug.Assert(Stat.MPI_TAG == 32567);
-                                Debug.Assert(Stat.MPI_SOURCE == RecvRanks[index - NoOfSend]);
-#if DEBUG
-                                Debug.Assert(Stat.count == _RecvSize[index - NoOfSend]);
-#endif
-                                // create data structure for the respective rank
-                                int OwnerRank = RecvRanks[index - NoOfSend];
-                                Dictionary<int, TempBlockRow> ExternalRows_rank;
-                                if (!ExternalRows.TryGetValue(OwnerRank, out ExternalRows_rank)) {
-                                    ExternalRows_rank = new Dictionary<int, TempBlockRow>();
-                                    ExternalRows.Add(OwnerRank, ExternalRows_rank);
-                                }
-
-                                // start computing the external stuff
-                                void* pBuffer = (void*)secondWave_ReceiveBuffer[index - NoOfSend];
-
-                                int* pI = (int*)pBuffer;
-                                int NoOfBuffers = *pI;
-                                pI++;
-                                pBuffer = pI;
-
-                                for (int iBuf = 0; iBuf < NoOfBuffers; iBuf++) {
-                                    int* pH = (int*)pBuffer;
-                                    int i0 = pH[0];
-                                    int j0 = pH[1];
-                                    int I = pH[2];
-                                    int J = pH[3];
-                                    Debug.Assert(B._RowPartitioning.IsInLocalRange(j0));
-                                    Debug.Assert(J <= 0 || B._RowPartitioning.IsInLocalRange(j0 + J - 1));
-                                    Debug.Assert(A._RowPartitioning.FindProcess(i0) == RecvRanks[index - NoOfSend]);
-                                    Debug.Assert(I <= 0 || A._RowPartitioning.FindProcess(i0 + I - 1) == RecvRanks[index - NoOfSend]);
-                                    double* pBlock = (double*)(pH + 4);
-
-                                    double* _pAij = pBlock;
-                                    double AijSum = 0;
-                                    for (int l = I * J; l > 0; l--) {
-                                        AijSum += Math.Abs(*_pAij);
-                                        _pAij++;
-                                        if (AijSum != 0.0)
-                                            break;
-                                    }
-
-                                    if (AijSum != 0.0) {
-                                        // extract block-row [j0 .. j0+J[ from B,
-                                        // multiply with pBlock from left,
-                                        // send back (somehow) later
-
-                                        TempBlockRow Btmp = TempBlockRow.Init(B, j0, j0 + J, true, rt1, rt2, rt3);
-
-                                        // access row
-                                        TempBlockRow Crow;
-                                        if (!ExternalRows_rank.TryGetValue(i0, out Crow)) {
-                                            Crow = new TempBlockRow();
-                                            Crow.Clear(i0, i0 + I);
-                                            ExternalRows_rank.Add(i0, Crow);
-                                        } else {
-                                            Debug.Assert(Crow.i0 == i0);
-                                            Debug.Assert(Crow.iE == i0 + I);
-                                        }
-
-                                        // multiply & merge
-                                        TempBlockRow.Merge(CrowNext, Btmp, Crow, pBlock, I, J);
-
-                                        // swap
-                                        var _CrowNext = CrowNext;
-                                        CrowNext = Crow;
-                                        ExternalRows_rank[i0] = _CrowNext;
-                                    }
-
-                                    // move to next block
-                                    pBlock += I * J;
-                                    pBuffer = pBlock;
-                                }
-#if DEBUG
-                                Debug.Assert((((byte*)pBuffer) - ((byte*)secondWave_ReceiveBuffer[index - NoOfSend])) == _RecvSize[index - NoOfSend]);
-#endif
-                                Marshal.FreeHGlobal(secondWave_ReceiveBuffer[index - NoOfSend]);
-                                secondWave_ReceiveBuffer[index - NoOfSend] = IntPtr.Zero;
-                            } else {
-                                // send operation complete: free send buffer
-                                Marshal.FreeHGlobal(secondWave_SendBuffers[index]);
-                                secondWave_SendBuffers[index] = IntPtr.Zero;
+                    void OnReceive(int OriginRank, IntPtr Buffer, int _RecvSize) {
+                        // create data structure for the respective rank
+                        unsafe {
+                            Dictionary<int, TempBlockRow> ExternalRows_rank;
+                            if(!ExternalRows.TryGetValue(OriginRank, out ExternalRows_rank)) {
+                                ExternalRows_rank = new Dictionary<int, TempBlockRow>();
+                                ExternalRows.Add(OriginRank, ExternalRows_rank);
                             }
+
+                            // start computing the external stuff
+                            void* pBuffer = (void*)Buffer;
+                            int* pI = (int*)pBuffer;
+                            int NoOfBuffers = *pI;
+                            pI++;
+                            pBuffer = pI;
+
+                            for(int iBuf = 0; iBuf < NoOfBuffers; iBuf++) {
+                                int* pH = (int*)pBuffer;
+                                int i0 = pH[0];
+                                int j0 = pH[1];
+                                int I = pH[2];
+                                int J = pH[3];
+                                Debug.Assert(B._RowPartitioning.IsInLocalRange(j0), "2nd wave: first index not in local range");
+                                Debug.Assert(J <= 0 || B._RowPartitioning.IsInLocalRange(j0 + J - 1), "2nd wave: last index not in local range");
+                                Debug.Assert(A._RowPartitioning.FindProcess(i0) == OriginRank, "2nd wave: receive index mismatch (1)");
+                                Debug.Assert(I <= 0 || A._RowPartitioning.FindProcess(i0 + I - 1) == OriginRank, "2nd wave: receive index mismatch (2)");
+                                double* pBlock = (double*)(pH + 4);
+
+                                double* _pAij = pBlock;
+                                double AijSum = 0;
+                                for(int l = I * J; l > 0; l--) {
+                                    AijSum += Math.Abs(*_pAij);
+                                    _pAij++;
+                                    if(AijSum != 0.0)
+                                        break;
+                                }
+
+                                if(AijSum != 0.0) {
+                                    // extract block-row [j0 .. j0+J[ from B,
+                                    // multiply with pBlock from left,
+                                    // send back (somehow) later
+
+                                    TempBlockRow Btmp = TempBlockRow.Init(B, j0, j0 + J, true, rt1, rt2, rt3);
+
+                                    // access row
+                                    TempBlockRow Crow;
+                                    if(!ExternalRows_rank.TryGetValue(i0, out Crow)) {
+                                        Crow = new TempBlockRow();
+                                        Crow.Clear(i0, i0 + I);
+                                        ExternalRows_rank.Add(i0, Crow);
+                                    } else {
+                                        Debug.Assert(Crow.i0 == i0, "22");
+                                        Debug.Assert(Crow.iE == i0 + I, "23");
+                                    }
+
+                                    // multiply & merge
+                                    TempBlockRow.Merge(CrowNext, Btmp, Crow, pBlock, I, J);
+
+                                    // swap
+                                    var _CrowNext = CrowNext;
+                                    CrowNext = Crow;
+                                    ExternalRows_rank[i0] = _CrowNext;
+                                }
+
+                                // move to next block
+                                pBlock += I * J;
+                                pBuffer = pBlock;
+
+                            }
+#if DEBUG
+                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == _RecvSize, "mismatch between pointer difference and receive size");
+#endif
                         }
                     }
+
+
+                    miniTx1.Finish(OnReceive);
                 }
                 CrowNext.Dispose();
 
@@ -5423,187 +5371,292 @@ namespace ilPSP.LinSolvers {
                 // ---------------------------------------------------
 
                 // now, we have to return data, i.e. the role of send and receive ranks flips
-                int[] SendRanks = RecvRanks; //                  processes which receive data from us
-                RecvRanks = MpiSendCollection.Keys.ToArray(); // processes from which we receive data
-
-
-                IntPtr[] fourthWave_SendBuffers;
-                IntPtr[] fourthWave_RecvBuffers;
-                MPI_Request[] fourthWave; // 4th wave: exchange of block rows
-
-                unsafe
                 {
-                    int NoSend = SendRanks.Length;
-                    int NoRecv = RecvRanks.Length;
-                    MPI_Request[] thirdWave = new MPI_Request[NoSend + NoRecv]; // third wave: exchange buffer size
-                    fourthWave = new MPI_Request[NoSend + NoRecv];
-                    fourthWave_SendBuffers = new IntPtr[NoSend];
-                    fourthWave_RecvBuffers = new IntPtr[NoRecv];
+                    var tmp = SendRanks;
+                    SendRanks = RecvRanks; // processes which receive data from us
+                    RecvRanks = tmp;       // processes from which we receive data
+                }
+                MiniTransceiver miniTx2 = new MiniTransceiver(comm, SendRanks, RecvRanks);
 
-                    // initiate receiving of buffer size
-                    int* RecvSize = stackalloc int[NoRecv];
-                    for (int i = 0; i < NoRecv; i++) {
-                        csMPI.Raw.Irecv((IntPtr)(RecvSize + i), 1, csMPI.Raw._DATATYPE.INT, RecvRanks[i], 9875 + RecvRanks[i], comm, out thirdWave[i + NoSend]);
-                    }
-
-                    // compute buffer size
-                    int[] BufferSize = new int[NoSend];
-                    int cnt = -1;
-                    foreach (int DestRank in SendRanks) { //var kv in ExternalRows) {
+                {
+                    int GetSendBufferSize(int DestRank) {
                         var Value = ExternalRows[DestRank];
-                        //int DestRank = kv.Key;
-                        //Debug.Assert(SendRanks.Contains(DestRank));
-                        cnt++;
-                        //Debug.Assert(SendRanks[cnt] == DestRank);
 
                         int Sz = sizeof(int);
-                        foreach (var _kv in Value) {
+                        foreach(var _kv in Value) {
                             var r = _kv.Value;
                             Sz += r.GetSize();
                         }
 
-                        csMPI.Raw.Issend((IntPtr)(&Sz), 1, csMPI.Raw._DATATYPE.INT, DestRank, 9875 + MpiRank, comm, out thirdWave[cnt]);
-                        BufferSize[cnt] = Sz;
+                        return Sz;
                     }
 
                     // serialize block rows, send data
-                    cnt = -1;
-                    foreach (int DestRank in SendRanks) { //var kv in ExternalRows) {
-                        // serialize buffers
-                        //int DestRank = kv.Key;
-                        var RowCollection = ExternalRows[DestRank];
-                        //Debug.Assert(SendRanks.Contains(DestRank));
-                        cnt++;
-                        //Debug.Assert(SendRanks[cnt] == DestRank);
-                        //Debug.Assert(DestRank != MpiRank);
-                        IntPtr Buffer = Marshal.AllocHGlobal(BufferSize[cnt]);
-                        fourthWave_SendBuffers[cnt] = Buffer;
+                    void FillSendBuffer(int DestRank, IntPtr _Buffer) {
+                        unsafe {
+                            var RowCollection = ExternalRows[DestRank];
 
-                        int* pBuffer = (int*)Buffer;
-                        *pBuffer = RowCollection.Count;
-                        pBuffer++;
-                        Buffer = (IntPtr)pBuffer;
-                        foreach (var _kv in RowCollection) {
-                            var r = _kv.Value;
-                            Debug.Assert(C._RowPartitioning.FindProcess(r.i0) == DestRank);
-                            Debug.Assert(C._RowPartitioning.FindProcess(Math.Max(r.i0, r.iE - 1)) == DestRank);
+                            int* pBuffer = (int*)_Buffer;
+                            *pBuffer = RowCollection.Count;
+                            pBuffer++;
+                            IntPtr Buffer = (IntPtr)pBuffer;
+                            foreach(var _kv in RowCollection) {
+                                var r = _kv.Value;
+                                Debug.Assert(C._RowPartitioning.FindProcess(r.i0) == DestRank, "24");
+                                Debug.Assert(C._RowPartitioning.FindProcess(Math.Max(r.i0, r.iE - 1)) == DestRank, "25");
 
-                            Buffer = r.Serialize(Buffer);
-                        }
-                        Debug.Assert((byte*)Buffer - (byte*)fourthWave_SendBuffers[cnt] == BufferSize[cnt]);
-
-                        // send data
-                        csMPI.Raw.Issend(fourthWave_SendBuffers[cnt], BufferSize[cnt], csMPI.Raw._DATATYPE.BYTE, DestRank, 985 + MpiRank, comm, out fourthWave[cnt]);
-                    }
-
-                    // wait for data
+                                Buffer = r.Serialize(Buffer);
+                            }
 #if DEBUG
-                    bool[] checker = new bool[NoRecv + NoSend];
+                            Debug.Assert((byte*)Buffer - (byte*)_Buffer == GetSendBufferSize(DestRank));
 #endif
-                    for (int i = 0; i < NoRecv + NoSend; i++) {
-                        MPI_Status Stat;
-                        int index;
-                        csMPI.Raw.Waitany(NoSend + NoRecv, thirdWave, out index, out Stat);
-
-#if DEBUG
-                        Debug.Assert(checker[index] == false);
-                        checker[index] = true;
-#endif
-                        if (index >= NoSend) {
-                            // received buffer size
-                            Debug.Assert(Stat.count == 1 * sizeof(int));
-                            Debug.Assert(RecvSize[index - NoSend] >= 0);
-                            Debug.Assert(Stat.MPI_TAG == 9875 + RecvRanks[index - NoSend]);
-                            Debug.Assert(Stat.MPI_SOURCE == RecvRanks[index - NoSend]);
-
-                            IntPtr Buffer = Marshal.AllocHGlobal(RecvSize[index - NoSend]);
-                            fourthWave_RecvBuffers[index - NoSend] = Buffer;
-                            csMPI.Raw.Irecv(Buffer, RecvSize[index - NoSend], csMPI.Raw._DATATYPE.BYTE, RecvRanks[index - NoSend], 985 + RecvRanks[index - NoSend], comm, out fourthWave[index]);
-                        } else {
-                            // nop
                         }
                     }
-#if DEBUG
-                    _RecvSize = new int[NoRecv];
-                    for (int i44 = 0; i44 < NoRecv; i44++) {
-                        _RecvSize[i44] = RecvSize[i44];
-                    }
-#endif
+
+                    miniTx2.TransceiveStart(GetSendBufferSize, FillSendBuffer);
+
                 }
 
 
                 // wait for the block rows to come in and accumulate them
                 // ------------------------------------------------------
 
-                using (TempBlockRow rt1 = new TempBlockRow()) {
-                    unsafe
-                    {
-                        int NoOfSend = fourthWave_SendBuffers.Length;
-                        int NoOfRecv = fourthWave_RecvBuffers.Length;
-                        Debug.Assert(fourthWave.Length == NoOfSend + NoOfRecv);
+                using(TempBlockRow rt1 = new TempBlockRow()) {
 
-#if DEBUG
-                        bool[] checker = new bool[NoOfRecv + NoOfSend];
-#endif
-                        for (int i = 0; i < NoOfRecv + NoOfSend; i++) {
-                            MPI_Status Stat;
-                            int index;
-                            csMPI.Raw.Waitany(NoOfSend + NoOfRecv, fourthWave, out index, out Stat);
-
-#if DEBUG
-                            Debug.Assert(checker[index] == false);
-                            checker[index] = true;
-#endif
-                            if (index >= NoOfSend) {
-                                // received buffer
-                                Debug.Assert(Stat.MPI_TAG == 985 + RecvRanks[index - NoOfSend]);
-                                Debug.Assert(Stat.MPI_SOURCE == RecvRanks[index - NoOfSend]);
-#if DEBUG
-                                Debug.Assert(Stat.count == _RecvSize[index - NoOfSend]);
-#endif
-                                // de-serialize data & accumulate
-                                int* pBuffer = (int*)(fourthWave_RecvBuffers[index - NoOfSend]);
-                                int NoOfRows = *pBuffer;
-                                pBuffer++;
-                                IntPtr Buffer = (IntPtr)(pBuffer);
-                                for (int j = 0; j < NoOfRows; j++) {
-                                    Buffer = rt1.Deserialize(Buffer);
-                                    Debug.Assert(C._RowPartitioning.IsInLocalRange(rt1.i0));
-                                    Debug.Assert(C._RowPartitioning.IsInLocalRange(Math.Max(rt1.i0, rt1.iE - 1)));
+                    void OnReceive(int OriginRank, IntPtr _Buffer, int _RecvSize) {
+                        unsafe {
+                            // de-serialize data & accumulate
+                            int* pBuffer = (int*)_Buffer;
+                            int NoOfRows = *pBuffer;
+                            pBuffer++;
+                            IntPtr Buffer = (IntPtr)(pBuffer);
+                            for(int j = 0; j < NoOfRows; j++) {
+                                Buffer = rt1.Deserialize(Buffer);
+                                Debug.Assert(C._RowPartitioning.IsInLocalRange(rt1.i0), "31");
+                                Debug.Assert(C._RowPartitioning.IsInLocalRange(Math.Max(rt1.i0, rt1.iE - 1)), "32");
 
 
-                                    // accumulation:
-                                    int jPointer = rt1.i0;
-                                    while (jPointer < rt1.iE) {
-                                        int iBlock = C._RowPartitioning.GetBlockIndex(jPointer);
-                                        rt1.Save(C, iBlock);
-                                        int BlockLen = C._RowPartitioning.GetBlockLen(iBlock);
-                                        jPointer += BlockLen;
-                                    }
+                                // accumulation:
+                                int jPointer = rt1.i0;
+                                while(jPointer < rt1.iE) {
+                                    int iBlock = C._RowPartitioning.GetBlockIndex(jPointer);
+                                    rt1.Save(C, iBlock);
+                                    int BlockLen = C._RowPartitioning.GetBlockLen(iBlock);
+                                    jPointer += BlockLen;
                                 }
-#if DEBUG
-                                Debug.Assert(((byte*)Buffer - (byte*)fourthWave_RecvBuffers[index - NoOfSend]) == _RecvSize[index - NoOfSend]);
-#endif
-                                // free memory
-                                Marshal.FreeHGlobal(fourthWave_RecvBuffers[index - NoOfSend]);
-                                fourthWave_RecvBuffers[index - NoOfSend] = IntPtr.Zero;
-                            } else {
-                                // send operation complete: free send buffer
-                                Marshal.FreeHGlobal(fourthWave_SendBuffers[index]);
-                                fourthWave_SendBuffers[index] = IntPtr.Zero;
                             }
+#if DEBUG
+                            Debug.Assert(((byte*)Buffer - (byte*)_Buffer) == _RecvSize, "33");
+#endif
                         }
                     }
-                }
 
+                    miniTx2.Finish(OnReceive);
+                }
+         
                 // dispose external rows
                 // ---------------------
                 {
-                    foreach (var k in ExternalRows.Values)
-                        foreach (var t in k.Values)
+                    foreach(var k in ExternalRows.Values)
+                        foreach(var t in k.Values)
                             t.Dispose();
                 }
             }
+        }
+
+        class MiniTransceiver {
+
+            public MiniTransceiver(MPI_Comm __comm, int[] __RanksToSendTo, int[] __RanksToReceiveFrom) {
+                comm = __comm;
+                MPICollectiveWatchDog.Watch(comm);
+                RanksToSendTo = __RanksToSendTo;
+                RanksToReceiveFrom = __RanksToReceiveFrom;
+
+#if DEBUG
+                csMPI.Raw.Comm_Size(comm, out int MPIsize);
+                csMPI.Raw.Comm_Rank(comm, out int MPIrank);
+
+                int[] isTarget = new int[MPIsize];
+                foreach(int iDest in RanksToSendTo) {
+                    isTarget[iDest] = 1;
+                }
+
+                int[] Combined = isTarget.MPIAllGather(comm);
+                var Sources = new List<int>();
+                for(int r = 0; r < MPIsize; r++) {
+                    if(Combined[MPIrank + r*MPIsize] != 0) {
+                        Sources.Add(r);
+                    } 
+                }
+
+                Debug.Assert(__RanksToReceiveFrom.SetEquals(Sources), "MPI-global mismatch in sources and destinations.");
+#endif
+            }
+
+            MPI_Comm comm;
+            int[] RanksToSendTo;
+            int[] RanksToReceiveFrom;
+
+#if DEBUG
+            /// <summary>
+            /// 1st index: origin process rank 'o'
+            /// 2nd index: destination process rank 'r'
+            /// content: number of bytes send from rank 'o' to 'r'
+            /// </summary>
+            int[,] SizesCheck;
+#endif
+
+            internal void Finish(Action<int,IntPtr,int> ReceiveAction) {
+                MPICollectiveWatchDog.Watch(comm);
+                unsafe {
+                    int NoOfSend = secondWave_SendBuffers.Length;
+                    int NoOfRecv = secondWave_ReceiveBuffer.Length;
+                    Debug.Assert(secondWave.Length == NoOfSend + NoOfRecv, "21");
+
+#if DEBUG
+                    bool[] checker = new bool[NoOfRecv + NoOfSend];
+#endif
+                    for(int i = 0; i < NoOfRecv + NoOfSend; i++) {
+                        MPI_Status Stat;
+                        int index;
+                        csMPI.Raw.Waitany(NoOfSend + NoOfRecv, secondWave, out index, out Stat);
+
+#if DEBUG
+                        Debug.Assert(checker[index] == false, $"2nd wave: request {index} already handled.");
+                        checker[index] = true;
+#endif
+                        if(index >= NoOfSend) {
+                            // received buffer
+                            Debug.Assert(Stat.MPI_TAG == 32567, "2nd wave, receiving: tag mismatch in MPI status.");
+                            Debug.Assert(Stat.MPI_SOURCE == RanksToReceiveFrom[index - NoOfSend], "2nd wave, receiving: source rank mismatch in MPI status.");
+#if DEBUG
+                            //the count filed seeems to be wrongly mapped for OpenMPI
+                            //Debug.Assert(Stat.count == _RecvSize[index - NoOfSend], $"2nd wave, receiving: receive count mismatch -- Status count {Stat.count}, expected {_RecvSize[index - NoOfSend]}.");
+#endif
+                            IntPtr Buffer = secondWave_ReceiveBuffer[index - NoOfSend];
+
+                            // 
+                            ReceiveAction(RanksToReceiveFrom[index - NoOfSend], Buffer, _RecvSize[index - NoOfSend]);
+
+                            Marshal.FreeHGlobal(secondWave_ReceiveBuffer[index - NoOfSend]);
+                            secondWave_ReceiveBuffer[index - NoOfSend] = IntPtr.Zero;
+                        } else {
+                            // send operation complete: free send buffer
+                            Marshal.FreeHGlobal(secondWave_SendBuffers[index]);
+                            secondWave_SendBuffers[index] = IntPtr.Zero;
+                        }
+                    }
+                }
+            }
+
+            internal void TransceiveStart(Func<int, int> GetSentBufferSize, Action<int, IntPtr> FillSendBuffer) {
+                MPICollectiveWatchDog.Watch(comm);
+#if DEBUG
+                csMPI.Raw.Comm_Size(comm, out int MPIsize);
+                csMPI.Raw.Comm_Rank(comm, out int MPIrank);
+                int[] SendSizes = new int[MPIsize];
+#endif
+                unsafe {
+                    int NoOfSend = RanksToSendTo.Length;
+                    int NoOfRecv = RanksToReceiveFrom.Length;
+
+
+                    MPI_Request[] firstWave = new MPI_Request[NoOfSend + NoOfRecv];
+                    secondWave = new MPI_Request[NoOfSend + NoOfRecv];
+                    secondWave_SendBuffers = new IntPtr[NoOfSend];
+
+
+                    // initiate receiving of buffer size
+                    int* RecvSize = stackalloc int[NoOfRecv];
+                    for(int i = 0; i < RanksToReceiveFrom.Length; i++) {
+                        RecvSize[i] = int.MinValue;
+                        csMPI.Raw.Irecv((IntPtr)(RecvSize + i), 1, csMPI.Raw._DATATYPE.INT, RanksToReceiveFrom[i], 567, comm, out firstWave[NoOfSend + i]);
+                    }
+
+                    // serialize blocks & send them
+                    int* SendSize = stackalloc int[NoOfSend];
+                    for(int i = 0; i < RanksToSendTo.Length; i++) {
+                        int DestinationProc = RanksToSendTo[i];
+
+                        // calculate size of send buffer
+                        int Sz = GetSentBufferSize(DestinationProc);
+                        SendSize[i] = Sz;
+#if DEBUG
+                        SendSizes[DestinationProc] = Sz;
+#endif
+                        // send size of send buffer
+                        csMPI.Raw.Issend((IntPtr)(SendSize + i), 1, csMPI.Raw._DATATYPE.INT, DestinationProc, 567, comm, out firstWave[i]);
+
+                        // allocate send buffer
+                        IntPtr Buffer = Marshal.AllocHGlobal(Sz);
+                        secondWave_SendBuffers[i] = Buffer;
+
+                        // assemble send buffer
+                        FillSendBuffer(DestinationProc, Buffer);
+
+                        // send send buffer
+                        csMPI.Raw.Issend(Buffer, Sz, csMPI.Raw._DATATYPE.BYTE, DestinationProc, 32567, comm, out secondWave[i]);
+                    }
+
+                    // initiate receiving of data
+                    secondWave_ReceiveBuffer = new IntPtr[NoOfRecv];
+#if DEBUG
+                    bool[] checker = new bool[NoOfRecv + NoOfSend];
+                    SizesCheck = SendSizes.MPIAllGather(comm).Resize(false, MPIsize, MPIsize);
+#endif
+                    for(int i = 0; i < NoOfRecv + NoOfSend; i++) {
+                        MPI_Status Stat;
+                        int index;
+                        csMPI.Raw.Waitany(NoOfSend + NoOfRecv, firstWave, out index, out Stat);
+
+#if DEBUG
+                        Debug.Assert(checker[index] == false, $"1st wave: request {index} already handled.");
+                        checker[index] = true;
+#endif
+                        if(index >= NoOfSend) {
+                            // received buffer size
+#if DEBUG                            
+                            //Debug.Assert(Stat.count == 1 * sizeof(int), $"1st wave, receiving: receive count mismatch -- Status count {Stat.count}, expected {sizeof(int)}.");
+                            Debug.Assert(RecvSize[index - NoOfSend] >= 0, "11");
+                            Debug.Assert(Stat.MPI_TAG == 567, $"1st wave, receiving: tag mismatch.");
+                            Debug.Assert(Stat.MPI_SOURCE == RanksToReceiveFrom[index - NoOfSend], $"1st wave, receiving: source mismatch.");
+
+                            Debug.Assert(RecvSize[index - NoOfSend] == SizesCheck[RanksToReceiveFrom[index - NoOfSend], MPIrank], $"Buffer size check failed: received size {RecvSize[index - NoOfSend]}, check says {SizesCheck[RanksToReceiveFrom[index - NoOfSend], MPIrank]}");
+#endif
+                            IntPtr Buffer = Marshal.AllocHGlobal(RecvSize[index - NoOfSend]);
+                            secondWave_ReceiveBuffer[index - NoOfSend] = Buffer;
+                            csMPI.Raw.Irecv(Buffer, RecvSize[index - NoOfSend], csMPI.Raw._DATATYPE.BYTE, RanksToReceiveFrom[index - NoOfSend], 32567, comm, out secondWave[index]);
+                        } else {
+                            // nop
+                        }
+                    }
+                    _RecvSize = new int[NoOfRecv];
+                    for(int i44 = 0; i44 < NoOfRecv; i44++) {
+                        _RecvSize[i44] = RecvSize[i44];
+                    }
+                }
+#if DEBUG
+                
+                for(int r = 0; r < MPIsize; r++) {
+                    bool receiveFrom_r_check = SizesCheck[r, MPIrank] != 0;
+                    bool receiveFrom_r = RanksToReceiveFrom.Contains(r);
+                    Debug.Assert(receiveFrom_r == receiveFrom_r_check, "Receive/Send pattern failed 2nd check.");
+
+                    int idx = Array.IndexOf(RanksToReceiveFrom, r);
+                    int recvSize = idx >= 0 ? _RecvSize[idx] : 0;
+                    Debug.Assert(recvSize == SizesCheck[r, MPIrank], $"Buffer size check failed (2): received size {recvSize}, check says {SizesCheck[r, MPIrank]}");
+                }
+#endif
+            }
+            // for checking: number of bytes we receive from the respective rank, index correlates with 'RecvRanks'
+            int[] _RecvSize;
+
+            // requests for the send *and* receive ops: [0 .. MpiSendCollection.Count[      : MPI_Issend -- operations
+            //                                          [MpiSendCollection.Count .. Length[ : MPI_Irecv  -- operations
+            MPI_Request[] secondWave;
+                        
+            IntPtr[] secondWave_SendBuffers;
+            IntPtr[] secondWave_ReceiveBuffer;
         }
 
         /// <summary>

@@ -395,27 +395,27 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //switch(p) {
             //    case 1: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //            break;
             //        }
             //    case 2: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            //            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             //            C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
             //            break;
             //        }
             //    default:
-            //        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //        C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //        C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //        break;
             //}
 
             //if(D == 3) {
-            //    C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //    C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //    C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //}
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
 
@@ -752,22 +752,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //switch (p) {
             //    case 1: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //            break;
             //        }
             //    case 2: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            //            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             //            C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
             //            break;
             //        }
             //    default:
-            //        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //        C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //        C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //        break;
 
             //}
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
@@ -1041,8 +1041,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-  
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
@@ -1321,22 +1321,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //switch (p) {
             //    case 1: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //            break;
             //        }
             //    case 2: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            //            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             //            C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
             //            break;
             //        }
             //    default:
-            //        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //        C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //        C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //        break;
 
             //}
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
 
@@ -1605,7 +1605,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -1738,7 +1738,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = (steadyInterface) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
@@ -2021,22 +2021,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             switch (p) {
                 case 1: {
-                        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+                        C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
                         C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
                         break;
                     }
                 case 2: {
-                        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+                        C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
                         C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
                         break;
                     }
                 default:
-                    C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+                    C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
                     C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
                     break;
 
             }
-            //C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
 
@@ -2275,7 +2275,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
@@ -2568,7 +2568,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 

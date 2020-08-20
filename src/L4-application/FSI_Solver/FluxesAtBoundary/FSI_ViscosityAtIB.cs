@@ -60,7 +60,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             int dim = inp.Normal.Dim;
             double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
 
@@ -70,7 +70,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 throw new Exception("X is null or empty");
             if (m_GetParticleParams == null)
                 throw new Exception("m_GetParticleParams is null or empty");
+            if (inp.X.Abs() < 0)
+                throw new ArithmeticException("invalid length of position vector");
             FSI_ParameterAtIB coupling = m_GetParticleParams(inp.X);
+            if (coupling == null)
+                throw new Exception("coupling is null or empty");
             Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
             Vector orientationNormal = new Vector(-Math.Sin(coupling.Angle()), Math.Cos(coupling.Angle()));
             Vector activeStressVector = orientationNormal * inp.Normal > 0 ? new Vector(-coupling.ActiveStress() * inp.Normal[1], coupling.ActiveStress() * inp.Normal[0]) 

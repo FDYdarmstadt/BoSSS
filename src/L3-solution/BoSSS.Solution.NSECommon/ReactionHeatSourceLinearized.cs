@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
@@ -55,7 +56,7 @@ namespace BoSSS.Solution.NSECommon {
             this.EoS = EoS;
             m_Da = ReactionRateConstants[0]; // Damköhler number 
 
-         
+
         }
 
 
@@ -75,7 +76,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            if(cs.UserDefinedValues.Keys.Contains("Damkoehler"))
+            if (cs.UserDefinedValues.Keys.Contains("Damkoehler"))
                 m_Da = (double)cs.UserDefinedValues["Damkoehler"];
         }
 
@@ -86,11 +87,11 @@ namespace BoSSS.Solution.NSECommon {
             rho = EoS.GetDensity(parameters);
             Debug.Assert(!double.IsNaN(rho));
             Debug.Assert(!double.IsInfinity(rho));
-                      
-                ReactionRate = m_Da * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]); 
+
+            ReactionRate = m_Da * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
 
             return HeatReleaseFactor * U[0] * ReactionRate;
-            
+
         }
     }
 
@@ -99,17 +100,20 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Reaction heat source in temperature equation.
     /// </summary>
-    public class ReactionHeatSourceLinearizedJacobi : IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
+    public class ReactionHeatSourceJacobi : IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
         string[] m_ArgumentOrdering;
         string[] m_ParameterOrdering;
         double ReactionRate;
         double HeatReleaseFactor;
         double[] ReactionRateConstants;
-        double OneOverMolarMass0MolarMass1;
+        double[] molarMasses;
 
-        MaterialLaw EoS;
+        MaterialLawCombustion EoS;
         double rho;
         double m_Da;
+        double TRef;
+        double cpRef;
+        bool VariableOneStepParameters;
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -117,17 +121,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="ReactionRateConstants">0. PreExpFactor/Damköhler number, 1. ActivationTemperature, 2. MassFraction0Exponent, 3. MassFraction1Exponent</param>  
         /// <param name="OneOverMolarMass0MolarMass1"> 1/(M_infty^(a + b -1) * MolarMassFuel^a * MolarMassOxidizer^b). M_infty is the reference for the molar mass steming from non-dimensionalisation of the governing equations.</param>  
         /// <param name="EoS">MaterialLawCombustion</param>  
-        public ReactionHeatSourceLinearizedJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double OneOverMolarMass0MolarMass1, MaterialLaw EoS) {
-            //m_ArgumentOrdering = new string[] { VariableNames.Temperature };
-            m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2};
-            m_ParameterOrdering = null;//  new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
+        public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLawCombustion EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
+            m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
+            m_ParameterOrdering = null; 
             this.HeatReleaseFactor = HeatReleaseFactor;
             this.ReactionRateConstants = ReactionRateConstants;
-            this.OneOverMolarMass0MolarMass1 = OneOverMolarMass0MolarMass1;
+            this.molarMasses = molarmasses;
             this.EoS = EoS;
             m_Da = ReactionRateConstants[0]; // Damköhler number 
-
-
+            this.TRef = TRef;
+            this.cpRef = cpRef;
+            this.VariableOneStepParameters = VariableOneStepParameters;
         }
 
 
@@ -152,7 +156,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            if(cs.UserDefinedValues.Keys.Contains("Damkoehler"))
+            if (cs.UserDefinedValues.Keys.Contains("Damkoehler"))
                 m_Da = (double)cs.UserDefinedValues["Damkoehler"];
         }
 
@@ -170,26 +174,26 @@ namespace BoSSS.Solution.NSECommon {
         /// 
         /// </summary>
         protected double Source(double[] x, double[] parameters, double[] U) {
-            //rho = EoS.GetDensity(parameters);
             rho = EoS.GetDensity(U);
-
-            //double Temperature = parameters[0];
-            //double Y0 = parameters[1];
-            //double Y1 = parameters[2];
-
-            double Temperature = U[0];
-            double Y0 = U[1];
-            double Y1 = U[2];
-
-
             Debug.Assert(!double.IsNaN(rho));
             Debug.Assert(!double.IsInfinity(rho));
+            double Temperature = U[0];
+            double YF = U[1];
+            double YO = U[2];
+            double Ta = ReactionRateConstants[1];
 
-            ReactionRate = m_Da * Math.Exp(-ReactionRateConstants[1] / Temperature) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
 
-            //if (ReactionRate < 0)
-            //    ReactionRate = 0;
-            return HeatReleaseFactor * U[0] * ReactionRate;
+
+            if (YF * YO > 1e-6 && VariableOneStepParameters) {//  calculate one-Step model parameters
+                Ta = EoS.getTa(YF, YO) / TRef;
+                HeatReleaseFactor = EoS.getHeatRelease(YF, YO) / (cpRef * TRef);
+            }
+            double PM_CH4 = molarMasses[0];
+            double PM_O2 = molarMasses[1];
+
+            ReactionRate = m_Da * Math.Exp( -Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2) ;
+
+            return -HeatReleaseFactor * ReactionRate * PM_CH4;
 
         }
     }

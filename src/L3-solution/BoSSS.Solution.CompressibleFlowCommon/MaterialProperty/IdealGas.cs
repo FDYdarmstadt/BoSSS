@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using System;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
@@ -77,7 +79,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
         /// supplied to <see cref="IdealGas.IdealGas"/>.
         /// </returns>
         public double GetPressure(StateVector state) {
-            return (HeatCapacityRatio - 1.0) * state.InnerEnergy;
+            var r = (HeatCapacityRatio - 1.0) * state.InnerEnergy;
+            Debug.Assert(r > 0, "pressure in ideal gas law is zero or negative");
+            return r;
         }
 
         /// <summary>
@@ -126,7 +130,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
         /// </returns>
         public double GetSpeedOfSound(StateVector state) {
             // Equals sqrt{\kappa \frac{p}{\rho}} for Ma = \kappa
-            return Math.Sqrt(state.Pressure / state.Density) / state.Material.MachNumber;
+            double r = Math.Sqrt(state.Pressure / state.Density) / state.Material.MachNumber;
+            Debug.Assert(r > 0, "speed of sound smaller or equal to 0.0");
+            Debug.Assert(r.IsNaNorInf() == false, "speed of sound is NAN or INF");
+            return r;
         }
 
         /// <summary>

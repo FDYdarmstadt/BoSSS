@@ -256,7 +256,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             this.m_HMForder_kinE = degK * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
 
-            KineticEnergyOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => this.m_HMForder_kinE, this.LsTrk.SpeciesIdS.ToArray());
+            KineticEnergyOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => this.m_HMForder_kinE, this.LsTrk.SpeciesNames);
 
 
             // build the operator
@@ -694,12 +694,12 @@ namespace BoSSS.Application.XNSE_Solver {
             // compute matrix
             if (OpMtx != null) {
 
-                var mtxBuilder = KineticEnergyOperator.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, this.LsTrk.SpeciesIdS.ToArray());
+                var mtxBuilder = KineticEnergyOperator.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping);
 
                 mtxBuilder.time = phystime;
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
                 }
 
                 //if (this.KineticEnergyOperator.SurfaceElementOperator.TotalNoOfComponents > 0) {
@@ -714,11 +714,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             } else {
                 XSpatialOperatorMk2.XEvaluatorNonlin eval = this.KineticEnergyOperator.GetEvaluatorEx(this.LsTrk,
-                    this.KineticEnergy.ToEnumerable().ToArray(), Params, this.KineticEnergy.Mapping,
-                    this.LsTrk.SpeciesIdS.ToArray());
+                    this.KineticEnergy.ToEnumerable().ToArray(), Params, this.KineticEnergy.Mapping);
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    eval.CellLengthScales[kv.Key] = kv.Value;
                 }
 
                 //if (this.KineticEnergyOperator.SurfaceElementOperator.TotalNoOfComponents > 0) {

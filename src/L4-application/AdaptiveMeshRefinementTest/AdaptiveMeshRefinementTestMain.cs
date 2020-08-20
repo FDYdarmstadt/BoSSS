@@ -177,7 +177,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             MagGrad_u.Clear();
             MagGrad_u.ProjectFunction(1.0,
-                (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
+                (ilPSP.Vector X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
                 new Foundation.Quadrature.CellQuadratureScheme(),
                 Grad_u.ToArray());
 
@@ -290,12 +290,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             bool AnyChange;
             List<int> CellsToRefineList;
             List<int[]> Coarsening;
+            GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, LsTrk.Regions.GetCutCellMask());
             if (MPISize > 1) {
                 List<Tuple<int, BitArray>> cellMaskRefinementLevel = GetCellMaskWithRefinementLevels();
-                AnyChange = GridRefinementController.ComputeGridChange((GridData)this.GridData, LsTrk.Regions.GetCutCellMask().GetBitMask(), cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
+                AnyChange = gridRefinementController.ComputeGridChange(cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
             }
             else
-                AnyChange = GridRefinementController.ComputeGridChange((GridData) this.GridData, LsTrk.Regions.GetCutCellMask(), LevelIndicator, out CellsToRefineList, out Coarsening);
+                AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out CellsToRefineList, out Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {

@@ -115,7 +115,9 @@ namespace BoSSS.Foundation.XDG {
             // -------------------------------------
             //this.m_TrackerVersionCnt = m_CCBasis.Tracker.Regions.Version;
             m_CCBasis.Tracker.Subscribe(this);
+            this.m_TrackerPushCount = m_CCBasis.Tracker.PushCount - 1;
             this.OnNext(m_CCBasis.Tracker.Regions); // initialize data structures.
+            Debug.Assert(this.m_TrackerPushCount == m_CCBasis.Tracker.PushCount);
         }
 
         XDGBasis m_CCBasis;
@@ -158,6 +160,7 @@ namespace BoSSS.Foundation.XDG {
         /// return value is cached
         /// </remarks>
         public SpeciesShadowField GetSpeciesShadowField(SpeciesId id) {
+            MPICollectiveWatchDog.Watch();
             if (!m_SpeciesShadowFields.ContainsKey(id.cntnt)) {
                 SpeciesShadowField ssf = new SpeciesShadowField(this, id);
                 m_SpeciesShadowFields.Add(id.cntnt, ssf);
@@ -1273,6 +1276,11 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// most recent entry for <see cref="LevelSetTracker.PushCount"/>
+        /// </summary>
+        int m_TrackerPushCount;
+
+        /// <summary>
         /// Updated the data structure of this cut-cell DG field to reflect the
         /// latest status of the level set.
         /// </summary>
@@ -1280,6 +1288,9 @@ namespace BoSSS.Foundation.XDG {
         public void OnNext(LevelSetTracker.LevelSetRegions levelSetStatus) {
             int J = this.GridDat.iLogicalCells.Count;
             LevelSetTracker trk = m_CCBasis.Tracker;
+            int oldTrackerPushCount = m_TrackerPushCount;
+            int newTrackerPushCount = m_CCBasis.Tracker.PushCount;
+            m_TrackerPushCount = newTrackerPushCount;
 
             m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
 
@@ -1294,9 +1305,16 @@ namespace BoSSS.Foundation.XDG {
             //    throw new ApplicationException("missed at least one memory update; field can't be updated anymore with arg. \"Preserve=true\"");
 
             // rearrange DG coordinates if regions have changed
-            // ===============================================
+            // ================================================
             if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
                 && trk.PopulatedHistoryLength >= 1) {
+
+                if((newTrackerPushCount - oldTrackerPushCount) != 1) {
+                    //string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call.";
+                    //Console.WriteLine(message);
+                    //throw new NotSupportedException(message);
+                }
+
                 // rearrange DG coordinates, preserve State of each species 
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1314,7 +1332,7 @@ namespace BoSSS.Foundation.XDG {
 
                     ushort oldCd = OldRegionCode[j];
                     ushort newCd = NewRegionCode[j];
-
+                                       
                     if (oldCd != newCd  // quick pre-test
                          && ReducedRegionCode.Extract(oldCd) != ReducedRegionCode.Extract(newCd)) {
                         // something changed

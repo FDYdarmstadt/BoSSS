@@ -79,7 +79,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         public static Job RunBatch(this AppControl ctrl, int queueIdx = 0) {
             var b = InteractiveShell.ExecutionQueues[queueIdx];
-            return RunBatch(ctrl, queueIdx);
+            return RunBatch(ctrl, InteractiveShell.ExecutionQueues[queueIdx]);
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace BoSSS.Application.BoSSSpad {
                 var f2 = ctrlBack.InitialValues[ivk];
 
                 if(!f1.Equals(f2))
-                    throw new ArgumentException($"Unable to serialize/deserialize initial values for '{ivk}' correctly. Note that you cannot use delegates with the workflow management, use either formulas as text or 'GetFormulaObject(...)' in the BoSSSpad.");
+                    throw new ArgumentException($"Unable to serialize/deserialize initial values for '{ivk}' correctly. Note that you cannot use delegates with the workflow management, use either formulas as text or 'GetFormulaObject(...)' in the BoSSSpad -- or use other implementations of IBoundaryAndInitialData.");
             }
 
             if (!ctrl.FieldOptions.Keys.SetEquals(ctrlBack.FieldOptions.Keys))
@@ -344,7 +344,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             // otherwise, create new db
-            return new DatabaseInfo(dbPath);
+            return DatabaseInfo.Open(dbPath);
         }
     }
 }

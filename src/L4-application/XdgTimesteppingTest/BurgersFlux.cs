@@ -107,7 +107,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
                
 
-        public double LevelSetForm(ref CommonParams inp,
+        public double InnerEdgeForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 

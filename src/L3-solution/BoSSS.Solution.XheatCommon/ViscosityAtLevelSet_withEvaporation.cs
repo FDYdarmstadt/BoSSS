@@ -56,7 +56,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public override double LevelSetForm(ref CommonParams inp,
+        public override double InnerEdgeForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;

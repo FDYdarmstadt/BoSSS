@@ -42,10 +42,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             this.m_bcMap = bcMap;
             //this.m_spcName = spcName;
             this.m_spcId = spcId;
+            ValidSpecies = spcName;
         }
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string ValidSpecies {
+            get;
+            private set;
         }
 
         protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {

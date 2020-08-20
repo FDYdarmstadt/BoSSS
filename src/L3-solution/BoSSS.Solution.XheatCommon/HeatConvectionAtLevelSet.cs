@@ -88,7 +88,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             double[] U_NegFict, U_PosFict;
 
 
@@ -266,7 +266,7 @@ namespace BoSSS.Solution.XheatCommon {
             U_PosFict = U_Neg;
         }
 
-        public override double LevelSetForm(ref CommonParams cp,
+        public override double InnerEdgeForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
@@ -389,7 +389,7 @@ namespace BoSSS.Solution.XheatCommon {
         double m_capA;
         double m_capB;
 
-        public override double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public override double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
             double M = ComputeEvaporationMass(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
@@ -450,7 +450,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
 
-        public override double LevelSetForm(ref CommonParams inp,
+        public override double InnerEdgeForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 

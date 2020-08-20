@@ -359,23 +359,23 @@ namespace BoSSS.Application.XNSE_Solver {
                             //ReInitPDE.ReInitialize();
 
                             // setup extension velocity mover
-                            switch (this.Control.Timestepper_Scheme) {
-                                case XBase_Control.TimesteppingScheme.RK_CrankNicolson:
-                                case XBase_Control.TimesteppingScheme.CrankNicolson: {
+                            switch (this.Control.TimeSteppingScheme) {
+                                case TimeSteppingScheme.RK_CrankNic:
+                                case TimeSteppingScheme.CrankNicolson: {
                                         //do not instantiate rksch, use bdf instead
                                         bdfOrder = -1;
                                         break;
                                     }
-                                case XBase_Control.TimesteppingScheme.RK_ImplicitEuler:
-                                case XBase_Control.TimesteppingScheme.ImplicitEuler: {
+                                case TimeSteppingScheme.RK_ImplicitEuler:
+                                case TimeSteppingScheme.ImplicitEuler: {
                                         //do not instantiate rksch, use bdf instead
                                         bdfOrder = 1;
                                         break;
                                     }
                                 default: {
-                                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                                        if (this.Control.TimeSteppingScheme.ToString().StartsWith("BDF")) {
                                             //do not instantiate rksch, use bdf instead
-                                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                                            bdfOrder = Convert.ToInt32(this.Control.TimeSteppingScheme.ToString().Substring(3));
                                             break;
                                         } else
                                             throw new NotImplementedException();

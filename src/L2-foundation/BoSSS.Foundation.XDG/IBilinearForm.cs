@@ -25,170 +25,29 @@ using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG {
     
-    /// <summary>
-    /// method parameters (aka. arguments) for level set integrands
-    /// </summary>
-	public sealed class LevSetIntParams {
-		
-        /// <summary>
-		/// integration nodes in physical coordinates
-		/// </summary>
-		/// <remarks>
-		/// <list type="bullet">
-		///   <item>1st index: cell</item>
-		///   <item>2nd index: quadrature node</item>
-		///   <item>3rd index: spatial dimension</item>
-		/// </list>
-		/// </remarks>			
-		public MultidimensionalArray Nodes;
-
-		/// <summary>
-		/// normals on level set at quadrature points
-		/// </summary>
-		/// <list type="bullet">
-		///   <item>1st index: cell</item>
-		///   <item>2nd index: quadrature node</item>
-		///   <item>3rd index: spatial direction</item>
-		/// </list>
-		public MultidimensionalArray Normals;
-
-		/// <summary>
-        /// Values of parameter fields at quadrature nodes on positive side, i.e. where the level-set function is positive.
-		/// </summary>
-		public MultidimensionalArray[] ParamsPos;
-
-        /// <summary>
-        /// Values of parameter fields at quadrature nodes on negative side, i.e. where the level-set function is negative.
-        /// </summary>
-        public MultidimensionalArray[] ParamsNeg;
-      
-
-        /// <summary>
-        /// 1st item to integrate, i.e. cell/edge offset;
-        /// </summary>
-        public int i0;
-
-        /// <summary>
-        /// number of items
-        /// </summary>
-        public int Len {
-            get {
-                int L = Normals.GetLength(0);
-                return L;
-            }
-        }
-
-        /// <summary>
-        /// Physical time.
-        /// </summary>
-        public double time;
-
-        /// <summary>
-        /// Access to the level-set tracker.
-        /// </summary>
-        public LevelSetTracker LsTrk;
-	}
-    /*
-    /// <summary>
-    /// common input parameters for the abstract functions
-    /// </summary>
-    public struct CommonParams {
-
-        /// <summary>
-        /// Position vector, in global/physical coordinates at which the integrand should be evaluated.
-        /// Note: depending on the quadrature rule, that point is not necessarily located on the zero-level-set.
-        /// </summary>
-        public Vector X;
-
-        /// <summary>
-        /// Normal vector, parallel to the gradient of the level-set function.
-        /// </summary>
-        public Vector Normal;
-
-        /// <summary>
-        /// Guess what?
-        /// </summary>
-        public int D {
-            get {
-                Debug.Assert(X.Dim == Normal.Dim);
-                return Normal.Dim;
-            }
-        }
-
-        /// <summary>
-        /// Values of parameter variables on negative side, i.e. where the level-set function is negative.
-        /// </summary>
-        public double[] ParamsNeg;
-
-        /// <summary>
-        /// Values of parameter variables on positive side, i.e. where the level-set function is positive.
-        /// </summary>
-        public double[] ParamsPos;
-
-        /// <summary>
-        /// cell index
-        /// </summary>
-        public int jCell;
-
-        /// <summary>
-        /// Physical time.
-        /// </summary>
-        public double time;
-
-    }
-    */
+   
 
     /// <summary>
     /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
     /// </summary>
-    public interface IEquationComponentSpeciesNotification {
+    public interface IEquationComponentSpeciesNotification : IEquationComponent {
+
+        /// <summary>
+        /// called before the integration on respective species 
+        /// </summary>
         void SetParameter(string speciesName, SpeciesId SpcId);
     }
 
     /// <summary>
     /// this interface should be implemented by bulk equation components which are only valid in one species
     /// </summary>
-    public interface ISpeciesFilter {
+    public interface ISpeciesFilter : IEquationComponent {
 
-        /// <summary>
-        /// name of the valid species
-        /// </summary>
-        //string SpeciesName { get; }
 
         /// <summary>
         /// the species in which the bulk equation component is valid
         /// </summary>
-        SpeciesId validSpeciesId { get; }
-    }
-
-    /// <summary>
-    /// An integrand on the level set.
-    /// </summary>
-    public interface ILevelSetForm : IEquationComponent {
-
-
-        /// <summary>
-        /// index of the species-separating level set.
-        /// </summary>
-        int LevelSetIndex { get; }
-
-
-        /// <summary>
-        /// regarding this integrand, the species on the positive side of level set number <see cref="LevelSetIndex"/>
-        /// </summary>
-        SpeciesId PositiveSpecies { get; }
-
-        /// <summary>
-        /// guess what?
-        /// </summary>
-        SpeciesId NegativeSpecies { get; }
-
-
-        TermActivationFlags LevelSetTerms { get; }
-
-        double LevelSetForm(ref CommonParams inp,
-            double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
-            double vA, double vB, double[] Grad_vA, double[] Grad_vB);
+        string ValidSpecies { get; }
     }
 
     /// <summary>
@@ -218,59 +77,79 @@ namespace BoSSS.Foundation.XDG {
     }
 
     /// <summary>
-    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeform_UxV"/>
+    /// An integrand on the level set; per definition a level-set is always an interior edge
     /// </summary>
-    public interface ILevelSetForm_UxV : ILevelSetForm {
-       
-        void LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV);
+    public interface ILevelSetForm : IInnerEdgeForm {
+
+
+        /// <summary>
+        /// index of the species-separating level set.
+        /// </summary>
+        int LevelSetIndex { get; }
+
+
+        /// <summary>
+        /// regarding this integrand, the species on the positive side of level set number <see cref="LevelSetIndex"/>
+        /// </summary>
+        SpeciesId PositiveSpecies { get; }
+
+        /// <summary>
+        /// guess what?
+        /// </summary>
+        SpeciesId NegativeSpecies { get; }
+
+        /// <summary>
+        /// Controls integration at the level-set.
+        /// </summary>
+        TermActivationFlags LevelSetTerms { get; }
+    }
+
+
+    public interface ILevelSetFormSetup { 
+        /// <summary>
+        /// Called before Integration
+        /// </summary>
+        void Setup(LevelSetTracker lsTrk);
+
     }
 
     /// <summary>
-    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeform_UxV"/>
+    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeForm_UxV"/>
     /// </summary>
-    public interface ILevelSetForm_GradUxV : ILevelSetForm {
-        void LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxV);
+    public interface ILevelSetForm_UxV : ILevelSetForm, IInnerEdgeform_UxV {
+       
+        //void LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV);
+    }
+
+    /// <summary>
+    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeForm_UxV"/>
+    /// </summary>
+    public interface ILevelSetForm_GradUxV : ILevelSetForm, IInnerEdgeform_GradUxV {
+        //void LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxV);
 
     }
 
-    public interface ILevelSetForm_UxGradV : ILevelSetForm {
-        void LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxGradV);
+    public interface ILevelSetForm_UxGradV : ILevelSetForm, IInnerEdgeform_UxGradV {
 
     }
 
-    public interface ILevelSetForm_GradUxGradV : ILevelSetForm {
-        void LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxGradV);
+    public interface ILevelSetForm_GradUxGradV : ILevelSetForm, IInnerEdgeform_GradUxGradV {
+
+    }
+    public interface ILevelSetForm_V : ILevelSetForm, IInnerEdgeSource_V {
 
     }
 
-    public interface ILevelSetForm_V : ILevelSetForm {
-
-        void LevelSetForm_V(LevSetIntParams inp, 
-            MultidimensionalArray Koeff_V);
-
-    }
-
-    public interface ILevelSetForm_GradV : ILevelSetForm {
-
-        void LevelSetForm_GradV(LevSetIntParams inp, 
-            MultidimensionalArray Koeff_GradV);
+    public interface ILevelSetForm_GradV : ILevelSetForm, IInnerEdgeSource_GradV {
 
     }
 
 
-    public interface INonlinLevelSetForm_V : ILevelSetForm {
-
-        void LevelSetForm_V(LevSetIntParams inp, 
-            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB,
-            MultidimensionalArray Koeff_V);
+    public interface INonlinLevelSetForm_V : ILevelSetForm, INonlinInnerEdgeForm_V {
 
     }
 
-    public interface INonlinLevelSetForm_GradV : ILevelSetForm {
-
-        void LevelSetForm_GradV(LevSetIntParams inp, 
-            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB,
-            MultidimensionalArray Koeff_GradV);
+    public interface INonlinLevelSetForm_GradV : ILevelSetForm, INonlinInnerEdgeForm_GradV {
 
     }
 

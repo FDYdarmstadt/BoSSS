@@ -45,7 +45,7 @@ namespace BoSSS.Solution.XheatCommon {
         int m_d;
 
 
-        public override double LevelSetForm(ref CommonParams cp,
+        public override double InnerEdgeForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
@@ -126,7 +126,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
 
-        public override double LevelSetForm(ref CommonParams cp,
+        public override double InnerEdgeForm(ref CommonParams cp,
 
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -220,7 +220,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
 
-        public override double LevelSetForm(ref CommonParams cp,
+        public override double InnerEdgeForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 

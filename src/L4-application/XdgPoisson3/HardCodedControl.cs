@@ -513,7 +513,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 1, int blocksize = 1000, string myDB = null)
+        public static XdgPoisson3Control TestOrTreat(int solver = 1, int blocksize = 10000, string myDB = null)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -524,9 +524,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                     break;
                 case 1:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-                    break;
-                case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap;
                     break;
                 case 3:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
@@ -557,7 +554,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 return grid;
             };
 
-            C.GridPartType = GridPartType.directHilbert;
+            C.GridPartType = GridPartType.Hilbert;
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
 

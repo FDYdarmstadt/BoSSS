@@ -31,6 +31,44 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         /// <summary>
+        /// Create a regular checkerboard mesh
+        /// </summary>
+        /// <param name="xTics">
+        /// Ascending tics of grid in x direction.
+        /// </param>
+        /// <param name="yTics">
+        /// Ascending tics of grid in y direction.
+        /// </param>
+        /// <returns></returns>
+        public static VoronoiGrid Rectangle(double[] xTics, double[] yTics)
+        {
+            Vector[] rectangle = new Vector[]
+            {
+                new Vector(xTics[0], yTics[0]),
+                new Vector(xTics[0], yTics[yTics.Length - 1]),
+                new Vector(xTics[xTics.Length - 1], yTics[yTics.Length - 1]),
+                new Vector(xTics[xTics.Length - 1], yTics[0])
+            };
+            MultidimensionalArray nodes = Checkerize(xTics, yTics);
+
+            return Polygonal(nodes, rectangle, 0, 0);
+        }
+
+        static MultidimensionalArray Checkerize(double[] a, double[] b)
+        {
+            MultidimensionalArray abT = MultidimensionalArray.Create((a.Length - 1) * (b.Length - 1), 2);
+            for(int i = 0; i < a.Length - 1; ++i)
+            {
+                for (int j = 0; j < b.Length - 1; ++j)
+                {
+                    abT[i * (b.Length - 1) + j, 0] = (a[i] + a[i +1]) / 2.0;
+                    abT[i * (b.Length - 1) + j, 1] = (b[j] + b[j + 1]) / 2.0;
+                }
+            }
+            return abT;
+        }
+
+        /// <summary>
         /// Creates a random voronoi mesh inside a polygon.
         /// </summary>
         /// <param name="polygonBoundary">

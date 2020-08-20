@@ -1313,7 +1313,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
             double dt = 0.1;
@@ -1539,7 +1539,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 0.1;
@@ -2424,7 +2424,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
             C.LSunderrelax = 0.7;
@@ -2694,7 +2694,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 4;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -3506,7 +3506,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -3812,7 +3812,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -3830,7 +3830,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        public static XNSE_Control StokesSphere(int p = 2, int kelem = 4, string _DbPath = null) {
+        public static XNSE_Control StokesSphere(int p = 1, int kelem = 4, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -3872,6 +3872,7 @@ namespace BoSSS.Application.XNSE_Solver {
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = Math.Max(4, 2 * p + 2),
+                //Degree = 4,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
@@ -4018,7 +4019,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -4243,7 +4244,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -5388,7 +5389,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
@@ -5571,7 +5572,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 

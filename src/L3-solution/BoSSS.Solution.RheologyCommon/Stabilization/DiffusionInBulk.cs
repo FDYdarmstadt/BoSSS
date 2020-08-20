@@ -43,11 +43,12 @@ namespace BoSSS.Solution.RheologyCommon {
             this.cj = _cj;
             this.variable = _variable;
             this.m_spcId = spcId;
-
+            this.ValidSpecies = spcName;
         }
 
-        public SpeciesId validSpeciesId {
-            get { return m_spcId; }
+        public string ValidSpecies {
+            get;
+            private set;
         }
     }
 }

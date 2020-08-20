@@ -36,7 +36,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Initialize Viscosity
         /// </summary>
         public ViscosityInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _beta, double[] _Penalty1, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _beta, _Penalty1) {
-            this.validSpeciesId = spcId;
+            this.ValidSpecies = spcName;
             this.m_bcMap = _BcMap;
 
             base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 2];
@@ -44,6 +44,6 @@ namespace BoSSS.Solution.RheologyCommon {
             base.VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.VelocityY + "#" + spcName], 1);
         }
 
-        public SpeciesId validSpeciesId { get; }
+        public string ValidSpecies { get; private set; }
     }
 }

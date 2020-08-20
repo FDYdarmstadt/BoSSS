@@ -73,9 +73,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure{
             }
         }
 
-        public double LevelSetForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             return vA * inp.Normal[m_d] * pA[0];
         }
+
 
         /// <summary>
         /// Linear component - returns this object itself.

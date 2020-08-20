@@ -280,6 +280,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             get {
                 //Dimensional scaling is inside GetSpeedOfSound
                 double sos = Material.EquationOfState.GetSpeedOfSound(this);
+                Debug.Assert(sos > 0, "speed of sound smaller or equal to 0.0");
+                Debug.Assert(!sos.IsNaNorInf(), "speed of sound is NAN or INF");
                 return sos;
             }
         }
@@ -291,7 +293,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public double LocalMachNumber {
             get {
-                return Velocity.Abs() / SpeedOfSound;
+                var R = Velocity.Abs() / SpeedOfSound;
+                Debug.Assert(R.IsNaNorInf() == false, "NAN or INF  in local mach number");
+                return R;
             }
         }
 

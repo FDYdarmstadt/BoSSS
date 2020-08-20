@@ -109,21 +109,6 @@ namespace BoSSS.Platform
 
                 if (iEar < 0)
                 {
-                    /*
-                    using(var gp = new Gnuplot()) {
-                        double[] xn = Polygon.Select(X => X.x).ToArray();
-                        double[] yn = Polygon.Select(X => X.y).ToArray();
-                        double[] xm = _Polygon.Select(X => X.x).ToArray();
-                        double[] ym = _Polygon.Select(X => X.y).ToArray();
-
-                        gp.PlotXY(xn, yn, "earless", new PlotFormat("-xb"));
-                        gp.PlotXY(xm, ym, "orginal", new PlotFormat(":0r"));
-
-                        gp.Execute();
-
-                        Console.ReadKey();
-                    }
-                    */
                     throw new ArithmeticException("unable to find ear.");
                 }
 
@@ -160,26 +145,6 @@ namespace BoSSS.Platform
                 R[iTri, 0] = iV0;
                 R[iTri, 1] = iV1;
                 R[iTri, 2] = iV2;
-
-                /*
-                Vector V0 = Polygon[iV0];
-                Vector V1 = Polygon[iV1];
-                Vector V2 = Polygon[iV2];
-
-                Vector D1 = V1 - V0;
-                Vector D2 = V2 - V0;
-                if(!(D1.CrossProduct2D(D2) > 1.0e-8)) {
-                    throw new ArithmeticException("Not a convex polygon.");
-                }
-                //if (D1.CrossProduct2D(D2) < 0) {
-                //    Vector T = V2;
-                //    int t = iV2;
-                //    V2 = V1;
-                //    iV2 = iV1;
-                //    V1 = T;
-                //    iV1 = t;
-                //}
-                */
             }
 
             return R;
@@ -192,17 +157,19 @@ namespace BoSSS.Platform
         /// A positively oriented polygon
         /// </param>
         /// <param name="point"></param>
+        /// <param name="accuracy"></param>
         /// <returns></returns>
-        public static bool PointInConvexPolygon(IEnumerable<Vector> _Polygon, Vector point)
+        public static bool PointInConvexPolygon(IEnumerable<Vector> _Polygon, Vector point, double accuracy = 1e-14)
         {
             //http://demonstrations.wolfram.com/AnEfficientTestForAPointToBeInAConvexPolygon/
-            const double accuracy = 1e-12;
             //Shift
             Vector[] shiftedPoly = new Vector[_Polygon.Count()];
+            double max = double.NegativeInfinity;
             int i = 0;
             foreach (Vector vtx in _Polygon)
             {
                 shiftedPoly[i] = vtx - point;
+                max = Math.Max(max, shiftedPoly[i].AbsSquare());
                 ++i;
             }
             bool inside = true;
@@ -210,13 +177,72 @@ namespace BoSSS.Platform
             for(i = 0; i < shiftedPoly.Length - 1; ++i)
             {
                 double a_i = shiftedPoly[i + 1].x * shiftedPoly[i].y - shiftedPoly[i].x * shiftedPoly[i + 1].y;
-                inside &= a_i <= accuracy;
+                inside &= a_i < accuracy * max;
             }
             double a = shiftedPoly[0].x * shiftedPoly[shiftedPoly.Length-1].y 
                 - shiftedPoly[shiftedPoly.Length-1].x * shiftedPoly[0].y;
-            inside &= a <= accuracy;
+            inside &= a < accuracy * max;
             return inside;
 
+        }
+    }
+
+    public static class FloatingPointArithmetic
+    {
+        /// <summary>
+        /// Checks for equality by using relative error
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="accuracy"></param>
+        /// <returns></returns>
+        public static bool IsEqual(double a, double b, double accuracy, double zeroAccuracy = 1e-12)
+        {
+            double absA = Math.Abs(a);
+            double absB = Math.Abs(b);
+            double diff = Math.Abs(a - b);
+            
+            if (a == 0 || b == 0 || absA + absB < zeroAccuracy)
+            {
+                // a or b is zero or both are extremely close to it
+                // relative error is less meaningful here
+                return diff < zeroAccuracy;
+            }
+            else
+            { // use relative error
+                return diff / (absA + absB) < accuracy;
+            }
+        }
+
+        /// <summary>
+        /// Checks for equality by using relative error
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="accuracy"></param>
+        /// <param name="zeroAccuracy"></param>
+        /// <returns></returns>
+        public static bool IsEqual(Vector a, Vector b, double accuracy = 1e-10, double zeroAccuracy = 1e-12)
+        {
+            double absA = a.AbsSquare();
+            double absB = b.AbsSquare();
+            double max = Math.Max(absA, absB);
+            double diff = (a - b).AbsSquare();
+            if (absA == 0 || absB == 0 || max < zeroAccuracy * zeroAccuracy)
+            {
+                return diff < zeroAccuracy * zeroAccuracy;
+            }
+            else
+            {
+                if (diff < max * accuracy * accuracy)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
         }
     }
 
@@ -250,23 +276,17 @@ namespace BoSSS.Platform
 
             Vector S12 = S2 - S1;
             Vector E12 = E2 - E1;
-            if (S12.Abs() <= 0)
-                throw new ArgumentException();
-            if (E12.Abs() <= 0)
-                throw new ArgumentException();
-
 
             var P_S12 = AffineManifold.FromPoints(S1, S2);
             var P_E12 = AffineManifold.FromPoints(E1, E2);
 
-            Vector NS = P_S12.Normal; NS.Normalize();
-            Vector NE = P_E12.Normal; NE.Normalize();
+            double parallel = S12[0] * E12[1] - S12[1] * E12[0];
+            double relParallel = parallel * parallel / (S12.AbsSquare() * E12.AbsSquare());
 
-            double parallel = NS * NE;
-            if (parallel.Abs() >= 1.0 - 1e-10)
+            if ( Math.Abs(relParallel)  <= 1e-20)
             {
-                alpha1 = P_S12.PointDistance(E1);
-                //alpha1 = double.PositiveInfinity;
+                alpha1 = P_S12.PointDistance(E1); 
+                alpha1 /= E12.Abs();
                 alpha2 = double.PositiveInfinity;
                 I = new Vector(double.PositiveInfinity, double.PositiveInfinity);
                 return false;

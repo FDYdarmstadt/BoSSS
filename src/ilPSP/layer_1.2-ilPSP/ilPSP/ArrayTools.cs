@@ -676,6 +676,9 @@ namespace ilPSP.Utils {
             for (; i0 < erstes.Count; i0++)
                 ret.Add(erstes[i0]);
 
+            if(andere == null)
+                return ret.ToArray();
+
             for (int i = 0; i < andere.Length; i++) {
 
                 if (andere[i] is IEnumerable<T>) {

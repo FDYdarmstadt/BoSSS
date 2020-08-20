@@ -39,12 +39,12 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="MathNet.Numerics">
-      <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
+    <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Advection\ExtensionVelocityBDFMover.cs" />
@@ -103,6 +103,12 @@
     <Compile Include="Advection\NonconservativeAdvection.cs" />
     <Compile Include="ReInitialization.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SemiLagrangianLevelSet\FrontTrackingLevelSet.cs" />
+    <Compile Include="SemiLagrangianLevelSet\MarkerLevelSet.cs" />
+    <Compile Include="SemiLagrangianLevelSet\ParticleLevelSet.cs" />
+    <Compile Include="SemiLagrangianLevelSet\SemiLagrangianLevelSetMethod.cs" />
+    <Compile Include="SemiLagrangianLevelSet\TestCases.cs" />
+    <Compile Include="SemiLagrangianLevelSet\TestSuite.cs" />
     <Compile Include="TestCases\Flower.cs" />
     <Compile Include="TestCases\RotationFieldClipped.cs" />
     <Compile Include="TestCases\Torus.cs" />

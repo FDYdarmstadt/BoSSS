@@ -66,7 +66,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi">scalar</param>
         /// <param name="jCell">Not used.</param>
         /// <returns>Density</returns>
-        public double GetDensity(double[] X, double[] phi, int jCell) {
+        public double GetDensity(ilPSP.Vector X, double[] phi, int jCell) {
             return this.GetDensity(phi);
         }
 
@@ -78,6 +78,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns>dynamic viscosity</returns>
         public abstract double GetViscosity(double phi);
 
+  
         /// <summary>
         /// Returns dynamic viscosity dependent on one or more scalars,
         /// e.g. k and omega for use in turbulence model.
@@ -100,7 +101,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi">scalar</param>
         /// <param name="jCell">Not used.</param>
         /// <returns>Dynamic viscosity</returns>
-        public double GetViscosity(double[] X, double[] phi, int jCell) {
+        public double GetViscosity(ilPSP.Vector X, double[] phi, int jCell) {
             if (phi.Length != 1)
                 throw new ArgumentException();
 
@@ -116,17 +117,31 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public abstract double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Z"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public abstract double getVariableFromZ(double Z, string id);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Z"></param>
+        /// <returns></returns>
+        public abstract double getDensityFromZ(double Z);
 
 #region CoupledLaxFriedrichs
 
-        /// <summary>
-        /// Returns lambda, i.e. penalty parameter for coupled Lax-Friedrichs flux.
-        /// Not to be confused with heat conductivity!!!
-        /// </summary>
-        /// <param name="VelocityMean"></param>
-        /// <param name="Normal"></param>
-        /// <param name="ScalarMean"></param>
-        /// <returns>Absolute value of lambda.</returns>
+            /// <summary>
+            /// Returns lambda, i.e. penalty parameter for coupled Lax-Friedrichs flux.
+            /// Not to be confused with heat conductivity!!!
+            /// </summary>
+            /// <param name="VelocityMean"></param>
+            /// <param name="Normal"></param>
+            /// <param name="ScalarMean"></param>
+            /// <returns>Absolute value of lambda.</returns>
         public abstract double GetLambda(double[] VelocityMean, double[] Normal, double ScalarMean);
 
         /// <summary>

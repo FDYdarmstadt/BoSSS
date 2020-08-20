@@ -55,6 +55,8 @@ namespace BoSSS.Application.FSI_Solver {
             SetDGdegree(degree);
         }
 
+        public bool IsRestart = false;
+
         /// <summary>
         /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
         /// </summary>
@@ -112,7 +114,6 @@ namespace BoSSS.Application.FSI_Solver {
         public double MinGridLength;
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             MaxGridLength = 1 / cellsPerUnitLength;
-            MinGridLength = MaxGridLength / RefinementLevel;
             BoundaryPositionPerDimension = new double[2][];
             WallPositionPerDimension = new double[2][];
             WallPositionPerDimension[0] = new double[2];
@@ -122,6 +123,10 @@ namespace BoSSS.Application.FSI_Solver {
             BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
             BoundaryIsPeriodic[0] = periodicX;
             BoundaryIsPeriodic[1] = periodicY;
+            if (IsRestart)
+                return;
+            if (m_BoundaryValues.IsNullOrEmpty() && !BoundaryIsPeriodic[0] && !BoundaryIsPeriodic[1])
+                SetBoundaries(new List<string> { "Wall" });
             GridFunc = delegate {
                 FluidDomainVolume = lengthX * lengthY;
                 int q = new int(); // #Cells in x-dircetion + 1
@@ -209,11 +214,12 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-        public void SetTimesteps(double dt, int noOfTimesteps) {
+        public void SetTimesteps(double dt, int noOfTimesteps, bool staticTimestep = true) {
             dtMax = dt;
             dtMin = dt;
             Endtime = noOfTimesteps * dt;
             NoOfTimesteps = noOfTimesteps;
+            this.staticTimestep = staticTimestep;
         }
 
 
@@ -268,7 +274,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Gravity acting on the particles, zero by default.
         /// </summary>
-        [DataMember]
+       // [DataMember]
         public Vector gravity = new Vector(0, 0);
 
         /// <summary>
@@ -296,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
             get;
             set;
         }
-
+        public bool fixPosition = false;
         public enum CollisionModel {
             RepulsiveForce = 0,
 
@@ -305,6 +311,8 @@ namespace BoSSS.Application.FSI_Solver {
             NoCollisionModel = 2
 
         }
+
+        public double minDistanceThreshold = 0;
 
         [DataMember]
         public CollisionModel collisionModel = CollisionModel.MomentumConservation;
@@ -319,6 +327,6 @@ namespace BoSSS.Application.FSI_Solver {
             return typeof(FSI_SolverMain);
         }
 
-        public bool UsePerssonSensor = true;
+        public bool UsePerssonSensor = false;
     }
 }

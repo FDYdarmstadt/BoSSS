@@ -258,7 +258,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 }
             }
 
-            CSVFile.SaveToCSVFile<IEnumerable<double>, double>(testData, "ConditionNumberScalingTest_dataSet.txt");
+            //CSVFile.SaveToCSVFile<IEnumerable<double>, double>(testData, "ConditionNumberScalingTest_dataSet.txt");
+            Console.WriteLine("warning no output-file - ToDo");
 
         }
 

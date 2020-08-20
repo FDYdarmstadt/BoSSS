@@ -32,12 +32,11 @@ namespace BoSSS.Solution.NSECommon {
     public class MassMatrixComponent : BoSSS.Solution.Utils.LinearSource {
         string[] m_ArgumentOrdering;
         IList<string> m_ParameterOrdering;
-        MaterialLawLowMach EoS;
-        bool m_energy;
-        bool m_conti;
-        double rho;
-        double dt;
-
+        MaterialLaw EoS;
+        int m_SpatialDimension = 2;
+        int NumberOfReactants = 3;
+        int j;
+        PhysicsMode physicsMode;
         /// <summary>
         /// Ctor for variable density flows
         /// </summary> 
@@ -45,29 +44,58 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="energy">Set conti: true for the energy equation</param>
         /// <param name="ArgumentOrdering"></param>
         /// <param name="TimeStepSize"></param>
-        public MassMatrixComponent(MaterialLawLowMach EoS, double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
-            m_ArgumentOrdering = ArgumentOrdering;//.Cat(VariableNames.Rho);
+        public MassMatrixComponent(MaterialLaw EoS, String[] ArgumentOrdering, int j, PhysicsMode _physicsMode, int spatDim, int NumberOfReactants) {
+            this.j = j;
             this.EoS = EoS;
-            dt = TimeStepSize;
-            m_energy = energy;
-            m_conti = conti;
             m_ParameterOrdering = EoS.ParameterOrdering;
+            this.m_SpatialDimension = spatDim;
+            this.NumberOfReactants = NumberOfReactants;
 
+            int SpatDim =2;
+            int numberOfReactants = 3;
+            this.physicsMode = _physicsMode;
+            switch (_physicsMode) {
+                case PhysicsMode.Multiphase:
+                    m_ArgumentOrdering = new string[] { VariableNames.LevelSet };
+                    m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
+                    break;
+                case PhysicsMode.LowMach:
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature);
+                    if (EoS == null)
+                        throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+                    else
+                        this.EoS = EoS;
+                    break;
+                case PhysicsMode.MixtureFraction:
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction);
+
+                    if (EoS == null)
+                        throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+                    else
+                        this.EoS = EoS;
+                    break;
+                case PhysicsMode.Combustion:
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature, VariableNames.MassFractions(numberOfReactants - 1)); // u,v,w,T, Y0,Y1,Y2,Y3  as variables (Y4 is calculated as Y4 = 1- (Y0+Y1+Y2+Y3)
+                    if (EoS == null)
+                        throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+                    else
+                        this.EoS = EoS;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
         /// <summary>
-        /// ctor for cte density flows
+        /// ctor for constant density flows
         /// </summary>
         /// <param name="EoS"></param>
         /// <param name="TimeStepSize"></param>
         /// <param name="ArgumentOrdering"></param>
         /// <param name="energy"></param>
         /// <param name="conti"></param>
-        public MassMatrixComponent( double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
+        public MassMatrixComponent(String[] ArgumentOrdering) {
             m_ArgumentOrdering = ArgumentOrdering;
             this.EoS = null;
-            dt = TimeStepSize;
-            m_energy = energy;
-            m_conti = conti;
             m_ParameterOrdering = null;
         }
 
@@ -99,22 +127,27 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
             double mult = 1.0;
-            rho = 1.0;
-
-            if(EoS!= null) { 
-            rho = EoS.GetDensity(parameters);
-                double T = parameters[0];
-
-                if(m_energy == true) {
-                    double gamma = EoS.GetHeatCapacityRatio(parameters[0]);
-                    Debug.Assert(gamma > 0);
-                    mult = 1; // 1/gamma;
-                }
-                if(m_conti == true)
-                    mult = -1 / T;
+            double rho = 1.0;
+      
+            switch (physicsMode) {
+                case PhysicsMode.Incompressible:
+                    break;
+                case PhysicsMode.MixtureFraction:
+                    rho = EoS.getDensityFromZ(U[m_SpatialDimension]);
+                    break;
+                case PhysicsMode.LowMach:
+                    double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension, 1);
+                    rho = EoS.GetDensity(DensityArgumentsIn);
+                    break;
+                case PhysicsMode.Combustion:
+                    double[] DensityArgumentsIn2 = U.GetSubVector(m_SpatialDimension, NumberOfReactants);
+                    rho = EoS.GetDensity(DensityArgumentsIn2);
+                    break;
+                default:
+                    throw new NotImplementedException("PhysicsMode not implemented");
             }
 
-            return mult * rho * U[0];
+            return mult * rho * U[j];
 
 
         }

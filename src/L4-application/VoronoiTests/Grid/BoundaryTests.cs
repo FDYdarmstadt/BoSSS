@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Voronoi;
 using ilPSP;
+using ilPSP.Utils;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,108 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicBoundaryPairLarge();
+            PeriodicPairSkewCheckerBoard();
+        }
+
+        [Test]
+        public void Shift()
+        {
+            double offset = 1e-7;
+            MultidimensionalArray nodes = MultidimensionalArray.Create(6, 2);
+            nodes.SetRowPt(0, new Vector(0.5 + offset, 0.5));
+            nodes.SetRowPt(1, new Vector(-0.5 + offset, 0.5));
+            nodes.SetRowPt(2, new Vector(0.5 - offset, -0.5));
+            nodes.SetRowPt(3, new Vector(-0.5 - offset, -0.5));
+            nodes.SetRowPt(4, new Vector(0, -0.5));
+            nodes.SetRowPt(5, new Vector(0, 0.5));
+
+            // ### Grid
+            byte[] tags = { 1, 181, 1, 181 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 1, "AdiabaticSlipWall"},
+                { 181, "Periodic-X"}
+            };
+            var gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.Rectangle(2, 2),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+        }
+
+        [Test]
+        public void PeriodicPairCheckerBoard()
+        {
+            // ### Grid
+            byte[] tags = { 1, 181, 1, 181 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 1, "AdiabaticSlipWall"},
+                { 181, "Periodic-X"}
+            };
+            var gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.Rectangle(1, 0.5 ),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            double[] xTics = GenericBlas.Linspace(-0.5, 0.5, 3);
+            double[] yTics = GenericBlas.Linspace(-0.25, 0.25, 5);
+            for (int i = 0; i < yTics.Length; ++i)
+            {
+                yTics[i] *= -1;
+            }
+            MultidimensionalArray nodes = Checkerize(xTics, yTics);
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+            Plotter.Plot(grid);
+
+        }
+
+        MultidimensionalArray Checkerize(double[] a, double[] b)
+        {
+            MultidimensionalArray abT = MultidimensionalArray.Create((a.Length - 1) * (b.Length - 1), 2);
+            for (int i = 0; i < a.Length - 1; ++i)
+            {
+                for (int j = 0; j < b.Length - 1; ++j)
+                {
+                    abT[i * (b.Length - 1) + j, 0] = (a[i] + a[i + 1]) / 2.0;
+                    abT[i * (b.Length - 1) + j, 1] = (b[j] + b[j + 1]) / 2.0;
+                }
+            }
+            return abT;
+        }
+
+        [Test] 
+        public void PeriodicPairSkewCheckerBoard()
+        {
+            byte[] tags = { 1, 181, 1, 181 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 181, "Periodic-X" },
+                { 1, "Dirichlet" }
+            };
+
+            VoronoiBoundary gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.Rectangle(2, 2),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            MultidimensionalArray nodes = MultidimensionalArray.Create(6, 2);
+            nodes.SetRow(0, new double[] { -0.71, 0.7 });
+            nodes.SetRow(1, new double[] { 0.8, 0.7 });
+            nodes.SetRow(2, new double[] { 0, 0.5 });
+            nodes.SetRow(3, new double[] { -0.7, -0.7 });
+            nodes.SetRow(4, new double[] { 0.7, -0.7 });
+            nodes.SetRow(5, new double[] { 0, -0.5 });
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
         }
 
         [Test]
@@ -168,7 +270,7 @@ namespace VoronoiTests.Grid
 
             Random random = new Random(10);
             MultidimensionalArray nodes = default(MultidimensionalArray);
-            for (int i = 0; i < 1000; i += 1)
+            for (int i = 0; i < 10; i += 1)
             {
                 Console.WriteLine($"Roll number{i}");
                 nodes = RandomNodesInSquare(4.09, 4.0, 300, random);

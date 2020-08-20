@@ -313,10 +313,40 @@ namespace ilPSP.Utils {
 
             double[] r = new double[n];
             double dx = (b - a) / ((double)(n - 1));
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < n - 1; i++) {
                 r[i] = a + dx * ((double)i);
             }
+            r[n - 1] = b;
             return r;
+        }
+
+        /// <summary>
+        /// Creates logarithmically distributed nodes between two points.
+        /// </summary>
+        /// <param name="min">minimum</param>
+        /// <param name="max">maximum</param>
+        /// <param name="n">number of nodes desired</param>
+        /// <returns>an array of length <paramref name="n"/>,
+        /// with first entry equal to <paramref name="min"/>, 
+        /// last entry equal to <paramref name="max"/>, and 
+        /// all other points linear interpolated in between.</returns>
+        public static double[] Logspace(double min, double max, int n) {
+
+            double a = - Math.Log10(min) + Math.Log10(max);
+            double b = min;
+
+
+            double[] aa = Linspace(0, 1, n);
+            Debug.Assert(aa.Length == n);
+            aa[0] = min; // startpoint should be exact - avoid any round-off errors
+            for(int i = 1; i < n - 1; i++) {
+                aa[i] = b * Math.Pow(10, a * aa[i]);
+            }
+            aa[n - 1] = max; // endpoint should also be exact
+
+            Debug.Assert(Math.Abs(b * Math.Pow(10, a) - max) < Math.Abs(max) * 0.0001);
+
+            return aa;
         }
 
         /// <summary>
@@ -538,6 +568,8 @@ namespace ilPSP.Utils {
         /// clear all entries.
         /// </summary>
         static public void ClearEntries<T>(this T a) where T : IList<double> {
+            if (a.Count == 0)
+                throw new Exception("anfksdfnalfnyf");
             int L = a.Count;
             if(a is Array) {
                 // optimized for arrays

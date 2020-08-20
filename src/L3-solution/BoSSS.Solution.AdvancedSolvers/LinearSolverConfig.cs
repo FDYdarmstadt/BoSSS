@@ -42,42 +42,14 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         classic_pardiso = 2,
 
-        /// <summary>
-        /// Classic Multigrid approach, especially useful for predoncitioning
-        /// </summary>
-        exp_multigrid = 3,
-
-        /// <summary>
-        /// ILU decomposition with modification for saddle-point (highly experimental)
-        /// </summary>
-        exp_ILU = 4,
-
-        /// <summary>
-        /// Direct solver from new solver framework, using a dense LU decomposition from Lapack.
-        /// </summary>
-        exp_direct_lapack = 7,
-
         //Schwarz: Domain decomposition (direct Solver)
-
-        /// <summary>
-        /// Schwarz method with METIS blocking and direct solver for coarse solve
-        /// </summary>
-        exp_schwarz_directcoarse = 10,
 
         /// <summary>
         /// Schwarz method with METIS blocking and direct solver for coarse solve with an overlap of 1
         /// </summary>
-        exp_schwarz_directcoarse_overlap = 11,
+        exp_AS = 11,
 
-        /// <summary>
-        /// Schwarz method with Multigridblocking on the coarsest level and coarse solve
-        /// </summary>
-        exp_schwarz_MG_directcoarse = 12,
-
-        /// <summary>
-        /// Schwarz method with Multigridblocking on the coarsest level and coarse solve with an overlap of 1
-        /// </summary>
-        exp_schwarz_MG_directcoarse_overlap = 13,
+        exp_AS_MG = 12,
 
         //GMRES (iterative Solver)
 
@@ -86,30 +58,14 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_softgmres = 20,
 
-        /// <summary>
-        /// GMRES with schwarz precoditioning using METIS blocking without overlap
-        /// </summary>
-        exp_softgmres_schwarz_directcoarse = 21,
-
-        /// <summary>
-        /// GMRES with schwarz precoditioning using METIS blocking with overlap
-        /// </summary>
-        exp_softgmres_schwarz_directcoarse_overlap = 22,
-
-        /// <summary>
-        /// GMRES with schwarz precoditioning using MG blocking with overlap
-        /// </summary>
-        exp_softgmres_schwarz_Kcycle_directcoarse_overlap = 23,
 
         //GMRES Solver with different experimental Preconditioner
 
-        exp_Schur = 24,
-        exp_localPrec = 25,
-        exp_Simple = 26,
-        exp_AS_1000 = 27,
-        exp_AS_5000 = 28,
-        exp_AS_10000 = 29,
-        exp_AS_MG = 30,
+        exp_gmres_Schur = 24,
+        exp_gmres_localPrec = 25,
+        exp_gmres_Simple = 26,
+        exp_gmres_AS = 27,
+        exp_gmres_AS_MG = 30,
 
         //CG versions
 
@@ -123,10 +79,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_Kcycle_schwarz = 41,
 
-        /// <summary>
-        /// Conjugate gradient, with multi-grid preconditioner.
-        /// </summary>
-        exp_softpcg_mg = 42,
+        exp_softpcg_jacobi_mg =42,
 
         /// <summary>
         /// Conjugate gradient, with additive Schwarz preconditioner.
@@ -137,13 +90,6 @@ namespace BoSSS.Solution.Control {
         /// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
         /// </summary>
         exp_softpcg_schwarz_directcoarse = 44,
-
-        exp_softpcg_jacobi_mg=45,
-
-        /// <summary>
-        /// Conjugate gradient with Schwarz and multigrid.
-        /// </summary>
-        exp_softpcg_schwarz_mg = 46,
 
         /// <summary>
         /// GMRES with p-multigrid on the same mesh level; direct solver is used for 
@@ -222,12 +168,13 @@ namespace BoSSS.Solution.Control {
         public int NoOfMultigridLevels = 1;
 
         //-------------------------
-        // These parameters have to be set only, if exp_localPrec is used. They can be deleted, if exp_localPrec is removed.
+        // Probably legacy code: can be deleted, if exp_localPrec is removed.
         /// <summary>
         /// The physical viscosity has to be written to <see cref="exp_localPrec_muA"/>, if the experimental linear solver <see cref="LinearSolverCode.exp_localPrec"/> is used.
         /// </summary>
         [DataMember]
         public int exp_localPrec_muA = 1;
+
 
         /// <summary>
         /// The minimum time step has to be written to <see cref="exp_localPrec_Min_dt"/>, if the experimental linear solver <see cref="LinearSolverCode.exp_localPrec"/> is used.
@@ -244,7 +191,7 @@ namespace BoSSS.Solution.Control {
         public int TargetBlockSize = 10000;
 
         /// <summary>
-        /// Clones the NonLinearConfig
+        /// Clones the LinearConfig
         /// </summary>
         /// <returns></returns>
         public object Clone() {
@@ -266,6 +213,9 @@ namespace BoSSS.Solution.Control {
         /// <param name="compareto"></param>
         /// <returns></returns>
         public bool Equals(LinearSolverConfig compareto) {
+            if(compareto == null)
+                return false;
+
             return this.verbose == compareto.verbose &&
                 this.MaxKrylovDim == compareto.MaxKrylovDim &&
                 this.MaxSolverIterations == compareto.MaxSolverIterations &&

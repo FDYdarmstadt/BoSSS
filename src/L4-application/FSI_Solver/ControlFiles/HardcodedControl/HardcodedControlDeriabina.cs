@@ -50,8 +50,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 20;
-            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false);
-            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, true, true);
+            InitializeMotion motion1 = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, false, false);
+            InitializeMotion motion2 = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, true, true);
             C.Particles.Add(new Particle_Shell(motion2, 1, 0.5, 0.2, new double[] { 0, 0}, startAngl: 0));
             C.Particles.Add(new Particle_Sphere(motion1, 0.1, new double[] { 0, 1 }, startAngl: 0));
 
@@ -149,7 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return grd;
             };
 
-            C.GridPartType = GridPartType.Hilbert;
+            C.GridPartType = GridPartType.clusterHilbert;
 
             C.AddBoundaryValue("Wall_left");
             C.AddBoundaryValue("Wall_right");
@@ -173,8 +173,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.gravity = new Vector( 0, -9.81 );
             double particleDensity = 2.01;
 
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);
-            ParticleMotionInit fix = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, true, true);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions);
+            InitializeMotion fix = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, true, true);
 
             C.Particles.Add(new Particle_Sphere(motion, 0.35, new double[] { -1.0, 5.5 }) {
             });
@@ -294,7 +294,7 @@ namespace BoSSS.Application.FSI_Solver {
         //                return grd;
         //            };
 
-        //            C.GridPartType = GridPartType.Hilbert;
+        //            C.GridPartType = GridPartType.clusterHilbert;
 
         //            C.AddBoundaryValue("Wall_left");
         //            C.AddBoundaryValue("Wall_right");
@@ -439,7 +439,7 @@ namespace BoSSS.Application.FSI_Solver {
         //                return grd;
         //            };
 
-        //            C.GridPartType = GridPartType.Hilbert;
+        //            C.GridPartType = GridPartType.clusterHilbert;
 
         //            C.AddBoundaryValue("Wall_left");
         //            C.AddBoundaryValue("Wall_right");

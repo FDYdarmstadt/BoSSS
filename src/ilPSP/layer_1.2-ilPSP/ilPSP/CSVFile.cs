@@ -31,15 +31,23 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Writes a 'table' in a csv format to a file named <paramref name="filename"/>.
         /// </summary>
-        //public static void SaveToCSVFile(this IDictionary<string, object[]> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true) {
-        public static void SaveToCSVFile<T, V>(this IDictionary<string, T> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true)
-            where T : IEnumerable<V> //
+        public static void SaveToCSVFile<T>(this IDictionary<string, T> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true)
+            where T : System.Collections.IEnumerable //    
         {
-            using (var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
-                WriteCSVToStream<T, V>(table, txt, ColSep, writeHeader);
+            using(var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
+                WriteCSVToStream(table, txt, ColSep, writeHeader);
                 txt.Flush();
             }
         }
+
+        //public static void SaveToCSVFile<T, V>(this IDictionary<string, T> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true)
+        //    where T : IEnumerable<V> //
+        //{
+        //    using (var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
+        //        WriteCSVToStream<T, V>(table, txt, ColSep, writeHeader);
+        //        txt.Flush();
+        //    }
+        //}
 
         /*
 
@@ -145,14 +153,18 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Writes a 'table' in a csv format to a stream <paramref name="txt"/>.
         /// </summary>
-        //public static void WriteCSVToStream(this IDictionary<string, object[]> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true) {
-        public static void WriteCSVToStream<T, V>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
-            where T : IEnumerable<V> //
-        { 
+        public static void WriteCSVToStream<T>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
+            where T : System.Collections.IEnumerable //
+        {
+            //public static void WriteCSVToStream<T, V>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
+            //    where T : IEnumerable<V> //
+            //{ 
+
             string[] cols = table.Keys.ToArray();
             if(cols.Length <= 0)
                 return;
 
+      
             int L = table[cols[0]].Count();
 
             foreach(var kv in table) {
@@ -255,6 +267,16 @@ namespace ilPSP.Utils {
             }
         }
 
+        
+        /// <summary>
+        /// Reads a 'table' in a csv format from a file named <paramref name="filename"/>.
+        /// </summary>
+        public static void ReadFromCSVFile(this IDictionary<string, System.Collections.IEnumerable> table, string filename, char ColSep = '\t', params Func<string, object>[] parsers) {
+            using(var txt = new StreamReader(filename, new UTF8Encoding())) {
+                ReadCSVFromStream(table, txt, ColSep, parsers);
+            }
+        }
+
         /// <summary>
         /// Reads a 'table' in a csv format from <paramref name="txt"/>.
         /// </summary>
@@ -290,6 +312,114 @@ namespace ilPSP.Utils {
 
             for(int i = 0; i < I; i++) {
                 table.Add(ColNames[i], ColCont[i].ToArray());
+            }
+        }
+
+         /// <summary> 
+        /// Finds the most derived common base class of all the provided types, or System.Object if there is no common base class.
+        /// </summary>
+        static Type CommonBaseClass(System.Collections.IEnumerable enu) {
+            HashSet<Type> types = new HashSet<Type>();
+            foreach(object o in enu) {
+                if(o != null)
+                    types.Add(o.GetType());
+
+            }
+
+            if(types.Count > 0)
+                return CommonBaseClass(types.ToArray());
+            else
+                return typeof(object);
+        }
+
+        /// <summary>
+        /// Gets the class hierarchy of the provided type, in order of derivation, e.g. : (System.Object,CustomBaseType,CustomConcreteType,...), or the singleton of System.Object type if the provided type is an interface or null .
+        /// </summary>
+        static IEnumerable<Type> ClassHierarchy(this Type type) {
+            if (type == null || type.IsInterface) type = typeof(object);
+            var stack = new Stack<Type>();
+            do {
+                stack.Push(type);
+                type = type.BaseType;
+            } while (type != null);
+            return stack;
+
+        }
+
+
+        /// <summary> 
+        /// Finds the most derived common base class of all the provided types, or System.Object if there is no common base class.
+        /// </summary>
+        static Type CommonBaseClass(params Type[] types) {
+            if (ReferenceEquals(types, null)) return typeof(object);
+            types = types.Where(x => !ReferenceEquals(x, null)).Distinct().ToArray();
+            switch (types.Length) {
+                case 0: return typeof(object);
+                case 1: return types[0].IsInterface ? typeof(object) : types[0];
+                default:
+                IEnumerable<IEnumerable<Type>> hierarchies = types.Select(ClassHierarchy).OrderBy(x => x.Count());
+                Queue<Type> smallest = new Queue<Type>(hierarchies.First().Reverse());
+                hierarchies = hierarchies.Skip(1);
+                do {
+                    int maxPossible = smallest.Count;
+                    hierarchies = hierarchies.Select(each => each.Take(maxPossible));
+                    Type candidate = smallest.Dequeue();
+                    if (hierarchies.All(each => each.Last() == candidate))
+                        return candidate;
+                } while (smallest.Count > 1);
+                return typeof(object);
+            }
+        }
+
+        
+        /// <summary>
+        /// Reads a 'table' in a csv format from <paramref name="txt"/>.
+        /// </summary>
+        public static void ReadCSVFromStream(this IDictionary<string, System.Collections.IEnumerable> table, TextReader txt, char ColSep = '\t', params Func<string, object>[] parsers) {
+            if(table.Count > 0)
+                throw new ArgumentException("Expecting an empty table");
+
+
+            char[] _colSep = new char[] { ColSep };
+            string line;
+            line = txt.ReadLine();
+            if(line == null)
+                return;
+            string[] ColNames = line.Split(_colSep, StringSplitOptions.RemoveEmptyEntries);
+            int I = ColNames.Length;
+
+            List<object>[] ColCont = new List<object>[I];
+            for(int i = 0; i < I; i++) {
+                ColCont[i] = new List<object>();
+            }
+
+            int iLine = 1;
+            for(line = txt.ReadLine(); line != null; line = txt.ReadLine()) {
+                iLine++;
+                string[] vals = line.Split(_colSep, StringSplitOptions.RemoveEmptyEntries);
+                if(vals.Length != I)
+                    throw new IOException(string.Format("Errors in CSV in line {0}; expecting {1} value(s), but found {2}.", iLine, I, vals.Length));
+
+                for(int i = 0; i < I; i++) {
+                    ColCont[i].Add(parsers[i](vals[i]));
+                }
+            }
+
+            Array[] CastedColumns = new Array[I];
+            for(int i = 0; i < I; i++) {
+                var Col_i = ColCont[i];
+
+                Type T = CommonBaseClass(Col_i);
+                Array CastCol = Array.CreateInstance(T, Col_i.Count);
+                for(int l = 0; l < Col_i.Count; l++)
+                    CastCol.SetValue(Col_i[l], l);
+
+                CastedColumns[i] = CastCol;
+            }
+
+
+            for(int i = 0; i < I; i++) {
+                table.Add(ColNames[i], CastedColumns[i]);
             }
         }
     }

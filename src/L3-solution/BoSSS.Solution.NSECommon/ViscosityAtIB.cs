@@ -67,7 +67,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp,
+        public double InnerEdgeForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -137,6 +137,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             return Ret * muA;
         }
 
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
 
         public int LevelSetIndex {
             get { return 0; }
@@ -154,12 +158,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             get { return m_LsTrk.GetSpeciesId("A"); }
         }
 
+        /// <summary>
+        /// %
+        /// </summary>
         public TermActivationFlags LevelSetTerms {
             get {
                 return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV;
             }
         }
 
+        
         public IList<string> ParameterOrdering {
             get {
                 return null;

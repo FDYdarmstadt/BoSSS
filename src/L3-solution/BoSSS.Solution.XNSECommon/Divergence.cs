@@ -194,7 +194,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             }
         }
 
-        public double LevelSetForm(ref CommonParams cp,
+        public double InnerEdgeForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
@@ -366,6 +366,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         public SpeciesId NegativeSpecies {
             get { return this.m_lsTrk.GetSpeciesId("A"); }
         }
+
+      
     }
 
 

@@ -110,7 +110,7 @@ namespace BoSSS.Solution.XheatCommon {
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
-                    comps.Add(new AuxiliaryHeatFlux_Identity(d, spcId));   // cell local
+                    comps.Add(new AuxiliaryHeatFlux_Identity(d, spcName, spcId));   // cell local
                     comps.Add(new TemperatureGradientInSpeciesBulk(D, d, BcMap, spcName, spcId, kSpc));
                     //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                     //    comps.Add(new TemperatureStabilizationForm(d, BcMap, spcName, spcId));

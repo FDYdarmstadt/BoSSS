@@ -25,11 +25,15 @@ namespace BoSSS.Solution.Statistic {
         /// onto the DG field <paramref name="target"/>.
         /// </summary>
         static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
+                Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
+                int D = target.GridDat.SpatialDimension;
 
-                if(object.ReferenceEquals(source.GridDat, target.GridDat)) {
+
+
+                if (object.ReferenceEquals(source.GridDat, target.GridDat)) {
                     // +++++++++++++++++
                     // equal grid branch
                     // +++++++++++++++++
@@ -41,17 +45,84 @@ namespace BoSSS.Solution.Statistic {
                     // different grid branch
                     // +++++++++++++++++++++
 
-                    var eval = new FieldEvaluation(GridHelper.ExtractGridData(source.GridDat));
-
-                    void SourceEval(MultidimensionalArray input, MultidimensionalArray output) {
-                        int L = input.GetLength(0);
-                        Debug.Assert(output.GetLength(0) == L);
-
-                        eval.Evaluate(1.0, new DGField[] { source }, input, 0.0, output.ResizeShallow(L, 1));
-
+                    if(source.GridDat.SpatialDimension != D) {
+                        throw new ArgumentException("Spatial Dimension Mismatch.");
                     }
 
-                    target.ProjectField(alpha, SourceEval, CompQuadRule);
+                    var eval = new FieldEvaluation(GridHelper.ExtractGridData(source.GridDat));
+
+
+                    // 
+                    // Difficulty with MPI parallelism:
+                    // While the different meshes may represent the same geometrical domain, 
+                    // their MPI partitioning may be different.
+                    //
+                    // Solution Approach: we circulate unlocated points among all MPI processes.
+                    //
+
+                    int MPIsize = target.GridDat.MpiSize;
+                    
+
+                    // pass 1: collect all points
+                    // ==========================
+                    MultidimensionalArray allNodes = null;
+                    void CollectPoints(MultidimensionalArray input, MultidimensionalArray output) {
+
+                        Debug.Assert(input.Dimension == 2);
+                        Debug.Assert(input.NoOfCols == D);
+
+                        if(allNodes == null) {
+                            allNodes = input.CloneAs();
+                        } else {
+                            /*
+                            var newNodes = MultidimensionalArray.Create(allNodes.NoOfRows + input.NoOfRows, D);
+                            newNodes.ExtractSubArrayShallow(new[] { 0, 0 }, new[] { allNodes.NoOfRows - 1, D - 1 })
+                                .Acc(1.0, allNodes);
+                            newNodes.ExtractSubArrayShallow(new[] {  allNodes.NoOfRows, 0 }, new[] { newNodes.NoOfRows - 1, D - 1 })
+                                .Acc(1.0, allNodes);
+                            */
+                            allNodes = allNodes.CatVert(input);
+                        }
+                        Debug.Assert(allNodes.NoOfCols == D);
+
+                    }
+                    target.ProjectField(alpha, CollectPoints, CompQuadRule);
+
+                    int L = allNodes != null ? allNodes.GetLength(0) : 0;
+
+                    // evaluate 
+                    // ========
+
+                    //allNodes = MultidimensionalArray.Create(2, 2);
+                    //allNodes[0, 0] = -1.5;
+                    //allNodes[0, 1] = 2.0;
+                    //allNodes[1, 0] = -0.5;
+                    //allNodes[1, 1] = 2.0;
+                    //L = 2;
+                    var Res = L > 0 ? MultidimensionalArray.Create(L, 1) : default(MultidimensionalArray);
+                    int NoOfUnlocated = eval.EvaluateParallel(1.0, new DGField[] { source }, allNodes, 0.0, Res);
+
+                    int TotalNumberOfUnlocated = NoOfUnlocated.MPISum();
+                    if(TotalNumberOfUnlocated > 0) {
+                        Console.Error.WriteLine($"WARNING: {TotalNumberOfUnlocated} unlocalized points in 'ProjectFromForeignGrid(...)'");
+                    }
+
+                    // perform the real projection
+                    // ===========================
+
+                    
+                    int lc = 0;
+                    void ProjectionIntegrand(MultidimensionalArray input, MultidimensionalArray output) {
+
+                        Debug.Assert(input.Dimension == 2);
+                        Debug.Assert(input.NoOfCols == D);
+
+                        int LL = input.GetLength(0);
+                        output.Set(Res.ExtractSubArrayShallow(new int[] { lc, 0 }, new int[] { lc + LL - 1, -1 }));
+                        lc += LL;
+                    }
+                    target.ProjectField(alpha, ProjectionIntegrand, CompQuadRule);
+
                 }
             }
         }
@@ -78,7 +149,7 @@ namespace BoSSS.Solution.Statistic {
             if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                 throw new ArgumentException("Both fields must have the same spatial dimension.");
 
-            if(object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
+            if (object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
                 // ++++++++++++++
                 // equal meshes
                 // ++++++++++++++
@@ -90,11 +161,11 @@ namespace BoSSS.Solution.Statistic {
                     // domain volume
                     double Vol = 0;
                     int J = A.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for(int j = 0; j < J; j++) {
+                    for (int j = 0; j < J; j++) {
                         Vol += A.GridDat.iGeomCells.GetCellVolume(j);
                     }
                     Vol = Vol.MPISum();
-                    
+
                     // mean value
                     double mean = A.GetMeanValueTotal(domain) - B.GetMeanValueTotal(domain);
 
@@ -102,7 +173,7 @@ namespace BoSSS.Solution.Statistic {
                     // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
                     return Math.Sqrt(errPow2 - mean * mean * Vol);
                 } else {
-                     return Math.Sqrt(errPow2);
+                    return Math.Sqrt(errPow2);
                 }
 
             } else {
@@ -112,14 +183,14 @@ namespace BoSSS.Solution.Statistic {
 
 
                 DGField fine, coarse;
-                if(A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+                if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
                     fine = A;
                     coarse = B;
                 } else {
                     fine = B;
                     coarse = A;
                 }
-                
+
                 var CompQuadRule = scheme.SaveCompile(coarse.GridDat, maxDeg * 3 + 3); // use over-integration
 
                 var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
@@ -129,25 +200,25 @@ namespace BoSSS.Solution.Statistic {
                     Debug.Assert(output.GetLength(0) == L);
 
                     eval.Evaluate(1.0, new DGField[] { fine }, input, 0.0, output.ResizeShallow(L, 1));
-                   
+
                 }
 
 
-                double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride:int.MaxValue);
+                double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
 
-                if(IgnoreMeanValue == true) {
-                    
+                if (IgnoreMeanValue == true) {
+
                     // domain volume
                     double Vol = 0;
                     int J = coarse.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for(int j = 0; j < J; j++) {
+                    for (int j = 0; j < J; j++) {
                         Vol += coarse.GridDat.iGeomCells.GetCellVolume(j);
                     }
                     Vol = Vol.MPISum();
 
                     // mean value times domain volume 
-                    double meanVol = coarse.LxError(FineEval, (double[] X, double fC, double fF) => fC - fF, CompQuadRule, Quadrature_ChunkDataLimitOverride:int.MaxValue);
-                    
+                    double meanVol = coarse.LxError(FineEval, (double[] X, double fC, double fF) => fC - fF, CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
+
 
                     // Note: for a field p, we have 
                     // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
@@ -177,7 +248,7 @@ namespace BoSSS.Solution.Statistic {
 
             double Acc = 0.0;
             Acc += L2Distance(A, B, false, scheme).Pow2();
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 ConventionalDGField dA_dd = new SinglePhaseField(A.Basis);
                 dA_dd.Derivative(1.0, A, d, scheme != null ? scheme.Domain : null);
 

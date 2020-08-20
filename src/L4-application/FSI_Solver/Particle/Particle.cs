@@ -60,7 +60,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle(ParticleMotionInit motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
+        public Particle(InitializeMotion motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
             Aux = new FSI_Auxillary();
@@ -73,40 +73,33 @@ namespace BoSSS.Application.FSI_Solver {
             MotionInitializer = motionInit;
         }
 
-        /// <summary>
-        /// rank in ghost hierachy; 0 = master, 1 = ghost mirrored in x-direction, 2 = ghost mirrored in y - direction, 3 = sub ghost of 1 mirrored in y - direction
-        /// </summary>
-        public int GhostRank { get; private set; }
+        [DataMember]
         public bool IsMaster = true;
+
+        [DataMember]
         public int[] MasterGhostIDs = new int[4];
 
         public void SetMaster(Motion newMotionType) {
-            newMotionType.TransferPhysicalData(Motion);
+            newMotionType.TransferDataFromOtherParticle(Motion);
             Motion = newMotionType;
             IsMaster = true;
         }
 
         public void SetGhost() {
-            HiddenMotion = Motion;
-            Motion = new MotionGhost(new Vector(0, 0), 0);
-            Motion.TransferPhysicalData(HiddenMotion);
             IsMaster = false;
         }
 
         public void SetGhostHierachy(int[] hierachy) {
             MasterGhostIDs = hierachy.CloneAs();
         }
-
-        [DataMember]
-        public Motion HiddenMotion { get; private set; }
-
+        
         [NonSerialized]
-        protected readonly FSI_Auxillary Aux;
+        protected FSI_Auxillary Aux;
         [DataMember]
         private readonly double particleDensity;
 
         [DataMember]
-        protected int SpatialDim { get; }
+        protected int SpatialDim;
 
         /// <summary>
         /// Instantiate object for particle motion.
@@ -114,7 +107,8 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public Motion Motion { get; private set; }
 
-        public ParticleMotionInit MotionInitializer { get; private set; }
+        [DataMember]
+        public InitializeMotion MotionInitializer;
 
         /// <summary>
         /// Mass of the current particle.
@@ -189,7 +183,7 @@ namespace BoSSS.Application.FSI_Solver {
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             var h_min = LsTrk.Regions.GetCutCellSubGrid().h_minSubGrd;
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h_min);
+                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), 2 * h_min);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
             CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
@@ -229,6 +223,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="RadialLength">
         /// </param>
         internal void CalculateRadialVector(Vector SurfacePoint, out Vector RadialVector, out double RadialLength) {
+            Aux = new FSI_Auxillary();
             RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
                 throw new ArithmeticException("The radial vector has no length");
@@ -241,9 +236,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculates the eccentricity of a collision
         /// </summary>
-        internal void CalculateEccentricity() {
+        internal void CalculateEccentricity(Vector tangentialVector) {
             CalculateRadialVector(ClosestPointToOtherObject, out Vector RadialVector, out _);
-            Eccentricity = RadialVector * Motion.GetLastCollisionTangentialVector();
+            Eccentricity = RadialVector * tangentialVector;
             Aux.TestArithmeticException(Eccentricity, "particle eccentricity");
         }
 

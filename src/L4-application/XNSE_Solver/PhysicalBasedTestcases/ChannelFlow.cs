@@ -418,7 +418,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
@@ -686,7 +686,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -711,7 +711,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// </summary>
         /// <returns></returns>
         public static XNSE_Control CF_LevelSetMovementTest(int boundarySetup = 2, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching, 
-            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme tsScheme = XNSE_Control.TimesteppingScheme.ImplicitEuler) {
+            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, TimeSteppingScheme tsScheme = TimeSteppingScheme.ImplicitEuler) {
 
             int p = 2;
             int kelem = 16;
@@ -995,7 +995,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
-            C.Timestepper_Scheme = tsScheme;
+            C.TimeSteppingScheme = tsScheme;
 
             double dt = 1e-2;
             C.dtMax = dt;
@@ -1015,7 +1015,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// </summary>
         /// <returns></returns>
         public static XNSE_Control CF_LevelSetRotationTest(int boundarySetup = 1, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching,
-            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme tsScheme = XNSE_Control.TimesteppingScheme.ImplicitEuler)
+            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, TimeSteppingScheme tsScheme = TimeSteppingScheme.ImplicitEuler)
         {
 
             int p = 2;
@@ -1277,7 +1277,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
-            C.Timestepper_Scheme = tsScheme;
+            C.TimeSteppingScheme = tsScheme;
 
             double dt = 1e-2;
             C.dtMax = dt;

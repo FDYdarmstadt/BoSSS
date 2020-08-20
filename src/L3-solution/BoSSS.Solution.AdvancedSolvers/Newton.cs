@@ -29,16 +29,18 @@ using ilPSP.Tracing;
 using System.IO;
 using System.Diagnostics;
 using BoSSS.Foundation.XDG;
+using NUnit.Framework;
+using System.Security.Cryptography.X509Certificates;
 
-namespace BoSSS.Solution.AdvancedSolvers
-{
+namespace BoSSS.Solution.AdvancedSolvers {
+
+
     /// <summary>
     /// Implementation based on presudocode from Kelley, C. 
     /// Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. 
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
-    public class Newton : NonlinearSolver
-    {
+    public class Newton : NonlinearSolver {
         /// <summary>
         /// ctor
         /// </summary>
@@ -86,294 +88,558 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// Convergence for Krylov and GMRES iterations
         /// </summary>
         public double GMRESConvCrit = 1e-6;
+               
+        /// <summary>
+        /// Options for (approximate) solution to the linearizes system
+        /// </summary>
+        public enum ApproxInvJacobianOptions { 
+            
+            /// <summary>
+            /// Using a matrix-free GMRES implementation, optionally employing <see cref="Newton.linsolver"/> (typically not matrix-free) as a preconditioner.
+            /// </summary>
+            MatrixFreeGMRES = 1, 
+            
+            /// <summary>
+            /// Using the solver <see cref="Newton.linsolver"/> for computing Newton corrections
+            /// </summary>
+            ExternalSolver = 2 
+        }
 
-        public CoordinateVector m_SolutionVec;
+        /// <summary>
+        /// Options for (approximate) solution to the linearizes system
+        /// </summary>
+        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.MatrixFreeGMRES;
 
-        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2 }
+        /// <summary>
+        /// Options for Globalization, i.e. means to ensure convergence of Newton iterations 
+        /// when the initial guess is far away from the solution.
+        /// </summary>
+        public enum GlobalizationOption {
+            
+            /// <summary>
+            /// Dogleg method according to 
+            /// Pawlowski et. al., 2006, Globalization Techniques for Newton–Krylov Methods and Applications to the Fully Coupled Solution of the Navier–Stokes Equations, SIAM Review, Vol. 48, No. 4, pp 700-721.
+            /// </summary>
+            Dogleg = 1,
 
-        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.GMRES;
+            /// <summary>
+            /// Parabolic line search according to 
+            /// Kelley, C., Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
+            /// </summary>
+            LineSearch = 2
+        }
+
+        /// <summary>
+        /// Options for Globalization, i.e. means to ensure convergence of Newton iterations 
+        /// when the initial guess is far away from the solution.
+        /// </summary>
+        GlobalizationOption Globalization = GlobalizationOption.LineSearch;
 
 
         public string m_SessionPath;
 
+        /// <summary>
+        /// Optional external solver for computation of Newton corrections
+        /// </summary>
         public ISolverSmootherTemplate linsolver;
 
         public bool UsePresRefPoint;
 
-        //bool solveVelocity = true;
+        /// <summary>
+        /// Prints the step reduction factor
+        /// </summary>
+        public bool printLambda = false;
 
-        //double VelocitySolver_ConvergenceCriterion = 1e-5;
 
-        //double StressSolver_ConvergenceCriterion = 1e-5;
-
+        /// <summary>
+        /// Main solver routine
+        /// </summary>
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
 
-                m_SolutionVec = SolutionVec;
 
-                int itc;
-                itc = 0;
-                double[] x, xt, xOld, f0, deltaX, ft;
+                int itc = 0;
+                double[] CurSol, // "current (approximate) solution", i.e. 
+                    CurRes; // residual associated with 'CurSol'
+                //TempRes;
                 double rat;
-                double alpha = 1E-4;
-                //double sigma0 = 0.1;
-                double sigma1 = 0.5;
-                //double maxarm = 20;
-                //double gamma = 0.9;
+
 
                 // Eval_F0 
 
-                using (new BlockTrace("Slv Init", tr)) {
-                    base.Init(SolutionVec, RHS, out x, out f0);
+                using(new BlockTrace("Slv Init", tr)) {
+                    base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
-                //Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
 
+                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
+                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes);
 
-                deltaX = new double[x.Length];
-                xt = new double[x.Length];
-                ft = new double[x.Length];
-
-
-                this.CurrentLin.TransformSolFrom(SolutionVec, x);
-                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), f0);
-
-                Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
+                Console.WriteLine("Residual base.init:   " + CurRes.L2NormPow2().MPISum().Sqrt());
                 //base.EvalResidual(x, ref f0);
 
                 // fnorm
-                double fnorm = f0.L2NormPow2().MPISum().Sqrt();
+                double fnorm = CurRes.L2NormPow2().MPISum().Sqrt();
                 double fNormo = 1;
                 double errstep;
-                double[] step = new double[x.Length];
-                double[] stepOld = new double[x.Length];
+                double[] step = new double[CurSol.Length];
+                double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
+                //double[] stepOld = new double[CurSol.Length];
                 //BlockMsrMatrix CurrentJac;
-                bool secondCriteriumConverged = false;
-                OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
+                //bool secondCriteriumConverged = false;
+                OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
                 double fnorminit = fnorm;
-                using (new BlockTrace("Slv Iter", tr)) {
-                    while (
-                        (fnorm > ConvCrit * fnorminit + ConvCrit && 
-                        /*secondCriteriumConverged == false &&*/ itc < MaxIter)   
+                using(new BlockTrace("Slv Iter", tr)) {
+                    while((fnorm > ConvCrit * fnorminit + ConvCrit
+                        //&& secondCriteriumConverged == false 
+                        && itc < MaxIter)
                         || itc < MinIter) {
-                        //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
                         rat = fnorm / fNormo;
                         //if (Math.Abs(fNormo - fnorm) < 1e-12)
                         //    break;
                         fNormo = fnorm;
                         itc++;
 
+                        // computation of Newton step
+                        // --------------------------
+
+
                         // How should the inverse of the Jacobian be approximated?
-                        if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
-                            if (Precond != null) {
+                        if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
+                            // ++++++++++++++++++++++++++
+                            // Option: Matrix-Free GMRES
+                            // ++++++++++++++++++++++++++
+
+                            if(Precond != null) {
                                 Precond.Init(CurrentLin);
                             }
                             //base.EvalResidual(x, ref f0); 
-                            f0.ScaleV(-1.0);
-                            step = Krylov(SolutionVec, x, f0, out errstep);
-                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
-                            /*
-                            double[] _step = step.ToArray();
-                            double[] _f0 = f0.ToArray();
-                            double _check_norm;
-                            {
-                                var CurrentJac = CurrentLin.OperatorMatrix;
-                                var _solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();      // .MUMPS.MUMPSSolver();
-                                _solver.DefineMatrix(CurrentJac);
-                                _step.ClearEntries();
-                                var _check = _f0.CloneAs();
-                                _f0.ScaleV(-1.0);
-                                _solver.Solve(_step, _f0);
+                            step = Krylov(SolutionVec, CurSol, CurRes, out errstep);
+                            step.ScaleV(-1);
+                        } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
+                            // +++++++++++++++++++++++++++++
+                            // Option: use 'external' solver
+                            // +++++++++++++++++++++++++++++
 
-                                CurrentLin.OperatorMatrix.SpMV(-1.0, _step, -1.0, _check);
-                                _check_norm = _check.L2Norm();
-                            }
-                            */
 
-                            var solver = linsolver;
-                            //var mgo = new MultigridOperator(m_AggBasisSeq, SolutionVec.Mapping, CurrentJac, null, m_MultigridOperatorConfig);
-                            //if (Precond != null) {
-                            //    Precond.Init(CurrentLin);
-                            //}
 
+                            var solver = this.linsolver;
                             solver.Init(CurrentLin);
                             step.ClearEntries();
-                            var check = f0.CloneAs();
-                            f0.ScaleV(-1.0);
+                            var check = CurRes.CloneAs();
                             solver.ResetStat();
 
                             if(solver is IProgrammableTermination pt) {
                                 // iterative solver with programmable termination is used - 
-                                
-                                double f0_L2 = f0.MPI_L2Norm();
+
+                                double f0_L2 = CurRes.MPI_L2Norm();
                                 double thresh = f0_L2 * 1e-5;
                                 Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                                 pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
                                     return (R_l2 > thresh) && (iter < 100);
                                 };
- 
+
 
                             }
 
-                            
-                            solver.Solve(step, f0);
-                            /*
-                            double check_norm; 
-                            {
-                                CurrentLin.OperatorMatrix.SpMV(-1.0, step, -1.0, check);
-                                check_norm = check.L2Norm();
-                            }
-
-
-                            double dist = GenericBlas.L2Dist(step, _step);
-
-
-                            Console.WriteLine("    conv: " + solver.Converged + " /iter = " + solver.ThisLevelIterations + " /dist  = " + dist + " /resNrm = " + check_norm + " /parresNrm = " + _check_norm);
-                            */
-                            //step.SetV(step);
-
-                            //if (solver.Converged == false)
-                            //    Debugger.Launch();
+                            solver.Solve(step, CurRes);
+                            step.ScaleV(-1);
 
                         } else {
-                            throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
+                            throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
                         }
 
-                        // Start line search
-                        xOld = x;
-                        double lambda = 1;
-                        double lamm = 1;
-                        double lamc = lambda;
-                        double iarm = 0;
-                        xt = x.CloneAs();
-                        xt.AccV(lambda, step);
-                        this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-                        
-                        double nft = ft.L2NormPow2().MPISum().Sqrt();
-                        double nf0 = f0.L2NormPow2().MPISum().Sqrt();
-                        double ff0 = nf0 * nf0;
-                        double ffc = nft * nft;
-                        double ffm = nft * nft;
+                        // globalization
+                        // -------------
+                        switch(Globalization) {
+                            case GlobalizationOption.Dogleg:
+                            DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
+                            break;
 
-                    //    Console.WriteLine("    Residuum 0:" + nf0);
+                            case GlobalizationOption.LineSearch:
+                            LineSearch(SolutionVec, CurSol, CurRes, step);
+                            break;
 
-                        // Control of the the step size
-                        while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
-
-                            // Line search starts here
-                            if (iarm == 0)
-                                lambda = sigma1 * lambda;
-                            else
-                                lambda = parab3p(lamc, lamm, ff0, ffc, ffm);
-
-                            // Update x;
-                            xt = x.CloneAs();
-                            xt.AccV(lambda, step);
-                            lamm = lamc;
-                            lamc = lambda;
-
-                            this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                            EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-
-                            nft = ft.L2NormPow2().MPISum().Sqrt();
-                            ffm = ffc;
-                            ffc = nft * nft;
-                            iarm++;
-#if DEBUG
-                            Console.WriteLine("    Residuum:  " + nft + " lambda = " + lambda);
-#endif 
+                            default:
+                            throw new NotImplementedException();
                         }
-                        // transform solution back to 'original domain'
-                        // to perform the linearization at the new point...
-                        // (and for Level-Set-Updates ...)
-                        this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
-                        if (UsePresRefPoint == false) {
+                        // fix the pressure 
+                        // ----------------
+                        if(UsePresRefPoint == false) {
 
-                            if (this.m_SolutionVec.Mapping.Fields[2] is XDGField  Xpres) {
+                            if(SolutionVec.Mapping.Fields[2] is XDGField Xpres) {
                                 DGField presSpA = Xpres.GetSpeciesShadowField("A");
                                 DGField presSpB = Xpres.GetSpeciesShadowField("B");
                                 var meanpres = presSpB.GetMeanValueTotal(null);
                                 presSpA.AccConstant(-1.0 * meanpres);
                                 presSpB.AccConstant(-1.0 * meanpres);
                             } else {
-                                DGField pres = this.m_SolutionVec.Mapping.Fields[2];
+                                DGField pres = SolutionVec.Mapping.Fields[2];
                                 var meanpres = pres.GetMeanValueTotal(null);
                                 pres.AccConstant(-1.0 * meanpres);
                             }
                         }
 
 
+
                         // update linearization
-                        if (itc  % constant_newton_it == 0) {
-                            base.Update(SolutionVec.Mapping.Fields, ref xt);
-                            if(constant_newton_it !=1) { 
-                            Console.WriteLine("Jacobian is updated: it {0}", itc);
+                        // --------------------
+                        if(itc % constant_newton_it == 0) {
+                            //base.UpdateLinearization(SolutionVec.Mapping.Fields);
+                            base.Update(SolutionVec.Mapping.Fields, ref CurSol);
+                            if(constant_newton_it != 1) {
+                                Console.WriteLine("Jacobian is updated: it {0}", itc);
                             }
                         }
 
                         // residual evaluation & callback
-                        base.EvalResidual(xt, ref ft);
+                        // ------------------------------
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes);
+                        fnorm = CurRes.MPI_L2Norm();
 
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
-                        fnorm = ft.L2NormPow2().MPISum().Sqrt();
-
-                        x = xt;
-                        f0 = ft.CloneAs();
-
-                        OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
+                        OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
 
                         #region second criterium
-                        /// Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
-                        /// this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
-                        /*
-                        double[] WMat_s = new double[x.Length];
-                        double psi_r = 1e-3;
-                        double psi_a = 1e-8;
-                        double[] truestep = step;
-                        truestep.ScaleV(lambda);
-                        for(int i = 0; i < WMat_s.Length; i++) {
-                            WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
-                        }
-                        WMat_s.CheckForNanOrInfV();
+                        // Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
+                        // this criterium is useful to "ensure that even finer physical details of the flow and are resolved"
 
-                        double secondCriterium = WMat_s.L2Norm()/x.Length;
-                    
-                        if(secondCriterium < 1) {
-                            secondCriteriumConverged = true;
-                        }
-                        //Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
-                        //if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
-                        //    Console.WriteLine("Criterium 1 fulfilled");
-                        //if((secondCriteriumConverged == true))
-                        //    Console.WriteLine("Criterium 2 fulfilled");
-                        //if(itc > MaxIter)
-                        //    Console.WriteLine("Criterium 3 fulfilled");
-                    */
+
+                        //double[] WMat_s = new double[x.Length];
+                        //double psi_r = 1e-3;
+                        //double psi_a = 1e-8;
+                        //double[] truestep = step;
+                        //truestep.ScaleV(lambda);
+                        //for(int i = 0; i < WMat_s.Length; i++) {
+                        //    WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
+                        //}
+                        //WMat_s.CheckForNanOrInfV();
+
+                        //double secondCriterium = WMat_s.L2Norm()/x.Length;
+
+                        //if(secondCriterium < 1) {
+                        //    secondCriteriumConverged = true;
+                        //}
+                        ////Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
+                        ////if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
+                        ////    Console.WriteLine("Criterium 1 fulfilled");
+                        ////if((secondCriteriumConverged == true))
+                        ////    Console.WriteLine("Criterium 2 fulfilled");
+                        ////if(itc > MaxIter)
+                        ////    Console.WriteLine("Criterium 3 fulfilled");
+
                         #endregion
 
                     }
                 }
 
-                SolutionVec = m_SolutionVec;
 
             }
+        }
+
+        /// <summary>
+        /// Newton Globalization via parabolic line search
+        /// </summary>
+        /// <param name="SolutionVec">
+        /// output: updated solution in original DG coordinates
+        /// </param>
+        /// <param name="CurSol">
+        /// input: current solution in the preconditioned DG coordinates
+        /// </param>
+        /// <param name="CurRes">
+        /// input: residual for <paramref name="CurSol"/>
+        /// </param>
+        /// <param name="step">
+        /// input: Newton step
+        /// </param>
+        /// <returns>
+        /// Updated Solution
+        /// </returns>
+        private void LineSearch(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] step) {
+
+            double[] TempSol;
+            double[] TempRes;
+
+            double alpha = 1E-4;
+            double sigma1 = 0.5;
+
+
+            // Start line search
+            double lambda = 1;
+            double lamm = 1;
+            double lamc = lambda;
+            double iarm = 0;
+            TempSol = CurSol.CloneAs();
+            TempSol.AccV(lambda, step);
+            this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
+
+            TempRes = new double[TempSol.Length];
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes);
+
+            double nft = TempRes.L2NormPow2().MPISum().Sqrt();
+            double nf0 = CurRes.L2NormPow2().MPISum().Sqrt();
+            double ff0 = nf0 * nf0; // residual norm of current solution ^2
+            double ffc = nft * nft; // 
+            double ffm = nft * nft; //
+
+
+            // Control of the the step size
+            while(nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
+
+                // Line search starts here
+                if(iarm == 0)
+                    lambda = sigma1 * lambda;
+                else
+                    lambda = parab3p(lamc, lamm, ff0, ffc, ffm); // ff0: curent sol, ffc: most recent reduction, ffm: previous reduction
+
+                // Update x;
+                TempSol = CurSol.CloneAs();
+                TempSol.AccV(lambda, step);
+                lamm = lamc;
+                lamc = lambda;
+
+                this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes);
+
+                nft = TempRes.L2NormPow2().MPISum().Sqrt();
+                ffm = ffc;
+                ffc = nft * nft;
+                iarm++;
+
+                if(printLambda)
+                    Console.WriteLine("    Residuum:  " + nft + " lambda = " + lambda);
+
+            }
+            // transform solution back to 'original domain'
+            // to perform the linearization at the new point...
+            // (and for Level-Set-Updates ...)
+            this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
+
+            
+        }
+
+        /// <summary>
+        /// Newton Globalization via Dogleg Method (a trust region approach)
+        /// </summary>
+        /// <param name="SolutionVec">
+        /// output: updated solution in original DG coordinates
+        /// </param>
+        /// <param name="CurSol">
+        /// input: current solution in the preconditioned DG coordinates
+        /// </param>
+        /// <param name="CurRes">
+        /// input: residual for <paramref name="CurSol"/>
+        /// </param>
+        /// <param name="stepIN">
+        /// input: (inexact) Newton step
+        /// </param>
+        /// <param name="NewtonIterCnt">
+        /// newton iteration counter, starts at 1
+        /// </param>
+        /// <param name="TrustRegionDelta">
+        /// Estimated in <paramref name="NewtonIterCnt"/>==1;
+        /// value must be stored externally for later iterations.
+        /// </param>
+        /// <remarks>
+        /// See:
+        /// - Pawlowski et. al., 2006, Globalization Techniques for Newton–Krylov Methods and Applications to the Fully Coupled Solution of the Navier–Stokes Equations, SIAM Review, Vol. 48, No. 4, pp 700-721.
+        /// - Pawlowski et. al., 2008, Inexact Newton Dogleg Methods, SIAM Journal on Numerical Analysis, Vol. 46, No. 4, pp 2112-2132.
+        /// </remarks>
+        private void DogLeg(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] stepIN, int NewtonIterCnt, ref double TrustRegionDelta) {
+
+            // algorithm constants taken from [Pawlowski et. al. 2006]
+            // =======================================================
+            const double t = 1.0e-4;
+            const double delta_min = 1e-6;
+            const double delta_max = 1e10;
+
+            // initial estimate of trust region width in first iteration 
+            // =========================================================
+            if(NewtonIterCnt < 1)
+                throw new ArgumentException();
+            if(NewtonIterCnt == 1) {
+                double norm_step = stepIN.MPI_L2Norm();
+                if(norm_step < delta_min)
+                    TrustRegionDelta = 2 * delta_min;
+                else
+                    TrustRegionDelta = norm_step;
+
+                TrustRegionDelta = Math.Min(delta_max, TrustRegionDelta);
+            }
+
+            if(TrustRegionDelta < delta_min || TrustRegionDelta > delta_max)
+                throw new ArithmeticException("trust region width out of allowed range");
+
+            // compute Cauchy point
+            // ====================
+            double[] stepCP;
+            {
+                // step 1: calculate direction of Cauchy point / direction of steepest decent
+                double[] dk = new double[CurSol.Length];
+                BlockMsrMatrix JacTransp = this.CurrentLin.OperatorMatrix.Transpose();
+                JacTransp.SpMV(-1.0, CurRes, 0.0, dk); // eventually, replace this by a SpMV - transpose
+
+
+                // step 2: computing Cauchy point
+                double[] Mdk = new double[dk.Length];
+                this.CurrentLin.OperatorMatrix.SpMV(1.0, dk, 0.0, Mdk);
+                double[] a = (new[] { CurRes.InnerProd(Mdk), Mdk.L2NormPow2() }).MPISum();
+
+                double lambda = -a[0] / a[1];
+
+                stepCP = dk;
+                stepCP.ScaleV(lambda);
+                dk = null; // invalidate
+
+                // test:
+                double[] ResAtCP = CurRes.CloneAs();
+                this.CurrentLin.OperatorMatrix.SpMV(1.0, stepCP, 1.0, ResAtCP);
+
+                double ResNormAtCP = ResAtCP.MPI_L2Norm();
+                double ResNormAtX0 = CurRes.MPI_L2Norm();
+
+                Assert.LessOrEqual(ResNormAtCP, ResNormAtX0, "Something wrong in calculation of Cauchy Point -- residual of linear model increased.");
+            }
+
+            // using only Cauchy-Point
+            //var _NewSol = CurSol.CloneAs();
+            //_NewSol.AccV(1.0, stepCP);
+            //this.CurrentLin.TransformSolFrom(SolutionVec, _NewSol);
+            //return;
+           
+            // find point on Dogleg curve, within the trust region
+            // ===================================================
+            double[] step = new double[stepIN.Length];
+            double l2_stepCP = stepCP.MPI_L2Norm();
+            double l2_stepIN = stepIN.MPI_L2Norm();
+            double[] NewSol;
+            void PointOnDogleg(double _TrustRegionDelta) {
+                if(l2_stepIN <= _TrustRegionDelta) {
+                    // use Newton Step
+                    Console.WriteLine($"       -------- using Newton step (delta = {_TrustRegionDelta})");
+                    step.SetV(stepIN);
+                } else {
+                    if(l2_stepCP < _TrustRegionDelta) {
+                        // interpolate between Cauchy-point and Newton-step
+                        Console.WriteLine($"       -------- between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
+                        Debug.Assert(l2_stepCP * 0.99999 <= _TrustRegionDelta); // Cauchy Point is INSIDE   trust region
+                        Debug.Assert(l2_stepIN * 1.00001 >= _TrustRegionDelta); // Newton Step  is OUTSIDE  trust region
+                        Debug.Assert(l2_stepCP <= l2_stepIN * 1.00001); // consequently, the Newton Step must be larger than the Cauchy point
+
+                        //double tau = (l2_stepCP - _TrustRegionDelta) / (l2_stepCP - l2_stepIN); // nominator and denominator must be negative!
+                        //                                                                        //double tau2 = (l2_stepCP + TrustRegionDelta) / (l2_stepCP - l2_stepIN); // other solution of quadratic problem, probably negative
+                        double tau;
+                        {
+                            double A = l2_stepCP, B = l2_stepIN, C = stepCP.MPI_ddot(stepIN);
+                            tau = (A.Pow2() - C + Math.Sqrt((A.Pow2() + B.Pow2() - 2 * C) * _TrustRegionDelta.Pow2() - A.Pow2() * B.Pow2() + C.Pow2()))
+                                / (A.Pow2() + B.Pow2() - 2 * C);
+                            if(!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
+                                throw new ArithmeticException();
+                        }
+                        // do interpolation
+                        step.SetV(stepCP, (1 - tau));
+                        step.AccV(tau, stepIN);
+                        Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "interpolation step went wrong");
+                    } else {
+                        // use reduced Cauchy point
+                        Console.WriteLine($"       -------- using Cauchy point (delta = {_TrustRegionDelta})");
+                        Debug.Assert(l2_stepCP * 1.00001 >= _TrustRegionDelta); // Cauchy Point is outside trust region
+                        step.SetV(stepCP, alpha: (_TrustRegionDelta / l2_stepCP));
+                        Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "scaling step went wrong");
+                    }
+                }
+
+                NewSol = CurSol.CloneAs();
+                NewSol.AccV(1.0, step);
+            }
+
+            PointOnDogleg(TrustRegionDelta);
+
+            // check and adapt trust region
+            // ============================
+            double l2_CurRes = CurRes.MPI_L2Norm();
+
+            double[] temp = new double[CurRes.Length];
+
+            // predicted residual reduction
+            double pred() {
+
+                temp.SetV(CurRes);
+                this.CurrentLin.OperatorMatrix.SpMV(1.0, step, 1.0, temp);
+
+                return l2_CurRes - temp.MPI_L2Norm();
+            }
+
+            // actual residual reduction
+            double ared() {
+                this.CurrentLin.TransformSolFrom(SolutionVec, NewSol);
+                base.EvaluateOperator(1.0, SolutionVec.Fields, temp);
+
+                return l2_CurRes - temp.MPI_L2Norm();
+            }
+
+            // trust region adaptation loop
+            double last_ared = ared();
+            double last_pred = pred();
+            while(last_ared < t * last_pred) {
+                double newTrustRegionDelta = TrustRegionDelta * 0.5;
+                if(newTrustRegionDelta < TrustRegionDelta)
+                    break;
+
+                PointOnDogleg(TrustRegionDelta);
+
+                TrustRegionDelta = Math.Min(delta_min, newTrustRegionDelta);
+
+
+                last_ared = ared();
+                last_pred = pred();
+            }
+
+            // final trust region update
+            // =========================
+            {
+                // taken from [Pawlovski et.al. 2006], section 2.4;
+                // originally from J. E. Dennis, Jr. and R. B. Schnabel. Numerical Methods for Unconstrained Optimization and Nonlinear Equations. Series in Automatic Computation. Prentice-Hall, Englewood Cliffs, NJ, 1983.
+                                
+                const double rho_s = 0.1;
+                const double rho_e = 0.75;
+                const double beta_s = 0.25;
+                const double beta_e = 4.0;
+                                
+                if(last_ared/last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
+                    TrustRegionDelta = Math.Max(l2_stepIN, delta_min);
+                } else if(last_ared/last_pred < rho_s) {
+                    TrustRegionDelta = Math.Max(beta_s * TrustRegionDelta, delta_min); // shrinking
+                } else if(last_ared/last_pred > rho_e) {
+                    TrustRegionDelta = Math.Min(beta_e * TrustRegionDelta, delta_max); // enhancing
+                }
+           }
+
+
+
+            // return updated solution
+            // =======================
+
+            // remark: 'SolutionVec' should be up to date due to the last call to 'ared()'        
+
+            //this.CurrentLin.TransformSolFrom(SolutionVec, NewSol); 
+            return;
         }
 
 
 
         /// <summary>
-        /// 
+        /// Preconditioned GMRES, using <see cref="NonlinearSolver.Precond"/> as a preconditioner
         /// </summary>
         /// <param name="SolutionVec">Current Point</param>
         /// <param name="f0">Function at current point</param>
         /// <param name="xinit">initial iterate</param>
         /// <param name="errstep">error of step</param>
+        /// <param name="currentX"></param>
         /// <returns></returns>
-        double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
-            using (var tr = new FuncTrace()) {
+        double[] MatrixFreeGMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
+            using(var tr = new FuncTrace()) {
                 int n = f0.Length;
 
                 int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
@@ -391,12 +657,12 @@ namespace BoSSS.Solution.AdvancedSolvers
                 r = b;
 
                 //Initial solution
-                if (xinit.L2Norm() != 0) {
+                if(xinit.L2Norm() != 0) {
                     x = xinit.CloneAs();
                     r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
                 }
                 // Precond = null;
-                if (Precond != null) {
+                if(Precond != null) {
                     var temp2 = r.CloneAs();
                     r.ClearEntries();
                     //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: false, Subblocks: false).SpMV(1, temp2, 0, r);
@@ -417,20 +683,20 @@ namespace BoSSS.Solution.AdvancedSolvers
                 Console.WriteLine("Error NewtonGMRES:   " + rho);
 
                 // Termination of entry
-                if (rho < GMRESConvCrit)
+                if(rho < GMRESConvCrit)
                     return SolutionVec.ToArray();
 
                 V[0].SetV(r, alpha: (1.0 / rho));
                 double beta = rho;
                 int k = 1;
 
-                while ((rho > GMRESConvCrit) && k <= m) {
+                while((rho > GMRESConvCrit) && k <= m) {
                     V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
                     //CurrentLin.OperatorMatrix.SpMV(1.0, V[k-1], 0.0, temp3);
                     // Call directional derivative
                     //V[k].SetV(f0);
 
-                    if (Precond != null) {
+                    if(Precond != null) {
                         var temp3 = V[k].CloneAs();
                         V[k].ClearEntries();
                         //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
@@ -440,7 +706,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     double normav = V[k].L2NormPow2().MPISum().Sqrt();
 
                     // Modified Gram-Schmidt
-                    for (int j = 1; j <= k; j++) {
+                    for(int j = 1; j <= k; j++) {
                         H[j - 1, k - 1] = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                         V[k].AccV(-H[j - 1, k - 1], V[j - 1]);
                     }
@@ -449,8 +715,8 @@ namespace BoSSS.Solution.AdvancedSolvers
 
 
                     // Reorthogonalize ?
-                    if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3)) || reorth == 3) {
-                        for (int j = 1; j <= k; j++) {
+                    if((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3)) || reorth == 3) {
+                        for(int j = 1; j <= k; j++) {
                             double hr = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                             H[j - 1, k - 1] = H[j - 1, k - 1] + hr;
                             V[k].AccV(-hr, V[j - 1]);
@@ -459,7 +725,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     }
 
                     // Watch out for happy breakdown
-                    if (H[k, k - 1] != 0)
+                    if(H[k, k - 1] != 0)
                         V[k].ScaleV(1 / H[k, k - 1]);
 
 
@@ -473,7 +739,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                     // Givens rotation from SoftGMRES
                     double temp;
-                    for (int l = 1; l <= k - 1; l++) {
+                    for(int l = 1; l <= k - 1; l++) {
                         // apply Givens rotation, H is Hessenbergmatrix
                         temp = c[l - 1] * H[l - 1, k - 1] + s[l - 1] * H[l + 1 - 1, k - 1];
                         H[l + 1 - 1, k - 1] = -s[l - 1] * H[l - 1, k - 1] + c[l - 1] * H[l + 1 - 1, k - 1];
@@ -488,7 +754,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                     // Don't divide by zero if solution has  been found
                     var nu = (H[k - 1, k - 1].Pow2() + H[k, k - 1].Pow2()).Sqrt();
-                    if (nu != 0) {
+                    if(nu != 0) {
                         //c[k - 1] = H[k - 1, k - 1] / nu;
                         //s[k - 1] = H[k, k - 1] / nu;
                         //H[k - 1, k - 1] = c[k - 1] * H[k - 1, k - 1] - s[k - 1] * H[k, k - 1];
@@ -527,7 +793,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 int totalIter = k;
 
                 // x = x + V(:,1:i)*y;
-                for (int ii = 0; ii < k; ii++) {
+                for(int ii = 0; ii < k; ii++) {
                     x.AccV(y[ii], V[ii]);
                 }
 
@@ -542,16 +808,19 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
-        public double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
+        /// <summary>
+        /// Driver routine
+        /// </summary>
+        double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
             //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
-            double[] step = GMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
+            double[] step = MatrixFreeGMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
             Console.WriteLine("Error Krylov:   " + errstep);
 
-            while (kinn < restart_limit && errstep > GMRESConvCrit) {
+            while(kinn < restart_limit && errstep > GMRESConvCrit) {
                 kinn++;
 
-                step = GMRES(SolutionVec, currentX, f0, step, out errstep);
+                step = MatrixFreeGMRES(SolutionVec, currentX, f0, step, out errstep);
 
                 Console.WriteLine("Error Krylov:   " + errstep);
             }
@@ -571,14 +840,14 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
         /// <returns></returns>
         public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 double epsnew = 1E-7;
 
                 int n = SolutionVec.Length;
                 double[] fx = new double[f0.Length];
 
                 // Scale the step
-                if (w.L2NormPow2().MPISum().Sqrt() == 0) {
+                if(w.L2NormPow2().MPISum().Sqrt() == 0) {
                     fx.Clear();
                     return fx;
                 }
@@ -587,7 +856,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 double xs = GenericBlas.InnerProd(currentX, w).MPISum() / normw;
 
-                if (xs != 0) {
+                if(xs != 0) {
                     epsnew = epsnew * Math.Max(Math.Abs(xs), 1) * Math.Sign(xs);
                 }
                 epsnew = epsnew / w.L2NormPow2().MPISum().Sqrt();
@@ -606,7 +875,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 //var OpAffineRaw = this.LinearizationRHS.CloneAs();
                 //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
-                if (linearization == false) {
+                if(linearization == false) {
                     EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
                 }
                 //else {
@@ -637,11 +906,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="vin"></param>
         /// <param name="k"></param>
         /// <returns></returns>
-        public double[] givapp(double[] c, double[] s, double[] vin, int k) {
+        static double[] givapp(double[] c, double[] s, double[] vin, int k) {
             double[] vrot = vin;
             double w1, w2;
 
-            for (int i = 1; i < k; i++) {
+            for(int i = 1; i < k; i++) {
                 w1 = c[i - 1] * vrot[i - 1] - s[i - 1] * vrot[i];
                 w2 = s[i - 1] * vrot[i - 1] + c[i - 1] * vrot[i];
                 vrot[i - 1] = w1;
@@ -655,16 +924,14 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         static void rotmat(out double c, out double s, double a, double b) {
             double temp;
-            if (b == 0.0) {
+            if(b == 0.0) {
                 c = 1.0;
                 s = 0.0;
-            }
-            else if (Math.Abs(b) > Math.Abs(a)) {
+            } else if(Math.Abs(b) > Math.Abs(a)) {
                 temp = a / b;
                 s = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 c = temp * s;
-            }
-            else {
+            } else {
                 temp = b / a;
                 c = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 s = temp * c;
@@ -694,201 +961,22 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="ffc"></param>
         /// <param name="ffm"></param>
         /// <returns></returns>
-        public double parab3p(double lambdac, double lambdam, double ff0, double ffc, double ffm) {
+        static double parab3p(double lambdac, double lambdam, double ff0, double ffc, double ffm) {
             double sigma0 = 0.1;
             double sigma1 = 0.5;
 
             double c2 = lambdam * (ffc - ff0) - lambdac * (ffm - ff0);
-            if (c2 >= 0)
+            if(c2 >= 0)
                 return sigma1 * lambdac;
             double c1 = lambdac * lambdac * (ffm - ff0) - lambdam * lambdam * (ffc - ff0);
             double lambdap = -c1 * 0.5 / c2;
-            if (lambdap < sigma0 * lambdac) lambdap = sigma0 * lambdac;
-            if (lambdap > sigma1 * lambdac) lambdap = sigma1 * lambdac;
+            if(lambdap < sigma0 * lambdac) lambdap = sigma0 * lambdac;
+            if(lambdap > sigma1 * lambdac) lambdap = sigma1 * lambdac;
 
             return lambdap;
         }
 
 
-
-
-        /// <summary>
-        /// Computes a forward difference jacobian and returns the dense jacobian
-        /// </summary>
-        /// <param name="SolutionVec"></param>
-        /// <param name="currentX"></param>
-        /// <param name="f0"></param>
-        /// <returns></returns>
-        public BlockMsrMatrix diffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
-            int n = currentX.Length;
-            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
-
-            var temp = new double[n];
-
-            for (int i = 0; i < n; i++) {
-                var zz = new double[n];
-                zz[i] = 1;
-                temp = dirder(SolutionVec, currentX, zz, f0);
-                for (int j = 0; j < n; j++) {
-                    jac[j, i] = temp[j];
-                }
-            }
-
-            return jac;
-        }
-
-        public int Bandwidth(double[] currentX) {
-            int beta;
-            int dim = currentX.Length;
-            int full_bandwidth_row;
-            BlockMsrMatrix OpMatrix = CurrentLin.OperatorMatrix;
-            double[] b = new double[dim];
-
-            for (int j = 0; j < dim; j++) {
-                for (int i = dim - 1; i >= 0; i--) {
-                    if (OpMatrix[j, i] != 0) {
-
-                        b[j] = i - j;
-                        break;
-
-                    }
-
-                }
-
-            }
-
-            beta = (int)b.Max();
-            full_bandwidth_row = b.FirstIndexWhere(c => c == beta);
-
-            return beta;
-
-        }
-
-        public BlockMsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
-            int n = currentX.Length;
-            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
-            int beta = Bandwidth(currentX);
-            int number_Cells = n / beta;
-
-            var temp = new double[n];
-
-            for (int k = 0; k < beta; k++) {
-                var zz = new double[n];
-
-                for (int i = 0; i < number_Cells; i++) {
-                    zz[i * beta + k] = 1;
-
-                }
-                temp = dirder(SolutionVec, currentX, zz, f0);
-
-
-                for (int i = 0; i < number_Cells; i++) {
-                    for (int j = i * beta + k; j < (i + 1) * beta; j++) {
-                        jac[j, i * beta + k] = temp[j];
-                    }
-                }
-            }
-
-            return jac;
-        }
-
-        public BlockMsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
-            int dimension = SolutionVec.Mapping.GridDat.SpatialDimension;
-
-            int degree_VelocityX = SolutionVec.Mapping.Fields[0].Basis.Degree;
-            int degree_VelocityY = SolutionVec.Mapping.Fields[1].Basis.Degree;
-            int degree_VelocityZ = new int();
-            int degree_Pressure = new int();
-            int degree_StressXX = new int();
-            int degree_StressXY = new int();
-            int degree_StressYY = new int();
-
-            int NoVariables = SolutionVec.Mapping.NoOfVariables;
-
-
-
-            if (dimension == 2) {
-                degree_Pressure = SolutionVec.Mapping.Fields[2].Basis.Degree;
-
-                if (NoVariables > 4) {
-                    degree_StressXX = SolutionVec.Mapping.Fields[3].Basis.Degree;
-                    degree_StressXY = SolutionVec.Mapping.Fields[4].Basis.Degree;
-                    degree_StressYY = SolutionVec.Mapping.Fields[5].Basis.Degree;
-                }
-            }
-            else if (dimension == 3) {
-                degree_VelocityZ = SolutionVec.Mapping.Fields[2].Basis.Degree;
-                degree_Pressure = SolutionVec.Mapping.Fields[3].Basis.Degree;
-            }
-            else throw new ArgumentException();
-
-
-            int factor = 1;
-            int PI_VelocityX = 1;
-            int PI_VelocityY = 1;
-            int PI_VelocityZ = 1;
-            int PI_Pressure = 1;
-            int PI_StressXX = 1;
-            int PI_StressXY = 1;
-            int PI_StressYY = 1;
-
-            for (int i = 1; i <= dimension; i++) {
-                factor *= factor * i;
-                PI_VelocityX *= degree_VelocityX + i;
-                PI_VelocityY *= degree_VelocityY + i;
-                PI_Pressure *= degree_Pressure + i;
-
-                if (dimension == 3) {
-                    PI_VelocityZ *= degree_VelocityZ + i;
-                }
-
-                if (NoVariables > 4) {
-                    PI_StressXX *= degree_StressXX + i;
-                    PI_StressXY *= degree_StressXY + i;
-                    PI_StressYY *= degree_StressYY + i;
-                }
-            }
-
-            int number_Polynomials = (PI_VelocityX + PI_VelocityY + PI_Pressure) / factor;
-
-            if (dimension == 3) {
-                number_Polynomials += PI_VelocityZ / factor;
-            }
-
-            if (NoVariables > 4) {
-                number_Polynomials += (PI_StressXX + PI_StressXY + PI_StressYY) / factor;
-            }
-
-            int n = currentX.Length;
-            int number_Cells = n / number_Polynomials;
-
-            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
-
-            var temp = new double[n];
-
-            for (int k = 0; k < number_Polynomials; k++) {
-                var zz = new double[n];
-
-                for (int i = 0; i < number_Cells; i++) {
-                    zz[i * number_Polynomials + k] = 1;
-
-                }
-                temp = dirder(SolutionVec, currentX, zz, f0);
-
-
-                for (int i = 0; i < number_Cells; i++) {
-                    for (int j = i * number_Polynomials + k; j < (i + 1) * number_Polynomials; j++) {
-                        jac[j, i * number_Polynomials + k] = temp[j];
-                    }
-                }
-            }
-
-
-            return jac;
-        }
-
-
     }
-
 
 }

@@ -58,7 +58,7 @@ namespace BoSSS.Application.DerivativeTest {
             CHUNK_DATA_LIMIT_bkup = Quadrature_Bulksize.CHUNK_DATA_LIMIT;
         }
 
-      
+
         /// <summary>
         /// Basic grid tests, tested in DEBUG and RELEASE configuration.
         /// </summary>
@@ -94,7 +94,7 @@ namespace BoSSS.Application.DerivativeTest {
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
-            BoSSS.Solution.Application._Main(new string[0], true, delegate() {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate () {
                 p = new DerivativeTestMain();
                 return p;
             });
@@ -135,7 +135,23 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Test using grids imported from gmsh/cgns
         /// </summary>
-        [NUnitFileToCopyHack("DerivativeTest/TestGrids/*.msh", "DerivativeTest/TestGrids/*.msh")]
+        [NUnitFileToCopyHack("DerivativeTest/TestGrids/bump1st.msh",
+            "DerivativeTest/TestGrids/bump2nd.msh",
+            "DerivativeTest/TestGrids/bump3rd.msh",
+            "DerivativeTest/TestGrids/QuadTest1st.msh",
+            "DerivativeTest/TestGrids/QuadTest2nd.msh",
+            "DerivativeTest/TestGrids/QuadTest3rd.msh",
+            "DerivativeTest/TestGrids/QuadTest4th.msh",
+            "DerivativeTest/TestGrids/QuadTest5th.msh",
+            "DerivativeTest/TestGrids/Ringleb1st.msh",
+            "DerivativeTest/TestGrids/Ringleb2nd.msh",
+            "DerivativeTest/TestGrids/Ringleb3rd.msh",
+            "DerivativeTest/TestGrids/Ringleb4th.msh",
+            "DerivativeTest/TestGrids/Ringleb5th.msh",
+            "DerivativeTest/TestGrids/Ringleb6th.msh",
+            "DerivativeTest/TestGrids/Tria_coarse1st.msh",
+            "DerivativeTest/TestGrids/Tria_coarse2nd.msh",
+            "DerivativeTest/TestGrids/Tria_coarse3rd.msh")]
         [Test]
         public static void DerivativeTest_GridImport([ValueSource("m_testFiles")] string File) {
             DerivativeTestMain.GRID_CASE = 50;
@@ -150,7 +166,7 @@ namespace BoSSS.Application.DerivativeTest {
                 p = new DerivativeTestMain();
                 return p;
             });
-            
+
             Assert.IsTrue(p.m_passed);
         }
 
@@ -184,17 +200,19 @@ namespace BoSSS.Application.DerivativeTest {
         static void Main(string[] args) {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
-
-
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(1, 1, 1024);
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(1, 1, 1024 * 1024 * 128);
+            //BoSSS.Solution.Application.FinalizeMPI();
+            //return;
 
             // Build-In Grids
             // ==============
 
             //Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            
+
             for (int i = 1; i <= 5; i++) {
-                BoSSS.Solution.Application._Main(args, true,  delegate () {
+                BoSSS.Solution.Application._Main(args, true, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
                     return R;
@@ -305,199 +323,199 @@ namespace BoSSS.Application.DerivativeTest {
             IGrid grd;
             switch (GRID_CASE) {
                 case 1:
-                grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 5));
-                break;
+                    grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 5));
+                    break;
 
 
                 case 2: {
-                    grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 20));
-                    break;
-                }
+                        grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 20));
+                        break;
+                    }
 
                 case 3: {
-                    double[] xnodes = new double[] { -2, 0, 2 };
-                    double[] ynodes = new double[] { -2, 0, 2 };
-                    double dx = xnodes[1] - xnodes[0];
-                    double dy = ynodes[1] - ynodes[0];
-                    //this.CellVolume = dx * dy;
-                    //if(Math.Abs(dx - dy) <= 1.0e-12)
-                    //    EdgeArea = dx;
-                    grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, periodicX: false, periodicY: false, type: CellType.Square_4);
-                    break;
-                }
+                        double[] xnodes = new double[] { -2, 0, 2 };
+                        double[] ynodes = new double[] { -2, 0, 2 };
+                        double dx = xnodes[1] - xnodes[0];
+                        double dy = ynodes[1] - ynodes[0];
+                        //this.CellVolume = dx * dy;
+                        //if(Math.Abs(dx - dy) <= 1.0e-12)
+                        //    EdgeArea = dx;
+                        grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, periodicX: false, periodicY: false, type: CellType.Square_4);
+                        break;
+                    }
 
                 case 4: {
-                    double[] xnodes = GenericBlas.Linspace(-1, 5, 9);
-                    double[] ynodes = GenericBlas.Linspace(-1, 5, 13);
-                    double dx = xnodes[1] - xnodes[0];
-                    double dy = ynodes[1] - ynodes[0];
-                    this.CellVolume = dx * dy;
-                    if (Math.Abs(dx - dy) <= 1.0e-12)
-                        EdgeArea = dx;
-                    grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, periodicX: false, periodicY: false, type: CellType.Square_4);
-                    break;
-                }
+                        double[] xnodes = GenericBlas.Linspace(-1, 5, 9);
+                        double[] ynodes = GenericBlas.Linspace(-1, 5, 13);
+                        double dx = xnodes[1] - xnodes[0];
+                        double dy = ynodes[1] - ynodes[0];
+                        this.CellVolume = dx * dy;
+                        if (Math.Abs(dx - dy) <= 1.0e-12)
+                            EdgeArea = dx;
+                        grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, periodicX: false, periodicY: false, type: CellType.Square_4);
+                        break;
+                    }
 
                 case 5: {
-                    double[] xnodes = GenericBlas.Linspace(-1, 1, 8);
-                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13);
-                    grd = Grid2D.UnstructuredTriangleGrid(xnodes, ynodes, JitterScale: 0.5);
-                    break;
-                }
+                        double[] xnodes = GenericBlas.Linspace(-1, 1, 8);
+                        double[] ynodes = GenericBlas.Linspace(-1, 1, 13);
+                        grd = Grid2D.UnstructuredTriangleGrid(xnodes, ynodes, JitterScale: 0.5);
+                        break;
+                    }
 
                 case 6: {
-                    grd = Circle();
-                    break;
-                }
+                        grd = Circle();
+                        break;
+                    }
 
                 case 7: {
-                    // test periodicity
+                        // test periodicity
 
-                    grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 4), GenericBlas.Linspace(0, 0.25, 10), CellType.Square_9, PeriodicS: true);
-                    AltRefSol = true;
-                    break;
-                }
+                        grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 4), GenericBlas.Linspace(0, 0.25, 10), CellType.Square_9, PeriodicS: true);
+                        AltRefSol = true;
+                        break;
+                    }
 
                 case 8: {
-                    double[] rNodes = GenericBlas.Linspace(1, 4, 8);
-                    double[] sNodes = GenericBlas.Linspace(0, 0.5, 15);
-                    grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_4, PeriodicS: false);
-                    break;
-                }
+                        double[] rNodes = GenericBlas.Linspace(1, 4, 8);
+                        double[] sNodes = GenericBlas.Linspace(0, 0.5, 15);
+                        grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_4, PeriodicS: false);
+                        break;
+                    }
 
                 case 9: {
-                    double[] xNodes1 = GenericBlas.Linspace(-1, 0.3, 7);
-                    double[] yNodes1 = GenericBlas.Linspace(-1, 1, 13);
-                    double[] xNodes2 = GenericBlas.Linspace(0.3, 1, 5);
-                    double[] yNodes2 = GenericBlas.Linspace(-1, 1, 25);
-                    double[] xNodes3 = GenericBlas.Linspace(-1, 1, 8);
-                    double[] yNodes3 = GenericBlas.Linspace(-2, -1, 5);
+                        double[] xNodes1 = GenericBlas.Linspace(-1, 0.3, 7);
+                        double[] yNodes1 = GenericBlas.Linspace(-1, 1, 13);
+                        double[] xNodes2 = GenericBlas.Linspace(0.3, 1, 5);
+                        double[] yNodes2 = GenericBlas.Linspace(-1, 1, 25);
+                        double[] xNodes3 = GenericBlas.Linspace(-1, 1, 8);
+                        double[] yNodes3 = GenericBlas.Linspace(-2, -1, 5);
 
-                    var grd1 = Grid2D.Cartesian2DGrid(xNodes1, yNodes1, type: CellType.Square_Linear);
-                    var grd2 = Grid2D.Cartesian2DGrid(xNodes2, yNodes2, type: CellType.Square_Linear);
-                    var grd3 = Grid2D.Cartesian2DGrid(xNodes3, yNodes3, type: CellType.Square_Linear);
-                    var grdJ = GridCommons.MergeLogically(grd1, GridCommons.MergeLogically(grd2, grd3));
-                    grd = GridCommons.Seal(grdJ, 4);
+                        var grd1 = Grid2D.Cartesian2DGrid(xNodes1, yNodes1, type: CellType.Square_Linear);
+                        var grd2 = Grid2D.Cartesian2DGrid(xNodes2, yNodes2, type: CellType.Square_Linear);
+                        var grd3 = Grid2D.Cartesian2DGrid(xNodes3, yNodes3, type: CellType.Square_Linear);
+                        var grdJ = GridCommons.MergeLogically(grd1, GridCommons.MergeLogically(grd2, grd3));
+                        grd = GridCommons.Seal(grdJ, 4);
 
-                    break;
-                }
+                        break;
+                    }
 
                 case 10: {
 
-                    double[] xNodes1 = GenericBlas.Linspace(-1, 0.3, 4);
-                    double[] xNodes2 = GenericBlas.Linspace(0.3, 1, 5);
+                        double[] xNodes1 = GenericBlas.Linspace(-1, 0.3, 4);
+                        double[] xNodes2 = GenericBlas.Linspace(0.3, 1, 5);
 
-                    double[] yNodes1 = GenericBlas.Linspace(-1, 1, 9);
-                    double[] yNodes2 = GenericBlas.Linspace(-1, 1, 5);
+                        double[] yNodes1 = GenericBlas.Linspace(-1, 1, 9);
+                        double[] yNodes2 = GenericBlas.Linspace(-1, 1, 5);
 
-                    double[] zNodes1 = GenericBlas.Linspace(-1, 1, 5);
-                    double[] zNodes2 = GenericBlas.Linspace(-1, 1, 3);
+                        double[] zNodes1 = GenericBlas.Linspace(-1, 1, 5);
+                        double[] zNodes2 = GenericBlas.Linspace(-1, 1, 3);
 
-                    var grd1 = Grid3D.Cartesian3DGrid(xNodes1, yNodes1, zNodes1);
-                    var grd2 = Grid3D.Cartesian3DGrid(xNodes2, yNodes2, zNodes2);
-                    var grdJ = GridCommons.MergeLogically(grd1, grd2);
-                    grd = GridCommons.Seal(grdJ, 4);
+                        var grd1 = Grid3D.Cartesian3DGrid(xNodes1, yNodes1, zNodes1);
+                        var grd2 = Grid3D.Cartesian3DGrid(xNodes2, yNodes2, zNodes2);
+                        var grdJ = GridCommons.MergeLogically(grd1, grd2);
+                        grd = GridCommons.Seal(grdJ, 4);
 
 
-                    break;
+                        break;
 
-                }
+                    }
 
                 case 11: {
-                    grd = Grid2D.Trapezoidal2dGrid(4, 2, 2, GenericBlas.Linspace(0, 1, 2));
-                    break;
-                }
+                        grd = Grid2D.Trapezoidal2dGrid(4, 2, 2, GenericBlas.Linspace(0, 1, 2));
+                        break;
+                    }
 
                 case 12: {
-                    var grid1 = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 5, 5), GenericBlas.Linspace(-1, 1, 2));
-                    //grd = base_grid;
-                    //grid1.Plot2DGrid();
+                        var grid1 = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 5, 5), GenericBlas.Linspace(-1, 1, 2));
+                        //grd = base_grid;
+                        //grid1.Plot2DGrid();
 
 
-                    var gdat1 = grid1.GridData;
-                    var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null, out GridCorrelation o2c_1);
-                    //grid2.Plot2DGrid();
+                        var gdat1 = grid1.GridData;
+                        var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null, out GridCorrelation o2c_1);
+                        //grid2.Plot2DGrid();
 
-                    var gdat2 = grid2.GridData;
-                    var grid3 = gdat2.Adapt(new int[] { 2, 4 }, null, out GridCorrelation o2c_2);
-                    //grid3.Plot2DGrid();
+                        var gdat2 = grid2.GridData;
+                        var grid3 = gdat2.Adapt(new int[] { 2, 4 }, null, out GridCorrelation o2c_2);
+                        //grid3.Plot2DGrid();
 
-                    var gdat3 = grid3.GridData;
-                    var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null, out GridCorrelation o2c_3);
-                    //grid4.Plot2DGrid();
+                        var gdat3 = grid3.GridData;
+                        var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null, out GridCorrelation o2c_3);
+                        //grid4.Plot2DGrid();
 
-                    var gdat4 = grid4.GridData;
-                    var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out GridCorrelation o2c_4);
+                        var gdat4 = grid4.GridData;
+                        var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out GridCorrelation o2c_4);
 
-                    //grid5.Plot2DGrid();
+                        //grid5.Plot2DGrid();
 
-                    grd = grid5;
+                        grd = grid5;
 
-                    break;
-                }
+                        break;
+                    }
 
                 case 13: {
-                    double[] rNodes = GenericBlas.Linspace(1, 4, 8);
-                    double[] sNodes = GenericBlas.Linspace(0, 0.5, 15);
-                    grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_9, PeriodicS: false);
-                    break;
-                }
+                        double[] rNodes = GenericBlas.Linspace(1, 4, 8);
+                        double[] sNodes = GenericBlas.Linspace(0, 0.5, 15);
+                        grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_9, PeriodicS: false);
+                        break;
+                    }
 
                 case 14: {
-                    double[] rNodes = GenericBlas.Linspace(1, 4, 13);
-                    double[] sNodes = GenericBlas.Linspace(0, 0.5, 25);
-                    grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_16, PeriodicS: false);
-                    break;
-                }
+                        double[] rNodes = GenericBlas.Linspace(1, 4, 13);
+                        double[] sNodes = GenericBlas.Linspace(0, 0.5, 25);
+                        grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_16, PeriodicS: false);
+                        break;
+                    }
 
                 case 15: {
-                    double[] rNodes = GenericBlas.Linspace(1, 2, 4);
-                    double[] sNodes = GenericBlas.Linspace(0, 0.5, 4);
-                    double[] zNodes = GenericBlas.Linspace(-1, 1, 5);
-                    grd = Grid3D.CylinderGrid(rNodes, sNodes, zNodes, CellType.Cube_27, PeriodicS: false, PeriodicZ: false);
-                    break;
-                }
+                        double[] rNodes = GenericBlas.Linspace(1, 2, 4);
+                        double[] sNodes = GenericBlas.Linspace(0, 0.5, 4);
+                        double[] zNodes = GenericBlas.Linspace(-1, 1, 5);
+                        grd = Grid3D.CylinderGrid(rNodes, sNodes, zNodes, CellType.Cube_27, PeriodicS: false, PeriodicZ: false);
+                        break;
+                    }
 
                 case 16: {
-                    grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
-                    break;
-                }
+                        grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
+                        break;
+                    }
 
                 case 17: {
-                    grd = Grid3D.Ogrid(0.5, 1, 3, 3, GenericBlas.Linspace(0, 4, 3));
-                    break;
-                }
+                        grd = Grid3D.Ogrid(0.5, 1, 3, 3, GenericBlas.Linspace(0, 4, 3));
+                        break;
+                    }
 
                 case 18: {
-                    // aggregation grid
-                    double[] xNodes = GenericBlas.Linspace(-1, 1, 5);
-                    double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
+                        // aggregation grid
+                        double[] xNodes = GenericBlas.Linspace(-1, 1, 5);
+                        double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
 
-                    var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
+                        var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
 
-                    grd = CoarseningAlgorithms.Coarsen(baseGrid, 2);
-                    
-                    double dx = xNodes[1] - xNodes[0];
-                    double dy = yNodes[1] - yNodes[0];
-                    this.CellVolume = dx * dy;
-                    if (Math.Abs(dx - dy) <= 1.0e-12)
-                        EdgeArea = dx;
+                        grd = CoarseningAlgorithms.Coarsen(baseGrid, 2);
+
+                        double dx = xNodes[1] - xNodes[0];
+                        double dy = yNodes[1] - yNodes[0];
+                        this.CellVolume = dx * dy;
+                        if (Math.Abs(dx - dy) <= 1.0e-12)
+                            EdgeArea = dx;
 
 
-                    break;
-                }
+                        break;
+                    }
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // more expensive grids (not tested in DEBUG MODE)
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                 case 30: {
-                    double[] xnodes = GenericBlas.Linspace(-1, 1, 7);
-                    double[] ynodes = GenericBlas.Linspace(-1, 1, 9);
-                    double[] znodes = GenericBlas.Linspace(-1, 1, 8);
-                    grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes, periodicX: false, periodicY: false, periodicZ: false);
-                    break;
-                }
+                        double[] xnodes = GenericBlas.Linspace(-1, 1, 7);
+                        double[] ynodes = GenericBlas.Linspace(-1, 1, 9);
+                        double[] znodes = GenericBlas.Linspace(-1, 1, 8);
+                        grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes, periodicX: false, periodicY: false, periodicZ: false);
+                        break;
+                    }
 
 
 
@@ -506,37 +524,36 @@ namespace BoSSS.Application.DerivativeTest {
                 // +++++++++++++++++++++++++++++++++
 
                 case 50: {
-                    // gmsh grid import test
+                        // gmsh grid import test
 
-                    Console.WriteLine("Loading file: '" + GRID_FILE + "'...");
-                    GridCommons _grd = GridImporter.Import(GRID_FILE);
-                    //Console.WriteLine("done. " + grd.NoOfUpdateCells.MPISum() + " cells loaded.");
+                        Console.WriteLine("Loading file: '" + GRID_FILE + "'...");
+                        GridCommons _grd = GridImporter.Import(GRID_FILE);
+                        //Console.WriteLine("done. " + grd.NoOfUpdateCells.MPISum() + " cells loaded.");
 
-                    //Plot2dGridGnuplot(grd);
+                        //Plot2dGridGnuplot(grd);
 
-                    HashSet<CellType> cellTypes = new HashSet<CellType>();
-                    foreach (var cell in _grd.Cells) {
-                        if (!cellTypes.Contains(cell.Type))
-                            cellTypes.Add(cell.Type);
-                    }
-                    Console.Write("Cell types: ");
-                    foreach (var ct in cellTypes) {
-                        Console.Write(ct);
-                        Console.Write(" ");
-                    }
-                    Console.WriteLine();
-                    grd = _grd;
+                        HashSet<CellType> cellTypes = new HashSet<CellType>();
+                        foreach (var cell in _grd.Cells) {
+                            if (!cellTypes.Contains(cell.Type))
+                                cellTypes.Add(cell.Type);
+                        }
+                        Console.Write("Cell types: ");
+                        foreach (var ct in cellTypes) {
+                            Console.Write(ct);
+                            Console.Write(" ");
+                        }
+                        Console.WriteLine();
+                        grd = _grd;
 
-                    if (GRID_FILE.Contains("QuadTest3rd") || GRID_FILE.Contains("QuadTest4th") || GRID_FILE.Contains("QuadTest5th"))
-                    {
-                        AltRefSol = true;
-                    }
+                        if (GRID_FILE.Contains("QuadTest3rd") || GRID_FILE.Contains("QuadTest4th") || GRID_FILE.Contains("QuadTest5th")) {
+                            AltRefSol = true;
+                        }
 
                         break;
-                }
+                    }
 
                 default:
-                throw new NotSupportedException();
+                    throw new NotSupportedException();
 
             }
             return grd;
@@ -652,7 +669,7 @@ namespace BoSSS.Application.DerivativeTest {
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             Tecplot.PlotFields(
                 ArrayTools.Cat<DGField>(
-                    f1Gradient_Analytical, f1Gradient_Numerical, f1, 
+                    f1Gradient_Analytical, f1Gradient_Numerical, f1,
                     GridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical, f2),
                 "derivatives", 0.0, superSampling);
         }
@@ -694,8 +711,8 @@ namespace BoSSS.Application.DerivativeTest {
             // sealing test
             // =================
 
-            if(this.GridData is Foundation.Grid.Classic.GridData)
-                TestSealing(this.GridData); 
+            if (this.GridData is Foundation.Grid.Classic.GridData)
+                TestSealing(this.GridData);
 
             // cell volume and edge area check, if possible
             // ===============================================
@@ -756,8 +773,8 @@ namespace BoSSS.Application.DerivativeTest {
                         EvalResult.Multiply(1.0, BasisVals, BasisVals, 0.0, "jknm", "jkn", "jkm");
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        if(jG2jL != null) {
-                            for(int i = 0; i < Length; i++) {
+                        if (jG2jL != null) {
+                            for (int i = 0; i < Length; i++) {
                                 int jG = i + i0;
                                 MassMatrix.ExtractSubArrayShallow(jG2jL[jG], -1, -1)
                                     .Acc(1.0, ResultsOfIntegration.ExtractSubArrayShallow(i, -1, -1));
@@ -977,14 +994,11 @@ namespace BoSSS.Application.DerivativeTest {
                 // comparison of finite difference Jacobian and Operator matrix
                 if (TestFDJacobian) {
 
-                   
+
                     //this.f1.Clear();
                     //var NullField = new SinglePhaseField(this.f1.Basis);
 
-                    var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
-                        delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
-                            return;
-                        });
+                    var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping);
                     var CheckMatrix = new BlockMsrMatrix(FDJbuilder.CodomainMapping, FDJbuilder.DomainMapping);
                     var CheckAffine = new double[FDJbuilder.CodomainMapping.LocalLength];
                     FDJbuilder.ComputeMatrix(CheckMatrix, CheckAffine);
@@ -1002,19 +1016,19 @@ namespace BoSSS.Application.DerivativeTest {
                     ErrAffine.AccV(-1.0, CheckAffine);
                     double LinfMtx = ErrMatrix.InfNorm();
                     double L2Aff = ErrAffine.L2NormPow2().MPISum().Sqrt();
-                    bool passed1 = (LinfMtx < MtxTol*RelTol);
-                    bool passed2 = (L2Aff < AffTol*RelTol);
+                    bool passed1 = (LinfMtx < MtxTol * RelTol);
+                    bool passed2 = (L2Aff < AffTol * RelTol);
                     Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;
-                    
+
 
                 }
                 Console.WriteLine("--------------------------------------------");
             }
 
-            
-            
+
+
 
             // finally...
             // =================

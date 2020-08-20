@@ -262,15 +262,25 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             //    MPIParameterExchange: false,
             //    whichSpc: LevelSetTracker.GetSpeciesId("A")
             //    );
+
+            Operator_interface.OperatorCoefficientsProvider =
+                delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+                    var r = new CoefficientSet() {
+                        
+                    };
+
+                    //throw new NotImplementedException("todo");
+                    return r;
+                };
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker,
-                Extension.Mapping, InterfaceParams, Extension.Mapping, LevelSetTracker.SpeciesIdS.ToArray());
+                Extension.Mapping, InterfaceParams, Extension.Mapping);
 
             MultiphaseCellAgglomerator dummy = LevelSetTracker.GetAgglomerator(LevelSetTracker.SpeciesIdS.ToArray(), 2 * Extension.Basis.Degree + 2, 0.0);
             foreach (SpeciesId spcId in LevelSetTracker.SpeciesIdS) {
-                mtxBuilder.SpeciesOperatorCoefficients[spcId].CellLengthScales = dummy.CellLengthScales[spcId];
+                //mtxBuilder.SpeciesOperatorCoefficients[spcId].CellLengthScales = dummy.CellLengthScales[spcId];
+                mtxBuilder.CellLengthScales.Add(spcId, dummy.CellLengthScales[spcId]);
             }
-            //mtxBuilder.SpeciesOperatorCoefficients[LevelSetTracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")];
-
+            //mtxBuilder.CellLengthScales.Add(LevelSetTracker.GetSpeciesId("A"), dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")]);
 
             mtxBuilder.time = 0;
             mtxBuilder.MPITtransceive = false;
@@ -330,7 +340,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             //    subGrid: nearfield ? LevelSetTracker.Regions.GetNearFieldSubgrid(1) : null
             //    );
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, 
-                Extension.Mapping, new List<DGField> { InterfaceValue }, Extension.Mapping, LevelSetTracker.GetSpeciesId("A"));
+                Extension.Mapping, new List<DGField> { InterfaceValue }, Extension.Mapping);
             mtxBuilder.time = 0;
             mtxBuilder.MPITtransceive = false;
             mtxBuilder.ComputeAffine(OpAffine_interface);
@@ -463,7 +473,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             DefineBulkOperator(LSTrck, InterfaceFlux, D, PenaltyBase);
 
-            Operator_interface = InterfaceFlux.XOperator(QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2), LevelSetTracker.SpeciesIdS.ToArray());
+            Operator_interface = InterfaceFlux.XOperator(new[] { "A", "B" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
+            //Operator_interface = InterfaceFlux.XOperator(new[] { "A" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
         }
 
         private void DefineBulkOperator(LevelSetTracker LSTrck, ILevelSetForm InterfaceFlux, int D, double PenaltyBase) {

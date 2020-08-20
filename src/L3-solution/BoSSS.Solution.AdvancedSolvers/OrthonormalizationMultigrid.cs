@@ -25,7 +25,6 @@ using BoSSS.Foundation;
 using ilPSP.LinSolvers;
 using BoSSS.Platform;
 using MPI.Wrappers;
-using MathNet.Numerics.Algorithms.LinearAlgebra;
 using System.Numerics;
 using System.Diagnostics;
 using BoSSS.Foundation.XDG;
@@ -434,6 +433,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Res0 = new double[L];
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, rl, L);
+
 
                 /*
                 ISparseSolver Fullsolver = null;

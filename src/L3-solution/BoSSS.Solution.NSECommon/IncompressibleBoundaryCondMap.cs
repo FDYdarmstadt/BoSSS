@@ -44,7 +44,7 @@ namespace BoSSS.Solution.NSECommon {
                     ScalarFields = new string[] { VariableNames.Pressure, VariableNames.LevelSet };
                     break;
                 case PhysicsMode.Combustion:
-                    ScalarFields = new string[] { VariableNames.Pressure, VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
+                    ScalarFields = new string[] { VariableNames.Pressure, VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3, VariableNames.MassFraction4 };
                     break;
 
                 case PhysicsMode.Helical:
@@ -59,6 +59,9 @@ namespace BoSSS.Solution.NSECommon {
                     ScalarFields = new string[] { VariableNames.Pressure, "k", "omega" }; // TODO physics mode for each turbulence model?
                     break;
 
+                case PhysicsMode.MixtureFraction:
+                    ScalarFields = new string[] { VariableNames.Pressure, VariableNames.MixtureFraction };
+                    break;
                 default:
                     throw new ArgumentException();
             }

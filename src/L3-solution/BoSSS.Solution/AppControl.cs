@@ -319,7 +319,6 @@ namespace BoSSS.Solution.Control {
         /// only for restarts with loaded grid, 
         /// changes a boundary condition in the loaded grid
         /// </summary>
-        /// <param name="EdgeTagNames"></param>
         public void ChangeBoundaryCondition(string oldEdgeTagName, string newEdgeTagName) {
             if(!this.BoundaryValueChanges.ContainsKey(oldEdgeTagName))
                 this.BoundaryValueChanges.Add(oldEdgeTagName, newEdgeTagName);
@@ -630,6 +629,9 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(tsi.Session.ID, tsi.TimeStepNumber);
+            
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -639,6 +641,10 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, default(TimestepNumber));
+
+            var tsi = si.Timesteps.Last();
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
         /// <summary>
@@ -648,6 +654,10 @@ namespace BoSSS.Solution.Control {
             this.InitialValues.Clear();
             this.InitialValues_Evaluators.Clear();
             this.RestartInfo = Tuple.Create(si.ID, idx);
+
+            var tsi = si.Timesteps.Single(_tsi => _tsi.TimeStepNumber.Equals(idx));
+            this.GridGuid = tsi.GridID;
+            this.GridFunc = null;
         }
 
 
@@ -675,17 +685,16 @@ namespace BoSSS.Solution.Control {
         public void SetGrid(IGridInfo grd) {
             this.GridGuid = grd.ID;
 
-            if(grd.Database == null || grd.Database.Path == null) {
+            if(grd.Database == null) {
                 Console.WriteLine("Warning: grid seems not to be saved in a database");
             } else {
-                if(this.DbPath == null) {
-                    this.DbPath = grd.Database.Path;
-                    Console.WriteLine("Info: setting database path to: " + this.DbPath);
-                } else {
-                    if(!this.DbPath.Equals(grd.Database.Path)) {
-                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
-                    }
+                SetDatabase(grd.Database);
+
+                if (!grd.Database.PathMatch(this.DbPath)) {
+                    Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
                 }
+
+
             }
         }
         
@@ -738,6 +747,12 @@ namespace BoSSS.Solution.Control {
         public int NoOfTimesteps = -1;
 
         /// <summary>
+        /// true: constant dt, false: dt varies depending on solution
+        /// </summary>
+        [DataMember]
+        public bool staticTimestep = true;
+
+        /// <summary>
         /// physical time at which the solver terminates;
         /// </summary>
         [DataMember]
@@ -750,10 +765,12 @@ namespace BoSSS.Solution.Control {
         public int saveperiod = 1;
 
         /// <summary>
-        /// A number of previous timesteps which are always saved in case of a simulation crash.
+        /// Intended for restart simulations after a crash:
+        /// Causes the currently completed time step to always be saved;
+        /// It will be deleted if it is not at the <see cref="saveperiod"/> and a newer timestep is available.
         /// </summary>
         [DataMember]
-        public int rollingSaves = 0;
+        public bool rollingSaves = false;
 
 
 
@@ -827,7 +844,7 @@ namespace BoSSS.Solution.Control {
         /// For solvers which support both, stationary as well as transient simulations, the corresponding switch.
         /// </summary>
         [JsonIgnore]
-        public _TimesteppingMode TimesteppingMode {
+        virtual public _TimesteppingMode TimesteppingMode {
             get {
                 return m_TimesteppingMode;
             }
@@ -890,7 +907,7 @@ namespace BoSSS.Solution.Control {
         /// - 2nd entry: optional machine name filter
         /// </summary>
         [DataMember]
-        public ValueTuple<string, string>[] AlternateDbPaths = null;
+        public (string DbPath, string MachineFilter)[] AlternateDbPaths = null;
         
         /// <summary>
         /// Sets <see cref="DbPath"/>, <see cref="AlternateDbPaths"/>.
@@ -1215,12 +1232,18 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
-        /// 
+        /// always -1
         /// </summary>
         public override int GetHashCode() {
             return -1;
         }
 
+        /// <summary>
+        /// Number of Consecutive timesteps which are saved -- this is intended to be used by BDF or Adams-Bashforth time integrators which require multiple time steps
+        /// (e.g. 3 to save time-step 98, 99, 100 for a save-period of 100;)
+        /// </summary>
+        [DataMember]
+        public int BurstSave = 1;
 
         /// <summary>
         /// Equality of control files - mostly relevant for the job manager

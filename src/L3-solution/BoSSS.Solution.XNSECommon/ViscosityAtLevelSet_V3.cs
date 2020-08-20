@@ -62,7 +62,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp,
+        public double InnerEdgeForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
@@ -344,6 +344,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             get { return null;  }
         }
 
+      
         /*
         /// <summary>
         /// Performance implementation
@@ -534,7 +535,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     //    /// <summary>
     //    /// 
     //    /// </summary>
-    //    public double LevelSetForm(ref CommonParams inp,
+    //    public double InnerEdgeForm(ref CommonParams inp,
     //        double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
     //        double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
     //        double[] N = inp.n;

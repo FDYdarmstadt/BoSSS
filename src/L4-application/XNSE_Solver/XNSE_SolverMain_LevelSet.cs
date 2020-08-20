@@ -57,7 +57,7 @@ using NUnit.Framework;
 using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
-using System.Threading;
+using BoSSS.Application.SemiLagrangianLevelSetTestSuite;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -148,6 +148,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         ExtensionVelocityBDFMover ExtVelMover;
 
+        /// <summary>
+        /// Corrector used when employing <see cref="BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet"/>
+        /// </summary>
+        LagrangianCorrectors Corrector;
 #pragma warning restore 649
 
         /// <summary>
@@ -302,23 +306,23 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                             // setup extension velocity mover
-                            switch (this.Control.Timestepper_Scheme) {
-                                case XNSE_Control.TimesteppingScheme.RK_CrankNicolson:
-                                case XNSE_Control.TimesteppingScheme.CrankNicolson: {
+                            switch (this.Control.TimeSteppingScheme) {
+                                case TimeSteppingScheme.RK_CrankNic:
+                                case TimeSteppingScheme.CrankNicolson: {
                                         //do not instantiate rksch, use bdf instead
                                         bdfOrder = -1;
                                         break;
                                     }
-                                case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler:
-                                case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
+                                case TimeSteppingScheme.RK_ImplicitEuler:
+                                case TimeSteppingScheme.ImplicitEuler: {
                                         //do not instantiate rksch, use bdf instead
                                         bdfOrder = 1;
                                         break;
                                     }
                                 default: {
-                                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                                        if (this.Control.TimeSteppingScheme.ToString().StartsWith("BDF")) {
                                             //do not instantiate rksch, use bdf instead
-                                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                                            bdfOrder = Convert.ToInt32(this.Control.TimeSteppingScheme.ToString().Substring(3));
                                             break;
                                         } else
                                             throw new NotImplementedException();
@@ -334,6 +338,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
                             break;
                         }
+                    case LevelSetEvolution.SemiLagrangianLevelSet:
+
+                        Corrector = new LagrangianCorrectors(LagrangianMode.Marker);
+                        Corrector.Constructor(this.DGLevSet.Current, this.DGLevSetGradient, this.LsTrk, this.ExtensionVelocity.Current, this.ExtensionVelocity.Current, this.GridData);
+
+                        this.DGLevSet.Current.Clear();
+                        this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
+                        this.DGLevSetGradient.Gradient(1.0, this.DGLevSet.Current);
+                        //this.LevSetGradient.Gradient(1.0, this.LevSet);
+                        Corrector.Initialize();
+                        break;
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.PrescribedLSwave:
@@ -823,6 +838,28 @@ namespace BoSSS.Application.XNSE_Solver {
 
                             break;
                         }
+                    case LevelSetEvolution.SemiLagrangianLevelSet:
+                        // update velocity at Interface ??
+                        //double[][] ExtVelMin = new double[ExtensionVelocity.Current.ToArray().Length][];
+                        //double[][] ExtVelMax = new double[ExtensionVelocity.Current.ToArray().Length][];
+                        //for (int i = 0; i < ExtensionVelocity.Current.ToArray().Length; i++)
+                        //{
+                        //    ExtVelMin[i] = new double[LsTrk.GridDat.Cells.NoOfLocalUpdatedCells];
+                        //    ExtVelMax[i] = new double[LsTrk.GridDat.Cells.NoOfLocalUpdatedCells];
+                        //}
+                        //NarrowMarchingBand.ConstructExtVel_PDE(LsTrk, LsTrk.Regions.GetCutCellSubgrid4LevSet(0), ExtensionVelocity.Current.ToArray(), meanVelocity, LevSet, LevSetGradient, ExtVelMin, ExtVelMax, this.m_HMForder);
+
+                        ExtensionVelocity.Push();
+                        for (int g = 0; g < meanVelocity.Length; g++)
+                        {
+                            ExtensionVelocity.Current[g].Clear();
+                            ExtensionVelocity.Current[g].Acc(1.0, meanVelocity[g]);
+                        }
+
+                        // advect particles and retrieve LevelSet
+                        Corrector.Timestep(dt, 1, iTimestep);
+
+                        break;
                     default:
                         throw new ApplicationException();
                 }

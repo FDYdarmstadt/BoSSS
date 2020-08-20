@@ -1,5 +1,5 @@
 ﻿/* =======================================================================
-Copyright 2020 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ limitations under the License.
 */
 using BoSSS.Application.FSI_Solver;
 using ilPSP;
+using System;
 
 namespace FSI_Solver {
     public class FSI_ParameterAtIB {
@@ -25,7 +26,13 @@ namespace FSI_Solver {
         /// <param name="currentPoint">The current point</param>
         public FSI_ParameterAtIB(Particle currentParticle, Vector currentPoint) {
             m_CurrentParticle = currentParticle;
+            if (currentParticle == null)
+                Console.WriteLine("ndsngosdng");
+            if (m_CurrentParticle.Area <= 0)
+                throw new ArithmeticException("no particle with an positive domain assigned.");
             m_CurrentParticle.CalculateRadialVector(currentPoint, out m_RadialVector, out m_radialLength);
+            if (m_radialLength <= 0)
+                throw new ArithmeticException("negative or zero length of radial vector");
         }
 
         private readonly Particle m_CurrentParticle;

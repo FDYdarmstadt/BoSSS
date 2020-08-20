@@ -237,7 +237,7 @@ namespace BoSSS.Foundation {
                     int jins = j + j_insert;
 
                     for (int n = 0; n < N; n++) {
-                        m_Coordinates[jins, n] = Buffer[j * N + n];
+                        m_Coordinates[jins, n] = Buffer[i0 + j * N + n];
                     }
                 }
                 return Len * N;
@@ -321,11 +321,9 @@ namespace BoSSS.Foundation {
                     _qInsVol = (new Quadrature.CellQuadratureScheme(true, em));
                 }
 
-                var op = (new BrokenDerivativeForm(d)).Operator(1);
+                var op = (new BrokenDerivativeForm(d)).Operator(1, g => _qInsEdge, g => _qInsVol);
 
-                op.Evaluate(alpha, 1.0, f.Mapping, null, this.Mapping,
-                    qInsEdge: _qInsEdge,
-                    qInsVol: _qInsVol);
+                op.Evaluate(alpha, 1.0, f.Mapping, null, this.Mapping);
 
             }
         }

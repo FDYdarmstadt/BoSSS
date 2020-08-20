@@ -12,7 +12,27 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            Large();
+            EquidistandGrid();
+        }
+
+        [Test]
+        public void VertexMerge()
+        {
+            var rectangle = GridShapes.Rectangle(3, 3);
+
+            MultidimensionalArray nodes = MultidimensionalArray.Create(5, 2);
+            nodes.SetRowPt(0, OnCircle(0));
+            nodes.SetRowPt(1, OnCircle(0.5));
+            nodes.SetRowPt(2, OnCircle(1));
+            nodes.SetRowPt(3, OnCircle(2));
+            nodes.SetRowPt(4, OnCircle(3));
+
+            IGrid grid = VoronoiGrid2D.Polygonal(nodes, rectangle, 0, 0);
+
+            Vector OnCircle(double radian)
+            {
+                return new Vector(Math.Cos(radian), Math.Sin(radian));
+            }
         }
 
         [Test]
@@ -20,7 +40,7 @@ namespace VoronoiTests.Grid
         {
             var rectangle = GridShapes.Rectangle(2, 2);
 
-            IGrid grid = VoronoiGrid2D.Polygonal(rectangle, 0, 10000);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(rectangle, 0, 10000);
             Plotter.Plot(grid);
         }
 
@@ -41,32 +61,64 @@ namespace VoronoiTests.Grid
         [Test]
         public void EquidistandGrid()
         {
-            var rectangle = GridShapes.Rectangle(2, 2);
+            double offset = 1e-7;
             MultidimensionalArray nodes = MultidimensionalArray.Create(4, 2);
-            nodes.SetRow(0, new double[] { -0.5, 0.5 });
-            nodes.SetRow(1, new double[] { -0.5, -0.5 });
-            nodes.SetRow(2, new double[] { 0.5, 0.5 });
-            nodes.SetRow(3, new double[] { 0.5, -0.5 });
+            nodes.SetRowPt(0, new Vector(0.5 + offset, 0.5 ));
+            nodes.SetRowPt(1, new Vector(-0.5 + offset, 0.5 ));
+            nodes.SetRowPt(2, new Vector(0.5, -0.5));
+            nodes.SetRowPt(3, new Vector(-0.5, -0.5));
 
-            IGrid grid = VoronoiGrid2D.Polygonal(nodes, rectangle, 0, 0);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, GridShapes.Rectangle(2, 2), 0, 1);
+            Plotter.Plot(grid);
         }
 
         [Test]
         public void EquidistandGridLarge()
         {
-            int nodesPerDimension = 100;
-            var rectangle = GridShapes.Rectangle(2, 2);
+            int nodesX = 101;
+            int nodesY = 51;
+            var rectangle = GridShapes.Rectangle(1, 0.5);
             
-            MultidimensionalArray nodes = MultidimensionalArray.Create(nodesPerDimension * nodesPerDimension, 2);
-            for(int i = 0; i < nodesPerDimension; ++i)
+            MultidimensionalArray nodes = MultidimensionalArray.Create(nodesX * nodesY, 2);
+            for(int i = 0; i < nodesX; ++i)
             {
-                for(int j = 0; j < nodesPerDimension; ++j)
+                for(int j = 0; j < nodesY; ++j)
                 {
-                    nodes[i * nodesPerDimension +j, 0] = 2.0/ (nodesPerDimension - 1) * i -1.0 ;
-                    nodes[i * nodesPerDimension +j, 1] = 2.0 / (nodesPerDimension - 1) * j -1.0;
+                    nodes[i * nodesY +j, 0] = 1.0/ (nodesX - 1) * i -0.5 ;
+                    nodes[i * nodesY +j, 1] = 0.5 / (nodesY - 1) * j -0.25;
                 }
             }
             IGrid grid = VoronoiGrid2D.Polygonal(nodes, rectangle, 0, 0);
+            //Plotter.Plot(grid);
+        }
+
+        [Test]
+        public void WiggleNode()
+        {
+            int nodesPerDimension = 2;
+            var rectangle = GridShapes.Rectangle(2, 2);
+
+            MultidimensionalArray nodes = MultidimensionalArray.Create(nodesPerDimension * nodesPerDimension, 2);
+            for (int i = 0; i < nodesPerDimension; ++i)
+            {
+                for (int j = 0; j < nodesPerDimension; ++j)
+                {
+                    nodes[i * nodesPerDimension + j, 0] = 2.0 / (nodesPerDimension - 1) * i - 1.0;
+                    nodes[i * nodesPerDimension + j, 1] = 2.0 / (nodesPerDimension - 1) * j - 1.0;
+                }
+            }
+
+            int wiggles = 100;
+            double range = 1e-8;
+            double increment = range / wiggles;
+            nodes[0, 0] -= range / 2.0;
+
+            for (int i = 0; i < wiggles + 1; ++i)
+            {
+                IGrid grid = VoronoiGrid2D.Polygonal(nodes, rectangle, 0, 0);
+                nodes[0, 0] += increment;
+            }
+            
             //Plotter.Plot(grid);
         }
 

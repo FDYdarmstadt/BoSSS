@@ -25,7 +25,6 @@ using BoSSS.Foundation;
 using ilPSP.LinSolvers;
 using BoSSS.Platform;
 using MPI.Wrappers;
-using MathNet.Numerics.Algorithms.LinearAlgebra;
 using System.Numerics;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
@@ -48,7 +47,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="map"></param>
         public SubBlockSelectorBase(MultigridMapping map) {
             if (map == null)
-                throw new Exception("empty mapping! This will not end well ...");
+                throw new ArgumentNullException("empty mapping! This will not end well ...");
             m_map = map;
             this.CellSelector();
             this.VariableSelector();

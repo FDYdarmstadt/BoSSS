@@ -72,26 +72,19 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
 
         static void Main(string[] args) {
-            // Tweaking to use OCTAVE instead of MATLAB
-            if(System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")) {
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
-            } else if(System.Environment.MachineName.ToLowerInvariant().Contains("stormbreaker")) { 
-                // This is Florians Laptop;
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
-            }
 
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
 
-            //Tests.UnitTest.OneTimeSetUp();
+            ////Tests.UnitTest.OneTimeSetUp();
+            //InitMPI();
             //DeleteOldPlotFiles();
-            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
             ////Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
             //Tests.UnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric);
-            //Tests.UnitTest.OneTimeTearDown();
+            ////Tests.UnitTest.OneTimeTearDown();
             //return;
 
 
@@ -555,7 +548,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
                                 out filtLevSetGradient, this.LsTrk,
                                 this.DGLevSet.Current);
-                            if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmpty) || XOpConfig.isEvaporation) {
+                            if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmptyOnRank) || XOpConfig.isEvaporation) {
                                 VectorField<SinglePhaseField> filtLevSetGradient_dummy;
                                 CurvatureAlgorithms.CurvatureDriver(
                                     SurfaceStressTensor_IsotropicMode.Curvature_Projected,
@@ -846,29 +839,29 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void CreateTimestepper() {
 
-            switch (this.Control.Timestepper_Scheme) {
-                case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
+            switch (this.Control.TimeSteppingScheme) {
+                case TimeSteppingScheme.RK_ImplicitEuler: {
                         rksch = RungeKuttaScheme.ImplicitEuler;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
+                case TimeSteppingScheme.RK_CrankNic: {
                         rksch = RungeKuttaScheme.CrankNicolson;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.CrankNicolson: {
+                case TimeSteppingScheme.CrankNicolson: {
                         //do not instantiate rksch, use bdf instead
                         bdfOrder = -1;
                         break;
                     }
-                case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
+                case TimeSteppingScheme.ImplicitEuler: {
                         //do not instantiate rksch, use bdf instead
                         bdfOrder = 1;
                         break;
                     }
                 default: {
-                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                        if (this.Control.TimeSteppingScheme.ToString().StartsWith("BDF")) {
                             //do not instantiate rksch, use bdf instead
-                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                            bdfOrder = Convert.ToInt32(this.Control.TimeSteppingScheme.ToString().Substring(3));
                             break;
                         } else
                             throw new NotImplementedException();
@@ -1421,7 +1414,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             }
                             for (int rl = 0; rl <= this.Control.RefinementLevel; rl++) {
                                 CellMask cm = new CellMask(this.GridData, fmBitA[rl]);
-                                if (!cm.IsEmpty)
+                                if (!cm.IsEmptyOnRank)
                                     fastMarchMasks.Add(cm);
                             }
                             fastMarchMasks.Reverse();   // start with finest refinement level
@@ -1610,6 +1603,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current,
                     new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
             }
+
 
             // Load the sample Points for the restart of the Fourier LevelSet
             if (this.Control.FourierLevSetControl != null) {
@@ -2043,8 +2037,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, BlockedCells);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {

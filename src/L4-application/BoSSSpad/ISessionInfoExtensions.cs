@@ -30,7 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
-using MathNet.Numerics.Interpolation.Algorithms;
+using MathNet.Numerics.Interpolation;
 using static BoSSS.Application.BoSSSpad.Plot2Ddata;
 
 namespace BoSSS.Foundation.IO {
@@ -167,6 +167,40 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Opens the database directory where the files for the selected
+        /// <paramref name="session"/> are stored in the explorer.
+        /// </summary>
+        /// <param name="session">
+        /// The selected session.
+        /// </param>
+        public static void OpenDeployDirectory(this ISessionInfo session, int Clientidx=-1) {
+            string deployname = session.DeployPath.Split('/', '\\').Last();
+            var bpc = BatchProcessorConfig.LoadOrDefault();
+            int idx = -1;
+
+            if (Clientidx < 0) {
+                for (int i = 0; i < bpc.AllQueues.Length; i++) Console.WriteLine(i + " : " + bpc.AllQueues[i].ToString());
+                Console.WriteLine("Choose Client-Config:");
+                string usrinput = Console.ReadLine();
+                idx = Convert.ToInt32(usrinput);
+            } else {
+                idx = Clientidx;
+            }
+
+            if (idx > bpc.AllQueues.Length)
+                throw new IndexOutOfRangeException();
+
+            var bpclnt = bpc.AllQueues[idx];
+            string deploydir = bpclnt.DeploymentBaseDirectory;
+            string deploypath = Path.Combine(deploydir, deployname);
+
+            if (!deploydir.IsEmptyOrWhite() && Directory.Exists(deploypath))
+                Process.Start(deploypath);
+            else
+                Console.WriteLine("Attempt failed. Search directory via DeployPath-Attribute");
+        }
+
+        /// <summary>
         /// Opens the specified <paramref name="TextFile"/>
         /// of the selected <paramref name="session"/>.
         /// </summary>
@@ -210,7 +244,7 @@ namespace BoSSS.Foundation.IO {
         /// The names of the variables to plot the read out.
         /// </param>
         public static ResidualLog Residuals(
-            this ISessionInfo session, string norm, int stride = 1, params string[] variables) {
+            this ISessionInfo session, string norm = null, int stride = 1, params string[] variables) {
 
             return new ResidualLog(session, norm, variables, stride);
         }
@@ -394,6 +428,67 @@ namespace BoSSS.Foundation.IO {
             // return
             return R;
         }
+
+        /// <summary>
+        /// Gets a profiling tree for a given MPI-rank, of a session
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static MethodCallRecord GetProfilingOfRank(this ISessionInfo session, int rank) {
+
+            // check if within bounds
+            int MPISize = session.ComputeNodeNames.Count;
+            if (MPISize < rank) {
+                Console.WriteLine("WARNING: the searched rank (" + rank + ") is greater then MPI-size (" + MPISize + ").");
+            }
+
+            // check if exists
+            string sessDir = DatabaseDriver.GetSessionDirectory(session);
+            string pathf = String.Concat(sessDir, @"\profiling_bin.", rank, ".txt");
+            string namef = String.Concat("profiling_bin.", rank, ".txt");
+            if (!File.Exists(pathf))
+                throw new IOException("Unable to locate '" + pathf + "'.");
+
+            // check if unique
+            int many = Directory.GetFiles(sessDir, namef).Length;
+            if (many > 1)
+                throw new ArgumentException("profiling is not unique, occurances: " + many);
+
+            // load 
+            var f = pathf;
+            var JSON = File.ReadAllText(f);
+            var mcr = MethodCallRecord.Deserialize(JSON);
+
+            return mcr;
+        }
+
+        /// <summary>
+        /// Prints the methods with the highest Imbalance of runtime over MPI-ranks.
+        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// NOTE: this consideres no idle time within methods!
+        /// </summary>
+        /// <param name="SI"></param>
+        /// <param name="printcnt"></param>
+        public static void PrintMostImblancedCalls(this ISessionInfo SI, int printcnt = 0) {
+            var dictImbalances = MethodCallRecordExtension.GetProfilingStats(SI.GetProfiling());
+            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.Item1);
+            int i = 1;
+            var wrt = Console.Out;
+            foreach (var kv in mostimbalance) {
+                wrt.Write("#" + i + ": ");
+                wrt.WriteLine(string.Format(
+                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusivesec",
+                    kv.Key,
+                    kv.Value.Item3,
+                    kv.Value.Item1,
+                    kv.Value.Item2));
+                if (i == printcnt) return;
+                i++;
+            }
+            Console.Out.Flush();
+        }
+
 
         /// <summary>
         /// Reads tabulated text files.
@@ -2133,8 +2228,9 @@ namespace BoSSS.Foundation.IO {
                         if (numRefVal < numVal)
                             throw new ArgumentException("reference data should have at least the same length as comparison data");
                         // interpolate solution
-                        LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
-                        LinSpline.Initialize(abs, val);
+                        //LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
+                        //LinSpline.Initialize(abs, val);
+                        LinearSpline LinSpline = LinearSpline.InterpolateSorted(abs, val);
 
                         val = new double[numRefVal];
                         for (int p = 0; p < numRefVal; p++) {

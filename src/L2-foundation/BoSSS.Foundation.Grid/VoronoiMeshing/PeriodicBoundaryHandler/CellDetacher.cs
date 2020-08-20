@@ -46,25 +46,31 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             edges = new Dictionary<Edge<T>, (int, int, int)>(new TwinEdgeComparer<T>());
         }
 
-        public void DetachCells(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
+        public void DetachCells(IList<(MeshCell<T>, bool)> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
         {
             MoveBoundary(cells, boundaryEdgeNumber, pairedBoundaryEdgeNumber);
             edgeDivider.DivideBoundary(cells);
         }
 
-        public void MoveBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
+        public void MoveBoundary(IList<(MeshCell<T>, bool)> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
         {
-            foreach (MeshCell<T> cell in cells)
+            foreach ((MeshCell<T> cell, bool isSplit) cell in cells)
             {
-                cell.Type = MeshCellType.Outside;
+                if (cell.isSplit)
+                {
+                    cell.cell.Type = MeshCellType.Outside;
+                }
             }
             if (boundary.FirstCorner.Type == MeshCellType.Outside)
             {
                 MoveBoundaryCorner();
             }
-            foreach (MeshCell<T> cell in cells)
+            foreach ((MeshCell<T> cell, bool isSplit) cell in cells)
             {
-                MoveBoundary(cell.Edges, boundaryEdgeNumber, pairedBoundaryEdgeNumber);
+                if (cell.isSplit)
+                {
+                    MoveBoundary(cell.cell.Edges, boundaryEdgeNumber, pairedBoundaryEdgeNumber);
+                }
             }
         }
 

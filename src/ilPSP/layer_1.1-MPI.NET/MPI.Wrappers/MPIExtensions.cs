@@ -252,11 +252,7 @@ namespace MPI.Wrappers {
             T[] ret = new T[MpiSize];
             using(var ms = new MemoryStream(rcvBuffer)) {
                 for(int r = 0; r < MpiSize; r++) {
-                    if(r == MyRank) {
-                        ret[r] = o;
-                    } else {
-                        ret[r] = (T)_Formatter.Deserialize(ms);
-                    }
+                    ret[r] = (T)_Formatter.Deserialize(ms);
                 }
             }
             return ret;
@@ -984,7 +980,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
             int L = i.Length;
-            int[] result = new int[L * size];
+            int[] result = new int[size*L];
 
 
             unsafe {
@@ -992,10 +988,10 @@ namespace MPI.Wrappers {
                     
                     csMPI.Raw.Allgather(
                         (IntPtr)sendbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.INT,
                         (IntPtr)recvbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.INT,
                         comm);
                 }
@@ -1019,7 +1015,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
             int L = i.Length;
-            double[] result = new double[L * size];
+            double[] result = new double[size*L];
 
 
             unsafe {
@@ -1027,10 +1023,10 @@ namespace MPI.Wrappers {
 
                     csMPI.Raw.Allgather(
                         (IntPtr)sendbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.DOUBLE,
                         (IntPtr)recvbuf,
-                        1,
+                        L,
                         csMPI.Raw._DATATYPE.DOUBLE,
                         comm);
                 }

@@ -431,7 +431,7 @@ namespace CNS.IBM {
             OptimizedSIPGEnergyFlux.EVIL_HACK_CELL_INDEX = prm.j0;
             OptimizedSIPGMomentumFlux.EVIL_HACK_CELL_INDEX = prm.j0;
             fluxFunction.AdiabaticWall = this.adiaWall;
-            flux.InternalEdge(ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary);
+            flux.NonlinInternalEdge_V(ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary);
             OptimizedSIPGEnergyFlux.EVIL_HACK_CELL_INDEX = -1;
             OptimizedSIPGMomentumFlux.EVIL_HACK_CELL_INDEX = -1;
         }
@@ -457,7 +457,7 @@ namespace CNS.IBM {
             MultidimensionalArray fBoundary = MultidimensionalArray.Create(
                 U[0].GetLength(0), prm.Xglobal.GetLength(1), CompressibleEnvironment.NumberOfDimensions);
             fluxFunction.AdiabaticWall = this.adiaWall;
-            flux.InternalEdge(ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary);
+            flux.NonlinInternalEdge_GradV(ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary);
         }
 
         /// <summary>
