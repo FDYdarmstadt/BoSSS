@@ -597,7 +597,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
 
-    public class IsotropicSurfaceTension_LaplaceBeltrami : IVolumeForm, IEdgeForm {
+    public class IsotropicSurfaceTension_LaplaceBeltrami : IVolumeForm, IEdgeForm, BoSSS.Foundation.IEquationComponentCoefficient {
 
         int m_comp;
 
@@ -606,7 +606,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// <summary>
         /// surface tension coefficient
         /// </summary>
-        double m_sigma;
+        //double m_sigma;
+        MultidimensionalArray m_sigma;
 
         /// <summary>
         /// static contact angle (for navier-slip B.C.)
@@ -632,16 +633,22 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         protected Func<double[], double, double>[] velFunction;
 
 
-        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, double sigma, IncompressibleBcType[] edgeTag2Type, IncompressibleBoundaryCondMap bcmap, 
+        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, IncompressibleBcType[] edgeTag2Type, IncompressibleBoundaryCondMap bcmap, 
             double theta_e, double beta_L) {
             m_comp = d;
             m_D = D;
-            m_sigma = sigma;
+            //m_sigma = sigma;
             m_theta = theta_e;
             m_beta = beta_L;
             m_edgeTag2Type = edgeTag2Type;
             velFunction = bcmap.bndFunction[VariableNames.Velocity_d(d)];
             //m_staticInt = _staticInt;
+        }
+
+
+        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+
+            m_sigma = (MultidimensionalArray)cs.UserDefinedValues["sigmaMaxValue"];
         }
 
 
@@ -671,7 +678,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.V | TermActivationFlags.UxV;
+                return TermActivationFlags.V | TermActivationFlags.UxV; 
             }
         }
 
@@ -693,7 +700,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //}
 
             for (int d = 0; d < cpv.D; d++)
-                acc += - m_sigma * Psurf[m_comp, d] * GradV[d];
+                acc += - m_sigma[cpv.jCell] * Psurf[m_comp, d] * GradV[d];
 
             // stabilization
             //for(int d = 0; d < cpv.D; d++) {
@@ -717,7 +724,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[] Tangente_OUT = Tangent(SurfaceNormal_OUT, EdgeNormal);
             //Console.WriteLine("Tangente_OUT = ({0}, {1})", Tangente_OUT[0], Tangente_OUT[1]);
 
-            double acc = 0.5 * (Tangente_IN[m_comp] + Tangente_OUT[m_comp]) * m_sigma * (_vA - _vB);
+            //double m_sigmaMax = Math.Max(m_sigma[inp.jCellIn], m_sigma[inp.jCellOut]);
+            double acc = 0.5 * (m_sigma[inp.jCellIn] * Tangente_IN[m_comp] + m_sigma[inp.jCellOut] * Tangente_OUT[m_comp]) * (_vA - _vB);
 
             //double surfTdiff = (Tangente_IN[m_comp] - Tangente_OUT[m_comp]);
             //if (inp.iEdge == 14 && m_comp == 0) {
@@ -756,7 +764,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                         double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
                         double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
 
-                        Flx_InCell = -m_sigma * Tangente_IN[m_comp];
+                        Flx_InCell = -m_sigma[inp.jCellIn] * Tangente_IN[m_comp];
                         //for (int d = 0; d < inp.D; d++) {
                         //    Flx_InCell -= m_sigma * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
                         //}
@@ -791,13 +799,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                         // isotropic surface tension terms
                         for (int d = 0; d < D; d++) {
-                            Flx_InCell -= m_sigma * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
+                            Flx_InCell -= m_sigma[inp.jCellIn] * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
                         }
 
-                        if(edgType == IncompressibleBcType.NavierSlip_Linear) {
+
+                        if (edgType == IncompressibleBcType.NavierSlip_Linear) {
 
                             // Young's relation (static contact angle)
-                            Flx_InCell -= m_sigma * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
+                            Flx_InCell -= m_sigma[inp.jCellIn] * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
 
                             // dissipative contact line force
                             // beta*(u*nL)
@@ -1626,6 +1635,151 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
     }
 
+
+
+    public class SurfaceDeformationRate_LocalStabilization : IVolumeForm, BoSSS.Foundation.IEquationComponentCoefficient {
+
+        int m_comp;
+        int m_D;
+
+        bool m_transposed;
+  
+        public SurfaceDeformationRate_LocalStabilization(int d, int D, bool transposed = false) {
+            m_comp = d;
+            m_D = D;
+            m_transposed = transposed;
+        }
+
+        /// <summary>
+        /// local stabilization coefficients.
+        /// </summary>
+        MultidimensionalArray m_muIs;
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+
+            m_muIs = (MultidimensionalArray)cs.UserDefinedValues["mu_interface"];
+        }
+
+
+        public virtual IList<string> ParameterOrdering {
+            get {
+                return VariableNames.NormalVector(m_D);
+            }
+        }
+
+        public virtual IList<string> ArgumentOrdering {
+            get {
+                return VariableNames.VelocityVector(m_D);
+            }
+        }
+
+
+        public virtual TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.GradUxGradV;
+            }
+        }
+
+        public virtual double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+            int D = cpv.D;
+
+            double[] flx = new double[D];
+            this.Flux(ref cpv, GradU, flx);
+
+            double acc = 0;
+            for (int d = 0; d < D; d++)
+                acc += flx[d] * GradV[d];
+
+            return -acc;
+        }
+
+        protected void Flux(ref CommonParamsVol inp, double[,] GradU, double[] flux) {
+
+            int D = inp.D;
+
+            double[] Nsurf = SurfaceNormal(inp.Parameters);
+            double[,] Psurf = SurfaceProjection(Nsurf);
+
+            double[,] GradUsurf = Multiply(Psurf, GradU);
+
+            for (int d = 0; d < D; d++) {
+
+                for (int dd = 0; dd < D; dd++) {
+                    flux[d] += -m_muIs[inp.jCell] * GradUsurf[m_comp, dd] * Psurf[dd, d];
+                    // transpose term
+                    if(m_transposed)
+                        flux[d] += -m_muIs[inp.jCell] * GradUsurf[dd, m_comp] * Psurf[dd, d];
+                }
+            }
+
+        }
+
+        protected static double[] SurfaceNormal(double[] param) {
+
+            double[] N = new double[param.Length];
+
+            for (int d = 0; d < param.Length; d++) {
+                N[d] = param[d];
+            }
+
+            return N.Normalize();
+        }
+
+        protected static double[,] SurfaceProjection(double[] Nsurf) {
+
+            int D = Nsurf.Length;
+            double[,] P = new double[D, D];
+
+            for (int d = 0; d < D; d++) {
+                for (int dd = 0; dd < D; dd++) {
+                    if (dd == d)
+                        P[d, dd] = (1.0 - Nsurf[d] * Nsurf[dd]);
+                    else
+                        P[d, dd] = (0.0 - Nsurf[d] * Nsurf[dd]);
+                }
+            }
+
+            return P;
+        }
+
+        protected static double[] Tangent(double[] Nsurf, double[] Nedge) {
+            Debug.Assert(Nsurf.Length == Nedge.Length);
+
+            int D = Nsurf.Length;
+
+            double[] tau = new double[D];
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    double nn = Nsurf[d1] * Nsurf[d2];
+                    if (d1 == d2) {
+                        tau[d1] += (1 - nn) * Nedge[d2];
+                    } else {
+                        tau[d1] += -nn * Nedge[d2];
+                    }
+                }
+            }
+
+            return tau.Normalize();
+        }
+
+        protected static double[,] Multiply(double[,] M1, double[,] M2) {
+
+            int D = M1.GetLength(0);
+            double[,] res = new double[D, D];
+
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    for (int dd = 0; dd < D; dd++) {
+                        res[d1, d2] += M1[d1, dd] * M2[dd, d2];
+                    }
+                }
+            }
+
+            return res;
+        }
+
+    }
 
 
 

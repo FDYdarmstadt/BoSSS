@@ -96,34 +96,44 @@ namespace BoSSS.Solution.XNSECommon {
             public static FilterConfiguration Default {
                 get {
                     FilterConfiguration r = new FilterConfiguration();
+                    r.gradOpt = GradientOption.FiltLevSet;
+                    r.hessOpt = HessianOption.FiltLevSetGrad;
+                    r.useFiltLevSetGrad = true;
+                    r.useFiltLevSetHess = true;
+                    r.FilterCurvatureCycles = 0;
+                    r.LevelSetSource = LevelSetSource.fromC0;
+                    r.PatchRecoveryDomWidth = 0;
+                    r.NoOfPatchRecoverySweeps = 3;
+                    r.CurvatureLimiting = false;
+
                     return r;
                 }
             }
 
 
             [DataMember]
-            public GradientOption gradOpt = GradientOption.FiltLevSet;
+            public GradientOption gradOpt = GradientOption.LevSet;
 
             [DataMember]
-            public HessianOption hessOpt = HessianOption.FiltLevSetGrad;
+            public HessianOption hessOpt = HessianOption.LevSetGrad;
 
             [DataMember]
-            public bool useFiltLevSetGrad = true;
+            public bool useFiltLevSetGrad = false;
 
             [DataMember]
-            public bool useFiltLevSetHess = true;
+            public bool useFiltLevSetHess = false;
 
             [DataMember]
             public int FilterCurvatureCycles = 0;
 
             [DataMember]
-            public LevelSetSource LevelSetSource = LevelSetSource.fromDG;
+            public LevelSetSource LevelSetSource = LevelSetSource.fromC0;
 
             [DataMember]
             public int PatchRecoveryDomWidth = 0;
 
             [DataMember]
-            public int NoOfPatchRecoverySweeps = 3;
+            public int NoOfPatchRecoverySweeps = 0;
 
             [DataMember]
             public bool CurvatureLimiting = false;
@@ -448,7 +458,7 @@ namespace BoSSS.Solution.XNSECommon {
 
 
             for (int d = 0; d < D && FiltLevSetGrad_Req; d++) {
-                FiltLevSetGrad[d] = new SinglePhaseField(FiltLevSet.Basis, string.Format("~G({0})", d));
+                FiltLevSetGrad[d] = new SinglePhaseField(LevSetGrad[d].Basis, string.Format("~G({0})", d));
                 FiltLevSetGrad[d].AccLaidBack(1.0, LevSetGrad[d]);
                 PatchRecMultipassFilter(FiltLevSetGrad[d], config.NoOfPatchRecoverySweeps, l2pr);
             }

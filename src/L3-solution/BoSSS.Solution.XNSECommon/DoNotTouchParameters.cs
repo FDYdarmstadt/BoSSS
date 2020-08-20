@@ -300,11 +300,13 @@ namespace BoSSS.Solution.XNSECommon {
 
             None,
 
+            surfaceDeformationRateLocal,
+
             GradUxGradV,
 
             surfaceDivergence,
 
-            EdgeDissipation
+            EdgeDissipation,
 
         }
 
@@ -313,6 +315,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public SurfaceTensionForceStabilization STFstabilization = SurfaceTensionForceStabilization.None;
+
+        /// <summary>
+        /// set the the maximum surface tension coefficient value according to given time step restriction
+        /// </summary>
+        [DataMember]
+        public bool SetSurfaceTensionMaxValue = false;
 
 
         /// <summary>
@@ -344,7 +352,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Expert options regarding the evaluation of the curvature.
         /// </summary>
         [DataMember]
-        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter; //new CurvatureAlgorithms.FilterConfiguration();
+        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
 
         /// <summary>

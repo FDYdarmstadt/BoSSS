@@ -608,7 +608,7 @@ namespace BoSSS.Solution.XNSECommon {
 
 
         static ScalarFunctionEx GetMomentumBalanceFunc(XDGField P, VectorField<XDGField> U, SinglePhaseField C,
-            PhysicalParameters physParam, SurfaceSressTensor sst, int d, bool squared) {
+            PhysicalParameters physParam, bool Icoord, int dir, bool squared) {
 
             int D = P.Basis.GridDat.SpatialDimension;
 
@@ -655,17 +655,50 @@ namespace BoSSS.Solution.XNSECommon {
 
                         double acc = 0.0;
 
-                        // druck
-                        acc -= (pBRes[j, k] - pARes[j, k]) * Normals[j, k, d];
+                        if (!Icoord) {
 
-                        // Nabla U
-                        for (int dd = 0; dd < D; dd++) {
-                            acc += (muB * Grad_UBRes[j, k, d, dd] - muA * Grad_UARes[j, k, d, dd]) * Normals[j, k, dd];
-                            acc += (muB * Grad_UBRes[j, k, dd, d] - muA * Grad_UARes[j, k, dd, d]) * Normals[j, k, dd];
+                            // druck
+                            acc -= (pBRes[j, k] - pARes[j, k]) * Normals[j, k, dir];
+
+                            // Nabla U
+                            for (int dd = 0; dd < D; dd++) {
+                                acc += (muB * Grad_UBRes[j, k, dir, dd] - muA * Grad_UARes[j, k, dir, dd]) * Normals[j, k, dd];
+                                acc += (muB * Grad_UBRes[j, k, dd, dir] - muA * Grad_UARes[j, k, dd, dir]) * Normals[j, k, dd];
+                            }
+
+                            // isotropic surface tension force
+                            acc -= sigma * curvRes[j, k] * Normals[j, k, dir];
+
+                        } else {
+
+                            double[] Vdir = new double[2];   // normal(0) or tangential(1)
+                            if (dir == 0) {
+                                Vdir = Normals.ExtractSubArrayShallow(j, k, -1).To1DArray();
+                            } else if (dir == 1) {
+                                Vdir[0] = -Normals[j, k, 1];
+                                Vdir[1] = Normals[j, k, 0];
+                            } else {
+                                throw new NotImplementedException("ToDo 3D");
+                            }
+
+                            for (int d = 0; d < D; d++) {
+
+                                // pressure
+                                acc -= (pBRes[j, k] - pARes[j, k]) * Normals[j, k, d] * Vdir[d];
+
+                                // velocity gradients
+                                for (int dd = 0; dd < D; dd++) {
+                                    acc += (muB * Grad_UBRes[j, k, d, dd] - muA * Grad_UARes[j, k, d, dd]) * Normals[j, k, dd] * Vdir[d];
+                                    // transposed
+                                    acc += (muB * Grad_UBRes[j, k, dd, d] - muA * Grad_UARes[j, k, dd, d]) * Normals[j, k, dd] * Vdir[d];
+                                }
+
+                                // surface tension
+                                acc -= sigma * curvRes[j, k] * Normals[j, k, d] * Vdir[d];
+
+                            }
+
                         }
-
-                        // isotropic surface tension force
-                        acc -= sigma * curvRes[j, k] * Normals[j, k, d];
 
                         #region dynamic parts
                         // dynamic part of surface tension tensor
@@ -753,7 +786,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         public static double[] MomentumBalanceNormAtInterface(XDGField P, VectorField<XDGField> U, SinglePhaseField C,
-            PhysicalParameters physParam, SurfaceSressTensor sst, int momentFittingOrder) {
+            PhysicalParameters physParam, bool Icoord, int momentFittingOrder) {
 
             LevelSetTracker LsTrk = P.Basis.Tracker;
 
@@ -769,7 +802,7 @@ namespace BoSSS.Solution.XNSECommon {
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                     for (int d = 0; d < D; d++) {
-                        ScalarFunctionEx momBalFunc = GetMomentumBalanceFunc(P, U, C, physParam, sst, d, true);
+                        ScalarFunctionEx momBalFunc = GetMomentumBalanceFunc(P, U, C, physParam, Icoord, d, true);
                         momBalFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
                     }
 
@@ -786,28 +819,33 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-        public static void ProjectMomentumBalanceNorm(this SinglePhaseField err, double alpha, XDGField P, VectorField<XDGField> U, SinglePhaseField C,
-            PhysicalParameters physParam, SurfaceSressTensor sst, int d, int momentFittingOrder) {
+        public static void ProjectMomentumBalanceNorm(this VectorField<SinglePhaseField> err, XDGField P, VectorField<XDGField> U, SinglePhaseField C,
+            PhysicalParameters physParam, bool Icoord) {
 
             var LsTrk = U[0].Basis.Tracker;
             int D = LsTrk.GridDat.SpatialDimension;
 
-            ScalarFunctionEx ErrFunc = GetMomentumBalanceFunc(P, U, C, physParam, sst, d, true);
+            for (int d = 0; d < D; d++) {
 
-            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, momentFittingOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                ScalarFunctionEx ErrFunc = GetMomentumBalanceFunc(P, U, C, physParam, Icoord, d, true);
 
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                cqs.Compile(LsTrk.GridDat, momentFittingOrder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++) {
-                        err.SetMeanValue(i0 + i, ResultsOfIntegration[i, 0].Sqrt());
+                int order = ((U[d].Basis.Degree - 1) + (P.Basis.Degree) + err[d].Basis.Degree + 2);
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+
+                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    cqs.Compile(LsTrk.GridDat, order),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for (int i = 0; i < Length; i++) {
+                            err[d].SetMeanValue(i0 + i, ResultsOfIntegration[i, 0].Sqrt());
+                        }
                     }
-                }
-            ).Execute();
+                ).Execute();
+
+            }
 
         }
 
@@ -953,12 +991,12 @@ namespace BoSSS.Solution.XNSECommon {
             VectorField<XDGField> GuY = new VectorField<XDGField>(D, u[1].Basis, XDGField.Factory);
 
             foreach (SpeciesId spcId in LsTrk.SpeciesIdS) {
-                SubGrid sf = LsTrk.Regions.GetSpeciesSubGrid(spcId);
+                CellMask sf = LsTrk.Regions.GetSpeciesMask(spcId);
                 DGField f0_Spc = u[0].GetSpeciesShadowField(spcId);
                 DGField f1_Spc = u[1].GetSpeciesShadowField(spcId);
                 for (int dd = 0; dd < D; dd++) {
-                    GuX[dd].GetSpeciesShadowField(spcId).DerivativeByFlux(1.0, f0_Spc, dd, optionalSubGrid: sf);
-                    GuY[dd].GetSpeciesShadowField(spcId).DerivativeByFlux(1.0, f1_Spc, dd, optionalSubGrid: sf);
+                    GuX[dd].GetSpeciesShadowField(spcId).Derivative(1.0, f0_Spc, dd, sf);
+                    GuY[dd].GetSpeciesShadowField(spcId).Derivative(1.0, f1_Spc, dd, sf);
                 }
             }
             GuX.ForEach(F => F.CheckForNanOrInf(true, true, true));
