@@ -109,7 +109,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// <summary>
         /// 
         /// </summary>
-        public bool massConsv_correction = false;
+        public bool massConsv_correction;
 
         /// <summary>
         /// 
@@ -154,6 +154,11 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             setInterfaceLength(current_interfaceP);
             InterfaceResolution = interfaceLength / numFp;
 
+            this.massConsv_correction = ctrl.enforceMassConservation;
+            if (this.massConsv_correction) {
+                consvPolyArea = getFourierArea();
+            }
+
         }
 
         /// <summary>
@@ -163,6 +168,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
             double r_min = interfaceP_polar.ExtractSubArrayShallow(new int[] { -1, 1 }).To1DArray().Min();
             cf_end = (int)Math.Ceiling(2.0 * Math.PI * r_min / (2.0 * h_min));
+            //Console.WriteLine("cf_end = {0}", cf_end);
 
         }
 
@@ -650,6 +656,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
                 double cmc = (consvPolyArea - area) / length;
 
+                Console.WriteLine("volume correction active! add constant: {0}", cmc);
                 for (int sp = 0; sp < current_interfaceP.Lengths[0]; sp++) {
                     interfaceP_polar[sp, 1] += cmc; 
                 }
