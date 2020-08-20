@@ -288,20 +288,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OUT_coarse.SetV(LB);
             }
 
-
-            /*
-            var M = MsrMatrix.Multiply(this.RightChangeOfBasis_Inverse, this.PrologateOperator);
-            var MaMa = MsrMatrix.Multiply(M.Transpose(), M);
-            int JAGG = this.Mapping.AggGrid.NoOfAggregateCells;
-            MsrMatrix Lpc, Rpc, RpcI;
-            this.CoarserLevel.ComputeChangeOfBasis(MaMa, MaMa, out Lpc, out Rpc, out RpcI);
-
-            //var prl = MsrMatrix.Multiply(M, Rpc);
-            //var rest = prl.Transpose();
-            var rest = MsrMatrix.Multiply(Lpc, M.Transpose());
-
-            rest.SpMVpara(1.0, IN_fine, 0.0, OUT_coarse);
-             */
         }
 
 
