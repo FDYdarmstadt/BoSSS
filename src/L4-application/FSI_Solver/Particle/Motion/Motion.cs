@@ -496,7 +496,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         internal virtual void SetGhostPosition(Vector position) {
-            Console.WriteLine("GhostPosition");
             for (int h = 0; h<NumberOfHistoryEntries; h++) {
                 Position[h] = new Vector(position);
             }

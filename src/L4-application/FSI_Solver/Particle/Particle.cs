@@ -133,13 +133,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public double Eccentricity { get; private set; }
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public Vector ClosestPointToOtherObject = new Vector(2);
-
+        
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
@@ -234,14 +228,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculates the eccentricity of a collision
         /// </summary>
-        internal double CalculateEccentricity(Vector normalVector) {
-            Vector radialVector = CalculateRadialVector(ClosestPointToOtherObject);
+        internal double CalculateEccentricity(Vector normalVector, Vector ClosestPoint) {
+            Vector radialVector = CalculateRadialVector(ClosestPoint);
             Vector normalRadialVector = new Vector(-radialVector[1], radialVector[0]);
             return normalRadialVector * normalVector;
         }
 
-        internal double CalculateSecondOrderEccentricity(Vector NormalVector) {
-            Vector radialVector = CalculateRadialVector(ClosestPointToOtherObject);
+        internal double CalculateSecondOrderEccentricity(Vector NormalVector, Vector ClosestPoint) {
+            Vector radialVector = CalculateRadialVector(ClosestPoint);
             double firstCrossProduct2D = radialVector[0] * NormalVector[1] - radialVector[1] * NormalVector[0];
             Vector secondCrossProduct2D = new Vector(-firstCrossProduct2D * radialVector[1], firstCrossProduct2D * radialVector[0]);
             return secondCrossProduct2D * NormalVector;

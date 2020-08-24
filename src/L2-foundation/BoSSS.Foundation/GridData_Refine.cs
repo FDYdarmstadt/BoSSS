@@ -46,8 +46,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         public GridCommons Adapt(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse, out GridCorrelation Old2New) {
             using (new FuncTrace()) {
                 // Check for refinement/coarsening on all processes.
-                bool anyRefinement = GetMPIGlobalIsNotNullOrEmpty(cellsToRefine);
-                bool anyCoarsening = GetMPIGlobalIsNotNullOrEmpty(cellsToCoarse);
+                bool anyRefinement = !GetGlobalIsNullOrEmpty(cellsToRefine);
+                bool anyCoarsening = !GetGlobalIsNullOrEmpty(cellsToCoarse);
 
                 GridCommons oldGrid = m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
@@ -490,11 +490,14 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="enumeration">
         /// The enumeration to be checked.
         /// </param>
-        private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int> enumeration) {
-            int[] sendTestingVariable = new int[1];
-            sendTestingVariable[0] = enumeration.IsNullOrEmpty() ? 0 : 1;
-            int[] receiveTestingVariable = MPISendReceiveOnAllProcesses(sendTestingVariable);
-            return receiveTestingVariable.Sum() > 0;
+        private bool GetGlobalIsNullOrEmpty(IEnumerable<int> enumeration) {
+            bool isNullOrEmpty = enumeration.IsNullOrEmpty();
+            bool[] receiveAnswer = isNullOrEmpty.MPIAllGatherO();
+            for (int i = 0; i < receiveAnswer.Length; i++) {
+                if (receiveAnswer[i])
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -503,27 +506,14 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="enumeration">
         /// The eneumeration to be checked.
         /// </param>
-        private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int[]> enumeration) {
-            int[] sendTestingVariable = new int[1];
-            sendTestingVariable[0] = enumeration.IsNullOrEmpty() ? 0 : 1;
-            int[] receiveTestingVariable = MPISendReceiveOnAllProcesses(sendTestingVariable);
-            return receiveTestingVariable.Sum() > 0;
-        }
-
-        /// <summary>
-        /// Sends and receives a variable over all mpi processes.
-        /// </summary>
-        /// <param name="sendVariable">
-        /// </param>
-        private int[] MPISendReceiveOnAllProcesses(int[] sendVariable) {
-            int[] receiveVariable = new int[MpiSize];
-            unsafe {
-                fixed (int* pCheckSend = sendVariable, pCheckReceive = receiveVariable) {
-                    csMPI.Raw.Allgather((IntPtr)pCheckSend, sendVariable.Length, csMPI.Raw._DATATYPE.INT, (IntPtr)pCheckReceive, sendVariable.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._COMM.WORLD);
-                }
+        private bool GetGlobalIsNullOrEmpty(IEnumerable<int[]> enumeration) {
+            bool isNullOrEmpty = enumeration.IsNullOrEmpty();
+            bool[] receiveAnswer = isNullOrEmpty.MPIAllGatherO();
+            for (int i = 0; i < receiveAnswer.Length; i++) {
+                if (receiveAnswer[i])
+                    return true;
             }
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            return receiveVariable;
+            return false;
         }
 
         /// <summary>
@@ -533,9 +523,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         private int GetGlobalIdOffset(IEnumerable<int> cellsToRefine) {
             int globalIDOffset = 0;
-            int[] sendOffset = new int[1];
-            sendOffset[0] = cellsToRefine.Count();
-            int[] receiveOffset = MPISendReceiveOnAllProcesses(sendOffset);
+            int sendOffset = cellsToRefine.Count();
+            int[] receiveOffset = sendOffset.MPIAllGatherO();// MPISendReceiveOnAllProcesses(sendOffset);
             for (int m = 0; m < MpiRank; m++) {
                 globalIDOffset += receiveOffset[m] * 3;
             }

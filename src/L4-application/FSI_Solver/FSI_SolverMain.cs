@@ -715,6 +715,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ghostParticle.SetGhost();
                                 ghostParticle.Motion.SetGhostPosition(originNeighbouringDomain + particlePosition);
                                 ghostParticles.Add(ghostParticle.CloneAs());
+                                Console.WriteLine("Added ghost particle " + (ghostHierachy[d1 + 1] - 1));
                             }
                             else {
                                 ghostParticle = ParticleList[ghostHierachy[d1 + 1] - 1];
@@ -732,6 +733,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         ghostParticleOfGhostParticle.SetGhost();
                                         ghostParticleOfGhostParticle.Motion.SetGhostPosition(originNeighbouringDomain + ghostParticle.Motion.GetPosition());
                                         ghostParticles.Add(ghostParticleOfGhostParticle.CloneAs());
+                                        Console.WriteLine("Added ghost particle " + (ghostHierachy[3] - 1));
                                         break;
                                     }
                                 }
@@ -837,7 +839,7 @@ namespace BoSSS.Application.FSI_Solver {
                 else
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2] - additionalWallThreshold);
                 FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
-                periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
+                periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
             }
             return false;
@@ -855,7 +857,7 @@ namespace BoSSS.Application.FSI_Solver {
                     else
                         currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID] - additionalWallThreshold);
                     FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
-                    periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
+                    periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
                         return true;
                 }
