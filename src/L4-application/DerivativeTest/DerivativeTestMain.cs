@@ -200,8 +200,10 @@ namespace BoSSS.Application.DerivativeTest {
         static void Main(string[] args) {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
-
-
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(1, 1, 1024);
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(1, 1, 1024 * 1024 * 128);
+            //BoSSS.Solution.Application.FinalizeMPI();
+            //return;
 
             // Build-In Grids
             // ==============
@@ -996,10 +998,7 @@ namespace BoSSS.Application.DerivativeTest {
                     //this.f1.Clear();
                     //var NullField = new SinglePhaseField(this.f1.Basis);
 
-                    var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
-                        delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
-                            return;
-                        });
+                    var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping);
                     var CheckMatrix = new BlockMsrMatrix(FDJbuilder.CodomainMapping, FDJbuilder.DomainMapping);
                     var CheckAffine = new double[FDJbuilder.CodomainMapping.LocalLength];
                     FDJbuilder.ComputeMatrix(CheckMatrix, CheckAffine);

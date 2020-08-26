@@ -64,6 +64,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         [InstantiateFromControlFile("RHS", "T", IOListOption.ControlFileDetermined)]
         protected SinglePhaseField RHS;
+
+        
 #pragma warning restore 649
 
         /// <summary>
@@ -77,6 +79,11 @@ namespace BoSSS.Application.SipPoisson {
         private SinglePhaseField Error;
 
         /// <summary>
+        /// MPI rank coloring
+        /// </summary>
+        private SinglePhaseField MPIrank;
+
+        /// <summary>
         /// DG field instantiation
         /// </summary>
         protected override void CreateFields() {
@@ -87,6 +94,10 @@ namespace BoSSS.Application.SipPoisson {
 
             Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
             base.m_IOFields.Add(Error);
+
+            // MPI rank coloring
+            MPIrank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
+            MPIrank.AccConstant(this.MPIRank);
 
             // mg coloring
             int iLevel = 0;
@@ -662,8 +673,8 @@ namespace BoSSS.Application.SipPoisson {
                         return CurrentLevel;
                 }
 
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData,null);
+                bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -829,7 +840,7 @@ namespace BoSSS.Application.SipPoisson {
                         this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
                     }
 
-                    var ev = this.LapaceIp.GetEvaluator(T.Mapping, ResiualKP1.Mapping);
+                    var ev = this.LapaceIp.GetEvaluatorEx(T.Mapping, null, ResiualKP1.Mapping);
                     ev.Evaluate(-1.0, 1.0, ResiualKP1.CoordinateVector);
                 }
 

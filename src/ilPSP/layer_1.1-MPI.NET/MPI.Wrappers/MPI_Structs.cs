@@ -47,7 +47,7 @@ namespace MPI.Wrappers {
                     case MPI_Flavour.MPICH:
                         return i1;
                     case MPI_Flavour.OpenMPI:
-                        return i4;
+                        return i5;
                     default:
                         throw new NotImplementedException("unknown MPI flavor.");
                 }
@@ -63,7 +63,7 @@ namespace MPI.Wrappers {
                     case MPI_Flavour.MPICH:
                         return i2;
                     case MPI_Flavour.OpenMPI:
-                        return i5;
+                        return i4;
                     default:
                         throw new NotImplementedException("unknown MPI flavor.");
                 }

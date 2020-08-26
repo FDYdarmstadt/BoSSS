@@ -689,7 +689,9 @@ namespace BoSSS.Application.BoSSSpad {
 
                         string StdoutFile = null;
                         if(this.Status == JobStatus.FinishedSuccessful) {
-                            StdoutFile = this.LatestSession.FilesInSessionDir("stdout.0.txt").FirstOrDefault();
+                            if(this.LatestSession != null) {
+                                StdoutFile = this.LatestSession.FilesInSessionDir("stdout.0.txt").FirstOrDefault();
+                            }
                         }
                         if(StdoutFile == null) {
                             StdoutFile = AssignedBatchProc.GetStdoutFile(this);
@@ -728,7 +730,9 @@ namespace BoSSS.Application.BoSSSpad {
                     Exception op(int itry) {
                         string StderrFile = null;
                         if(this.Status == JobStatus.FinishedSuccessful) {
-                            StderrFile = this.LatestSession.FilesInSessionDir("stderr.0.txt").FirstOrDefault();
+                            if(this.LatestSession != null) {
+                                StderrFile = this.LatestSession.FilesInSessionDir("stderr.0.txt").FirstOrDefault();
+                            }
                         }
                         if(StderrFile == null) {
                             StderrFile = AssignedBatchProc.GetStderrFile(this);

@@ -63,93 +63,56 @@ namespace BoSSS.Foundation.XDG {
 
         List<string> m_SpeciesList = new List<string>();
 
+        private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
-        /// <summary>
-        /// for constructing evaluators of the species terms
-        /// </summary>
-        SpeciesOperatorHelper m_SpeciesOperator; 
+            var r = new SpatialOperator(op.DomainVar, op.ParameterVar, op.CodomainVar, (degDom, degParam, degCod) => order);
 
-        SpatialOperator m_SpatialOperator {
-            get {
-                return m_SpeciesOperator.SpatialOp;
-            }
-        }
+            r.UserDefinedValues.AddRange(this.UserDefinedValues[species]);
 
-        class SpeciesOperatorHelper {
+            foreach(string comps in op.CodomainVar) { // loop over rows
+                foreach(IEquationComponent iec in op.EquationComponents[comps]) {
+                    //m_SpatialOperator.EquationComponents[comps].Add(iec);
+                    
+                    if(iec is ISpeciesFilter fiec) {
+                        string spcNmn = fiec.ValidSpecies;
 
-            XSpatialOperatorMk2 m_owner;
-
-            SpatialOperator m_SpatialOperator;  // so far only needed for iLevelSet terms, may be removed
-
-            internal SpatialOperator SpatialOp {
-                get {
-                    return m_SpatialOperator;
-                }
-            }
-
-            Dictionary<string, SpatialOperator> m_SpeciesOperator;
-
-            internal SpeciesOperatorHelper(XSpatialOperatorMk2 owner) {
-                m_owner = owner;
-
-                m_SpatialOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
-
-                m_SpeciesOperator = new Dictionary<string, SpatialOperator>();
-                foreach(string spcId in m_owner.Species) {
-                    SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
-                    m_SpeciesOperator.Add(spcId, spcOperator);
-                }
-
-                //if(m_owner.m_Species == null) {
-                //    SpeciesId nullSpcId;
-                //    nullSpcId.cntnt = ___SpeciesIDOffest;
-                //    SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
-                //    m_SpeciesOperator.Add(nullSpcId, spcOperator);
-                //} else {
-                //    foreach(SpeciesId spcId in m_owner.m_Species) {
-                //        SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
-                //        m_SpeciesOperator.Add(spcId, spcOperator);
-                //    }
-                //}
-
-            }
-
-            //internal const int ___SpeciesIDOffest = 11111;  // not to be changed!!!
-
-            public SpatialOperator this[string spcId] {
-                get {
-                    return m_SpeciesOperator[spcId];
-                }
-            }
-
-            internal void Commit() {
-
-                foreach(string comps in m_owner.m_EquationComponents.Keys) {
-                    foreach(IEquationComponent iec in m_owner.m_EquationComponents[comps]) {
-                        m_SpatialOperator.EquationComponents[comps].Add(iec);
-                        if(iec is ISpeciesFilter fiec) {
-                            string spcNmn = fiec.validSpeciesId;
-
-                            if(!m_owner.Species.Contains(spcNmn)) {
-                                throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
-                            } else {
-                                m_SpeciesOperator[spcNmn].EquationComponents[comps].Add(iec);
-                            }
-                        } else {
-                            foreach(var spcOp in m_SpeciesOperator.Values) {
-                                spcOp.EquationComponents[comps].Add(iec);
-                            }
+                        if(!this.Species.Contains(spcNmn)) {
+                            throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
+                        } 
+                        
+                        if(species.Equals(fiec.ValidSpecies)){
+                            r.EquationComponents[comps].Add(iec);
                         }
+                    } else {
+                        // no species filter defined: per default, valid for all species.
+                        r.EquationComponents[comps].Add(iec);
                     }
                 }
-
-                m_SpatialOperator.Commit();
-                foreach(var spcOp in m_SpeciesOperator.Values) {
-                    spcOp.Commit();
-                }
             }
 
+            r.EdgeQuadraturSchemeProvider = g => eqs;
+            r.VolumeQuadraturSchemeProvider = g => cqs;
+
+            r.OperatorCoefficientsProvider = delegate (IGridData g, double time) {
+
+                var c = this.OperatorCoefficientsProvider(lsTrk, lsTrk.GetSpeciesId(species), order, TrackerHistory, time);
+
+                SpeciesId id = lsTrk.GetSpeciesId(species);
+                CellLenScales.TryGetValue(id, out var cls);
+                EdgLenScales.TryGetValue(id, out var els);
+
+
+                c.CellLengthScales = cls;
+                c.EdgeLengthScales = els;
+
+                return c;
+            };
+
+            r.Commit();
+            return r;
         }
+
+
 
   
 
@@ -189,15 +152,6 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-
-        IEvaluatorNonLin_ GetSpeciesEvaluatorExBase(string spcName, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpeciesOperator[spcName].GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        }
-
-        IEvaluatorLinear_ GetSpeciesMatrixBuilderBase(string spcName, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpeciesOperator[spcName].GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        }
-
         /// <summary>
         /// edge and cell scheme for a certain species
         /// </summary>
@@ -214,20 +168,15 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             public CellQuadratureScheme CellScheme;
         }
-
+        
 
         /// <summary>
         /// create a matrix from this operator
         /// </summary>
-        public XEvaluatorLinear GetMatrixBuilder(
-            LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
-            ) {
+        public IEvaluatorLinear GetMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) { 
+            LevelSetTracker lsTrk = GetTracker(DomainVarMap.BasisS, GetBasisS(ParameterMap), CodomainVarMap.BasisS);
 
-            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap,
-                1, // based on actual level-set tracker state
-                SpeciesSchemes);
+            return GetMatrixBuilder(lsTrk, DomainVarMap, ParameterMap, CodomainVarMap);
         }
 
         /// <summary>
@@ -236,48 +185,21 @@ namespace BoSSS.Foundation.XDG {
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
-
-            SpeciesId[] whichSpecies = this.Species.Select(spcNmn => lsTrk.GetSpeciesId(spcNmn)).ToArray();
-            
-            Dictionary<SpeciesId, QrSchemPair> SpeciesSchemes = new Dictionary<SpeciesId, QrSchemPair>();
-            if(whichSpecies == null | whichSpecies.Length <= 0) {
-                foreach(var s in lsTrk.SpeciesIdS) {
-                    SpeciesSchemes.Add(s, new QrSchemPair());
-                }
-            } else {
-                foreach(var s in whichSpecies) {
-                    SpeciesSchemes.Add(s, new QrSchemPair());
-                }
-            }
+            if(!IsCommited)
+                throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap,
-                1, // based on actual level-set tracker state
-                SpeciesSchemes);
+                1 // based on actual level-set tracker state
+                );
         }
 
         /// <summary>
         /// explicit evaluation of the operator
         /// </summary>
-        public XEvaluatorNonlin GetEvaluatorEx(
-            LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
-            ) {
-            return new XEvaluatorNonlin(this, lsTrk,
-                new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
-                1,
-                SpeciesSchemes);
+        public IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            LevelSetTracker lsTrk = GetTracker(GetBasisS(DomainFields), GetBasisS(ParameterMap), CodomainVarMap.BasisS);
+            return GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
         }
-
-
-        /// <summary>
-        /// explicit evaluation of the operator
-        /// </summary>
-        public IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            throw new NotImplementedException();
-        }
-
-
 
         /// <summary>
         /// explicit evaluation of the operator
@@ -285,49 +207,73 @@ namespace BoSSS.Foundation.XDG {
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
-
-            var whichSpecies = this.Species.Select(spcNmn => lsTrk.GetSpeciesId(spcNmn)).ToArray();
-            Dictionary<SpeciesId, QrSchemPair> SpeciesSchemes = new Dictionary<SpeciesId, QrSchemPair>();
-            foreach(var s in whichSpecies) {
-                SpeciesSchemes.Add(s, new QrSchemPair());
-            }
-            
+            if(!IsCommited)
+                throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
-                1,
-                SpeciesSchemes);
+                1);
         }
 
+
+        static Basis[] GetBasisS(IList<DGField> ParameterMap) {
+            if(ParameterMap == null)
+                return new Basis[0];
+
+            return ParameterMap.Select(f => f != null ? f.Basis : default(Basis)).ToArray();
+        }
+
+        static LevelSetTracker GetTracker(IEnumerable<Basis> dom, IEnumerable<Basis> para, IEnumerable<Basis> cod) {
+            LevelSetTracker lsTrk = null;
+            foreach(var enu in new[] { dom, para, cod}) {
+                if(enu != null) {
+                    foreach(Basis b in enu) {
+                        if(b != null && b is XDGBasis xb) {
+                            if(lsTrk == null) {
+                                lsTrk = xb.Tracker; 
+                            } else {
+                                if(!object.ReferenceEquals(lsTrk, xb.Tracker))
+                                    throw new ArgumentException("Tracker mismatch.");
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(lsTrk == null)
+                throw new ArgumentException("Unable to obtain level-set tracker.");
+            return lsTrk;
+        }
    
 
         /// <summary>
         /// Computes the Jacobian matrix of the operator by finite differences.
         /// </summary>
-        public XFDJacobianBuilder GetFDJacobianBuilder(
-            LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate,
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
-            ) {
+        public IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
 
-            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, SpeciesSchemes);
+            LevelSetTracker lsTrk = GetTracker(GetBasisS(DomainFields), GetBasisS(ParameterMap), CodomainVarMap.BasisS);
 
-            return new XFDJacobianBuilder(xeval, __delParameterUpdate);
+            return GetFDJacobianBuilder(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
         }
 
         /// <summary>
         /// Computes the Jacobian matrix of the operator by finite differences.
         /// </summary>
-        public XFDJacobianBuilder GetFDJacobianBuilder(
+        public FDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate) //
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
+            if(!IsCommited)
+                throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
 
-            return new XFDJacobianBuilder(xeval, __delParameterUpdate);
+            DelParameterUpdate delParameterUpdate = null;
+            if(this.ParameterUpdate != null) {
+                delParameterUpdate = this.ParameterUpdate.PerformUpdate;
+            }
+
+            return new FDJacobianBuilder(xeval, delParameterUpdate);
         }
 
 
@@ -901,22 +847,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-
-
-        class FixedOrder_SpatialOperator : SpatialOperator {
-            public FixedOrder_SpatialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar)
-                : base(__DomainVar, __ParameterVar, __CoDomainVar, null) //
-            {
-                base.QuadOrderFunction = this.QOF;
-            }
-
-            int QOF(int[] A, int[] B, int[] C) {
-                return m_Order;
-            }
-
-            internal int m_Order;
-        }
-
         #endregion
 
 
@@ -999,16 +929,12 @@ namespace BoSSS.Foundation.XDG {
             m_EquationComponentsHelper = new _XEquationComponents(this);
             this.QuadOrderFunction = QuadOrderFunc;
 
-
-            GhostEdgesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
-            SurfaceElementOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
-            //SpeciesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
-            m_SpeciesOperator = new SpeciesOperatorHelper(this);
-
-
+            
+            GhostEdgesOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+                (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
+            SurfaceElementOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+                (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
         }
-
-
 
         _XEquationComponents m_EquationComponentsHelper;
 
@@ -1051,32 +977,6 @@ namespace BoSSS.Foundation.XDG {
                         return m_owner.m_EquationComponents[EqnName];
                 }
             }
-
-            /// <summary>
-            /// filters the equation components for the required species
-            /// </summary>
-            /// <param name="spcId">required species</param>
-            /// <returns></returns>
-            //public SortedList<string, List<IEquationComponent>> GetSpeciesEquationComponents(SpeciesId spcId) {
-
-            //    SortedList<string, List<IEquationComponent>> SpeciesEquationComponent = new SortedList<string, List<IEquationComponent>>(m_owner.CodomainVar.Count);
-            //    foreach(var f in m_owner.CodomainVar) {
-            //        SpeciesEquationComponent.Add(f, new List<IEquationComponent>());
-            //    }
-
-            //    foreach(string comps in m_owner.m_EquationComponents.Keys) {
-            //        foreach(IEquationComponent iec in m_owner.m_EquationComponents[comps]) {
-            //            if(iec is ISpeciesFilter) {
-            //                if(((ISpeciesFilter)iec).validSpecies == spcId | ((ISpeciesFilter)iec).validSpecies == null)
-            //                    SpeciesEquationComponent[comps].Add(iec);
-            //            } else {
-            //                SpeciesEquationComponent[comps].Add(iec);
-            //            }
-            //        }
-            //    }
-
-            //    return SpeciesEquationComponent;
-            //}
 
 
             #region IEnumerable<KeyValuePair<string,IEnumerable<IEquationComponent>> Members
@@ -1125,43 +1025,9 @@ namespace BoSSS.Foundation.XDG {
             GhostEdgesOperator.Commit();
             SurfaceElementOperator.Commit();
 
-            m_SpeciesOperator.Commit();
         }
 
 
-        /// <summary>
-        /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="CatParams">
-        /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
-        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
-        /// </param>
-        /// <param name="F">
-        /// optional filter;
-        /// should return true, if the component should be added, false if not; 
-        /// </param>
-        /// <param name="vectorizer">
-        /// vectorizer option: translate some equation component to another one
-        /// </param>
-        public EquationComponentArgMapping<T>[] GetArgMapping<T>(bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
-            if(!IsCommited)
-                throw new ApplicationException("Commit() has to be called prior to this method.");
-
-            int Gamma = CodomainVar.Count;
-
-            var ret = new EquationComponentArgMapping<T>[Gamma];
-            for(int i = 0; i < Gamma; i++) {
-                var codName = this.m_CodomainVar[i];
-                ret[i] = new EquationComponentArgMapping<T>(m_SpatialOperator,
-                    codName,
-                    this.m_DomainVar,
-                    CatParams ? this.ParameterVar : null,
-                    F, vectorizer);
-            }
-
-            return ret;
-        }
 
         #endregion
 
@@ -1224,7 +1090,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension,
-                this.ParameterUpdate != null ? this.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
 
 
 
@@ -1279,12 +1145,254 @@ namespace BoSSS.Foundation.XDG {
             return JacobianOp;
         }
 
+        #region QuadSchemeProvider
+
+        static EdgeQuadratureScheme DefaultEQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var edgeScheme = SchemeHelper.GetEdgeQuadScheme(spc);
+            return edgeScheme;
+        }
+
+
+        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> m_EdgeQuadraturSchemeProvider = DefaultEQSprovider;
+
+        /// <summary>
+        /// User-customizable factory, to specify the edge quadrature, see also <see cref="QuadOrderFunction"/>
+        /// - 1st argument: current level-set tracker
+        /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
+        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 4th argument: quadrature order
+        /// - 5th argument: level-set resp. tracker history.
+        /// - return: quadrature scheme        
+        /// </summary>
+        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> EdgeQuadraturSchemeProvider {
+            get {
+                if(m_EdgeQuadraturSchemeProvider == null)
+                    m_EdgeQuadraturSchemeProvider = DefaultEQSprovider;
+                return m_EdgeQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_EdgeQuadraturSchemeProvider = value;
+            }
+        }
+
+        
+
+        static CellQuadratureScheme DefaultCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var volScheme = SchemeHelper.GetVolumeQuadScheme(spc);
+            return volScheme;
+        }
+
+        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_VolumeQuadraturSchemeProvider;
+
+        /// <summary>
+        /// User-customizable factory, to specify the cell/volume quadrature, see also <see cref="QuadOrderFunction"/>
+        /// - 1st argument: current level-set tracker
+        /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
+        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 4th argument: quadrature order
+        /// - 5th argument: level-set resp. tracker history.
+        /// - return: quadrature scheme
+        /// </summary>
+        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> VolumeQuadraturSchemeProvider {
+            get {
+                if(m_VolumeQuadraturSchemeProvider == null)
+                    m_VolumeQuadraturSchemeProvider = DefaultCQSprovider;
+                return m_VolumeQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_VolumeQuadraturSchemeProvider = value;
+            }
+        }
+
+        #endregion
+
+        #region Ghost_quadSchemeProvider
+
+        static EdgeQuadratureScheme DefaultGhostEQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var edgeScheme = SchemeHelper.GetEdgeGhostScheme(spc);
+            return edgeScheme;
+        }
+
+        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> m_GhostEdgeQuadraturSchemeProvider;
+
+        /// <summary>
+        /// User-customizable factory, to specify the edge quadrature for the ghost-edges operator <see cref="GhostEdgesOperator"/>, see also <see cref="QuadOrderFunction"/>
+        /// - 1st argument: current level-set tracker
+        /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
+        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 4th argument: quadrature order
+        /// - 5th argument: level-set resp. tracker history.
+        /// - return: quadrature scheme        
+        /// </summary>
+        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> GhostEdgeQuadraturSchemeProvider {
+            get {
+                if(m_GhostEdgeQuadraturSchemeProvider == null)
+                    m_GhostEdgeQuadraturSchemeProvider = DefaultGhostEQSprovider;
+                return m_GhostEdgeQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_GhostEdgeQuadraturSchemeProvider = value;
+            }
+        }
+
+        #endregion
+
+        #region SurfElement_quadSchemeProvider
+        static EdgeQuadratureScheme DefaultSurfElementEQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var edgeScheme = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spc);
+            return edgeScheme;
+        }
+
+
+        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> m_SurfaceElementEdgeQuadraturSchemeProvider;
+
+        /// <summary>
+        /// User-customizable factory, to specify the edge quadrature for the <see cref="SurfaceElementOperator"/>, see also <see cref="QuadOrderFunction"/>
+        /// - 1st argument: current level-set tracker
+        /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
+        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 4th argument: quadrature order
+        /// - 5th argument: level-set resp. tracker history.
+        /// - return: quadrature scheme        
+        /// </summary>
+        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> SurfaceElement_EdgeQuadraturSchemeProvider {
+            get {
+                if(m_SurfaceElementEdgeQuadraturSchemeProvider == null)
+                    m_SurfaceElementEdgeQuadraturSchemeProvider = DefaultSurfElementEQSprovider;
+                return m_SurfaceElementEdgeQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_SurfaceElementEdgeQuadraturSchemeProvider = value;
+            }
+        }
+
+        CellQuadratureScheme DefaultSurfElmCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spc);
+            return volScheme;
+        }
+
+        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_SurfaceElement_VolumeQuadraturSchemeProvider;
+
+        /// <summary>
+        /// User-customizable factory, to specify the cell/volume quadrature, see also <see cref="QuadOrderFunction"/>
+        /// - 1st argument: current level-set tracker
+        /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
+        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 4th argument: quadrature order
+        /// - 5th argument: level-set resp. tracker history.
+        /// - return: quadrature scheme
+        /// </summary>
+        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> SurfaceElement_VolumeQuadraturSchemeProvider {
+            get {
+                if(m_SurfaceElement_VolumeQuadraturSchemeProvider == null)
+                    m_SurfaceElement_VolumeQuadraturSchemeProvider = DefaultSurfElmCQSprovider;
+                return m_SurfaceElement_VolumeQuadraturSchemeProvider;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_SurfaceElement_VolumeQuadraturSchemeProvider = value;
+            }
+        }
+        #endregion
+
+
+        DelOperatorCoefficientsProvider m_OperatorCoefficientsProvider; 
+        
+        
+        CoefficientSet DefaultOperatorCoefficientsProvider (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+
+            var r = new CoefficientSet() {
+                GrdDat = lstrk.GridDat
+            };
+            /*
+            if(g is Grid.Classic.GridData cgdat) {
+                r.CellLengthScales = cgdat.Cells.CellLengthScale;
+                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
+
+            } else {
+                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
+            }
+
+            todo();
+            */
+
+            foreach(var kv in UserDefinedValues[lstrk.GetSpeciesName(spc)]) {
+                r.UserDefinedValues.Add(kv.Key, kv.Value);
+            }
+
+            return r;
+        }
+
+        Dictionary<string, IDictionary<string, object>> m_UserDefinedValues;
+
+        /// <summary>
+        /// Modification of <see cref="CoefficientSet.UserDefinedValues"/>, **but only if** default setting for <see cref="OperatorCoefficientsProvider"/> is used
+        /// - 1st key: species
+        /// - 2nd key: user-defined name 
+        /// - value: object to pass to <see cref="IEquationComponentCoefficient.CoefficientUpdate"/>
+        /// </summary>
+        public IReadOnlyDictionary<string, IDictionary<string, object>> UserDefinedValues {
+            get {
+                if(m_UserDefinedValues == null) {
+                    m_UserDefinedValues = new Dictionary<string, IDictionary<string, object>>();
+                    foreach(string spcName in this.Species) {
+                        m_UserDefinedValues.Add(spcName, new Dictionary<string, object>());
+                    }
+                }
+                return m_UserDefinedValues;
+            }
+            
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lstrk">current level-set tracker</param>
+        /// <param name="spc">species which should be integrated, one of <see cref="Species"/></param>
+        /// <param name="quadOrder">quadrature order used for the operator (may affect length scales, etc.)</param>
+        /// <param name="TrackerHistoryIdx">level-set resp. tracker history</param>
+        /// <param name="time">time</param>
+        /// <returns></returns>
+        public delegate CoefficientSet DelOperatorCoefficientsProvider(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time);
+
+        /// <summary>
+        /// User-customizable factory, to modify single values (e.g. Reynolds numbers)
+        /// within the operator components (those implementing <see cref="IEquationComponentCoefficient"/>)
+        /// Auxiliary data passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
+        /// </summary>
+        public DelOperatorCoefficientsProvider OperatorCoefficientsProvider {
+            get {
+                if(m_OperatorCoefficientsProvider == null)
+                    m_OperatorCoefficientsProvider = DefaultOperatorCoefficientsProvider;
+                return m_OperatorCoefficientsProvider;
+            }
+            set {
+                //if(IsCommited)
+                //    throw new NotSupportedException("not allowed to change after Commit");
+                m_OperatorCoefficientsProvider = value;
+            }
+        }
+
+
+
+
         //==========================================================================================================================
         // Reused from SpatialOperator without modifications
         //==========================================================================================================================
         #region SpatialOperator
 
-       Func<int[], int[], int[], int> m_QuadOrderFunction;
+        Func<int[], int[], int[], int> m_QuadOrderFunction;
 
         /// <summary>
         /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
@@ -1299,6 +1407,16 @@ namespace BoSSS.Foundation.XDG {
                 m_QuadOrderFunction = value;
             }
         }
+
+
+
+
+
+
+
+
+
+
 
         static string[] GetSubarray(string[] A, int i0, int len) {
             string[] r = new string[len];
@@ -1350,14 +1468,14 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="Parameters"></param>
         /// <param name="CodomainMap"></param>
         /// <returns></returns>
-        public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
+        public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
             /// Compute Quadrature Order
             int order;
-            int[] DomainDegrees = DomainMap.BasisS.Select(f => f.Degree).ToArray();
-            int[] CodomainDegrees = CodomainMap.BasisS.Select(f => f.Degree).ToArray();
+            int[] DomainDegrees = DomainBasis.Select(f => f.Degree).ToArray();
+            int[] CodomainDegrees = CodomainBasis.Select(f => f.Degree).ToArray();
             int[] ParameterDegrees;
-            if(Parameters != null && Parameters.Count != 0) {
-                ParameterDegrees = Parameters.Select(f => f == null ? 0 : f.Basis.Degree).ToArray();
+            if(ParameterBasis != null && ParameterBasis.Count() != 0) {
+                ParameterDegrees = ParameterBasis.Select(b => b != null ? b.Degree : 0).ToArray();
             } else {
                 ParameterDegrees = new int[] { 0 };
             };

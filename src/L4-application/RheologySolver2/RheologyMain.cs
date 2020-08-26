@@ -1008,8 +1008,8 @@ namespace BoSSS.Application.Rheology {
             Assert.IsTrue(codMap.EqualsPartition(this.CurrentResidual.Mapping));
 
             // Finite Difference Linearization
+            XOP.UserDefinedValues["Weissenbergnumber"] = currentWeissenberg;
             var FDbuilder = XOP.GetFDJacobianBuilder_(domMap, null, codMap, null);
-            FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
             var JacobianFD = new BlockMsrMatrix(codMap, domMap);
             var AffineFD = new double[JacobianFD.NoOfRows];
             FDbuilder.ComputeMatrix(JacobianFD, AffineFD);
@@ -1018,10 +1018,11 @@ namespace BoSSS.Application.Rheology {
             var JacParams = JacobiOp.ParameterUpdate;
             var TmpParams = JacParams.AllocateParameters(CurrentState, Params);
             var map = new CoordinateMapping(CurrentState);
+            JacobiOp.UserDefinedValues["Weissenbergnumber"] = currentWeissenberg;
+            
             var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
-            JacBuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
             this.ParameterUpdate(CurrentState, TmpParams);
-            JacParams.ParameterUpdate(CurrentState, TmpParams);
+            JacParams.PerformUpdate(CurrentState, TmpParams);
             var JacobiDX = new BlockMsrMatrix(map);
             var AffineDX = new double[map.LocalLength];
             JacBuilder.ComputeMatrix(JacobiDX, AffineDX);
@@ -1121,10 +1122,10 @@ namespace BoSSS.Application.Rheology {
                     var JacParams = JacobiOp.ParameterUpdate;
                     var TmpParams = JacParams.AllocateParameters(CurrentState, Params);
                     var map = new CoordinateMapping(CurrentState);
+                    JacobiOp.UserDefinedValues["Weissenbergnumber"] = currentWeissenberg;
                     var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
-                    JacBuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     ParameterUpdate(CurrentState, TmpParams);
-                    JacParams.ParameterUpdate(CurrentState, TmpParams);
+                    JacParams.PerformUpdate(CurrentState, TmpParams);
                     JacBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
 
@@ -1139,9 +1140,9 @@ namespace BoSSS.Application.Rheology {
                     }
 
                 SkipToEnd:
+                    XOP.UserDefinedValues["Weissenbergnumber"] = currentWeissenberg;
                     var FDbuilder = XOP.GetFDJacobianBuilder_(domMap, Params, codMap, this.ParameterUpdate);
 
-                    FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
 
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
@@ -1185,7 +1186,7 @@ namespace BoSSS.Application.Rheology {
                 OpAffine = new double[codMap.LocalLength];
                 var eval = XOP.GetEvaluatorEx(CurrentState, Params, codMap);
                 this.ParameterUpdate(eval.DomainFields.Fields, Params);
-                eval.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
+                XOP.UserDefinedValues["Weissenbergnumber"] = currentWeissenberg;
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
 
@@ -1597,8 +1598,8 @@ namespace BoSSS.Application.Rheology {
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
             if (this.Control.AdaptiveMeshRefinement) {
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 ChangeMesh = AnyChange;
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;

@@ -1108,7 +1108,7 @@ namespace BoSSS.Foundation {
 
 
     /// <summary>
-    /// parameters on which edge forms (e.g. <see cref="IEdgeform_UxV"/>, <see cref="IEdgeform_GradUxV"/>, <see cref="IEdgeform_UxGradV"/>, <see cref="IEdgeSource_V"/>, <see cref="IEdgeSource_GradV"/>)
+    /// parameters on which edge forms (e.g. <see cref="IEdgeForm_UxV"/>, <see cref="IEdgeform_GradUxV"/>, <see cref="IEdgeform_UxGradV"/>, <see cref="IEdgeSource_V"/>, <see cref="IEdgeSource_GradV"/>)
     /// may depend.
     /// </summary>
     public struct EdgeFormParams {
@@ -1170,7 +1170,7 @@ namespace BoSSS.Foundation {
     }
 
     /// <summary>
-    /// Inner edge integrand of <see cref="IEdgeform_UxV"/>
+    /// Inner edge integrand of <see cref="IEdgeForm_UxV"/>
     /// </summary>
     public interface IInnerEdgeform_UxV : IInnerEdgeForm {
         
@@ -1193,7 +1193,7 @@ namespace BoSSS.Foundation {
     }
 
     /// <summary>
-    /// Boundary edge integrand of <see cref="IEdgeform_UxV"/>
+    /// Boundary edge integrand of <see cref="IEdgeForm_UxV"/>
     /// </summary>
     public interface IBoundaryEdgeform_UxV : IBoundaryEdgeForm {
         
@@ -1229,7 +1229,7 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface IEdgeform_UxV : IInnerEdgeform_UxV, IBoundaryEdgeform_UxV, IEdgeForm {
+    public interface IEdgeForm_UxV : IInnerEdgeform_UxV, IBoundaryEdgeform_UxV, IEdgeForm {
 
 
        

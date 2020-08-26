@@ -46,14 +46,14 @@ namespace BoSSS.Solution.EnergyCommon {
         public PowerofGravity(int SpatDim, string spcNmn, SpeciesId spcId, double _rho) {
             m_D = SpatDim;
             m_spcId = spcId;
-            validSpeciesId = spcNmn;
+            ValidSpecies = spcNmn;
             rho = _rho;
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

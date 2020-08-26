@@ -98,16 +98,22 @@ namespace BoSSS.Foundation.IO {
         /// <param name="database"></param>
         /// <param name="grd"></param>
         /// <returns></returns>
-        public static Guid SaveGrid<TG>(this IDatabaseInfo database, ref TG grd) where TG : IGrid //
+        public static Guid SaveGrid<TG>(this IDatabaseInfo database, ref TG grd, bool force = false) where TG : IGrid //
         {
             bool found;
             IGrid grid = grd;
+            Guid GridGuid;
 
-            Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
-            if (found) {
-                Console.WriteLine("An equivalent grid (" + GridGuid + ") is already present in the database -- the grid will not be saved.");
-                grd = ((TG)grid);
+            if (!force) {
+                GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                if (found) {
+                    Console.WriteLine("An equivalent grid (" + GridGuid + ") is already present in the database -- the grid will not be saved.");
+                    grd = ((TG)grid);
+                }
+            } else {
+                GridGuid = database.Controller.DBDriver.SaveGrid(grid, database);
             }
+
             return GridGuid;
         }
 
@@ -118,13 +124,17 @@ namespace BoSSS.Foundation.IO {
         /// <param name="database"></param>
         /// <param name="grd"></param>
         /// <returns></returns>
-        public static IGrid SaveGrid(this IDatabaseInfo database, IGrid grd) {
+        public static IGrid SaveGrid(this IDatabaseInfo database, IGrid grd, bool force = false) {
             bool found;
             IGrid grid = grd;
-
-            Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
-            if (found) {
-                Console.WriteLine("An equivalent grid is already present in the database -- the grid will not be saved.");
+            if (!force) {
+                Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                if (found) {
+                    Console.WriteLine("An equivalent grid is already present in the database -- the grid will not be saved.");
+                    grd = (GridCommons)grid;
+                }
+            } else {
+                database.Controller.DBDriver.SaveGrid(grid, database);
                 grd = (GridCommons)grid;
             }
             return grid;

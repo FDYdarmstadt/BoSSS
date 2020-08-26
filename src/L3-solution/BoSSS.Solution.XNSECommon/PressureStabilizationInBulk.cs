@@ -53,7 +53,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get { return m_spcName; }
         }
     }

@@ -40,7 +40,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             //
             rho = _rho;
             m_spcId = spcId;
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
 
             //varMode = _varMode;
             this.lsTrk = _lsTrk;
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

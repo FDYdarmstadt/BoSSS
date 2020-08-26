@@ -28,7 +28,7 @@ namespace BoSSS.Solution.NSECommon {
 
     [DataContract]
     [Serializable]
-    public class MaterialLawLowMach_MF : MaterialLawCombustion {
+    public class MaterialLawLowMach_MF : MaterialLawLowMach {
         /// <summary>
         /// 
         /// </summary>
@@ -43,8 +43,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="YF0">Fuel mass fraction of fuel inlet </param>
         /// <param name="zst">Stoichiometric mixture fraction </param>
         /// <param name="CC"></param>
+        /// <param name="Prandtl"></param>
         /// 
-        public MaterialLawLowMach_MF(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(T_ref, MolarMasses, rhoOne, MatParamsMode, Prandtl) {
+        public MaterialLawLowMach_MF(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(T_ref, MatParamsMode, rhoOne, Prandtl) {
             this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
@@ -56,20 +57,20 @@ namespace BoSSS.Solution.NSECommon {
             this.Prandtl = Prandtl;
             this.MatParamsMode = MatParamsMode;
             this.rhoOne = rhoOne;
-            
+
         }
-        MaterialParamsMode MatParamsMode;
-        public bool rhoOne;
-        public double Q;
-        public double TO0;
-        public double TF0;
-        public double YF0;
-        public double YO0;
-        public double zst;
-        public double cp;
-        public ChemicalConstants CC;
+        [DataMember] MaterialParamsMode MatParamsMode;
+        [DataMember] public bool rhoOne;
+        [DataMember] public double Q;
+        [DataMember] public double TO0;
+        [DataMember] public double TF0;
+        [DataMember] public double YF0;
+        [DataMember] public double YO0;
+        [DataMember] public double zst;
+        [DataMember] public double cp;
+        [DataMember] public ChemicalConstants CC;
 
-
+    
         /// <summary>
         /// Calculate density based on the mixture fraction.
         /// </summary>
@@ -77,7 +78,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public override double getDensityFromZ(double Z) {
             double res;
-            Z = repairMixtureFractionValue(Z);
+          //  Z = repairMixtureFractionValue(Z);
             if (Q > 0) {
                 if (!rhoOne) {
                     //Debug.Assert(Z - 1.0 < 1e-4 && Z > -1e-4);
@@ -86,15 +87,15 @@ namespace BoSSS.Solution.NSECommon {
                         T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
                         Y0 = YF0 * (Z - zst) / (1 - zst);
                         Y1 = 0;
-                        Y2 = -YO0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
-                        Y3 = -YO0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
+                        Y2 = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+                        Y3 = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
                         Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
                     } else if (Z < zst) { // Oxydizer side
                         T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
                         Y0 = 0;
                         Y1 = YO0 * (1 - Z / zst);
-                        Y2 = -YF0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_CH4 * CC.PM_CH4) * Z;
-                        Y3 = -YF0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_CH4 * CC.PM_CH4) * Z;
+                        Y2 = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
+                        Y3 = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
                         Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
                     } else {
                         throw new Exception("out of bounds");
@@ -182,10 +183,10 @@ namespace BoSSS.Solution.NSECommon {
                         res = 0;
                         break;
                     case VariableNames.MassFraction2:
-                        res = -YO0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
+                        res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
                         break;
                     case VariableNames.MassFraction3:
-                        res = -YO0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_O2 * CC.PM_O2) * (1 - Z);
+                        res = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
                         break;
                     case VariableNames.MassFraction4:
                         double YNOxi0 = 1.0 - YO0;
@@ -208,10 +209,10 @@ namespace BoSSS.Solution.NSECommon {
                         res = YO0 * (1 - Z / zst);
                         break;
                     case VariableNames.MassFraction2:
-                        res = -YF0 * (CC.s_CO2 * CC.PM_CO2) / (CC.s_CH4 * CC.PM_CH4) * Z;
+                        res = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
                         break;
                     case VariableNames.MassFraction3:
-                        res = -YF0 * (CC.s_H2O * CC.PM_H2O) / (CC.s_CH4 * CC.PM_CH4) * Z;
+                        res = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
                         break;
                     case VariableNames.MassFraction4:
                         double YNOxi0 = 1.0 - YO0;
@@ -358,8 +359,9 @@ namespace BoSSS.Solution.NSECommon {
                         rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
                     }
                 }
-                Debug.Assert(!double.IsNaN(rho));
-                Debug.Assert(!double.IsInfinity(rho));
+                
+                if(double.IsNaN(rho) || double.IsInfinity(rho))
+                    throw new ArithmeticException("Invalid value for density: " + rho);
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -379,6 +381,10 @@ namespace BoSSS.Solution.NSECommon {
             double T0 = 273.15; // 
             double viscosity0 = 1.716e-5; //kg/( m s) ==> viscosity at T = 273.15 for air
             double viscosity = viscosity0 * Math.Pow(T / T0, 1.5) * (T0 + S) / (T + S);
+
+            if(double.IsNaN(viscosity) || double.IsInfinity(viscosity) || viscosity <= 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + viscosity);
+
             return viscosity;
         }
 
@@ -391,6 +397,9 @@ namespace BoSSS.Solution.NSECommon {
         /// Dynamic viscosity
         /// </returns>
         public override double GetViscosity(double phi) {
+
+            phi = Math.Max(0.01, phi);
+
             double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
@@ -409,9 +418,8 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException();
             }
-            Debug.Assert(!double.IsNaN(visc));
-            Debug.Assert(!double.IsInfinity(visc));
-            Debug.Assert(visc > 0);
+            if(double.IsNaN(visc) || double.IsInfinity(visc) || visc <= 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + visc);
             return visc;
         }
 
@@ -422,7 +430,10 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public virtual double GetHeatConductivity(double phi) {
 
-            return GetViscosity(phi) / Prandtl;
+            double res = GetViscosity(phi);
+            if(double.IsNaN(res) || double.IsInfinity(res))
+                throw new ArithmeticException("Invalid value for viscosity: " + res);
+            return res;
 
         }
         /// <summary>
@@ -431,7 +442,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi"></param>
         /// <returns></returns>
         public virtual double GetDiffusivity(double phi) {
-            return GetViscosity(phi) / Prandtl;
+            return GetViscosity(phi) ;
 
         }
         /// <summary>

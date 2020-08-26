@@ -132,7 +132,8 @@ namespace BoSSS.Application.IBM_Solver {
                 int D = this.GridData.SpatialDimension;
 
                 double[] _rho = new double[D + 1];
-                _rho.SetAll(rho);
+                if(!this.Control.IsStationary)
+                    _rho.SetAll(rho);
                 //No MassMatrix for the pressure
                 _rho[D] = 0;
 
@@ -572,7 +573,7 @@ namespace BoSSS.Application.IBM_Solver {
                 ParameterUpdate(CurrentState, Params);
                 var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping);
                 mtxBuilder.time = phystime;
-                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using finite difference Jacobi:
@@ -619,7 +620,7 @@ namespace BoSSS.Application.IBM_Solver {
                 ParameterUpdate(CurrentState, Params);
                 var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping);
                 eval.time = phystime;
-                eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                eval.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
 
@@ -1043,7 +1044,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         /// <summary>
-        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true
+        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true. Note that this is not necessary if the order of the level-set function of the particles is equal to the polynomial DG order.
         /// </summary>
         protected void PerformLevelSetSmoothing(CellMask domain, CellMask NegMask, bool SetFarField) {
 
@@ -1398,7 +1399,8 @@ namespace BoSSS.Application.IBM_Solver {
                 //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
                 // Only CutCells are NoCoarseningCells 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)(this.GridData), CutCells);
+                bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<DBEControl>
+  <Databases>
+    <Database>
+      <path value="P:\some_database" />
+    </Database>
+    <!--	
+    <Database>
+      <path value="G:\database_which_is_not_used_at_the_moment" />
+    </Database>
+		-->
+  </Databases>
+</DBEControl>
