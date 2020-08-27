@@ -99,8 +99,7 @@ namespace BoSSS.Foundation {
         /// If set, used to update parameters before evaluation.
         /// </summary>
         IParameterUpdate ParameterUpdate { get; set; }
-        
-        
+                
         /// <summary>
         /// names of (DG-) variables which act as parameters; 
         /// Their role is pretty similar to those of the domain variables, and for nonlinear
@@ -127,7 +126,6 @@ namespace BoSSS.Foundation {
             set;
         }
        
-
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
@@ -141,7 +139,7 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
-        /*
+        
         
         /// <summary>
         /// Constructs a new evaluator object for the explicit evaluation of this spatial operator.
@@ -167,19 +165,18 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
         /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
-        IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null);
+        IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
 
         /// <summary>
         /// Computes the Jacobian matrix of the operator by finite differences.
         /// </summary>
-        IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, DelParameterUpdate __delParameterUpdate, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null);
-         
+        IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
          
         /// <summary>
         /// Evaluation of the operator matrix
         /// (only for linear operators or ad-hoc linearizations)
         /// </summary>
-        IEvaluatorLinear GetMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null);
-        */
+        IEvaluatorLinear GetMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
+        
     }
 }

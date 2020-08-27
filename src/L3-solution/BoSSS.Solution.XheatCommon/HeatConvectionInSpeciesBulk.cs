@@ -43,7 +43,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             this.cap = _cap;
             this.m_spcId = spcId;
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
 
             this.lsTrk = _lsTrk;
             this.LFF = _LFF;
@@ -68,7 +68,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -186,7 +186,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             this.cap = _cap;
             this.m_spcId = spcId;
-            this.validSpeciesId = spcName;
+            this.ValidSpecies = spcName;
             this.m_bcmap = _bcmap;
 
             this.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
@@ -200,7 +200,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

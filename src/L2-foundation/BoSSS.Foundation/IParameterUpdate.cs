@@ -8,7 +8,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
-    /// Note: this matches the signature of <see cref="IParameterUpdate.ParameterUpdate"/>
+    /// Note: this matches the signature of <see cref="IParameterUpdate.PerformUpdate"/>
     /// </summary>
     /// <param name="DomainVar">
     /// Input fields, current state of domain variables
@@ -38,6 +38,6 @@ namespace BoSSS.Foundation {
         /// <param name="ParameterVar">
         /// Output fields, updated states of parameter fields
         /// </param>
-        void ParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
+        void PerformUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
     }
 }

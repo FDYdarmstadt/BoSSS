@@ -989,7 +989,21 @@ namespace BoSSS.Foundation {
 
             return R.ToArray();
         }
+    
 
-        
+        /// <summary>
+        /// implicit conversion
+        /// </summary>
+        public static implicit operator UnsetteledCoordinateMapping(Basis[] bss) {
+            return new UnsetteledCoordinateMapping(bss);
+        }
+
+        /// <summary>
+        /// implicit conversion
+        /// </summary>
+        public static implicit operator Basis[](UnsetteledCoordinateMapping cm) {
+            return cm.BasisS.ToArray();
+        }    
+    
     }
 }

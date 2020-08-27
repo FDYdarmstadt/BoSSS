@@ -91,12 +91,13 @@ namespace CNS.IBM {
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
             this.m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate () {
+                this.Operator.EdgeQuadraturSchemeProvider = g => edgeScheme;
+                this.Operator.VolumeQuadraturSchemeProvider = g => volumeScheme;
+
                 var opi = this.Operator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
-                    Mapping,
-                    edgeScheme,
-                    volumeScheme);
+                    Mapping);
                 opi.ActivateSubgridBoundary(ABSubGrid.VolumeMask, subGridBoundaryTreatment: SubGridBoundaryModes.InnerEdgeLTS);
                 return opi;
             });
@@ -105,13 +106,14 @@ namespace CNS.IBM {
             CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetquadScheme(
                 0, cutCells, control.LevelSetQuadratureOrder);
 
-            this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(() =>
-                boundaryOperator.GetEvaluatorEx(
+            this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(delegate() {
+                boundaryOperator.EdgeQuadraturSchemeProvider = g => null; // Contains no boundary terms --> PROBLEM??????????
+                boundaryOperator.VolumeQuadraturSchemeProvider = g => boundaryVolumeScheme;
+                return boundaryOperator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
-                    Mapping,
-                    null, // Contains no boundary terms --> PROBLEM??????????
-                    boundaryVolumeScheme));
+                    Mapping);
+            });
         }
 
 
