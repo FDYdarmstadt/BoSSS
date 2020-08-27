@@ -199,11 +199,11 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>     
         /// <returns></returns>
         public double getLocalEquivalenceRatio(double Yf, double Yox) {
-            Debug.Assert(!(Yf < 0));
-            Debug.Assert(!(Yox < 0));
+            Debug.Assert(!(Yf < -1e3));
+            Debug.Assert(!(Yox < -1e3));
             double Z = getMixtureFraction(Yf, Yox);
             double phi = s * (YF0 / YO0) * (Z / (1.0 - Z));
-            Debug.Assert( phi >= -1e-1);
+            //Debug.Assert( phi >= -1e-1);
             if (phi.IsNaNorInf()) {
                 phi = double.MaxValue;
             }
@@ -279,6 +279,12 @@ namespace BoSSS.Solution.NSECommon {
 
             return AvgMw;
         }
+
+
+
+
+
+
 
     }
 }
