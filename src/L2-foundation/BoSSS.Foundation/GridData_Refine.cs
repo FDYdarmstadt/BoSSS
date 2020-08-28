@@ -46,8 +46,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         public GridCommons Adapt(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse, out GridCorrelation Old2New) {
             using (new FuncTrace()) {
                 // Check for refinement/coarsening on all processes.
-                bool anyRefinement = !GetGlobalIsNullOrEmpty(cellsToRefine);
-                bool anyCoarsening = !GetGlobalIsNullOrEmpty(cellsToCoarse);
+                bool anyRefinement = !cellsToRefine.IsNullOrEmpty().MPIAnd();
+                bool anyCoarsening = !cellsToCoarse.IsNullOrEmpty().MPIAnd(); 
 
                 GridCommons oldGrid = m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
@@ -101,8 +101,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Old2New.DestGlobalId = new long[J][];
 
                 // define counters to get the correct global id and vertex id
-                long GlobalIdCounter = oldGrid.NumberOfCells_l;
-                int globalIDOffset = GetGlobalIdOffset(cellsToRefine);
+                long noOfGlobalCells = oldGrid.NumberOfCells_l;
+                int globalCellIDOffsetLocalProcess = GetGlobalIdOffset(cellsToRefine);
                 int newVertexCounter = (oldGrid.Cells.Max(cl => cl.NodeIndices.Max()) + 1).MPIMax();
 
                 // all locally adapted cells (on this mpi process)
@@ -205,7 +205,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Cell[] refinedCells = new Cell[Leaves.Length];
 
                         for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) {
-                            Cell newCell = CreateRefinedCell(ref GlobalIdCounter, globalIDOffset, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
+                            Cell newCell = CreateRefinedCell(ref noOfGlobalCells, globalCellIDOffsetLocalProcess, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
                             refinedCells[iSubDiv] = newCell;
 
                             NodeSet RefNodes = Kref.GetInterpolationNodes(oldCell.Type);
@@ -485,48 +485,18 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Checks whether the enumeration has any entry ony any process.
-        /// </summary>
-        /// <param name="enumeration">
-        /// The enumeration to be checked.
-        /// </param>
-        private bool GetGlobalIsNullOrEmpty(IEnumerable<int> enumeration) {
-            bool isNullOrEmpty = enumeration.IsNullOrEmpty();
-            bool[] receiveAnswer = isNullOrEmpty.MPIAllGatherO();
-            for (int i = 0; i < receiveAnswer.Length; i++) {
-                if (receiveAnswer[i])
-                    return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Checks whether the enumeration has any entry ony any process.
-        /// </summary>
-        /// <param name="enumeration">
-        /// The eneumeration to be checked.
-        /// </param>
-        private bool GetGlobalIsNullOrEmpty(IEnumerable<int[]> enumeration) {
-            bool isNullOrEmpty = enumeration.IsNullOrEmpty();
-            bool[] receiveAnswer = isNullOrEmpty.MPIAllGatherO();
-            for (int i = 0; i < receiveAnswer.Length; i++) {
-                if (receiveAnswer[i])
-                    return true;
-            }
-            return false;
-        }
-
-        /// <summary>
         /// Calculates the global id offset 
         /// </summary>
         /// <param name="cellsToRefine">
         /// </param>
         private int GetGlobalIdOffset(IEnumerable<int> cellsToRefine) {
             int globalIDOffset = 0;
+            int noOfRefinedCellsPerCell = 4;
+            int noOfNewCellsIDPerCell = noOfRefinedCellsPerCell - 1;
             int sendOffset = cellsToRefine.Count();
-            int[] receiveOffset = sendOffset.MPIAllGatherO();// MPISendReceiveOnAllProcesses(sendOffset);
+            int[] receiveOffset = sendOffset.MPIAllGatherO();
             for (int m = 0; m < MpiRank; m++) {
-                globalIDOffset += receiveOffset[m] * 3;
+                globalIDOffset += receiveOffset[m] * noOfNewCellsIDPerCell;
             }
             return globalIDOffset;
         }
@@ -617,8 +587,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 exchangeNeighbours[neighbourProcess] = new List<long>();
                             exchangeNeighbours[neighbourProcess].Add(neighbourGlobalIndex);
                         }
-
-
                     }
                 }
             }

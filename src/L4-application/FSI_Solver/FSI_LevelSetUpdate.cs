@@ -47,10 +47,24 @@ namespace FSI_Solver {
             for (int p = 0; p < Particles.Length; p++) {
                 for (int j = 0; j < J; j++) {
                     if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength))
-                        coloredCells[j] = 1;
+                        coloredCells[j] = p + 1;
                 }
             }
             //RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
+            return coloredCells;
+        }
+
+        internal int[] UpdateColoring(LevelSetTracker LsTrk, Particle[] Particles, double MaxGridLength) {
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+            int[] coloredCells = new int[J];
+            for (int p = 0; p < Particles.Length; p++) {
+                for (int j = 0; j < J; j++) {
+                    if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength / 2))
+                        coloredCells[j] = p + 1;
+                }
+            }
+            RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
             return coloredCells;
         }
 
@@ -133,7 +147,7 @@ namespace FSI_Solver {
         /// <param name="NoOfLocalCells">
         /// Number of locally stored cells.
         /// </param>
-        internal bool MPIProcessContainsCurrentColor(int[] CellColor, int CurrentColor, int NoOfLocalCells) {
+        internal bool CurrentProcessContainsCurrentColor(int[] CellColor, int CurrentColor, int NoOfLocalCells) {
             for (int j = 0; j < NoOfLocalCells; j++) {
                 if (CellColor[j] == CurrentColor && CurrentColor != 0)
                     return true;

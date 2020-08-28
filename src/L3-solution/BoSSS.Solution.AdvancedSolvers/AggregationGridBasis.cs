@@ -939,6 +939,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public virtual int GetMaximalLength(int p) {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
+            if (DGBasis.MaximalLength == 0)
+                throw new Exception(" DGBasis.MaximalLength nee das ist 0");
             return this.GetLength(0, p);
         }
 
@@ -949,6 +951,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
         public virtual int GetLength(int jCell, int p) {
             GetNp();
+            if (m_Lengths[p] == 0)
+                throw new Exception("jkfafsasf");
             return m_Lengths[p];
         }
 
@@ -1188,6 +1192,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Lengths = new int[this.DGBasis.Degree + 1];
                 for(int pp = 0; pp < m_Lengths.Length; pp++) {
                     m_Lengths[pp] = this.DGBasis.Polynomials[0].Where(poly => poly.AbsoluteDegree <= pp).Count();
+                    if (m_Lengths[pp] == 0)
+                        throw new Exception(" nee das ist 0");
                 }
             }
             return m_Lengths.CloneAs();

@@ -1048,7 +1048,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected void PerformLevelSetSmoothing(CellMask domain, CellMask NegMask, bool SetFarField) {
 
-            if (this.Control.LevelSetSmoothing) {
+            if (this.Control.LevelSetSmoothing) 
+                {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // smoothing on: perform some kind of C0-projection
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1072,8 +1073,8 @@ namespace BoSSS.Application.IBM_Solver {
                 // no smoothing (not recommended): copy DGLevSet -> LevSet
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                //this.LevSet.Clear(domain);
-                //this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
+                this.LevSet.Clear(domain);
+                this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
                 this.LevSet.Clear();
                 this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current);
             }

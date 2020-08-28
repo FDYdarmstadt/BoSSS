@@ -2152,7 +2152,6 @@ namespace BoSSS.Solution {
 
                     //int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
 
-
                     int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
 
 

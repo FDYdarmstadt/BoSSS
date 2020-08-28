@@ -79,7 +79,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Single(double angle = 80, double distance = 0) {
+        public static FSI_Control Single(double angle = 0, double distance = 0, double aspectRatio = 0.05, double activeStress = 1) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
@@ -91,8 +91,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(4);
+            C.SetGrid(lengthX: 5, lengthY: 5, cellsPerUnitLength: 8, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(2);
 
             // Coupling Properties
             // =============================
@@ -105,7 +105,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 10;
             C.PhysicalParameters.IncludeConvection = false;
             C.IsStationary = true;
             double particleDensity = 1;
@@ -114,10 +114,9 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================   
             C.fixPosition = true;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5, true);
-            double particleRadius = 0.5;
-            double aspectRatio = 2;
+            double particleRadius = 1;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -distance / 2, 0.0 }, angle, 1)
+                new Particle_Ellipsoid(motion, particleRadius, aspectRatio * particleRadius, new double[] { -distance / 2, 0.0 }, angle, activeStress)
             };
 
             // misc. solver options
@@ -132,7 +131,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 20);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 200);
 
             return C;
         }

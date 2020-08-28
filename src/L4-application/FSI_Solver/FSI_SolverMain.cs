@@ -612,7 +612,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 for (int c = 0; c < globalParticleColor.Length; c++) {
                     int currentColor = globalParticleColor[c];
-                    if (levelSetUpdate.MPIProcessContainsCurrentColor(CellColor, currentColor, noOfLocalCells)) {
+                    if (levelSetUpdate.CurrentProcessContainsCurrentColor(CellColor, currentColor, noOfLocalCells)) {
                         coloredCellMask = new CellMask(GridData, levelSetUpdate.CreateBitArrayFromColoredCells(CellColor, currentColor, noOfLocalCells));
                         allParticleMask = allParticleMask == null ? coloredCellMask : allParticleMask.Union(coloredCellMask);
 
@@ -830,7 +830,7 @@ namespace BoSSS.Application.FSI_Solver {
             Vector particlePosition = currentParticle.Motion.GetPosition();
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
-            double additionalWallThreshold = 1.5 * GetMinGridLength();
+            double additionalWallThreshold = 0;
             if (d2 == 0)
                 additionalWallThreshold *= -1;
             if (Math.Abs(distance) < particleMaxLength) {
@@ -846,7 +846,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private bool AnyOverlap(Particle currentParticle) {
-            double additionalWallThreshold = 1.5 * GetMinGridLength();
+            double additionalWallThreshold = 0;
             for (int d = 0; d < spatialDim; d++) {
                 for (int wallID = 0; wallID < spatialDim; wallID++) {
                     if (wallID == 0)

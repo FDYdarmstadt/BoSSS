@@ -69,7 +69,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (!OperatorMatrix.ColPartition.EqualsPartition(_ProblemMapping))
                 throw new ArgumentException("Column partitioning mismatch.");
 
-
             if (MassMatrix != null) {
                 if (!MassMatrix.RowPartitioning.Equals(_ProblemMapping))
                     throw new ArgumentException("Row partitioning mismatch.");
@@ -379,12 +378,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (basisES.Count() <= 0) {
                 throw new ArgumentException("At least one multigrid level is required.");
             }
+            
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             this.BaseGridProblemMapping = _pm;
             if (cobc.Count() < 1)
                 throw new ArgumentException();
             this.m_Config = cobc.First();
             this.FinerLevel = __FinerLevel;
+            
             this.Mapping = new MultigridMapping(_pm, basisES.First(), this.Degrees);
 
             if (this.Mapping.LocalLength > this.BaseGridProblemMapping.LocalLength)

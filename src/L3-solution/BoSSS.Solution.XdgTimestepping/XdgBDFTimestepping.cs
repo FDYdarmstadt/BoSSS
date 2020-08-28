@@ -1647,6 +1647,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     RHS.ScaleV(-1);
 
                     // update the multigrid operator
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
                         System, MaMa,
                         this.Config_MultigridOperator);
