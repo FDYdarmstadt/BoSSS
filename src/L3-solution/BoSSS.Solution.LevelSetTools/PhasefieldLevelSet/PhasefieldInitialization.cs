@@ -73,9 +73,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
             // mobility coefficient, for now inverse of Pe = Re*Sc
             // following Yue et. al. (2010), WARNING not correct
-            _Diff = (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
+            _Diff = this.ModTyp == ModelType.modelA ? 1.0 : _Cahn.Pow2();// (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
 
-            // 0.0 = pure bulk diffusion, 1.0 = pure surface diffusion
+            // 0.0 = pure bulk diffusion, 1.0 = pure surface diffusion, not implemented in model A
             _Lambda = 0.0;
         }
         

@@ -78,7 +78,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Phasefield level set by Cahn Hilliard equation
         /// </summary>
-        Phasefield
+        Phasefield,
 
         /// <summary>
         /// Level Set is moved by advected particles.

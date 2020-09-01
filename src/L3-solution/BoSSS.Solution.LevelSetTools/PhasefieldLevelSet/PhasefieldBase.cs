@@ -68,6 +68,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         protected VectorField<SinglePhaseField> gradPhi0;
 
         /// <summary>
+        /// curvature
+        /// </summary>
+        protected SinglePhaseField Curvature;
+
+        /// <summary>
         /// chemical potential
         /// </summary>
         protected SinglePhaseField mu;
@@ -133,6 +138,37 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// Control for Bulk vs Surface Diffusion
         /// </summary>
         double Lambda;
+
+        /// <summary>
+        /// Model Type of Phasefield equation, see Halperin (1977)
+        /// </summary>
+        public enum ModelType
+        {
+            /// <summary>
+            /// Order Parameter is nonconserved
+            /// </summary>
+            modelA,
+
+            /// <summary>
+            /// Order Parameter is conserved
+            /// </summary>
+            modelB,
+
+            /// <summary>
+            /// Mass is conserved
+            /// </summary>
+            modelC
+        }
+
+        /// <summary>
+        /// Set the <see cref="ModelType"/>
+        /// </summary>
+        public ModelType ModTyp = ModelType.modelB;
+
+        /// <summary>
+        /// According to Biben (2003), Correction to account for arclength diffusion
+        /// </summary>
+        public bool CurvatureCorrection = true;
 
         /// <summary>
         /// Cahn-Hilliard spatial Operator
@@ -208,6 +244,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         {
             phi0 = new SinglePhaseField(DGLevSet.Basis, "phi0");
             gradPhi0 = new VectorField<SinglePhaseField>(DGLevSet.GridDat.SpatialDimension.ForLoop(d => new SinglePhaseField(DGLevSet.Basis, "dPhiDG_dx[" + d + "]")));
+            Curvature = new SinglePhaseField(new Basis(phi0.GridDat, phi0.Basis.Degree + 2), VariableNames.Curvature);
             phi = new SinglePhaseField(DGLevSet.Basis, "phi");
             phi.Acc(1.0, DGLevSet);
             mu = new SinglePhaseField(DGLevSet.Basis, "mu");
@@ -267,23 +304,78 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                     SetCHCoefficents(out Cahn, out Diff, out Lambda);
 
-                    CHOp.EquationComponents["Res_phi"].Add(
-                    new phi_Diffusion(D, penalty_factor, LengthScales, Diff, Lambda, m_bcMap)
-                    );
+                    switch (this.ModTyp)
+                    {
+                        case Phasefield.ModelType.modelA:
+
+                            CHOp = new SpatialOperator(
+                                new string[] { "phi" },
+                                VariableNames.VelocityVector(D).Cat("phi0").Cat(VariableNames.LevelSetGradient(D)).Cat(VariableNames.Curvature),
+                                new string[] { "Res_phi" },
+                                QuadOrderFunc.NonLinear(3)
+                                );
+
+                            CHOp.EquationComponents["Res_phi"].Add(
+                            new phi_Source(this.Diff)
+                            );
+
+                            CHOp.EquationComponents["Res_phi"].Add(
+                            new phi_Flux(D, m_bcMap)
+                            );
+
+                            CHOp.EquationComponents["Res_phi"].Add(
+                                new mu_Diffusion(D, penalty_factor, LengthScales, Cahn * Diff.Sqrt(), m_bcMap)
+                                );
+
+                            if (this.CurvatureCorrection == true)
+                            {
+                                CHOp.EquationComponents["Res_phi"].Add(
+                                    new phi_CurvatureCorrection(D, Cahn * Diff.Sqrt())
+                                    );
+                            }
+
+                            break;
+                        case Phasefield.ModelType.modelB:
+
+                            CHOp = new SpatialOperator(
+                                new string[] { "phi", "mu" },
+                                VariableNames.VelocityVector(D).Cat("phi0").Cat(VariableNames.LevelSetGradient(D)).Cat(VariableNames.Curvature),
+                                new string[] { "Res_phi", "Res_mu" },
+                                QuadOrderFunc.NonLinear(3)
+                                );
 
 
-                    CHOp.EquationComponents["Res_phi"].Add(
-                    new phi_Flux(D, m_bcMap)
-                    );
+                            CHOp.EquationComponents["Res_phi"].Add(
+                                new phi_Diffusion(D, penalty_factor, LengthScales, Diff, Lambda, m_bcMap)
+                                );
 
+                            CHOp.EquationComponents["Res_phi"].Add(
+                                new phi_Flux(D, m_bcMap)
+                                );
 
-                    CHOp.EquationComponents["Res_mu"].Add(
-                        new mu_Diffusion(D, penalty_factor, LengthScales, Cahn, m_bcMap)
-                        );
+                            CHOp.EquationComponents["Res_mu"].Add(
+                                new mu_Diffusion(D, penalty_factor, LengthScales, Cahn, m_bcMap)
+                                );
 
-                    CHOp.EquationComponents["Res_mu"].Add(
-                        new mu_Source(true, Cahn)
-                        );
+                            CHOp.EquationComponents["Res_mu"].Add(
+                                new mu_Source(true, Cahn)
+                                );
+
+                            if (this.CurvatureCorrection == true)
+                            {
+                                CHOp.EquationComponents["Res_mu"].Add(
+                                    new phi_CurvatureCorrection(D, Cahn)
+                                    );
+                            }
+
+                            break;
+                        case Phasefield.ModelType.modelC:
+                            throw new NotImplementedException();
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                            break;
+                    }
 
                     CHOp.Commit();
                 }
@@ -292,20 +384,48 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // create solver
                 // =============
 
-                {              
+                {
 
-                    m_Timestepper = new XdgBDFTimestepping(
-                        new DGField[] { phi, mu },
-                        new DGField[] { phi_Resi, mu_Resi },
-                        this.DummyLsTrk,
-                        false,
-                        DelComputeOperatorMatrix, null, null,
-                        1, // BDF order
-                        LevelSetHandling.None, MassMatrixShapeandDependence.IsTimeDependent, SpatialOperatorType.Nonlinear,
-                        this.MassScale, this.MgConfig, mgSeq, new[] { this.DummyLsTrk.GetSpeciesId("A") }, phi.Basis.Degree * 2, 0.0, false,
-                        GetNonLinearSolver(), GetLinearSolver()
-                        );
+                    switch (this.ModTyp)
+                    {
+                        case Phasefield.ModelType.modelA:
 
+                            m_Timestepper = new XdgBDFTimestepping(
+                                 new DGField[] { phi },
+                                 new DGField[] { phi_Resi },
+                                 this.DummyLsTrk,
+                                 false,
+                                 DelComputeOperatorMatrix, null, null,
+                                 1, // BDF order
+                                 LevelSetHandling.None, MassMatrixShapeandDependence.IsTimeDependent, SpatialOperatorType.Nonlinear,
+                                 this.MassScaleA, this.MgConfigA, mgSeq, new[] { this.DummyLsTrk.GetSpeciesId("A") }, phi.Basis.Degree * 2, 0.0, false,
+                                 GetNonLinearSolver(), GetLinearSolver()
+                                 );
+
+                            break;
+                        case Phasefield.ModelType.modelB:
+
+                            m_Timestepper = new XdgBDFTimestepping(
+                                new DGField[] { phi, mu },
+                                new DGField[] { phi_Resi, mu_Resi },
+                                this.DummyLsTrk,
+                                false,
+                                DelComputeOperatorMatrix, null, null,
+                                1, // BDF order
+                                LevelSetHandling.None, MassMatrixShapeandDependence.IsTimeDependent, SpatialOperatorType.Nonlinear,
+                                this.MassScaleB, this.MgConfigB, mgSeq, new[] { this.DummyLsTrk.GetSpeciesId("A") }, phi.Basis.Degree * 2, 0.0, false,
+                                GetNonLinearSolver(), GetLinearSolver()
+                                );
+
+                            break;
+                        case Phasefield.ModelType.modelC:
+                            throw new NotImplementedException();
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                            break;
+
+                    }
 
                 }
             }
@@ -331,7 +451,32 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             return NonLinConfig;
         }
 
-        MultigridOperator.ChangeOfBasisConfig[][] MgConfig
+        MultigridOperator.ChangeOfBasisConfig[][] MgConfigA
+        {
+            get
+            {
+                int p = this.phi.Basis.Degree;
+                int NoOfLevels = mgSeq.Length;
+                var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
+
+                for (int iLevel = 0; iLevel < NoOfLevels; iLevel++)
+                {
+                    config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
+                        new MultigridOperator.ChangeOfBasisConfig() {
+                            VarIndex = new int[] {0},
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            DegreeS = new int[] { Math.Max(1, p - iLevel) }
+                        }
+                    };
+
+                }
+
+                return config;
+            }
+
+        }
+
+        MultigridOperator.ChangeOfBasisConfig[][] MgConfigB
         {
             get
             {
@@ -362,7 +507,6 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time)
         {
             SinglePhaseField Current_phi = (SinglePhaseField)(CurrentState[0]);
-            SinglePhaseField Current_mu = (SinglePhaseField)(CurrentState[1]);
 
             phi0.Clear();
             phi0.Acc(1.0, Current_phi);
@@ -371,7 +515,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             
             OpMtx.Clear();
             OpAffine.ClearEntries();
-            var mb = CHOp.GetMatrixBuilder(Mapping, this.Velocity.ToArray().Cat(phi0).Cat(gradPhi0.ToArray()), Mapping);
+            var mb = CHOp.GetMatrixBuilder(Mapping, this.Velocity.ToArray().Cat(phi0).Cat(gradPhi0.ToArray()).Cat(Curvature), Mapping);
             mb.ComputeMatrix(OpMtx, OpAffine);
         }
 
@@ -379,7 +523,22 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale
+        protected IDictionary<SpeciesId, IEnumerable<double>> MassScaleA
+        {
+            get
+            {
+
+                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
+                R.Add(this.DummyLsTrk.GetSpeciesId("A"), new double[] { 1.0 });
+
+                return R;
+            }
+        }
+
+        /// <summary>
+        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// </summary>
+        protected IDictionary<SpeciesId, IEnumerable<double>> MassScaleB
         {
             get
             {
@@ -399,7 +558,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             string caseStr = "";
             
             DGField[] Fields = new DGField[0];
-            Fields = Fields.Cat(this.phi, this.mu, this.Velocity);
+            Fields = Fields.Cat(this.phi, this.mu, this.Velocity, this.gradPhi0, this.Curvature);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "Phasefield-" + timestepNo + caseStr, phystime, superSampling);
         }
 
@@ -807,6 +966,91 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             }
 
 
+            return Acc * V;
+        }
+    }
+
+    /// <summary>
+    /// source term of phi in Model A
+    /// </summary>
+    class phi_Source : IVolumeForm
+    {
+        //public phi_Source(double __lambda, double __epsilon) {
+        //    m_lambda = __lambda;
+        //    m_epsilon = __epsilon;
+        //}
+
+        public phi_Source(double _diff = 0.0)
+        {
+            m_diff = _diff;
+        }
+
+
+
+        //double m_lambda;
+        //double m_epsilon;
+        double m_diff;
+
+        public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
+
+        public IList<string> ArgumentOrdering => new[] { "phi" };
+        public IList<string> ParameterOrdering => new[] { "phi0" };
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        {
+
+            double c = U[0];
+            double c0 = cpv.Parameters[0];
+            // values seem shifted without this offset hack
+
+            double Acc = 0;
+
+            Acc += (3.0 * c0 * c0 - 1.0) * c - 2 * Math.Pow(c0, 3.0); // linearized around (Taylor expansion)
+
+            return m_diff * Acc * V;
+        }
+    }
+
+    /// <summary>
+    /// Correction term to counter along the interface diffusion
+    /// </summary>
+    class phi_CurvatureCorrection : IVolumeForm
+    {
+        //public phi_Source(double __lambda, double __epsilon) {
+        //    m_lambda = __lambda;
+        //    m_epsilon = __epsilon;
+        //}
+
+        public phi_CurvatureCorrection(int D, double _cahn = 0.0)
+        {
+            m_cahn = _cahn.Pow2();
+            m_D = D;
+        }
+
+
+
+        //double m_lambda;
+        //double m_epsilon;
+        int m_D;
+        double m_cahn;
+
+        public TermActivationFlags VolTerms => TermActivationFlags.V;
+
+        public IList<string> ArgumentOrdering => new[] { "phi" };
+        public IList<string> ParameterOrdering => new[] { VariableNames.Curvature }.Cat(VariableNames.LevelSetGradient(m_D));
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        {
+            double Acc = 0.0;
+            for (int d = 0; d < m_D; d++)
+            {
+                Acc += cpv.Parameters[1 + d].Pow2();
+            }
+            Acc = Acc.Sqrt();
+
+            Acc *= m_cahn * cpv.Parameters[0];
+
+            // sign minus should be correct, plus produces more sensual results
             return Acc * V;
         }
     }

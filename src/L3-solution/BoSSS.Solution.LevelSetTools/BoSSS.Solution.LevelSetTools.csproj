@@ -55,6 +55,7 @@
     <Compile Include="Advection\VectorExtVelAdvection.cs" />
     <Compile Include="Advection\ScalarExtVelAdvection.cs" />
     <Compile Include="ContinuityProjection.cs" />
+    <Compile Include="CurvatureAlgortihmsForLevelSet.cs" />
     <Compile Include="EllipticExtVel\DensityWeightedExtVel.cs" />
     <Compile Include="EllipticExtVel\Extender.cs" />
     <Compile Include="EllipticExtVel\EllipticExtVelControl.cs" />
