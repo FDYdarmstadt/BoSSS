@@ -841,7 +841,7 @@ namespace BoSSS.Application.SipPoisson {
                         this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
                     }
 
-                    var ev = this.LapaceIp.GetEvaluator(T.Mapping, ResiualKP1.Mapping);
+                    var ev = this.LapaceIp.GetEvaluatorEx(T.Mapping, null, ResiualKP1.Mapping);
                     ev.Evaluate(-1.0, 1.0, ResiualKP1.CoordinateVector);
                 }
 

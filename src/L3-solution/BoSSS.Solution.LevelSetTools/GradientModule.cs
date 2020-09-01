@@ -229,12 +229,12 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 SpatialOperator op = new SpatialOperator(1, 2, QuadOrderFunc.Linear(), "Phi", "g0", "g1");
                 op.EquationComponents["g0"].Add(new Gradient(0, jCell, AcceptedMask));
                 op.EquationComponents["g1"].Add(new Gradient(1, jCell, AcceptedMask));
+                op.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask);
+                op.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(domain: Sgrd.VolumeMask);
                 op.Commit();
 
                 m_gradEvo = op.GetEvaluatorEx(
-                    Phi.Mapping, null, gradPhi.Mapping,
-                    edgeQrCtx: (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask)),
-                    volQrCtx: (new CellQuadratureScheme(domain: Sgrd.VolumeMask)));
+                    Phi.Mapping, null, gradPhi.Mapping);
                 m_gradEvo.ActivateSubgridBoundary(subGridBoundaryTreatment: SubGridBoundaryModes.BoundaryEdge, sgrd: Sgrd.VolumeMask);
 
                 m_gradEvo_jCell = jCell;
@@ -260,12 +260,11 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             SpatialOperator op = new SpatialOperator(1, 2, QuadOrderFunc.Linear(), "Phi", "g0", "g1");
             op.EquationComponents["g0"].Add(new Gradient2(0, PhiMean));
             op.EquationComponents["g1"].Add(new Gradient2(1, PhiMean));
+            op.EdgeQuadraturSchemeProvider = g => (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask));
+            op.VolumeQuadraturSchemeProvider = g => (new CellQuadratureScheme(domain: Sgrd.VolumeMask));
             op.Commit();
 
-            var gradEvo = op.GetEvaluatorEx(
-                Phi.Mapping, null, gradPhi.Mapping,
-                (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask)),
-                (new CellQuadratureScheme(domain: Sgrd.VolumeMask)));
+            var gradEvo = op.GetEvaluatorEx(Phi.Mapping, null, gradPhi.Mapping);
 
             gradEvo.ActivateSubgridBoundary(Sgrd.VolumeMask, SubGridBoundaryModes.BoundaryEdge);
 

@@ -28,10 +28,10 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Initialize Convection
         /// </summary>
         public ConvectiveInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double Weissenberg, double alpha, string spcName, SpeciesId spcId) : base(_Component, _BcMap, Weissenberg, true, alpha = 1.0) {
-            this.validSpeciesId = spcName;
+            this.ValidSpecies = spcName;
         }
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

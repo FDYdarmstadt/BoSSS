@@ -110,7 +110,7 @@ namespace BoSSS.Foundation {
         /// Parameter update function, 
         /// compatible with <see cref="DelParameterUpdate"/>.
         /// </summary>
-        virtual public void ParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
+        virtual public void PerformUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
             DGField[] __DomainVar = DomainVar.ToArray();
             DGField[] __ParameterVar = ParameterVar.ToArray();
 

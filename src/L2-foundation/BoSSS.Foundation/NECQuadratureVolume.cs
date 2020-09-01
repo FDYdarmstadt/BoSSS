@@ -71,11 +71,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // sort equation components
             // ------------------------
 
-            m_NonlinSources = DiffOp.GetArgMapping<INonlinearSource>(true);
-            m_NonlinFormV = DiffOp.GetArgMapping<INonlinVolumeForm_V>(true,
+            m_NonlinSources = EquationComponentArgMapping<INonlinearSource>.GetArgMapping(DiffOp, true);
+            m_NonlinFormV = EquationComponentArgMapping<INonlinVolumeForm_V>.GetArgMapping(DiffOp, true,
                 eq => ((eq.VolTerms & (TermActivationFlags.V |TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
                 eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm)eq) : null));
-            m_NonlinFormGradV = DiffOp.GetArgMapping<INonlinVolumeForm_GradV>(true,
+            m_NonlinFormGradV = EquationComponentArgMapping<INonlinVolumeForm_GradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.GradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm)eq) : null));
 

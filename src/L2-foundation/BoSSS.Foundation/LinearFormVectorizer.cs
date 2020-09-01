@@ -369,7 +369,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
     }
 
 
-    class LinearEdgeFormVectorizer : IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeform_UxV, IEdgeform_GradUxGradV {
+    class LinearEdgeFormVectorizer : IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeForm_UxV, IEdgeform_GradUxGradV {
 
 
         public TermActivationFlags BoundaryEdgeTerms {
@@ -938,7 +938,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeform_UxV.InternalEdge"/>
+        /// see <see cref="IEdgeForm_UxV.InternalEdge"/>
         /// </summary>
         void IInnerEdgeform_UxV.InternalEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
@@ -983,7 +983,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeform_UxV.BoundaryEdge"/>
+        /// see <see cref="IEdgeForm_UxV.BoundaryEdge"/>
         /// </summary>
         void IBoundaryEdgeform_UxV.BoundaryEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
