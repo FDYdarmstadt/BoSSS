@@ -344,7 +344,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     case LevelSetEvolution.Phasefield:
                         this.DGLevSet.Current.Clear();
                         this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                        PhaseField = new Phasefield(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence, Math.Sqrt(this.Control.PhysicalParameters.mu_A* this.Control.PhysicalParameters.mu_B));
+                        PhaseField = new Phasefield(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
                         PhaseField.InitCH(this.Control.dtMin);
                         break;
                     case LevelSetEvolution.FastMarching:
@@ -368,7 +368,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // =========================================
                 // Enforcing the continuity of the level-set
                 // =========================================
-                
+
                 ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,

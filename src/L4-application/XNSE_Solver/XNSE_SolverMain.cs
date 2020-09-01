@@ -1262,7 +1262,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // delegate for the initialization of previous timesteps from an analytic solution
                     BDFDelayedInitSetIntial);
             }
-
+            
             After_SetInitialOrLoadRestart(0.0, 0);
 
         }
@@ -1655,12 +1655,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
-                    int[] glb = (new int[] {
-
-                    CellsToRefineList.Count,
-                    Coarsening.Sum(L => L.Length),
-                }).MPISum();
+                    if (AnyChange.MPIOr()) {
+                    int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length)}).MPISum();                        
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
@@ -1668,8 +1664,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // Update Grid
                     // ===========
-
-                    if(AnyChange) {
+                    if (AnyChange.MPIOr()) {
 
                         //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 1 }), 2);
 
