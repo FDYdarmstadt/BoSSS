@@ -1025,6 +1025,9 @@ namespace BoSSS.Foundation.XDG {
             GhostEdgesOperator.Commit();
             SurfaceElementOperator.Commit();
 
+            if (TemporalOperator != null) {
+                TemporalOperator.Commit();
+            }
         }
 
 
@@ -1332,7 +1335,10 @@ namespace BoSSS.Foundation.XDG {
             return r;
         }
 
-        Dictionary<string, IDictionary<string, object>> m_UserDefinedValues;
+        /// <summary>
+        /// internal access for hack in <see cref="DependentXTemporalOperator"/>.
+        /// </summary>
+        internal Dictionary<string, IDictionary<string, object>> m_UserDefinedValues;
 
         /// <summary>
         /// Modification of <see cref="CoefficientSet.UserDefinedValues"/>, **but only if** default setting for <see cref="OperatorCoefficientsProvider"/> is used
@@ -1641,8 +1647,130 @@ namespace BoSSS.Foundation.XDG {
             return false;
         }
 
+
+        ITemporalOperator m_TemporalOperator;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public ITemporalOperator TemporalOperator {
+            get {
+                return m_TemporalOperator;
+            }
+            set {
+                if (IsCommited)
+                    throw new NotSupportedException("Not allowed to change after operator is committed.");
+                m_TemporalOperator = value;
+            }
+        }
+
+        MyDict m_FreeMeanValue;
+
+        /// <summary>
+        /// Notifies the solver that the mean value for a specific value is floating.
+        /// An example is e.g. the pressure in the incompressible Navier-Stokes equation with all-walls boundary condition.
+        /// - key: the name of some domain variable
+        /// - value: false, if the mean value of the solution  is defined, true if the mean value  of the solution is floating (i.e. for some solution u, u + constant is also a solution).
+        /// </summary>
+        public IDictionary<string, bool> FreeMeanValue {
+            get {
+                if (m_FreeMeanValue == null) {
+                    m_FreeMeanValue = new MyDict(this);
+                }
+                return m_FreeMeanValue;
+            }
+        }
+
+
+        /// <summary>
+        /// I hate shit like this class - so many dumb lines of code.
+        /// </summary>
+        class MyDict : IDictionary<string, bool> {
+
+            XSpatialOperatorMk2 owner;
+
+            public MyDict(XSpatialOperatorMk2 __owner) {
+                owner = __owner;
+                InternalRep = new Dictionary<string, bool>();
+                foreach (string domName in __owner.DomainVar) {
+                    InternalRep.Add(domName, false);
+                }
+            }
+
+            Dictionary<string, bool> InternalRep;
+
+
+            public bool this[string key] {
+                get {
+                    return InternalRep[key];
+                }
+                set {
+                    if (!InternalRep.ContainsKey(key))
+                        throw new ArgumentException("Must be a name of some domain variable.");
+                    if (owner.IsCommited)
+                        throw new NotSupportedException("Changing is not allowed after operator is committed.");
+                    InternalRep[key] = value;
+                }
+            }
+
+            public ICollection<string> Keys => InternalRep.Keys;
+
+            public ICollection<bool> Values => InternalRep.Values;
+
+            public int Count => InternalRep.Count;
+
+            public bool IsReadOnly => owner.IsCommited;
+
+
+            public void Add(string key, bool value) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Add(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Clear() {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Contains(KeyValuePair<string, bool> item) {
+                return InternalRep.Contains(item);
+            }
+
+            public bool ContainsKey(string key) {
+                return InternalRep.ContainsKey(key);
+            }
+
+
+            public void CopyTo(KeyValuePair<string, bool>[] array, int arrayIndex) {
+                (InternalRep as ICollection<KeyValuePair<string, bool>>).CopyTo(array, arrayIndex);
+            }
+
+
+            public IEnumerator<KeyValuePair<string, bool>> GetEnumerator() {
+                throw new NotImplementedException();
+            }
+
+            public bool Remove(string key) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Remove(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool TryGetValue(string key, out bool value) {
+                return InternalRep.TryGetValue(key, out value);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() {
+                return InternalRep.GetEnumerator();
+            }
+        }
+
         #endregion
-        
+
 
     }
 

@@ -115,16 +115,25 @@ namespace BoSSS.Foundation.XDG {
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesGhostEdgeBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesSurfElmBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
 
+            /// <summary>
+            /// <see cref="IEvaluatorLinear.ComputeAffine{V}(V)"/>
+            /// </summary>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
-                ComputeMatrix_Internal(default(BlockMsrMatrix), AffineOffset, true);
+                ComputeMatrix_Internal(default(BlockMsrMatrix), AffineOffset, true, 1.0);
             }
 
-            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
+            /// <summary>
+            /// <see cref="IEvaluatorLinear.ComputeMatrix{M,V}"/>
+            /// </summary>
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha)
                 where M : IMutableMatrixEx
                 where V : IList<double> {
-                ComputeMatrix_Internal(Matrix, AffineOffset, false);
+                ComputeMatrix_Internal(Matrix, AffineOffset, false, alpha);
             }
 
+            /// <summary>
+            /// fields for MPI exchange
+            /// </summary>
             protected override DGField[] GetTrxFields() {
                 return base.Parameters.ToArray();
             }
@@ -135,7 +144,7 @@ namespace BoSSS.Foundation.XDG {
             /// computation of operator matrix, currently only two species are supported
             /// </summary>
             void ComputeMatrix_Internal<M, V>(
-                M Matrix, V AffineOffset, bool OnlyAffine)
+                M Matrix, V AffineOffset, bool OnlyAffine, double alpha)
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
@@ -238,9 +247,11 @@ namespace BoSSS.Foundation.XDG {
                                     builder.time = base.time;
 
                                     if(OnlyAffine) {
+                                        if (alpha != 1.0)
+                                            throw new NotSupportedException();
                                         builder.ComputeAffine(vec);
                                     } else {
-                                        builder.ComputeMatrix(_mtx, vec);
+                                        builder.ComputeMatrix(_mtx, vec, alpha);
                                     }
                                 }
 
