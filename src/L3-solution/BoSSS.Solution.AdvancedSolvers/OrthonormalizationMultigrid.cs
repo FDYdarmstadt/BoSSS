@@ -476,9 +476,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     X = _xl.ToArray();
 
-                // clear history
-                MxxHistory.Clear();
-                SolHistory.Clear();
+                //// clear history, makes a small difference on coarse levels, which one is better?
+                //MxxHistory.Clear();
+                //SolHistory.Clear();
 
 
                 // in case of spectral analysis
@@ -554,11 +554,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (this.m_MgOperator.LevelIndex == 0 && iIter == 1 && SpectralAnalysis)
                     {
                         Resample(0, X, this.m_MgOperator, "initial");
-                    }
-                    // Restart?
-                    if (SolHistory.Count >= MaxKrylovDimension)
-                    {
-                        Restart(X, Sol0, rl, Res0, B, L);
                     }
 
                     // pre-smoother
@@ -724,6 +719,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+        /// <summary>
+        /// Currently not used
+        /// </summary>
+        /// <param name="X"></param>
+        /// <param name="Sol0"></param>
+        /// <param name="rl"></param>
+        /// <param name="Res0"></param>
+        /// <param name="B"></param>
+        /// <param name="L"></param>
         private void Restart(double[] X, double[] Sol0, double[] rl, double[] Res0, double[] B, int L)
         {
             MxxHistory.Clear();

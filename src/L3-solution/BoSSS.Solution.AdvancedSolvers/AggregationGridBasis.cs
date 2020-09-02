@@ -400,6 +400,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     /*
                     // first approach by locally ensuring continuity and smoothness at inner edges
+                    // not sure if this approach can work at all, requires more work, actual state left in code
                     int maxMGlevel = agSeq.Length - 1;
                     AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis, InjectorCoarse);
 
@@ -411,7 +412,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     AggregationGridCurvedInjector.ProjectBasis(agSeq, maxDgBasis, Injectors, InjectorCoarse, 0);
 
                     stop.Stop();
-                    Console.WriteLine($"Construction of curved MG operators took: {stop.Elapsed}");
+                    Console.WriteLine($"Construction of curved MG operators took: {stop.Elapsed}");                    
                 }
             }
             else
@@ -1289,6 +1290,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_ModeIndexForDegree[p];
         }
 
+        /// <summary>
+        /// Helper routine to quickly visualize the multigrid basisfunctions on all levels,
+        /// does not yet work in parallel I think.
+        /// </summary>
+        /// <param name="_agGrd"></param>
+        /// <param name="_maxDgBasis"></param>
+        /// <param name="_Injectors"></param>
         private static void PlotAggregationBasis(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors)
         {
             int cellCount = _agGrd[0].iGeomCells.NoOfLocalUpdatedCells;

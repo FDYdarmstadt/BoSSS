@@ -2390,6 +2390,15 @@ namespace BoSSS.Solution.AdvancedSolvers
             return usableRows;
         }
 
+        /// <summary>
+        /// Calculate an Injection operator by projection of the basis functions from the curved cells on <paramref name="ilevel"/>-1
+        /// to (linear) bounding boxes around the aggregated cells on <paramref name="ilevel"/>. Followed by an reorthonormalization on the aggregated cells.
+        /// </summary>
+        /// <param name="_agGrd"></param>
+        /// <param name="_maxDgBasis"></param>
+        /// <param name="_Injectors"></param> the Injection operator from (level-1 to level) with 1st index level; 2nd index logical (aggregate) cell
+        /// <param name="_injectorCoarse"></param> the direct injector from level 0 to ilevel
+        /// <param name="ilevel"></param>
         public static void ProjectBasis(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors, MultidimensionalArray[] _injectorCoarse, int ilevel)
         {
             // get dimensions of Injection operator
