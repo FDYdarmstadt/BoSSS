@@ -283,7 +283,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <summary>
     /// Base-class for XDG applications with a monolithic operator and a time-integrator.
     /// </summary>
-    abstract public class XdgApplicationWithSollver<T> : ApplicationWithSolver<T>
+    abstract public class XdgApplicationWithSolver<T> : ApplicationWithSolver<T>
          where T : AppControlSolver, new() //
     {
 
@@ -405,16 +405,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.Timestepping = solver;
         }
 
-
         /// <summary>
         /// releases the operator
         /// </summary>
         internal override void ClearOperator() {
             m_XOperator = null;
         }
-
-
-
     }
 
 

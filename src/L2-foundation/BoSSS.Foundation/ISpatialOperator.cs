@@ -81,8 +81,18 @@ namespace BoSSS.Foundation {
         /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
         /// </summary>
         IList<string> DomainVar { get; }
-        
-        
+
+        /// <summary>
+        /// Notifies the solver that the mean value for a specific value is floating.
+        /// An example is e.g. the pressure in the incompressible Navier-Stokes equation with all-walls boundary condition.
+        /// - key: the name of some domain variable
+        /// - value: false, if the mean value of the solution  is defined, true if the mean value  of the solution is floating (i.e. for some solution u, u + constant is also a solution).
+        /// </summary>
+        IDictionary<string, bool> FreeMeanValue {
+            get;
+        }
+
+
         /// <summary>
         /// for each variable in <see cref="CodomainVar"/>, a
         /// collection of equation components that define the operator.
@@ -134,6 +144,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
+        /// (<see cref="GetJacobiOperator"/>, <see cref="GetMatrixBuilder"/>, <see cref="GetFDJacobianBuilder"/>),
         /// </summary>
         LinearizationHint LinearizationHint {
             get;
@@ -163,8 +174,6 @@ namespace BoSSS.Foundation {
         /// are assumed to be 0.0;
         /// If the differential operator contains no parameters, this argument can be null;
         /// </param>
-        /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
-        /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
         IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
 
         /// <summary>
@@ -177,6 +186,36 @@ namespace BoSSS.Foundation {
         /// (only for linear operators or ad-hoc linearizations)
         /// </summary>
         IEvaluatorLinear GetMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
-        
+
+
+        /// <summary>
+        /// Specification of the temporal operator, i.e. the mass matrix.
+        /// Null defers to a steady-state system.
+        /// Setting is only available before calling <see cref="Commit"/>.
+        /// </summary>
+        ITemporalOperator TemporalOperator {
+            get;
+            set;
+        }
+       
     }
+
+    /// <summary>
+    /// <see cref="ISpatialOperator.TemporalOperator"/>
+    /// </summary>
+    public interface ITemporalOperator {
+
+        /// <summary>
+        /// finalizes the assembly of the operator;
+        /// Can be called only once in the lifetime of this object.
+        /// After calling this method, no adding/removing of equation components is possible.
+        /// </summary>
+        void Commit();
+
+        /// <summary>
+        /// Evaluation of the temporal operator matrix (aka. mass matrix).
+        /// </summary>
+        IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
+    }
+
 }

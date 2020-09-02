@@ -173,7 +173,10 @@ namespace BoSSS.Foundation {
             return (_edgeRule, _volRule);
         }
 
-        Dictionary<string, object> m_UserDefinedValues;
+        /// <summary>
+        /// internal asses for hack in <see cref="DependentTemporalOperator"/>.
+        /// </summary>
+        internal Dictionary<string, object> m_UserDefinedValues;
 
         /// <summary>
         /// Modification of <see cref="CoefficientSet.UserDefinedValues"/>, **but only if** default setting for <see cref="OperatorCoefficientsProvider"/> is used
@@ -234,7 +237,7 @@ namespace BoSSS.Foundation {
             }
             set {
                  if(IsCommited)
-                    throw new NotSupportedException("not allowed to change after Commit");
+                    throw new NotSupportedException("not allowed to change after operator is committed.");
                 m_OperatorCoefficientsProvider = value;
             }
         }
@@ -415,10 +418,6 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Evaluation of the <see cref="QuadOrderFunction"/>.
         /// </summary>
-        /// <param name="DomainMap"></param>
-        /// <param name="Parameters"></param>
-        /// <param name="CodomainMap"></param>
-        /// <returns></returns>
         public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
             /// Compute Quadrature Order
             int order;
@@ -521,6 +520,10 @@ namespace BoSSS.Foundation {
         /// </summary>
         public virtual void Commit() {
             Verify();
+
+            if(TemporalOperator != null) {
+                TemporalOperator.Commit();
+            }
 
             if(m_IsCommited)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
@@ -688,8 +691,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-
-
+        
         /// <summary>
         /// returns true, if any of the equation components associated with 
         /// variable <paramref name="CodomVar"/> is linear
@@ -1422,7 +1424,7 @@ namespace BoSSS.Foundation {
             /// </summary>
             /// <param name="AffineOffset"></param>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
-                Internal_ComputeMatrixEx(default(BlockMsrMatrix), AffineOffset, true);
+                Internal_ComputeMatrixEx(default(BlockMsrMatrix), AffineOffset, true, 1.0);
             }
 
             /// <summary>
@@ -1432,16 +1434,19 @@ namespace BoSSS.Foundation {
             /// \f]
             /// </summary>
             /// <param name="Matrix">
-            /// Output, the operator matrix is accumulated here
+            /// Output, the operator matrix, scaled by <paramref name="alpha"/>, is accumulated here
             /// </param>
             /// <param name="AffineOffset">
-            /// Output, the affine part of the operator linearization is accumulated here
+            /// Output, the affine part of the operator linearization, scaled by <paramref name="alpha"/>, is accumulated here
             /// </param>
-            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
+            /// <param name="alpha">
+            /// scaling factor
+            /// </param>
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha = 1.0)
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
-                Internal_ComputeMatrixEx(Matrix, AffineOffset, false);
+                Internal_ComputeMatrixEx(Matrix, AffineOffset, false, alpha);
             }
 
             /// <summary>
@@ -1464,7 +1469,7 @@ namespace BoSSS.Foundation {
             /// matrix evaluation
             /// </summary>
             virtual protected void Internal_ComputeMatrixEx<M, V>(
-                M Matrix, V AffineOffset, bool OnlyAffine)
+                M Matrix, V AffineOffset, bool OnlyAffine, double alpha)
                 where M : IMutableMatrix
                 where V : IList<double> //
             {
@@ -1510,7 +1515,7 @@ namespace BoSSS.Foundation {
                         && _Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
-
+                            mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule,
                                 CodomainMapping, Parameters, DomainMapping,
                                 OnlyAffine ? default(M) : Matrix, AffineOffset, time);
@@ -1528,8 +1533,8 @@ namespace BoSSS.Foundation {
                          && _Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeForm_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeForm_UxV), typeof(IEdgeSource_V))) {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
+                            mxtbuilder2.m_alpha = alpha;
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            mxtbuilder2 = null;
                         }
                     }
                 }
@@ -2230,12 +2235,15 @@ namespace BoSSS.Foundation {
             /// \f]
             /// </summary>
             /// <param name="Matrix">
-            /// Output, the approximate Jacobian matrix of the operator is accumulated here
+            /// Output, the approximate Jacobian matrix of the operator, scaled by <paramref name="alpha"/>, is accumulated here
             /// </param>
             /// <param name="AffineOffset">
-            /// Output, the operator value in the linearization point
+            /// Output, the operator value in the linearization point, scaled by <paramref name="alpha"/>.
             /// </param>
-            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
+            /// <param name="alpha">
+            /// scaling factor
+            /// </param>
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha = 1.0)
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
@@ -2291,7 +2299,7 @@ namespace BoSSS.Foundation {
                 }
 #endif
                 Eval.Evaluate(1.0, 0.0, F0);
-                AffineOffset.AccV(1.0, F0);
+                AffineOffset.AccV(alpha, F0);
                 NoOfEvals++;
 
                 // compute epsilon's
@@ -2501,7 +2509,7 @@ namespace BoSSS.Foundation {
                                 Matrix.AccBlock(i0Row + codMap.i0,
                                     //i0Col + domMap.i0, 
                                     domMap.GlobalUniqueCoordinateIndex(0, jCol, 0),
-                                    1.0, Block);
+                                    alpha, Block);
                             }
                         }
 
@@ -2633,6 +2641,127 @@ namespace BoSSS.Foundation {
             JacobianOp.ParameterUpdate = h;
             JacobianOp.Commit();
             return JacobianOp;
+        }
+
+        ITemporalOperator m_TemporalOperator;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public ITemporalOperator TemporalOperator {
+            get {
+                return m_TemporalOperator;
+            }
+            set {
+                if (IsCommited)
+                    throw new NotSupportedException("Not allowed to change after operator is committed.");
+                m_TemporalOperator = value;
+            }
+        }
+
+        MyDict m_FreeMeanValue;
+
+        /// <summary>
+        /// Notifies the solver that the mean value for a specific value is floating.
+        /// An example is e.g. the pressure in the incompressible Navier-Stokes equation with all-walls boundary condition.
+        /// - key: the name of some domain variable
+        /// - value: false, if the mean value of the solution  is defined, true if the mean value  of the solution is floating (i.e. for some solution u, u + constant is also a solution).
+        /// </summary>
+        public IDictionary<string, bool> FreeMeanValue {
+            get {
+                if(m_FreeMeanValue == null) {
+                    m_FreeMeanValue = new MyDict(this);
+                }
+                return m_FreeMeanValue;
+            }
+        }
+
+
+        /// <summary>
+        /// I hate shit like this class - so many dumb lines of code.
+        /// </summary>
+        class MyDict : IDictionary<string, bool> {
+
+            SpatialOperator owner;
+
+            public MyDict(SpatialOperator __owner) {
+                owner = __owner;
+                InternalRep = new Dictionary<string, bool>();
+                foreach(string domName in __owner.DomainVar) {
+                    InternalRep.Add(domName, false);
+                }
+            }
+
+            Dictionary<string, bool> InternalRep;
+
+
+            public bool this[string key] {
+                get {
+                    return InternalRep[key];
+                }
+                set {
+                    if (!InternalRep.ContainsKey(key))
+                        throw new ArgumentException("Must be a name of some domain variable.");
+                    if (owner.IsCommited)
+                        throw new NotSupportedException("Changing is not allowed after operator is committed.");
+                    InternalRep[key] = value;
+                }
+            }
+
+            public ICollection<string> Keys => InternalRep.Keys;
+
+            public ICollection<bool> Values => InternalRep.Values;
+
+            public int Count => InternalRep.Count;
+
+            public bool IsReadOnly => owner.IsCommited;
+            
+
+            public void Add(string key, bool value) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Add(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Clear() {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Contains(KeyValuePair<string, bool> item) {
+                return InternalRep.Contains(item);
+            }
+
+            public bool ContainsKey(string key) {
+                return InternalRep.ContainsKey(key);
+            }
+
+            
+            public void CopyTo(KeyValuePair<string, bool>[] array, int arrayIndex) {
+                (InternalRep as ICollection<KeyValuePair<string,bool>>).CopyTo(array, arrayIndex);
+            }
+            
+
+            public IEnumerator<KeyValuePair<string, bool>> GetEnumerator() {
+                throw new NotImplementedException();
+            }
+
+            public bool Remove(string key) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Remove(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool TryGetValue(string key, out bool value) {
+                return InternalRep.TryGetValue(key, out value);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() {
+                return InternalRep.GetEnumerator();
+            }
         }
     }
 }

@@ -81,7 +81,6 @@ namespace BoSSS.Application.IncompressibleNSE {
 
 #pragma warning restore 649
 
-
         /// <summary>
         /// Links edge tags (<see cref="BoSSS.Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>) and
         /// boundary conditions in the control object (<see cref="BoSSS.Solution.Control.AppControl.BoundaryValues"/>).
