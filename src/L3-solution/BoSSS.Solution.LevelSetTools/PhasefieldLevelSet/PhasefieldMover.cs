@@ -57,6 +57,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 this.m_Timestepper.m_ResLogger = new ResidualLogger(this.MPIRank, null, new Guid());
                 this.m_Timestepper.m_ResidualNames = new string[] { "Res_phi", "Res_mu" };
 
+                /* Not needed when using Newton Solver
                 phi0.Clear();
                 phi0.Acc(1.0, phi);
                 gradPhi0.Clear();
@@ -72,6 +73,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                                  this.Curvature.Basis.Degree * 2,
                                  phi0);
                 }
+                */
 
                 //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo , 0}), 2);
                 this.m_Timestepper.Solve(_phystime, _dt);

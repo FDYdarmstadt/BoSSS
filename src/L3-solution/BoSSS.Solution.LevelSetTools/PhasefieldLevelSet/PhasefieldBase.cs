@@ -163,7 +163,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Set the <see cref="ModelType"/>
         /// </summary>
-        public ModelType ModTyp = ModelType.modelB;
+        public ModelType ModTyp = ModelType.modelA;
 
         /// <summary>
         /// According to Biben (2003), Correction to account for arclength diffusion
@@ -174,6 +174,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// Cahn-Hilliard spatial Operator
         /// </summary>
         SpatialOperator CHOp;
+
+        /// <summary>
+        /// Operator for Jacobian
+        /// </summary>
+        SpatialOperator JacobiOp;
 
         /// <summary>
         /// Boundary Condition map for Cahn Hilliard
@@ -279,13 +284,6 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                     //BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
 
-                    CHOp = new SpatialOperator(
-                        new string[] { "phi", "mu" },
-                        VariableNames.VelocityVector(D).Cat("phi0").Cat(VariableNames.LevelSetGradient(D)),
-                        new string[] { "Res_phi", "Res_mu" },
-                        QuadOrderFunc.NonLinear(3)
-                        );
-
                     MultidimensionalArray LengthScales;
                     if (this.GridData is GridData)
                     {
@@ -358,7 +356,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                                 );
 
                             CHOp.EquationComponents["Res_mu"].Add(
-                                new mu_Source(true, Cahn)
+                                new mu_Source()
                                 );
 
                             if (this.CurvatureCorrection == true)
@@ -377,7 +375,10 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                             break;
                     }
 
+                    CHOp.ParameterUpdate = new PFParameterUpdate(this);
+
                     CHOp.Commit();
+                    JacobiOp = CHOp._GetJacobiOperator(D);
                 }
 
 
@@ -448,6 +449,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         private NonLinearSolverConfig GetNonLinearSolver()
         {
             NonLinearSolverConfig NonLinConfig = new NonLinearSolverConfig();
+            NonLinConfig.SolverCode = NonLinearSolverCode.Newton;
+            NonLinConfig.MaxSolverIterations = 50;
             return NonLinConfig;
         }
 
@@ -506,6 +509,75 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// </summary>
         void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time)
         {
+
+            //create mappings
+            var codMap = Mapping;
+            var domMap = Mapping;
+
+            DGField[] prms;
+            prms = ArrayTools.Cat(this.Velocity, phi0, gradPhi0, Curvature);
+
+            if (OpMtx != null)
+            {
+                // ++++++++++++++++++++++++++++++++
+                // create matrix and affine vector:
+                // ++++++++++++++++++++++++++++++++
+
+                IEvaluatorLinear mtxBuilder;
+
+                // for completeness, FDJacobian is slower, can be switched on if needed
+                bool UseFDJacobian = false;
+
+                if (UseFDJacobian)
+                {
+                    mtxBuilder = CHOp.GetFDJacobianBuilder(CurrentState, prms, codMap);
+                    mtxBuilder.time = time;
+                    mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                }
+                else
+                {
+                    var JacParams = JacobiOp.ParameterUpdate;
+                    var TmpParams = JacParams.AllocateParameters(CurrentState, prms);
+                    var map = Mapping;// new CoordinateMapping(CurrentState);
+
+                    var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
+                    JacobiOp.ParameterUpdate.PerformUpdate(CurrentState, TmpParams);
+                    JacParams.PerformUpdate(CurrentState, TmpParams);
+                    JacBuilder.ComputeMatrix(OpMtx, OpAffine);
+                }
+
+            }
+            else
+            {
+                // ++++++++++++++++++++++++++++++++
+                // evaluate the operator
+                // ++++++++++++++++++++++++++++++++
+                var eval = CHOp.GetEvaluatorEx(CurrentState, prms, codMap);
+                eval.time = time;
+                eval.Evaluate(1.0, 1.0, OpAffine);
+            }
+
+            try
+            {
+                if (OpMtx != null)
+                    OpMtx.CheckForNanOrInfM();
+                OpAffine.CheckForNanOrInfV();
+            }
+            catch (ArithmeticException ae)
+            {
+                Console.WriteLine("Found NAN");
+
+                foreach (DGField f in CurrentState)
+                {
+                    f.GetExtremalValues(out double min, out double max);
+                    Console.WriteLine($"  Field {f.Identification} extremal values: {min}  ---  {max}");
+                }
+
+                throw ae;
+            }
+
+            #region deprecated, only Picard-Support
+            /*
             SinglePhaseField Current_phi = (SinglePhaseField)(CurrentState[0]);
 
             phi0.Clear();
@@ -517,6 +589,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             OpAffine.ClearEntries();
             var mb = CHOp.GetMatrixBuilder(Mapping, this.Velocity.ToArray().Cat(phi0).Cat(gradPhi0.ToArray()).Cat(Curvature), Mapping);
             mb.ComputeMatrix(OpMtx, OpAffine);
+            */
+            #endregion
         }
 
 
@@ -562,6 +636,46 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "Phasefield-" + timestepNo + caseStr, phystime, superSampling);
         }
 
+        private class PFParameterUpdate : IParameterUpdate
+        {
+            private Phasefield phasefield;
+
+            public PFParameterUpdate(Phasefield _phasefield)
+            {
+                this.phasefield = _phasefield;
+            }
+
+            public DGField[] AllocateParameters(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void PerformUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar)
+            {
+                this.phasefield.UpdateParameter();
+            }
+        }
+
+        private void UpdateParameter()
+        {
+            int D = this.GridData.SpatialDimension;
+            this.phi0.Clear();
+            this.phi0.Acc(1.0, this.phi);
+
+            gradPhi0.Clear();
+            gradPhi0.Gradient(1.0, this.phi0);
+
+            if (this.CurvatureCorrection)
+            {
+                VectorField<SinglePhaseField> filtgrad;
+                CurvatureAlgorithmsForLevelSet.CurvatureDriver(
+                             CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                             CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
+                             this.Curvature, out filtgrad, LsTrk,
+                             this.Curvature.Basis.Degree * 2,
+                             phi0);
+            }
+        }
     }
 
     /// <summary>
@@ -716,7 +830,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Transport flux for Cahn-Hilliard
     /// </summary>
-    class phi_Flux : IVolumeForm, IEdgeForm
+    class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent
     {
         public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap)
         {
@@ -792,6 +906,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             }
 
             return -acc;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
+        {
+            return new[] { this };
         }
     }
 
@@ -927,17 +1046,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// nonlinear source term in the 'phi'-equation
     /// </summary>
-    class mu_Source : IVolumeForm
+    class mu_Source : IVolumeForm, ISupportsJacobianComponent
     {
 
-        public mu_Source(bool __inc, double _cahn = 0.0)
+        public mu_Source()
         {
-            m_inc = __inc;
-            m_offset = 0.0;//_cahn * 0.488;
-        }
 
-        bool m_inc;
-        double m_offset;
+        }
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
@@ -949,31 +1064,56 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         {
 
             double mu = U[0];
-            // values seem shifted without this offset hack
-            double phi = U[1] + m_offset;
-            double phi0 = cpv.Parameters[0];
+            double phi = U[1];
+            //double phi0 = cpv.Parameters[0];
 
             double Acc = 0;
-            if (m_inc == false)
-            {
-                Acc += -mu;
-            }
-            else
-            {
-                Acc += -mu;
 
-                Acc += (3 * phi0 * phi0 - 1.0) * phi - 2 * Math.Pow(phi0, 3.0); // linearized around phi0 (Taylor expansion)
-            }
+            Acc += -mu;
 
+            //Acc += (3 * phi0 * phi0 - 1.0) * phi - 2 * Math.Pow(phi0, 3.0); // linearized around phi0 (Taylor expansion)
+            Acc += phi.Pow(3.0) - phi; // when using Newton with Jacobian linearization is not needed
 
             return Acc * V;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
+        {
+            return new IEquationComponent[] { new jacobi_mu_Source() };
+        }
+
+        private class jacobi_mu_Source : IVolumeForm
+        {
+
+            public jacobi_mu_Source()
+            {
+            }
+            public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
+
+            public IList<string> ArgumentOrdering => new[] { "mu", "phi" };
+
+            public IList<string> ParameterOrdering => new[] { "phi0" };
+
+            public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+            {
+                double mu = U[0];
+                double phi = U[1];
+                double phi0 = cpv.Parameters[0];
+
+                double Acc = 0;
+
+                Acc -= mu;
+                Acc += 3 * phi0.Pow2() * phi - phi; // linearized around c0 (Taylor expansion)
+
+                return Acc * V;
+            }
         }
     }
 
     /// <summary>
     /// source term of phi in Model A
     /// </summary>
-    class phi_Source : IVolumeForm
+    class phi_Source : IVolumeForm, ISupportsJacobianComponent
     {
         //public phi_Source(double __lambda, double __epsilon) {
         //    m_lambda = __lambda;
@@ -999,22 +1139,56 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
         {
 
-            double c = U[0];
-            double c0 = cpv.Parameters[0];
+            double phi = U[0];
+            double phi0 = cpv.Parameters[0];
             // values seem shifted without this offset hack
 
             double Acc = 0;
 
-            Acc += (3.0 * c0 * c0 - 1.0) * c - 2 * Math.Pow(c0, 3.0); // linearized around (Taylor expansion)
+            //Acc += (3.0 * phi0 * phi0 - 1.0) * phi - 2 * Math.Pow(phi0, 3.0); // linearized around (Taylor expansion)
+            Acc += phi.Pow(3.0) - phi; // when using Newton with Jacobian linearization is not needed
 
             return m_diff * Acc * V;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
+        {
+            return new IEquationComponent[] { new jacobi_phi_Source(m_diff) };
+        }
+
+        private class jacobi_phi_Source : IVolumeForm
+        {
+            private double m_diff;
+
+            public jacobi_phi_Source(double m_diff)
+            {
+                this.m_diff = m_diff;
+            }
+
+            public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
+
+            public IList<string> ArgumentOrdering => new[] { "phi" };
+
+            public IList<string> ParameterOrdering => new[] { "phi0" };
+
+            public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+            {
+                double phi = U[0];
+                double phi0 = cpv.Parameters[0];
+
+                double Acc = 0;
+
+                Acc += 3 * phi0.Pow2() * phi - phi; // linearized around c0 (Taylor expansion)
+
+                return Acc * V;
+            }
         }
     }
 
     /// <summary>
     /// Correction term to counter along the interface diffusion
     /// </summary>
-    class phi_CurvatureCorrection : IVolumeForm
+    class phi_CurvatureCorrection : IVolumeForm, ISupportsJacobianComponent
     {
         //public phi_Source(double __lambda, double __epsilon) {
         //    m_lambda = __lambda;
@@ -1042,16 +1216,24 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
         {
             double Acc = 0.0;
+            double[] grad = new double[m_D];
             for (int d = 0; d < m_D; d++)
             {
-                Acc += cpv.Parameters[1 + d].Pow2();
+                grad[d] = GradU[0, d];
+                //Acc += cpv.Parameters[1 + d].Pow2();
             }
-            Acc = Acc.Sqrt();
-
+            //Acc = Acc.Sqrt();
+            Acc += grad.L2Norm();
             Acc *= m_cahn * cpv.Parameters[0];
 
             // sign minus should be correct, plus produces more sensual results
             return Acc * V;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
+        {
+            var VolDiff = new VolumeFormDifferentiator(this, m_D);            
+            return new IEquationComponent[] { VolDiff };
         }
     }
 
