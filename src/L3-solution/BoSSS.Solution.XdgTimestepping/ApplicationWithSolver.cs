@@ -53,6 +53,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             private set;
         }
 
+        /*
         /// <summary>
         /// Mapping for fields defined by <see cref="InstantiateParameterFields"/>
         /// </summary>
@@ -60,7 +61,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             private set;
         }
-
+        */
 
       
 
@@ -92,6 +93,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             // parameters:
+            /*
             var paramFields = InstantiateParameterFields();
             if(paramFields == null || paramFields.Count() <= 0) {
                 CurrentParameters = new CoordinateMapping(this.GridData);
@@ -101,6 +103,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.RegisterField(f);
                 }
             }
+            */
             CreateAdditionalFields();
         }
 
@@ -119,13 +122,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected abstract IEnumerable<DGField> InstantiateSolutionFields();
 
+        /*
         /// <summary>
         /// (Optional) Override to instantiate parameters required by the operator
         /// </summary>
         protected virtual IEnumerable<DGField> InstantiateParameterFields() {
             return new DGField[0];
         }
-
+        */
 
         /// <summary>
         /// Override to instantiate fields to store the solver residuals
@@ -214,7 +218,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, this.CurrentParameters.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
             }
         }
 
@@ -226,7 +230,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;
             CurrentResidualVector = null;
-            CurrentParameters = null;
             ClearOperator();
         }
 
@@ -391,7 +394,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             XdgTimestepping solver = new XdgTimestepping(
                 XOperator,
                 CurrentState.Fields,
-                CurrentParameters.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
                 UpdateLevelset,
@@ -481,7 +483,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             XdgTimestepping solver = new XdgTimestepping(
                 SOperator,
                 CurrentState.Fields,
-                CurrentParameters.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
