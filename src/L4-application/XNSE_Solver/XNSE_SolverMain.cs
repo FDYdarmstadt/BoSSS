@@ -216,59 +216,59 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         MassMatrixFactory MassFact;
         
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                double rho_A = this.Control.PhysicalParameters.rho_A,
-                    rho_B = this.Control.PhysicalParameters.rho_B;
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        ///// </summary>
+        //IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get {
+        //        double rho_A = this.Control.PhysicalParameters.rho_A,
+        //            rho_B = this.Control.PhysicalParameters.rho_B;
 
-                double c_A = this.Control.ThermalParameters.c_A,
-                    c_B = this.Control.ThermalParameters.c_B;
+        //        double c_A = this.Control.ThermalParameters.c_A,
+        //            c_B = this.Control.ThermalParameters.c_B;
 
-                int D = this.GridData.SpatialDimension;
-
-
-                double[] scale_A = new double[D + 1];
-                double[] scale_B = new double[D + 1];
-                int mD = D + 1;
-                if (this.Control.solveKineticEnergyEquation) {
-                    scale_A = new double[D + 2];
-                    scale_B = new double[D + 2];
-                    mD = D + 2;
-                }
-                if (this.Control.solveCoupledHeatEquation) {
-                    scale_A = new double[mD + 1];
-                    scale_B = new double[mD + 1];
-                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                        scale_A = new double[mD + 1 + D];
-                        scale_B = new double[mD + 1 + D];
-                    }
-                }
-
-                scale_A.SetAll(rho_A); // mass matrix in momentum equation (kinetic energy equation)
-                scale_A[D] = 0; // no  mass matrix for continuity equation
-                scale_B.SetAll(rho_B); // mass matrix in momentum equation (kinetic energy equation)
-                scale_B[D] = 0; // no  mass matrix for continuity equation
-
-                if (this.Control.solveCoupledHeatEquation) {
-                    scale_A[mD + 1] = rho_A * c_A;
-                    scale_B[mD + 1] = rho_B * c_B;
-                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                        scale_A.GetSubVector(mD + 1, D).SetAll(0.0);
-                        scale_B.GetSubVector(mD + 1, D).SetAll(0.0);
-                    }
-                }
-
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), scale_A);
-                R.Add(this.LsTrk.GetSpeciesId("B"), scale_B);
+        //        int D = this.GridData.SpatialDimension;
 
 
-                return R;
-            }
-        }
+        //        double[] scale_A = new double[D + 1];
+        //        double[] scale_B = new double[D + 1];
+        //        int mD = D + 1;
+        //        if (this.Control.solveKineticEnergyEquation) {
+        //            scale_A = new double[D + 2];
+        //            scale_B = new double[D + 2];
+        //            mD = D + 2;
+        //        }
+        //        if (this.Control.solveCoupledHeatEquation) {
+        //            scale_A = new double[mD + 1];
+        //            scale_B = new double[mD + 1];
+        //            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+        //                scale_A = new double[mD + 1 + D];
+        //                scale_B = new double[mD + 1 + D];
+        //            }
+        //        }
+
+        //        scale_A.SetAll(rho_A); // mass matrix in momentum equation (kinetic energy equation)
+        //        scale_A[D] = 0; // no  mass matrix for continuity equation
+        //        scale_B.SetAll(rho_B); // mass matrix in momentum equation (kinetic energy equation)
+        //        scale_B[D] = 0; // no  mass matrix for continuity equation
+
+        //        if (this.Control.solveCoupledHeatEquation) {
+        //            scale_A[mD + 1] = rho_A * c_A;
+        //            scale_B[mD + 1] = rho_B * c_B;
+        //            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+        //                scale_A.GetSubVector(mD + 1, D).SetAll(0.0);
+        //                scale_B.GetSubVector(mD + 1, D).SetAll(0.0);
+        //            }
+        //        }
+
+        //        Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
+        //        R.Add(this.LsTrk.GetSpeciesId("A"), scale_A);
+        //        R.Add(this.LsTrk.GetSpeciesId("B"), scale_B);
+
+
+        //        return R;
+        //    }
+        //}
 
 
 
@@ -886,6 +886,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (rksch == null) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(
                     this.CurrentSolution.Mapping.Fields,
+                    
                     this.CurrentResidual.Mapping.Fields,
                     LsTrk,
                     true,

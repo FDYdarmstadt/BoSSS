@@ -299,46 +299,46 @@ namespace BoSSS.Application.XRheology_Solver {
         #endregion
 
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                double reynolds_A = this.Control.PhysicalParameters.reynolds_A,
-                    reynolds_B = this.Control.PhysicalParameters.reynolds_B;
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        ///// </summary>
+        //IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get {
+        //        double reynolds_A = this.Control.PhysicalParameters.reynolds_A,
+        //            reynolds_B = this.Control.PhysicalParameters.reynolds_B;
 
-                int D = this.GridData.SpatialDimension;
+        //        int D = this.GridData.SpatialDimension;
 
-                double[] _reynolds_A = new double[D + 4];
-                _reynolds_A.SetAll(reynolds_A); // mass matrix in momentum equation
-                _reynolds_A[D] = 0; // no  mass matrix for continuity equation
-                _reynolds_A[D + 1] = 0; // no  mass matrix for constitutive equation
-                _reynolds_A[D + 2] = 0; // no  mass matrix for constitutive equation
-                _reynolds_A[D + 3] = 0; // no  mass matrix for constitutive equation
-                double[] _reynolds_B = new double[D + 4];
-                _reynolds_B.SetAll(reynolds_B); // mass matrix in momentum equation
-                _reynolds_B[D] = 0; // no  mass matrix for continuity equation
-                _reynolds_B[D + 1] = 0; // no  mass matrix for constitutive equation
-                _reynolds_B[D + 2] = 0; // no  mass matrix for constitutive equation
-                _reynolds_B[D + 3] = 0; // no  mass matrix for constitutive equation
+        //        double[] _reynolds_A = new double[D + 4];
+        //        _reynolds_A.SetAll(reynolds_A); // mass matrix in momentum equation
+        //        _reynolds_A[D] = 0; // no  mass matrix for continuity equation
+        //        _reynolds_A[D + 1] = 0; // no  mass matrix for constitutive equation
+        //        _reynolds_A[D + 2] = 0; // no  mass matrix for constitutive equation
+        //        _reynolds_A[D + 3] = 0; // no  mass matrix for constitutive equation
+        //        double[] _reynolds_B = new double[D + 4];
+        //        _reynolds_B.SetAll(reynolds_B); // mass matrix in momentum equation
+        //        _reynolds_B[D] = 0; // no  mass matrix for continuity equation
+        //        _reynolds_B[D + 1] = 0; // no  mass matrix for constitutive equation
+        //        _reynolds_B[D + 2] = 0; // no  mass matrix for constitutive equation
+        //        _reynolds_B[D + 3] = 0; // no  mass matrix for constitutive equation
 
 
-                //double[] _rho = new double[D + 4];
-                //_rho.SetAll(rho);
-                ////No MassMatrix for the pressure
-                //_rho[D] = 0;
+        //        //double[] _rho = new double[D + 4];
+        //        //_rho.SetAll(rho);
+        //        ////No MassMatrix for the pressure
+        //        //_rho[D] = 0;
 
-                //_rho[D + 1] = 1;
-                //_rho[D + 2] = 1;
-                //_rho[D + 3] = 1;
+        //        //_rho[D + 1] = 1;
+        //        //_rho[D + 2] = 1;
+        //        //_rho[D + 3] = 1;
 
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _reynolds_A);
-                R.Add(this.LsTrk.GetSpeciesId("B"), _reynolds_B);
+        //        Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
+        //        R.Add(this.LsTrk.GetSpeciesId("A"), _reynolds_A);
+        //        R.Add(this.LsTrk.GetSpeciesId("B"), _reynolds_B);
 
-                return R;
-            }
-        }
+        //        return R;
+        //    }
+        //}
 
         //IncompressibleMultiphaseBoundaryCondMap m_BcMap;
 

@@ -107,9 +107,23 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// If set, used to update parameters before evaluation.
+        /// Keep in mind: Here, multiple handlers can be added so it is not necessary to 
+        /// put the update of all parameter fields for the operator into one big piece of spaghetti code.
+        /// Hence, it can be split among different handlers.
         /// </summary>
-        IParameterUpdate ParameterUpdate { get; set; }
-                
+        /// <remarks>
+        /// Alternatively, equation components which implement <see cref="IParameterHandling"/> can be used (<see cref="IParameterHandling.MyParameterUpdate"/>).
+        /// </remarks>
+        ICollection<DelPartialParameterUpdate> ParameterUpdates { get; }
+
+        /// <summary>
+        /// Can be used to implement the allocation of DG fields to store parameter values.
+        /// </summary>
+        /// <remarks>
+        /// Alternatively, equation components which implement <see cref="IParameterHandling"/> can be used (<see cref="IParameterHandling.MyParameterAlloc"/>).
+        /// </remarks>
+        ICollection<DelParameterFactory> ParameterFactories { get; }
+
         /// <summary>
         /// names of (DG-) variables which act as parameters; 
         /// Their role is pretty similar to those of the domain variables, and for nonlinear

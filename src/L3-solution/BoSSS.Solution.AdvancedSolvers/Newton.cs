@@ -583,13 +583,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double last_ared = ared();
             double last_pred = pred();
             while(last_ared < t * last_pred) {
-                double newTrustRegionDelta = TrustRegionDelta * 0.5;
-                if(newTrustRegionDelta < TrustRegionDelta)
+                double newTrustRegionDelta = TrustRegionDelta * 0.25;
+                if(newTrustRegionDelta < delta_min)
                     break;
 
                 PointOnDogleg(TrustRegionDelta);
 
-                TrustRegionDelta = Math.Min(delta_min, newTrustRegionDelta);
+                TrustRegionDelta = Math.Max(delta_min, newTrustRegionDelta);
 
 
                 last_ared = ared();

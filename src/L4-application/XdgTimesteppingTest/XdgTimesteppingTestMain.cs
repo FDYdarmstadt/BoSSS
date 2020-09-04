@@ -45,7 +45,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
-    public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSollver<XdgTimesteppingTestControl> {
+    public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSolver<XdgTimesteppingTestControl> {
 
         /// <summary>
         /// Les main routine.
@@ -347,14 +347,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return 0.0;
         }
         
-        protected override IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                var Ret = new Dictionary<SpeciesId, IEnumerable<double>>();
-                foreach (var s in this.LsTrk.SpeciesIdS)
-                    Ret.Add(s, new double[] { 1.0 });
-                return Ret;
-            }
-        }
+        //protected override IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get {
+        //        var Ret = new Dictionary<SpeciesId, IEnumerable<double>>();
+        //        foreach (var s in this.LsTrk.SpeciesIdS)
+        //            Ret.Add(s, new double[] { 1.0 });
+        //        return Ret;
+        //    }
+        //}
 
         
 

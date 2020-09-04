@@ -53,10 +53,36 @@ namespace BoSSS.Foundation {
         double[] m_diagonal;
 
         /// <summary>
+        /// Modifies the diagonal entries.
+        /// </summary>
+        /// <param name="val">value to set for the diagonal entry</param>
+        /// <param name="eqnName">some codomain name in <see cref="ISpatialOperator.CodomainVar"/></param>
+        public void SetDiagonal(string eqnName, double val) {
+            int idx = owner.CodomainVar.IndexOf(eqnName);
+            SetDiagonal(idx, val);
+        }
+
+        /// <summary>
+        /// Modifies the diagonal entries.
+        /// </summary>
+        /// <param name="eqIdx">equation index</param>
+        /// <param name="val">value to set for the diagonal entry</param>
+        public void SetDiagonal(int eqIdx, double val) {
+            if (m_IsCommited)
+                throw new NotSupportedException("No change to temporal operator is allowed after commit.");
+            m_diagonal[eqIdx] = val;
+        }
+
+        bool m_IsCommited;
+
+        /// <summary>
         /// locks the configuration of the operator
         /// </summary>
         public void Commit() {
-            throw new NotImplementedException();
+            m_IsCommited = true;
+            if (m_IsCommited)
+                throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
+
         }
 
         /// <summary>
@@ -238,7 +264,12 @@ namespace BoSSS.Foundation {
         public void Commit() {
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
             InternalRepresentation.LinearizationHint = LinearizationHint.AdHoc;
-            InternalRepresentation.ParameterUpdate = owner.ParameterUpdate;
+
+            InternalRepresentation.ParameterFactories.Clear();
+            InternalRepresentation.ParameterFactories.AddRange(owner.ParameterFactories);
+            InternalRepresentation.ParameterUpdates.Clear();
+            InternalRepresentation.ParameterUpdates.AddRange(owner.ParameterUpdates);
+
             InternalRepresentation.EdgeQuadraturSchemeProvider = owner.EdgeQuadraturSchemeProvider;
             InternalRepresentation.VolumeQuadraturSchemeProvider = owner.VolumeQuadraturSchemeProvider;
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;

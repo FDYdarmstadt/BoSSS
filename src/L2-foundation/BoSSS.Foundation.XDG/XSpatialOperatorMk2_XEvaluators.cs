@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// <see cref="IEvaluatorLinear.ComputeMatrix{M,V}"/>
             /// </summary>
-            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha)
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha = 1.0)
                 where M : IMutableMatrixEx
                 where V : IList<double> {
                 ComputeMatrix_Internal(Matrix, AffineOffset, false, alpha);

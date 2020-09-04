@@ -258,23 +258,35 @@ namespace BoSSS.Foundation {
             return r;
         }
 
-
-        IParameterUpdate m_ParameterUpdate;
+        List<DelPartialParameterUpdate> m_ParameterUpdates = new List<DelPartialParameterUpdate>();
 
         /// <summary>
-        /// If set, used to update parameters before evaluation.
+        /// <see cref="ISpatialOperator.ParameterUpdates"/>
         /// </summary>
-        public IParameterUpdate ParameterUpdate {
+        public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                return m_ParameterUpdate;
-            }
-            set {
-                if(IsCommited)
-                    throw new NotSupportedException("unable to change after 'Commit()'");
-                m_ParameterUpdate = value;
+                if(m_IsCommited) {
+                    return m_ParameterUpdates.AsReadOnly();
+                } else {
+                    return m_ParameterUpdates;
+                }
             }
         }
 
+        List<DelParameterFactory> m_ParameterFactories = new List<DelParameterFactory>();
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.ParameterFactories"/>
+        /// </summary>
+        public ICollection<DelParameterFactory> ParameterFactories {
+            get {
+                if(IsCommited) {
+                    return m_ParameterFactories.AsReadOnly();
+                } else {
+                    return m_ParameterFactories;
+                }
+            }
+        }
 
 
         /// <summary>
@@ -599,7 +611,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public IList<string> DomainVar {
             get {
-                return (string[])m_DomainVar.Clone();
+                return m_DomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -612,7 +624,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public IList<string> CodomainVar {
             get {
-                return (string[])m_CodomainVar.Clone();
+                return m_CodomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -628,7 +640,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public IList<string> ParameterVar {
             get {
-                return (string[])m_ParameterVar.Clone();
+                return m_ParameterVar.ToList().AsReadOnly();
             }
         }
 
@@ -1548,12 +1560,13 @@ namespace BoSSS.Foundation {
         public virtual IEvaluatorLinear GetFDJacobianBuilder(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
-            DelParameterUpdate __delParameterUpdate = null;
-            if(this.ParameterUpdate != null) {
-                __delParameterUpdate = this.ParameterUpdate.PerformUpdate;
-            }
-            
-            return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, __delParameterUpdate);
+
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+                };
+
+            return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, ParamUpdate);
         }
 
         static Basis[] GetBasisS(IList<DGField> ParameterMap) {
@@ -1564,22 +1577,26 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// Internal implementation and legacy API;
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
+        /// <param name="CodomainVarMap"></param>
+        /// <param name="DomainFields"></param>
+        /// <param name="ParameterMap"></param>
+        /// <param name="legayc_delParameterUpdate">
+        /// legacy: external delegate to update all parameters at once;
+        /// specifying this replaces all <see cref="IParameterHandling"/> components and all <see cref="ParameterUpdates"/> set for this operator
+        /// with the external update.
+        /// </param>
         public virtual FDJacobianBuilder GetFDJacobianBuilder_(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate) //
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
         {
             using(new FuncTrace()) {
                 if(!IsCommited)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-                if(__delParameterUpdate == null) {
-                    if(this.ParameterVar.Count > 0) {
-                        throw new ArgumentException("Provided parameter update delegate '__delParameterUpdate' is null, but this operator contains " + this.ParameterVar.Count + " parameters.", "__delParameterUpdate");
-                    }
-                }
-
+                
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
                     GetBasisS(ParameterMap),
                     CodomainVarMap.BasisS);
@@ -1589,7 +1606,7 @@ namespace BoSSS.Foundation {
                     this,
                     new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
                     rulz.edgeRule, rulz.volRule),
-                    __delParameterUpdate);
+                    legayc_delParameterUpdate);
                 //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
@@ -1605,7 +1622,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            public FDJacobianBuilder(IEvaluatorNonLin __Eval, DelParameterUpdate __delParameterUpdate) {
+            public FDJacobianBuilder(IEvaluatorNonLin __Eval, Action<IEnumerable<DGField>, IEnumerable<DGField>> __delParameterUpdate) {
 
                 eps = 1.0;
                 while(1.0 + eps > 1.0) {
@@ -1721,7 +1738,7 @@ namespace BoSSS.Foundation {
 
             IEvaluatorNonLin Eval;
 
-            DelParameterUpdate DelParamUpdate;
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
 
             /// <summary>
             /// - 1st index: enumeration of color lists
@@ -2607,8 +2624,7 @@ namespace BoSSS.Foundation {
                 return ret;
             }
 
-            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension, 
-                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
 
             // create derivative operator
             // ==========================
@@ -2619,7 +2635,9 @@ namespace BoSSS.Foundation {
                    this.CodomainVar,
                    this.QuadOrderFunction);
 
-            foreach(string CodNmn in this.CodomainVar) {
+            JacobianOp.TemporalOperator = this.TemporalOperator;
+
+            foreach (string CodNmn in this.CodomainVar) {
                 foreach(var eq in this.EquationComponents[CodNmn]) {
 
                     if(!(eq is ISupportsJacobianComponent _eq))
@@ -2638,7 +2656,13 @@ namespace BoSSS.Foundation {
 
             // return
             // =====
-            JacobianOp.ParameterUpdate = h;
+            foreach(DelParameterFactory f in this.ParameterFactories) 
+                JacobianOp.ParameterFactories.Add(f);
+            foreach (DelPartialParameterUpdate f in this.ParameterUpdates) {
+                JacobianOp.ParameterUpdates.Add(f);
+            }
+            JacobianOp.ParameterFactories.Add(h.AllocateParameters);
+            JacobianOp.ParameterUpdates.Add(h.PerformUpdate);
             JacobianOp.Commit();
             return JacobianOp;
         }

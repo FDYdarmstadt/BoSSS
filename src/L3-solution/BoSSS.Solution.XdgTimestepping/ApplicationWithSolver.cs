@@ -287,12 +287,12 @@ namespace BoSSS.Solution.XdgTimestepping {
          where T : AppControlSolver, new() //
     {
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get;
-        }
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        ///// </summary>
+        //abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get;
+        //}
 
         /// <summary>
         /// Callback-template for level-set updates.
@@ -396,11 +396,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.TimeSteppingScheme,
                 UpdateLevelset,
                 LevelSetHandling,
-                MassScale,
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.AgglomerationThreshold,
-                Control);
+                Control.LinearSolver, Control.NonLinearSolver);
 
             base.Timestepping = solver;
         }
@@ -417,15 +416,15 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <summary>
     /// Base-class for XDG applications with a monolithic operator and a time-integrator.
     /// </summary>
-    abstract public class DgApplicationWithSollver<T> : ApplicationWithSolver<T>
+    abstract public class DgApplicationWithSolver<T> : ApplicationWithSolver<T>
          where T : AppControlSolver, new() {
 
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each codomain variable (row) in the spatial operator, 
-        /// a single number..
-        /// </summary>
-        abstract protected IEnumerable<double> GetMassScale(int D);
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each codomain variable (row) in the spatial operator, 
+        ///// a single number..
+        ///// </summary>
+        //abstract protected IEnumerable<double> GetMassScale(int D);
 
         /// <summary>
         /// initialization of the main spatial operator
@@ -485,10 +484,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 CurrentParameters.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
-                GetMassScale(this.Grid.SpatialDimension),
                 MultigridOperatorConfig,
                 MultigridSequence,
-                Control);
+                Control.LinearSolver, Control.NonLinearSolver);
 
             base.Timestepping = solver;
         }

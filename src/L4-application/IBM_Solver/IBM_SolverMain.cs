@@ -122,28 +122,28 @@ namespace BoSSS.Application.IBM_Solver {
         #endregion
 
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        virtual protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                double rho = this.Control.PhysicalParameters.rho_A;
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        ///// </summary>
+        //virtual protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get {
+        //        double rho = this.Control.PhysicalParameters.rho_A;
 
-                int D = this.GridData.SpatialDimension;
+        //        int D = this.GridData.SpatialDimension;
 
-                double[] _rho = new double[D + 1];
-                if(!this.Control.IsStationary)
-                    _rho.SetAll(rho);
-                //No MassMatrix for the pressure
-                _rho[D] = 0;
+        //        double[] _rho = new double[D + 1];
+        //        if(!this.Control.IsStationary)
+        //            _rho.SetAll(rho);
+        //        //No MassMatrix for the pressure
+        //        _rho[D] = 0;
 
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>> {
-                    { this.LsTrk.GetSpeciesId("A"), _rho }
-                };
+        //        Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>> {
+        //            { this.LsTrk.GetSpeciesId("A"), _rho }
+        //        };
 
-                return R;
-            }
-        }
+        //        return R;
+        //    }
+        //}
 
         ///// <summary>
         ///// Continuous high-order finite element representation of the level-set field.
@@ -347,6 +347,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             XdgBDFTimestepping m_BDF_Timestepper = new XdgBDFTimestepping(
                 Unknowns,
+
                 Residual,
                 LsTrk,
                 true,
@@ -357,7 +358,6 @@ namespace BoSSS.Application.IBM_Solver {
                 lsh,
                 MassMatrixShapeandDependence.IsTimeDependent,
                 SpatialOp,
-                MassScale,
                 this.MultigridOperatorConfig,
                 base.MultigridSequence,
                 this.FluidSpecies,

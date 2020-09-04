@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,14 +17,21 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class ConstantXTemporalOperator : ITemporalOperator {
 
+        static ValueTuple<string, double[]>[] Diag(XSpatialOperatorMk2 __owner, double diagonalValue) {
+            double[] diag = new double[__owner.DomainVar.Count];
+            diag.SetAll(diagonalValue);
+            return __owner.Species.Select(spcName => (spcName, diag.CloneAs())).ToArray();
+        }
+
+
         /// <summary>
         /// Ctor, the same factor in the temporal derivative for all 
         /// </summary>
         /// <param name="__owner"></param>
         /// <param name="diagonalValue"></param>
-        public ConstantXTemporalOperator(XSpatialOperatorMk2 __owner, double diagonalValue = 1.0) 
-            : this(__owner, __owner.DomainVar.Select(dv => diagonalValue).ToArray()) { 
-            
+        public ConstantXTemporalOperator(XSpatialOperatorMk2 __owner, double diagonalValue = 1.0)
+            : this(__owner, Diag(__owner, diagonalValue)) {
+
             owner = __owner;
             if (owner.DomainVar.Count != owner.CodomainVar.Count) {
                 throw new NotSupportedException("Expecting a square operator.");
@@ -36,27 +44,60 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="__owner"></param>
         /// <param name="diagonal">
-        /// Matrix diagonal per variable, i.e. if <paramref name="__owner"/> has 4 domain and 4 codomain variables,
-        /// this must have 4 entries too, providing a single factor for the temporal derivative of each equation.
+        /// For each species, the temporal operator/mass matrix diagonal (per variable), 
+        /// i.e. if <paramref name="__owner"/> has 4 domain and 4 codomain variables,
+        /// this must have 4 entries per species too, providing a single factor for the temporal derivative of each equation.
         /// </param>
-        public ConstantXTemporalOperator(XSpatialOperatorMk2 __owner, double[] diagonal) {
+        public ConstantXTemporalOperator(XSpatialOperatorMk2 __owner, params ValueTuple<string, double[]>[] diagonal) {
             owner = __owner;
-            if(owner.DomainVar.Count != owner.CodomainVar.Count) {
+            if (owner.DomainVar.Count != owner.CodomainVar.Count) {
                 throw new NotSupportedException("Expecting a square operator.");
             }
 
-            m_diagonal = diagonal.CloneAs();
+            int NoOfVar = owner.DomainVar.Count;
+
+            m_DiagonalScale = new Dictionary<string, double[]>();
+            foreach(string spc in __owner.Species) {
+                m_DiagonalScale.Add(spc, new double[NoOfVar]);
+            }
+
+            foreach(var tt in diagonal) {
+                string spc = tt.Item1;
+                if (!m_DiagonalScale.ContainsKey(spc))
+                    throw new ArgumentException($"Got species {spc} which is not contained in the spatial operator.");
+
+                double[] vals = tt.Item2.CloneAs();
+                if (vals.Length != NoOfVar)
+                    throw new ArgumentException($"wrong number of entries for species {spc}");
+            }
         }
 
         XSpatialOperatorMk2 owner;
 
-        double[] m_diagonal;
+        Dictionary<string, double[]> m_DiagonalScale;
+
+        /// <summary>
+        /// For each species, the temporal operator/mass matrix diagonal (per variable), 
+        /// i.e. if the spatial operator has 4 domain and 4 codomain variables,
+        /// this must have 4 entries per species too, providing a single factor for the temporal derivative of each equation.
+        /// </summary>
+        public IReadOnlyDictionary<string, double[]> DiagonalScale {
+            get {
+                return m_DiagonalScale;
+            }
+
+        }
+
+        bool m_IsCommited;
 
         /// <summary>
         /// locks the configuration of the operator
         /// </summary>
         public void Commit() {
-            throw new NotImplementedException();
+            m_IsCommited = true;
+            if (m_IsCommited)
+                throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
+
         }
 
         /// <summary>
@@ -147,54 +188,35 @@ namespace BoSSS.Foundation.XDG {
 
             CellMask subMask;
 
-            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double oodt = 1.0)
+            /// <summary>
+            /// Computation of mass matrix, makes use of <see cref="MassMatrixFactory"/>
+            /// </summary>
+            public void ComputeMatrix<M, V>(M MassMatrix, V AffineOffset, double oodt = 1.0)
                 where M : IMutableMatrixEx
                 where V : IList<double> {
 
-                if (!Matrix.RowPartitioning.EqualsPartition(this.CodomainMapping))
+                if (!MassMatrix.RowPartitioning.EqualsPartition(this.CodomainMapping))
                     throw new ArgumentException("Mismatch between matrix columns and domain variable mapping.");
-                if (!Matrix.ColPartition.EqualsPartition(this.DomainMapping))
+                if (!MassMatrix.ColPartition.EqualsPartition(this.DomainMapping))
                     throw new ArgumentException("Mismatch between matrix columns and domain variable mapping.");
                 if (DomainMapping.NoOfVariables != CodomainMapping.NoOfVariables)
                     throw new NotSupportedException($"Mismatch between number of variables in domain ({DomainMapping.NoOfVariables}) and codomain ({CodomainMapping.NoOfVariables}).");
-                
 
-                double[] VarDiag = m_Owner.m_diagonal;
-                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int NoOfVar = DomainMapping.NoOfVariables;
-                if (NoOfVar != VarDiag.Length)
-                    throw new NotSupportedException();
+                int QuadratureOrder = m_Owner.owner.GetOrderFromQuadOrderFunction(DomainMapping.BasisS, XSpatialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
+                var _LsTrk = XSpatialOperatorMk2.GetTracker(DomainMapping.BasisS, XSpatialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
+                SpeciesId[] _SpeciesToCompute = m_Owner.owner.Species.Select(spcName => _LsTrk.GetSpeciesId(spcName)).ToArray();
 
-                Basis[] domBs = DomainMapping.BasisS.ToArray();
-                Basis[] codBs = CodomainMapping.BasisS.ToArray();
 
-               
-                void SetCellDiag(int j) {
-                    for(int iVar = 0; iVar < NoOfVar; iVar++) {
-                        int Ncol = domBs[iVar].GetLength(j);
-                        int Nrow = codBs[iVar].GetLength(j);
-                        if(Nrow != Ncol) {
-                            throw new NotSupportedException($"Diagonal block of {iVar}-th variable is not square: domain basis dimension is {Ncol}, codomain basis dimension is {Nrow}.");
-                        }
-
-                        for(int n = 0; n < Nrow; n++) {
-                            int idx = DomainMapping.GlobalUniqueCoordinateIndex(iVar, j, n);
-                            Matrix[idx, idx] += oodt * VarDiag[iVar];
-                        }
-                    }
+                Dictionary<SpeciesId, IEnumerable<double>> MassScale = new Dictionary<SpeciesId, IEnumerable<double>>();
+                foreach(var spc in _SpeciesToCompute) {
+                    double[] diag = m_Owner.m_DiagonalScale[_LsTrk.GetSpeciesName(spc)].CloneAs();
+                    diag.ScaleV(oodt);
+                    MassScale.Add(spc, diag);
                 }
 
+                MassMatrixFactory MassFact = _LsTrk.GetXDGSpaceMetrics(_SpeciesToCompute, QuadratureOrder, HistoryIndex:1).MassMatrixFactory;
+                MassFact.AccMassMatrix(MassMatrix, DomainMapping, MassScale);
 
-                if (subMask == null) {
-                    foreach(int j in subMask.ItemEnum) {
-                        SetCellDiag(j);
-                    }
-                } else {
-                    for(int j = 0; j < J; j++) {
-                        SetCellDiag(j);
-                    }
-                }
-                
             }
         }
 
@@ -238,8 +260,10 @@ namespace BoSSS.Foundation.XDG {
         public void Commit() {
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
             InternalRepresentation.LinearizationHint = LinearizationHint.AdHoc;
-            InternalRepresentation.ParameterUpdate = owner.ParameterUpdate;
-            
+
+            InternalRepresentation.ParameterFactories += owner.ParameterFactories;
+            InternalRepresentation.ParameterUpdates += owner.ParameterUpdates;
+
             InternalRepresentation.EdgeQuadraturSchemeProvider = owner.EdgeQuadraturSchemeProvider;
             InternalRepresentation.VolumeQuadraturSchemeProvider = owner.VolumeQuadraturSchemeProvider;
             InternalRepresentation.SurfaceElement_EdgeQuadraturSchemeProvider = owner.SurfaceElement_EdgeQuadraturSchemeProvider;

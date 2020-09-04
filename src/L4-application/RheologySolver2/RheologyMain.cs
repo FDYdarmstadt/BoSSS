@@ -290,29 +290,29 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                double rho = 1; // this.Control.PhysicalParameters.rho_A;
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        ///// </summary>
+        //protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get {
+        //        double rho = 1; // this.Control.PhysicalParameters.rho_A;
 
-                int D = this.GridData.SpatialDimension;
+        //        int D = this.GridData.SpatialDimension;
 
-                double[] _rho = new double[D + 4];
-                _rho.SetAll(rho);
-                //No MassMatrix for the pressure
-                _rho[D] = 0;
+        //        double[] _rho = new double[D + 4];
+        //        _rho.SetAll(rho);
+        //        //No MassMatrix for the pressure
+        //        _rho[D] = 0;
 
-                _rho[D + 1] = 1;
-                _rho[D + 2] = 1;
-                _rho[D + 3] = 1;
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
+        //        _rho[D + 1] = 1;
+        //        _rho[D + 2] = 1;
+        //        _rho[D + 3] = 1;
+        //        Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
+        //        R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
 
-                return R;
-            }
-        }
+        //        return R;
+        //    }
+        //}
 
         CoordinateVector m_CurrentSolution = null;
 
@@ -419,6 +419,14 @@ namespace BoSSS.Application.Rheology {
                     bool MomContinuitycoupling = true;
                     bool ConstitutiveEqs = true;
 
+                    var tempOp = new ConstantTemporalOperator(XOP, 0.0);
+                    double rho = 1; // this.Control.PhysicalParameters.rho_A;
+                    tempOp.SetDiagonal(0, rho);
+                    tempOp.SetDiagonal(1, rho);
+                    tempOp.SetDiagonal(D + 1, 1);
+                    tempOp.SetDiagonal(D + 2, 1);
+                    tempOp.SetDiagonal(D + 3, 1);
+                    XOP.TemporalOperator = tempOp;
 
 
                     // Momentum equation
@@ -557,6 +565,7 @@ namespace BoSSS.Application.Rheology {
 
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         CurrentSolution.Fields,
+                        Para
                         CurrentResidual.Fields,
                         LsTrk, false,
                         DelComputeOperatorMatrix, null, DelUpdateLevelset,
@@ -564,7 +573,6 @@ namespace BoSSS.Application.Rheology {
                         lsh,
                         MassMatrixShapeandDependence.IsTimeDependent,
                         SpatialOperatorType.Nonlinear,
-                        MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, 1, // no hmf order required.
                         0, false,
@@ -1067,29 +1075,8 @@ namespace BoSSS.Application.Rheology {
 
             // parameters
             //============================================================
-            SinglePhaseField[] U0_U0mean;
-            if (this.U0MeanRequired) {
-                Basis U0meanBasis = new Basis(GridData, 0);
-                VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
-                U0mean.Clear();
-
-                U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
-            } else {
-                U0_U0mean = new SinglePhaseField[2 * D];
-            }
-
             DGField[] Params;
-
-            if (this.Control.useFDJacobianForOperatorMatrix) {
-                Params = ArrayTools.Cat<DGField>(U0_U0mean, VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity);
-            } else {
-                if (this.Control.UseArtificialDiffusion) {
-                    Params = new[] { artificalViscosity };
-                } else {
-                    Params = null;
-                }
-            }
-
+            Params = GetParameters(D, U0, Stress0);
 
             // create mappings
             //==========================================================
@@ -1192,6 +1179,36 @@ namespace BoSSS.Application.Rheology {
 
             }
 
+        }
+
+        private DGField[] GetParameters(int D, VectorField<SinglePhaseField> U0, VectorField<SinglePhaseField> Stress0) {
+            DGField[] Params;
+            {
+                SinglePhaseField[] U0_U0mean;
+                if (this.U0MeanRequired) {
+                    Basis U0meanBasis = new Basis(GridData, 0);
+                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
+                    U0mean.Clear();
+
+                    U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
+                } else {
+                    U0_U0mean = new SinglePhaseField[2 * D];
+                }
+
+
+
+                if (this.Control.useFDJacobianForOperatorMatrix) {
+                    Params = ArrayTools.Cat<DGField>(U0_U0mean, VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity);
+                } else {
+                    if (this.Control.UseArtificialDiffusion) {
+                        Params = new[] { artificalViscosity };
+                    } else {
+                        Params = null;
+                    }
+                }
+            }
+
+            return Params;
         }
 
         /// <summary>

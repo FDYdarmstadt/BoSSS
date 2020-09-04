@@ -216,14 +216,14 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        static Basis[] GetBasisS(IList<DGField> ParameterMap) {
+        internal static Basis[] GetBasisS(IList<DGField> ParameterMap) {
             if(ParameterMap == null)
                 return new Basis[0];
 
             return ParameterMap.Select(f => f != null ? f.Basis : default(Basis)).ToArray();
         }
 
-        static LevelSetTracker GetTracker(IEnumerable<Basis> dom, IEnumerable<Basis> para, IEnumerable<Basis> cod) {
+        internal static LevelSetTracker GetTracker(IEnumerable<Basis> dom, IEnumerable<Basis> para, IEnumerable<Basis> cod) {
             LevelSetTracker lsTrk = null;
             foreach(var enu in new[] { dom, para, cod}) {
                 if(enu != null) {
@@ -268,7 +268,7 @@ namespace BoSSS.Foundation.XDG {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
 
-            DelParameterUpdate delParameterUpdate = null;
+            DelPartialParameterUpdate delParameterUpdate = null;
             if(this.ParameterUpdate != null) {
                 delParameterUpdate = this.ParameterUpdate.PerformUpdate;
             }
@@ -1093,7 +1093,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension,
-                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
+                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelPartialParameterUpdate));
 
 
 
@@ -1103,6 +1103,8 @@ namespace BoSSS.Foundation.XDG {
                    this.CodomainVar,
                    this.QuadOrderFunction,
                    this.Species.ToArray());
+
+            JacobianOp.TemporalOperator = this.TemporalOperator;
 
             void CheckCoeffUpd(IEquationComponent eq, IEquationComponent eqj) {
                 bool eq_suppCoeffUpd = eq is IEquationComponentCoefficient;
@@ -1470,10 +1472,6 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Evaluation of the <see cref="QuadOrderFunction"/>.
         /// </summary>
-        /// <param name="DomainMap"></param>
-        /// <param name="Parameters"></param>
-        /// <param name="CodomainMap"></param>
-        /// <returns></returns>
         public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
             /// Compute Quadrature Order
             int order;
@@ -1581,7 +1579,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IList<string> DomainVar {
             get {
-                return (string[])m_DomainVar.Clone();
+                return m_DomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -1594,7 +1592,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IList<string> CodomainVar {
             get {
-                return (string[])m_CodomainVar.Clone();
+                return m_CodomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -1610,7 +1608,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IList<string> ParameterVar {
             get {
-                return (string[])m_ParameterVar.Clone();
+                return m_ParameterVar.ToList().AsReadOnly();
             }
         }
 

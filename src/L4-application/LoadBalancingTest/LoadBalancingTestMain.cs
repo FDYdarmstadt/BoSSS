@@ -195,18 +195,18 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        /// <summary>
-        /// Block scaling of the mass matrix.
-        /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                double[] _rho = new double[] { 1 };
-                IDictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
-                R.Add(this.LsTrk.GetSpeciesId("B"), _rho);
-                return R;
-            }
-        }
+        ///// <summary>
+        ///// Block scaling of the mass matrix.
+        ///// </summary>
+        //protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get {
+        //        double[] _rho = new double[] { 1 };
+        //        IDictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
+        //        R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
+        //        R.Add(this.LsTrk.GetSpeciesId("B"), _rho);
+        //        return R;
+        //    }
+        //}
 
         MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
             get {

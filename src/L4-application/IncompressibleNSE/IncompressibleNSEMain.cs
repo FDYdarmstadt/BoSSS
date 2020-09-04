@@ -17,16 +17,16 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// </summary>
     public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSollver<IncompressibleControl> {
         
-        /// <summary>
-        /// Mass matrix diagonal/temporal operator for incompressible Navier-Stokes, i.e. <see cref="IncompressibleControl.Density"/> for the momentum equation and zero for the continuity equation
-        /// </summary>
-        protected override IEnumerable<double> GetMassScale(int D) {
-            double[] diag = new double[D + 1];
-            for(int d = 0; d < D; d++) {
-                diag[d] = Control.Density; 
-            }
-            return diag;
-        }
+        ///// <summary>
+        ///// Mass matrix diagonal/temporal operator for incompressible Navier-Stokes, i.e. <see cref="IncompressibleControl.Density"/> for the momentum equation and zero for the continuity equation
+        ///// </summary>
+        //protected override IEnumerable<double> GetMassScale(int D) {
+        //    double[] diag = new double[D + 1];
+        //    for(int d = 0; d < D; d++) {
+        //        diag[d] = Control.Density; 
+        //    }
+        //    return diag;
+        //}
 
         static void Main(string[] args) {
             _Main(args, false, delegate () {
@@ -94,9 +94,11 @@ namespace BoSSS.Application.IncompressibleNSE {
         protected override SpatialOperator GetOperatorInstance(int D) {
 
             // instantiate boundary condition mapping
+            // ======================================
             boundaryCondMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
 
             // instantiate operator
+            // ====================
             string[] CodName = (new[] { "ResidualMomentumX", "ResidualMomentumY", "ResidualMomentumZ" }).GetSubVector(0, D).Cat("ResidualConti");
             
             var op = new SpatialOperator(
@@ -106,6 +108,18 @@ namespace BoSSS.Application.IncompressibleNSE {
                 QuadOrderFunc: QuadOrderFunc.NonLinear(2));
 
             op.LinearizationHint = LinearizationHint.GetJacobiOperator;
+
+            // Temporal Operator
+            // =================
+
+            var TempOp = new ConstantTemporalOperator(op, 0.0); // init with entire diagonal set to 0.0
+            op.TemporalOperator = TempOp;
+
+            for (int d = 0; d < D; d++)
+                TempOp.SetDiagonal(CodName[d], Control.Density); // set momentum equation entries to density
+
+            // Momentum Equation
+            // =================
 
             // convective part:
             {
@@ -142,8 +156,8 @@ namespace BoSSS.Application.IncompressibleNSE {
                 }
             }
 
-            // Continuum equation
-            // ==================
+            // Continuity equation
+            // ===================
             {
                 for(int d = 0; d < D; d++) {
                     var src = new Divergence_DerivativeSource(d, D);
@@ -155,6 +169,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
                 //IBM_Op.EquationComponents["div"].Add(new PressureStabilization(1, 1.0 / this.Control.PhysicalParameters.mu_A));
             }
+
 
 
             op.Commit();

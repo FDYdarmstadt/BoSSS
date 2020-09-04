@@ -51,10 +51,10 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="time"></param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
         
-    /// <summary>
-    /// Callback-Template for the mass matrix update.
-    /// </summary>
-    public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
+    ///// <summary>
+    ///// Callback-Template for the mass matrix update.
+    ///// </summary>
+    //public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
  
     /// <summary>
     /// Callback-template for level-set updates.
@@ -185,21 +185,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 && this.Config_LevelSetHandling != LevelSetHandling.None)
                 throw new ArgumentOutOfRangeException("illegal configuration");
 
-            if (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity && this.Config_MassScale != null) {
-                // may occur e.g. if one runs the FSI solver as a pure single-phase solver,
-                // i.e. if the Level-Set is outside the domain.
-
-                foreach (var kv in this.Config_MassScale) {
-                    SpeciesId spId = kv.Key;
-                    double[] scaleVec = kv.Value.ToArray();
-                    //for (int i = 0; i < scaleVec.Length; i++) {
-                    //    if (scaleVec[i] != 1.0)
-                    //        throw new ArithmeticException(string.Format("XDG time-stepping: illegal mass scale, mass matrix option {0} is set, but scaling factor for species {1}, variable no. {2} ({3}) is set to {4} (expecting 1.0).",
-                    //            MassMatrixShapeandDependence.IsIdentity, this.m_LsTrk.GetSpeciesName(kv.Key), i, this.CurrentStateMapping.Fields[i].Identification, scaleVec[i]));
-                    //}
-                }
-
-            }
+            
         }
 
 
@@ -232,13 +218,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public string SessionPath = "";
 
-        /// <summary>
-        /// Scaling of the mass matrix, for each species and each variable.
-        /// </summary>
-        public IDictionary<SpeciesId, IEnumerable<double>> Config_MassScale {
-            get;
-            protected set;
-        }
+        
+        ///// <summary>
+        ///// Scaling of the mass matrix, for each species and each variable.
+        ///// </summary>
+        //public IDictionary<SpeciesId, IEnumerable<double>> Config_MassScale {
+        //    get;
+        //    protected set;
+        //}
+
 
         /// <summary>
         /// Species to compute, must be a subset of <see cref="LevelSetTracker.SpeciesIdS"/>
@@ -274,13 +262,19 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-        /// <summary>
-        /// Optional callback routine to update the mass matrix in the case of  <see cref="Config_MassMatrixShapeandDependence"/> == <see cref="MassMatrixShapeandDependence.IsTimeAndSolutionDependent"/>.
-        /// </summary>
-        public DelComputeMassMatrix ComputeMassMatrix {
+        ///// <summary>
+        ///// Optional callback routine to update the mass matrix in the case of  <see cref="Config_MassMatrixShapeandDependence"/> == <see cref="MassMatrixShapeandDependence.IsTimeAndSolutionDependent"/>.
+        ///// </summary>
+        //public DelComputeMassMatrix ComputeMassMatrix {
+        //    get;
+        //    protected set;
+        //}
+
+        public ITemporalOperator TemporalOperator {
             get;
             protected set;
         }
+
 
         protected void ComputeMassMatrixImpl(BlockMsrMatrix MassMatrix, double time) {
             if (!MassMatrix._RowPartitioning.EqualsPartition(CurrentStateMapping))
@@ -288,14 +282,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (!MassMatrix._ColPartitioning.EqualsPartition(CurrentStateMapping))
                 throw new ArgumentException("Internal error.");
 
-            if (ComputeMassMatrix == null) {
-                // ++++++++++++++
-                // default branch
-                // ++++++++++++++
-                MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder).MassMatrixFactory;
-                MassFact.AccMassMatrix(MassMatrix, CurrentStateMapping, _alpha: Config_MassScale);
+            if (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
+                MassMatrix.AccEyeSp(1.0);
             } else {
-                ComputeMassMatrix(MassMatrix, CurrentStateMapping, CurrentStateMapping.Fields.ToArray(), time);
+
+                var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
+                builder.time = time;
+                builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
             }
         }
 
@@ -593,6 +586,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         abstract public CoordinateMapping CurrentStateMapping {
             get;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public DGField[] CurrentParameters {
+            get;
+            protected set;
         }
 
         /// <summary>
