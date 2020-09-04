@@ -38,6 +38,9 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     public class XdgRKTimestepping : XdgTimesteppingBase {
 
+        /// <summary>
+        /// The specifically used Runge-Kutta scheme
+        /// </summary>
         public RungeKuttaScheme m_RKscheme {
             get;
             private set;

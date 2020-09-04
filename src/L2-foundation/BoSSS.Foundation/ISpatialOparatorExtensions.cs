@@ -143,9 +143,9 @@ namespace BoSSS.Foundation {
             // invoke update functions in the equation components
             bool[] ParameterIsUpdated = new bool[NoOfParams]; // for the equation components, we mark parameters that are already updated, to avoid doing the update multiple times
 
-            bool ComponentUpdateUseful(IParameterHandling _ph, out DGField[] _ph_args, out DGField[] _ph_params) {
+            bool ComponentUpdateUseful(IParameterHandling _ph, out DGField[] _ph_args, out DGField[] _ph_params, out int[] targIdx) {
                 var phParams = _ph.ParameterOrdering;
-                
+                targIdx = new int[phParams != null ? phParams.Count : 0];
 
                 _ph_params = new DGField[phParams != null ? phParams.Count : 0];
                 bool useful = false;
@@ -156,10 +156,10 @@ namespace BoSSS.Foundation {
                         if (idx < 0)
                             throw new ApplicationException("should not happen if operator is committed and verified");
                         _ph_params[c] = ParameterVarsDict[phParamName];
+                        targIdx[c] = idx;
 
                         if (ParameterIsUpdated[idx] == false) {
                             useful = true;
-                            ParameterIsUpdated[idx] = true; // just assume, it will be updated if the upddate function is called
                         }
 
                         if (ret[idx] == null)
@@ -184,8 +184,13 @@ namespace BoSSS.Foundation {
             foreach (string codName in op.CodomainVar) {
                 foreach (IEquationComponent comp in op.EquationComponents[codName]) {
                     if (comp is IParameterHandling ph) {
-                        if(ComponentUpdateUseful(ph, out var ph_argFields, out var ph_paramFields)) {
+                        if(ComponentUpdateUseful(ph, out var ph_argFields, out var ph_paramFields, out int[] targIdx)) {
                             ph.MyParameterUpdate(ph_argFields, ph_paramFields);
+
+                            for(int i = 0; i < ph_paramFields.Length; i++) {
+                                if (ph_paramFields[i] != null) // hack: if the 'MyParameterUpdate' sets some entry to null, it signals that it did not updated the parameter variable
+                                    ParameterIsUpdated[targIdx[i]] = true; 
+                            }
                         }
                     }
                 }

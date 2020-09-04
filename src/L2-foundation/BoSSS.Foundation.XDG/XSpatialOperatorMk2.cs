@@ -268,12 +268,12 @@ namespace BoSSS.Foundation.XDG {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
 
-            DelPartialParameterUpdate delParameterUpdate = null;
-            if(this.ParameterUpdate != null) {
-                delParameterUpdate = this.ParameterUpdate.PerformUpdate;
-            }
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+                };
 
-            return new FDJacobianBuilder(xeval, delParameterUpdate);
+            return new FDJacobianBuilder(xeval, ParamUpdate);
         }
 
 
@@ -1034,21 +1034,37 @@ namespace BoSSS.Foundation.XDG {
 
         #endregion
 
-        IParameterUpdate m_ParameterUpdate;
+
+        List<DelPartialParameterUpdate> m_ParameterUpdates = new List<DelPartialParameterUpdate>();
 
         /// <summary>
-        /// If set, used to update parameters before evaluation.
+        /// <see cref="ISpatialOperator.ParameterUpdates"/>
         /// </summary>
-        public IParameterUpdate ParameterUpdate {
+        public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                return m_ParameterUpdate;
-            }
-            set {
-                if(IsCommited)
-                    throw new NotSupportedException("unable to change after 'Commit()'");
-                m_ParameterUpdate = value;
+                if (m_IsCommited) {
+                    return m_ParameterUpdates.AsReadOnly();
+                } else {
+                    return m_ParameterUpdates;
+                }
             }
         }
+
+        List<DelParameterFactory> m_ParameterFactories = new List<DelParameterFactory>();
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.ParameterFactories"/>
+        /// </summary>
+        public ICollection<DelParameterFactory> ParameterFactories {
+            get {
+                if (IsCommited) {
+                    return m_ParameterFactories.AsReadOnly();
+                } else {
+                    return m_ParameterFactories;
+                }
+            }
+        }
+
 
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
@@ -1092,11 +1108,8 @@ namespace BoSSS.Foundation.XDG {
                 return ret;
             }
 
-            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension,
-                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelPartialParameterUpdate));
-
-
-
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+                       
             var JacobianOp = new XSpatialOperatorMk2(
                    this.DomainVar,
                    h.JacobianParameterVars,
@@ -1144,7 +1157,13 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
-            JacobianOp.ParameterUpdate = h;
+            foreach (DelParameterFactory f in this.ParameterFactories)
+                JacobianOp.ParameterFactories.Add(f);
+            foreach (DelPartialParameterUpdate f in this.ParameterUpdates) {
+                JacobianOp.ParameterUpdates.Add(f);
+            }
+            JacobianOp.ParameterFactories.Add(h.AllocateParameters);
+            JacobianOp.ParameterUpdates.Add(h.PerformUpdate);
 
             JacobianOp.Commit();
             return JacobianOp;

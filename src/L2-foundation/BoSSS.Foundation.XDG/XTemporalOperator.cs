@@ -261,8 +261,11 @@ namespace BoSSS.Foundation.XDG {
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
             InternalRepresentation.LinearizationHint = LinearizationHint.AdHoc;
 
-            InternalRepresentation.ParameterFactories += owner.ParameterFactories;
-            InternalRepresentation.ParameterUpdates += owner.ParameterUpdates;
+            InternalRepresentation.ParameterFactories.Clear();
+            InternalRepresentation.ParameterFactories.AddRange(owner.ParameterFactories);
+
+            InternalRepresentation.ParameterUpdates.Clear();
+            InternalRepresentation.ParameterUpdates.AddRange(owner.ParameterUpdates);
 
             InternalRepresentation.EdgeQuadraturSchemeProvider = owner.EdgeQuadraturSchemeProvider;
             InternalRepresentation.VolumeQuadraturSchemeProvider = owner.VolumeQuadraturSchemeProvider;
