@@ -184,6 +184,9 @@ namespace BoSSS.Solution.XNSECommon {
 
         override public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             base.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);
+            if(cs.CellLengthScales == null) {
+                throw new ArgumentException("Internal Error - no cell Lengths provided.");
+            }
             this.m_LenScales = cs.CellLengthScales;
         }
     }

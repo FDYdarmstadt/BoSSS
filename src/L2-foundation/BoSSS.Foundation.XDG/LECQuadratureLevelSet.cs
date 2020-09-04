@@ -174,22 +174,22 @@ namespace BoSSS.Foundation.XDG {
             //m_BiLinForms = DiffOp.GetArgMapping<IBilinearForm>(true, Compfilter<IBilinearForm>);
             //m_2ndDerivFlux = DiffOp.GetArgMapping<ILinear2ndDerivativeCouplingFlux>(true, Compfilter<ILinear2ndDerivativeCouplingFlux>);
 
-            m_LsForm_UxV = DiffOp.GetArgMapping<ILevelSetForm_UxV>(true,
+            m_LsForm_UxV = EquationComponentArgMapping<ILevelSetForm_UxV>.GetArgMapping(DiffOp, true,
                eq => ((eq.LevelSetTerms & TermActivationFlags.UxV) != 0) && Compfilter(eq),
                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
-            m_LsForm_GradUxV = DiffOp.GetArgMapping<ILevelSetForm_GradUxV>(true,
+            m_LsForm_GradUxV = EquationComponentArgMapping<ILevelSetForm_GradUxV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxV) != 0) && Compfilter(eq),
                 eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
-            m_LsForm_UxGradV = DiffOp.GetArgMapping<ILevelSetForm_UxGradV>(true,
+            m_LsForm_UxGradV = EquationComponentArgMapping<ILevelSetForm_UxGradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.UxGradV) != 0) && Compfilter(eq),
                 eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
-            m_LsForm_GradUxGradV = DiffOp.GetArgMapping<ILevelSetForm_GradUxGradV>(true,
+            m_LsForm_GradUxGradV = EquationComponentArgMapping<ILevelSetForm_GradUxGradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxGradV) != 0) && Compfilter(eq),
                 eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
-            m_LsForm_V = DiffOp.GetArgMapping<ILevelSetForm_V>(true,
+            m_LsForm_V = EquationComponentArgMapping<ILevelSetForm_V>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.V) != 0 && Compfilter(eq)),
                 eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
-            m_LsForm_GradV = DiffOp.GetArgMapping<ILevelSetForm_GradV>(true,
+            m_LsForm_GradV = EquationComponentArgMapping<ILevelSetForm_GradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradV) != 0) && Compfilter(eq),
                 eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
 

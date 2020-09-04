@@ -25,225 +25,7 @@ using ilPSP;
 using NUnit.Framework;
 
 namespace BoSSS.Solution.NSECommon {
-
-    [DataContract]
-    [Serializable]
-    public class MaterialLawLowMach_MF : MaterialLawLowMach {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="T_ref"> Reference temperature of Sutherland Law </param>
-        /// <param name="MolarMasses">Array of molar masses </param>
-        /// <param name="MatParamsMode">Material law (constant, sutherland, etc) </param>
-        /// <param name="rhoOne">Switch for constant density </param>
-        /// <param name="Q"> Adimensionalized heat release </param>
-        /// <param name="TO0">Temperature of oxidizer inlet</param>
-        /// <param name="TF0">Temperature of fuel inlet</param>
-        /// <param name="YO0">Oxigen mass fraction of oxidizer inlet</param>
-        /// <param name="YF0">Fuel mass fraction of fuel inlet </param>
-        /// <param name="zst">Stoichiometric mixture fraction </param>
-        /// <param name="CC"></param>
-        /// <param name="Prandtl"></param>
-        /// 
-        public MaterialLawLowMach_MF(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(T_ref, MatParamsMode, rhoOne, Prandtl) {
-            this.Q = Q;
-            this.TO0 = TO0;
-            this.TF0 = TF0;
-            this.YF0 = YF0;
-            this.YO0 = YO0;
-            this.zst = zst;
-            this.cp = 1.0;
-            this.CC = CC;
-            this.Prandtl = Prandtl;
-            this.MatParamsMode = MatParamsMode;
-            this.rhoOne = rhoOne;
-
-        }
-        [DataMember] MaterialParamsMode MatParamsMode;
-        [DataMember] public bool rhoOne;
-        [DataMember] public double Q;
-        [DataMember] public double TO0;
-        [DataMember] public double TF0;
-        [DataMember] public double YF0;
-        [DataMember] public double YO0;
-        [DataMember] public double zst;
-        [DataMember] public double cp;
-        [DataMember] public ChemicalConstants CC;
-
-    
-        /// <summary>
-        /// Calculate density based on the mixture fraction.
-        /// </summary>
-        /// <param name="Z"></param>
-        /// <returns></returns>
-        public override double getDensityFromZ(double Z) {
-            double res;
-          //  Z = repairMixtureFractionValue(Z);
-            if (Q > 0) {
-                if (!rhoOne) {
-                    //Debug.Assert(Z - 1.0 < 1e-4 && Z > -1e-4);
-                    double T, Y0, Y1, Y2, Y3, Y4;
-                    if (Z >= zst) { // Fuel side
-                        T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
-                        Y0 = YF0 * (Z - zst) / (1 - zst);
-                        Y1 = 0;
-                        Y2 = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
-                        Y3 = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
-                        Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
-                    } else if (Z < zst) { // Oxydizer side
-                        T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
-                        Y0 = 0;
-                        Y1 = YO0 * (1 - Z / zst);
-                        Y2 = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        Y3 = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
-                    } else {
-                        throw new Exception("out of bounds");
-                    }
-                    Debug.Assert(Math.Abs(1.0 - (Y0 + Y1 + Y2 + Y3 + Y4)) <= 1e-1);
-                    double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
-                    res = base.GetDensity(densityArguments);
-                } else {
-                    res = 1.0;
-                }
-            } else {
-                res = base.GetDensity(new double[] { 1.0, Z, 1.0 - Z, 0.0, 0.0 });
-            }
-            return res;
-        }
-
-        /// <summary>
-        /// Forces the mixture fraction value to be between 0 and 1. 
-        /// </summary>
-        /// <returns></returns>
-        public double repairMixtureFractionValue(double phi) {
-            double repairedPhi;
-            if (phi < 0.0) {
-                repairedPhi = 0.0;
-            } else if (phi > 1.0) {
-                repairedPhi = 1.0;
-            } else {
-                repairedPhi = phi;
-            }
-            return repairedPhi;
-        }
-
-        /// <summary>
-        ///  The heat conductivity $\lambda. Possibly dependent on the variable <see cref="phi"/> representing the temperature
-        ///  Used for the mixture fraction equations
-        /// </summary>
-        /// <param name="phi"></param>
-        /// <returns></returns>
-        public override double GetHeatConductivity(double phi) {
-            double Temperature = this.getVariableFromZ(phi, VariableNames.Temperature);
-            return base.GetHeatConductivity(Temperature);
-        }
-        /// <summary>
-        ///  The diffusivity  D. Possibly dependent on the variable <see cref="phi"/> representing the temperature
-        ///  Used for the mixture fraction equations
-        /// </summary>
-        /// <param name="phi"></param>
-        /// <returns></returns>
-        public override double GetDiffusivity(double phi) {
-            double Temperature = this.getVariableFromZ(phi, VariableNames.Temperature);
-            return base.GetDiffusivity(Temperature);
-
-        }
-
-        /// <summary>
-        /// Dimensionless Sutherland's law.
-        /// </summary>
-        /// <param name="phi">Temperature</param>
-        /// <returns>
-        /// Dynamic viscosity
-        /// </returns>
-        public override double GetViscosity(double phi) {
-             double Temperature = getVariableFromZ(phi, VariableNames.Temperature); 
-            return base.GetViscosity(Temperature);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="Z"></param>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public override double getVariableFromZ(double Z, string id) {
-            double res;
-            Z = repairMixtureFractionValue(Z);
-            if (Z >= zst) { // Fuel side
-                switch (id) {
-                    case VariableNames.Temperature:
-                        res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
-                        break;
-                    case VariableNames.MassFraction0:
-                        res = YF0 * (Z - zst) / (1 - zst);
-                        break;
-                    case VariableNames.MassFraction1:
-                        res = 0;
-                        break;
-                    case VariableNames.MassFraction2:
-                        res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
-                        break;
-                    case VariableNames.MassFraction3:
-                        res = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
-                        break;
-                    case VariableNames.MassFraction4:
-                        double YNOxi0 = 1.0 - YO0;
-                        double YNFuel0 = 1.0 - YF0;
-                        res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
-                        break;
-                    default:
-                        throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
-                }
-
-            } else if (Z < zst) { // Oxydizer side
-                switch (id) {
-                    case VariableNames.Temperature:
-                        res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
-                        break;
-                    case VariableNames.MassFraction0:
-                        res = 0;
-                        break;
-                    case VariableNames.MassFraction1:
-                        res = YO0 * (1 - Z / zst);
-                        break;
-                    case VariableNames.MassFraction2:
-                        res = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        break;
-                    case VariableNames.MassFraction3:
-                        res = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        break;
-                    case VariableNames.MassFraction4:
-                        double YNOxi0 = 1.0 - YO0;
-                        double YNFuel0 = 1.0 - YF0;
-                        res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
-                        break;
-                    default:
-                        throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
-                }
-            } else {
-                throw new Exception("out of bounds");
-            }
-            return res;
-
-        }
-
-        public override IList<string> ParameterOrdering {
-            get {
-                return new string[] {
-                    VariableNames.Temperature0,
-                    VariableNames.MassFraction0_0,
-                    VariableNames.MassFraction1_0,
-                    VariableNames.MassFraction2_0,
-                    VariableNames.MassFraction3_0                     
-                    //,VariableNames.MassFraction4_0
-                };
-            }
-        }
-
-        public double Prandtl { get; }
-    }
+ 
     /// <summary>
     /// Material law for low Mach number flows.
     /// </summary>
@@ -359,8 +141,9 @@ namespace BoSSS.Solution.NSECommon {
                         rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
                     }
                 }
-                Debug.Assert(!double.IsNaN(rho));
-                Debug.Assert(!double.IsInfinity(rho));
+                
+                if(double.IsNaN(rho) || double.IsInfinity(rho))
+                    throw new ArithmeticException("Invalid value for density: " + rho);
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -380,6 +163,10 @@ namespace BoSSS.Solution.NSECommon {
             double T0 = 273.15; // 
             double viscosity0 = 1.716e-5; //kg/( m s) ==> viscosity at T = 273.15 for air
             double viscosity = viscosity0 * Math.Pow(T / T0, 1.5) * (T0 + S) / (T + S);
+
+            if(double.IsNaN(viscosity) || double.IsInfinity(viscosity) || viscosity <= 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + viscosity);
+
             return viscosity;
         }
 
@@ -392,7 +179,12 @@ namespace BoSSS.Solution.NSECommon {
         /// Dynamic viscosity
         /// </returns>
         public override double GetViscosity(double phi) {
+
+            phi = Math.Max(0.01, phi);
+
             double visc = 0; // nondimensional viscosity
+
+            phi = phi < 0.1 ? 0.1 : phi; //////////////////
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
                         visc = 1.0;
@@ -410,9 +202,8 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException();
             }
-            Debug.Assert(!double.IsNaN(visc));
-            Debug.Assert(!double.IsInfinity(visc));
-            Debug.Assert(visc > 0);
+            if(double.IsNaN(visc) || double.IsInfinity(visc) || visc <= 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + visc);
             return visc;
         }
 
@@ -424,8 +215,8 @@ namespace BoSSS.Solution.NSECommon {
         public virtual double GetHeatConductivity(double phi) {
 
             double res = GetViscosity(phi);
-            Debug.Assert(!double.IsNaN(res));
-            Debug.Assert(!double.IsInfinity(res));
+            if(double.IsNaN(res) || double.IsInfinity(res))
+                throw new ArithmeticException("Invalid value for viscosity: " + res);
             return res;
 
         }

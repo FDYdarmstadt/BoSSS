@@ -36,22 +36,22 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         
         public LECEdgeQuadrature2(SpatialOperator op) {
             Operator = op;
-            m_Edgeform_UxV = op.GetArgMapping<IEdgeform_UxV>(true,
+            m_Edgeform_UxV = EquationComponentArgMapping<IEdgeForm_UxV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.UxV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.UxV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
-            m_Edgeform_GradUxV = op.GetArgMapping<IEdgeform_GradUxV>(true,
+            m_Edgeform_GradUxV = EquationComponentArgMapping<IEdgeform_GradUxV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.GradUxV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.GradUxV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
-            m_Edgeform_UxGradV = op.GetArgMapping<IEdgeform_UxGradV>(true,
+            m_Edgeform_UxGradV = EquationComponentArgMapping<IEdgeform_UxGradV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.UxGradV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.UxGradV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
-            m_Edgeform_GradUxGradV = op.GetArgMapping<IEdgeform_GradUxGradV>(true,
+            m_Edgeform_GradUxGradV = EquationComponentArgMapping<IEdgeform_GradUxGradV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.GradUxGradV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.GradUxGradV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
-            m_EdgeSourceV = op.GetArgMapping<IEdgeSource_V>(true,
+            m_EdgeSourceV = EquationComponentArgMapping<IEdgeSource_V>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.V) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.V) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
-            m_EdgeSourceGradV = op.GetArgMapping<IEdgeSource_GradV>(true,
+            m_EdgeSourceGradV = EquationComponentArgMapping<IEdgeSource_GradV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.GradV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.GradV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
         }
@@ -77,7 +77,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
-        EquationComponentArgMapping<IEdgeform_UxV>[] m_Edgeform_UxV;
+        EquationComponentArgMapping<IEdgeForm_UxV>[] m_Edgeform_UxV;
         EquationComponentArgMapping<IEdgeform_GradUxV>[] m_Edgeform_GradUxV;
         EquationComponentArgMapping<IEdgeform_UxGradV>[] m_Edgeform_UxGradV;
         EquationComponentArgMapping<IEdgeform_GradUxGradV>[] m_Edgeform_GradUxGradV;

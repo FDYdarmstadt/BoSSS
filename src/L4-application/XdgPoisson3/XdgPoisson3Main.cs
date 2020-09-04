@@ -257,8 +257,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     //    this.LsTrk.SpeciesIdS.ToArray());
                     XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(this.LsTrk, map, null, map);
 
-                    foreach (var s in this.LsTrk.SpeciesIdS)
-                        mtxBuilder.SpeciesOperatorCoefficients[s].CellLengthScales = agg.CellLengthScales[s];
+                    mtxBuilder.CellLengthScales.AddRange(agg.CellLengthScales);
 
                     mtxBuilder.time = 0.0;
                     mtxBuilder.MPITtransceive = true;
@@ -276,8 +275,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 var eval = Op.GetEvaluatorEx(LsTrk,
                     testDomainFieldS, null, map);
 
-                foreach (var s in this.LsTrk.SpeciesIdS)
-                    eval.SpeciesOperatorCoefficients[s].CellLengthScales = agg.CellLengthScales[s];
+                eval.CellLengthScales.AddRange(agg.CellLengthScales);
 
                 eval.time = 0.0;
                 int L = test.Count;

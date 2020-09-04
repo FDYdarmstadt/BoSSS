@@ -206,13 +206,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// This will return <code>linear</code> and <code>nonlinear</code> solver objects, which are configured according to <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>).
         /// </summary>
-        /// <param name="nonlinSolver"></param>
-        /// <param name="linsolver"></param>
-        /// <param name="ts_AssembleMatrixCallback"></param>
-        /// <param name="ts_MultigridBasis"></param>
-        /// <param name="ts_MultigridOperatorConfig"></param>
-        /// <param name="ts_SessionPath"></param>
-        /// <param name="ts_MGS"></param>
         public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, string ts_SessionPath, AggregationGridData[] ts_MGS) {
 
             if (m_nonlinsolver != null)
@@ -240,9 +233,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// This will return a linear solver object, which is configured according to <see cref="LinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>). 
         /// </summary>
-        /// <param name="linSolve">the linear solver object</param>
-        /// <param name="ts_MultigridSequence"></param>
-        /// <param name="ts_MultigridOperatorConfig"></param>
         public void GenerateLinear(out ISolverSmootherTemplate linSolve, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig) {
             if (m_linsolver != null) {
                 m_lc.SolverCode = LinearSolverCode.selfmade;
@@ -258,7 +248,7 @@ namespace BoSSS.Solution {
         /// This will return a linear solver object, which is configured according to <see cref="LinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>).
         /// </summary>
         /// <param name="linSolve">the linear solver object</param>
-        /// <param name="ts_MultigridSequence"></param>
+        /// <param name="ts_MultigridBasis"></param>
         /// <param name="ts_MultigridOperatorConfig"></param>
         /// <param name="IterationCallbacks">insert callback specified by user here</param>
         public void GenerateLinear(out ISolverSmootherTemplate linSolve, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, List<Action<int, double[], double[], MultigridOperator>> IterationCallbacks) {
@@ -271,15 +261,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// This one is the method-body of <see cref="GenerateNonLin"/> and shall not be called from the outside. The parameters are mainly handed over to the NonLinearSolver object, which lives in <see cref="AdvancedSolvers.NonlinearSolver"/>.
         /// </summary>
-        /// <param name="ts_AssembleMatrixCallback"></param>
-        /// <param name="ts_MultigridBasis"></param>
-        /// <param name="nc"></param>
-        /// <param name="lc"></param>
-        /// <param name="LinSolver"></param>
-        /// <param name="PrecondSolver"></param>
-        /// <param name="MultigridOperatorConfig"></param>
-        /// <param name="SessionPath"></param>
-        /// <returns></returns>
         private NonlinearSolver GenerateNonLin_body(OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, string SessionPath, ISolverSmootherTemplate linsolver, ISolverSmootherTemplate precondonly) {
 
             var lc = m_lc;
@@ -315,7 +296,7 @@ namespace BoSSS.Solution {
                             maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.MatrixFreeGMRES,
                             Precond = precondonly,
                             GMRESConvCrit = lc.ConvergenceCriterion,
                             ConvCrit = nc.ConvergenceCriterion,
@@ -334,7 +315,7 @@ namespace BoSSS.Solution {
                             MinIter = nc.MinSolverIterations,
                             UsePresRefPoint = nc.UsePresRefPoint,
                             printLambda = nc.printLambda,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                             linsolver = linsolver,
                             GMRESConvCrit = lc.ConvergenceCriterion,
                             ConvCrit = nc.ConvergenceCriterion,
@@ -367,7 +348,7 @@ namespace BoSSS.Solution {
                         maxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
-                        ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
+                        ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                         linsolver = linsolver,
                         GMRESConvCrit = lc.ConvergenceCriterion,
                         ConvCrit = nc.ConvergenceCriterion,
@@ -594,7 +575,8 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// This one is the method-body of <see cref="GenerateLinear"/> and shall not be called from the outside. Some Solver aquire additional information, thus the timestepper is overgiven as well.
+        /// This one is the method-body of <see cref="GenerateLinear(out ISolverSmootherTemplate, IEnumerable{AggregationGridBasis[]}, ChangeOfBasisConfig[][], List{Action{int, double[], double[], MultigridOperator}})"/> and shall not be called from the outside. 
+        /// Some Solver acquire additional information, thus the timestepper is passed as well.
         /// </summary>
         private ISolverSmootherTemplate GenerateLinear_body(IEnumerable<AggregationGridBasis[]> MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, out ISolverSmootherTemplate[] precond) {
 

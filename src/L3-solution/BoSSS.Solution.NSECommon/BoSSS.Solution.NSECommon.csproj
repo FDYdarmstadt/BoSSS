@@ -57,6 +57,7 @@
     <Compile Include="DivergenceAtIB.cs" />
     <Compile Include="IBMSolverUtils.cs" />
     <Compile Include="ipLaplace.cs" />
+    <Compile Include="MaterialLawMixtureFraction.cs" />
     <Compile Include="NSEOperatorConfiguration.cs" />
     <Compile Include="PressureFormAtIB.cs" />
     <Compile Include="TimeDerivativeLinearSource.cs" />

@@ -51,11 +51,11 @@ namespace CNS {
 
 
 
-            //Application.InitMPI(args);
+            Application.InitMPI(args);
             //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
-            //Debug.Assert(false, "remove me");
-            //csMPI.Raw.mpiFinalize();
-            //return;
+            CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            Debug.Assert(false, "remove me");
+            return;
 
             Application<CNSControl>._Main(
                 args,

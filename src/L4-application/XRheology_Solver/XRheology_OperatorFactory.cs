@@ -388,15 +388,15 @@ namespace BoSSS.Application.XRheology_Solver {
                     this.ParameterUpdate(CurrentState, Params, CutCellQuadOrder, AgglomeratedCellLengthScales);
 
                     foreach (var kv in AgglomeratedCellLengthScales) {
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = kv.Value; // this.LsTrk.GridDat.Edges.h_max_Edge;
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                        mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                        //mtxBuilder.CellLengthScales[kv.Key].EdgeLengthScales = kv.Value; // this.LsTrk.GridDat.Edges.h_max_Edge;
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["EvapMicroRegion"] = EvapMicroRegion;
                     }
 
                     if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                         foreach (var kv in InterfaceLengths) {
-                            mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                            this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                         }
                     }
 
@@ -406,7 +406,7 @@ namespace BoSSS.Application.XRheology_Solver {
                             id = 0;
                         else 
                             id = 1;
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg[id]);
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["Weissenbergnumber"] = currentWeissenberg[id];
                     }
 
                     mtxBuilder.time = time;
@@ -447,14 +447,14 @@ namespace BoSSS.Application.XRheology_Solver {
                     CurrentState.ToArray(), Params, RowMapping);
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    eval.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = kv.Value; //this.LsTrk.GridDat.Edges.h_max_Edge;
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    eval.CellLengthScales[kv.Key] = kv.Value;
+                    //eval.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = kv.Value; //this.LsTrk.GridDat.Edges.h_max_Edge;
+                    this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                     }
                 }
 
@@ -464,7 +464,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         id = 0;
                     else
                         id = 1;
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg[id]);
+                    this.m_XOp.UserDefinedValues[LsTrk.GetSpeciesName(kv.Key)]["Weissenbergnumber"] = currentWeissenberg[id];
                 }
 
                 eval.time = time;

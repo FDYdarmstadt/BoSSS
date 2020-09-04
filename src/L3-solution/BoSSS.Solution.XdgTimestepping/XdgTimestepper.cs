@@ -418,7 +418,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     case LinearizationHint.AdHoc: {
                         if(this.XdgOperator.ParameterUpdate != null) {
-                            this.XdgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
+                            this.XdgOperator.ParameterUpdate.PerformUpdate(CurrentState, this.Parameters);
                         }
 
                         var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
@@ -429,8 +429,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     case LinearizationHint.FDJacobi: {
-                        var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping,
-                            XdgOperator.ParameterUpdate != null ? XdgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+                        var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping);
                         mtxBuilder.time = time;
                         mtxBuilder.MPITtransceive = true;
                         mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -443,7 +442,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         if(JacobiParameterVars == null)
                             JacobiParameterVars = op.ParameterUpdate.AllocateParameters(this.CurrentState.Fields, this.Parameters);
 
-                        op.ParameterUpdate.ParameterUpdate(this.CurrentState.Fields, JacobiParameterVars);
+                        op.ParameterUpdate.PerformUpdate(this.CurrentState.Fields, JacobiParameterVars);
 
                         var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping);
                         mtxBuilder.time = time;
@@ -460,7 +459,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ++++++++++++++++++++++++
 
                 if(this.XdgOperator.ParameterUpdate != null) {
-                    this.XdgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
+                    this.XdgOperator.ParameterUpdate.PerformUpdate(CurrentState, this.Parameters);
                 }
 
                 var eval = XdgOperator.GetEvaluatorEx(CurrentState, this.Parameters, Mapping);
@@ -485,7 +484,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     case LinearizationHint.AdHoc: {
                         if(this.DgOperator.ParameterUpdate != null) {
-                            this.DgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
+                            this.DgOperator.ParameterUpdate.PerformUpdate(CurrentState, this.Parameters);
                         }
 
                         var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
@@ -497,7 +496,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     case LinearizationHint.FDJacobi: {
                         var mtxBuilder = DgOperator.GetFDJacobianBuilder_(CurrentState, this.Parameters, Mapping,
-                            DgOperator.ParameterUpdate != null ? DgOperator.ParameterUpdate.ParameterUpdate : default(DelParameterUpdate));
+                            DgOperator.ParameterUpdate != null ? DgOperator.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
                         mtxBuilder.time = time;
                         mtxBuilder.MPITtransceive = true;
                         mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -509,7 +508,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         if(JacobiParameterVars == null)
                             JacobiParameterVars = op.ParameterUpdate.AllocateParameters(this.CurrentState.Fields, this.Parameters);
-                        op.ParameterUpdate.ParameterUpdate(this.CurrentState.Fields, JacobiParameterVars);
+                        op.ParameterUpdate.PerformUpdate(this.CurrentState.Fields, JacobiParameterVars);
 
                         var mtxBuilder = op.GetMatrixBuilder(Mapping, this.JacobiParameterVars, Mapping);
                         mtxBuilder.time = time;
@@ -524,7 +523,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ++++++++++++++++++++++++
 
                 if(this.DgOperator.ParameterUpdate != null) {
-                    this.DgOperator.ParameterUpdate.ParameterUpdate(CurrentState, this.Parameters);
+                    this.DgOperator.ParameterUpdate.PerformUpdate(CurrentState, this.Parameters);
                 }
 
                 var eval = DgOperator.GetEvaluatorEx(CurrentState, this.Parameters, Mapping);
