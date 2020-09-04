@@ -786,25 +786,8 @@ namespace BoSSS.Application.SipPoisson {
                 int NoOfIterations;
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
-                switch (solvercodes) {
 
-                    case LinearSolverCode.classic_cg:
-                    case LinearSolverCode.classic_mumps:
-                    case LinearSolverCode.classic_pardiso:
-                        ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                        break;
-
-                    //case SolverCodes.nix:
-                    //NoOfIterations = 0;
-                    //mintime = 0;
-                    //maxtime = 0;
-                    //converged = false;
-                    //break;
-
-                    default:
-                        ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                        break;
-                }
+                ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
                 Console.WriteLine("converged? " + converged);
@@ -1021,7 +1004,7 @@ namespace BoSSS.Application.SipPoisson {
                     solverSetup.Start();
                     ISolverSmootherTemplate solver;
 
-                    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
+                    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver, this.m_queryHandler);
 
                     T.Clear();
                     T.AccLaidBack(1.0, Tex);
