@@ -2635,7 +2635,8 @@ namespace BoSSS.Foundation {
                    this.CodomainVar,
                    this.QuadOrderFunction);
 
-            JacobianOp.TemporalOperator = this.TemporalOperator;
+            if (this.TemporalOperator != null)
+                JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);
 
             foreach (string CodNmn in this.CodomainVar) {
                 foreach(var eq in this.EquationComponents[CodNmn]) {
@@ -2666,6 +2667,40 @@ namespace BoSSS.Foundation {
             JacobianOp.Commit();
             return JacobianOp;
         }
+
+        /// <summary>
+        /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
+        /// of this operator (because of the ownership, the temporal operator cannot be reused).
+        /// </summary>
+        class TemporalOperatorContainer : ITemporalOperator {
+
+            SpatialOperator m_newOwner;
+            ITemporalOperator m_encapsulatedObj;
+            public TemporalOperatorContainer(SpatialOperator __newOwner, ITemporalOperator __encapsulatedObj) {
+                m_encapsulatedObj = __encapsulatedObj;
+                m_newOwner = __newOwner;
+
+                
+            }
+
+            bool m_IsCommited;
+
+            /// <summary>
+            /// locks the configuration of the operator
+            /// </summary>
+            public void Commit() {
+                if (m_IsCommited)
+                    throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
+                m_IsCommited = true;
+
+            }
+
+            public IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+                return m_encapsulatedObj.GetMassMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+            }
+        }
+
+
 
         ITemporalOperator m_TemporalOperator;
 

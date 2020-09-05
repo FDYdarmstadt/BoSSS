@@ -261,20 +261,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="OpMatrix"></param>
-        /// <param name="OpAffine"></param>
-        /// <param name="RowMapping"></param>
-        /// <param name="ColMapping"></param>
-        /// <param name="CurrentState"></param>
-        /// <param name="AgglomeratedCellLengthScales"></param>
-        /// <param name="time"></param>
-        /// <param name="CutCellQuadOrder"></param>
-        /// <param name="SurfaceForce"></param>
-        /// <param name="LevelSetGradient"></param>
-        /// <param name="ExternalyProvidedCurvature"></param>
-        /// <param name="updateSolutionParams"></param>
-        /// <param name="ExtParams"></param>
         public void AssembleMatrix<T>(BlockMsrMatrix OpMatrix, double[] OpAffine,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,

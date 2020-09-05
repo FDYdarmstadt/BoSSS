@@ -404,6 +404,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.LinearSolver, Control.NonLinearSolver);
 
             base.Timestepping = solver;
+
+            if (!object.ReferenceEquals(base.LsTrk, solver.LsTrk))
+                throw new ApplicationException();
+
         }
 
         /// <summary>
@@ -488,6 +492,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver);
+
+            LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 
             base.Timestepping = solver;
         }

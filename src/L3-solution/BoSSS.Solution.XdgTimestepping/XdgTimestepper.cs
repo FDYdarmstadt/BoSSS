@@ -219,12 +219,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
-            DelUpdateLevelset _UpdateLevelset,
-            LevelSetHandling _LevelSetHandling,
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
-            double _AgglomerationThreshold,
-            LinearSolverConfig LinearSolver, NonLinearSolverConfig NonLinearSolver) //
+            DelUpdateLevelset _UpdateLevelset = null,
+            LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
+            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
+            AggregationGridData[] _MultigridSequence = null,
+            double _AgglomerationThreshold = 0.1,
+            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null) //
         {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
@@ -233,7 +233,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             
 
             foreach(var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
-                if(f is XDGField xf) {
+                if(f != null && f is XDGField xf) {
                     if(LsTrk == null) {
                         LsTrk = xf.Basis.Tracker;
                     } else {
@@ -259,7 +259,61 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-        private void ConstructorCommon(ISpatialOperator op, bool UseX, IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, DelComputeOperatorMatrix __delComputeOperatorMatrix, 
+        /*
+        /// <summary>
+        /// Legacy-Constructor for user-specified <see cref="DelComputeOperatorMatrix"/>
+        /// </summary>
+        public XdgTimestepping(
+            DelComputeOperatorMatrix userComputeOperatorMatrix,
+            IEnumerable<DGField> Fields,
+            IEnumerable<DGField> IterationResiduals,
+            TimeSteppingScheme __Scheme,
+            DelUpdateLevelset _UpdateLevelset,
+            LevelSetHandling _LevelSetHandling,
+            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
+            AggregationGridData[] _MultigridSequence,
+            double _AgglomerationThreshold,
+            LinearSolverConfig LinearSolver, NonLinearSolverConfig NonLinearSolver) //
+        {
+            this.Scheme = __Scheme;
+            this.XdgOperator = op;
+
+            this.Parameters = op.InvokeParameterFactory(Fields);
+
+
+            foreach (var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
+                if (f != null && f is XDGField xf) {
+                    if (LsTrk == null) {
+                        LsTrk = xf.Basis.Tracker;
+                    } else {
+                        if (!object.ReferenceEquals(LsTrk, xf.Basis.Tracker))
+                            throw new ArgumentException();
+                    }
+                }
+            }
+            if (LsTrk == null)
+                throw new ArgumentException("unable to get Level Set Tracker reference");
+
+            bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
+
+            ConstructorCommon(op, UseX,
+                Fields, this.Parameters, IterationResiduals,
+                myDelComputeXOperatorMatrix,
+                _UpdateLevelset,
+                _LevelSetHandling,
+                _MultigridOperatorConfig,
+                _MultigridSequence,
+                _AgglomerationThreshold,
+                LinearSolver, NonLinearSolver);
+
+        }
+        */
+
+
+        private void ConstructorCommon(
+            ISpatialOperator op, bool UseX, 
+            IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
+            DelComputeOperatorMatrix __delComputeOperatorMatrix, 
             DelUpdateLevelset _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
             double _AgglomerationThreshold,
@@ -277,7 +331,53 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters.Select(f => f != null ? f.Basis.Degree : 0).ToArray(),
                 IterationResiduals.Select(f => f.Basis.Degree).ToArray());
 
+            // default solvers
+            // ===============
+            if(LinearSolver == null) {
+                LinearSolver = new LinearSolverConfig() {
+                    SolverCode = LinearSolverCode.automatic
+                };
+            }
+            if (NonLinearSolver == null) {
+                NonLinearSolver = new NonLinearSolverConfig() {
+                    SolverCode = NonLinearSolverCode.Newton
+                };
+            }
 
+            // default Multi-Grid
+            // ==================
+
+            if (_MultigridSequence == null) {
+                _MultigridSequence = new[] { CoarseningAlgorithms.ZeroAggregation(this.GridDat) };
+            }
+
+            // default level-set treatment
+            // ===========================
+
+            if (_UpdateLevelset == null) {
+                _UpdateLevelset = this.UpdateLevelsetWithNothing;
+                if (_LevelSetHandling != LevelSetHandling.None)
+                    throw new ArgumentException($"If level-set handling is set to {_LevelSetHandling} (anything but {LevelSetHandling.None}) an updating routine must be specified.");
+            }
+
+            // default multigrid operator config
+            // =================================
+            if(_MultigridOperatorConfig == null) {
+                int NoOfVar = Fields.Count();
+                _MultigridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[0][];
+                _MultigridOperatorConfig[0] = new MultigridOperator.ChangeOfBasisConfig[NoOfVar];
+                for(int iVar = 0; iVar < NoOfVar; iVar++) {
+                    _MultigridOperatorConfig[0][iVar] = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { Fields.ElementAt(iVar).Basis.Degree },
+                        mode = MultigridOperator.Mode.Eye,
+                        VarIndex = new int[] { iVar }
+                    };
+                }
+
+            }
+
+            // finally, create timestepper
+            // ===========================
 
             if(bdfOrder > -1000) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(Fields, __Parameters, IterationResiduals,
@@ -313,7 +413,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// 
+        /// translates a time-stepping scheme code
         /// </summary>
         /// <param name="Scheme"></param>
         /// <param name="rksch">if <paramref name="Scheme"/> denotes a Runge-Kutta scheme, well, the Runge-Kutta scheme</param>
@@ -357,9 +457,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
-            LinearSolverConfig LinearSolver, NonLinearSolverConfig NonLinearSolver) //
+            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
+            AggregationGridData[] _MultigridSequence = null,
+            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null) //
         {
             this.Scheme = __Scheme;
             this.DgOperator = op;
@@ -512,8 +612,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-
-        XdgTimesteppingBase TimesteppingBase {
+        /// <summary>
+        /// the internal object
+        /// </summary>
+        public XdgTimesteppingBase TimesteppingBase {
             get {
                 Debug.Assert((m_BDF_Timestepper == null) != (m_RK_Timestepper == null));
                 if(m_BDF_Timestepper != null)
@@ -522,6 +624,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     return m_RK_Timestepper;
                 throw new ApplicationException("internal error");
             }
+        }
+
+        /// <summary>
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability
+        /// </summary>
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
+            return TimesteppingBase.OperatorAnalysis(VarGroups);
         }
 
 
@@ -534,7 +643,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Add logging of iteration residuals.
         /// </summary>
         public void RegisterResidualLogger(ResidualLogger _ResLogger) {
-            TimesteppingBase.m_ResidualNames = this.IterationResiduals.Fields.Select(f => f.Identification).ToArray();
+            TimesteppingBase.m_ResidualNames = this.Operator.CodomainVar.ToArray();
             TimesteppingBase.m_ResLogger = _ResLogger;
         }
 
@@ -542,13 +651,16 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// driver for solver calls
         /// </summary>
-        public void Solve(double phystime, double dt) {
+        public void Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
 
             if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.Solve(phystime, dt);
+                m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
             } else {
+                if (SkipSolveAndEvaluateResidual == true)
+                    throw new NotSupportedException("SkipSolveAndEvaluateResidual == true is not supported for Runge-Kutta");
+
                 m_RK_Timestepper.Solve(phystime, dt);
             }
 

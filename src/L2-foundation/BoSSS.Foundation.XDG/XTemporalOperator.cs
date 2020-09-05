@@ -94,10 +94,9 @@ namespace BoSSS.Foundation.XDG {
         /// locks the configuration of the operator
         /// </summary>
         public void Commit() {
-            m_IsCommited = true;
             if (m_IsCommited)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
-
+            m_IsCommited = true;
         }
 
         /// <summary>
