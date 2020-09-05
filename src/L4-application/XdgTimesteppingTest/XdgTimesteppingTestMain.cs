@@ -51,16 +51,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-
-            InitMPI();
-            DeleteOldPlotFiles();
+            //InitMPI();
+            //DeleteOldPlotFiles();
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02(TimeSteppingScheme.RK1u1, 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 4);
-            FinalizeMPI();
-            return;
+            //FinalizeMPI();
+            //return;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
                 return new XdgTimesteppingMain();
@@ -106,8 +101,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         public override IEnumerable<DGField> InstantiateResidualFields() {
             return new DGField[] { this.Residual };
         }
-
-
 
         protected override void CreateAdditionalFields() {
             base.LsTrk = MyLsTrk;
@@ -301,6 +294,17 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 var Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames , "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(this.LsTrk, S));
+
+                //delegate (string ParameterName, DGField ParamField)[] DelParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+                Operator.ParameterFactories.Add(delegate (IReadOnlyDictionary<string, DGField> DomainVarFields) {
+                    return new ValueTuple<string, DGField>[] {
+                        ("Vx", this.V[0] as DGField),
+                        ("Vy", this.V[1] as DGField)
+                    };
+                });
+                // no update of the parameter is required since it stays constant.
+
+                Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 Operator.Commit();
 
                 return Operator;
@@ -313,6 +317,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 Operator.EquationComponents["Cod1"].Add(bulkFlx);
                 Operator.EquationComponents["Cod1"].Add(intfFlx);
+
+                Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 Operator.Commit();
 
                 return Operator;
@@ -322,6 +328,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 var Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, LsTrk.SpeciesNames, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
+                Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 Operator.Commit();
 
                 return Operator;
@@ -330,6 +337,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
+        /*
         protected override IEnumerable<DGField> InstantiateParameterFields() {
             if (this.Control.Eq == Equation.ScalarTransport)
                 return this.V.ToArray();
@@ -340,6 +348,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             else
                 throw new NotImplementedException();
         }
+        */
+
 
         public override double UpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
             LevsetEvo(phystime, dt, null);

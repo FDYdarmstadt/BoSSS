@@ -28,7 +28,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.XdgTimesteppingTest {
 
 
-    class BurgersFlux_Bulk : LinearFlux {
+    class BurgersFlux_Bulk : LinearFlux, IParameterHandling {
 
         public Func<double[], double, double> Inflow;
 
@@ -72,6 +72,23 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double u0 = inp.Parameters[0];
             output[0] = Direction.x * (u0 * U[0] * 0.5);
             output[1] = Direction.y * (u0 * U[0] * 0.5);
+        }
+
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
+            var u = Arguments[0];
+            var u0 = Parameters[0];
+
+            if (object.ReferenceEquals(u, u0))
+                return; // we are done...
+
+            // ... but otherwise:
+            u0.Clear();
+            u0.Acc(1.0, u);
+        }
+
+        public DGField[] MyParameterAlloc(DGField[] Arguments) {
+            var u = Arguments[0];
+            return new[] { u }; // use "u" itself also as a parameter!
         }
 
         /// <summary>
