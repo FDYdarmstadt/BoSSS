@@ -156,7 +156,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// <summary>
         /// The BDF time integrator - makes load balancing challenging.
         /// </summary>
-        XdgBDFTimestepping TimeIntegration;
+        XdgTimestepping TimeIntegration;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
@@ -166,10 +166,15 @@ namespace BoSSS.Application.LoadBalancingTest {
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, alpha_A, alpha_B)); // flux am lev-set 0
-            
+
+            Op.LinearizationHint = LinearizationHint.AdHoc;
+
+            Op.TemporalOperator = new ConstantXTemporalOperator(Op, 1.0);
+
             Op.Commit();
 
             if (L == null) {
+                /*
                 TimeIntegration = new XdgBDFTimestepping(
                     new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk,
                     true,
@@ -189,24 +194,25 @@ namespace BoSSS.Application.LoadBalancingTest {
                     true,
                     this.Control.NonLinearSolver,
                     this.Control.LinearSolver);
+                */
+
+                TimeIntegration = new XdgTimestepping(
+                    Op,
+                    new DGField[] { u }, new DGField[] { uResidual },
+                    TimeSteppingScheme.BDF3,
+                    this.DelUpdateLevelset, LevelSetHandling.LieSplitting,
+                    MultigridOperatorConfig, MultigridSequence,
+                    _AgglomerationThreshold: this.THRESHOLD,
+                    LinearSolver: this.Control.LinearSolver, NonLinearSolver: this.Control.NonLinearSolver);
+
+
+
             } else {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
                 TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
             }
         }
 
-        ///// <summary>
-        ///// Block scaling of the mass matrix.
-        ///// </summary>
-        //protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-        //    get {
-        //        double[] _rho = new double[] { 1 };
-        //        IDictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-        //        R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
-        //        R.Add(this.LsTrk.GetSpeciesId("B"), _rho);
-        //        return R;
-        //    }
-        //}
 
         MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
             get {
@@ -236,6 +242,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
+        /*
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             
             OpAffine.ClearEntries();
@@ -265,32 +272,9 @@ namespace BoSSS.Application.LoadBalancingTest {
                 OpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
             }
 
-
-            /*
-            if (!Mapping.EqualsPartition(uResidual.Mapping))
-                throw new ArgumentException();
-
-            if (OpMatrix != null) {
-                OpMatrix.Clear();
-                OpAffine.ClearEntries();
-
-                Op.ComputeMatrixEx(base.LsTrk,
-                    u.Mapping, null, Mapping,
-                    OpMatrix, OpAffine, false,
-                    phystime,
-                    false,
-                    base.LsTrk.SpeciesIdS.ToArray());
-            } else {
-                var eval = Op.GetEvaluatorEx(base.LsTrk,
-                    CurrentState, null, Mapping,
-                    base.LsTrk.SpeciesIdS.ToArray());
-
-                eval.time = phystime;
-
-                eval.Evaluate(1.0, 1.0, OpAffine);
-            }
-            */
         }
+        */
+
 
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
          
@@ -306,12 +290,9 @@ namespace BoSSS.Application.LoadBalancingTest {
                 base.NoOfTimesteps = 20;
                 dt = 0.1;
 
-                // initial value
-                if (TimestepNo == 1)
-                    TimeIntegration.SingleInit();
 
                 // compute one time-step
-                TimeIntegration.Solve(phystime, dt, ComputeOnlyResidual: true);
+                TimeIntegration.Solve(phystime, dt, SkipSolveAndEvaluateResidual: true);
                 double ResidualNorm = this.uResidual.L2Norm();
                 Assert.LessOrEqual(ResidualNorm, 1.0e-8, "Unusually large and ugly residual norm detected.");
 
