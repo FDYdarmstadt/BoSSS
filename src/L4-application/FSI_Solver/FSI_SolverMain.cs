@@ -298,8 +298,7 @@ namespace BoSSS.Application.FSI_Solver {
             if(IBM_Op != null)
                 return;
 
-            base.CreateEquationsAndSolvers
-
+           
             // boundary conditions
             boundaryCondMap = new IncompressibleBoundaryCondMap(GridData, Control.BoundaryValues, PhysicsMode.Incompressible);
 
