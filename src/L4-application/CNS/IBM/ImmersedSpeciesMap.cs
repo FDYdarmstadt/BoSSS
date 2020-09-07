@@ -67,7 +67,7 @@ namespace CNS.IBM {
                 if (firstCall) {
                     // This IS necessary... don't ask me why, though
                     // to have one previous state available, so all the incremental updates work
-                    tracker.UpdateTracker();
+                    tracker.UpdateTracker(0.0);
                     tracker.PushStacks();
                 }
 

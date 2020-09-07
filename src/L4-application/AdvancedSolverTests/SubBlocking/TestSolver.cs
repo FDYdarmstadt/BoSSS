@@ -168,7 +168,7 @@ namespace AdvancedSolverTests {
         void LsUpdate(double t) {
             double offset = t;
             Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.707).Pow2());
-            LsTrk.UpdateTracker();
+            LsTrk.UpdateTracker(t);
         }
 
 

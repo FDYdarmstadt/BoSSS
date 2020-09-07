@@ -118,7 +118,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             // project new level-set
             double s = 1.0;
             LevSet.ProjectField((x, y) => -(x - s * t).Pow2() - y.Pow2() + (2.4).Pow2());
-            LsTrk.UpdateTracker(incremental: _incremental);
+            LsTrk.UpdateTracker(t, incremental: _incremental);
 
             // exact solution for new timestep
             uEx.GetSpeciesShadowField("A").ProjectField((x, y) => x + alpha_A * t);

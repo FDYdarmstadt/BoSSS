@@ -1419,7 +1419,7 @@ namespace BoSSS.Application.Rheology {
                 throw new NotImplementedException("currently only support for 2 dimensions.");
 
             base.SetInitial();
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(0.0);
             CreateEquationsAndSolvers(null);
             VelocityXGradient = new VectorField<SinglePhaseField>(D, Velocity.Current[0].Basis, "VelocityX_Gradient", SinglePhaseField.Factory);
             VelocityYGradient = new VectorField<SinglePhaseField>(D, Velocity.Current[1].Basis, "VelocityY_Gradient", SinglePhaseField.Factory);
@@ -1458,7 +1458,7 @@ namespace BoSSS.Application.Rheology {
         protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
             base.LoadRestart(out Time, out TimestepNo);
 
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(Time);
         }
 
         /// <summary>

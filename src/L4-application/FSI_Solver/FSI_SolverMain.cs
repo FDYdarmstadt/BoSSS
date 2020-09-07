@@ -556,7 +556,7 @@ namespace BoSSS.Application.FSI_Solver {
                 case LevelSetHandling.None:
                     ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
                     LevSet.ProjectField(Posfunction);
-                    LsTrk.UpdateTracker();
+                    LsTrk.UpdateTracker(phystime + dt);
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
@@ -649,7 +649,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
 
             try {
-                LsTrk.UpdateTracker(__NearRegionWith: 2);
+                LsTrk.UpdateTracker(phystime, __NearRegionWith: 2);
             }
             catch (LevelSetCFLException e) {//hacky workaround
                 if (AddedGhostParticle)

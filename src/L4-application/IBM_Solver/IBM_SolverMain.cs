@@ -999,7 +999,7 @@ namespace BoSSS.Application.IBM_Solver {
             //}
 
             CreateEquationsAndSolvers(null);
-            After_SetInitialOrLoadRestart();
+            After_SetInitialOrLoadRestart(0.0);
             m_BDF_Timestepper.SingleInit();
         }
 
@@ -1027,7 +1027,7 @@ namespace BoSSS.Application.IBM_Solver {
             this.DGLevSet.Current.Clear();
             this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
 
-            this.LsTrk.UpdateTracker(incremental: true);
+            this.LsTrk.UpdateTracker(time, incremental: true);
 
             // solution
             // --------
@@ -1039,7 +1039,7 @@ namespace BoSSS.Application.IBM_Solver {
             St[D] = this.Pressure.CloneAs();
         }
 
-        private void After_SetInitialOrLoadRestart() {
+        private void After_SetInitialOrLoadRestart(double time) {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
                 
@@ -1050,7 +1050,7 @@ namespace BoSSS.Application.IBM_Solver {
              
                 
                 // we push the current state of the level-set, so we have an initial value
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(time);
                 this.DGLevSet.IncreaseHistoryLength(1);
                 this.LsTrk.PushStacks();
                 this.DGLevSet.Push();
@@ -1117,10 +1117,10 @@ namespace BoSSS.Application.IBM_Solver {
                         BDFDelayedInitLoadRestart);
                 }
 
-                After_SetInitialOrLoadRestart();
+                After_SetInitialOrLoadRestart(Time);
             } else {
                 if (m_BDF_Timestepper != null) {
-                    After_SetInitialOrLoadRestart();
+                    After_SetInitialOrLoadRestart(Time);
                     m_BDF_Timestepper.SingleInit();
                 }
             }

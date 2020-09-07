@@ -115,7 +115,7 @@ namespace CNS.IBM {
         public override void ProjectInitialValues(ISpeciesMap speciesMap, IDictionary<string, Func<double[], double>> initialValues) {
             LevelSet.ProjectField(NonVectorizedScalarFunction.Vectorize(
                 X => config.LevelSetFunction(X, 0.0)));
-            speciesMap.As<ImmersedSpeciesMap>().Tracker.UpdateTracker();
+            speciesMap.As<ImmersedSpeciesMap>().Tracker.UpdateTracker(0.0);
 
             base.ProjectInitialValues(speciesMap, initialValues);
         }

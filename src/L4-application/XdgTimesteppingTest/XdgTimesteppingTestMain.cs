@@ -197,9 +197,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                         }
 
                         if (CallCount == 0) {
-                            this.LsTrk.UpdateTracker();
+                            this.LsTrk.UpdateTracker(Time);
                         } else {
-                            this.LsTrk.UpdateTracker(incremental: true);
+                            this.LsTrk.UpdateTracker(Time, incremental: true);
                         }
 
                         CallCount++;
@@ -215,7 +215,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     });
             } else {
                 this.Phi.ProjectField(X => this.Control.Phi(X, 0.0));
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(0.0);
                 u.Clear();
                 u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, 0.0)));
                 u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, 0.0)));
@@ -401,7 +401,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 // project new level-set
                 this.Phi.ProjectField(X => this.Control.Phi(X, phystime + dt));
-                this.LsTrk.UpdateTracker(incremental: true);
+                this.LsTrk.UpdateTracker(phystime + dt, incremental: true);
                 UpdateMarkerFields();
 
                 // HMF hacks

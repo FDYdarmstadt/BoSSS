@@ -973,7 +973,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
                 this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
 
-                this.LsTrk.UpdateTracker(incremental: true);
+                this.LsTrk.UpdateTracker(Time, incremental: true);
 
                 // solution
                 // --------

@@ -301,7 +301,7 @@ namespace BoSSS.Foundation.XDG {
             ComputeGhostTable();
 
 
-            UpdateTracker();
+            UpdateTracker(0.0);
             PushStacks();
         }
 
@@ -1244,7 +1244,7 @@ namespace BoSSS.Foundation.XDG {
 
             // update tracker
             // ==============
-            UpdateTracker();
+            UpdateTracker(0.0);
             this.Regions.Version = VersionCounter;
             this.m_VersionCnt = VersionCounter;
         }
@@ -1320,7 +1320,10 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// Also, detection of topology changes/collisions *require* incremental update set to true.
         /// </param>
-        public void UpdateTracker(int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
+        /// <param name="PhysTime">
+        /// 
+        /// </param>
+        public void UpdateTracker(double PhysTime, int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
             using (var tr = new FuncTrace()) {
                 ilPSP.MPICollectiveWatchDog.Watch();
                

@@ -126,9 +126,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
            
             base.SetInitial();
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(0.0);
             base.SetInitial();
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(0.0);
 
             this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
             for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
@@ -412,7 +412,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 base.QueryHandler.ValueQuery("L2_ERR", L2_ERR, true);
 
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(0.0);
                 int order = Math.Max(u.Basis.Degree, Math.Max(uErr.Basis.Degree, uEx.Basis.Degree)) * 2 + 1;
                 //var scheme = new XQuadSchemeHelper(this.LsTrk, this.Control.HMFversion, this.LsTrk.SpeciesIdS.ToArray());
                 var scheme = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;

@@ -484,7 +484,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
-            this.LsTrk.UpdateTracker(incremental: true);
+            this.LsTrk.UpdateTracker(time + dt, incremental: true);
             return 0.0;
         }
 
