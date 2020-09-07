@@ -73,12 +73,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            //InitMPI();
+            InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
-            ////Tests.UnitTest.OneTimeTearDown();
-            //return;
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
+            FinalizeMPI();
+            return;
 
 
             _Main(args, false, delegate () {
@@ -887,9 +887,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (rksch == null) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(
-                    this.CurrentSolution.Mapping.Fields,
-                    null,
-                    this.CurrentResidual.Mapping.Fields,
+                    this.CurrentSolution.Fields,
+                    XNSFE_Operator.Xop.InvokeParameterFactory(this.CurrentSolution.Fields),
+                    this.CurrentResidual.Fields,
                     LsTrk,
                     true,
                     DelComputeOperatorMatrix, this.XNSFE_Operator.Xop.TemporalOperator, DelUpdateLevelSet,
