@@ -158,6 +158,8 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         XdgTimestepping TimeIntegration;
 
+        //XdgBDFTimestepping AltTimeIntegration;
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
 
@@ -175,17 +177,16 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             if (L == null) {
                 /*
-                TimeIntegration = new XdgBDFTimestepping(
-                    new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk,
+                AltTimeIntegration = new XdgBDFTimestepping(
+                    new DGField[] { u }, new DGField[0], new DGField[] { uResidual }, base.LsTrk,
                     true,
-                    DelComputeOperatorMatrix, null, DelUpdateLevelset,
+                    DelComputeOperatorMatrix, Op.TemporalOperator, DelUpdateLevelset,
                     3, // BDF3
                        //-1, // Crank-Nicolson
                        //0, // Explicit Euler
                     LevelSetHandling.LieSplitting,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
                     MultigridOperatorConfig,
                     this.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(),
@@ -195,7 +196,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     this.Control.NonLinearSolver,
                     this.Control.LinearSolver);
                 */
-
+                
                 TimeIntegration = new XdgTimestepping(
                     Op,
                     new DGField[] { u }, new DGField[] { uResidual },
@@ -204,12 +205,13 @@ namespace BoSSS.Application.LoadBalancingTest {
                     MultigridOperatorConfig, MultigridSequence,
                     _AgglomerationThreshold: this.THRESHOLD,
                     LinearSolver: this.Control.LinearSolver, NonLinearSolver: this.Control.NonLinearSolver);
-
+                
 
 
             } else {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
                 TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
+                //AltTimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
             }
         }
 
@@ -242,7 +244,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-        /*
+        
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             
             OpAffine.ClearEntries();
@@ -273,12 +275,13 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
 
         }
-        */
+        
 
 
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
          
             TimeIntegration.DataBackupBeforeBalancing(L);
+            //AltTimeIntegration.DataBackupBeforeBalancing(L);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -293,6 +296,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
                 // compute one time-step
                 TimeIntegration.Solve(phystime, dt, SkipSolveAndEvaluateResidual: true);
+                //AltTimeIntegration.Solve(phystime, dt, ComputeOnlyResidual: true);
                 double ResidualNorm = this.uResidual.L2Norm();
                 Assert.LessOrEqual(ResidualNorm, 1.0e-8, "Unusually large and ugly residual norm detected.");
 

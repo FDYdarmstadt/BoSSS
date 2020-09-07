@@ -285,6 +285,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
                 MassMatrix.AccEyeSp(1.0);
             } else {
+                if(TemporalOperator is ConstantXTemporalOperator cxt) {
+                    cxt.SetTrackerHack(this.m_LsTrk);
+                }
 
                 var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
                 builder.time = time;

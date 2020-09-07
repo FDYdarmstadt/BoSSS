@@ -69,6 +69,7 @@ namespace BoSSS.Foundation.XDG {
                 double[] vals = tt.Item2.CloneAs();
                 if (vals.Length != NoOfVar)
                     throw new ArgumentException($"wrong number of entries for species {spc}");
+                m_DiagonalScale[spc].SetV(vals, 1.0);
             }
         }
 
@@ -108,6 +109,17 @@ namespace BoSSS.Foundation.XDG {
             return new InternalBla(this, DomainVarMap, ParameterMap, CodomainVarMap);
         }
 
+
+        /// <summary>
+        /// Dirty hack to support e.g. the IBM solver (state sept2020) which uses only DG 
+        /// fields but employs an <see cref="XSpatialOperatorMk2"/>;
+        /// may be deleted, eventually.
+        /// </summary>
+        public void SetTrackerHack(LevelSetTracker lstrk) {
+            m_lstrk = lstrk;
+        }
+
+        LevelSetTracker m_lstrk;
 
         class InternalBla : IEvaluatorLinear {
 
@@ -202,7 +214,11 @@ namespace BoSSS.Foundation.XDG {
                     throw new NotSupportedException($"Mismatch between number of variables in domain ({DomainMapping.NoOfVariables}) and codomain ({CodomainMapping.NoOfVariables}).");
 
                 int QuadratureOrder = m_Owner.owner.GetOrderFromQuadOrderFunction(DomainMapping.BasisS, XSpatialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
-                var _LsTrk = XSpatialOperatorMk2.GetTracker(DomainMapping.BasisS, XSpatialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
+                LevelSetTracker _LsTrk;
+                if(m_Owner.m_lstrk != null)
+                    _LsTrk = m_Owner.m_lstrk;
+                else
+                    _LsTrk = XSpatialOperatorMk2.GetTracker(DomainMapping.BasisS, XSpatialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
                 SpeciesId[] _SpeciesToCompute = m_Owner.owner.Species.Select(spcName => _LsTrk.GetSpeciesId(spcName)).ToArray();
 
 

@@ -1693,7 +1693,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                     double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
 
-                    //Assert.Less(distL2, refL2 * 1.0e-5, "argh");
+                    Assert.Less(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
 
                 }
 #endif
@@ -1714,12 +1714,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
                     m_ResLogger.CustomValue(0.0, "LevelSet");
                 }
-
-                //if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
-                //    m_ResLogger.CustomValue(0.0, "LevelSet");
-                //}
-
-                //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(m_Stack_u[0].Mapping.Fields, ResidualFields), "strange", 0.0, 4);
 
                 if (m_ResLogger != null)
                     m_ResLogger.NextIteration(true);

@@ -367,7 +367,7 @@ namespace BoSSS.Application.IBM_Solver {
                 LsTrk,
                 true,
                 DelComputeOperatorMatrix,
-                null,
+                this.IBM_Op.TemporalOperator,
                 DelUpdateLevelset,
                 bdfOrder,
                 lsh,
