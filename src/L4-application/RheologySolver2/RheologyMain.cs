@@ -586,6 +586,7 @@ namespace BoSSS.Application.Rheology {
                     if(Control.UseArtificialDiffusion) {
 
                         XOP.ParameterUpdates.Add(ArtificialViscosityUpdate);
+                        
                         XOP.ParameterFactories.Add(delegate (IReadOnlyDictionary<string, DGField> DomainVarFields) {
                             return new[] { ("artificialViscosity", this.artificalViscosity as DGField) };
                         });

@@ -229,7 +229,15 @@ namespace BoSSS.Foundation.XDG {
                     MassScale.Add(spc, diag);
                 }
 
-                MassMatrixFactory MassFact = _LsTrk.GetXDGSpaceMetrics(_SpeciesToCompute, QuadratureOrder, HistoryIndex:1).MassMatrixFactory;
+                //double MaxTime = _LsTrk.RegionsHistory.AvailabelIndices.Max((int iHist) => _LsTrk.RegionsHistory[iHist].Time.Abs());
+                int ii = _LsTrk.RegionsHistory.AvailabelIndices.IndexOfMin((int iHist) => Math.Abs(_LsTrk.RegionsHistory[iHist].Time - this.time));
+                int BestTimeIdx = _LsTrk.RegionsHistory.AvailabelIndices[ii];
+
+                if(Math.Abs(Math.Abs(time - _LsTrk.RegionsHistory[BestTimeIdx].Time)) >= time * 1e-10 + 1e-10)
+                    throw new NotSupportedException("unknown time level");
+                
+
+                MassMatrixFactory MassFact = _LsTrk.GetXDGSpaceMetrics(_SpeciesToCompute, QuadratureOrder, HistoryIndex:BestTimeIdx).MassMatrixFactory;
                 MassFact.AccMassMatrix(MassMatrix, DomainMapping, MassScale);
 
             }

@@ -779,14 +779,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (m_PrivateBalancingInfo.m_Stack_MassMatrix[i]) {
                         m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
 
-                        /*
-                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[i], )
+                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[i], LsTrk.RegionsHistory[1 - i].Time);
 
+                        /*
                         m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, 1 - i)
                             .MassMatrixFactory
                             .AccMassMatrix(m_Stack_MassMatrix[i], CurrentStateMapping, _alpha: Config_MassScale);
                         */
-                        throw new NotImplementedException("todo");
                     }
                 }
 
