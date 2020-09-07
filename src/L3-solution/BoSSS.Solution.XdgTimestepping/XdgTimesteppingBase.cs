@@ -277,21 +277,23 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         protected void ComputeMassMatrixImpl(BlockMsrMatrix MassMatrix, double time) {
-            if (!MassMatrix._RowPartitioning.EqualsPartition(CurrentStateMapping))
-                throw new ArgumentException("Internal error.");
-            if (!MassMatrix._ColPartitioning.EqualsPartition(CurrentStateMapping))
-                throw new ArgumentException("Internal error.");
+            using(new FuncTrace()) {
+                if(!MassMatrix._RowPartitioning.EqualsPartition(CurrentStateMapping))
+                    throw new ArgumentException("Internal error.");
+                if(!MassMatrix._ColPartitioning.EqualsPartition(CurrentStateMapping))
+                    throw new ArgumentException("Internal error.");
 
-            if (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
-                MassMatrix.AccEyeSp(1.0);
-            } else {
-                if(TemporalOperator is ConstantXTemporalOperator cxt) {
-                    cxt.SetTrackerHack(this.m_LsTrk);
+                if(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
+                    MassMatrix.AccEyeSp(1.0);
+                } else {
+                    if(TemporalOperator is ConstantXTemporalOperator cxt) {
+                        cxt.SetTrackerHack(this.m_LsTrk);
+                    }
+
+                    var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
+                    builder.time = time;
+                    builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
                 }
-
-                var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
-                builder.time = time;
-                builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
             }
         }
 

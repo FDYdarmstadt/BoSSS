@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="thermBcMap"></param>
         /// <param name="degU"></param>
         public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration _config, LevelSetTracker _LsTrk, int _HMFdegree, 
-            IncompressibleMultiphaseBoundaryCondMap BcMap, ThermalMultiphaseBoundaryCondMap thermBcMap, int degU) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, ThermalMultiphaseBoundaryCondMap thermBcMap, int degU, IDictionary<SpeciesId, IEnumerable<double>> MassScale) {
 
             this.config = _config;
             this.LsTrk = _LsTrk;
@@ -244,6 +244,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
 
+            // create temporal operator
+            // ========================
+            var TempOp = new ConstantXTemporalOperator(m_XOp, 0.0);
+            m_XOp.TemporalOperator = TempOp;
+            foreach(var kv in MassScale) {
+                TempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
+            }
+
+            // Finalize
+            // ========
 
             m_XOp.Commit();
         }

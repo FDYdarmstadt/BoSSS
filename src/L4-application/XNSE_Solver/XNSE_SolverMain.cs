@@ -486,15 +486,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XOpConfig = new XNSFE_OperatorConfiguration(this.Control);
 
-            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU);
+            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU, this.MassScale);
             updateSolutionParams = new bool[CurrentResidual.Mapping.Fields.Count];
 
-            // create temporal operator
-            var TempOp = new ConstantXTemporalOperator(XNSFE_Operator.Xop, 0.0);
-            XNSFE_Operator.Xop.TemporalOperator = TempOp;
-            foreach(var kv in this.MassScale) {
-                TempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
-            }
+            
             
             #endregion
 
