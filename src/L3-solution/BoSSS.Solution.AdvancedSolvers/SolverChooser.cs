@@ -303,6 +303,7 @@ namespace BoSSS.Solution {
                             m_SessionPath = SessionPath,
                             UsePresRefPoint = nc.UsePresRefPoint,
                             printLambda = nc.printLambda,
+                            Globalization = nc.Globalization,
                         };
                         linsolver = precondonly; // put out the solver, which is actually used!
                     } else {
@@ -315,6 +316,7 @@ namespace BoSSS.Solution {
                             MinIter = nc.MinSolverIterations,
                             UsePresRefPoint = nc.UsePresRefPoint,
                             printLambda = nc.printLambda,
+                            Globalization = nc.Globalization,
                             ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                             linsolver = linsolver,
                             GMRESConvCrit = lc.ConvergenceCriterion,
@@ -348,6 +350,7 @@ namespace BoSSS.Solution {
                         maxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
+                        Globalization = nc.Globalization,
                         ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                         linsolver = linsolver,
                         GMRESConvCrit = lc.ConvergenceCriterion,

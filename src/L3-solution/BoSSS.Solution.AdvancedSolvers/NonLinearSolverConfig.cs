@@ -15,12 +15,8 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Solution;
+using static BoSSS.Solution.AdvancedSolvers.Newton;
 
 namespace BoSSS.Solution.Control {
 
@@ -107,6 +103,11 @@ namespace BoSSS.Solution.Control {
         public bool printLambda = false;
 
         /// <summary>
+        /// How to restrict the step size of Newton steps
+        /// </summary>
+        public GlobalizationOption Globalization = GlobalizationOption.LineSearch;
+
+        /// <summary>
         /// Clones the NonLinearConfig
         /// </summary>
         /// <returns></returns>
@@ -142,6 +143,7 @@ namespace BoSSS.Solution.Control {
                 this.UnderRelax == compareto.UnderRelax &&
                 this.UsePresRefPoint == compareto.UsePresRefPoint &&
                 this.printLambda == compareto.printLambda &&
+                this.Globalization == compareto.Globalization &&
                 this.verbose == compareto.verbose;
         }
     }
