@@ -308,6 +308,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 // no update of the parameter is required since it stays constant.
 
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
+                
+                Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.Commit();
 
                 return Operator;
@@ -322,6 +324,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.EquationComponents["Cod1"].Add(intfFlx);
 
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
+                
+                Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.Commit();
 
                 return Operator;
@@ -332,6 +336,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
+
+                Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.Commit();
 
                 return Operator;

@@ -339,7 +339,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     int NF = this.CurrentStateMapping.Fields.Count;
                     //MassFact.AccMassMatrix(ScaledMassMatrix, CurrentStateMapping, _alpha: Config_MassScale);
-                    base.ComputeMassMatrixImpl(ScaledMassMatrix, time);
+                    base.ComputeMassMatrixImpl(ScaledMassMatrix, m_LsTrk.RegionsHistory.Current.Time); // we need a better concept here
                 } else {
                     throw new NotSupportedException();
                 }

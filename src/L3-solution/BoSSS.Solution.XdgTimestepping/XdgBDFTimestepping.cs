@@ -583,7 +583,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                     //MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
-                    base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], 0);
+                    base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_LsTrk.RegionsHistory.Current.Time);
 
                 }
             }
@@ -1174,7 +1174,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // mass matrix for time derivative
                         m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                         //MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
-                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_CurrentPhystime + m_CurrentDt);
+                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_LsTrk.RegionsHistory.Current.Time);
                     }
 
                     PrecondMassMatrix = m_PrecondMassMatrix;

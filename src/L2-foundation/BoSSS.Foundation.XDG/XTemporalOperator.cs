@@ -235,9 +235,10 @@ namespace BoSSS.Foundation.XDG {
                 int BestTimeIdx = _LsTrk.RegionsHistory.AvailabelIndices[ii];
 
                 if(Math.Abs(Math.Abs(time - _LsTrk.RegionsHistory[BestTimeIdx].Time)) >= time * 1e-10 + 1e-10)
-                    throw new NotSupportedException("unknown time level");
-                
+                    Console.WriteLine("unknown time level");
 
+
+                //BestTimeIdx = 1;
                 MassMatrixFactory MassFact = _LsTrk.GetXDGSpaceMetrics(_SpeciesToCompute, QuadratureOrder, HistoryIndex:BestTimeIdx).MassMatrixFactory;
                 MassFact.AccMassMatrix(MassMatrix, DomainMapping, MassScale);
 
