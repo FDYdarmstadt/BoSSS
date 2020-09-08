@@ -361,7 +361,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public BlockingStrategy m_BlockingStrategy;
 
-
         MultigridOperator m_MgOp;
 
         /// <summary>
@@ -370,6 +369,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool UsePMGinBlocks {
             get;
             set;
+        }
+
+        private bool AnyHighOrderTerms {
+            get {
+                Debug.Assert(m_MgOp != null, "there is no matrix given yet!");
+                return m_MgOp.Mapping.DgDegree.Any(p => p > pLow);
+            }
         }
 
         public int CoarseLowOrder {
@@ -388,9 +394,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
-                if (UsePMGinBlocks) {
-                    Console.WriteLine("Schwarz: pmg is used as blocksolve");
-                }
 
                 if (m_MgOp != null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -415,8 +418,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
                         throw new ArgumentException("Blocking, unable to re-use");
                     }
-
-
                     return;
                 }
 
@@ -428,6 +429,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int myMpisize = MgMap.MpiSize;
                 int D = m_MgOp.GridData.SpatialDimension;
 
+                if (UsePMGinBlocks && AnyHighOrderTerms)
+                    Console.WriteLine("Schwarz: pmg is used as blocksolve");
+                if (UsePMGinBlocks && !AnyHighOrderTerms)
+                    Console.WriteLine("Schwarz: Only low order terms present. Use Schwarz blocks will be solved direct instead of PMG");
                 if (!Mop.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!Mop.ColPartition.EqualsPartition(MgMap.Partitioning))
@@ -588,7 +593,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     BMfullBlocks[iPart] = fullMask;
 
-                    if (UsePMGinBlocks) {
+                    if (UsePMGinBlocks && AnyHighOrderTerms) {
                         //generate selector instructions
                         var lowSel = new SubBlockSelector(op.Mapping);
                         lowSel.CellSelector(bc.ToList(), false);
@@ -642,7 +647,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         UseDoublePrecision = false
                     };
 
-                    if (UsePMGinBlocks) {
+                    if (UsePMGinBlocks && AnyHighOrderTerms) {
                         blockSolvers[iPart].DefineMatrix(loBlock);
                     } else {
                         blockSolvers[iPart].DefineMatrix(fullBlock);
@@ -880,7 +885,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             var bi=BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                             double[] xi = new double[bi.Length];
-                            if (UsePMGinBlocks) {
+                            if (UsePMGinBlocks && AnyHighOrderTerms) {
                                 // +++++++++++++++++++++++++++++++++
                                 // P-multigrid in each Schwarz block
                                 // +++++++++++++++++++++++++++++++++

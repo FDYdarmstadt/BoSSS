@@ -132,6 +132,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate CoarserLevelSolver;
         public ISolverSmootherTemplate PreSmoother;
         public ISolverSmootherTemplate PostSmoother;
+        public int m_omega = 1;
+        public int MaxKrylovDim = int.MaxValue;
 
         /// <summary>
         /// 
@@ -146,9 +148,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///// Threshold for convergence detection
         ///// </summary>
         //public double Tolerance = 1E-10;
-
-
-
 
         /// <summary>
         /// computes the residual on this level.
@@ -262,6 +261,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
 
         void AddSolCore(ref double[] X) {
+
+            if (SolHistory.Count >= MaxKrylovDim) {
+                SolHistory.Clear();
+                MxxHistory.Clear();
+            }
+
             Debug.Assert(SolHistory.Count == MxxHistory.Count);
             Debug.Assert(X.Length == OpMatrix._RowPartitioning.LocalLength);
             int L = X.Length;
@@ -528,7 +533,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // Berechnung der Grobgitterkorrektur
                         double[] vlc = new double[Lc];
-                        this.CoarserLevelSolver.Solve(vlc, rlc);
+                        for(int i =0;i<m_omega;i++)
+                            this.CoarserLevelSolver.Solve(vlc, rlc);
 
                         // Prolongation der Grobgitterkorrektur
                         double[] vl = new double[L];

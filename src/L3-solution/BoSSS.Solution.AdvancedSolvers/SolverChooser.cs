@@ -1440,6 +1440,8 @@ namespace BoSSS.Solution {
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
                         PostSmoother = smoother1,
+                        m_omega = 1,
+                        MaxKrylovDim = _lc.MaxKrylovDim,
                     };
 
                     if (iLevel > 0) {

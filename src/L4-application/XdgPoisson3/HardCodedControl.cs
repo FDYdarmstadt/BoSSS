@@ -555,11 +555,11 @@ namespace BoSSS.Application.XdgPoisson3 {
             };
 
             C.GridPartType = GridPartType.Hilbert;
-            C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(2);
+            C.LinearSolver.TargetBlockSize = blocksize/20;
+            C.SetDGdegree(0);
 
             C.LinearSolver.NoOfMultigridLevels = 2;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-14;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MaxKrylovDim = 50;
             //C.LinearSolver.TargetBlockSize = 79;
