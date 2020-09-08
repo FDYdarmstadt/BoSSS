@@ -133,8 +133,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Options for Globalization, i.e. means to ensure convergence of Newton iterations
         /// when the initial guess is far away from the solution.
         /// </summary>
-        GlobalizationOption Globalization = GlobalizationOption.Dogleg;
-
+        public GlobalizationOption Globalization = GlobalizationOption.LineSearch;
 
         public string m_SessionPath;
 
