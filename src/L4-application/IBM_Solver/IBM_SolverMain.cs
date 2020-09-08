@@ -50,10 +50,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         static void Main(string[] args) {
 
-            InitMPI();
-            BoSSS.Application.IBM_Solver.TestProgram.TestChannel();
-            throw new ApplicationException("remove me");
-
             _Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
