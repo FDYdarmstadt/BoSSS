@@ -9,6 +9,7 @@ using BoSSS.Solution.Timestepping;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -652,6 +653,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
 
+            double[] AvailTimesBefore;
+            if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
+                AvailTimesBefore = LsTrk.TimeLevelsInStack;
+                Assert.IsTrue((AvailTimesBefore[0] - phystime).Abs() < dt*1e-7, "Error in Level-Set tracker time");
+            }
+
             if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
             } else {
@@ -659,6 +666,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotSupportedException("SkipSolveAndEvaluateResidual == true is not supported for Runge-Kutta");
 
                 m_RK_Timestepper.Solve(phystime, dt);
+            }
+
+            double[] AvailTimesAfter;
+            if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
+                AvailTimesAfter = LsTrk.RegionsHistory.AvailabelIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
+                Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt*1e-7, "Error in Level-Set tracker time");
             }
 
             JacobiParameterVars = null; 

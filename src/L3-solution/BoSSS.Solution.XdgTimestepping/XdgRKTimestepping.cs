@@ -424,9 +424,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             //m_AllCCM.Clear();
             m_RequiredTimeLevels = 0;
             m_LsTrk.PushStacks();
+            
             this.UpdateAgglom(false);
             base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
             BlockMsrMatrix PM, SM;
+            //UpdateMassMatrix(out PM, out SM, performSplitting ? m_LsTrk.TimeLevelsInStack[0] : phystime); // splitting case: most recent time
             UpdateMassMatrix(out PM, out SM, phystime);
             MassMatrix[0] = SM;
             m_PrecondMassMatrix = PM;
@@ -881,10 +883,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         RHS.SetV(u0, 1.0 / dt);
                     }
                     for (int l = 0; l < s; l++) {
-                        if(RK_as[l] != 0.0) {
-                            Debug.Assert(l == 0);
+                        if(RK_as[l] != 0.0) 
                             RHS.AccV(-RK_as[l], k[l]);
-                        }
                     }
 
                 } else {

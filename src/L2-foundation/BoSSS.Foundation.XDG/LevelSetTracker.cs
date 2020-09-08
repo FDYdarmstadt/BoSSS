@@ -611,6 +611,16 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Returns all <see cref="LevelSetRegions.Time"/> entries in the <see cref="RegionsHistory"/> stack.
+        /// </summary>
+        public double[] TimeLevelsInStack {
+            get {
+                return RegionsHistory.AvailabelIndices.Select((int iHist) => RegionsHistory[iHist].Time).ToArray();
+            }
+        }
+
+
+        /// <summary>
         /// Information about the current level set sign in each cell.
         /// </summary>
         public LevelSetRegions Regions {

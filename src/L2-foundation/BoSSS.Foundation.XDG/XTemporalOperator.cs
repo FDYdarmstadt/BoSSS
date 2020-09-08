@@ -230,7 +230,8 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 //double MaxTime = _LsTrk.RegionsHistory.AvailabelIndices.Max((int iHist) => _LsTrk.RegionsHistory[iHist].Time.Abs());
-                int ii = _LsTrk.RegionsHistory.AvailabelIndices.IndexOfMin((int iHist) => Math.Abs(_LsTrk.RegionsHistory[iHist].Time - this.time));
+                double[] AvailableTimes = _LsTrk.TimeLevelsInStack;
+                int ii = AvailableTimes.IndexOfMin((double t) => Math.Abs(t - this.time));
                 int BestTimeIdx = _LsTrk.RegionsHistory.AvailabelIndices[ii];
 
                 if(Math.Abs(Math.Abs(time - _LsTrk.RegionsHistory[BestTimeIdx].Time)) >= time * 1e-10 + 1e-10)

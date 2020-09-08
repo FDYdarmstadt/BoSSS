@@ -371,20 +371,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_PrecondMassMatrix != null);
             }
 
-            //// cut-cell metrics
-            //// ----------------
-            //if (this.Config_LevelSetHandling != LevelSetHandling.None) {
-            //    // we expect the level-set to change in every timestep
-
-            //    for (int i = m_Stack_CutCellMetrics.Length - 1; i >= 1; i--) {
-            //        m_Stack_CutCellMetrics[i] = m_Stack_CutCellMetrics[i - 1];
-            //    }
-            //    m_Stack_CutCellMetrics[0] = null;
-            //} else {
-            //    // a level-set which is static over all timeteps
-
-            //    Debug.Assert(m_Stack_CutCellMetrics[0] != null);
-            //}
 
 
             // special hack: increment init
@@ -516,7 +502,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // all the other stuff (cut-cell-metrics, ...)
                     InitTimestepping(iStage == (S - 1));
 
-                    if (iStage < (S - 1))
+                    if (iStage < (S - 1)) // push, but not the last time in the loop
                         PushStack(TimestepNo);
                 }
 
