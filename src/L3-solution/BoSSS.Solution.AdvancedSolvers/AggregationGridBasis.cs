@@ -784,7 +784,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[] agCl = agCls[jAgg];
                 int K = agCl.Length;
 
-                MultidimensionalArray coords = (K * N == Buffer.GetLength(0)) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
+                MultidimensionalArray coords = (K * N == Buffer.Length) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
 
                 for (int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                     int jCell = agCl[k];
