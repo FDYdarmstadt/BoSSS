@@ -29,11 +29,6 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
-            //Debugger.Launch();
-            InitMPI();
-            BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
-            throw new Exception("2");
-
             BoSSS.Solution.Application<AppControlSolver>._Main(
                 args,
                 true,

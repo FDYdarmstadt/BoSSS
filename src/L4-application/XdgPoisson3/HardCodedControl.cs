@@ -536,7 +536,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
 
             C.savetodb = false;
-            //C.DbPath = @"E:\\XdgPerformance";
+            //C.DbPath = @"D:\trash_db";
 
             int Res = 8;
 
@@ -574,9 +574,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("u#B", X => 0);
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.SetDefaultDiriBndCnd = true;
+            C.SetDefaultDiriBndCnd = true;  //which means ...
             //C.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             //C.xLaplaceBCs.IsDirichlet = (inp => true);
+            // ... but stuff is not serializable, therefore this workaround.
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
 
             C.AgglomerationThreshold = 0.1;
