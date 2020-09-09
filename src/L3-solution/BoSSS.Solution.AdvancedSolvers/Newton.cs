@@ -587,9 +587,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double last_pred = pred();
             while (last_ared < t * last_pred) {
                 double newTrustRegionDelta = TrustRegionDelta * 0.5;
-                // TODO this makes no sense at all
-                // if (newTrustRegionDelta < TrustRegionDelta)
-                //     break;
                 if (newTrustRegionDelta <= delta_min)
                     break;
 

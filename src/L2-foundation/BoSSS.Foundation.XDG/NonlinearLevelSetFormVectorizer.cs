@@ -177,8 +177,8 @@ namespace BoSSS.Foundation.XDG {
             Debug.Assert(_NOargs == uB.Length);
             Debug.Assert(_NOargs == Grad_uA.Length);
             Debug.Assert(_NOargs == Grad_uB.Length);
-            SpeciesId posSpc = this.PositiveSpecies;
-            SpeciesId negSpc = this.NegativeSpecies;
+            //SpeciesId posSpc = this.PositiveSpecies;
+            //SpeciesId negSpc = this.NegativeSpecies;
 
             CommonParams cp;
             cp.Normal = new Vector(D);

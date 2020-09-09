@@ -45,22 +45,20 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
-    public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSollver<XdgTimesteppingTestControl> {
+    public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSolver<XdgTimesteppingTestControl> {
 
         /// <summary>
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-
-            InitMPI();
-            DeleteOldPlotFiles();
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t023(TimeSteppingScheme.RK_IMEX3, 8, 0.0d);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023(TimeSteppingScheme.RK_IMEX3, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02(TimeSteppingScheme.RK1u1, 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 4);
-            FinalizeMPI();
-            return;
+            //FinalizeMPI();
+            //throw new ApplicationException("fuck you");
+            //return;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
                 return new XdgTimesteppingMain();
@@ -106,8 +104,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         public override IEnumerable<DGField> InstantiateResidualFields() {
             return new DGField[] { this.Residual };
         }
-
-
 
         protected override void CreateAdditionalFields() {
             base.LsTrk = MyLsTrk;
@@ -204,9 +200,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                         }
 
                         if (CallCount == 0) {
-                            this.LsTrk.UpdateTracker();
+                            this.LsTrk.UpdateTracker(Time);
                         } else {
-                            this.LsTrk.UpdateTracker(incremental: true);
+                            this.LsTrk.UpdateTracker(Time, incremental: true);
                         }
 
                         CallCount++;
@@ -222,7 +218,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     });
             } else {
                 this.Phi.ProjectField(X => this.Control.Phi(X, 0.0));
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(0.0);
                 u.Clear();
                 u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, 0.0)));
                 u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, 0.0)));
@@ -301,6 +297,19 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 var Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames , "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(this.LsTrk, S));
+
+                //delegate (string ParameterName, DGField ParamField)[] DelParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+                Operator.ParameterFactories.Add(delegate (IReadOnlyDictionary<string, DGField> DomainVarFields) {
+                    return new ValueTuple<string, DGField>[] {
+                        ("Vx", this.V[0] as DGField),
+                        ("Vy", this.V[1] as DGField)
+                    };
+                });
+                // no update of the parameter is required since it stays constant.
+
+                Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
+                
+                Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.Commit();
 
                 return Operator;
@@ -313,6 +322,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 Operator.EquationComponents["Cod1"].Add(bulkFlx);
                 Operator.EquationComponents["Cod1"].Add(intfFlx);
+
+                Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
+                
+                Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.Commit();
 
                 return Operator;
@@ -322,6 +335,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 var Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, LsTrk.SpeciesNames, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
+                Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
+
+                Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.Commit();
 
                 return Operator;
@@ -330,6 +346,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
+        /*
         protected override IEnumerable<DGField> InstantiateParameterFields() {
             if (this.Control.Eq == Equation.ScalarTransport)
                 return this.V.ToArray();
@@ -340,6 +357,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             else
                 throw new NotImplementedException();
         }
+        */
+
 
         public override double UpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
             LevsetEvo(phystime, dt, null);
@@ -347,14 +366,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return 0.0;
         }
         
-        protected override IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                var Ret = new Dictionary<SpeciesId, IEnumerable<double>>();
-                foreach (var s in this.LsTrk.SpeciesIdS)
-                    Ret.Add(s, new double[] { 1.0 });
-                return Ret;
-            }
-        }
+        //protected override IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get {
+        //        var Ret = new Dictionary<SpeciesId, IEnumerable<double>>();
+        //        foreach (var s in this.LsTrk.SpeciesIdS)
+        //            Ret.Add(s, new double[] { 1.0 });
+        //        return Ret;
+        //    }
+        //}
 
         
 
@@ -391,7 +410,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 // project new level-set
                 this.Phi.ProjectField(X => this.Control.Phi(X, phystime + dt));
-                this.LsTrk.UpdateTracker(incremental: true);
+                this.LsTrk.UpdateTracker(phystime + dt, incremental: true);
                 UpdateMarkerFields();
 
                 // HMF hacks

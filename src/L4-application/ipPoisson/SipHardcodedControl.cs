@@ -258,10 +258,13 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-        /// <summary>
-        /// Test channel flow around a cylinder (half domain with symmetry condition)
-        /// </summary>
-        public static SipControl ConfinedCylinder(int k = 3)
+                     return grd;
+            };
+
+    /// <summary>
+    /// Test channel flow around a cylinder (half domain with symmetry condition)
+    /// </summary>
+    public static SipControl ConfinedCylinder(int k = 3)
         {
             var C = new SipControl();
 

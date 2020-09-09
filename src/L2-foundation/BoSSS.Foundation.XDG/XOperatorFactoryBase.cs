@@ -33,6 +33,13 @@ namespace BoSSS.Foundation.XDG {
 
         protected XSpatialOperatorMk2 m_XOp;
 
+        public XSpatialOperatorMk2 Xop {
+            get {
+                return m_XOp;
+            }
+        }
+
+
         protected LevelSetTracker LsTrk;
 
 

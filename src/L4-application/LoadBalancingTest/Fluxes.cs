@@ -56,14 +56,14 @@ namespace BoSSS.Application.LoadBalancingTest {
     /// </summary>
     class LevSetFlx : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
         double alpha_A;
         double alpha_B;
 
         public LevSetFlx(LevelSetTracker _LsTrk, double _alpha_A, double _alpha_B) {
-            m_LsTrk = _LsTrk;
             alpha_A = _alpha_A;
             alpha_B = _alpha_B;
+            this.PositiveSpecies = _LsTrk.GetSpeciesId("B");
+            this.NegativeSpecies = _LsTrk.GetSpeciesId("A");
         }
         
         public IList<string> ArgumentOrdering {
@@ -98,15 +98,13 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
         public SpeciesId PositiveSpecies {
-            get { 
-                return m_LsTrk.GetSpeciesId("B"); 
-            }
+            get;
+            private set;
         }
 
         public SpeciesId NegativeSpecies {
-            get { 
-                return m_LsTrk.GetSpeciesId("A"); 
-            }
+            get;
+            private set;
         }
     }
 }
