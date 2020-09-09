@@ -41,6 +41,61 @@ namespace BoSSS.Application.SipPoisson {
     static public class SipHardcodedControl
     {
 
+        public static SipControl ConvergenceTest(int Res = 20, int Dim = 2, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 1)
+        {
+
+            if (Dim != 2 && Dim != 3)
+                throw new ArgumentOutOfRangeException();
+
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/cartesian";
+            R.savetodb = false;
+
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
+            R.InitialValues_Evaluators.Add("RHS", X => -1.0); // constant force i.e. gravity
+            R.ExactSolution_provided = false;//true;
+            R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
+            R.LinearSolver.SolverCode = solver_name;
+            R.LinearSolver.MaxSolverIterations = 200;
+            R.LinearSolver.TargetBlockSize = 10000;
+            R.LinearSolver.MaxKrylovDim = 2000;
+
+
+
+            R.GridFunc = delegate () {
+                GridCommons grd = null;
+                if (Dim == 2)
+                {
+                    double[] xNodes = GenericBlas.Linspace(-10, 10, Res * 5 + 1);
+                    double[] yNodes = GenericBlas.Linspace(-10, 10, Res * 5 + 1);
+                    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+                
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret;
+
+                    ret = 1; // all dirichlet
+                    return ret;
+                });
+
+                return grd;
+            };
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     double x = X[0], y = X[1];
+                     return 0.0;
+                 });
+
+            return R;
+        }
+
         /// <summary>
         /// Test on a curved grid.
         /// </summary>
