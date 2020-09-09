@@ -213,6 +213,7 @@ namespace BoSSS.Application.Rheology
                 solver.RunSolverMode();
                 solver.CheckJacobian();
 
+                /*
                 // matrix analysis
                 // ===============
 
@@ -227,7 +228,7 @@ namespace BoSSS.Application.Rheology
                     //double Cond = OpMatrix.cond();
                     //Assert.LessOrEqual(Cond, 1.0e8, "Matrix is degenerated: Condition no out of range.");
                 }
-
+                */
 
                 // check residuals and errors
                 // ==========================

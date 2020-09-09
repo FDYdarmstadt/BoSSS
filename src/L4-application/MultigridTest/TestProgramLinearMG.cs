@@ -382,7 +382,7 @@ namespace BoSSS.Application.MultigridTest {
                 LevSet.Clear();
                 LevSet.ProjectField(LevSetFunc);
                 LsTrk = new LevelSetTracker(grid, XQuadFactoryHelper.MomentFittingVariants.Classic, TrackerWidth, new string[] { "A", "B" }, LevSet);
-                LsTrk.UpdateTracker();
+                LsTrk.UpdateTracker(0.0);
 
                 XB = new XDGBasis(LsTrk, p);
 

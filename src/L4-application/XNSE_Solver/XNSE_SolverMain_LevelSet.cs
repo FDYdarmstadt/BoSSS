@@ -252,7 +252,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // tracker needs to be updated to get access to the cut-cell mask
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(0.0);
 
                 // ==============================
                 // level-set initialization
@@ -376,7 +376,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
 
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(0.0);
 
             }
 
@@ -838,7 +838,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // tracker update
                 // ===============
 
-                this.LsTrk.UpdateTracker(incremental: true);
+                this.LsTrk.UpdateTracker(Phystime + dt, incremental: true);
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 4 }), 2);
 

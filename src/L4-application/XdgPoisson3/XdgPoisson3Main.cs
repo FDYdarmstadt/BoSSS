@@ -126,9 +126,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
            
             base.SetInitial();
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(0.0);
             base.SetInitial();
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(0.0);
 
             this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
             for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
@@ -337,7 +337,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             MultigridOperator mgo;
 
             // direct solver 
+#if TEST
             this.ReferenceSolve();
+#endif
             //this.ConsistencyTest();
 
 
@@ -412,7 +414,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 base.QueryHandler.ValueQuery("L2_ERR", L2_ERR, true);
 
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(0.0);
                 int order = Math.Max(u.Basis.Degree, Math.Max(uErr.Basis.Degree, uEx.Basis.Degree)) * 2 + 1;
                 //var scheme = new XQuadSchemeHelper(this.LsTrk, this.Control.HMFversion, this.LsTrk.SpeciesIdS.ToArray());
                 var scheme = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
@@ -444,9 +446,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Console.WriteLine("Error norm (HMF, Species B): " + L2_ERR_HMF_B);
                 Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
             }
-
+#if TEST
             OperatorAnalysis();
-
+#endif
 
 
             return dt;
@@ -541,7 +543,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 ISolverSmootherTemplate exsolver;
 
-                SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
+                SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver, this.m_queryHandler);
                 var Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
                 Callbacks.Add(CustomItCallback);
                 SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
@@ -587,7 +589,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ErrField.Acc(-1.0, u);
                 double ERR = ErrField.L2Norm();
                 double RelERR = ERR / u.L2Norm();
+#if TEST
                 Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
+#endif
            
             }
         }

@@ -112,7 +112,7 @@ namespace CNS.IBM {
             LevelSet levelSet = speciesMap.Tracker.LevelSets[0].As<LevelSet>();
             levelSet.Clear();
             levelSet.ProjectField(X => speciesMap.Control.LevelSetFunction(X, time));
-            speciesMap.Tracker.UpdateTracker();
+            speciesMap.Tracker.UpdateTracker(time);
 
             cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);

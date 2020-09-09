@@ -258,6 +258,7 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+
         /// <summary>
         /// Test channel flow around a cylinder (half domain with symmetry condition)
         /// </summary>

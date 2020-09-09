@@ -460,15 +460,7 @@ namespace BoSSS.Foundation.IO {
             return mcr;
         }
 
-        /// <summary>
-        /// Prints the methods with the highest Imbalance of runtime over MPI-ranks.
-        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
-        /// NOTE: this consideres no idle time within methods!
-        /// </summary>
-        /// <param name="SI"></param>
-        /// <param name="printcnt"></param>
-        public static void PrintMostImblancedCalls(this ISessionInfo SI, int printcnt = 0) {
-            var dictImbalances = MethodCallRecordExtension.GetProfilingStats(SI.GetProfiling());
+        private static void PrintImbalance(Dictionary<string, Tuple<double, double, int>> dictImbalances, int printcnt) {
             var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.Item1);
             int i = 1;
             var wrt = Console.Out;
@@ -486,6 +478,33 @@ namespace BoSSS.Foundation.IO {
             Console.Out.Flush();
         }
 
+        /// <summary>
+        /// Prints the methods with the highest Imbalance of runtime over MPI-ranks,
+        /// which reflects load imbalance. Runtime of FuncTraces are taken.
+        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// NOTE: this consideres no idle time within methods!
+        /// </summary>
+        /// <param name="SI"></param>
+        /// <param name="printcnt"></param>
+        public static void PrintTotalImbalance(this ISessionInfo SI, int printcnt = 0) {
+            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling());
+            PrintImbalance(dictImbalances, printcnt);
+        }
+
+        /// <summary>
+        /// Prints the methods with the highest Imbalance within MPI blocking methods,
+        /// which reflects communication delay.
+        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// NOTE: Nonblocking MPI-Methods are not included! Refer to this as a hint rather beeing accurate
+        /// If <see cref="PrintTotalImbalance"/> and this show same tendency, it is likley,
+        /// that <see cref="PrintTotalImbalance"/> is dominated by communication delays.
+        /// </summary>
+        /// <param name="SI"></param>
+        /// <param name="printcnt"></param>
+        public static void PrintMPIImbalance(this ISessionInfo SI, int printcnt = 0) {
+            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling());
+            PrintImbalance(dictImbalances, printcnt);
+        }
 
         /// <summary>
         /// Reads tabulated text files.
