@@ -374,5 +374,19 @@ namespace MPI.Wrappers {
             get;
         }
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IMPIdriver_wTimeTracer : IMPIdriver
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        long TicksSpent {
+            get;
+        }
+    }
+
 }
 

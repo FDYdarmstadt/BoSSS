@@ -283,7 +283,7 @@ namespace BoSSS.Solution {
                         ushort[] RegionCode = new ushort[m_newJ];
                         this.RestoreVector(RegionCode, base.GetLSregioncodeName(iH));
 
-                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, RegionCode, m_LsTrkPrivData.Versions[1 - iH]);
+                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, RegionCode, m_LsTrkPrivData.Versions[1 - iH], m_LsTrkPrivData.Times[1 - iH]);
 
                         if(iH < 1) {
                             m_NewTracker.PushStacks();

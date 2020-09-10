@@ -129,7 +129,7 @@ namespace BoSSS.Application.XDGTest {
             this.Pressure.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
             this.LevSet.ProjectField((_2D)((x, y) => Phi(new[] { x, y }, x0)));
             this.LsTrk.PushStacks();
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(phystime + dt);
 
 
             // update markers

@@ -53,6 +53,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             private set;
         }
 
+        /*
         /// <summary>
         /// Mapping for fields defined by <see cref="InstantiateParameterFields"/>
         /// </summary>
@@ -60,7 +61,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             private set;
         }
-
+        */
 
       
 
@@ -92,6 +93,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             // parameters:
+            /*
             var paramFields = InstantiateParameterFields();
             if(paramFields == null || paramFields.Count() <= 0) {
                 CurrentParameters = new CoordinateMapping(this.GridData);
@@ -101,6 +103,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.RegisterField(f);
                 }
             }
+            */
             CreateAdditionalFields();
         }
 
@@ -119,13 +122,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected abstract IEnumerable<DGField> InstantiateSolutionFields();
 
+        /*
         /// <summary>
         /// (Optional) Override to instantiate parameters required by the operator
         /// </summary>
         protected virtual IEnumerable<DGField> InstantiateParameterFields() {
             return new DGField[0];
         }
-
+        */
 
         /// <summary>
         /// Override to instantiate fields to store the solver residuals
@@ -214,7 +218,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, this.CurrentParameters.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
             }
         }
 
@@ -226,7 +230,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;
             CurrentResidualVector = null;
-            CurrentParameters = null;
             ClearOperator();
         }
 
@@ -283,16 +286,16 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <summary>
     /// Base-class for XDG applications with a monolithic operator and a time-integrator.
     /// </summary>
-    abstract public class XdgApplicationWithSollver<T> : ApplicationWithSolver<T>
+    abstract public class XdgApplicationWithSolver<T> : ApplicationWithSolver<T>
          where T : AppControlSolver, new() //
     {
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get;
-        }
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        ///// </summary>
+        //abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        //    get;
+        //}
 
         /// <summary>
         /// Callback-template for level-set updates.
@@ -391,20 +394,21 @@ namespace BoSSS.Solution.XdgTimestepping {
             XdgTimestepping solver = new XdgTimestepping(
                 XOperator,
                 CurrentState.Fields,
-                CurrentParameters.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
                 UpdateLevelset,
                 LevelSetHandling,
-                MassScale,
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.AgglomerationThreshold,
-                Control);
+                Control.LinearSolver, Control.NonLinearSolver);
 
             base.Timestepping = solver;
-        }
 
+            if (!object.ReferenceEquals(base.LsTrk, solver.LsTrk))
+                throw new ApplicationException();
+
+        }
 
         /// <summary>
         /// releases the operator
@@ -412,24 +416,21 @@ namespace BoSSS.Solution.XdgTimestepping {
         internal override void ClearOperator() {
             m_XOperator = null;
         }
-
-
-
     }
 
 
     /// <summary>
     /// Base-class for XDG applications with a monolithic operator and a time-integrator.
     /// </summary>
-    abstract public class DgApplicationWithSollver<T> : ApplicationWithSolver<T>
+    abstract public class DgApplicationWithSolver<T> : ApplicationWithSolver<T>
          where T : AppControlSolver, new() {
 
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each codomain variable (row) in the spatial operator, 
-        /// a single number..
-        /// </summary>
-        abstract protected IEnumerable<double> GetMassScale(int D);
+        ///// <summary>
+        ///// Block scaling of the mass matrix: for each codomain variable (row) in the spatial operator, 
+        ///// a single number..
+        ///// </summary>
+        //abstract protected IEnumerable<double> GetMassScale(int D);
 
         /// <summary>
         /// initialization of the main spatial operator
@@ -486,13 +487,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             XdgTimestepping solver = new XdgTimestepping(
                 SOperator,
                 CurrentState.Fields,
-                CurrentParameters.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
-                GetMassScale(this.Grid.SpatialDimension),
                 MultigridOperatorConfig,
                 MultigridSequence,
-                Control);
+                Control.LinearSolver, Control.NonLinearSolver);
+
+            LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 
             base.Timestepping = solver;
         }

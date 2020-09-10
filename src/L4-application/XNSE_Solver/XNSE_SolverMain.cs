@@ -73,12 +73,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            //InitMPI();
+            InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
-            ////Tests.UnitTest.OneTimeTearDown();
-            //return;
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
+            FinalizeMPI();
+            return;
 
 
             _Main(args, false, delegate () {
@@ -215,9 +215,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// output of <see cref="AssembleMatrix"/>;
         /// </summary>
         MassMatrixFactory MassFact;
-        
+
         /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// Block scaling of the mass matrix/temporal operator: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
         IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
@@ -486,9 +486,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XOpConfig = new XNSFE_OperatorConfiguration(this.Control);
 
-            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU);
+            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU, this.MassScale);
             updateSolutionParams = new bool[CurrentResidual.Mapping.Fields.Count];
 
+            
+            
             #endregion
 
 
@@ -885,16 +887,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (rksch == null) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(
-                    this.CurrentSolution.Mapping.Fields,
-                    this.CurrentResidual.Mapping.Fields,
+                    this.CurrentSolution.Fields,
+                    XNSFE_Operator.Xop.InvokeParameterFactory(this.CurrentSolution.Fields),
+                    this.CurrentResidual.Fields,
                     LsTrk,
                     true,
-                    DelComputeOperatorMatrix, null, DelUpdateLevelSet,
+                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop.TemporalOperator, DelUpdateLevelSet,
                     (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                     this.Control.Timestepper_LevelSetHandling,
                     this.XOpConfig.mmsd,
                     (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
                     this.MultigridOperatorConfig, base.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
                     this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
@@ -971,7 +973,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
                 this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
 
-                this.LsTrk.UpdateTracker(incremental: true);
+                this.LsTrk.UpdateTracker(Time, incremental: true);
 
                 // solution
                 // --------

@@ -48,14 +48,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="LsTrk"></param>
         /// <param name="_ComputeOperatorMatrix">See <see cref="ComputeOperatorMatrix"/>.</param>
         /// <param name="_UpdateLevelset">See <see cref="UpdateLevelset"/>.</param>
-        /// <param name="_UpdateCutCellMetrics">See <see cref="UpdateCutCellMetrics"/>.</param>
         /// <param name="BDForder">
         /// The order of the BDF scheme from 1 to 6; in addition, 0 encodes Explicit Euler and -1 encodes Crank-Nicolson.
         /// </param>
         /// <param name="_LevelSetHandling"></param>
         /// <param name="_MassMatrixShapeandDependence"></param>
         /// <param name="_SpatialOperatorType"></param>
-        /// <param name="_MassScale"></param>
         /// <param name="_AgglomerationThreshold"></param>
         /// <param name="DelayInit">
         /// Triggers a delayed initialization of the BDF scheme.
@@ -70,19 +68,23 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="_CutCellQuadOrder">Order of quadrature in cut cells, required e.g. for <see cref="LevelSetTracker.GetXDGSpaceMetrics(SpeciesId[], int, int)"/></param>
         /// <param name="_SpId">Species to compute, actually a subset of <see cref="LevelSetTracker.SpeciesIdS"/></param>
         /// <param name="_MultigridSequence"></param>
-        /// <param name="_ComputeMassMatrix"><see cref="XdgTimesteppingBase.ComputeMassMatrix"/></param>
-        public XdgBDFTimestepping(IEnumerable<DGField> Fields,
+        /// <param name="linearconfig"></param>
+        /// <param name="nonlinconfig"></param>
+        /// <param name="temporalOperator"></param>
+        /// <param name="__Parameters"></param>
+        public XdgBDFTimestepping(
+            IEnumerable<DGField> Fields,
+            IEnumerable<DGField> __Parameters,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            DelComputeMassMatrix _ComputeMassMatrix,
+            ITemporalOperator temporalOperator,
             DelUpdateLevelset _UpdateLevelset,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             SpatialOperatorType _SpatialOperatorType,
-            IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
@@ -100,23 +102,19 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ArgumentException(string.Format("Mismatch between {0}-th basis of fields and residuals.", iFld));
             }
 
-            if (_MassScale != null) {
-                if (!IEnumerableExtensions.SetEquals(_SpId, _MassScale.Keys))
-                    throw new ArgumentException();
-            }
-
             this.Config_LevelSetHandling = _LevelSetHandling;
             this.Config_MassMatrixShapeandDependence = _MassMatrixShapeandDependence;
             this.Config_SpatialOperatorType = _SpatialOperatorType;
             this.ComputeOperatorMatrix = _ComputeOperatorMatrix;
-            this.ComputeMassMatrix = _ComputeMassMatrix;
             this.UpdateLevelset = _UpdateLevelset;
-            this.Config_MassScale = _MassScale;
+            this.TemporalOperator = temporalOperator;
             this.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.useX = _useX;
             base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
+            base.CurrentParameters = __Parameters.ToArray();
+
             if (_MultigridSequence == null || _MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
@@ -373,20 +371,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_PrecondMassMatrix != null);
             }
 
-            //// cut-cell metrics
-            //// ----------------
-            //if (this.Config_LevelSetHandling != LevelSetHandling.None) {
-            //    // we expect the level-set to change in every timestep
-
-            //    for (int i = m_Stack_CutCellMetrics.Length - 1; i >= 1; i--) {
-            //        m_Stack_CutCellMetrics[i] = m_Stack_CutCellMetrics[i - 1];
-            //    }
-            //    m_Stack_CutCellMetrics[0] = null;
-            //} else {
-            //    // a level-set which is static over all timeteps
-
-            //    Debug.Assert(m_Stack_CutCellMetrics[0] != null);
-            //}
 
 
             // special hack: increment init
@@ -518,7 +502,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // all the other stuff (cut-cell-metrics, ...)
                     InitTimestepping(iStage == (S - 1));
 
-                    if (iStage < (S - 1))
+                    if (iStage < (S - 1)) // push, but not the last time in the loop
                         PushStack(TimestepNo);
                 }
 
@@ -574,15 +558,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // may occur e.g. if one runs the FSI solver as a pure single-phase solver,
                 // i.e. if the Level-Set is outside the domain.
 
-                foreach (var kv in this.Config_MassScale) {
-                    SpeciesId spId = kv.Key;
-                    double[] scaleVec = kv.Value.ToArray();
-                    for (int i = 0; i < scaleVec.Length; i++) {
-                        //if (scaleVec[i] != 1.0)
-                        //    throw new ArithmeticException(string.Format("XDG time-stepping: illegal mass scale, mass matrix option {0} is set, but scaling factor for species {1}, variable no. {2} ({3}) is set to {4} (expecting 1.0).", 
-                        //        MassMatrixShapeandDependence.IsIdentity, this.m_LsTrk.GetSpeciesName(kv.Key), i, this.CurrentStateMapping.Fields[i].Identification, scaleVec[i]));
-                    }
-                }
 
             } else {
                 // checks:
@@ -608,7 +583,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                     //MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
-                    base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], 0);
+                    base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_LsTrk.RegionsHistory.Current.Time);
 
                 }
             }
@@ -789,10 +764,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
                     if (m_PrivateBalancingInfo.m_Stack_MassMatrix[i]) {
                         m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
-                        //L.RestoreMatrix(m_Stack_MassMatrix[i], GetName__Stack_MassMatrix(i), CurrentStateMapping, CurrentStateMapping);
+
+                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[i], LsTrk.RegionsHistory[1 - i].Time);
+
+                        /*
                         m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, 1 - i)
                             .MassMatrixFactory
                             .AccMassMatrix(m_Stack_MassMatrix[i], CurrentStateMapping, _alpha: Config_MassScale);
+                        */
                     }
                 }
 
@@ -1195,7 +1174,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // mass matrix for time derivative
                         m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                         //MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
-                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_CurrentPhystime + m_CurrentDt);
+                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_LsTrk.RegionsHistory.Current.Time);
                     }
 
                     PrecondMassMatrix = m_PrecondMassMatrix;
@@ -1339,8 +1318,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
 
+                /*
 #if DEBUG
-                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity && this.ComputeMassMatrix == null) {
+                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
                     // compare "private" and "official" mass matrix stack
                     // (private may be removed soon)
 
@@ -1362,6 +1342,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
 #endif
+*/
 
                 // perform agglomeration
                 // ---------------------
@@ -1697,7 +1678,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                     double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
 
-                    //Assert.Less(distL2, refL2 * 1.0e-5, "argh");
+                    Assert.Less(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
 
                 }
 #endif
@@ -1718,12 +1699,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
                     m_ResLogger.CustomValue(0.0, "LevelSet");
                 }
-
-                //if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
-                //    m_ResLogger.CustomValue(0.0, "LevelSet");
-                //}
-
-                //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(m_Stack_u[0].Mapping.Fields, ResidualFields), "strange", 0.0, 4);
 
                 if (m_ResLogger != null)
                     m_ResLogger.NextIteration(true);
