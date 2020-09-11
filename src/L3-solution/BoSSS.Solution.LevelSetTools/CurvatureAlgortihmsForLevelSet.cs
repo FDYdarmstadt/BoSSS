@@ -99,7 +99,8 @@ namespace BoSSS.Solution.LevelSetTools
                     r.useFiltLevSetHess = false;
                     r.FilterCurvatureCycles = 3;
                     r.LevelSetSource = LevelSetSource.fromDG;
-                    r.UseWholeField = true;
+                    r.UseWholeField = false;
+                    r.FieldWidth = 1;
 
                     return r;
                 }
@@ -126,6 +127,8 @@ namespace BoSSS.Solution.LevelSetTools
             public bool useFiltLevSetHess = true;
 
             public int FilterCurvatureCycles = 0;
+
+            public int FieldWidth = 0;
 
             public LevelSetSource LevelSetSource = LevelSetSource.fromDG;
 
@@ -176,7 +179,7 @@ namespace BoSSS.Solution.LevelSetTools
             }
             else
             {
-                CC = LsTrk.Regions.GetNearFieldMask(0);
+                CC = LsTrk.Regions.GetNearFieldMask(config.FieldWidth);
             }
 
                 
@@ -378,7 +381,31 @@ namespace BoSSS.Solution.LevelSetTools
 
         }
 
-        private static void ComputeHessian(SinglePhaseField LevSet, CellMask CC, FilterConfiguration config,
+        public static void ComputeHessian(SinglePhaseField LevSet,
+            out SinglePhaseField[,] LevSetHess)
+        {
+            int D = LevSet.GridDat.SpatialDimension;
+            LevSetHess = new SinglePhaseField[D, D];
+
+            CellMask CC = CellMask.GetFullMask(LevSet.GridDat);
+
+            for (int d1 = 0; d1 < D; d1++)
+            {
+                for (int d2 = 0; d2 < D; d2++)
+                {
+                    //LevSetHess[d1, d2].Clear();
+                    LevSetHess[d1, d2] = new SinglePhaseField(LevSet.Basis, string.Format("H({0},{1})", d1, d2));
+                    LevSetHess[d1, d2].ProjectField(1.0,
+                        delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                            var bffr = MultidimensionalArray.Create(Len, result.GetLength(1), D, D);
+                            LevSet.EvaluateHessian(j0, Len, NS, bffr);
+                            result.Set(bffr.ExtractSubArrayShallow(-1, -1, d1, d2));
+                        }, new CellQuadratureScheme(UseDefaultFactories: true, domain: CC));
+                }
+            }
+        }
+
+            private static void ComputeHessian(SinglePhaseField LevSet, CellMask CC, FilterConfiguration config,
             out SinglePhaseField[,] LevSetHess, out SinglePhaseField[,] FiltLevSetHess, 
             SinglePhaseField FiltLevSet, SinglePhaseField[] LevSetGrad,
             SinglePhaseField[] FiltLevSetGrad)
@@ -541,7 +568,7 @@ namespace BoSSS.Solution.LevelSetTools
                         var GradPhi_d = GradPhi.ExtractSubArrayShallow(-1, -1, d);
                         ooNormGrad.Multiply(1.0, GradPhi_d, GradPhi_d, 1.0, "ik", "ik", "ik");
                     }
-                    ooNormGrad.ApplyAll(x => x > 1e-2 ? 1.0 / Math.Sqrt(x) : 0.0);
+                    ooNormGrad.ApplyAll(x => x > 1e-6 ? 1.0 / Math.Sqrt(x) : 0.0); // prohibit the norm to be very small
 
                     // laplacian of phi:
                     for (int d = 0; d < D; d++) {

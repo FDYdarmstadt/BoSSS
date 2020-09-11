@@ -32,7 +32,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <param name="_TimestepNo"></param>
         /// <param name="_dt"></param>
         /// <param name="_phystime"></param>
-        public void RelaxationStep(int _TimestepNo = -1, double _dt = 0.01, double _phystime = 0.0)
+        public void RelaxationStep(int _TimestepNo = -1, double _dt = 10.0, double _phystime = 0.0)
         {
             this.Velocity.Clear();
             RunSolverOneStep(_TimestepNo, _dt, _phystime);
@@ -53,9 +53,23 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                 // Perform timestep
                 // ================
-
+                this.m_Timestepper.m_ResLogger.WriteResidualsToTextFile = false;
                 this.m_Timestepper.m_ResLogger = new ResidualLogger(this.MPIRank, null, new Guid());
-                this.m_Timestepper.m_ResidualNames = new string[] { "Res_phi", "Res_mu" };
+
+                switch (this.ModTyp)
+                {
+                    case ModelType.modelA:
+                        this.m_Timestepper.m_ResidualNames = new string[] { "Res_phi", "Res_Curvature" };
+                        break;
+                    case ModelType.modelB:
+                        this.m_Timestepper.m_ResidualNames = new string[] { "Res_phi", "Res_mu", "Res_Curvature" };
+                        break;
+                    case ModelType.modelC:
+                    default:
+                        this.m_Timestepper.m_ResidualNames = new string[] { "Res_phi", "Res_mu", "Res_Curvature" };
+                        break;
+                }
+                
 
                 /* Not needed when using Newton Solver
                 phi0.Clear();
