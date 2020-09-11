@@ -61,7 +61,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             m_MultigridOp = new MultigridOperator(XAggB, Mapping,
                 m_OpMtx,
                 _mass,
-                OpConfig);
+                OpConfig, null);
         }
 
 

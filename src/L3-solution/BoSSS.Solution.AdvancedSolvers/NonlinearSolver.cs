@@ -42,7 +42,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <param name="CurrentState">
     /// Current state of the solution
     /// </param>
-    public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization);
+    /// <param name="OberFrickelHack">
+    /// the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
+    /// </param>
+    public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out ISpatialOperator OberFrickelHack);
               
 
     /// <summary>
@@ -167,12 +170,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <param name="Output"></param>
         protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
-            BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), false);
-            Debug.Assert(OpMtxRaw == null);
+            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var Dummy);
+            Debug.Assert(OpMtxRaw == null); // only evaluation ==> OpMatrix must be null
 
-            CurrentLin.TransformRhsInto(OpAffineRaw, Output);
+            CurrentLin.TransformRhsInto(OpAffineRaw, Output, false);
 
         }
 
@@ -223,11 +225,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), true);
+            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), true, out ISpatialOperator abstractOperator);
 
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,
-                this.m_MultigridOperatorConfig);
+                this.m_MultigridOperatorConfig, 
+                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
 
             OpAffineRaw = OpAffineRaw.CloneAs();
             if (this.RHSRaw != null)
@@ -236,7 +239,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LinearizationRHS = new double[this.CurrentLin.Mapping.LocalLength];
             else
                 LinearizationRHS.ClearEntries();
-            CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS);
+            CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS, true);
             this.LinearizationRHS.ScaleV(-1.0);
 
             //this.CurrentLin.OperatorMatrix.SaveToTextFileSparse("PcMatrix-" + counter + ".txt");

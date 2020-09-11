@@ -301,7 +301,6 @@ namespace BoSSS.Solution {
                             GMRESConvCrit = lc.ConvergenceCriterion,
                             ConvCrit = nc.ConvergenceCriterion,
                             m_SessionPath = SessionPath,
-                            UsePresRefPoint = nc.UsePresRefPoint,
                             printLambda = nc.printLambda,
                             Globalization = nc.Globalization,
                         };
@@ -314,7 +313,6 @@ namespace BoSSS.Solution {
                             maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            UsePresRefPoint = nc.UsePresRefPoint,
                             printLambda = nc.printLambda,
                             Globalization = nc.Globalization,
                             ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,

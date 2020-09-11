@@ -410,7 +410,7 @@ namespace AdvancedSolverTests {
             MGOp = new MultigridOperator(XAggB, map,
                     OperatorMatrix,
                     this.massFact.GetMassMatrix(map, false),
-                    OpConfig);
+                    OpConfig, null);
             Debug.Assert(MGOp.OperatorMatrix != null);
             Debug.Assert(MGOp.Mapping != null);
 

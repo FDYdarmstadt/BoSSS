@@ -531,14 +531,15 @@ namespace BoSSS.Application.XdgPoisson3 {
                 MultigridOp = new MultigridOperator(XAggB, this.u.Mapping,
                     this.Op_Matrix,
                     this.Op_mass.GetMassMatrix(new UnsetteledCoordinateMapping(this.u.Basis), false),
-                    OpConfig);
+                    OpConfig,
+                    null);
                 Assert.True(MultigridOp!=null);
 
                 int L = MultigridOp.Mapping.LocalLength;
                 DOFs = MultigridOp.Mapping.TotalLength;
 
                 double[] RHSvec = new double[L];
-                MultigridOp.TransformRhsInto(_RHSvec, RHSvec);
+                MultigridOp.TransformRhsInto(_RHSvec, RHSvec, true);
 
 
                 ISolverSmootherTemplate exsolver;
@@ -660,12 +661,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                     new MultigridOperator.ChangeOfBasisConfig[] {
                         new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = MultigridOperator.Mode.Eye, DegreeS = new int[] {u.Basis.Degree } }
                     }
-                });
+                }, null);
 
             double[] mgSolVec = new double[MultigridOp.Mapping.LocalLength];
             double[] mgRhsVec = new double[MultigridOp.Mapping.LocalLength];
             MultigridOp.TransformSolInto(this.u.CoordinateVector, mgSolVec);
-            MultigridOp.TransformRhsInto(RHSvec, mgRhsVec);
+            MultigridOp.TransformRhsInto(RHSvec, mgRhsVec, false);
 
             MgConsistencyTestRec(MultigridOp, mgSolVec, mgRhsVec);
 

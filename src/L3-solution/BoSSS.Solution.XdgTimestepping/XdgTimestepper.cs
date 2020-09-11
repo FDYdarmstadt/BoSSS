@@ -381,7 +381,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if(bdfOrder > -1000) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(Fields, __Parameters, IterationResiduals,
                     LsTrk, true,
-                    this.ComputeOperatorMatrix, op.TemporalOperator, _UpdateLevelset,
+                    this.ComputeOperatorMatrix, op, _UpdateLevelset,
                     bdfOrder,
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
@@ -396,7 +396,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             } else {
                 m_RK_Timestepper = new XdgRKTimestepping(Fields.ToArray(), __Parameters, IterationResiduals.ToArray(),
                     LsTrk,
-                    this.ComputeOperatorMatrix, op.TemporalOperator, _UpdateLevelset,
+                    this.ComputeOperatorMatrix, op, _UpdateLevelset,
                     rksch,
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,

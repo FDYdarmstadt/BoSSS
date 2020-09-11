@@ -2655,8 +2655,20 @@ namespace BoSSS.Foundation {
                 }
             }
 
+
+
             // return
             // =====
+
+            foreach(string domName in this.DomainVar)
+                JacobianOp.FreeMeanValue[domName] = this.FreeMeanValue[domName];
+            JacobianOp.EdgeQuadraturSchemeProvider = this.EdgeQuadraturSchemeProvider;
+            JacobianOp.VolumeQuadraturSchemeProvider = this.VolumeQuadraturSchemeProvider;
+            foreach(var kv in this.UserDefinedValues)
+                JacobianOp.UserDefinedValues.Add(kv);
+
+            JacobianOp.LinearizationHint = LinearizationHint.AdHoc;
+
             foreach(DelParameterFactory f in this.ParameterFactories) 
                 JacobianOp.ParameterFactories.Add(f);
             foreach (DelPartialParameterUpdate f in this.ParameterUpdates) {

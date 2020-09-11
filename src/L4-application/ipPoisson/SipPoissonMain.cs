@@ -991,7 +991,7 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("Setting up multigrid operator...");
                     var mgsetup = new Stopwatch();
                     mgsetup.Start();
-                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig);
+                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig, LapaceIp.DomainVar.Select(varName => LapaceIp.FreeMeanValue[varName]).ToArray());
                     //double[] condests;
                     //int[] DOFs, Level;
                     //GimmeKondnumber(MultigridOp, out condests, out DOFs, out Level);
