@@ -285,6 +285,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.m_RawMassMatrix = null;
                 } else {
                     this.m_RawOperatorMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
+                    var bkup = SetPressureReferencePointMTX(OperatorMatrix);
                     OperatorMatrix.WriteSubMatrixTo(this.m_RawOperatorMatrix, this.IndexIntoProblemMapping_Global, default(int[]), this.IndexIntoProblemMapping_Global, default(int[]));
 
                     if (MassMatrix != null) {
@@ -348,7 +349,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BlockMsrMatrix RawOpMatrix;
                 if (this.FinerLevel == null) {
                     RawOpMatrix = this.m_RawOperatorMatrix;
-                    SetPressureReferencePointMTX(RawOpMatrix);
                 } else {
                     BlockMsrMatrix Op = FinerLevel.OperatorMatrix;
                     RawOpMatrix = BlockMsrMatrix.Multiply(RawRestriction, BlockMsrMatrix.Multiply(Op, RawProlongation));

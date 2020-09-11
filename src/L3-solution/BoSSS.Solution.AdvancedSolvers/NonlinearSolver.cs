@@ -229,8 +229,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,
-                this.m_MultigridOperatorConfig, 
-                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
+                this.m_MultigridOperatorConfig,
+                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray()); ;
 
             OpAffineRaw = OpAffineRaw.CloneAs();
             if (this.RHSRaw != null)
