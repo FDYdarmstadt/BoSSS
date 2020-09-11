@@ -57,9 +57,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            //Tests.ScalingCircle2D(2);
-            //throw new ApplicationException("remove me");
-            
+            //InitMPI();
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
+            //throw new Exception("fuck");
+
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
             });

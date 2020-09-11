@@ -261,8 +261,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 if(FreeMeanValue.Length != _ProblemMapping.BasisS.Count)
                     throw new ArgumentException();
-                m_FreeMeanValue = FreeMeanValue.CloneAs();
             }
+            m_FreeMeanValue = FreeMeanValue.CloneAs();
 
 
             if (MassMatrix != null) {
