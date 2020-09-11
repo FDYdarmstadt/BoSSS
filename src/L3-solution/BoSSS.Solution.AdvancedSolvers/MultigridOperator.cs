@@ -79,14 +79,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ReferenceCell = FindReferencePointCell(map, bases);
             bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
 
-            m_ReferenceIndices = new int[L];
-            for(int iVar = 0; iVar < L; iVar++) {
-                if(FreeMeanValue[iVar]) {
-                    m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, m_ReferenceCell, 0);
-                } else {
-                    m_ReferenceIndices[iVar] = int.MinValue;
+            if(onthisProc) {
+                m_ReferenceIndices = new int[L];
+                for(int iVar = 0; iVar < L; iVar++) {
+                    if(FreeMeanValue[iVar]) {
+                        m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, m_ReferenceCell, 0);
+                    } else {
+                        m_ReferenceIndices[iVar] = int.MinValue;
+                    }
                 }
+            } else {
+                m_ReferenceIndices = null;
             }
+
+            m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell));
 
         }
 
@@ -900,8 +906,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 v_OUT.SetV(uc);
             }
 
-            foreach(var t in bkup) {
-                u_IN[t.idx] = t.val;
+            if(bkup != null) {
+                foreach(var t in bkup) {
+                    u_IN[t.idx] = t.val;
+                }
             }
         }
 
