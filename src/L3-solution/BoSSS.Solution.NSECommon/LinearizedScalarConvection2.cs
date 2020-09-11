@@ -459,7 +459,7 @@ namespace BoSSS.Solution.NSECommon {
         double LaxFriedrichsSchemeSwitch = 0.0;
 
         string[] m_ArgumentOrdering;
-        string[] m_ParameterOrdering;
+        //string[] m_ParameterOrdering;
 
         MaterialLaw EoS;
 
@@ -886,7 +886,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return m_ParameterOrdering;
+                return null;
             }
         }
 

@@ -59,18 +59,21 @@ namespace BoSSS.Solution.NSECommon {
             this.rhoOne = rhoOne;
             this.s = (CC.nu_O2 * CC.MW_O2) / (CC.nu_CH4 * CC.MW_CH4);
 
+            
+
         }
         [DataMember] MaterialParamsMode MatParamsMode;
         [DataMember] public bool rhoOne;
-        [DataMember] public double Q;
-        [DataMember] public double TO0;
-        [DataMember] public double TF0;
-        [DataMember] public double YF0;
-        [DataMember] public double YO0;
-        [DataMember] public double zst;
-        [DataMember] public double cp;
-        [DataMember] public ChemicalConstants CC;
-        [DataMember] public double s;
+        
+        //[DataMember] public double Q;
+        //[DataMember] public double TO0;
+        //[DataMember] public double TF0;
+        //[DataMember] public double YF0;
+        //[DataMember] public double YO0;
+        //[DataMember] public double zst;
+        //[DataMember] public double cp;
+        //[DataMember] public ChemicalConstants CC;
+        //[DataMember] public double s;
 
         /// <summary>
         /// Calculate density based on the mixture fraction.
@@ -171,7 +174,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates the global equivalence ratio 
         /// </summary>     
         /// <returns></returns>
-        public double getLocalEquivalenceRatio(double Yf, double Yox) {
+        override public double getLocalEquivalenceRatio(double Yf, double Yox) {
             Debug.Assert(!(Yf < 0));
             Debug.Assert(!(Yox < 0));
             double Z = getMixtureFraction(Yf, Yox);
@@ -181,6 +184,7 @@ namespace BoSSS.Solution.NSECommon {
                 phi = double.MaxValue;
             }
             return phi;
+            
         }
 
 
@@ -188,7 +192,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates local mixture fraction
         /// </summary>     
         /// <returns></returns>
-        public double getMixtureFraction(double YF, double YO) {
+        override public double getMixtureFraction(double YF, double YO) {
             double Z = (s * YF - YO + YO0) / (s * YF0 + YO0);
             return Z;
         }
@@ -197,7 +201,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates the global equivalence ratio 
         /// </summary>     
         /// <returns></returns>
-        public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
+        override public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
             Debug.Assert(!(Yf0 < 0));
             Debug.Assert(!(Yox0 < 0));
             double phi = s * Yf0 / Yox0;
@@ -285,7 +289,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        public double Prandtl { get; }
+        //public double Prandtl { get; }
     }
  
 }
