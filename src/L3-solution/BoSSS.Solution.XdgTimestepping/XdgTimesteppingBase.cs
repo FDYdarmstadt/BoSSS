@@ -645,7 +645,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             var Ret = new Dictionary<string, double>();
             foreach(int[] varGroup in VarGroups) {
-                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
                 

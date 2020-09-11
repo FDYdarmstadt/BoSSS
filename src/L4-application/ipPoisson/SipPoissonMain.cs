@@ -1148,7 +1148,7 @@ namespace BoSSS.Application.SipPoisson {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(
                     this.LaplaceMtx, this.LaplaceAffine,
                     this.T.Mapping,
-                    this.MgConfig);
+                    this.MgConfig, this.LapaceIp);
 
                 return ana.GetNamedProperties();
             }

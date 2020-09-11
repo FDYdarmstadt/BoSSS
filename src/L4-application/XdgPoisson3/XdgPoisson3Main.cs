@@ -201,6 +201,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             Console.WriteLine("Symm. diff: {0}", Msc.SymmetryDeviation());
         }
         */
+
+        XSpatialOperatorMk2 Op;
+
         private void AssembleMatrix(double MU_A, double MU_B, out BlockMsrMatrix M, out double[] b, out MultiphaseCellAgglomerator agg, out MassMatrixFactory massFact) {
             using (var tr = new FuncTrace()) {
                 // create operator
@@ -224,7 +227,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 int order = this.u.Basis.Degree * 2;
 
-                XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
+                Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
                 var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
                 var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
@@ -464,7 +467,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 this.Op_Matrix, this.Op_Affine, 
                 this.u.Mapping, Op_Agglomeration, 
                 this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()), 
-                this.OpConfig);
+                this.OpConfig, this.Op);
 
             Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV() }, "stencilCn", 0.0, 1);
 

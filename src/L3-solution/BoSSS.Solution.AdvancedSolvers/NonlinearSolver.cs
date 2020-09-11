@@ -53,14 +53,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public abstract class NonlinearSolver {
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public NonlinearSolver(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) {
             m_AssembleMatrix = __AssembleMatrix;
             m_AggBasisSeq = __AggBasisSeq.ToArray();
             m_MultigridOperatorConfig = __MultigridOperatorConfig;
         }
 
+        /// <summary>
+        /// Evaluation and linearization of PDE to solve
+        /// </summary>
         protected OperatorEvalOrLin m_AssembleMatrix;
+        
+        /// <summary>
+        /// Multigrid basis
+        /// - 1st index: Multigrid level
+        /// - 2nd index: variable index
+        /// </summary>
         protected AggregationGridBasis[][] m_AggBasisSeq;
+                
+        /// <summary>
+        /// required for construction of <see cref="CurrentLin"/>
+        /// </summary>
         protected MultigridOperator.ChangeOfBasisConfig[][] m_MultigridOperatorConfig;
 
         /// <summary>
@@ -230,7 +246,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,
                 this.m_MultigridOperatorConfig,
-                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray()); ;
+                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray()); 
 
             OpAffineRaw = OpAffineRaw.CloneAs();
             if (this.RHSRaw != null)
