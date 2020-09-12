@@ -80,10 +80,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
 
             if(onthisProc) {
+                int jRefLoc = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(m_ReferenceCell);
+
                 m_ReferenceIndices = new int[L];
                 for(int iVar = 0; iVar < L; iVar++) {
                     if(FreeMeanValue[iVar]) {
-                        m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, m_ReferenceCell, 0);
+                        m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, 0);
                     } else {
                         m_ReferenceIndices[iVar] = int.MinValue;
                     }
@@ -282,6 +284,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (this.LevelIndex == 0) {
 
+                var bkup = SetPressureReferencePointMTX(OperatorMatrix);
+
                 if (this.IndexIntoProblemMapping_Local == null) {
                     this.m_RawOperatorMatrix = OperatorMatrix;
 
@@ -291,7 +295,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.m_RawMassMatrix = null;
                 } else {
                     this.m_RawOperatorMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
-                    var bkup = SetPressureReferencePointMTX(OperatorMatrix);
+                    
                     OperatorMatrix.WriteSubMatrixTo(this.m_RawOperatorMatrix, this.IndexIntoProblemMapping_Global, default(int[]), this.IndexIntoProblemMapping_Global, default(int[]));
 
                     if (MassMatrix != null) {
