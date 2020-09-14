@@ -49,13 +49,11 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-
-
-            Application.InitMPI(args);
-            //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
-            CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
-            Debug.Assert(false, "remove me");
-            return;
+            //Application.InitMPI(args);
+            ////CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
+            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            //Debug.Assert(false, "remove me");
+            //return;
 
             Application<CNSControl>._Main(
                 args,
