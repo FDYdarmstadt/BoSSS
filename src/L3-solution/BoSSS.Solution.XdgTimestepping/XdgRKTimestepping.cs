@@ -68,7 +68,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="_MultigridOperatorConfig">
         /// Configuration of block-preconditioner, if null a default value is chosen.
         /// </param>
-        /// <param name="temporalOperator"></param>
+        /// <param name="abstractOperator"></param>
         /// <param name="linearconfig"></param>
         /// <param name="nonlinconfig"></param>
         /// <param name="__Parameters"></param>
@@ -77,7 +77,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             DGField[] IterationResiduals,
             LevelSetTracker LsTrk,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            ITemporalOperator temporalOperator,
+            ISpatialOperator abstractOperator,
             DelUpdateLevelset _UpdateLevelset,
             RungeKuttaScheme _RKscheme,
             LevelSetHandling _LevelSetHandling,
@@ -113,13 +113,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.Config_SpatialOperatorType = _SpatialOperatorType;
             base.ComputeOperatorMatrix = _ComputeOperatorMatrix;
             base.UpdateLevelset = _UpdateLevelset;
-            base.TemporalOperator = TemporalOperator;
+            base.AbstractOperator = abstractOperator;
             base.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.m_RKscheme = _RKscheme.CloneAs();
             base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
-            base.TemporalOperator = temporalOperator;
             base.CurrentParameters = __Parameters.ToArray();
             if (_MultigridSequence == null || _MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
@@ -571,13 +570,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // build the saddle-point matrix
                 BlockMsrMatrix System, MaMa;
                 double[] RHS;
-                this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true);
+                this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
                 RHS.ScaleV(-1);
 
                 // update the multigrid operator
                 MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
                     System, MaMa,
-                    this.Config_MultigridOperator);
+                    this.Config_MultigridOperator,
+                    opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
 
                 // init linear solver
                 linearSolver.Init(mgOperator);
@@ -618,8 +618,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Matrix/Affine assembly in the case of an implicit RK stage.
         /// </summary>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization) {
+        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
 
+            abstractOp = base.AbstractOperator;
             if (Linearization == false)
                 throw new NotImplementedException("todo");
 

@@ -465,7 +465,7 @@ namespace BoSSS.Application.MultigridTest {
                         new MultigridOperator.ChangeOfBasisConfig[] {
                             new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = mumo, DegreeS = new int[] { p } }
                         }
-                    });
+                    }, null);
 
             }
 

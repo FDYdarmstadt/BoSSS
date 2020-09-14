@@ -1350,7 +1350,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     MgBasis.UpdateXdgAggregationBasis(CurrentAgglomeration);
                     MultigridOperator mgOp = new MultigridOperator(MgBasis, this.SaddlePointProblemMapping,
                         SaddlePointMatrix, this.MassFact.GetMassMatrix(this.SaddlePointProblemMapping, false),
-                        this.MultigridOperatorConfig);
+                        this.MultigridOperatorConfig, null);
 
                     // extract
                     ////////////

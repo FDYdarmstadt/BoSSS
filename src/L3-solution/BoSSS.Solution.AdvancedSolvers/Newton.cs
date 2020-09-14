@@ -108,7 +108,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Options for (approximate) solution to the linearizes system
         /// </summary>
-        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.MatrixFreeGMRES;
+        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.ExternalSolver;
 
         /// <summary>
         /// Options for Globalization, i.e. means to ensure convergence of Newton iterations
@@ -142,8 +142,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public ISolverSmootherTemplate linsolver;
 
-        public bool UsePresRefPoint;
-
+        
         /// <summary>
         /// Prints the step reduction factor
         /// </summary>
@@ -220,8 +219,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // Option: use 'external' solver
                             // +++++++++++++++++++++++++++++
 
-
-
                             var solver = this.linsolver;
                             solver.Init(CurrentLin);
                             step.ClearEntries();
@@ -229,7 +226,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             solver.ResetStat();
 
                             if (solver is IProgrammableTermination pt) {
-                                // iterative solver with programmable termination is used -
+                                // iterative solver with programmable termination is used - so use it
 
                                 double f0_L2 = CurRes.MPI_L2Norm();
                                 double thresh = f0_L2 * 1e-5;
@@ -265,18 +262,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // fix the pressure
                         // ----------------
-                        if (UsePresRefPoint == false) {
+                        if (CurrentLin.FreeMeanValue.Any()) {
 
-                            if (SolutionVec.Mapping.Fields[2] is XDGField Xpres) {
-                                DGField presSpA = Xpres.GetSpeciesShadowField("A");
-                                DGField presSpB = Xpres.GetSpeciesShadowField("B");
-                                var meanpres = presSpB.GetMeanValueTotal(null);
-                                presSpA.AccConstant(-1.0 * meanpres);
-                                presSpB.AccConstant(-1.0 * meanpres);
-                            } else {
-                                DGField pres = SolutionVec.Mapping.Fields[2];
-                                var meanpres = pres.GetMeanValueTotal(null);
-                                pres.AccConstant(-1.0 * meanpres);
+                            DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
+                            bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
+                            if(flds.Length != FreeMeanValue.Length)
+                                throw new ApplicationException();
+
+                            for(int iFld = 0; iFld < flds.Length; iFld++) {
+                                if(FreeMeanValue[iFld]) {
+                                    double mean = flds[iFld].GetMeanValueTotal(null);
+                                    flds[iFld].AccConstant(-mean);
+                                }
                             }
                         }
 

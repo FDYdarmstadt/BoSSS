@@ -1158,6 +1158,22 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
+            foreach(string domName in this.DomainVar)
+                JacobianOp.FreeMeanValue[domName] = this.FreeMeanValue[domName];
+            JacobianOp.EdgeQuadraturSchemeProvider = this.EdgeQuadraturSchemeProvider;
+            JacobianOp.VolumeQuadraturSchemeProvider = this.VolumeQuadraturSchemeProvider;
+            JacobianOp.SurfaceElement_VolumeQuadraturSchemeProvider = this.SurfaceElement_VolumeQuadraturSchemeProvider;
+            JacobianOp.SurfaceElement_EdgeQuadraturSchemeProvider = this.SurfaceElement_EdgeQuadraturSchemeProvider;
+            JacobianOp.GhostEdgeQuadraturSchemeProvider = this.GhostEdgeQuadraturSchemeProvider;
+            foreach(var species in this.Species) {
+                var src = this.UserDefinedValues[species];
+                var dst = JacobianOp.UserDefinedValues[species];
+                foreach(var kv in src)
+                    dst.Add(kv);
+            }
+            JacobianOp.LinearizationHint = LinearizationHint.AdHoc;
+
+
             foreach (DelParameterFactory f in this.ParameterFactories)
                 JacobianOp.ParameterFactories.Add(f);
             foreach (DelPartialParameterUpdate f in this.ParameterUpdates) {

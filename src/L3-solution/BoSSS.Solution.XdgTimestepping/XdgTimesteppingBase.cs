@@ -262,17 +262,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-        ///// <summary>
-        ///// Optional callback routine to update the mass matrix in the case of  <see cref="Config_MassMatrixShapeandDependence"/> == <see cref="MassMatrixShapeandDependence.IsTimeAndSolutionDependent"/>.
-        ///// </summary>
-        //public DelComputeMassMatrix ComputeMassMatrix {
-        //    get;
-        //    protected set;
-        //}
 
+        /// <summary>
+        /// For the computation of the mass matrix
+        /// </summary>
         public ITemporalOperator TemporalOperator {
-            get;
-            protected set;
+            get {
+                return AbstractOperator.TemporalOperator;
+            }
         }
 
 
@@ -587,6 +584,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// Les spatial operateur 
+        /// </summary>
+        public virtual ISpatialOperator AbstractOperator {
+            get;
+            protected set;
+        }
+
+        /// <summary>
         /// Coordinate mapping of the current solution.
         /// </summary>
         abstract public CoordinateMapping CurrentStateMapping {
@@ -602,7 +607,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Callback-routine  to update the linear resp. linearized system, 
+        /// Callback-routine (<see cref="OperatorEvalOrLin"/>) to update the linear resp. linearized system, 
         /// see <see cref="OperatorEvalOrLin"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
         /// </summary>
         /// <param name="argCurSt">Input, current state of solution.</param>
@@ -616,7 +621,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: assemble matrix and affine vector
         /// - false: evaluate operator (<paramref name="System"/> will be null)
         /// </param>
-        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
+        /// <param name="abstractOperator">
+        ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
+        /// </param>
+        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
 
         /// <summary>
         /// Unscaled, agglomerated mass matrix used by the preconditioner.
@@ -627,7 +635,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
         public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
-            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true);
+            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             
             if(VarGroups == null) {
@@ -637,7 +645,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             var Ret = new Dictionary<string, double>();
             foreach(int[] varGroup in VarGroups) {
-                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
                 

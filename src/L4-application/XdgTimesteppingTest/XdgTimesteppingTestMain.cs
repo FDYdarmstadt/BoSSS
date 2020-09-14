@@ -53,6 +53,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         static void Main(string[] args) {
             //InitMPI();
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t023(TimeSteppingScheme.RK_IMEX3, 8, 0.0d);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023(TimeSteppingScheme.RK_IMEX3, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);

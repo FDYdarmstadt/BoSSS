@@ -510,7 +510,7 @@ namespace BoSSS.Application.FSI_Solver {
                 LsTrk: LsTrk,
                 DelayInit: true,
                 _ComputeOperatorMatrix: DelComputeOperatorMatrix,
-                temporalOperator: this.IBM_Op.TemporalOperator,
+                abstractOperator: this.IBM_Op,
                 _UpdateLevelset: DelUpdateLevelset,
                 BDForder: bdfOrder,
                 _LevelSetHandling: ((FSI_Control)Control).Timestepper_LevelSetHandling,

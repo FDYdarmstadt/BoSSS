@@ -57,9 +57,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            //Tests.ScalingCircle2D(2);
-            //throw new ApplicationException("remove me");
-            
+            //InitMPI();
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
+            //throw new Exception("fuck");
+
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
             });
@@ -200,6 +201,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             Console.WriteLine("Symm. diff: {0}", Msc.SymmetryDeviation());
         }
         */
+
+        XSpatialOperatorMk2 Op;
+
         private void AssembleMatrix(double MU_A, double MU_B, out BlockMsrMatrix M, out double[] b, out MultiphaseCellAgglomerator agg, out MassMatrixFactory massFact) {
             using (var tr = new FuncTrace()) {
                 // create operator
@@ -223,7 +227,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 int order = this.u.Basis.Degree * 2;
 
-                XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
+                Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
                 var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
                 var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
@@ -463,7 +467,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 this.Op_Matrix, this.Op_Affine, 
                 this.u.Mapping, Op_Agglomeration, 
                 this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()), 
-                this.OpConfig);
+                this.OpConfig, this.Op);
 
             Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV() }, "stencilCn", 0.0, 1);
 
@@ -531,14 +535,15 @@ namespace BoSSS.Application.XdgPoisson3 {
                 MultigridOp = new MultigridOperator(XAggB, this.u.Mapping,
                     this.Op_Matrix,
                     this.Op_mass.GetMassMatrix(new UnsetteledCoordinateMapping(this.u.Basis), false),
-                    OpConfig);
+                    OpConfig,
+                    null);
                 Assert.True(MultigridOp!=null);
 
                 int L = MultigridOp.Mapping.LocalLength;
                 DOFs = MultigridOp.Mapping.TotalLength;
 
                 double[] RHSvec = new double[L];
-                MultigridOp.TransformRhsInto(_RHSvec, RHSvec);
+                MultigridOp.TransformRhsInto(_RHSvec, RHSvec, true);
 
 
                 ISolverSmootherTemplate exsolver;
@@ -660,12 +665,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                     new MultigridOperator.ChangeOfBasisConfig[] {
                         new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = MultigridOperator.Mode.Eye, DegreeS = new int[] {u.Basis.Degree } }
                     }
-                });
+                }, null);
 
             double[] mgSolVec = new double[MultigridOp.Mapping.LocalLength];
             double[] mgRhsVec = new double[MultigridOp.Mapping.LocalLength];
             MultigridOp.TransformSolInto(this.u.CoordinateVector, mgSolVec);
-            MultigridOp.TransformRhsInto(RHSvec, mgRhsVec);
+            MultigridOp.TransformRhsInto(RHSvec, mgRhsVec, false);
 
             MgConsistencyTestRec(MultigridOp, mgSolVec, mgRhsVec);
 
