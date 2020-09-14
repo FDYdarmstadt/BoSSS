@@ -133,6 +133,11 @@ namespace BoSSS.Foundation {
         public MultidimensionalArray EdgeLengthScales;
 
         /// <summary>
+        /// scalar on the homotopy path a nonlinear solver
+        /// </summary>
+        public double HomotopyValue;
+
+        /// <summary>
         /// collection of user-defined objects
         /// </summary>
         public Dictionary<string, object> UserDefinedValues = new Dictionary<string, object>();

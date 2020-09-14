@@ -283,7 +283,7 @@ namespace BoSSS.Foundation {
             InternalRepresentation.EdgeQuadraturSchemeProvider = owner.EdgeQuadraturSchemeProvider;
             InternalRepresentation.VolumeQuadraturSchemeProvider = owner.VolumeQuadraturSchemeProvider;
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
-
+            InternalRepresentation.CurrentHomotopyValue = owner.CurrentHomotopyValue;
             return InternalRepresentation.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
         }
     }

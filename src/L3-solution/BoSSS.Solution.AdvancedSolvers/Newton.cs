@@ -124,15 +124,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public GlobalizationOption Globalization = GlobalizationOption.LineSearch;
 
-        //public string m_SessionPath;
-
-        /*
-        /// <summary>
-        /// Optional external solver for computation of Newton corrections
-        /// </summary>
-        public ISolverSmootherTemplate linsolver;
-        */
-
         /// <summary>
         /// Prints the step reduction factor
         /// </summary>
