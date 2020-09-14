@@ -73,7 +73,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     /// <returns>
     /// Some kind of level-set-residual in order to check convergence in a fully coupled simulation
-    /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>)
+    /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>, <see cref="XdgTimesteppingBase.Config_LevelSetConvergenceCriterion"/>)
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
 
@@ -209,24 +209,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public double IterUnderrelax = 1.0;
 
-
-        public double Config_LevelSetConvergenceCriterion = 1.0e-6;
-            
-
         /// <summary>
-        /// Session path for writing in database
+        /// convergence criteion for iterations over the level-set, c.f. return value of <see cref="DelUpdateLevelset"/>
         /// </summary>
-        public string SessionPath = "";
-
-        
-        ///// <summary>
-        ///// Scaling of the mass matrix, for each species and each variable.
-        ///// </summary>
-        //public IDictionary<SpeciesId, IEnumerable<double>> Config_MassScale {
-        //    get;
-        //    protected set;
-        //}
-
+        public double Config_LevelSetConvergenceCriterion = 1.0e-6;
 
         /// <summary>
         /// Species to compute, must be a subset of <see cref="LevelSetTracker.SpeciesIdS"/>
@@ -243,8 +229,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             protected set;
         }
-
-
 
         /// <summary>
         /// Whether the operator is linear, nonlinear.
@@ -432,7 +416,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
                 m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
 
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, MultigridSequence);
             
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);

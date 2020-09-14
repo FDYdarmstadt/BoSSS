@@ -119,6 +119,13 @@ namespace BoSSS.Application.IncompressibleNSE {
             for (int d = 0; d < D; d++)
                 TempOp.SetDiagonal(CodName[d], Control.Density); // set momentum equation entries to density
 
+            // Pressure Reference
+            // ==================
+
+            // if there is no Dirichlet boundary condition,
+            // the mean value of the pressure is free:
+            op.FreeMeanValue[VariableNames.Pressure] = !boundaryCondMap.DirichletPressureBoundary;
+
             // Momentum Equation
             // =================
 

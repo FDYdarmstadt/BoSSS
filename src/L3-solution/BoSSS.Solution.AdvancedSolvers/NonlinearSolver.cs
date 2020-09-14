@@ -151,11 +151,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         abstract public void SolverDriver<S>(CoordinateVector X, S RHS)
            where S : IList<double>;
 
-
+        
         /// <summary>
         /// Preconditioner/solver for the linearized problem
         /// </summary>
         public ISolverSmootherTemplate Precond;
+        
+
 
         /// <summary>
         /// Current linearization of the nonlinear operator: the linearized

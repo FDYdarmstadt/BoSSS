@@ -388,7 +388,6 @@ namespace BoSSS.Application.IBM_Solver {
                 m_ResLogger = base.ResLogger,
                 m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(
                     f => f.Identification), this.ResidualContinuity.Identification),
-                SessionPath = SessionPath,
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
             };
             return m_BDF_Timestepper;
