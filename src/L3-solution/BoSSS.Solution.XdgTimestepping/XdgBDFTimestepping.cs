@@ -273,7 +273,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 restartInfo[i - 1] = new List<DGField>();
 
                 if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
 
                     DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
                     restartInfo[i - 1].Add(phiField);
@@ -310,7 +310,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
-                case LevelSetHandling.FSI_Coupled_Iterative:
                     // noop.
                     break;
 
@@ -1067,7 +1066,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 bool updateAgglom = false;
                 if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0)
                     || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_IterationCounter == 0)
-                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration) || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
+                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration)) {
 
                     m_CoupledIterations++;
                     if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
@@ -1233,7 +1232,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // right-hand-side, resp. affine vector
                 double[] RHS = new double[CurrentAffine.Length];
                 if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // MovingMesh:
                     // (1/dt)*(M1*u1 - M0*u0) + theta1*(Op1*u1 + b1) + theta0*(Op0*u0 + b0);

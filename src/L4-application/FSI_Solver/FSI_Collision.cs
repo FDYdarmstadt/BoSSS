@@ -768,7 +768,8 @@ namespace FSI_Solver {
 
             Vector tangentialVector = new Vector(-normalVector[1], normalVector[0]);
             Particles[particleID].CalculateEccentricity(normalVector, ClosestPoints[particleID][secondObjectID]);
-            Particles[secondObjectID].CalculateEccentricity(normalVector, ClosestPoints[secondObjectID][particleID]);
+            if (IsParticle(secondObjectID))
+                Particles[secondObjectID].CalculateEccentricity(normalVector, ClosestPoints[secondObjectID][particleID]);
             double collisionCoefficient = CalculateCollisionCoefficient(particleID, secondObjectID, normalVector);
             Vector velocityP0 = CalculateNormalAndTangentialVelocity(particleID, normalVector);
             Vector radialVectorP0 = Particles[particleID].CalculateRadialVector(ClosestPoints[particleID][secondObjectID]);
