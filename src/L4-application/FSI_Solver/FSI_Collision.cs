@@ -195,7 +195,8 @@ namespace FSI_Solver {
                                 int secondObjectID = ParticleCollidedWith[currentParticleID][j];
                                 ComputeMomentumBalanceCollision(currentParticleID, secondObjectID, distanceThreshold);
                                 TransferResultsToGhostParticles(currentParticleID);
-                                TransferResultsToGhostParticles(secondObjectID);
+                                if(IsParticle(secondObjectID))
+                                    TransferResultsToGhostParticles(secondObjectID);
                                 if (Particles[currentParticleID].IsCollided)
                                     Console.WriteLine("Particle " + currentParticleID + " and particle / wall " + secondObjectID + " collided");
                             }
@@ -826,7 +827,10 @@ namespace FSI_Solver {
             }
 
             double collisionCoefficient = -(1 + CoefficientOfRestitution) * ((translationalVelocity[0][0] - translationalVelocity[1][0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
-            collisionCoefficient -= (1 + CoefficientOfRestitution) * ((eccentricity[0] * TemporaryVelocity[p0][2] - eccentricity[1] * TemporaryVelocity[p1][2]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
+            double tempRotVelocity2 = 0;
+            if (IsParticle(p1))
+                tempRotVelocity2 = TemporaryVelocity[p1][2];
+            collisionCoefficient -= (1 + CoefficientOfRestitution) * ((eccentricity[0] * TemporaryVelocity[p0][2] - eccentricity[1] * tempRotVelocity2) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
             return collisionCoefficient;
         }
 
