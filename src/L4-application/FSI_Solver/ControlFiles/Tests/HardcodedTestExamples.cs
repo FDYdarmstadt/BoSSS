@@ -229,8 +229,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.gravity = new Vector( 0, -9.81 );
 
             // Particle Properties
-            //C.PhysicalParameters.mu_B = 0.1;
-            //C.particleMass = 1;
             double particleDensity1 = 4.0;
             InitializeMotion motion1 = new InitializeMotion(C.gravity, particleDensity1, C.pureDryCollisions, true);
             double particleDensity2 = 1.0;
