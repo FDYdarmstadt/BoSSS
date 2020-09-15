@@ -61,7 +61,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.00732081626486242;
+                double angularVelocitySol = -0.00283955477369256;
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);

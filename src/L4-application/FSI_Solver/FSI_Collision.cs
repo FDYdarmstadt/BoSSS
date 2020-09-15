@@ -173,7 +173,7 @@ namespace FSI_Solver {
                             }
                         }
                     }
-                    if (saveTimestep <= double.MaxValue) {
+                    if (saveTimestep <= double.MaxValue && globalMinimalDistance != double.MaxValue) {
                         Console.WriteLine("Minimal distance " + globalMinimalDistance + ", threshold " + distanceThreshold + ", current save time+step " + saveTimestep + " accumulated timestep " + AccumulatedCollisionTimestep);
                     }
                     if (saveTimestep >= 0)

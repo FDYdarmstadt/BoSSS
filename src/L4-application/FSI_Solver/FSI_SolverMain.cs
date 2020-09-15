@@ -153,7 +153,6 @@ namespace BoSSS.Application.FSI_Solver {
                 switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                     case LevelSetHandling.Coupled_Once:
                     case LevelSetHandling.Coupled_Iterative:
-                    case LevelSetHandling.FSI_Coupled_Iterative:
                         return true;
 
                     case LevelSetHandling.LieSplitting:
@@ -184,7 +183,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Fully coupled LieSplitting?
         /// </summary>
         [DataMember]
-        private bool IsFullyCoupled => ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled || ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative;
+        private bool IsFullyCoupled => ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
 
         [DataMember]
         private bool StaticTimestep => ((FSI_Control)Control).staticTimestep;
@@ -479,7 +478,6 @@ namespace BoSSS.Application.FSI_Solver {
             MassMatrixShapeandDependence MassMatrixShape;
             switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.Coupled_Iterative:
-                case LevelSetHandling.FSI_Coupled_Iterative:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                     break;
@@ -565,7 +563,6 @@ namespace BoSSS.Application.FSI_Solver {
                 case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
-                case LevelSetHandling.FSI_Coupled_Iterative:
                 case LevelSetHandling.StrangSplitting:
                     UpdateLevelSetParticles(phystime);
                     break;
