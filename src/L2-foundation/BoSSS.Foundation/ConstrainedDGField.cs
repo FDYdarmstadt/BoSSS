@@ -692,8 +692,9 @@ namespace BoSSS.Foundation {
                     case 2: {
                             // condtions at vertices
                             foreach (int vert in VertAtEdge) {
-                                numVCond += NegotiateNumVCond(vert, CondAtVert, ProcsAtInterprocVert[local2Interproc[vert]]);
-                                CondAtVert[vert, 0] += 1;
+                                int lvert = GlobalVert2Local[vert];
+                                numVCond += NegotiateNumVCond(lvert, CondAtVert, ProcsAtInterprocVert[local2Interproc[lvert]]);
+                                CondAtVert[lvert, 0] += 1;
                             }
                             break;
                         }
@@ -777,7 +778,7 @@ namespace BoSSS.Foundation {
             MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
 
             int count = 0;
-            nodeCount = 0;
+            nodeCount = A.RowPartitioning.i0;
             foreach (int j in AcceptedEdges) {
 
                 int cell1 = m_grd.Edges.CellIndices[j, 0];

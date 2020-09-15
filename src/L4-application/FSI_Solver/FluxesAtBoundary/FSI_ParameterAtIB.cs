@@ -25,7 +25,9 @@ namespace FSI_Solver {
         /// <param name="currentParticle">The particle which contains the current point</param>
         /// <param name="currentPoint">The current point</param>
         public FSI_ParameterAtIB(Particle currentParticle, Vector currentPoint) {
-            m_CurrentParticle = currentParticle;
+            m_CurrentParticle = currentParticle ?? throw new ArgumentNullException("current Particle");
+            if (currentPoint.IsNullOrEmpty())
+                throw new ArgumentNullException("current point");
             if (m_CurrentParticle.Area <= 0)
                 throw new ArithmeticException("no particle with an positive domain assigned.");
             m_RadialVector = m_CurrentParticle.CalculateRadialVector(currentPoint);

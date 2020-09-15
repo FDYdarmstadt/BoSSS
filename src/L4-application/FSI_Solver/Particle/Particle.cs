@@ -220,7 +220,7 @@ namespace BoSSS.Application.FSI_Solver {
             Aux = new FSI_Auxillary();
             Vector RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
-                throw new ArithmeticException("The radial vector has no length");
+                throw new ArithmeticException("The radial vector has no length. Surface point: " + SurfacePoint + " Position: " + Motion.GetPosition(0));
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
             return RadialVector;
         }
