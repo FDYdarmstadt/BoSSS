@@ -77,21 +77,21 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
-        [Test]
+        //[Test]
         static public void Run__BoundaryAndInitialData() {
             RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
-        [Test]
+        //[Test]
         static public void Run__MetaJobManager() {
             RunWorksheet("MetaJobManager/MetaJobManager.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
-        [Test]
+        //[Test]
         static public void Run__GridGeneration() {
             RunWorksheet("GridGeneration/GridGeneration.tex");
         }
@@ -168,7 +168,7 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
-        [Test]
+        //[Test]
         static public void Run__convStudy() {
             RunWorksheet("convergenceStudyTutorial/convStudy.tex");
         }

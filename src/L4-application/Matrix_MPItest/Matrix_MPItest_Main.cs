@@ -133,7 +133,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (2.4).Pow2());
             //Phi.ProjectField((x, y) => x);
             //Console.WriteLine("more testcode");
-            LsTrk.UpdateTracker();
+            LsTrk.UpdateTracker(t);
         }
 
 

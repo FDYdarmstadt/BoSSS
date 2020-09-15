@@ -86,7 +86,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
         protected override void SetInitial() {
             Phi.ProjectField(test.GetLevelSet);
-            this.LsTrk.UpdateTracker();
+            this.LsTrk.UpdateTracker(0.0);
         }
 
         public static double[] GetTestRange() {
@@ -126,7 +126,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                         Console.WriteLine("Test {0}", testcnt);
 
                     this.Phi.ProjectField(this.test.GetLevelSet);
-                    this.LsTrk.UpdateTracker();
+                    this.LsTrk.UpdateTracker(0.0);
 
                     //var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
                     var schemes = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), this.QUAD_ORDER, 1).XQuadSchemeHelper;

@@ -41,7 +41,7 @@ namespace MPI.Wrappers {
     /// We solved such issues by addressing the FORTRAN interface, where types
     /// like MPI_Comm, MPI_Op, ... are defined to be integers by the standard;
     /// </remarks>
-    class FortranMPIdriver : Utils.DynLibLoader, IMPIdriver {
+    class FortranMPIdriver : Utils.DynLibLoader, IMPIdriver_wTimeTracer {
 
         /// <summary>
         /// converts the MPI communicators in ilPSP (which are
@@ -126,6 +126,18 @@ namespace MPI.Wrappers {
             }
         }
 
+        public static Stopwatch MPIwatch = new Stopwatch();
+
+        private class MPITracer : IDisposable
+        {
+            public MPITracer() {
+                MPIwatch.Start();
+            }
+            public void Dispose() {
+                MPIwatch.Stop();
+            }
+        }
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -166,6 +178,12 @@ namespace MPI.Wrappers {
         }
 
         MPI_Flavour m_Flavour;
+
+        public long TicksSpent {
+            get {
+                return MPIwatch.ElapsedTicks;
+            }
+        }
 
         /// <summary>
         /// identifies the currently loaded MPI implementation
@@ -401,17 +419,19 @@ namespace MPI.Wrappers {
         /// <param name="index"></param>
         /// <param name="status"></param>
         public void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status) {
-            int ierr;
+            using (new MPITracer()) {
+                int ierr;
 
-            // note: since the status is passed by reference/pointer, 
-            // some larger buffer does not do any harm 
-            // (if our internal MPI_Status structure is larger than the one actually defined by the MPI-implementation)
+                // note: since the status is passed by reference/pointer, 
+                // some larger buffer does not do any harm 
+                // (if our internal MPI_Status structure is larger than the one actually defined by the MPI-implementation)
 
-            MPI_WAITANY(ref count, array_of_requests, out index, out status, out ierr);
-            if (index != MiscConstants.UNDEFINED)
-                index--; // convert fortran index into C-index
-            MPIException.CheckReturnCode(ierr);
-            FixMPIStatus(ref status);
+                MPI_WAITANY(ref count, array_of_requests, out index, out status, out ierr);
+                if (index != MiscConstants.UNDEFINED)
+                    index--; // convert fortran index into C-index
+                MPIException.CheckReturnCode(ierr);
+                FixMPIStatus(ref status);
+            }
         }
 
 #pragma warning disable 649
@@ -467,10 +487,14 @@ namespace MPI.Wrappers {
         /// <param name="array_of_requests"></param>
         /// <param name="array_of_statii"></param>
         public void Waitall(int count, MPI_Request[] array_of_requests, MPI_Status[] array_of_statii) {
-            int ierr;
-            MPI_WAITALL(ref count, array_of_requests, array_of_statii, out ierr);
-            FixMPI_Status(array_of_statii);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+            
+                MPI_WAITALL(ref count, array_of_requests, array_of_statii, out ierr);
+
+                FixMPI_Status(array_of_statii);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649
@@ -483,8 +507,10 @@ namespace MPI.Wrappers {
         public void Gatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype,
                             IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype,
                             int root, MPI_Comm comm) {
-            MPI_GATHERV(sendbuf, ref sendcount, ref sendtype, recvbuf, recvcounts, displs, ref recvtype, ref root, ref comm, out int ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                MPI_GATHERV(sendbuf, ref sendcount, ref sendtype, recvbuf, recvcounts, displs, ref recvtype, ref root, ref comm, out int ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649
@@ -497,8 +523,10 @@ namespace MPI.Wrappers {
         public void Scatterv(IntPtr sendbuf, IntPtr sendcounts, IntPtr displs, MPI_Datatype sendtype,
                              IntPtr recvbuf, int recvcount, MPI_Datatype recvtype,
                              int root, MPI_Comm comm) {
-            MPI_SCATTERV(sendbuf, sendcounts, displs, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out int ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                MPI_SCATTERV(sendbuf, sendcounts, displs, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out int ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 
@@ -515,9 +543,11 @@ namespace MPI.Wrappers {
         public void Allgather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype,
                                      IntPtr recvbuf, int recvcount, MPI_Datatype recvtype,
                                      MPI_Comm comm) {
-            int ierr;
-            MPI_ALLGATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_ALLGATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649
@@ -532,8 +562,10 @@ namespace MPI.Wrappers {
         /// </summary>
         public void Gather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm) {
             int ierr;
-            MPI_GATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                MPI_GATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 
@@ -551,9 +583,11 @@ namespace MPI.Wrappers {
         public void Allgatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype,
                                       IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype,
                                       MPI_Comm comm) {
-            int ierr;
-            MPI_ALLGATHERV(sendbuf, ref sendcount, ref sendtype, recvbuf, recvcounts, displs, ref recvtype, ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_ALLGATHERV(sendbuf, ref sendcount, ref sendtype, recvbuf, recvcounts, displs, ref recvtype, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 
@@ -589,9 +623,11 @@ namespace MPI.Wrappers {
         /// 
         /// </summary>
         public void Barrier(MPI_Comm comm) {
-            int ierr;
-            MPI_BARRIER(ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_BARRIER(ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649
@@ -623,9 +659,11 @@ namespace MPI.Wrappers {
         /// 
         /// </summary>
         public void Bcast(IntPtr buf, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
-            int ierr;
-            MPI_BCAST(buf, ref count, ref datatype, ref root, ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_BCAST(buf, ref count, ref datatype, ref root, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649
@@ -637,9 +675,11 @@ namespace MPI.Wrappers {
         /// 
         /// </summary>
         public void Send(IntPtr buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
-            int ierr;
-            MPI_SEND(buf, ref count, ref datatype, ref dest, ref tag, ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_SEND(buf, ref count, ref datatype, ref dest, ref tag, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649
@@ -651,10 +691,12 @@ namespace MPI.Wrappers {
         /// 
         /// </summary>
         public void Recv(IntPtr buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, out MPI_Status status) {
-            int ierr;
-            MPI_RECV(buf, ref count, ref datatype, ref source, ref tag, ref comm, out status, out ierr);
-            FixMPIStatus(ref status);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_RECV(buf, ref count, ref datatype, ref source, ref tag, ref comm, out status, out ierr);
+                FixMPIStatus(ref status);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
         ///// <summary>
@@ -675,9 +717,11 @@ namespace MPI.Wrappers {
         /// 
         /// </summary>
         public void Reduce(IntPtr sndbuf, IntPtr rcvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm) {
-            int ierr;
-            MPI_REDUCE(sndbuf, rcvbuf, ref count, ref datatype, ref op, ref root, ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_REDUCE(sndbuf, rcvbuf, ref count, ref datatype, ref op, ref root, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649
@@ -689,9 +733,11 @@ namespace MPI.Wrappers {
         /// 
         /// </summary>
         unsafe public void Allreduce(IntPtr sndbuf, IntPtr rcvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) {
-            int ierr;
-            MPI_ALLREDUCE(sndbuf, rcvbuf, ref count, ref datatype, ref op, ref comm, out ierr);
-            MPIException.CheckReturnCode(ierr);
+            using (new MPITracer()) {
+                int ierr;
+                MPI_ALLREDUCE(sndbuf, rcvbuf, ref count, ref datatype, ref op, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
         }
 
 #pragma warning disable 649

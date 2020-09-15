@@ -248,7 +248,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 volQuadScheme: new CellQuadratureScheme(true, nearfield ? LevelSetTracker.Regions.GetNearFieldSubgrid(1).VolumeMask : null)
                 );
 
-            
+
 
             //Operator_interface.ComputeMatrixEx(
             //    LevelSetTracker,
@@ -262,11 +262,21 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             //    MPIParameterExchange: false,
             //    whichSpc: LevelSetTracker.GetSpeciesId("A")
             //    );
+
+            Operator_interface.OperatorCoefficientsProvider =
+                delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+                    var r = new CoefficientSet() {
+                        
+                    };
+
+                    //throw new NotImplementedException("todo");
+                    return r;
+                };
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker,
                 Extension.Mapping, InterfaceParams, Extension.Mapping);
 
             MultiphaseCellAgglomerator dummy = LevelSetTracker.GetAgglomerator(LevelSetTracker.SpeciesIdS.ToArray(), 2 * Extension.Basis.Degree + 2, 0.0);
-            mtxBuilder.SpeciesOperatorCoefficients[LevelSetTracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")];
+            mtxBuilder.CellLengthScales.Add(LevelSetTracker.GetSpeciesId("A"), dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")]);
 
             mtxBuilder.time = 0;
             mtxBuilder.MPITtransceive = false;

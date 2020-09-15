@@ -3,6 +3,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -15,18 +16,18 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// <summary>
     /// A minimal solver for the incompressible Navier-Stokes equation.
     /// </summary>
-    public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSollver<IncompressibleControl> {
+    public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<IncompressibleControl> {
         
-        /// <summary>
-        /// Mass matrix diagonal/temporal operator for incompressible Navier-Stokes, i.e. <see cref="IncompressibleControl.Density"/> for the momentum equation and zero for the continuity equation
-        /// </summary>
-        protected override IEnumerable<double> GetMassScale(int D) {
-            double[] diag = new double[D + 1];
-            for(int d = 0; d < D; d++) {
-                diag[d] = Control.Density; 
-            }
-            return diag;
-        }
+        ///// <summary>
+        ///// Mass matrix diagonal/temporal operator for incompressible Navier-Stokes, i.e. <see cref="IncompressibleControl.Density"/> for the momentum equation and zero for the continuity equation
+        ///// </summary>
+        //protected override IEnumerable<double> GetMassScale(int D) {
+        //    double[] diag = new double[D + 1];
+        //    for(int d = 0; d < D; d++) {
+        //        diag[d] = Control.Density; 
+        //    }
+        //    return diag;
+        //}
 
         static void Main(string[] args) {
             _Main(args, false, delegate () {
@@ -81,7 +82,6 @@ namespace BoSSS.Application.IncompressibleNSE {
 
 #pragma warning restore 649
 
-
         /// <summary>
         /// Links edge tags (<see cref="BoSSS.Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>) and
         /// boundary conditions in the control object (<see cref="BoSSS.Solution.Control.AppControl.BoundaryValues"/>).
@@ -95,9 +95,11 @@ namespace BoSSS.Application.IncompressibleNSE {
         protected override SpatialOperator GetOperatorInstance(int D) {
 
             // instantiate boundary condition mapping
+            // ======================================
             boundaryCondMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
 
             // instantiate operator
+            // ====================
             string[] CodName = (new[] { "ResidualMomentumX", "ResidualMomentumY", "ResidualMomentumZ" }).GetSubVector(0, D).Cat("ResidualConti");
             
             var op = new SpatialOperator(
@@ -107,6 +109,25 @@ namespace BoSSS.Application.IncompressibleNSE {
                 QuadOrderFunc: QuadOrderFunc.NonLinear(2));
 
             op.LinearizationHint = LinearizationHint.GetJacobiOperator;
+
+            // Temporal Operator
+            // =================
+
+            var TempOp = new ConstantTemporalOperator(op, 0.0); // init with entire diagonal set to 0.0
+            op.TemporalOperator = TempOp;
+
+            for (int d = 0; d < D; d++)
+                TempOp.SetDiagonal(CodName[d], Control.Density); // set momentum equation entries to density
+
+            // Pressure Reference
+            // ==================
+
+            // if there is no Dirichlet boundary condition,
+            // the mean value of the pressure is free:
+            op.FreeMeanValue[VariableNames.Pressure] = !boundaryCondMap.DirichletPressureBoundary;
+
+            // Momentum Equation
+            // =================
 
             // convective part:
             {
@@ -142,9 +163,10 @@ namespace BoSSS.Application.IncompressibleNSE {
                     comps.Add(Visc); // bulk component GradUTerm 
                 }
             }
+            
 
-            // Continuum equation
-            // ==================
+            // Continuity equation
+            // ===================
             {
                 for(int d = 0; d < D; d++) {
                     var src = new Divergence_DerivativeSource(d, D);
@@ -157,9 +179,17 @@ namespace BoSSS.Application.IncompressibleNSE {
                 //IBM_Op.EquationComponents["div"].Add(new PressureStabilization(1, 1.0 / this.Control.PhysicalParameters.mu_A));
             }
 
+            // Gravity parameter 
+            // =================
 
+            op.ParameterFactories.Add(delegate (IReadOnlyDictionary<string, DGField> DomainVarFields) {
+                return D.ForLoop(d => (VariableNames.Gravity_d(d), this.Gravity[d] as DGField));
+            });
+
+
+            // commit & return
+            // ===============
             op.Commit();
-
             return op;
         }
 
@@ -170,12 +200,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             return Velocity.Cat(Pressure);
         }
 
-        /// <summary>
-        /// We are using gravity as a parameter
-        /// </summary>
-        protected override IEnumerable<DGField> InstantiateParameterFields() {
-            return Gravity;
-        }
+       
 
         /// <summary>
         /// Returns the fields where we want to store our residuals

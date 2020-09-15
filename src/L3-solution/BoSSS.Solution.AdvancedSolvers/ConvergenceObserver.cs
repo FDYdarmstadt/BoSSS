@@ -76,7 +76,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             //this.DecompositionOperator = muop; this.DecompositionOperator_IsOrthonormal = false;
-            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config);
+            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config, muop.FreeMeanValue);
             this.DecompositionOperator_IsOrthonormal = true;
 
             ResNormTrend = new Dictionary<Tuple<int, int, int>, List<double>>();
@@ -360,7 +360,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int L0 = DecompositionOperator.Mapping.LocalLength;
             double[] Err_0 = new double[L0], Res_0 = new double[L0];
             DecompositionOperator.TransformSolInto(Err_Org, Err_0);
-            DecompositionOperator.TransformRhsInto(Res_Org, Res_0);
+            DecompositionOperator.TransformRhsInto(Res_Org, Res_0, false);
 
             IList<double[]> Err_OrthoLevels = OrthonormalMultigridDecomposition(Err_0);
             IList<double[]> Res_OrthoLevels = OrthonormalMultigridDecomposition(Res_0);

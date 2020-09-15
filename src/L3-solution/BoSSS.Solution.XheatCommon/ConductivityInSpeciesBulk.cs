@@ -62,7 +62,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_bcMap = bcMap;
 
             this.m_spcId = spcId;
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
 
             switch (spcName) {
                 case "A": currentk = _kA; complementk = _kB; break;
@@ -81,7 +81,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -142,7 +142,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -315,14 +315,14 @@ namespace BoSSS.Solution.XheatCommon {
             fluxFunction = m_D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
 
             this.m_spcId = spcId;
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
             //this.ksqrt = Math.Sqrt(_k);
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -420,13 +420,13 @@ namespace BoSSS.Solution.XheatCommon {
         public AuxiliaryHeatFlux_Identity(int component, string spcName, SpeciesId spcId) {
             this.component = component;
 
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
             this.m_spcId = spcId;
         }
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -502,7 +502,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             this.m_spcId = spcId;
             this.k = _k;
-            this.validSpeciesId = spcName;
+            this.ValidSpecies = spcName;
 
             //fluxFunction = m_D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
             tempFunction = bcMap.bndFunction[VariableNames.Temperature + "#" + spcName];
@@ -513,7 +513,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -629,14 +629,14 @@ namespace BoSSS.Solution.XheatCommon {
             tempFunction = bcMap.bndFunction[VariableNames.Temperature + "#" + spcName];
 
             this.m_spcId = spcId;
-            this.validSpeciesId = spcName;
+            this.ValidSpecies = spcName;
             //this.ksqrt = Math.Sqrt(_k);
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

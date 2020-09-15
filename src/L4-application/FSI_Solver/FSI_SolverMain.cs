@@ -54,12 +54,12 @@ namespace BoSSS.Application.FSI_Solver {
             //BoSSS.Application.FSI_Solver.TestProgram.PeriodicTest();
             //BoSSS.Solution.Application.FinalizeMPI();
             //throw new ApplicationException( "remove me");
-
+            
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
                 return p;
             });
-
+            
         }
 
         /// <summary>
@@ -295,9 +295,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// Creates Navier-Stokes and continuity eqution
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            if (IBM_Op != null)
+            if(IBM_Op != null)
                 return;
 
+           
             // boundary conditions
             boundaryCondMap = new IncompressibleBoundaryCondMap(GridData, Control.BoundaryValues, PhysicsMode.Incompressible);
 
@@ -317,20 +318,20 @@ namespace BoSSS.Application.FSI_Solver {
             string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(spatialDim), VariableNames.Pressure);
 
             string[] CodNameSelected = new string[0];
-            if (IBM_Op_config.CodBlocks[0])
+            if(IBM_Op_config.CodBlocks[0])
                 CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(0, spatialDim));
-            if (IBM_Op_config.CodBlocks[1])
+            if(IBM_Op_config.CodBlocks[1])
                 CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(spatialDim, 1));
 
             string[] DomNameSelected = new string[0];
-            if (IBM_Op_config.DomBlocks[0])
+            if(IBM_Op_config.DomBlocks[0])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(0, spatialDim));
-            if (IBM_Op_config.DomBlocks[1])
+            if(IBM_Op_config.DomBlocks[1])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(spatialDim, 1));
 
             IBM_Op = new XSpatialOperatorMk2(
                 __DomainVar: DomNameSelected, __ParameterVar: Params, __CoDomainVar: CodNameSelected,
-                QuadOrderFunc:(A, B, C) => HMForder, 
+                QuadOrderFunc: (A, B, C) => HMForder,
                 __Species: FluidSpecies.Select(id => LsTrk.GetSpeciesName(id)));
 
             // Momentum equation
@@ -338,8 +339,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Convective part
             // =============================
             {
-                if (IBM_Op_config.convection) {
-                    for (int d = 0; d < spatialDim; d++) {
+                if(IBM_Op_config.convection) {
+                    for(int d = 0; d < spatialDim; d++) {
 
                         // The bulk
                         // -----------------------------
@@ -349,15 +350,14 @@ namespace BoSSS.Application.FSI_Solver {
 
                         // Immersed boundary
                         // -----------------------------
-                        if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
+                        if(((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
                             var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
                                 delegate (Vector X) {
                                     throw new NotImplementedException("Currently not implemented for fixed motion");
                                 },
                                 UseMovingMesh);
                             comps.Add(convectionAtIB);
-                        }
-                        else {
+                        } else {
                             var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
                                     delegate (Vector X) {
                                         return CreateCouplingAtParticleBoundary(X);
@@ -371,7 +371,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Pressure part
             // =============================
-            for (int d = 0; d < spatialDim; d++) {
+            for(int d = 0; d < spatialDim; d++) {
                 ICollection<IEquationComponent> comps = IBM_Op.EquationComponents[CodName[d]];
 
                 // The bulk
@@ -385,7 +385,7 @@ namespace BoSSS.Application.FSI_Solver {
                 comps.Add(pressureAtIB);
 
                 // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
-                if (this.Control.FixedStreamwisePeriodicBC) {
+                if(this.Control.FixedStreamwisePeriodicBC) {
                     var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                     comps.Add(presSource);
                 }
@@ -393,7 +393,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Viscous part
             // =============================
-            for (int d = 0; d < spatialDim; d++) {
+            for(int d = 0; d < spatialDim; d++) {
                 var comps = IBM_Op.EquationComponents[CodName[d]];
                 double penalty = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
 
@@ -404,15 +404,14 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // Immersed boundary
                 // -----------------------------
-                if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
+                if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
                         penalty, this.ComputePenaltyIB, FluidViscosity, delegate (Vector X) {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
                         });
                     comps.Add(viscousAtIB);
-                }
-                else {
+                } else {
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity,
                         delegate (Vector X) {
                             return CreateCouplingAtParticleBoundary(X);
@@ -425,22 +424,21 @@ namespace BoSSS.Application.FSI_Solver {
             // Continuum equation
             // =============================
             {
-                for (int d = 0; d < spatialDim; d++) {
+                for(int d = 0; d < spatialDim; d++) {
                     var src = new Divergence_DerivativeSource(d, spatialDim);
                     var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
                     IBM_Op.EquationComponents["div"].Add(src);
                     IBM_Op.EquationComponents["div"].Add(flx);
                 }
 
-                if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
+                if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
                     var divPen = new Solution.NSECommon.Operator.Continuity.DivergenceAtIB(spatialDim, LsTrk, 1,
                         delegate (double[] X, double time) {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
                         });
                     IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
-                }
-                else {
+                } else {
                     var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk,
                        delegate (Vector X) {
                            return CreateCouplingAtParticleBoundary(X);
@@ -448,6 +446,21 @@ namespace BoSSS.Application.FSI_Solver {
                     IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
                 }
             }
+
+            // temporal operator
+            // =================
+
+            {
+                var tempOp = new ConstantXTemporalOperator(IBM_Op, 0.0);
+                foreach(var kv in this.MassScale) {
+                    tempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
+                }
+                IBM_Op.TemporalOperator = tempOp;
+
+            }
+
+            // Finalize
+            // ========
 
             IBM_Op.Commit();
 
@@ -492,17 +505,17 @@ namespace BoSSS.Application.FSI_Solver {
             bdforder = bdfOrder;
             m_BDF_Timestepper = new XdgBDFTimestepping(
                 Fields: ArrayTools.Cat(Velocity, Pressure),
+                __Parameters: IBM_Op.InvokeParameterFactory(ArrayTools.Cat(Velocity, Pressure)),
                 IterationResiduals: ArrayTools.Cat(ResidualMomentum, ResidualContinuity),
                 LsTrk: LsTrk,
                 DelayInit: true,
                 _ComputeOperatorMatrix: DelComputeOperatorMatrix,
-                _ComputeMassMatrix: null,
+                abstractOperator: this.IBM_Op,
                 _UpdateLevelset: DelUpdateLevelset,
                 BDForder: bdfOrder,
                 _LevelSetHandling: ((FSI_Control)Control).Timestepper_LevelSetHandling,
                 _MassMatrixShapeandDependence: MassMatrixShape,
                 _SpatialOperatorType: SpatialOp,
-                _MassScale: MassScale,
                 _MultigridOperatorConfig: MultigridOperatorConfig,
                 _MultigridSequence: MultigridSequence,
                 _SpId: FluidSpecies,
@@ -515,7 +528,6 @@ namespace BoSSS.Application.FSI_Solver {
                 m_ResidualNames = ArrayTools.Cat(ResidualMomentum.Select(f => f.Identification), ResidualContinuity.Identification),
                 IterUnderrelax = ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)Control).LSunderrelax : 1.0,
                 Config_LevelSetConvergenceCriterion = ((FSI_Control)Control).hydrodynamicsConvergenceCriterion,
-                SessionPath = SessionPath,
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit
             };
         }
@@ -543,7 +555,7 @@ namespace BoSSS.Application.FSI_Solver {
                 case LevelSetHandling.None:
                     ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
                     LevSet.ProjectField(Posfunction);
-                    LsTrk.UpdateTracker();
+                    LsTrk.UpdateTracker(phystime + dt);
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
@@ -639,7 +651,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
 
             try {
-                LsTrk.UpdateTracker(__NearRegionWith: 2);
+                LsTrk.UpdateTracker(phystime, __NearRegionWith: 2);
             }
             catch (LevelSetCFLException e) {//hacky workaround
                 if (AddedGhostParticle)

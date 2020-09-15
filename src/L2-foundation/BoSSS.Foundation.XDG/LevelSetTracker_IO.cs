@@ -200,7 +200,7 @@ namespace BoSSS.Foundation.XDG {
             foreach (var Ls in this.LevelSets) {
                 Ls.As<LevelSet>().LoadData(tsi, data, loadedObjects);
             }
-            this.UpdateTracker();
+            this.UpdateTracker(0.0);
             loadedObjects.Add(this);
         }
     }

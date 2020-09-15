@@ -1,0 +1,3 @@
+> List of 1 instances of BatchProcessorClient {
+>   0: SlurmClient: TuID@host, Slurm account: project12345
+> }

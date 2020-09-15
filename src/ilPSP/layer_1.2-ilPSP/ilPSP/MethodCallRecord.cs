@@ -178,6 +178,26 @@ namespace ilPSP.Tracing {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [DataMember]
+        internal long m_TicksSpentinBlocking = 0;
+
+        /// <summary>
+        /// Time spent in blocking MPI routines.
+        /// Time is exclusive the child calls.
+        /// </summary>
+        [JsonIgnore]
+        public TimeSpan TimeSpentinBlocking {
+            get {
+                long childs = 0;
+                foreach (var c in Calls.Values) {
+                    childs += c.m_TicksSpentinBlocking;
+                }
+                return new TimeSpan(m_TicksSpentinBlocking - childs);
+            }
+        }
 
         /// <summary>
         /// Accumulated, total time spend in method (inclusive child calls).
@@ -499,7 +519,17 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public long TicksSpentInBlocking {
+            get {
+                return AllCalls.Sum(a => a.m_TicksSpentinBlocking);
+            }
+        }
+
+        /// <summary>
         /// time spend in this method, relative to the
+        /// note: not usable in case of recursive calls
         /// <see cref="MethodCallRecord.Root"/>;
         /// </summary>
         public double TimeFractionOfRoot {

@@ -329,7 +329,8 @@ namespace BoSSS.Application.BoSSSpad
                 switch (CurrentSys) {
                     case PlatformID.Unix: {
                             Process cmd = new Process();
-                            cmd.StartInfo.FileName = "/bin/bash";
+                            // cmd.StartInfo.FileName = "/bin/bash";
+                            cmd.StartInfo.FileName = "bash";
                             cmd.StartInfo.RedirectStandardInput = true;
                             cmd.StartInfo.RedirectStandardOutput = true;
                             cmd.StartInfo.CreateNoWindow = true;
@@ -452,6 +453,7 @@ namespace BoSSS.Application.BoSSSpad
                 // Set startupstring
                 string RunningToken = DeploymentDirectoryAtRemote(myJob) + "/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
+                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(myJob)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
                 sw.WriteLine(startupstring);
                 sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob) + "/exit.txt'");
                 sw.WriteLine($"rm '{RunningToken}'");

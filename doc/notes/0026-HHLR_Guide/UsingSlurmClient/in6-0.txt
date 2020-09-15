@@ -1,0 +1,9 @@
+15: var aJob = new Job(ctrl.SessionName, typeof(SipPoissonMain));
+16: aJob.SetControlObject(ctrl);
+17: ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project12345";
+18: aJob.NumberOfMPIProcs         = 2;
+19: aJob.ExecutionTime            = "01:00:00";
+20: aJob.HHLR_project             = "project12345";
+21: aJob.MemPerCPU                = "5000";
+22: aJob.UseComputeNodesExclusive = true;
+23: aJob.Activate(myBatch);

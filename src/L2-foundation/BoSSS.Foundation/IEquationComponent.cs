@@ -44,6 +44,34 @@ namespace BoSSS.Foundation {
         IList<string> ParameterOrdering { get; }
     }
 
+    public interface IParameterHandling : IEquationComponent {
+
+        /// <summary>
+        /// Update of parameter fields used by this operator;
+        /// (alternatively, <see cref="ISpatialOperator.ParameterUpdates"/> can be used.) 
+        /// </summary>
+        /// <param name="Arguments">
+        /// input, the current state of the approximate solution at which the operator should be evaluated or linearized.
+        /// sequence correlates with <see cref="IEquationComponent.ArgumentOrdering"/>.
+        /// </param>
+        /// <param name="Parameters">
+        /// output, sequence correlates with <see cref="IEquationComponent.ParameterOrdering"/>.
+        /// </param>
+        void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters);
+
+        /// <summary>
+        /// Factory for the allocation of storage for storing the parameters for this component
+        /// (alternatively, <see cref="ISpatialOperator.ParameterFactories"/> can be used.)
+        /// </summary>
+        /// <param name="Arguments">
+        /// input, the currently used DG fields to store approximate solution.
+        /// (required if e.g. the DG degree of the parameters somehow should depend on the DG degree of the arguments/domain variables).
+        /// sequence correlates with <see cref="IEquationComponent.ArgumentOrdering"/>.
+        /// </param>
+        /// <returns></returns>
+        DGField[] MyParameterAlloc(DGField[] Arguments);
+    }
+
     /// <summary>
     /// Additional hints for checking the implementation
     /// </summary>
@@ -103,6 +131,11 @@ namespace BoSSS.Foundation {
         /// length scales for edges (e.g. for computing penalty parameters)
         /// </summary>
         public MultidimensionalArray EdgeLengthScales;
+
+        /// <summary>
+        /// scalar on the homotopy path a nonlinear solver
+        /// </summary>
+        public double HomotopyValue;
 
         /// <summary>
         /// collection of user-defined objects
@@ -1108,7 +1141,7 @@ namespace BoSSS.Foundation {
 
 
     /// <summary>
-    /// parameters on which edge forms (e.g. <see cref="IEdgeform_UxV"/>, <see cref="IEdgeform_GradUxV"/>, <see cref="IEdgeform_UxGradV"/>, <see cref="IEdgeSource_V"/>, <see cref="IEdgeSource_GradV"/>)
+    /// parameters on which edge forms (e.g. <see cref="IEdgeForm_UxV"/>, <see cref="IEdgeform_GradUxV"/>, <see cref="IEdgeform_UxGradV"/>, <see cref="IEdgeSource_V"/>, <see cref="IEdgeSource_GradV"/>)
     /// may depend.
     /// </summary>
     public struct EdgeFormParams {
@@ -1170,7 +1203,7 @@ namespace BoSSS.Foundation {
     }
 
     /// <summary>
-    /// Inner edge integrand of <see cref="IEdgeform_UxV"/>
+    /// Inner edge integrand of <see cref="IEdgeForm_UxV"/>
     /// </summary>
     public interface IInnerEdgeform_UxV : IInnerEdgeForm {
         
@@ -1193,7 +1226,7 @@ namespace BoSSS.Foundation {
     }
 
     /// <summary>
-    /// Boundary edge integrand of <see cref="IEdgeform_UxV"/>
+    /// Boundary edge integrand of <see cref="IEdgeForm_UxV"/>
     /// </summary>
     public interface IBoundaryEdgeform_UxV : IBoundaryEdgeForm {
         
@@ -1229,7 +1262,7 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface IEdgeform_UxV : IInnerEdgeform_UxV, IBoundaryEdgeform_UxV, IEdgeForm {
+    public interface IEdgeForm_UxV : IInnerEdgeform_UxV, IBoundaryEdgeform_UxV, IEdgeForm {
 
 
        

@@ -171,7 +171,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         base.Update(SolutionVec.Mapping.Fields, ref Solution);
 
                         // residual evaluation & callback
-                        base.EvalResidual(Solution, ref Residual);
+                        base.EvalLinearizedResidual(Solution, ref Residual);
                         ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
 
                         //if (NoOfIterations > NoCoupledIterations)
