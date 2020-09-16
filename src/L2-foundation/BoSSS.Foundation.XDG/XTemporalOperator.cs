@@ -299,6 +299,8 @@ namespace BoSSS.Foundation.XDG {
             InternalRepresentation.GhostEdgeQuadraturSchemeProvider = owner.GhostEdgeQuadraturSchemeProvider;
 
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
+            InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
+            
             InternalRepresentation.Commit();
         }
 
@@ -313,6 +315,9 @@ namespace BoSSS.Foundation.XDG {
             InternalRepresentation.GhostEdgeQuadraturSchemeProvider = owner.GhostEdgeQuadraturSchemeProvider;
 
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
+            InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
+
+            InternalRepresentation.CurrentHomotopyValue = owner.CurrentHomotopyValue;
 
             return InternalRepresentation.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
         }

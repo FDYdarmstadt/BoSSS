@@ -30,7 +30,8 @@ using System.Diagnostics;
 namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
-    /// Evaluation or linearization/matrix assembly of the operator
+    /// Evaluation or linearization/matrix assembly of the operator;
+    /// this delegate is, so-to-say, the connection between the used <see cref="ISpatialOperator"/> and its evaluation
     /// </summary>
     /// <param name="Matrix"></param>
     /// <param name="Affine"></param>
@@ -66,7 +67,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Evaluation and linearization of PDE to solve
         /// </summary>
         protected OperatorEvalOrLin m_AssembleMatrix;
-        
+
+
+        ISpatialOperator m_AbstractOperator;
+
+        /// <summary>
+        /// spatial operator provided by <see cref="m_AssembleMatrix"/>;
+        /// </summary>
+        protected ISpatialOperator AbstractOperator {
+            get {
+                return m_AbstractOperator;
+            }
+            set {
+                if(m_AbstractOperator == null)
+                    m_AbstractOperator = value;
+                if(!object.ReferenceEquals(m_AbstractOperator, value)) {
+                    throw new ApplicationException("Hey buddy, you should not change the operator during the solver life-time");
+                }
+            }
+        }
+
+
         /// <summary>
         /// Multigrid basis
         /// - 1st index: Multigrid level
@@ -151,11 +172,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         abstract public void SolverDriver<S>(CoordinateVector X, S RHS)
            where S : IList<double>;
 
-
+        
         /// <summary>
         /// Preconditioner/solver for the linearized problem
         /// </summary>
         public ISolverSmootherTemplate Precond;
+        
+
 
         /// <summary>
         /// Current linearization of the nonlinear operator: the linearized
@@ -185,13 +208,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Pre-scaling of <paramref name="Output"/>.
         /// </param>
         /// <param name="Output"></param>
-        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
+        /// <param name="HomotopyValue">
+        /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+        /// </param>
+        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output, double HomotopyValue = 1.0) {
             double[] OpAffineRaw;
-            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var Dummy);
-            Debug.Assert(OpMtxRaw == null); // only evaluation ==> OpMatrix must be null
+            BlockMsrMatrix OpMtxRaw;
+            BlockMsrMatrix MassMtxRaw;
+            if(AbstractOperator == null && HomotopyValue != 1) {
+                // do one call just to attain the spatial operator;
+                // not very efficient, but ok for the moment
+                this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), false, out var _Dummy);
+                Debug.Assert(OpMtxRaw == null); // only evaluation ==> OpMatrix must be null
+                this.AbstractOperator = _Dummy;
+            }
+
+            if(AbstractOperator == null && HomotopyValue != 1.0) {
+                throw new NotSupportedException("unable to attain operator for homotopy update");
+            }
+
+            if(AbstractOperator != null && HomotopyValue != AbstractOperator.CurrentHomotopyValue)
+                // set homotopy value
+                AbstractOperator.CurrentHomotopyValue = HomotopyValue;
+            
+            // the real call:
+            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), false, out var Dummy);
+            if(OpMtxRaw != null)
+                // only evaluation ==> OpMatrix must be null
+                throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
+            this.AbstractOperator = Dummy;
 
             CurrentLin.TransformRhsInto(OpAffineRaw, Output, false);
-
         }
 
 
@@ -235,18 +282,39 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Updating the <see cref="CurrentLin"/> -- operator;
         /// </summary>
         /// <param name="CurrentState">linearization point</param>
-        protected void UpdateLinearization(IEnumerable<DGField> CurrentState) {
+        /// <param name="HomotopyValue">
+        /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+        /// </param>
+        protected void UpdateLinearization(IEnumerable<DGField> CurrentState, double HomotopyValue = 1.0) {
             if(!(this.ProblemMapping.BasisS.Count == CurrentState.Count()))
                 throw new ArgumentException("mismatch in number of fields.");
 
             BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), true, out ISpatialOperator abstractOperator);
+            if(HomotopyValue != 1.0 && AbstractOperator == null) {
+                // do one call just to attain the spatial operator;
+                // not very efficient, but ok for the moment
+                this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), true, out ISpatialOperator _abstractOperator);
+                this.AbstractOperator = _abstractOperator;
+            }
 
+            if(AbstractOperator == null && HomotopyValue != 1.0) {
+                throw new NotSupportedException("unable to attain operator for homotopy update");
+            }
+
+            if(AbstractOperator != null && AbstractOperator.CurrentHomotopyValue != HomotopyValue)
+                // set homotopy value
+                AbstractOperator.CurrentHomotopyValue = HomotopyValue;
+
+            // the real call:
+            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), true, out ISpatialOperator abstractOperator);
+            AbstractOperator = abstractOperator;
+
+            // blabla:
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,
                 this.m_MultigridOperatorConfig,
-                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray()); 
+                AbstractOperator.DomainVar.Select(varName => AbstractOperator.FreeMeanValue[varName]).ToArray()); 
 
             OpAffineRaw = OpAffineRaw.CloneAs();
             if (this.RHSRaw != null)
@@ -265,6 +333,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //static int counter = 1;
 
 
+        /// <summary>
+        /// DG Coordinate mapping for the base DG/XDG space, without any multigrid fuzz
+        /// </summary>
         protected UnsetteledCoordinateMapping ProblemMapping {
             get;
             set;

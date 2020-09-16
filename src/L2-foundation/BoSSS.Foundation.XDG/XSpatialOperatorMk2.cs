@@ -1065,6 +1065,45 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        List<Action<double>> m_HomotopyUpdate = new List<Action<double>>();
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.HomotopyUpdate"/>
+        /// </summary>
+        public ICollection<Action<double>> HomotopyUpdate {
+            get {
+                if(m_IsCommited) {
+                    return m_HomotopyUpdate.AsReadOnly();
+                } else {
+                    return m_HomotopyUpdate;
+                }
+            }
+        }
+
+        double m_CurrentHomotopyValue = 1.0;
+
+        /// <summary>
+        /// Can be used by a (most likely nonlinear) solver to walk along the homotopy path.
+        /// Setting (to a different value) fires all <see cref="HomotopyUpdate"/> events
+        /// </summary>
+        public double CurrentHomotopyValue {
+            get {
+                return m_CurrentHomotopyValue;
+            }
+            set {
+                if(value < 0 || value > 1)
+                    throw new ArgumentOutOfRangeException();
+                double oldVal = m_CurrentHomotopyValue;
+                m_CurrentHomotopyValue = value;
+                if(oldVal != value) {
+                    foreach(var action in m_HomotopyUpdate) {
+                        action(value);
+                    }
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
@@ -1181,6 +1220,10 @@ namespace BoSSS.Foundation.XDG {
             }
             JacobianOp.ParameterFactories.Add(h.AllocateParameters);
             JacobianOp.ParameterUpdates.Add(h.PerformUpdate);
+
+            JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
+            JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
+            JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
 
             JacobianOp.Commit();
             return JacobianOp;
@@ -1401,6 +1444,8 @@ namespace BoSSS.Foundation.XDG {
             foreach(var kv in UserDefinedValues[lstrk.GetSpeciesName(spc)]) {
                 r.UserDefinedValues.Add(kv.Key, kv.Value);
             }
+
+            r.HomotopyValue = this.m_CurrentHomotopyValue;
 
             return r;
         }
