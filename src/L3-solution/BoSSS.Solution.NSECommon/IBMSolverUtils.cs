@@ -33,6 +33,7 @@ using MPI;
 namespace BoSSS.Solution.NSECommon {
     public static class IBMSolverUtils {
 
+        /*
 
         /// <summary>
         /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
@@ -153,7 +154,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-
+        */
 
 
         /// <summary>

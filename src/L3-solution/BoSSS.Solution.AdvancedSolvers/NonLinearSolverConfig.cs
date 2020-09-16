@@ -91,11 +91,6 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int constantNewtonIterations = 1;
 
-        /// <summary>
-        /// When pressure ref point can not be used (Option: false), a mean pressure field is calculated and substracted from the current pressure field.
-        /// </summary>
-        public bool UsePresRefPoint = true;
-
 
         /// <summary>
         /// Prints the step reduction factor of the newton backtracking method
@@ -105,6 +100,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// How to restrict the step size of Newton steps
         /// </summary>
+        [DataMember]
         public GlobalizationOption Globalization = GlobalizationOption.LineSearch;
 
         /// <summary>
@@ -119,7 +115,6 @@ namespace BoSSS.Solution.Control {
                 MinSolverIterations = this.MinSolverIterations,
                 SolverCode = this.SolverCode,
                 UnderRelax = this.UnderRelax,
-                UsePresRefPoint = this.UsePresRefPoint,
                 printLambda = this.printLambda,
                 verbose = this.verbose
         };
@@ -141,7 +136,6 @@ namespace BoSSS.Solution.Control {
                 this.MinSolverIterations == compareto.MinSolverIterations &&
                 this.SolverCode == compareto.SolverCode &&
                 this.UnderRelax == compareto.UnderRelax &&
-                this.UsePresRefPoint == compareto.UsePresRefPoint &&
                 this.printLambda == compareto.printLambda &&
                 this.Globalization == compareto.Globalization &&
                 this.verbose == compareto.verbose;

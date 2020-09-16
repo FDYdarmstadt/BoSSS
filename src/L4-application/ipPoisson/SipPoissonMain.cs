@@ -991,7 +991,7 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("Setting up multigrid operator...");
                     var mgsetup = new Stopwatch();
                     mgsetup.Start();
-                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig);
+                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig, LapaceIp.DomainVar.Select(varName => LapaceIp.FreeMeanValue[varName]).ToArray());
                     //double[] condests;
                     //int[] DOFs, Level;
                     //GimmeKondnumber(MultigridOp, out condests, out DOFs, out Level);
@@ -1148,7 +1148,7 @@ namespace BoSSS.Application.SipPoisson {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(
                     this.LaplaceMtx, this.LaplaceAffine,
                     this.T.Mapping,
-                    this.MgConfig);
+                    this.MgConfig, this.LapaceIp);
 
                 return ana.GetNamedProperties();
             }

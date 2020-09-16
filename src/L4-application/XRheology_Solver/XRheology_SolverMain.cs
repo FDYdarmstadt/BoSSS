@@ -550,7 +550,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         this.CurrentResidual.Mapping.Fields,
                         LsTrk,
                         true,
-                        DelComputeOperatorMatrix, this.XRheology_Operator.Xop.TemporalOperator, DelUpdateLevelSet,
+                        DelComputeOperatorMatrix, this.XRheology_Operator.Xop, DelUpdateLevelSet,
                         (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,
@@ -805,6 +805,7 @@ namespace BoSSS.Application.XRheology_Solver {
             WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
 
 
+            /*  not required anymore; 
             // ============================
             // Set Pressure Reference Point
             // ============================
@@ -826,6 +827,8 @@ namespace BoSSS.Application.XRheology_Solver {
                     }
                 }
             }
+            */
+
 
             // transform from RHS to Affine
             OpAffine.ScaleV(-1.0);
@@ -1274,7 +1277,7 @@ namespace BoSSS.Application.XRheology_Solver {
                                     MgBasis.UpdateXdgAggregationBasis(agg);
                                     MultigridOperator mgOp = new MultigridOperator(MgBasis, CurrentSolution.Mapping,
                                         SaddlePointMatrix, this.MassFact.GetMassMatrix(CurrentSolution.Mapping, false),
-                                        this.MultigridOperatorConfig);
+                                        this.MultigridOperatorConfig, null);
 
                                     MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
 

@@ -840,7 +840,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Partial inversion of a matrix with zero rows and columns; not considered to be performance-critical,
-        /// since it is only for treating phatological cases.
+        /// since it is only for treating pathological cases.
         /// </summary>
         static void RankDefInvert(MultidimensionalArray MtxIn, MultidimensionalArray MtxOt) {
             if(MtxIn.Dimension != 2)

@@ -126,7 +126,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        public double Prandtl { get; }
+        //public double Prandtl { get { base.Prandtl; } }
 
         /// <summary>
         /// Calculates heat capacity of air for a given temperature and composition.
@@ -177,7 +177,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates local mixture fraction
         /// </summary>     
         /// <returns></returns>
-        public double getMixtureFraction(double YF, double YO ) {
+        virtual public double getMixtureFraction(double YF, double YO ) {
             double Z = (s * YF - YO + YO0) / (s * YF0 + YO0);
             return Z;
         }
@@ -186,7 +186,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates the global equivalence ratio 
         /// </summary>     
         /// <returns></returns>
-        public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
+        virtual public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
             Debug.Assert(!(Yf0 < 0));
             Debug.Assert(!(Yox0 < 0));
             double phi = s * Yf0 / Yox0;
@@ -199,7 +199,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates the global equivalence ratio 
         /// </summary>     
         /// <returns></returns>
-        public double getLocalEquivalenceRatio(double Yf, double Yox) {
+        virtual public double getLocalEquivalenceRatio(double Yf, double Yox) {
             Debug.Assert(!(Yf < -1e3));
             Debug.Assert(!(Yox < -1e3));
             double Z = getMixtureFraction(Yf, Yox);

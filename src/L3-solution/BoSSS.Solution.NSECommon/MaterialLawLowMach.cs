@@ -74,7 +74,13 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        public double Prandtl { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double Prandtl { 
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// 
@@ -82,6 +88,7 @@ namespace BoSSS.Solution.NSECommon {
         //[NonSerialized]
         [DataMember]
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        
         /// <summary>
         /// 
         /// </summary>

@@ -200,6 +200,7 @@ namespace BoSSS.Solution.XNSECommon {
                 AddSpeciesNSE_component(XOp, config, d, D, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
             }
 
+            XOp.FreeMeanValue[VariableNames.Pressure] = !BcMap.DirichletPressureBoundary;
         }
 
 

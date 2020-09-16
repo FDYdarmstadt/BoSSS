@@ -211,6 +211,23 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
+
+
+        /// <summary>
+        /// Adaptation of user-defined values when a nonlinear solver moves along a homotopy path.
+        /// </summary>
+        ICollection<Action<double>> HomotopyUpdate {
+            get;
+        }
+
+        /// <summary>
+        /// 
+        /// Setting (to a different value) fires all <see cref="HomotopyUpdate"/> events
+        /// </summary>
+        double CurrentHomotopyValue {
+            get;
+            set;
+        }
        
     }
 

@@ -73,12 +73,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            InitMPI();
+            //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
-            FinalizeMPI();
-            return;
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p3(ViscosityMode.FullySymmetric);
+            //throw new Exception("fuck you ");
 
 
             _Main(args, false, delegate () {
@@ -731,7 +731,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
 
-
+                /* not required anymore; 
                 // ============================
                 // Set Pressure Reference Point
                 // ============================
@@ -751,6 +751,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.LsTrk, OpAffine);
                     }
                 }
+                */
 
                 // transform from RHS to Affine
                 OpAffine.ScaleV(-1.0);
@@ -892,7 +893,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.CurrentResidual.Fields,
                     LsTrk,
                     true,
-                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop.TemporalOperator, DelUpdateLevelSet,
+                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop, DelUpdateLevelSet,
                     (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                     this.Control.Timestepper_LevelSetHandling,
                     this.XOpConfig.mmsd,

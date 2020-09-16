@@ -284,6 +284,8 @@ namespace BoSSS.Application.IBM_Solver {
                     (A, B, C) => this.HMForder, 
                     FluidSpecies.Select(sId => LsTrk.GetSpeciesName(sId)));
 
+                IBM_Op.FreeMeanValue[VariableNames.Pressure] = !this.boundaryCondMap.DirichletPressureBoundary;
+
 
                 // Momentum equation
                 // =================
@@ -368,7 +370,7 @@ namespace BoSSS.Application.IBM_Solver {
                 LsTrk,
                 true,
                 DelComputeOperatorMatrix,
-                this.IBM_Op.TemporalOperator,
+                this.IBM_Op,
                 DelUpdateLevelset,
                 bdfOrder,
                 lsh,
@@ -386,7 +388,6 @@ namespace BoSSS.Application.IBM_Solver {
                 m_ResLogger = base.ResLogger,
                 m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(
                     f => f.Identification), this.ResidualContinuity.Identification),
-                SessionPath = SessionPath,
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
             };
             return m_BDF_Timestepper;
@@ -650,7 +651,7 @@ namespace BoSSS.Application.IBM_Solver {
             OpAffine.CheckForNanOrInfV();
 
 
-
+            /*
             // Set Pressure Reference Point
             if (!this.boundaryCondMap.DirichletPressureBoundary) {
                 if (OpMatrix != null) {
@@ -668,6 +669,7 @@ namespace BoSSS.Application.IBM_Solver {
                         OpAffine);
                 }
             }
+            */
         }
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {

@@ -63,7 +63,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
         */
 
-      
+        /// <summary>
+        /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis
+        /// </summary>
+        public override IDictionary<string, double> OperatorAnalysis() {
+            return this.Timestepping.OperatorAnalysis();
+        }      
 
 
         abstract internal void CreateTrackerHack();
