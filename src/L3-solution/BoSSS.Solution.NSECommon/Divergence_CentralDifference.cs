@@ -63,10 +63,10 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.Multiphase:
                     throw new ApplicationException("Wrong constructor");
                 case PhysicsMode.LowMach:
-                    this.m_ParamterOrdering = null; //  new string[] { VariableNames.Temperature0 };
+                    this.m_ParamterOrdering =new string[] { VariableNames.Temperature0 };
                     break;
                 case PhysicsMode.Combustion:
-                    this.m_ParamterOrdering = null; /* = ArrayTools.Cat(new string[] { VariableNames.Temperature0 }, VariableNames.MassFractions0(NumberOfReactants));*/
+                    this.m_ParamterOrdering =  ArrayTools.Cat(new string[] { VariableNames.Temperature0 }, VariableNames.MassFractions0(NumberOfReactants));
                     this.NumberOfReactants = NumberOfReactants;
                     if(NumberOfReactants == -1)
                         throw new ArgumentException("NumberOfReactants must be specified for combustion flows.");
