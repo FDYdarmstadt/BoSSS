@@ -22,7 +22,11 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace FSI_Solver {
-    class FSI_Collision {
+
+    /// <summary>
+    /// Handles the collision between particles
+    /// </summary>
+    class ParticleCollision {
         private readonly double TimestepSize;
         private readonly double GridLengthScale;
         private readonly double CoefficientOfRestitution;
@@ -39,13 +43,40 @@ namespace FSI_Solver {
         private int[][] CollisionCluster;
         private int[][] ParticleCollidedWith;
 
-        public FSI_Collision(double gridLenghtscale, double coefficientOfRestitution, double dt) {
-            CoefficientOfRestitution = coefficientOfRestitution;
-            TimestepSize = dt;
+        /// <summary>
+        /// Reduced version of the collision model, used to check for periodic boundaries.
+        /// </summary>
+        /// <param name="gridLenghtscale">
+        /// Characteristic lenght of the grid.
+        /// </param>
+        public ParticleCollision(double gridLenghtscale) {
+            CoefficientOfRestitution = 0;
+            TimestepSize = 0;
             GridLengthScale = gridLenghtscale;
         }
 
-        public FSI_Collision(double gridLenghtscale, double coefficientOfRestitution, double dt, double[][] wallCoordinates, bool[] IsPeriodicBoundary, double minDistance) {
+        /// <summary>
+        /// Constructor for the collision model.
+        /// </summary>
+        /// <param name="gridLenghtscale">
+        /// Characteristic lenght of the grid.
+        /// </param>
+        /// <param name="coefficientOfRestitution">
+        /// Static coefficient of restitution
+        /// </param>
+        /// <param name="dt">
+        /// time step size
+        /// </param>
+        /// <param name="wallCoordinates">
+        /// Contains the position of the wall. First index defines vertical/horizontal walls, [0]: vertical, [1]: horizontal. Second index, [0]: left/upper wall [1]: right/lower wall
+        /// </param>
+        /// <param name="IsPeriodicBoundary">
+        /// Determines whether a boundary is periodic. [0]: vertical boundary, [1]: horizontal boundary.
+        /// </param>
+        /// <param name="minDistance">
+        /// Min. distance threshold.
+        /// </param>
+        public ParticleCollision(double gridLenghtscale, double coefficientOfRestitution, double dt, double[][] wallCoordinates, bool[] IsPeriodicBoundary, double minDistance) {
             CoefficientOfRestitution = coefficientOfRestitution;
             TimestepSize = dt;
             GridLengthScale = gridLenghtscale;
@@ -286,16 +317,6 @@ namespace FSI_Solver {
             }
         }
 
-        
-        /// <summary>
-        /// Calculates the dynamic save timestep for a particle-particle interaction.
-        /// </summary>
-        /// <param name="particle0"></param>
-        /// <param name="particle1"></param>
-        /// <param name="closestPoint0"></param>
-        /// <param name="closestPoint1"></param>
-        ///  <param name="normalVector"></param>
-        /// <param name="distance"></param>
         private double DynamicTimestep(int FirstParticleID, int SecondParticleID) {
             double detectCollisionVn_P0 = 0;
             double detectCollisionVn_P1 = 0;
@@ -319,11 +340,6 @@ namespace FSI_Solver {
             return pointVelocity * normalVector;
         }
 
-        /// <summary>
-        /// Updates the state of the current particles with the dynamic timestep
-        /// </summary>
-        /// <param name="particles"></param>
-        ///  <param name="dynamicTimestep"></param>
         private void MoveParticlesWithSaveTimestep(Particle[] particles, double dynamicTimestep) {
             for (int p = 0; p < particles.Length; p++) {
                 Particle currentParticle = particles[p];
@@ -333,31 +349,7 @@ namespace FSI_Solver {
             }
         }
 
-        /// <summary>
-        /// Computes the minimal distance between two particles.
-        /// </summary>
-        /// <param name="Particle0">
-        /// The first particle.
-        /// </param>
-        ///  <param name="Particle1">
-        /// The second particle.
-        /// </param>
-        /// <param name="Distance">
-        /// The minimal distance between the two objects.
-        /// </param>
-        /// <param name="DistanceVector">
-        /// The vector of the minimal distance between the two objects.
-        /// </param>
-        /// <param name="ClosestPoint_P0">
-        /// The point on the first object closest to the second one.
-        /// </param>
-        /// <param name="ClosestPoint_P1">
-        /// The point on the second object closest to the first one.
-        /// </param>
-        /// <param name="Overlapping">
-        /// Is true if the two particles are overlapping.
-        /// </param>
-        internal void CalculateMinimumDistance(Particle[] Particles, out Vector DistanceVector, out Vector[] ClosestPoints, out bool Overlapping) {
+        private void CalculateMinimumDistance(Particle[] Particles, out Vector DistanceVector, out Vector[] ClosestPoints, out bool Overlapping) {
             int spatialDim = Particles[0].Motion.GetPosition(0).Dim;
             double distance = double.MaxValue;
             DistanceVector = new Vector(spatialDim);
@@ -384,16 +376,13 @@ namespace FSI_Solver {
         /// <summary>
         /// Computes the minimal distance between a particle and the wall.
         /// </summary>
-        /// <param name="Particle0">
+        /// <param name="particle">
         /// The first particle.
-        /// </param>
-        /// <param name="Distance">
-        /// The minimal distance between the two objects.
         /// </param>
         /// <param name="DistanceVector">
         /// The vector of the minimal distance between the two objects.
         /// </param>
-        /// <param name="ClosestPoint_P0">
+        /// <param name="ClosestPoint">
         /// The point on the first object closest to the second one.
         /// </param>
         /// <param name="Overlapping">
@@ -443,7 +432,7 @@ namespace FSI_Solver {
         /// <param name="Overlapping">
         /// Is true if the two particles are overlapping.
         /// </param>
-        internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
+        private void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
 
             // Step 1
             // Initialize the algorithm with the particle position
@@ -528,18 +517,6 @@ namespace FSI_Solver {
             DistanceVec = new Vector(supportVector);
         }
 
-        /// <summary>
-        /// Calculates the support point on a single particle.
-        /// </summary>
-        /// <param name="particle">
-        /// Current particle.
-        /// </param>
-        /// <param name="Vector">
-        /// The vector in which direction the support point is searched.
-        /// </param>
-        /// <param name="supportPoint">
-        /// The support point (Cpt. Obvious)
-        /// </param>
         private void CalculateSupportPoint(Particle particle, int SubParticleID, Vector supportVector, out Vector supportPoint) {
             int spatialDim = particle.Motion.GetPosition(0).Dim;
             supportPoint = new Vector(spatialDim);
@@ -578,19 +555,6 @@ namespace FSI_Solver {
             }
         }
 
-        /// <summary>
-        /// The core of the GJK-algorithm. Calculates the minimum distance between the current 
-        /// simplex and the origin.
-        /// </summary>
-        /// <param name="simplex">
-        /// A list of all support points constituting the simplex.
-        /// </param>
-        /// <param name="v">
-        /// The distance vector.
-        /// </param>
-        /// <param name="overlapping">
-        /// Is true if the simplex contains the origin
-        /// </param>
         private Vector DistanceAlgorithm(List<Vector> simplex, out bool overlapping) {
             Vector supportVector = new Vector(simplex[0].Dim);
             overlapping = false;
@@ -741,13 +705,7 @@ namespace FSI_Solver {
             return supportVector;
         }
 
-        /// <summary>
-        /// Computes the post-collision velocities of two particles.
-        /// </summary>
-        /// <param name="collidedParticles">
-        /// List of the two colliding particles
-        /// </param>
-        internal void ComputeMomentumBalanceCollision(int particleID, int secondObjectID, double threshold) {
+        private void ComputeMomentumBalanceCollision(int particleID, int secondObjectID, double threshold) {
             double distance = DistanceVector[particleID][secondObjectID].Abs();
             Vector normalVector = DistanceVector[particleID][secondObjectID];
             normalVector.Normalize();
@@ -803,10 +761,6 @@ namespace FSI_Solver {
             return new Vector(velocity * normalVector, velocity * tangentialVector);
         }
 
-        /// <summary>
-        /// Computes the collision coefficient of two particle after they collided.
-        /// </summary>
-        /// <param name="collidedParticles"></param>
         private double CalculateCollisionCoefficient(int p0, int p1, Vector normalVector) {
             Vector[] translationalVelocity = new Vector[2];
             translationalVelocity[0] = CalculateNormalAndTangentialVelocity(p0, normalVector);

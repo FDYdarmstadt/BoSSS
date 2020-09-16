@@ -79,7 +79,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Single(double angle = 0, double distance = 0, double aspectRatio = 0.05, double activeStress = 1) {
+        public static FSI_Control Single(double angle = 0, double distance = 0, double aspectRatio = 0.02, double activeStress = 1) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
@@ -91,7 +91,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 5, lengthY: 5, cellsPerUnitLength: 24, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 5, lengthY: 5, cellsPerUnitLength: 20, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(2);
 
             // Coupling Properties
@@ -131,7 +131,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 200);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 100);
 
             return C;
         }

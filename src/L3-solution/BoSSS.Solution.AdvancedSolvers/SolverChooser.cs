@@ -784,25 +784,25 @@ namespace BoSSS.Solution {
             int MGDepth = MGBasis.Length;
             int[] LocalDOF = new int[MGDepth];
 
-            for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
-                LocalDOF[iLevel] = 0;
-                int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            //for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
+            //    LocalDOF[iLevel] = 0;
+            //    int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
-                for (int iCell = 0; iCell < NoOfCells; iCell++) {
-                    for (int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
-                        int pmax = getDGs(iLevel, iVar)[0];
-                        try {
-                            LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
-                        }
-                        catch (Exception e) {
-                            Console.WriteLine("WARNING: internal error occured during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
+            //    for (int iCell = 0; iCell < NoOfCells; iCell++) {
+            //        for (int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
+            //            int pmax = getDGs(iLevel, iVar)[0];
+            //            try {
+            //                LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
+            //            }
+            //            catch (Exception e) {
+            //                Console.WriteLine("WARNING: internal error occured during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
                             return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-                        }
-                    }
-                }
-            }
+            //            }
+            //        }
+            //    }
+            //}
 
-            return LocalDOF;
+            //return LocalDOF;
         }
 
         private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {

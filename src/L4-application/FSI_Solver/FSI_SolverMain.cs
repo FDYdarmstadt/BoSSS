@@ -847,7 +847,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2] - additionalWallThreshold, particlePosition[1]);
                 else
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2] - additionalWallThreshold);
-                FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
+                ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
                 periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
             }
@@ -865,7 +865,7 @@ namespace BoSSS.Application.FSI_Solver {
                         currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID] - additionalWallThreshold, particlePosition[1]);
                     else
                         currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID] - additionalWallThreshold);
-                    FSI_Collision periodicCollision = new FSI_Collision(GetMinGridLength(), 0, 0);
+                    ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
                     periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
                         return true;
@@ -1339,7 +1339,7 @@ namespace BoSSS.Application.FSI_Solver {
                     for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
                         currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
                     }
-                    FSI_Collision _Collision = new FSI_Collision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
+                    ParticleCollision _Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
 
                     _Collision.CalculateCollision(currentParticles);
                 }
