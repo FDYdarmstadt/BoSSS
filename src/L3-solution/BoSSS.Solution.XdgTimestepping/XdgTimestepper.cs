@@ -248,8 +248,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
 
+            SpeciesId[] spcToCompute = op.Species.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
+
             ConstructorCommon(op, UseX,
                 Fields, this.Parameters, IterationResiduals, 
+                spcToCompute,
                 _UpdateLevelset, 
                 _LevelSetHandling,
                 _MultigridOperatorConfig, 
@@ -313,6 +316,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         private void ConstructorCommon(
             ISpatialOperator op, bool UseX, 
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
+            SpeciesId[] spcToCompute,
             DelUpdateLevelset _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
             double _AgglomerationThreshold,
@@ -387,7 +391,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
                     _MultigridOperatorConfig, _MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
+                    spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
                     LinearSolver);
@@ -402,7 +406,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
                     _MultigridOperatorConfig, _MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
+                    spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
                     LinearSolver);
@@ -465,10 +469,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             this.Parameters = op.InvokeParameterFactory(Fields);
 
-            CreateDummyTracker(Fields);
+            var spc = CreateDummyTracker(Fields);
                        
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
+                new[] { spc },
                 UpdateLevelsetWithNothing,
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
@@ -477,11 +482,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                 LinearSolver, NonLinearSolver);
         }
 
-        private void CreateDummyTracker(IEnumerable<DGField> Fields) {
+        private SpeciesId CreateDummyTracker(IEnumerable<DGField> Fields) {
             var gDat = Fields.First().GridDat as GridData;
             var DummyLevSet = new LevelSet(new Basis(gDat, 1), "DummyPhi");
             DummyLevSet.AccConstant(-1.0);
             LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new[] { "A", "B" }, DummyLevSet);
+            LsTrk.UpdateTracker(0.0, __NearRegionWith: 0);
+
+            var spcA = LsTrk.GetSpeciesId("A");
+
+            Debug.Assert(LsTrk.Regions.GetSpeciesMask(spcA).NoOfItemsLocally == gDat.Cells.NoOfLocalUpdatedCells);
+
+            return spcA;
         }
 
         double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {

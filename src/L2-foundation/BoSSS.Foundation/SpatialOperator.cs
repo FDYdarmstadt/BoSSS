@@ -1774,8 +1774,12 @@ namespace BoSSS.Foundation {
             /// can be dangerous to turn off
             /// </summary>
             public bool MPITtransceive {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
+                get {
+                    return Eval.MPITtransceive;
+                }
+                set {
+                    Eval.MPITtransceive = value;
+                }
             }
 
             IEvaluatorNonLin Eval;
