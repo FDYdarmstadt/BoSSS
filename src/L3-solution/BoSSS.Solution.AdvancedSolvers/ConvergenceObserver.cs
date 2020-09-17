@@ -179,7 +179,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else if (SepPoly == false && SepLev == true) {
                     title = string.Format("(var#{0},mg.lev.{1})", iVar, iLevel);
                 } else if (SepPoly == true && SepLev == false) {
-                    title = string.Format("(var#{0},p={2})", iVar, pDG);
+                    title = string.Format("(var#{0},p={1})", iVar, pDG);
                 } else if (SepPoly == true && SepLev == true) {
                     title = string.Format("(var#{0},mg.lev.{1},p={2})", iVar, iLevel, pDG);
                 } else {

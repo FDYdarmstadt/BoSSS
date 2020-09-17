@@ -1241,6 +1241,9 @@ namespace BoSSS.Application.XNSE_Solver {
 #endif
 
                 Console.WriteLine("done.");
+#if TEST
+                WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+#endif
                 return dt;
             }
         }
@@ -1416,14 +1419,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 EnergyLogger.Close();
         }
 
-        #endregion
+#endregion
 
 
 
         //==========================
         // adaptive mesh refinement
         //==========================
-        #region AMR
+#region AMR
 
         CellMask NScm;
 
@@ -1704,14 +1707,14 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        #endregion
+#endregion
 
 
 
         //===========================
         // I/O (saving and plotting)
         //===========================
-        #region IO
+#region IO
 
 
         /// <summary>
@@ -1864,6 +1867,25 @@ namespace BoSSS.Application.XNSE_Solver {
             return tsi;
         }
 
+        private void WriteTrendToDatabase(ConvergenceObserver CO) {
+            CO.WriteTrendToTable(false, true, true, out string[] columns, out MultidimensionalArray table);
+
+            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                var LogRes = base.DatabaseDriver.FsDriver.GetNewLog("ResTrend", this.CurrentSessionInfo.ID);
+                foreach (var col in columns) LogRes.Write(col + "\t");
+                int nocol = columns.Length;
+                int norow = table.GetLength(0);
+                Debug.Assert(nocol == table.GetLength(1));
+                LogRes.WriteLine();
+                for (int iRow = 0; iRow < norow; iRow++) {
+                    for (int iCol = 0; iCol < nocol; iCol++) {
+                        LogRes.Write(table[iRow, iCol] + "\t");
+                    }
+                    LogRes.WriteLine();
+                }
+                LogRes.Flush();
+            }
+        }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
             Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
@@ -1875,7 +1897,7 @@ namespace BoSSS.Application.XNSE_Solver {
             PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, iterIndex }), 2);
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis

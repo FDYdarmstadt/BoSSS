@@ -546,6 +546,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver, this.m_queryHandler);
                 var Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
                 Callbacks.Add(CustomItCallback);
+#if TEST
+                var CO = ActivateCObserver(MultigridOp, MassMatrix, SF, Callbacks);
+#endif
                 SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
 
 
@@ -591,8 +594,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double RelERR = ERR / u.L2Norm();
 #if TEST
                 Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
+                WriteTrendToDatabase(CO);
 #endif
-           
+
             }
         }
 
@@ -626,6 +630,54 @@ namespace BoSSS.Application.XdgPoisson3 {
             MassMatrix = this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray());
             MassMatrix.SpMV(1.0, this.rhs.CoordinateVector, 1.0, RHSvec);
             return RHSvec;
+        }
+
+        private ConvergenceObserver ActivateCObserver(MultigridOperator mop, BlockMsrMatrix Massmatrix, SolverFactory SF, List<Action<int, double[], double[], MultigridOperator>> Callback) {
+            Console.WriteLine("===Convergence Observer activated===");
+            //string AnalyseOutputpath = String.Join(@"\",this.Control.DbPath, this.CurrentSessionInfo.ID);
+            string AnalyseOutputpath = System.IO.Directory.GetCurrentDirectory();
+            var CO = new ConvergenceObserver(mop, Massmatrix, uEx.CoordinateVector.ToArray(), SF);
+            //CO.TecplotOut = String.Concat(AnalyseOutputpath, @"\Xdg_conv");
+            Callback.Add(CO.IterationCallback);
+            Console.WriteLine("Analysis output will be written to: {0}", AnalyseOutputpath);
+            Console.WriteLine("====================");
+            return CO;
+        }
+
+        private void WriteTrendToDatabase(ConvergenceObserver CO) {
+            CO.WriteTrendToTable(false, true, false, out string[] columns, out MultidimensionalArray table);
+
+            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                var LogRes = base.DatabaseDriver.FsDriver.GetNewLog("ResTrend", this.CurrentSessionInfo.ID);
+                foreach (var col in columns) LogRes.Write(col + "\t");
+                int nocol = columns.Length;
+                int norow = table.GetLength(0);
+                Debug.Assert(nocol == table.GetLength(1));
+                LogRes.WriteLine();
+                for (int iRow = 0; iRow < norow; iRow++) {
+                    for (int iCol = 0; iCol < nocol; iCol++) {
+                        LogRes.Write(table[iRow, iCol] + "\t");
+                    }
+                    LogRes.WriteLine();
+                }
+                LogRes.Flush();
+            }
+
+            //var stw = new StreamWriter(path + @"\bla.xml");
+            //    var tab = new System.Data.DataTable();
+            //    foreach (string col in columns) tab.Columns.Add(col, typeof(double));
+
+            //    int nocol = columns.Length;
+            //    int norow = table.GetLength(0);
+            //    Debug.Assert(nocol == table.GetLength(1));
+
+            //    for (int iRow = 0; iRow < norow; iRow++) {
+            //        var newrow = tab.NewRow();
+            //        for (int iCol = 0; iCol < nocol; iCol++) {
+            //            newrow[iCol] = table[iRow, iCol];
+            //        }
+            //        tab.Rows.Add(newrow);
+            //    }
         }
 
         private void ConsistencyTest() {

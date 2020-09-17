@@ -962,7 +962,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
             }
-
+            
 
             // =======================OUTPUT FOR GMRES=====================================
             //if(this.MPISize == 1) {

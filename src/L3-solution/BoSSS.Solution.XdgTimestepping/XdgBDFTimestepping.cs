@@ -1804,33 +1804,35 @@ namespace BoSSS.Solution.XdgTimestepping {
                 System, MaMa,
                 this.Config_MultigridOperator);
 
-            // create solver
-            ISolverWithCallback linearSolver = new OrthonormalizationScheme() {
-                MaxIter = 50000,
-                PrecondS = new ISolverSmootherTemplate[] {
-                        ClassicMultigrid.InitMultigridChain(mgOperator,
-                        i => new Schwarz() {
-                            // this creates the pre-smoother for each level
-                            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                Depth = 1
-                            },
-                            Overlap = 0
-                        },
-                        i => new Schwarz() {
-                            // this creates the post-smoother for each level
-                            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                Depth = 1
-                            },
-                            Overlap = 0
-                        },
-                        (i, mg) => {
-                            mg.Gamma = 1;
-                            mg.TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1);
-                        },
-                        () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
-                Tolerance = 1.0e-10
-            };
-
+            //// create solver
+            //ISolverWithCallback linearSolver = new OrthonormalizationScheme() {
+            //    MaxIter = 50000,
+            //    PrecondS = new ISolverSmootherTemplate[] {
+            //            ClassicMultigrid.InitMultigridChain(mgOperator,
+            //            i => new Schwarz() {
+            //                // this creates the pre-smoother for each level
+            //                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+            //                    Depth = 1
+            //                },
+            //                Overlap = 0
+            //            },
+            //            i => new Schwarz() {
+            //                // this creates the post-smoother for each level
+            //                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+            //                    Depth = 1
+            //                },
+            //                Overlap = 0
+            //            },
+            //            (i, mg) => {
+            //                mg.Gamma = 1;
+            //                mg.TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1);
+            //            },
+            //            () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
+            //    Tolerance = 1.0e-10
+            //};
+            ISolverSmootherTemplate linearSolver;
+            NonlinearSolver NonlinearSolver;
+            GetSolver(out NonlinearSolver, out linearSolver);
 
             // set-up the convergence observer
             double[] uEx = this.m_Stack_u[0].ToArray();

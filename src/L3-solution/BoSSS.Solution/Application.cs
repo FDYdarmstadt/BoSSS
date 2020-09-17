@@ -717,7 +717,7 @@ namespace BoSSS.Solution {
                 // load control file, parse args
                 if (opt.ProjectName != null)
                     ctrlV2.ProjectName = opt.ProjectName;
-                if (opt.SessionName != null)
+                if (opt.SessionName != null && ctrlV2.SessionName.IsEmptyOrWhite())
                     ctrlV2.SessionName = opt.SessionName;
 
                 if (opt.ImmediatePlotPeriod != null) {

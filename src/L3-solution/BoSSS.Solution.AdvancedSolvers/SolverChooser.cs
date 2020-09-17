@@ -488,7 +488,8 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1 };
+                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1, AssignXdGCellsToLowBlocks = true};
+                    SetQuery("XdgCellsToLowBlock", ((LevelPmg)precond[0]).AssignXdGCellsToLowBlocks ? 1 : 0, true);
                     break;
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
@@ -682,7 +683,7 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
                     Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize;  };
-                    templinearSolve = KcycleMultiSchwarz(lc, MaxMGDepth, LocalDOF, SblkSizeFunc);
+                    templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
@@ -1377,15 +1378,14 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Come with me, if you want to converge ...
-        /// -terminator algorithm
+        /// I want to ride my k-cycle ...
         /// </summary>
-        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int MaxMGDepth, int[] _LocalDOF, Func<int,int> SchwarzblockSize) {
+        ISolverSmootherTemplate KcycleMultiSchwarz(int MaxMGDepth, int[] _LocalDOF, Func<int,int> SchwarzblockSize) {
 
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
 
-            int DirectKickIn = _lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
+            int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
             int LocSysSizeZeroLvl = _LocalDOF[0];
             if (DirectKickIn < _LocalDOF.Last()) {
                 Console.WriteLine("WARNING: target blocksize ({0}) < smallest blocksize of MG ({1}).", DirectKickIn, _LocalDOF.Last());
@@ -1410,7 +1410,7 @@ namespace BoSSS.Solution {
                 // It has to be ensured, that directKickin takes place on all ranks at same level
                 // therefore only global criterions have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
-                useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
+                useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect |= TotalNoOfSchwarzBlocks < GetMPIsize;
 
                 if (useDirect && iLevel == 0)
@@ -1435,16 +1435,17 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
                         },
-                        Overlap = 1, // overlap seems to help; more overlap seems to help more
+                        Overlap = 0, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = true
+                        UsePMGinBlocks = true,
+                        AssignXdGCellsToLowBlocks = true,
                     };
+                    SetQuery("XdgCellsToLowBlock", ((Schwarz)smoother1).AssignXdGCellsToLowBlocks ? 1 : 0, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
                         PostSmoother = smoother1,
                         m_omega = 1,
-                        MaxKrylovDim = _lc.MaxKrylovDim,
                     };
 
                     if (iLevel > 0) {
