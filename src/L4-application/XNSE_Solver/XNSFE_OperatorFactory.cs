@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="thermBcMap"></param>
         /// <param name="degU"></param>
         public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration _config, LevelSetTracker _LsTrk, int _HMFdegree, 
-            IncompressibleMultiphaseBoundaryCondMap BcMap, ThermalMultiphaseBoundaryCondMap thermBcMap, int degU) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, ThermalMultiphaseBoundaryCondMap thermBcMap, int degU, IDictionary<SpeciesId, IEnumerable<double>> MassScale) {
 
             this.config = _config;
             this.LsTrk = _LsTrk;
@@ -244,6 +244,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
 
+            // create temporal operator
+            // ========================
+            var TempOp = new ConstantXTemporalOperator(m_XOp, 0.0);
+            m_XOp.TemporalOperator = TempOp;
+            foreach(var kv in MassScale) {
+                TempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
+            }
+
+            // Finalize
+            // ========
 
             m_XOp.Commit();
         }
@@ -261,20 +271,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="OpMatrix"></param>
-        /// <param name="OpAffine"></param>
-        /// <param name="RowMapping"></param>
-        /// <param name="ColMapping"></param>
-        /// <param name="CurrentState"></param>
-        /// <param name="AgglomeratedCellLengthScales"></param>
-        /// <param name="time"></param>
-        /// <param name="CutCellQuadOrder"></param>
-        /// <param name="SurfaceForce"></param>
-        /// <param name="LevelSetGradient"></param>
-        /// <param name="ExternalyProvidedCurvature"></param>
-        /// <param name="updateSolutionParams"></param>
-        /// <param name="ExtParams"></param>
         public void AssembleMatrix<T>(BlockMsrMatrix OpMatrix, double[] OpAffine,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,

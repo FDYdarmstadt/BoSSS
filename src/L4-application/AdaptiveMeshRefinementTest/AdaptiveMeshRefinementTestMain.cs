@@ -158,7 +158,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             // project new level-set
             double s = 1.0;
             LevSet.ProjectField((x, y) => -(x - s * t).Pow2() - y.Pow2() + (2.4).Pow2());
-            LsTrk.UpdateTracker(incremental: _incremental);
+            LsTrk.UpdateTracker(t, incremental: _incremental);
             LsTrk.PushStacks();
 
             // exact solution for new timestep

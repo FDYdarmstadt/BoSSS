@@ -196,7 +196,7 @@ namespace BoSSS.Foundation.XDG {
             int m_HistoryLength = 0;
 
             /// <summary>
-            /// the number of Timesteps that is stored <em>in addition</em> to the current one
+            /// the number of Timesteps that should stored <em>in addition</em> to the current one, at maximum, before elements are dropped.
             /// </summary>
             public int HistoryLength {
                 get {
@@ -208,6 +208,19 @@ namespace BoSSS.Foundation.XDG {
                         History.RemoveRange(m_HistoryLength, History.Count - m_HistoryLength);
                         Debug.Assert(History.Count == m_HistoryLength);
                     }
+                }
+            }
+
+            /// <summary>
+            /// 1 (including) to -<see cref="GetPopulatedLength()"/> (including) 
+            /// </summary>
+            public int[] AvailabelIndices {
+                get {
+                    var R = new int[GetPopulatedLength() + 1];
+                    for(int i = 0; i < R.Length; i++) {
+                        R[i] = 1 - i;
+                    }
+                    return R;
                 }
             }
 

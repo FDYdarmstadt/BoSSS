@@ -206,7 +206,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// This will return <code>linear</code> and <code>nonlinear</code> solver objects, which are configured according to <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>).
         /// </summary>
-        public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, string ts_SessionPath, AggregationGridData[] ts_MGS) {
+        public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, AggregationGridData[] ts_MGS) {
 
             if (m_nonlinsolver != null)
                 m_nc.SolverCode = NonLinearSolverCode.selfmade;
@@ -224,7 +224,7 @@ namespace BoSSS.Solution {
             }
             Debug.Assert(linsolver != null);
 
-            nonlinSolver = GenerateNonLin_body(ts_AssembleMatrixCallback, ts_MultigridBasis, ts_MultigridOperatorConfig, ts_SessionPath, linsolver, precondonly); // preconditioner may be used as standalone, then linsolver pointer is redirected
+            nonlinSolver = GenerateNonLin_body(ts_AssembleMatrixCallback, ts_MultigridBasis, ts_MultigridOperatorConfig, linsolver, precondonly); // preconditioner may be used as standalone, then linsolver pointer is redirected
 
                 Debug.Assert(nonlinSolver != null);
             return;
@@ -261,7 +261,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// This one is the method-body of <see cref="GenerateNonLin"/> and shall not be called from the outside. The parameters are mainly handed over to the NonLinearSolver object, which lives in <see cref="AdvancedSolvers.NonlinearSolver"/>.
         /// </summary>
-        private NonlinearSolver GenerateNonLin_body(OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, string SessionPath, ISolverSmootherTemplate linsolver, ISolverSmootherTemplate precondonly) {
+        private NonlinearSolver GenerateNonLin_body(OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, ISolverSmootherTemplate linsolver, ISolverSmootherTemplate precondonly) {
 
             var lc = m_lc;
             var nc = m_nc;
@@ -278,7 +278,6 @@ namespace BoSSS.Solution {
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
                         m_LinearSolver = linsolver,
-                        m_SessionPath = SessionPath, //is needed for Debug purposes, output of inter-timesteps
                         ConvCrit = nc.ConvergenceCriterion,
                         UnderRelax = nc.UnderRelax,
                     };
@@ -293,15 +292,12 @@ namespace BoSSS.Solution {
                         ts_AssembleMatrixCallback,
                         ts_MultigridBasis,
                         MultigridOperatorConfig) {
-                            maxKrylovDim = lc.MaxKrylovDim,
+                            //maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.MatrixFreeGMRES,
                             Precond = precondonly,
-                            GMRESConvCrit = lc.ConvergenceCriterion,
                             ConvCrit = nc.ConvergenceCriterion,
-                            m_SessionPath = SessionPath,
-                            UsePresRefPoint = nc.UsePresRefPoint,
                             printLambda = nc.printLambda,
                             Globalization = nc.Globalization,
                         };
@@ -311,17 +307,14 @@ namespace BoSSS.Solution {
                         ts_AssembleMatrixCallback,
                         ts_MultigridBasis,
                         MultigridOperatorConfig) {
-                            maxKrylovDim = lc.MaxKrylovDim,
+                            //maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            UsePresRefPoint = nc.UsePresRefPoint,
                             printLambda = nc.printLambda,
                             Globalization = nc.Globalization,
                             ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
-                            linsolver = linsolver,
-                            GMRESConvCrit = lc.ConvergenceCriterion,
+                            Precond = linsolver,
                             ConvCrit = nc.ConvergenceCriterion,
-                            m_SessionPath = SessionPath,
                             constant_newton_it = nc.constantNewtonIterations
                         };
                     }
@@ -337,7 +330,6 @@ namespace BoSSS.Solution {
                         MaxIter = nc.MinSolverIterations,
                         MinIter = nc.MinSolverIterations,
                         m_LinearSolver = linsolver,
-                        m_SessionPath = SessionPath, //is needed for Debug purposes, output of inter-timesteps
                         ConvCrit = nc.ConvergenceCriterion,
                         UnderRelax = nc.UnderRelax,
                     };
@@ -347,15 +339,13 @@ namespace BoSSS.Solution {
                         ts_AssembleMatrixCallback,
                         ts_MultigridBasis,
                         MultigridOperatorConfig) {
-                        maxKrylovDim = lc.MaxKrylovDim,
+                        //maxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
                         Globalization = nc.Globalization,
                         ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
-                        linsolver = linsolver,
-                        GMRESConvCrit = lc.ConvergenceCriterion,
+                        Precond = linsolver,
                         ConvCrit = nc.ConvergenceCriterion,
-                        m_SessionPath = SessionPath,
                         constant_newton_it = nc.constantNewtonIterations
                     };
                     SetNonLinItCallback(myNewton);

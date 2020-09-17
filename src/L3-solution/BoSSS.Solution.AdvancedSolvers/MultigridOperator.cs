@@ -33,12 +33,204 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     public partial class MultigridOperator {
 
+        static int FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
+            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+
+            int jFound = -1;
+            for(int j = 0; j < J; j++) {
+                if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1) {
+                    jFound = j;
+                    break;
+                }
+            }
+
+            jFound += map.GridDat.CellPartitioning.i0;
+
+            int jFoundGlob = jFound.MPIMax();
+            return jFoundGlob;
+        }
+
+        /// <summary>
+        /// global index
+        /// cell in which the reference point is located
+        /// </summary>
+        int m_ReferenceCell;
+
+        /// <summary>
+        /// Global Indices into <see cref="BaseGridProblemMapping"/>
+        /// </summary>
+        int[] m_ReferenceIndices;
+
+        void DefineReferenceIndices() {
+            UnsetteledCoordinateMapping map = this.BaseGridProblemMapping;
+            AggregationGridBasis[] bases = this.Mapping.AggBasis;
+            
+
+            if(map.BasisS.Count != bases.Length)
+                throw new ArgumentException();
+            if(bases.Length != FreeMeanValue.Length)
+                throw new ArgumentException(); 
+
+            if(FreeMeanValue.Any() == false) {
+                return;
+            }
+
+            int L = bases.Length;
+            m_ReferenceCell = FindReferencePointCell(map, bases);
+            bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
+
+            if(onthisProc) {
+                int jRefLoc = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(m_ReferenceCell);
+
+                m_ReferenceIndices = new int[L];
+                for(int iVar = 0; iVar < L; iVar++) {
+                    if(FreeMeanValue[iVar]) {
+                        m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, 0);
+                    } else {
+                        m_ReferenceIndices[iVar] = int.MinValue;
+                    }
+                }
+            } else {
+                m_ReferenceIndices = null;
+            }
+
+            m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell));
+
+        }
+
+
+        /// <summary>
+        /// modifies a right-hand-side <paramref name="rhs"/>
+        /// in order to fix the pressure at some reference point
+        /// </summary>
+        public (int idx, double val)[] SetPressureReferencePointRHS<T>(T rhs)
+            where T : IList<double> {
+            using (new FuncTrace()) {
+                if(this.LevelIndex != 0)
+                    throw new NotSupportedException("Can only be invoked on top level.");
+
+                if(m_ReferenceIndices == null)
+                    return new (int idx, double val)[0]; // nothing to do
+
+                if (rhs.Count != BaseGridProblemMapping.LocalLength)
+                    throw new ArgumentException("vector length mismatch");
+
+                bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
+
+
+                // clear row
+                // ---------
+
+                var bkup = new List<(int idx, double val)>();
+
+                if (onthisProc) {
+
+                    for(int iVar = 0; iVar < m_ReferenceIndices.Length; iVar++) {
+                        // clear RHS
+                        if(m_ReferenceIndices[iVar] >= 0) {
+                            int iRowLoc = BaseGridProblemMapping.TransformIndexToLocal(m_ReferenceIndices[iVar]);
+                            bkup.Add((iRowLoc, rhs[iRowLoc]));
+                            rhs[iRowLoc] = 0;
+                        }
+                    }
+                }
+
+                return bkup.ToArray();
+            }
+        }
+
+
+        /// <summary>
+        /// modifies a matrix 
+        /// in order to fix the pressure at some reference point
+        /// </summary>
+        public (int iRow, int jCol, double Val)[] SetPressureReferencePointMTX(IMutableMatrixEx Mtx) {
+            using (new FuncTrace()) {
+                
+                if(m_ReferenceIndices == null)
+                    return new (int iRow, int jCol, double Val)[0]; // nothing to do
+                bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
+
+
+                var map = this.BaseGridProblemMapping;
+                if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
+                    throw new ArgumentException();
+
+
+                // clear row
+                // ---------
+
+                var bkup = new List<(int, int, double)>();
+
+                if (onthisProc) {
+
+                    for(int iVar = 0; iVar < m_ReferenceIndices.Length; iVar++) {
+                        // clear RHS
+                        if(m_ReferenceIndices[iVar] >= 0) {
+                            int iRowGl = m_ReferenceIndices[iVar];
+
+                            // set matrix row to identity
+
+                            int[] ColIdx = Mtx.GetOccupiedColumnIndices(iRowGl);
+                            foreach(int ci in ColIdx) {
+                                bkup.Add((iRowGl, ci, Mtx[iRowGl, ci]));
+                                Mtx[iRowGl, ci] = 0;
+                            }
+                            Mtx.SetDiagonalElement(iRowGl, 1.0);
+
+
+                        }
+                    }
+                }
+
+                // clear column
+                // ------------
+                {
+                    for(int iVar = 0; iVar < m_ReferenceIndices.Length; iVar++) {
+                        if(m_ReferenceIndices[iVar] >= 0) {
+                            int iRowGl = m_ReferenceIndices[iVar];
+                            for(int i = Mtx.RowPartitioning.i0; i < Mtx.RowPartitioning.iE; i++) {
+                                
+                                if(i != iRowGl) {
+                                    double a = Mtx[i, iRowGl];
+                                    if(a != 0.0) {
+                                        bkup.Add((i, iRowGl, a));
+                                        Mtx[i, iRowGl] = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return bkup.ToArray();
+            }
+        }
+
+
+
         /// <summary>
         /// DG coordinate mapping on the original grid/mesh.
         /// </summary>
         public UnsetteledCoordinateMapping BaseGridProblemMapping {
             get;
             private set;
+        }
+
+
+        bool[] m_FreeMeanValue;
+
+
+        /// <summary>
+        /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
+        /// </summary>
+        public bool[] FreeMeanValue {
+            get {
+                if(m_FreeMeanValue == null) {
+                    m_FreeMeanValue = FinerLevel.FreeMeanValue;
+                }
+                return m_FreeMeanValue;
+            }
         }
 
         /// <summary>
@@ -59,15 +251,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Configuration of the cell-wise, explicit block-preconditioning for each multigrid level.
         /// (Remark: this kind of preconditioning is mathematically equivalent to a change of the DG resp. XDG basis.)
         /// </param>
+        /// <param name="FreeMeanValue">
+        /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
+        /// </param>
         public MultigridOperator(IEnumerable<AggregationGridBasis[]> basisSeq,
             UnsetteledCoordinateMapping _ProblemMapping, BlockMsrMatrix OperatorMatrix, BlockMsrMatrix MassMatrix,
-            IEnumerable<ChangeOfBasisConfig[]> cobc)
+            IEnumerable<ChangeOfBasisConfig[]> cobc, bool[] FreeMeanValue)
             : this(null, basisSeq, _ProblemMapping, cobc) //
         {
             if (!OperatorMatrix.RowPartitioning.EqualsPartition(_ProblemMapping))
                 throw new ArgumentException("Row partitioning mismatch.");
             if (!OperatorMatrix.ColPartition.EqualsPartition(_ProblemMapping))
                 throw new ArgumentException("Column partitioning mismatch.");
+
+            if(FreeMeanValue == null) {
+                FreeMeanValue = new bool[_ProblemMapping.BasisS.Count];
+            } else {
+                if(FreeMeanValue.Length != _ProblemMapping.BasisS.Count)
+                    throw new ArgumentException();
+            }
+            m_FreeMeanValue = FreeMeanValue.CloneAs();
 
 
             if (MassMatrix != null) {
@@ -77,7 +280,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ArgumentException("Column partitioning mismatch.");
             }
 
+            DefineReferenceIndices();
+
             if (this.LevelIndex == 0) {
+
+                var bkup = SetPressureReferencePointMTX(OperatorMatrix);
 
                 if (this.IndexIntoProblemMapping_Local == null) {
                     this.m_RawOperatorMatrix = OperatorMatrix;
@@ -88,6 +295,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.m_RawMassMatrix = null;
                 } else {
                     this.m_RawOperatorMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
+                    
                     OperatorMatrix.WriteSubMatrixTo(this.m_RawOperatorMatrix, this.IndexIntoProblemMapping_Global, default(int[]), this.IndexIntoProblemMapping_Global, default(int[]));
 
                     if (MassMatrix != null) {
@@ -107,7 +315,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         bool setupdone = false;
 
         void Setup() {
-            using (var tr =new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 if (setupdone)
                     return;
                 setupdone = true;
@@ -643,7 +851,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int L = this.Mapping.LocalLength;
             double[] X = new double[L];
             double[] B = new double[L];
-            this.TransformRhsInto(IN_RHS, B);
+            this.TransformRhsInto(IN_RHS, B, true);
             if(UseGuess)
                 this.TransformSolInto(INOUT_X, X);
 
@@ -676,7 +884,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
-        public void TransformRhsInto<T1, T2>(T1 u_IN, T2 v_OUT)
+        public void TransformRhsInto<T1, T2>(T1 u_IN, T2 v_OUT, bool ApplyRef)
             where T1 : IList<double>
             where T2 : IList<double> 
         {
@@ -686,6 +894,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentException("Mismatch in length of input vector.", "u");
             if(v_OUT.Count != this.Mapping.LocalLength)
                 throw new ArgumentException("Mismatch in length of output vector.", "v");
+
+
+            (int idx, double val)[] bkup = null;
+            if(ApplyRef)
+                bkup = this.SetPressureReferencePointRHS(u_IN);
 
             int L = this.Mapping.LocalLength;
             double[] uc = new double[L];
@@ -697,6 +910,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 v_OUT.SetV(uc);
             }
 
+            if(bkup != null) {
+                foreach(var t in bkup) {
+                    u_IN[t.idx] = t.val;
+                }
+            }
         }
 
         /// <summary>

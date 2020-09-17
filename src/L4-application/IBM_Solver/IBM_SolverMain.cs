@@ -49,6 +49,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+
             _Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -132,7 +133,7 @@ namespace BoSSS.Application.IBM_Solver {
                 int D = this.GridData.SpatialDimension;
 
                 double[] _rho = new double[D + 1];
-                if(!this.Control.IsStationary)
+                if (!this.Control.IsStationary)
                     _rho.SetAll(rho);
                 //No MassMatrix for the pressure
                 _rho[D] = 0;
@@ -283,12 +284,29 @@ namespace BoSSS.Application.IBM_Solver {
                     (A, B, C) => this.HMForder, 
                     FluidSpecies.Select(sId => LsTrk.GetSpeciesName(sId)));
 
+                IBM_Op.FreeMeanValue[VariableNames.Pressure] = !this.boundaryCondMap.DirichletPressureBoundary;
+
 
                 // Momentum equation
                 // =================
                 AddBulkEquationComponentsToIBMOp(IBM_Op_config, CodName);
                 AddInterfaceEquationComponentsToIBMOp(IBM_Op_config, CodName);
-                
+
+                // temporal operator
+                // =================
+
+                {
+                    var tempOp = new ConstantXTemporalOperator(IBM_Op, 0.0);
+                    foreach (var kv in this.MassScale) {
+                        tempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
+                    }
+                    IBM_Op.TemporalOperator = tempOp;
+
+                }
+
+
+                // Finalize
+                // ========
                 IBM_Op.Commit();
 
 
@@ -347,17 +365,17 @@ namespace BoSSS.Application.IBM_Solver {
 
             XdgBDFTimestepping m_BDF_Timestepper = new XdgBDFTimestepping(
                 Unknowns,
+                this.IBM_Op.InvokeParameterFactory(Unknowns),
                 Residual,
                 LsTrk,
                 true,
                 DelComputeOperatorMatrix,
-                null,
+                this.IBM_Op,
                 DelUpdateLevelset,
                 bdfOrder,
                 lsh,
                 MassMatrixShapeandDependence.IsTimeDependent,
                 SpatialOp,
-                MassScale,
                 this.MultigridOperatorConfig,
                 base.MultigridSequence,
                 this.FluidSpecies,
@@ -370,7 +388,6 @@ namespace BoSSS.Application.IBM_Solver {
                 m_ResLogger = base.ResLogger,
                 m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(
                     f => f.Identification), this.ResidualContinuity.Identification),
-                SessionPath = SessionPath,
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
             };
             return m_BDF_Timestepper;
@@ -634,7 +651,7 @@ namespace BoSSS.Application.IBM_Solver {
             OpAffine.CheckForNanOrInfV();
 
 
-
+            /*
             // Set Pressure Reference Point
             if (!this.boundaryCondMap.DirichletPressureBoundary) {
                 if (OpMatrix != null) {
@@ -652,6 +669,7 @@ namespace BoSSS.Application.IBM_Solver {
                         OpAffine);
                 }
             }
+            */
         }
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
@@ -984,7 +1002,7 @@ namespace BoSSS.Application.IBM_Solver {
             //}
 
             CreateEquationsAndSolvers(null);
-            After_SetInitialOrLoadRestart();
+            After_SetInitialOrLoadRestart(0.0);
             m_BDF_Timestepper.SingleInit();
         }
 
@@ -1012,7 +1030,7 @@ namespace BoSSS.Application.IBM_Solver {
             this.DGLevSet.Current.Clear();
             this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
 
-            this.LsTrk.UpdateTracker(incremental: true);
+            this.LsTrk.UpdateTracker(time, incremental: true);
 
             // solution
             // --------
@@ -1024,7 +1042,7 @@ namespace BoSSS.Application.IBM_Solver {
             St[D] = this.Pressure.CloneAs();
         }
 
-        private void After_SetInitialOrLoadRestart() {
+        private void After_SetInitialOrLoadRestart(double time) {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
                 
@@ -1035,7 +1053,7 @@ namespace BoSSS.Application.IBM_Solver {
              
                 
                 // we push the current state of the level-set, so we have an initial value
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(time);
                 this.DGLevSet.IncreaseHistoryLength(1);
                 this.LsTrk.PushStacks();
                 this.DGLevSet.Push();
@@ -1102,10 +1120,10 @@ namespace BoSSS.Application.IBM_Solver {
                         BDFDelayedInitLoadRestart);
                 }
 
-                After_SetInitialOrLoadRestart();
+                After_SetInitialOrLoadRestart(Time);
             } else {
                 if (m_BDF_Timestepper != null) {
-                    After_SetInitialOrLoadRestart();
+                    After_SetInitialOrLoadRestart(Time);
                     m_BDF_Timestepper.SingleInit();
                 }
             }

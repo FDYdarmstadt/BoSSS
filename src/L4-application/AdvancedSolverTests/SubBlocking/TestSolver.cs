@@ -168,7 +168,7 @@ namespace AdvancedSolverTests {
         void LsUpdate(double t) {
             double offset = t;
             Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.707).Pow2());
-            LsTrk.UpdateTracker();
+            LsTrk.UpdateTracker(t);
         }
 
 
@@ -410,7 +410,7 @@ namespace AdvancedSolverTests {
             MGOp = new MultigridOperator(XAggB, map,
                     OperatorMatrix,
                     this.massFact.GetMassMatrix(map, false),
-                    OpConfig);
+                    OpConfig, null);
             Debug.Assert(MGOp.OperatorMatrix != null);
             Debug.Assert(MGOp.Mapping != null);
 

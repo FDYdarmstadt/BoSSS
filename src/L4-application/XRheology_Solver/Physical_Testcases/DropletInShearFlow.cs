@@ -275,7 +275,6 @@ namespace BoSSS.Application.XRheology_Solver {
             C.LinearSolver.ConvergenceCriterion = 1e-8;
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.UsePresRefPoint = false;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;     
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;

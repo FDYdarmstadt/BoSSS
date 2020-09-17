@@ -496,6 +496,16 @@ namespace BoSSS.Application.XRheology_Solver {
             XRheology_Operator = new XRheology_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, stressDegree, degU);
             //XRheology_Operator = new XNSE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
 
+            {
+                var tempOp = new ConstantXTemporalOperator(XRheology_Operator.Xop, 0.0);
+                foreach (var kv in this.MassScale) {
+                    tempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
+                }
+                XRheology_Operator.Xop.TemporalOperator = tempOp;
+
+            }
+
+
             #endregion
 
             #region Create Timestepper
@@ -536,15 +546,15 @@ namespace BoSSS.Application.XRheology_Solver {
                 if (rksch == null) {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         this.CurrentSolution.Mapping.Fields,
+                        this.XRheology_Operator.Xop.InvokeParameterFactory(this.CurrentSolution.Mapping.Fields),
                         this.CurrentResidual.Mapping.Fields,
                         LsTrk,
                         true,
-                        DelComputeOperatorMatrix, null, DelUpdateLevelSet,
+                        DelComputeOperatorMatrix, this.XRheology_Operator.Xop, DelUpdateLevelSet,
                         (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,
                         (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                        MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
                         this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
@@ -795,6 +805,7 @@ namespace BoSSS.Application.XRheology_Solver {
             WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
 
 
+            /*  not required anymore; 
             // ============================
             // Set Pressure Reference Point
             // ============================
@@ -816,6 +827,8 @@ namespace BoSSS.Application.XRheology_Solver {
                     }
                 }
             }
+            */
+
 
             // transform from RHS to Affine
             OpAffine.ScaleV(-1.0);
@@ -1264,7 +1277,7 @@ namespace BoSSS.Application.XRheology_Solver {
                                     MgBasis.UpdateXdgAggregationBasis(agg);
                                     MultigridOperator mgOp = new MultigridOperator(MgBasis, CurrentSolution.Mapping,
                                         SaddlePointMatrix, this.MassFact.GetMassMatrix(CurrentSolution.Mapping, false),
-                                        this.MultigridOperatorConfig);
+                                        this.MultigridOperatorConfig, null);
 
                                     MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
 
@@ -1502,7 +1515,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
                 this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
 
-                this.LsTrk.UpdateTracker(incremental: true);
+                this.LsTrk.UpdateTracker(Time, incremental: true);
 
                 // solution
                 // --------

@@ -1796,7 +1796,7 @@ namespace BoSSS.Solution {
                 // pass 2: XDG fields (after tracker update)
                 // =========================================
                 if (Pass2_Evaluators.Count > 0) {
-                    LsTrk.UpdateTracker();
+                    LsTrk.UpdateTracker(0.0);
                     LsTrk.PushStacks();
 
                     foreach (var val in Pass2_Evaluators) {

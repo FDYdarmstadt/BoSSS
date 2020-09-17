@@ -919,8 +919,12 @@ namespace BoSSS.Foundation.XDG {
         private V OperatorAffine;
 
 
-       
 
+
+        /// <summary>
+        /// scaling factor for accumulation
+        /// </summary>
+        internal double m_alpha = 1.0;
 
         /// <summary>
         /// writes the dammed result of the integration to the sparse matrix
@@ -945,6 +949,8 @@ namespace BoSSS.Foundation.XDG {
 
             bool saveMtx = this.OperatorMatrix != null;
             bool saveAff = this.OperatorAffine != null;
+
+            double a = m_alpha;
 
             // loop over cells...
             for (int i = 0; i < Length; i++) {
@@ -989,7 +995,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0, _iE);
 
-                                    OperatorMatrix.AccBlock(Row0_g, Col0_g, 1.0, BlockRes);
+                                    OperatorMatrix.AccBlock(Row0_g, Col0_g, a, BlockRes);
                                 }
                             }
                         }
@@ -998,7 +1004,7 @@ namespace BoSSS.Foundation.XDG {
                             var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
 
                             for(int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
-                                OperatorAffine[Row0 + r] += BlockRes[r];
+                                OperatorAffine[Row0 + r] += BlockRes[r]*a;
                         }
                     }
                 }

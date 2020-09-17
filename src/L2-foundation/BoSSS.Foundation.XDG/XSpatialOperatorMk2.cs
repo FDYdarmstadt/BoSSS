@@ -216,14 +216,14 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        static Basis[] GetBasisS(IList<DGField> ParameterMap) {
+        internal static Basis[] GetBasisS(IList<DGField> ParameterMap) {
             if(ParameterMap == null)
                 return new Basis[0];
 
             return ParameterMap.Select(f => f != null ? f.Basis : default(Basis)).ToArray();
         }
 
-        static LevelSetTracker GetTracker(IEnumerable<Basis> dom, IEnumerable<Basis> para, IEnumerable<Basis> cod) {
+        internal static LevelSetTracker GetTracker(IEnumerable<Basis> dom, IEnumerable<Basis> para, IEnumerable<Basis> cod) {
             LevelSetTracker lsTrk = null;
             foreach(var enu in new[] { dom, para, cod}) {
                 if(enu != null) {
@@ -268,12 +268,12 @@ namespace BoSSS.Foundation.XDG {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
 
-            DelParameterUpdate delParameterUpdate = null;
-            if(this.ParameterUpdate != null) {
-                delParameterUpdate = this.ParameterUpdate.PerformUpdate;
-            }
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+                };
 
-            return new FDJacobianBuilder(xeval, delParameterUpdate);
+            return new FDJacobianBuilder(xeval, ParamUpdate);
         }
 
 
@@ -1025,27 +1025,85 @@ namespace BoSSS.Foundation.XDG {
             GhostEdgesOperator.Commit();
             SurfaceElementOperator.Commit();
 
+            if (TemporalOperator != null) {
+                TemporalOperator.Commit();
+            }
         }
 
 
 
         #endregion
 
-        IParameterUpdate m_ParameterUpdate;
+
+        List<DelPartialParameterUpdate> m_ParameterUpdates = new List<DelPartialParameterUpdate>();
 
         /// <summary>
-        /// If set, used to update parameters before evaluation.
+        /// <see cref="ISpatialOperator.ParameterUpdates"/>
         /// </summary>
-        public IParameterUpdate ParameterUpdate {
+        public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                return m_ParameterUpdate;
-            }
-            set {
-                if(IsCommited)
-                    throw new NotSupportedException("unable to change after 'Commit()'");
-                m_ParameterUpdate = value;
+                if (m_IsCommited) {
+                    return m_ParameterUpdates.AsReadOnly();
+                } else {
+                    return m_ParameterUpdates;
+                }
             }
         }
+
+        List<DelParameterFactory> m_ParameterFactories = new List<DelParameterFactory>();
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.ParameterFactories"/>
+        /// </summary>
+        public ICollection<DelParameterFactory> ParameterFactories {
+            get {
+                if (IsCommited) {
+                    return m_ParameterFactories.AsReadOnly();
+                } else {
+                    return m_ParameterFactories;
+                }
+            }
+        }
+
+        List<Action<double>> m_HomotopyUpdate = new List<Action<double>>();
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.HomotopyUpdate"/>
+        /// </summary>
+        public ICollection<Action<double>> HomotopyUpdate {
+            get {
+                if(m_IsCommited) {
+                    return m_HomotopyUpdate.AsReadOnly();
+                } else {
+                    return m_HomotopyUpdate;
+                }
+            }
+        }
+
+        double m_CurrentHomotopyValue = 1.0;
+
+        /// <summary>
+        /// Can be used by a (most likely nonlinear) solver to walk along the homotopy path.
+        /// Setting (to a different value) fires all <see cref="HomotopyUpdate"/> events
+        /// </summary>
+        public double CurrentHomotopyValue {
+            get {
+                return m_CurrentHomotopyValue;
+            }
+            set {
+                if(value < 0 || value > 1)
+                    throw new ArgumentOutOfRangeException();
+                double oldVal = m_CurrentHomotopyValue;
+                m_CurrentHomotopyValue = value;
+                if(oldVal != value) {
+                    foreach(var action in m_HomotopyUpdate) {
+                        action(value);
+                    }
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
@@ -1089,17 +1147,17 @@ namespace BoSSS.Foundation.XDG {
                 return ret;
             }
 
-            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension,
-                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
-
-
-
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+                       
             var JacobianOp = new XSpatialOperatorMk2(
                    this.DomainVar,
                    h.JacobianParameterVars,
                    this.CodomainVar,
                    this.QuadOrderFunction,
                    this.Species.ToArray());
+
+            if (this.TemporalOperator != null)
+                JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);
 
             void CheckCoeffUpd(IEquationComponent eq, IEquationComponent eqj) {
                 bool eq_suppCoeffUpd = eq is IEquationComponentCoefficient;
@@ -1139,10 +1197,68 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
-            JacobianOp.ParameterUpdate = h;
+            foreach(string domName in this.DomainVar)
+                JacobianOp.FreeMeanValue[domName] = this.FreeMeanValue[domName];
+            JacobianOp.EdgeQuadraturSchemeProvider = this.EdgeQuadraturSchemeProvider;
+            JacobianOp.VolumeQuadraturSchemeProvider = this.VolumeQuadraturSchemeProvider;
+            JacobianOp.SurfaceElement_VolumeQuadraturSchemeProvider = this.SurfaceElement_VolumeQuadraturSchemeProvider;
+            JacobianOp.SurfaceElement_EdgeQuadraturSchemeProvider = this.SurfaceElement_EdgeQuadraturSchemeProvider;
+            JacobianOp.GhostEdgeQuadraturSchemeProvider = this.GhostEdgeQuadraturSchemeProvider;
+            foreach(var species in this.Species) {
+                var src = this.UserDefinedValues[species];
+                var dst = JacobianOp.UserDefinedValues[species];
+                foreach(var kv in src)
+                    dst.Add(kv);
+            }
+            JacobianOp.LinearizationHint = LinearizationHint.AdHoc;
+
+
+            foreach (DelParameterFactory f in this.ParameterFactories)
+                JacobianOp.ParameterFactories.Add(f);
+            foreach (DelPartialParameterUpdate f in this.ParameterUpdates) {
+                JacobianOp.ParameterUpdates.Add(f);
+            }
+            JacobianOp.ParameterFactories.Add(h.AllocateParameters);
+            JacobianOp.ParameterUpdates.Add(h.PerformUpdate);
+
+            JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
+            JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
+            JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
 
             JacobianOp.Commit();
             return JacobianOp;
+        }
+
+        /// <summary>
+        /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
+        /// of this operator (because of the ownership, the temporal operator cannot be reused).
+        /// </summary>
+        class TemporalOperatorContainer : ITemporalOperator {
+
+            XSpatialOperatorMk2 m_newOwner;
+            ITemporalOperator m_encapsulatedObj;
+            public TemporalOperatorContainer(XSpatialOperatorMk2 __newOwner, ITemporalOperator __encapsulatedObj) {
+                m_encapsulatedObj = __encapsulatedObj;
+                m_newOwner = __newOwner;
+
+
+            }
+
+            bool m_IsCommited;
+
+            /// <summary>
+            /// locks the configuration of the operator
+            /// </summary>
+            public void Commit() {
+                if (m_IsCommited)
+                    throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
+                m_IsCommited = true;
+
+            }
+
+            public IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+                return m_encapsulatedObj.GetMassMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+            }
         }
 
         #region QuadSchemeProvider
@@ -1329,10 +1445,15 @@ namespace BoSSS.Foundation.XDG {
                 r.UserDefinedValues.Add(kv.Key, kv.Value);
             }
 
+            r.HomotopyValue = this.m_CurrentHomotopyValue;
+
             return r;
         }
 
-        Dictionary<string, IDictionary<string, object>> m_UserDefinedValues;
+        /// <summary>
+        /// internal access for hack in <see cref="DependentXTemporalOperator"/>.
+        /// </summary>
+        internal Dictionary<string, IDictionary<string, object>> m_UserDefinedValues;
 
         /// <summary>
         /// Modification of <see cref="CoefficientSet.UserDefinedValues"/>, **but only if** default setting for <see cref="OperatorCoefficientsProvider"/> is used
@@ -1464,10 +1585,6 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Evaluation of the <see cref="QuadOrderFunction"/>.
         /// </summary>
-        /// <param name="DomainMap"></param>
-        /// <param name="Parameters"></param>
-        /// <param name="CodomainMap"></param>
-        /// <returns></returns>
         public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
             /// Compute Quadrature Order
             int order;
@@ -1575,7 +1692,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IList<string> DomainVar {
             get {
-                return (string[])m_DomainVar.Clone();
+                return m_DomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -1588,7 +1705,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IList<string> CodomainVar {
             get {
-                return (string[])m_CodomainVar.Clone();
+                return m_CodomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -1604,7 +1721,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IList<string> ParameterVar {
             get {
-                return (string[])m_ParameterVar.Clone();
+                return m_ParameterVar.ToList().AsReadOnly();
             }
         }
 
@@ -1641,8 +1758,130 @@ namespace BoSSS.Foundation.XDG {
             return false;
         }
 
+
+        ITemporalOperator m_TemporalOperator;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public ITemporalOperator TemporalOperator {
+            get {
+                return m_TemporalOperator;
+            }
+            set {
+                if (IsCommited)
+                    throw new NotSupportedException("Not allowed to change after operator is committed.");
+                m_TemporalOperator = value;
+            }
+        }
+
+        MyDict m_FreeMeanValue;
+
+        /// <summary>
+        /// Notifies the solver that the mean value for a specific value is floating.
+        /// An example is e.g. the pressure in the incompressible Navier-Stokes equation with all-walls boundary condition.
+        /// - key: the name of some domain variable
+        /// - value: false, if the mean value of the solution  is defined, true if the mean value  of the solution is floating (i.e. for some solution u, u + constant is also a solution).
+        /// </summary>
+        public IDictionary<string, bool> FreeMeanValue {
+            get {
+                if (m_FreeMeanValue == null) {
+                    m_FreeMeanValue = new MyDict(this);
+                }
+                return m_FreeMeanValue;
+            }
+        }
+
+
+        /// <summary>
+        /// I hate shit like this class - so many dumb lines of code.
+        /// </summary>
+        class MyDict : IDictionary<string, bool> {
+
+            XSpatialOperatorMk2 owner;
+
+            public MyDict(XSpatialOperatorMk2 __owner) {
+                owner = __owner;
+                InternalRep = new Dictionary<string, bool>();
+                foreach (string domName in __owner.DomainVar) {
+                    InternalRep.Add(domName, false);
+                }
+            }
+
+            Dictionary<string, bool> InternalRep;
+
+
+            public bool this[string key] {
+                get {
+                    return InternalRep[key];
+                }
+                set {
+                    if (!InternalRep.ContainsKey(key))
+                        throw new ArgumentException("Must be a name of some domain variable.");
+                    if (owner.IsCommited)
+                        throw new NotSupportedException("Changing is not allowed after operator is committed.");
+                    InternalRep[key] = value;
+                }
+            }
+
+            public ICollection<string> Keys => InternalRep.Keys;
+
+            public ICollection<bool> Values => InternalRep.Values;
+
+            public int Count => InternalRep.Count;
+
+            public bool IsReadOnly => owner.IsCommited;
+
+
+            public void Add(string key, bool value) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Add(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Clear() {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Contains(KeyValuePair<string, bool> item) {
+                return InternalRep.Contains(item);
+            }
+
+            public bool ContainsKey(string key) {
+                return InternalRep.ContainsKey(key);
+            }
+
+
+            public void CopyTo(KeyValuePair<string, bool>[] array, int arrayIndex) {
+                (InternalRep as ICollection<KeyValuePair<string, bool>>).CopyTo(array, arrayIndex);
+            }
+
+
+            public IEnumerator<KeyValuePair<string, bool>> GetEnumerator() {
+                throw new NotImplementedException();
+            }
+
+            public bool Remove(string key) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Remove(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool TryGetValue(string key, out bool value) {
+                return InternalRep.TryGetValue(key, out value);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() {
+                return InternalRep.GetEnumerator();
+            }
+        }
+
         #endregion
-        
+
 
     }
 
