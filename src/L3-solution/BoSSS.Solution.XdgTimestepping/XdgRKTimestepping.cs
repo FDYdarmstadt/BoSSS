@@ -595,8 +595,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_ImplStParams = null;
         }
 
-        BlockMsrMatrix m_PrecondMassMatrix;
-
         ImplicitStage_AssiParams m_ImplStParams = null;
 
         /// <summary>
