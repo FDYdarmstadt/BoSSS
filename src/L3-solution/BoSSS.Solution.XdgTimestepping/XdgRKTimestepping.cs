@@ -347,10 +347,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         bool OneTimeMgInit = false;
 
-        //public Action<double[]> ChangeRate;
-        //public Action<double[]> BeforeBlockSol;
-        //public Action<double[]> AfterBlockSol;
-
         /// <summary>
         /// Performs one timestep, on the DG fields in <see cref="XdgTimesteppingBase.CurrentStateMapping"/>.
         /// </summary>
@@ -420,28 +416,18 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // init mass matrix & cut-cell metrics 
             BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[performSplitting ? 1 : 2];
-            //m_AllCCM.Clear();
             m_RequiredTimeLevels = 0;
             m_LsTrk.PushStacks();
             
             this.UpdateAgglom(false);
             base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
             BlockMsrMatrix PM, SM;
-            //UpdateMassMatrix(out PM, out SM, performSplitting ? m_LsTrk.TimeLevelsInStack[0] : phystime); // splitting case: most recent time
             UpdateMassMatrix(out PM, out SM, phystime);
             MassMatrix[0] = SM;
             m_PrecondMassMatrix = PM;
 
-
-            //SM.SaveToTextFileSparse("massMatrix.txt");
-
-            int TimestepNo = (int) Math.Round(phystime / dt);
-            //var dtatB4 = new TestingIO(m_LsTrk.GridDat, "C:\\tmp\\XDGshock-" + TimestepNo + ".csv", __ReferenceMPISize: 10000);
-
-
             // initial value
             CoordinateVector u0 = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
-            //dtatB4.AddVector("u0", u0);
             foreach (var f in u0.Mapping.Fields) {
                 if (f is XDGField) {
                     ((XDGField)f).UpdateBehaviour = BehaveUnder_LevSetMoovement.PreserveMemory;
@@ -454,64 +440,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
-                //dtatB4.AddVector("k" + s, k[s]);
             }
 
             // final stage
             RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
-            //dtatB4.AddVector("u1", m_CurrentState);
-            //dtatB4.DoIOnow();
-
-            /*
-            double fut_u0 = 0.0, fut_k0 = 0, fut_u1 = 0, fut_rhs = 0, fut_sol = 0, fut_sol1 = 0, fut_check0 = 0, fut_check1 = 0, fut_check2 = 0, fut_check3 = 0, fut_check4 = 0;
-            foreach(var kv in dtatB4.AllAbsErr()) {
-                //Console.WriteLine(kv.Key + ":     " + kv.Value);
-                if(kv.Key.StartsWith("u0"))
-                    fut_u0 += kv.Value;
-                else if(kv.Key.StartsWith("u1"))
-                    fut_u1 += kv.Value;
-                else if(kv.Key.StartsWith("k0"))
-                    fut_k0 += kv.Value;
-                else if(kv.Key.StartsWith("rhs"))
-                    fut_rhs += kv.Value;
-                else if(kv.Key.StartsWith("sol1"))
-                    fut_sol1 += kv.Value;
-                else if(kv.Key.StartsWith("sol"))
-                    fut_sol += kv.Value;
-                else if(kv.Key.StartsWith("check0"))
-                    fut_check0 += kv.Value;
-                else if(kv.Key.StartsWith("check1"))
-                    fut_check1 += kv.Value;
-                else if(kv.Key.StartsWith("check2"))
-                    fut_check2 += kv.Value;
-                else if(kv.Key.StartsWith("check3"))
-                    fut_check3 += kv.Value;
-                else if(kv.Key.StartsWith("check4"))
-                    fut_check4 += kv.Value;
-                //else
-                //    throw new ApplicationException();
-            }
-            Console.WriteLine("     u0:   " + fut_u0);
-            Console.WriteLine("     k0:   " + fut_k0);
-            Console.WriteLine("     u1:   " + fut_u1);
-            Console.WriteLine("     rhs:  " + fut_rhs);
-            Console.WriteLine("     sol1: " + fut_sol1);
-            Console.WriteLine("     sol:  " + fut_sol);
-            Console.WriteLine("     c0:   " + fut_check0);
-            Console.WriteLine("     c1:   " + fut_check1);
-            Console.WriteLine("     c2:   " + fut_check2);
-            Console.WriteLine("     c1:   " + fut_check3);
-            Console.WriteLine("     c2:   " + fut_check4);
-            */
 
             // ===========================================
             // update level-set (in the case of splitting)
             // ===========================================
 
             if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
-                // remember which old cells had values
-                //var oldCCM = this.UpdateCutCellMetrics();
-
                 // evolve the level set
                 m_LsTrk.PushStacks();
 
@@ -528,8 +466,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
 
                 // in the case of splitting, the fields must be extrapolated 
-                //var newCCM = this.UpdateCutCellMetrics();
-                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
                 Debug.Assert(m_LsTrk.HistoryLength >= 1);
                 var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                     __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
@@ -839,20 +775,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime, TestingIO testingIO = null) {
+        private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s <= m_RKscheme.Stages);
             for (int i = 0; i < s; i++) {
                 Debug.Assert(k[i] != null);
             }
 
-
             int Ndof = CurrentStateMapping.LocalLength;
             BlockMsrMatrix System;
             double[] RHS = new double[Ndof];
-
-            if(testingIO != null) {
-                testingIO.AddVector("check0", RHS);
-            }
 
             if (RelTime > 0) {
                 //
@@ -934,23 +865,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         RHS.SetV(u0, 1.0 / dt);
                     }
-                    if(testingIO != null) {
-                        testingIO.AddVector("check1", RHS);
-                    }
-
                     for(int l = 0; l < s; l++) {
-                        if(testingIO != null) {
-                            testingIO.AddVector("check" + (l + 3), k[l]);
-                        }
-
                         if(RK_as[l] != 0.0)
                             RHS.AccV(-RK_as[l], k[l]);
                     }
-
-                    if(testingIO != null) {
-                        testingIO.AddVector("check2", RHS);
-                    }
-
                 } else {
                     throw new NotImplementedException();
                 }
@@ -967,25 +885,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (System != null) {
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, this.CurrentStateMapping, this.CurrentStateMapping);
-
-                    if(testingIO != null)
-                        testingIO.AddVector("rhs", RHS);
                     BlockSol(System, m_CurrentState, RHS);
-                    if(testingIO != null)
-                        testingIO.AddVector("sol", m_CurrentState.ToArray());
-                    //m_CurrentAgglomeration.PlotAgglomerationPairs($"agglo.{m_CurrentState.Mapping.MpiRank + 1}of{this.CurrentStateMapping.MpiSize}");
                     m_CurrentAgglomeration.Extrapolate(this.CurrentStateMapping);
-                    if(testingIO != null)
-                        testingIO.AddVector("sol1", m_CurrentState.ToArray());
                 } else {
                     // system is diagonal: 1/dt
-                    if(testingIO != null)
-                        testingIO.AddVector("rhs", RHS);
                     m_CurrentState.SetV(RHS, dt);
-                    if(testingIO != null) {
-                        testingIO.AddVector("sol", m_CurrentState.ToArray());
-                        testingIO.AddVector("sol1", m_CurrentState.ToArray());
-                    }
                 }
 
             } else {
