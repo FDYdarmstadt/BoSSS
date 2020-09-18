@@ -436,12 +436,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             //SM.SaveToTextFileSparse("massMatrix.txt");
 
             int TimestepNo = (int) Math.Round(phystime / dt);
-            var dtatB4 = new TestingIO(m_LsTrk.GridDat, "C:\\tmp\\XDGshock-" + TimestepNo + ".csv", __ReferenceMPISize: 10000);
+            //var dtatB4 = new TestingIO(m_LsTrk.GridDat, "C:\\tmp\\XDGshock-" + TimestepNo + ".csv", __ReferenceMPISize: 10000);
 
 
             // initial value
             CoordinateVector u0 = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
-            dtatB4.AddVector("u0", u0);
+            //dtatB4.AddVector("u0", u0);
             foreach (var f in u0.Mapping.Fields) {
                 if (f is XDGField) {
                     ((XDGField)f).UpdateBehaviour = BehaveUnder_LevSetMoovement.PreserveMemory;
@@ -454,15 +454,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                 RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
-                dtatB4.AddVector("k" + s, k[s]);
+                //dtatB4.AddVector("k" + s, k[s]);
             }
 
             // final stage
-            RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0, dtatB4);
-            dtatB4.AddVector("u1", m_CurrentState);
-            dtatB4.DoIOnow();
+            RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
+            //dtatB4.AddVector("u1", m_CurrentState);
+            //dtatB4.DoIOnow();
 
-
+            /*
             double fut_u0 = 0.0, fut_k0 = 0, fut_u1 = 0, fut_rhs = 0, fut_sol = 0, fut_sol1 = 0, fut_check0 = 0, fut_check1 = 0, fut_check2 = 0, fut_check3 = 0, fut_check4 = 0;
             foreach(var kv in dtatB4.AllAbsErr()) {
                 //Console.WriteLine(kv.Key + ":     " + kv.Value);
@@ -502,6 +502,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             Console.WriteLine("     c2:   " + fut_check2);
             Console.WriteLine("     c1:   " + fut_check3);
             Console.WriteLine("     c2:   " + fut_check4);
+            */
 
             // ===========================================
             // update level-set (in the case of splitting)
