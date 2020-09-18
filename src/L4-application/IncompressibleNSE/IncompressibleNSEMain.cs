@@ -18,17 +18,6 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// </summary>
     public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<IncompressibleControl> {
         
-        ///// <summary>
-        ///// Mass matrix diagonal/temporal operator for incompressible Navier-Stokes, i.e. <see cref="IncompressibleControl.Density"/> for the momentum equation and zero for the continuity equation
-        ///// </summary>
-        //protected override IEnumerable<double> GetMassScale(int D) {
-        //    double[] diag = new double[D + 1];
-        //    for(int d = 0; d < D; d++) {
-        //        diag[d] = Control.Density; 
-        //    }
-        //    return diag;
-        //}
-
         static void Main(string[] args) {
             _Main(args, false, delegate () {
                 var p = new IncompressibleNSEMain();
@@ -45,7 +34,6 @@ namespace BoSSS.Application.IncompressibleNSE {
             true, true,
             IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> Velocity;
-
 
         /// <summary>
         /// Volume Force, dimension is acceleration, i.e. length per time-square.
@@ -66,7 +54,6 @@ namespace BoSSS.Application.IncompressibleNSE {
             IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> ResidualMomentum;
 
-
         /// <summary>
         /// Pressure
         /// </summary>
@@ -78,8 +65,6 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// </summary>
         [InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
         SinglePhaseField ResidualContinuity;
-
-
 #pragma warning restore 649
 
         /// <summary>
