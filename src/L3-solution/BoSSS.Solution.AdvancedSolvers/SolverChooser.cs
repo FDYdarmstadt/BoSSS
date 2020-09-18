@@ -1430,7 +1430,8 @@ namespace BoSSS.Solution {
                         UsePMGinBlocks = true,
                         AssignXdGCellsToLowBlocks = true,
                     };
-                    SetQuery("XdgCellsToLowBlock", ((Schwarz)smoother1).AssignXdGCellsToLowBlocks ? 1 : 0, true);
+
+                    if (iLevel == 0) SetQuery("XdgCellsToLowBlock", ((Schwarz)smoother1).AssignXdGCellsToLowBlocks ? 1 : 0, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,

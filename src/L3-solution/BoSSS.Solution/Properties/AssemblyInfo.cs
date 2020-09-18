@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("FG Stroemungsdynamik")]
 [assembly: AssemblyProduct("BoSSS.Solution")]
-[assembly: AssemblyCopyright("Copyright © FG Stroemungsdynamik 2009")]
+[assembly: AssemblyCopyright("Copyright � FG Stroemungsdynamik 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
