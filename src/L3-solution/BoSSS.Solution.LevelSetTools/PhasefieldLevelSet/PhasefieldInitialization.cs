@@ -8,6 +8,8 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Quadrature;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 {
@@ -17,15 +19,29 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// </summary>
     partial class Phasefield : Application
     {
+        // remember if this is a reinitialization
+        private static double Cahn_Reinit;
 
         /// <summary>
         /// Initialize Cahn Hilliard Level Set
         /// </summary>
-        public void InitCH(double _dt)
+        public void InitCH(PhasefieldControl _Control)
         {
+
+            if (_Control != null)
+                Control = _Control;
+            else
+                Control = new PhasefieldControl();
+
+
             CreateFields();
             CreateEquationsAndSolvers(null);
-            RelaxationStep(_dt: _dt);
+
+            if (Cahn_Reinit != 0.0)
+                //RelaxationStep();
+                ReInit(Cahn_Reinit, Cahn);
+
+            Cahn_Reinit = Cahn;
         }
 
         
@@ -36,6 +52,52 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         {
 
             throw new NotImplementedException();
+        }
+
+        int reinit = 0;
+
+        // Reinitialize Phasefield with changed interface thickness
+        private void ReInit(double cahn_old, double cahn)
+        {
+            Console.WriteLine($"Reprojecting Phasefield:\n" +
+                $"  old thickness:  {cahn_old}\n" +
+                $"  new thickness:  {cahn}");
+            // we assume the current phasefield is close to the equilibrium tangenshyperbolicus form
+            SinglePhaseField phiNew = new SinglePhaseField(phi.Basis);
+            GridData GridDat = (GridData)(phi.GridDat);
+
+            // compute and project 
+            // step one calculate distance field phiDist = 0.5 * log(Max(1+phi, eps)/Max(1-phi, eps)) * sqrt(2) * Cahn_old
+            // step two project the new phasefield phiNew = tanh(phiDist/(sqrt(2) * Cahn_new))
+            // here done in one step, with default quadscheme
+            // ===================
+            phiNew.ProjectField(
+                (ScalarFunctionEx)delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) 
+                { // ScalarFunction2
+                    Debug.Assert(result.Dimension == 2);
+                    Debug.Assert(Len == result.GetLength(0));
+                    int K = result.GetLength(1); // number of nodes
+
+                    // evaluate Phi
+                    // -----------------------------
+                    phi.Evaluate(j0, Len, NS, result);
+
+                    // compute the pointwise values of the new level set
+                    // -----------------------------
+
+                    result.ApplyAll(x => Math.Tanh(0.5 * Math.Log(Math.Max(1 + x, 1e-10) / Math.Max(1 - x, 1e-10)) * (cahn_old / cahn)));
+                }                
+            );
+
+            phi.Clear();
+            phi.Acc(1.0, phiNew);
+
+            // update DG LevelSet
+            DGLevSet.Clear();
+            DGLevSet.Acc(1.0, phi);
+
+            reinit++;
+            PlotCurrentState(0.0, reinit);
         }
 
         /// <summary>
@@ -73,7 +135,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
             // mobility coefficient, for now inverse of Pe = Re*Sc
             // following Yue et. al. (2010), WARNING not correct
-            _Diff = this.ModTyp == ModelType.modelA ? 1.0 : _Cahn.Pow2();// (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
+            _Diff = this.ModTyp == ModelType.modelA ? 1.0 : _Cahn;// (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
 
             // 0.0 = pure bulk diffusion, 1.0 = pure surface diffusion, not implemented in model A
             _Lambda = 0.0;

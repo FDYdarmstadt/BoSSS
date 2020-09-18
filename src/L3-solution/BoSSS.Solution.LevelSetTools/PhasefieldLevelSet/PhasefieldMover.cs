@@ -28,6 +28,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Initial step to initialize level set near its equilibrium
         /// TODO make this to calculate initial steady state without convection
+        /// This has been replaced by <see cref="ReInit(double, double)"/>
         /// </summary>
         /// <param name="_TimestepNo"></param>
         /// <param name="_dt"></param>
@@ -53,8 +54,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                 // Perform timestep
                 // ================
-                this.m_Timestepper.m_ResLogger.WriteResidualsToTextFile = false;
                 this.m_Timestepper.m_ResLogger = new ResidualLogger(this.MPIRank, null, new Guid());
+                this.m_Timestepper.m_ResLogger.WriteResidualsToTextFile = false;
 
                 switch (this.ModTyp)
                 {
@@ -91,7 +92,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                 //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo , 0}), 2);
                 this.m_Timestepper.Solve(_phystime, _dt);
-                PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo }), 2);
+                //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo }), 2);
 
                 // update DG LevelSet
                 DGLevSet.Clear();

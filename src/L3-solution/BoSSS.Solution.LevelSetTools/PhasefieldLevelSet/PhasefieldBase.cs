@@ -182,6 +182,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         public bool UseDirectCurvature = false;
 
         /// <summary>
+        /// Settings for solving the Phasefield equations
+        /// </summary>
+        PhasefieldControl Control;
+
+        /// <summary>
         /// Cahn-Hilliard spatial Operator
         /// </summary>
         SpatialOperator CHOp;
@@ -253,8 +258,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 CreateFields();
                 CreateEquationsAndSolvers(null);
 
-                if(Cahn_Old != Cahn)
-                    RelaxationStep();
+                if (Math.Abs(Cahn_Old - Cahn) > 1e-3 * Cahn_Old)
+                    //RelaxationStep();
+                    ReInit(Cahn_Old, Cahn);
+
+                // remember last cahn number for potential reinit
+                Cahn_Reinit = Cahn;
             }
         }
 
@@ -457,7 +466,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                                 1, // BDF order
                                 LevelSetHandling.None, MassMatrixShapeandDependence.IsTimeDependent, SpatialOperatorType.Nonlinear,
                                 this.MassScaleB, this.MgConfigB, mgSeq, new[] { this.DummyLsTrk.GetSpeciesId("A") }, phi.Basis.Degree * 2, 0.0, false,
-                                GetNonLinearSolver(), GetLinearSolver()
+                                Control.NonLinearSolver, Control.LinearSolver
                                 );
 
                             break;
