@@ -1871,23 +1871,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         private void WriteTrendToDatabase(ConvergenceObserver CO) {
-            CO.WriteTrendToTable(false, true, true, out string[] columns, out MultidimensionalArray table);
-
-            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                var LogRes = base.DatabaseDriver.FsDriver.GetNewLog("ResTrend", this.CurrentSessionInfo.ID);
-                foreach (var col in columns) LogRes.Write(col + "\t");
-                int nocol = columns.Length;
-                int norow = table.GetLength(0);
-                Debug.Assert(nocol == table.GetLength(1));
-                LogRes.WriteLine();
-                for (int iRow = 0; iRow < norow; iRow++) {
-                    for (int iCol = 0; iCol < nocol; iCol++) {
-                        LogRes.Write(table[iRow, iCol] + "\t");
-                    }
-                    LogRes.WriteLine();
-                }
-                LogRes.Flush();
-            }
+            CO.WriteTrendToSession(base.DatabaseDriver.FsDriver, this.CurrentSessionInfo);
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {

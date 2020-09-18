@@ -614,7 +614,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(lowMask != null);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         var HiMask = new BlockMask(HiSel, ExtRows);
-                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length);
+                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length || AssignXdGCellsToLowBlocks);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         BMhiBlocks[iPart] = HiMask;
                         BMloBlocks[iPart] = lowMask;
@@ -920,7 +920,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 // hack the hack
 
-                                int ExtLen=GetLocalandExternalDOF();
+                                int ExtLen=Overlap>0?BlockMask.GetLocalandExternalDOF(m_MgOp.Mapping): m_MgOp.Mapping.LocalLength;
 
                                 if (Xdummy == null) {
                                     Xdummy = new double[ExtLen];
@@ -1013,15 +1013,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } // end loop Schwarz iterations
 
             } // end FuncTrace
-        }
-
-
-        private int GetLocalandExternalDOF() {
-            var m_map = m_MgOp.Mapping;
-            int eCell = m_map.LocalNoOfBlocks + m_map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
-            int eVar = m_map.AggBasis.Length - 1;
-            int eN = m_map.AggBasis[eVar].GetLength(eCell, m_map.DgDegree[eVar]) - 1;
-            return m_map.LocalUniqueIndex(eVar, eCell, eN) + 1;
         }
 
         /// <summary>

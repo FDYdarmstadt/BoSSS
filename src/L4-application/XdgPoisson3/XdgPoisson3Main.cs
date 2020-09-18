@@ -650,39 +650,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
         private void WriteTrendToDatabase(ConvergenceObserver CO) {
-            CO.WriteTrendToTable(false, true, false, out string[] columns, out MultidimensionalArray table);
-
-            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                var LogRes = base.DatabaseDriver.FsDriver.GetNewLog("ResTrend", this.CurrentSessionInfo.ID);
-                foreach (var col in columns) LogRes.Write(col + "\t");
-                int nocol = columns.Length;
-                int norow = table.GetLength(0);
-                Debug.Assert(nocol == table.GetLength(1));
-                LogRes.WriteLine();
-                for (int iRow = 0; iRow < norow; iRow++) {
-                    for (int iCol = 0; iCol < nocol; iCol++) {
-                        LogRes.Write(table[iRow, iCol] + "\t");
-                    }
-                    LogRes.WriteLine();
-                }
-                LogRes.Flush();
-            }
-
-            //var stw = new StreamWriter(path + @"\bla.xml");
-            //    var tab = new System.Data.DataTable();
-            //    foreach (string col in columns) tab.Columns.Add(col, typeof(double));
-
-            //    int nocol = columns.Length;
-            //    int norow = table.GetLength(0);
-            //    Debug.Assert(nocol == table.GetLength(1));
-
-            //    for (int iRow = 0; iRow < norow; iRow++) {
-            //        var newrow = tab.NewRow();
-            //        for (int iCol = 0; iCol < nocol; iCol++) {
-            //            newrow[iCol] = table[iRow, iCol];
-            //        }
-            //        tab.Rows.Add(newrow);
-            //    }
+            CO.WriteTrendToSession(base.DatabaseDriver.FsDriver, this.CurrentSessionInfo);
         }
 
         private void ConsistencyTest() {
