@@ -435,8 +435,13 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             //SM.SaveToTextFileSparse("massMatrix.txt");
 
+            int TimestepNo = (int) Math.Round(phystime / dt);
+            var dtatB4 = new TestingIO(m_LsTrk.GridDat, "C:\\tmp\\XDGshock-" + TimestepNo + ".csv", __ReferenceMPISize: 10000);
+
+
             // initial value
             CoordinateVector u0 = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
+            dtatB4.AddVector("u0", u0);
             foreach (var f in u0.Mapping.Fields) {
                 if (f is XDGField) {
                     ((XDGField)f).UpdateBehaviour = BehaveUnder_LevSetMoovement.PreserveMemory;
@@ -449,10 +454,54 @@ namespace BoSSS.Solution.XdgTimestepping {
                 RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
+                dtatB4.AddVector("k" + s, k[s]);
             }
 
             // final stage
-            RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
+            RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0, dtatB4);
+            dtatB4.AddVector("u1", m_CurrentState);
+            dtatB4.DoIOnow();
+
+
+            double fut_u0 = 0.0, fut_k0 = 0, fut_u1 = 0, fut_rhs = 0, fut_sol = 0, fut_sol1 = 0, fut_check0 = 0, fut_check1 = 0, fut_check2 = 0, fut_check3 = 0, fut_check4 = 0;
+            foreach(var kv in dtatB4.AllAbsErr()) {
+                //Console.WriteLine(kv.Key + ":     " + kv.Value);
+                if(kv.Key.StartsWith("u0"))
+                    fut_u0 += kv.Value;
+                else if(kv.Key.StartsWith("u1"))
+                    fut_u1 += kv.Value;
+                else if(kv.Key.StartsWith("k0"))
+                    fut_k0 += kv.Value;
+                else if(kv.Key.StartsWith("rhs"))
+                    fut_rhs += kv.Value;
+                else if(kv.Key.StartsWith("sol1"))
+                    fut_sol1 += kv.Value;
+                else if(kv.Key.StartsWith("sol"))
+                    fut_sol += kv.Value;
+                else if(kv.Key.StartsWith("check0"))
+                    fut_check0 += kv.Value;
+                else if(kv.Key.StartsWith("check1"))
+                    fut_check1 += kv.Value;
+                else if(kv.Key.StartsWith("check2"))
+                    fut_check2 += kv.Value;
+                else if(kv.Key.StartsWith("check3"))
+                    fut_check3 += kv.Value;
+                else if(kv.Key.StartsWith("check4"))
+                    fut_check4 += kv.Value;
+                //else
+                //    throw new ApplicationException();
+            }
+            Console.WriteLine("     u0:   " + fut_u0);
+            Console.WriteLine("     k0:   " + fut_k0);
+            Console.WriteLine("     u1:   " + fut_u1);
+            Console.WriteLine("     rhs:  " + fut_rhs);
+            Console.WriteLine("     sol1: " + fut_sol1);
+            Console.WriteLine("     sol:  " + fut_sol);
+            Console.WriteLine("     c0:   " + fut_check0);
+            Console.WriteLine("     c1:   " + fut_check1);
+            Console.WriteLine("     c2:   " + fut_check2);
+            Console.WriteLine("     c1:   " + fut_check3);
+            Console.WriteLine("     c2:   " + fut_check4);
 
             // ===========================================
             // update level-set (in the case of splitting)
@@ -789,7 +838,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
+        private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime, TestingIO testingIO = null) {
             Debug.Assert(s <= m_RKscheme.Stages);
             for (int i = 0; i < s; i++) {
                 Debug.Assert(k[i] != null);
@@ -800,13 +849,16 @@ namespace BoSSS.Solution.XdgTimestepping {
             BlockMsrMatrix System;
             double[] RHS = new double[Ndof];
 
+            if(testingIO != null) {
+                testingIO.AddVector("check0", RHS);
+            }
 
             if (RelTime > 0) {
                 //
                 // some ordinary stage above stage 0
                 //
 
-                if (base.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative
+                if(base.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative
                      || base.Config_LevelSetHandling == LevelSetHandling.Coupled_Once) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Moving interface, RK stage 'i':
@@ -816,7 +868,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                     // move level-set:
-                    if (Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
+                    if(Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
 
                         this.m_LsTrk.PushStacks();
                         this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, IterUnderrelax, Mass, k);
@@ -831,7 +883,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var Ms = Mass[1];
 
                     // left-hand-side
-                    if (Ms != null) {
+                    if(Ms != null) {
                         System = Ms.CloneAs();
                         System.Scale(1.0 / dt);
                     } else {
@@ -840,18 +892,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     // right-hand-side
-                    if (M0 != null) {
+                    if(M0 != null) {
                         M0.SpMV(1.0 / dt, u0, 0.0, RHS);
                     } else {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         RHS.SetV(u0, 1.0 / dt);
                     }
-                    for (int l = 0; l < s; l++) {
-                        if (RK_as[l] != 0.0)
+                    for(int l = 0; l < s; l++) {
+                        if(RK_as[l] != 0.0)
                             RHS.AccV(-RK_as[l], k[l]);
                     }
 
-                } else if (base.Config_LevelSetHandling == LevelSetHandling.LieSplitting
+                } else if(base.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                      || base.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
                      || base.Config_LevelSetHandling == LevelSetHandling.None) {
 
@@ -865,25 +917,37 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var Ms = Mass[0];
 
                     // left-hand-side
-                    if (Ms != null) {
+                    if(Ms != null) {
                         System = Ms.CloneAs();
                         System.Scale(1.0 / dt);
-                        
+
                     } else {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         System = null;
                     }
 
                     // right-hand-side
-                    if (Ms != null) {
+                    if(Ms != null) {
                         Ms.SpMV(1.0 / dt, u0, 0.0, RHS);
                     } else {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         RHS.SetV(u0, 1.0 / dt);
                     }
-                    for (int l = 0; l < s; l++) {
-                        if(RK_as[l] != 0.0) 
+                    if(testingIO != null) {
+                        testingIO.AddVector("check1", RHS);
+                    }
+
+                    for(int l = 0; l < s; l++) {
+                        if(testingIO != null) {
+                            testingIO.AddVector("check" + (l + 3), k[l]);
+                        }
+
+                        if(RK_as[l] != 0.0)
                             RHS.AccV(-RK_as[l], k[l]);
+                    }
+
+                    if(testingIO != null) {
+                        testingIO.AddVector("check2", RHS);
                     }
 
                 } else {
@@ -902,12 +966,25 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (System != null) {
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, this.CurrentStateMapping, this.CurrentStateMapping);
+
+                    if(testingIO != null)
+                        testingIO.AddVector("rhs", RHS);
                     BlockSol(System, m_CurrentState, RHS);
+                    if(testingIO != null)
+                        testingIO.AddVector("sol", m_CurrentState.ToArray());
                     //m_CurrentAgglomeration.PlotAgglomerationPairs($"agglo.{m_CurrentState.Mapping.MpiRank + 1}of{this.CurrentStateMapping.MpiSize}");
                     m_CurrentAgglomeration.Extrapolate(this.CurrentStateMapping);
+                    if(testingIO != null)
+                        testingIO.AddVector("sol1", m_CurrentState.ToArray());
                 } else {
                     // system is diagonal: 1/dt
+                    if(testingIO != null)
+                        testingIO.AddVector("rhs", RHS);
                     m_CurrentState.SetV(RHS, dt);
+                    if(testingIO != null) {
+                        testingIO.AddVector("sol", m_CurrentState.ToArray());
+                        testingIO.AddVector("sol1", m_CurrentState.ToArray());
+                    }
                 }
 
             } else {
