@@ -579,7 +579,7 @@ namespace BoSSS.Solution.NSECommon {
             : this(SpatDim, _bcmap, _component) {
 
             m_UseBoundaryVelocityParameter = UseBoundaryVelocityParameter;
-            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
+            //m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
             if(m_UseBoundaryVelocityParameter)
                 m_ParameterOrdering = ArrayTools.Cat(m_ParameterOrdering, VariableNames.BoundaryVelocityVector(SpatDim));
             m_ArgumentOrdering = VariableNames.VelocityVector(SpatDim); // VelocityX,VelocityY,(VelocityZ) as variables. 
