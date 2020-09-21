@@ -551,6 +551,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver, this.m_queryHandler);
                 var Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
                 Callbacks.Add(CustomItCallback);
+#if TEST
+                var CO = ActivateCObserver(MultigridOp, MassMatrix, SF, Callbacks);
+#endif
                 SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
 
 
@@ -596,8 +599,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double RelERR = ERR / u.L2Norm();
 #if TEST
                 Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
+                WriteTrendToDatabase(CO);
 #endif
-           
+
             }
         }
 
@@ -631,6 +635,22 @@ namespace BoSSS.Application.XdgPoisson3 {
             MassMatrix = this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray());
             MassMatrix.SpMV(1.0, this.rhs.CoordinateVector, 1.0, RHSvec);
             return RHSvec;
+        }
+
+        private ConvergenceObserver ActivateCObserver(MultigridOperator mop, BlockMsrMatrix Massmatrix, SolverFactory SF, List<Action<int, double[], double[], MultigridOperator>> Callback) {
+            Console.WriteLine("===Convergence Observer activated===");
+            //string AnalyseOutputpath = String.Join(@"\",this.Control.DbPath, this.CurrentSessionInfo.ID);
+            string AnalyseOutputpath = System.IO.Directory.GetCurrentDirectory();
+            var CO = new ConvergenceObserver(mop, Massmatrix, uEx.CoordinateVector.ToArray(), SF);
+            //CO.TecplotOut = String.Concat(AnalyseOutputpath, @"\Xdg_conv");
+            Callback.Add(CO.IterationCallback);
+            Console.WriteLine("Analysis output will be written to: {0}", AnalyseOutputpath);
+            Console.WriteLine("====================");
+            return CO;
+        }
+
+        private void WriteTrendToDatabase(ConvergenceObserver CO) {
+            CO.WriteTrendToSession(base.DatabaseDriver.FsDriver, this.CurrentSessionInfo);
         }
 
         private void ConsistencyTest() {
