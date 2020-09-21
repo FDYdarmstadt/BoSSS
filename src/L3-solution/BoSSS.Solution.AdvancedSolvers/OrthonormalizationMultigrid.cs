@@ -128,7 +128,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+#pragma warning disable 0649
         MGViz viz;
+#pragma warning restore 0649
 
         public ISolverSmootherTemplate CoarserLevelSolver;
         public ISolverSmootherTemplate PreSmoother;
@@ -262,12 +265,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
 
         void AddSolCore(ref double[] X) {
-
-            if (SolHistory.Count >= MaxKrylovDim) {
-                SolHistory.Clear();
-                MxxHistory.Clear();
-            }
-
             Debug.Assert(SolHistory.Count == MxxHistory.Count);
             Debug.Assert(X.Length == OpMatrix._RowPartitioning.LocalLength);
             int L = X.Length;
@@ -312,7 +309,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int KrylovDim = SolHistory.Count;
                 int L = outX.Length;
 
-                    double[] alpha = new double[KrylovDim];
+                double[] alpha = new double[KrylovDim];
                 for (int i = 0; i < KrylovDim; i++) {
                     //alpha[i] = GenericBlas.InnerProd(MxxHistory[i], Res0).MPISum();
                     alpha[i] = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1);
