@@ -30,7 +30,6 @@ using System.IO;
 using System.Diagnostics;
 using BoSSS.Foundation.XDG;
 using NUnit.Framework;
-using System.Security.Cryptography.X509Certificates;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -235,6 +234,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // globalization
                         // -------------
+                        double[] OldSolClone;
+                        if(base.AbstractOperator.SolverStepValidation != null) {
+                            OldSolClone = SolutionVec.ToArray();
+                        } else {
+                            OldSolClone = null;
+                        }
+
                         switch(Globalization) {
                             case GlobalizationOption.Dogleg:
                             DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
@@ -247,6 +253,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             default:
                             throw new NotImplementedException();
                         }
+
+                        if(base.AbstractOperator.SolverStepValidation != null) {
+                            var newSol = SolutionVec.Fields.ToArray();
+                            var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
+                            var oldSolVec = new CoordinateVector(oldSol);
+                            oldSolVec.SetV(OldSolClone, 1.0);
+
+                            base.AbstractOperator.SolverStepValidation(oldSol, newSol);
+                        }
+
+
 
                         // fix the pressure
                         // ----------------
@@ -935,7 +952,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <param name="f0">f0, usually has been calculated earlier</param>
             /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
             /// <returns></returns>
-            public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
+            double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
                 using(var tr = new FuncTrace()) {
                     double epsnew = 1E-7;
 
