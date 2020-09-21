@@ -1466,11 +1466,11 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (!particleNearRegionCells[j]) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, refinementLevel * ParticleList[p].GetLengthScales().Min() / 2);
+                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, refinementLevel * MaxGridLength);
                     }
                     if (!particleFarRegionCells[j]) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleFarRegionCells[j] = ParticleList[p].Contains(cellCenter, refinementLevel * ParticleList[p].GetLengthScales().Min());
+                        particleFarRegionCells[j] = ParticleList[p].Contains(cellCenter, 2 * refinementLevel * MaxGridLength);
                     }
                 }
             }
