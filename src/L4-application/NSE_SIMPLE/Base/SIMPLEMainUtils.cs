@@ -28,6 +28,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid;
 using NSE_SIMPLE.LowMach;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.NSECommon;
 
 namespace NSE_SIMPLE {
 

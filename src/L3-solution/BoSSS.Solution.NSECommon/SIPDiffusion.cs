@@ -394,8 +394,7 @@ namespace BoSSS.Solution.NSECommon {
         string Argument;
 
         double PenaltyBase;
-        string[] m_ParameterOrdering;
-        string[] m_ArgumentOrdering;
+        
         IncompressibleBoundaryCondMap BcMap;
         Func<double[], double, double>[] ArgumentFunction;
 
@@ -422,14 +421,16 @@ namespace BoSSS.Solution.NSECommon {
             this.Mode = Mode;
             this.Argument = Argument;
             this.cj = PenaltyLengthScales;
-            int m_numberofspecies = 4;
+            
+            m_numberofspecies = 4;
+            
             switch (BcMap.PhysMode) {
                 case PhysicsMode.LowMach:
-                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
+                    ArgumentOrdering = new string[] { VariableNames.Temperature };
                     break;
                 case PhysicsMode.Combustion:
                     //this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0/*, VariableNames.MassFraction3_0*/ };
-                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2 };
+                    ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2 };
                     break;
                 default:
                     throw new ApplicationException("Wrong physicsMode");
@@ -708,16 +709,15 @@ namespace BoSSS.Solution.NSECommon {
         /// Arguments
         /// </summary>
         public IList<string> ArgumentOrdering {
-            get {
-                return m_ArgumentOrdering;
-            }
+            get;
+            private set;
         }
 
         /// <summary>
         /// Parameters at linearization point to calculate material properties.
         /// </summary>
         public IList<string> ParameterOrdering {
-            get { return m_ParameterOrdering; }
+            get { return null; }
         }
 
     }

@@ -1364,11 +1364,17 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
+        /// <summary>
+        /// scaling factor for accumulation
+        /// </summary>
+        internal double m_alpha = 1.0;
+
         protected void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
             var Edge2Cell = this.m_GridDat.iGeomEdges.LogicalCellIndices;
             int M = m_RowMap.NoOfCoordinatesPerCell;
             int N = m_ColMap.NoOfCoordinatesPerCell;
             int Jup = this.m_GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            double a = m_alpha;
 
             bool bLinearRequired = LinearRequired;
             bool bAffineRequired = AffineRequired;
@@ -1405,7 +1411,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             //        //m_Matrix[m0 + m, n0 + n] += BlockRes[m, n];
                             //    }
                             //}
-                            m_Matrix.AccBlock(m0, n0, 1.0, BlockRes);
+                            m_Matrix.AccBlock(m0, n0, a, BlockRes);
                         }
                     }
 
@@ -1419,7 +1425,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             new int[] { i - 1, cr - 1, 0 - 1, M - 1, offset - 1 });
 
                         for (int m = 0; m < M; m++)
-                            m_AffineVector[m0 + m] += BlockRes[m];
+                            m_AffineVector[m0 + m] += BlockRes[m]*a;
                     }
                 }
             }

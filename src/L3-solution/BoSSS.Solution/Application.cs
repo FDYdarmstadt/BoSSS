@@ -1326,9 +1326,9 @@ namespace BoSSS.Solution {
 
                 // set master git commit
                 //CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
-                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)Assembly
-                  .GetAssembly(typeof(BoSSS.Solution.Application))
-                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
+                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)
+                  (Assembly.GetAssembly(typeof(BoSSS.Solution.Application))
+                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0]))
                   .InformationalVersion;
 
                 // set deploy directory path
@@ -1796,7 +1796,7 @@ namespace BoSSS.Solution {
                 // pass 2: XDG fields (after tracker update)
                 // =========================================
                 if (Pass2_Evaluators.Count > 0) {
-                    LsTrk.UpdateTracker();
+                    LsTrk.UpdateTracker(0.0);
                     LsTrk.PushStacks();
 
                     foreach (var val in Pass2_Evaluators) {

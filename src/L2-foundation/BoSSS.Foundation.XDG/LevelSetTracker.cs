@@ -301,7 +301,7 @@ namespace BoSSS.Foundation.XDG {
             ComputeGhostTable();
 
 
-            UpdateTracker();
+            UpdateTracker(0.0);
             PushStacks();
         }
 
@@ -609,6 +609,16 @@ namespace BoSSS.Foundation.XDG {
                 return m_RegionsHistory;
             }
         }
+
+        /// <summary>
+        /// Returns all <see cref="LevelSetRegions.Time"/> entries in the <see cref="RegionsHistory"/> stack.
+        /// </summary>
+        public double[] TimeLevelsInStack {
+            get {
+                return RegionsHistory.AvailabelIndices.Select((int iHist) => RegionsHistory[iHist].Time).ToArray();
+            }
+        }
+
 
         /// <summary>
         /// Information about the current level set sign in each cell.
@@ -1191,8 +1201,9 @@ namespace BoSSS.Foundation.XDG {
         /// - 1st item: clone of the level-set fields, <see cref="m_LevelSetHistories"/>
         /// - 2nd item: region code for each cell, <see cref="LevelSetRegions.RegionsCode"/>
         /// - 3rd item: level-set version index, <see cref="LevelSetRegions.Version"/>
+        /// - 4th item: associated physical time, <see cref="LevelSetRegions.Time"/>
         /// </returns>
-        public Tuple<LevelSet[], ushort[], int> BackupTimeLevel(int iHistory) {
+        public (LevelSet[] LevelSets, ushort[] Regions, int Version, double time) BackupTimeLevel(int iHistory) {
             int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
             ushort[] RegionClone = new ushort[Jup];
             Array.Copy(this.RegionsHistory[iHistory].RegionsCode, 0, RegionClone, 0, Jup);
@@ -1204,7 +1215,7 @@ namespace BoSSS.Foundation.XDG {
                 LevSetClones[iLs] = Ls;
             }
 
-            return new Tuple<LevelSet[], ushort[], int>(LevSetClones, RegionClone, this.RegionsHistory[iHistory].Version);
+            return (LevSetClones, RegionClone, this.RegionsHistory[iHistory].Version, this.RegionsHistory[iHistory].Time);
         }
 
         /// <summary>
@@ -1213,10 +1224,11 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="LevSet">Level-Sets</param>
         /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
+        /// <param name="time"><see cref="LevelSetRegions.Time"/></param>
         /// <remarks>
         /// Used e.g. for mesh adaptation.
         /// </remarks>
-        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, int VersionCounter) {
+        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, int VersionCounter, double time) {
             if(LevSet.Length != this.NoOfLevelSets)
                 throw new ArgumentOutOfRangeException();
             int NoOfLevelSet = this.NoOfLevelSets;
@@ -1244,8 +1256,9 @@ namespace BoSSS.Foundation.XDG {
 
             // update tracker
             // ==============
-            UpdateTracker();
+            UpdateTracker(time);
             this.Regions.Version = VersionCounter;
+            this.Regions.Time = time;
             this.m_VersionCnt = VersionCounter;
         }
 
@@ -1255,8 +1268,9 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="LevSet">Level-Sets</param>
         /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
-        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>
-        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, int VersionCounter) {
+        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>#
+        /// <param name="time"><see cref="LevelSetRegions.Time"/></param>
+        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, int VersionCounter, double time) {
             if(LevSet.Length != this.NoOfLevelSets)
                 throw new ArgumentOutOfRangeException();
             int NoOfLevelSet = this.NoOfLevelSets;
@@ -1290,6 +1304,7 @@ namespace BoSSS.Foundation.XDG {
             Array.Copy(RegionCode, 0, this.Regions.m_LevSetRegions, 0, RegionCode.Length);
             this.Regions.Version = VersionCounter;
             this.m_VersionCnt = VersionCounter;
+            this.Regions.Time = time;
             MPIUpdate(this.Regions.m_LevSetRegions, this.GridDat);
             this.Regions.Recalc_LenToNextchange();
         }
@@ -1320,7 +1335,10 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// Also, detection of topology changes/collisions *require* incremental update set to true.
         /// </param>
-        public void UpdateTracker(int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
+        /// <param name="PhysTime">
+        /// physical time associated with current Level Set state, see <see cref="LevelSetRegions.Time"/>
+        /// </param>
+        public void UpdateTracker(double PhysTime, int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
             using (var tr = new FuncTrace()) {
                 ilPSP.MPICollectiveWatchDog.Watch();
                
@@ -1363,6 +1381,7 @@ namespace BoSSS.Foundation.XDG {
                 int[][] VerticeInd = m_gDat.Cells.CellVertices;
 
                 Regions.Version = m_VersionCnt;
+                Regions.Time = PhysTime;
 
                 ushort[] VertexMarker, LevSetRegions, LevSetRegionsUnsigned;
                 BitArray[] LevSetNeg;

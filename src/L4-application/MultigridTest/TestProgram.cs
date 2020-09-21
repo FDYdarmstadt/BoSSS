@@ -376,7 +376,7 @@ namespace BoSSS.Application.MultigridTest {
                 LevSet.Clear();
                 LevSet.ProjectField(LevSetFunc);
                 LsTrk = new LevelSetTracker(grid, XQuadFactoryHelper.MomentFittingVariants.Classic, TrackerWidth, new string[] { "A", "B" }, LevSet);
-                LsTrk.UpdateTracker();
+                LsTrk.UpdateTracker(0.0);
 
                 XB = new XDGBasis(LsTrk, p);
 
@@ -459,7 +459,7 @@ namespace BoSSS.Application.MultigridTest {
                         new MultigridOperator.ChangeOfBasisConfig[] {
                             new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = mumo, DegreeS = new int[] { p } }
                         }
-                    });
+                    }, null);
 
             }
 

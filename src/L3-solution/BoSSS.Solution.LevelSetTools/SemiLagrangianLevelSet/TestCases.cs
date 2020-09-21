@@ -923,7 +923,7 @@ namespace BoSSS.Application.SemiLagrangianLevelSetTestSuite
             ProjectInitialLevelSet();
             Console.WriteLine("Projected");
             LevelSetGradient.Gradient(1.0, LevelSet);
-            LevelSetTrck.UpdateTracker();
+            LevelSetTrck.UpdateTracker(0.0);
             ProjectVelocity(0.0, 0.0);
             Corrector.Initialize();
         }
@@ -931,7 +931,7 @@ namespace BoSSS.Application.SemiLagrangianLevelSetTestSuite
         public virtual void TimestepWork(double phystime, double dt, int Timestep)
         {
             ProjectVelocity(phystime, dt);
-            LevelSetTrck.UpdateTracker();
+            LevelSetTrck.UpdateTracker(phystime + dt);
             LevelSetGradient.Gradient(1.0, LevelSet);
             Corrector.Timestep(dt, 1, Timestep);
         }
