@@ -322,6 +322,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>)
         /// </returns>
         virtual public double UpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+            LsTrk.UpdateTracker(time + dt);
             return 0.0;
         }
 

@@ -1326,9 +1326,9 @@ namespace BoSSS.Solution {
 
                 // set master git commit
                 //CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
-                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)Assembly
-                  .GetAssembly(typeof(BoSSS.Solution.Application))
-                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
+                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)
+                  (Assembly.GetAssembly(typeof(BoSSS.Solution.Application))
+                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0]))
                   .InformationalVersion;
 
                 // set deploy directory path

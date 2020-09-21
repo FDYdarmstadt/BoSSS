@@ -127,7 +127,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+#pragma warning disable 0649
         MGViz viz;
+#pragma warning restore 0649
 
         public ISolverSmootherTemplate CoarserLevelSolver;
         public ISolverSmootherTemplate PreSmoother;
