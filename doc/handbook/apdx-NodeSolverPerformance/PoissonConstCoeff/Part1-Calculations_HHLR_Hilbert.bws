@@ -14,6 +14,9 @@ List of 1 instances of IDatabaseInfo {
 ==============
 using BoSSS.Application.SipPoisson;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Application.SipPoisson' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
 ==============
 ExecutionQueues;
 **************
@@ -25,7 +28,7 @@ List of 2 instances of BatchProcessorClient {
 var myBatch = (SlurmClient)ExecutionQueues[1];
 **************
 ==============
-//myBatch.MonoDebug = true;
+myBatch.MonoDebug = true;
 **************
 ==============
 ExecutionQueues[1].AllowedDatabases;
@@ -33,48 +36,37 @@ ExecutionQueues[1].AllowedDatabases;
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-string WFlowName = "SIP_weakscale_METIS";
+string WFlowName = "SIP_MPI_Hilbert_test";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'SIP_weakscale_METIS'.
+Project name is set to 'SIP_MPI_Hilbert_test'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 **************
 ==============
-**************
-==============
-string dirname = "DB_SIP_MPI";
+string dirname = "DB_SIP_MPI_HILBERT";
 string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 string linpath = @"/work/scratch/jw52xeqa/"+dirname;
 **************
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_SIP_MPI'.
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_SIP_MPI_HILBERT'.
 
 ==============
 tempDB.Sessions
 **************
-List of 17 instances of ISessionInfo {
-  0: SIP_weakscale_METIS_notrace	SIP_J34295_k2_exp_Kcycle_schwarz	09/10/2020 17:54:23	141add74...
-  1: SIP_weakscale_METIS_notrace	SIP_J69120_k2_exp_Kcycle_schwarz	09/10/2020 17:53:35	8c552582...
-  2: SIP_weakscale_METIS	SIP_J69120_k2_exp_Kcycle_schwarz	09/10/2020 15:49:21	fe9150c5...
-  3: SIP_weakscale_METIS	SIP_J34295_k2_exp_Kcycle_schwarz	09/10/2020 16:30:24	9be1a225...
-  4: SIP_weakscale_METIS	SIP_J16875_k2_exp_Kcycle_schwarz	09/10/2020 14:52:14	05013241...
-  5: SIP_weakscale_METIS	SIP_J8640_k2_exp_Kcycle_schwarz	09/10/2020 14:52:16	036f2dc4...
-  6: SIP_weakscale_METIS	SIP_J5000_k2_exp_Kcycle_schwarz	09/10/2020 14:52:11	b24e23ab...
-  7: SIP_weakscale_METIS	SIP_J69120_k2_classic_pardiso	09/10/2020 14:33:55	8f0e0cec...
-  8: SIP_weakscale_METIS	SIP_J69120_k2_exp_gmres_levelpmg	09/10/2020 14:36:18	585e4f41...
-  9: SIP_weakscale_METIS	SIP_J34295_k2_exp_gmres_levelpmg	09/10/2020 14:32:12	e275b324...
-  10: SIP_weakscale_METIS	SIP_J34295_k2_classic_pardiso	09/10/2020 14:29:14	e739c497...
-  11: SIP_weakscale_METIS	SIP_J16875_k2_exp_gmres_levelpmg	09/10/2020 14:29:18	dd21d1f7...
-  12: SIP_weakscale_METIS	SIP_J8640_k2_exp_gmres_levelpmg	09/10/2020 14:29:12	de38361e...
-  13: SIP_weakscale_METIS	SIP_J5000_k2_exp_gmres_levelpmg	09/10/2020 14:28:47	18ea2769...
-  14: SIP_weakscale_METIS	SIP_J16875_k2_classic_pardiso	09/10/2020 14:29:18	d6c9ec12...
-  15: SIP_weakscale_METIS	SIP_J8640_k2_classic_pardiso	09/10/2020 14:28:45	2e1efbbd...
-  16: SIP_weakscale_METIS	SIP_J5000_k2_classic_pardiso	09/10/2020 14:28:48	ab851547...
+List of 8 instances of ISessionInfo {
+  0: SIP_MPI_Hilbert_test	SIP_J34295_k2_exp_Kcycle_schwarz	06/25/2020 16:07:39	cea7b120...
+  1: SIP_256er_Hilbert_debug	SIP_J274360_k2_exp_Kcycle_schwarz*	06/25/2020 15:04:33	37e096f7...
+  2: SIP_MPI_Hilbert_test	SIP_J274360_k2_exp_gmres_levelpmg*	06/25/2020 14:42:31	fa4ef8ff...
+  3: SIP_MPI_Hilbert_test	SIP_J274360_k2_exp_Kcycle_schwarz*	06/25/2020 14:39:32	5dd80ee8...
+  4: SIP_MPI_Hilbert_test	SIP_J135000_k2_exp_gmres_levelpmg	06/25/2020 14:35:25	c6203b1b...
+  5: SIP_MPI_Hilbert_test	SIP_J69120_k2_exp_gmres_levelpmg	06/25/2020 14:35:22	0d0a77b4...
+  6: SIP_MPI_Hilbert_test	SIP_J135000_k2_exp_Kcycle_schwarz	06/25/2020 14:35:26	f69a4a00...
+  7: SIP_MPI_Hilbert_test	SIP_J69120_k2_exp_Kcycle_schwarz	06/25/2020 14:35:28	fdb037fe...
 }
 ==============
 //var myBatch = new SlurmClient(@"X:\Deployerie","lcluster4.hrz.tu-darmstadt.de","jw52xeqa");
@@ -113,52 +105,46 @@ static class Utils {
 // ===============================
 **************
 ==============
-tempDB.Grids
+tempDB.Grids;
 **************
-List of 13 instances of IGridInfo {
-  0: { Guid = ebfdb51a-cd32-4338-9a09-97958bbc8c4a; Name = SIP_weakscale_METIS_large_J1026895; Cell Count = 1026895; Dim = 3 }
-  1: { Guid = a0e15df7-28e6-415c-a8a6-1841baae6520; Name = SIP_weakscale_METIS_large_J519115; Cell Count = 519115; Dim = 3 }
-  2: { Guid = 5385b111-bfc3-4e89-93e4-65ab0bf5680e; Name = SIP_weakscale_METIS_large_J135000; Cell Count = 135000; Dim = 3 }
-  3: { Guid = e3465891-df4b-45f6-ba5a-cae275b04b55; Name = SIP_weakscale_METIS_large_J663255; Cell Count = 663255; Dim = 3 }
-  4: { Guid = 72384cb3-3e9d-4e67-a7a1-126bb5dfacb9; Name = SIP_weakscale_METIS_large_J320000; Cell Count = 320000; Dim = 3 }
-  5: { Guid = 8a2f5437-e8c7-43b1-9459-c075b49ef368; Name = SIP_weakscale_METIS_large_J163840; Cell Count = 163840; Dim = 3 }
-  6: { Guid = a49ff371-4d5e-4456-86d7-147352a77506; Name = SIP_weakscale_METIS_large_J87880; Cell Count = 87880; Dim = 3 }
-  7: { Guid = 3435396f-0bce-4e1d-8dc4-55a099a4eaed; Name = SIP_weakscale_METIS_notrace_J40000; Cell Count = 40000; Dim = 3 }
-  8: { Guid = 585939a5-5e68-43a0-9feb-cefbed2fb5b4; Name = SIP_weakscale_METIS_J69120; Cell Count = 69120; Dim = 3 }
-  9: { Guid = 3537f16d-cfcf-4ba3-abb7-f5e199a68491; Name = SIP_weakscale_METIS_J34295; Cell Count = 34295; Dim = 3 }
-  10: { Guid = cdc79821-ea13-4110-bd4a-a70e9f089854; Name = SIP_weakscale_METIS_J16875; Cell Count = 16875; Dim = 3 }
-  11: { Guid = 5c7d7566-bc56-4b77-a4da-68e32b2c0820; Name = SIP_weakscale_METIS_J8640; Cell Count = 8640; Dim = 3 }
-  12: { Guid = 05347f32-142e-41ec-b2be-3dcbddb3242c; Name = SIP_weakscale_METIS_J5000; Cell Count = 5000; Dim = 3 }
+List of 4 instances of IGridInfo {
+  0: { Guid = ec58220b-931a-4504-be1b-58c0289af3c7; Name = SIP_256er_Hilbert_debug_J34295; Cell Count = 34295; Dim = 3 }
+  1: { Guid = 904cea06-00c9-485a-9f2f-773de8b9efa4; Name = SIP_MPI_Hilbert_test_J274360; Cell Count = 274360; Dim = 3 }
+  2: { Guid = d8f06e7c-fcae-4185-a97b-59f11a023b8c; Name = SIP_MPI_Hilbert_test_J135000; Cell Count = 135000; Dim = 3 }
+  3: { Guid = 1f3e6d97-5393-41bb-bda2-e2ae5c829c5d; Name = SIP_MPI_Hilbert_test_J69120; Cell Count = 69120; Dim = 3 }
 }
 ==============
 **************
 ==============
 //Weak scaling
-int[] core_sweep = {128,512,1024};
-//int[] core_sweep = {64,128};
+//int[] core_sweep = {4,8,16,32,64};
+int[] core_sweep = {32};
 int p          = 2;
 int DOFperCore = 10000;
 **************
 ==============
 int[] res=new int[core_sweep.Length];
 int[] test=new int[core_sweep.Length];
-var cells2cores = new Dictionary<int, int>();
 for(int i=0;i<core_sweep.Length;i++){
 double Res   = Math.Pow(DOFperCore/Utils.Np(p)*core_sweep[i]/5,0.333333333);
 int ResRndup = (int)Math.Ceiling(Res);
 res[i]=ResRndup;
 test[i]=ResRndup*ResRndup*ResRndup*5;
-cells2cores.Add(test[i],core_sweep[i]);
 }
-cells2cores;
+test;
 **************
-List of 3 instances of KeyValuePair{Int32,Int32} {
-  0: [135000, 128]
-  1: [519115, 512]
-  2: [1026895, 1024]
+List of 1 instances of Int32 {
+  0: 34295
 }
 ==============
+tempDB.Grids
 **************
+List of 4 instances of IGridInfo {
+  0: { Guid = ec58220b-931a-4504-be1b-58c0289af3c7; Name = SIP_256er_Hilbert_debug_J34295; Cell Count = 34295; Dim = 3 }
+  1: { Guid = 904cea06-00c9-485a-9f2f-773de8b9efa4; Name = SIP_MPI_Hilbert_test_J274360; Cell Count = 274360; Dim = 3 }
+  2: { Guid = d8f06e7c-fcae-4185-a97b-59f11a023b8c; Name = SIP_MPI_Hilbert_test_J135000; Cell Count = 135000; Dim = 3 }
+  3: { Guid = 1f3e6d97-5393-41bb-bda2-e2ae5c829c5d; Name = SIP_MPI_Hilbert_test_J69120; Cell Count = 69120; Dim = 3 }
+}
 ==============
 //Add Predefined Partitioning
 static class AuxPart{
@@ -264,19 +250,15 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Creating grid with 135000 cells.
+Creating grid with 34295 cells.
 Grid Edge Tags changed.
-Creating grid with 519115 cells.
-Grid Edge Tags changed.
-Creating grid with 1026895 cells.
-Grid Edge Tags changed.
+An equivalent grid (ec58220b-931a-4504-be1b-58c0289af3c7) is already present in the database -- the grid will not be saved.
 
 ==============
 // Overwrite Selection
-var ListOfgrids = new List<IGridInfo>();
-ListOfgrids.AddRange(tempDB.Grids.Pick(0,1));
-IGridInfo[] grids = ListOfgrids.ToArray();
-//IGridInfo[] grids = tempDB.Grids.ToArray();
+//var ListOfgrids = new List<IGridInfo>();
+//ListOfgrids.Add(tempDB.Grids.Pick(0));
+//IGridInfo[] grids = ListOfgrids.ToArray();
 **************
 ==============
 **************
@@ -285,13 +267,8 @@ IGridInfo[] grids = ListOfgrids.ToArray();
 ==============
 grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = 3435396f-0bce-4e1d-8dc4-55a099a4eaed; Name = SIP_weakscale_METIS_notrace_J40000; Cell Count = 40000; Dim = 3 }
-  1: { Guid = 585939a5-5e68-43a0-9feb-cefbed2fb5b4; Name = SIP_weakscale_METIS_J69120; Cell Count = 69120; Dim = 3 }
-  2: { Guid = 3537f16d-cfcf-4ba3-abb7-f5e199a68491; Name = SIP_weakscale_METIS_J34295; Cell Count = 34295; Dim = 3 }
-  3: { Guid = cdc79821-ea13-4110-bd4a-a70e9f089854; Name = SIP_weakscale_METIS_J16875; Cell Count = 16875; Dim = 3 }
-  4: { Guid = 5c7d7566-bc56-4b77-a4da-68e32b2c0820; Name = SIP_weakscale_METIS_J8640; Cell Count = 8640; Dim = 3 }
-  5: { Guid = 05347f32-142e-41ec-b2be-3dcbddb3242c; Name = SIP_weakscale_METIS_J5000; Cell Count = 5000; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = ec58220b-931a-4504-be1b-58c0289af3c7; Name = SIP_256er_Hilbert_debug_J34295; Cell Count = 34295; Dim = 3 }
 }
 ==============
 **************
@@ -358,10 +335,10 @@ using BoSSS.Solution.AdvancedSolvers;
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_pardiso, 
     //LinearSolverCode.classic_mumps, 
-    //LinearSolverCode.exp_Kcycle_schwarz, 
-    LinearSolverCode.exp_gmres_levelpmg, 
+    LinearSolverCode.exp_Kcycle_schwarz, 
+    //LinearSolverCode.exp_gmres_levelpmg, 
 }; 
 **************
 ==============
@@ -375,7 +352,8 @@ int[] PolyDegS={p};
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
 //int MaxDof           = 5000000;
-int MaxDof = int.MaxValue;
+int MaxDof           = int.MaxValue;
+int JobsWithSameCore = PolyDegS.Length * solver_nameS.Length;
 **************
 ==============
 controls.Clear();
@@ -401,11 +379,12 @@ foreach(int k in PolyDegS) {
     
     ctrl.savetodb = true; //for debug's sake
     ctrl.GridGuid = grd.ID;
+    //ctrl.SetDGdegree(k);
     ctrl.FieldOptions.Add("T", new FieldOpts() { Degree = k, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    ctrl.FieldOptions.Add("Tex", new FieldOpts() { Degree = p + 2, SaveToDB = FieldOpts.SaveToDBOpt.unspecified });
+    ctrl.FieldOptions.Add("MPIrank", new FieldOpts() { Degree = 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    ctrl.FieldOptions.Add("Tex", new FieldOpts() { Degree = p + 2, SaveToDB = FieldOpts.SaveToDBOpt.unspecified});
     ctrl.LinearSolver.SolverCode          = solver_name;
     ctrl.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-    ctrl.LinearSolver.TargetBlockSize     = Math.Min(J*Np-1,DOFperCore);
     
     ctrl.InitialValues.Add("RHS", GetFormulaObject(InitialValues.RHS));
     ctrl.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
@@ -413,9 +392,10 @@ foreach(int k in PolyDegS) {
     ctrl.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
         GetFormulaObject(InitialValues.NeumannBC));
     ctrl.SessionName       = "SIP_"+caseName;
-    //ctrl.TracingNamespaces = "*";
+    ctrl.TracingNamespaces = "*";
     
-    ctrl.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
+    //ctrl.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
+    ctrl.GridPartType = BoSSS.Foundation.Grid.GridPartType.directHilbert;
     //ctrl.GridPartType    = BoSSS.Foundation.Grid.GridPartType.Predefined;
     //ctrl.GridPartOptions = "hallo";
     
@@ -423,8 +403,7 @@ foreach(int k in PolyDegS) {
 }
 }
 **************
-setting up: J69120_k2_exp_Kcycle_schwarz
-setting up: J34295_k2_exp_Kcycle_schwarz
+setting up: J34295_k2_exp_Kcycle_schwarz_
 
 ==============
 **************
@@ -434,54 +413,41 @@ setting up: J34295_k2_exp_Kcycle_schwarz
 // ==========
 **************
 ==============
+int cnt   = 0;
+int iCore = -1;
 foreach(var ctrl in controls) {
 
-    int nocores;
-    try{
-        int nocells = tempDB.Grids.Find(ctrl.GridGuid).NumberOfCells;
-        cells2cores.TryGetValue(nocells,out nocores);
-        Console.WriteLine("{0}:{1}",nocores, nocells);
-
-        
-        Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-        var aJob = new Job(ctrl.SessionName, typeof(SipPoissonMain));
-        aJob.SetControlObject(ctrl);
-        ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
-        aJob.NumberOfMPIProcs         = nocores;
-        aJob.ExecutionTime            = "01:00:00";
-        aJob.MemPerCPU                = "2500";
-        aJob.UseComputeNodesExclusive = true;
-        aJob.Activate(myBatch);
-    } catch (Exception e){
-        Console.WriteLine(e.Message);
-    }
+    if(cnt % JobsWithSameCore == 0)
+        iCore++;
+         
+    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+    var aJob = new Job(ctrl.SessionName, typeof(SipPoissonMain));
+    aJob.SetControlObject(ctrl);
+    ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
+    aJob.NumberOfMPIProcs         = core_sweep[iCore];
+    aJob.ExecutionTime            = "02:00:00";
+    //aJob.HHLR_project             = "project01217";
+    aJob.MemPerCPU                = "2500";
+    aJob.UseComputeNodesExclusive = true;
+    aJob.Activate(myBatch);
+    cnt++;
 }
 **************
-64:69120
- Submitting: SIP_J69120_k2_exp_Kcycle_schwarz
+ Submitting: SIP_J34295_k2_exp_Kcycle_schwarz_
 Job not submitted yet, or no result session is known - starting submission.
-
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\SIP_weakscale_METIS_notrace-ipPoisson2020Sep10_175121
-copied 27 files.
+Deployment directory: X:\Deployerie\SIP_MPI_Hilbert_test-ipPoisson2020Jun25_161844
+copied 26 files.
    written file: control.obj
 deployment finished.
 
-15573310
-32:34295
- Submitting: SIP_J34295_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\SIP_weakscale_METIS_notrace-ipPoisson2020Sep10_175128
-copied 27 files.
-   written file: control.obj
-deployment finished.
-
-15573311
+14966341
 
 ==============
 **************
+System.ArgumentOutOfRangeException occurred: Index was out of range. Must be non-negative and less than the size of the collection.
+Parameter name: index. Type 'LastError' for details.
+
 ==============
 **************
 ==============
@@ -739,50 +705,6 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
 **************
