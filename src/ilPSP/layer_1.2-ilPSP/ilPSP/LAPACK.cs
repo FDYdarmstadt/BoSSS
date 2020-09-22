@@ -79,6 +79,7 @@ namespace ilPSP.Utils {
         _DGEQP3 dgeqp3;
         _DORGQR dorgqr;
         _DPOSV  dposv;
+        _DGESVD dgesvd;
         //_DSYTRF dsytrf;
         _DGECON dgecon;
         _DGEEV dgeev;
@@ -777,6 +778,114 @@ namespace ilPSP.Utils {
                 return dorgqr;
             }
         }
+
+
+        /// <summary>
+        /// DGESVD computes the singular value decomposition (SVD) of a real
+        /// M-by-N matrix A, optionally computing the left and/or right singular
+        /// vectors.
+        /// </summary>
+        /// <param name="JOBU">
+        /// JOBU is CHARACTER*1
+        /// Specifies options for computing all or part of the matrix U:
+        ///   = 'A':  all M columns of U are returned in array U:
+        ///   = 'S':  the first min(m, n) columns of U(the left singular
+        ///            vectors) are returned in the array U;
+        ///   = 'O':  the first min(m, n) columns of U(the left singular
+        ///            vectors) are overwritten on the array A;
+        ///   = 'N':  no columns of U(no left singular vectors) are
+        ///          computed.
+        /// </param>
+        /// <param name="JOBVT">
+        /// JOBVT is CHARACTER*1
+        /// Specifies options for computing all or part of the matrix
+        ///   V** T:
+        ///   = 'A':  all N rows of V** T are returned in the array VT;
+        ///   = 'S':  the first min(m, n) rows of V** T(the right singular
+        ///            vectors) are returned in the array VT;
+        ///   = 'O':  the first min(m, n) rows of V** T(the right singular
+        ///            vectors) are overwritten on the array A;
+        ///   = 'N':  no rows of V**T(no right singular vectors) are
+        ///          computed.
+        /// 
+        ///  JOBVT and JOBU cannot both be 'O'.
+        /// </param>
+        /// <param name="M">
+        /// The number of rows of the matrix <paramref name="A"/>
+        /// </param>
+        /// <param name="N">
+        /// The number of columns of the matrix <paramref name="A"/>
+        /// </param>
+        /// <param name="A">
+        /// <paramref name="M"/>x<paramref name="N"/> matrix to be decomposited.
+        /// Note that the entries have to be in FORTRAN-order
+        /// </param>
+        /// <param name="LDA">
+        /// Leading dimension of <paramref name="A"/>
+        /// </param>
+        /// <param name="S">
+        /// Singular values of <paramref name="A"/>, sorted in decending order
+        /// </param>
+        /// <param name="U">
+        /// Array containing the left singular vectors of <paramref name="A"/>
+        /// </param>
+        /// <param name="LDU">
+        /// Leading dimension of <paramref name="U"/>
+        /// </param>
+        /// <param name="VT">
+        /// Array containing the right singular vectors of <paramref name="A"/>
+        /// </param>
+        /// <param name="LDVT">
+        /// Leading dimension of <paramref name="VT"/>
+        /// </param>
+        public unsafe void DGESVD(int JOBU, int JOBVT, int M, int N, double* A, int LDA, double* S, double* U, int LDU, double* VT, int LDVT)
+        {
+            // Determine optimal workspace size
+            int INFO;
+            int LWORK = -1;
+            double LENGTH;
+            unsafe
+            {
+                dgesvd(ref JOBU, ref JOBVT, ref M, ref N, A, ref LDA, S, U, ref LDU, VT, ref LDVT, &LENGTH, ref LWORK, out INFO);
+            }
+            if (INFO != 0)
+            {
+                throw new ApplicationException("Failed to determine optimal work size");
+            }
+
+            // Don't use stackalloc for $work since its size may be so
+            // large that the stack overflows!
+            LWORK = (int)LENGTH;
+            double[] work = new double[LWORK];
+
+            // Actual computation
+            fixed (double* pWORK = &work[0])
+            {
+                dgesvd(ref JOBU, ref JOBVT, ref M, ref N, A, ref LDA, S, U, ref LDU, VT, ref LDVT, pWORK, ref LWORK, out INFO);
+            }
+
+            if (INFO != 0)
+            {
+                throw new ApplicationException("Failed to compute Singular Value Decomposition");
+            }
+        }
+
+        /// <summary>
+        /// Singular Value Decomposition
+        /// </summary>
+        public unsafe delegate void _DGESVD(ref int JOBU, ref int JOBVT, ref int M, ref int N, double* A, ref int LDA, double* S, double* U, ref int LDU, double* VT, ref int LDVT, double* WORK, ref int LWORK, out int INFO);
+
+        /// <summary>
+        /// Singular Value Decomposition
+        /// </summary>
+        public unsafe _DGESVD DGESVD_
+        {
+            get
+            {
+                return dgesvd;
+            }
+        }
+
 
 
         /// <summary>

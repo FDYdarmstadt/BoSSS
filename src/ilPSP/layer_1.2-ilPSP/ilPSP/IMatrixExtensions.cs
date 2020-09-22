@@ -839,34 +839,86 @@ namespace ilPSP {
             }
         }
 
-        ///// <summary>
-        ///// General matrix/matrix multiplication:
-        ///// <paramref name="C"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="C"/>;
-        ///// </summary>
-        //public static void gemm(double alpha, FullMatrix A, FullMatrix B, double beta, FullMatrix C) {
-        //    if (A.NoOfCols != B.NoOfRows)
-        //        throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
-        //    if (A.NoOfRows != C.NoOfRows)
-        //        throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
-        //    if (B.NoOfCols != C.NoOfCols)
-        //        throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+        /// <summary>
+        /// General matrix/matrix multiplication:
+        /// Based on Level 3 Blas routine dgemm
+        /// <paramref name="M"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="M"/>;
+        /// define wether Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
+        /// </summary>
+        static public void DGEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false) 
+            where Matrix1 : IMatrix
+            where Matrix2 : IMatrix
+            where Matrix3 : IMatrix
+        {
+            if (!transA && !transB)
+            {
+                if (A.NoOfCols != B.NoOfRows)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfRows != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfCols != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
+            else if (transA && !transB)
+            {
+                if (A.NoOfRows != B.NoOfRows)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfCols != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfCols != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
+            else if (!transA && transB)
+            {
+                if (A.NoOfCols != B.NoOfCols)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfRows != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfRows != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
+            else if (transA && transB)
+            {
+                if (A.NoOfRows != B.NoOfCols)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfCols != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfRows != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
 
-        //    int K = A.NoOfCols;
+            unsafe 
+            {                
+                int TRANSA = transA ? 't' : 'n';
+                int TRANSB = transB ? 't' : 'n';
 
-        //    for (int i = C.NoOfRows - 1; i >= 0; i--) {
-        //        for (int j = C.NoOfCols - 1; j >= 0; j--) {
-        //            double r = 0;
+                int M = transA ? A.NoOfCols : A.NoOfRows;
+                int N = transB ? B.NoOfRows : B.NoOfCols;
+                int K = transA ? A.NoOfRows : A.NoOfCols;
 
+                int LDA = transA ? Math.Max(1, K) : Math.Max(1, M);
+                int LDB = transB ? Math.Max(1, N) : Math.Max(1, K);
+                int LDC = Math.Max(1, M);
 
-        //            for (int k = K - 1; k >= 0; k--)
-        //                r += A[i, k] * B[k, j];
+                int i0, i1, i2;
+                double[] __A = TempBuffer.GetTempBuffer(out i0, M * K);
+                double[] __B = TempBuffer.GetTempBuffer(out i1, N * K);
+                double[] __C = TempBuffer.GetTempBuffer(out i2, M * N);
+                fixed (double* _A = __A, _B = __B, _C = __C)
+                {
+                    CopyToUnsafeBuffer(A, _A, true);
+                    CopyToUnsafeBuffer(B, _B, true);
+                    CopyToUnsafeBuffer(C, _C, true);
 
-        //            r *= alpha;
-        //            C[i, j] = C[i, j] * beta + r;
-        //        }
+                    BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, _A, LDA, _B, LDB, beta, _C, LDC);
 
-        //    }
-        //}
+                    CopyFromUnsafeBuffer(C, _C, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+                TempBuffer.FreeTempBuffer(i2);                             
+            }
+        }
 
         /// <summary>
         /// total absolute sum of all entries
@@ -2165,6 +2217,61 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Solves the linear equation system:
+        /// 
+        /// <paramref name="M"/>*<paramref name="x"/> = <paramref name="b"/>
+        /// under the condition
+        /// <paramref name="N"/>*<paramref name="x"/> = <paramref name="c"/>
+        /// if no such exact solution exists the first set is solved exactly,
+        /// in such a fashion to minimize the residual of the second set
+        /// </summary>
+        /// <param name="x">On exit, the solution of the equation system.</param>
+        /// <param name="b">Right-hand-side of the main equation system.</param>
+        /// <param name="M">General matrix.</param>
+        /// <param name="c">Right-hand-side of the side equation system.</param>
+        /// <param name="N">General matrix.</param>
+        /// The second system is used to solve
+        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) where T : IMatrix
+        {
+            if (M.NoOfCols != N.NoOfCols)
+                throw new ApplicationException("Solutionspace of both systems has to be of equal dimension");
+            if (x.Length != M.NoOfCols)
+                throw new ArgumentException("length of x must be equal to number of columns");
+            if (b.Length != M.NoOfRows)
+                throw new ArgumentException("length of b must be equal to number of rows of M");
+            if (c.Length != N.NoOfRows)
+                throw new ArgumentException("length of c must be equal to number of rows of N");
+
+            // compute the nullspace of M
+            //MultidimensionalArray SRREF = M.GetSolutionSpace();
+            MultidimensionalArray S = M.GetSolutionSpaceSVD();
+            if (S == null)
+            {
+                throw new ApplicationException("Something went wrong");
+            }
+
+            // retrieve the particular solution for the first system
+            // I believe this could be done while retrieving the nullspace
+            M.LeastSquareSolve(x, b);
+
+            // Solve the augmented second system N * S * xi = (c - N * v)
+            // In such a manner to minimize ||N * S * xi - (c - N * v)||
+            // x = S * xi + v
+
+            // non-shallow copy of c
+            double[] rhs = new double[c.Length];
+            c.CopyTo(rhs, 0);
+            double[] xi = new double[S.NoOfCols];
+
+            // create the new rhs
+            N.MatVecMul(-1.0, x, 1.0, rhs);
+            GEMM(N, S).LeastSquareSolve(xi, rhs);
+
+            // compute the final solution
+            S.MatVecMul(1.0, xi, 1.0, x);
+        }
+
+        /// <summary>
         /// computes a LU-Factorization of <paramref name="M"/> and stores it in-place, using LAPACK function DGETRF
         /// </summary>
         /// <param name="M">(input, output) General quadratic, non-singular matrix; on exit, the LU-factorization</param>
@@ -2507,7 +2614,7 @@ namespace ilPSP {
 
             (var RRE, var pivots, var cols, int rank) = ReducedRowEchelonForm(Mtx);
 
-            Console.WriteLine("The rank of the matrix coming from the Reduced Row Echelon Form: rank={0}", rank);
+            //Console.WriteLine("The rank of the matrix coming from the Reduced Row Echelon Form: rank={0}", rank);
 
             if (cols.Length != Mtx.NoOfCols - rank)
                 throw new ArithmeticException("Error in reduced row echelon form.");
@@ -2541,6 +2648,104 @@ namespace ilPSP {
             return S;
         }
 
+        /// <summary>
+        /// Alternative for <see cref="GetSolutionSpace{T}(T)"> using Lapack routine dgesvd
+        /// Converts an implicit subspace representation (given as the solution of a singular matrix <paramref name="Mtx"/>)
+        /// into an explicit representation.
+        /// </summary>
+        /// <param name="Mtx">
+        /// A matrix implicitly defines a subspace.
+        /// </param>
+        /// <returns>
+        /// A matrix whose columns span the nullspace of the input matrix <paramref name="Mtx"/>.
+        /// </returns>
+        public static MultidimensionalArray GetSolutionSpaceSVD<T>(this T Mtx) where T : IMatrix
+        {
+            int M = Mtx.NoOfRows;
+            int N = Mtx.NoOfCols;
+
+            int JOBU = 'N';
+            int JOBVT = 'A';
+
+            int LDA = M >= 1 ? M : 1;
+            int LDU = 1;
+            switch (JOBU)
+            {
+                case 'A':
+                case 'S':
+                    LDU = M;
+                    break;
+                default:
+                    LDU = 1;
+                    break;
+            }
+
+            int LDVT = 1;
+            switch (JOBVT)
+            {
+                case 'A':
+                case 'S':
+                    LDVT = N;
+                    break;
+                default:
+                    LDVT = 1;
+                    break;
+            }
+            int LDS = Math.Min(M, N);
+
+            MultidimensionalArray S = MultidimensionalArray.Create(LDS,1);
+            MultidimensionalArray VT = MultidimensionalArray.Create(LDVT, LDVT);
+
+            unsafe
+            {
+
+                int i0, i1, i2, i3;
+                double[] __A = TempBuffer.GetTempBuffer(out i0, M * N);
+                double[] __S = TempBuffer.GetTempBuffer(out i1, LDS);
+                double[] __U = TempBuffer.GetTempBuffer(out i2, LDU * LDU);
+                double[] __VT = TempBuffer.GetTempBuffer(out i3, LDVT * LDVT);
+                fixed (double* _A = __A, _S = __S, _U = __U, _VT = __VT)
+                {
+                    CopyToUnsafeBuffer(Mtx, _A, true);
+
+                    LAPACK.F77_LAPACK.DGESVD(JOBU, JOBVT, M, N, _A, LDA, _S, _U, LDU, _VT, LDVT);
+
+                    CopyFromUnsafeBuffer(S, _S, true);
+                    CopyFromUnsafeBuffer(VT, _VT, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+                TempBuffer.FreeTempBuffer(i2);
+                TempBuffer.FreeTempBuffer(i3);
+            }
+
+            // we need the original V not V^T
+            VT.TransposeInPlace();
+
+            int nullspaceDim = M < N ? N - M : 0;
+
+            double thresh = 1.0E-14;
+            for (int i = 0; i < LDS; i++)
+            {
+                if (S.Storage[i] < thresh)
+                {
+                    nullspaceDim++;
+                }
+            }
+
+            MultidimensionalArray Nullspace = null;
+            if (nullspaceDim > 0)
+            {
+                Nullspace = MultidimensionalArray.Create(N, nullspaceDim);
+                Nullspace.Acc(1.0, VT.ExtractSubArrayShallow(new int[] { 0, LDVT - nullspaceDim }, new int[] { LDVT - 1, LDVT - 1 }));
+            }
+            else
+            {
+                Console.WriteLine("Warning: Nullspace is empty");
+            }
+
+            return Nullspace;
+        }
 
         /// <summary>
         /// Computes a reduced row echelon form
