@@ -56,7 +56,9 @@
     <Compile Include="LinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />
     <Compile Include="Quadrature\CellEdgeBoundaryQuadratureScheme.cs" />
-    <Compile Include="Quadrature\CombinedLevelSetQuadrature.cs" />
+    <Compile Include="Quadrature\MultiLevelSetBruteForceQuadratureSchemes.cs" />
+    <Compile Include="Quadrature\MultiLevelSetBruteForceQuadratureFactory.cs" />
+    <Compile Include="Quadrature\CombinedLevelSetQuadratureFactory.cs" />
     <Compile Include="Quadrature\CutCellQuadRuleFactory.cs" />
     <Compile Include="Quadrature\CutLineOnEdgeQuadRuleFactory.cs" />
     <Compile Include="Quadrature\DivergenceFreeBasis3D.cs" />

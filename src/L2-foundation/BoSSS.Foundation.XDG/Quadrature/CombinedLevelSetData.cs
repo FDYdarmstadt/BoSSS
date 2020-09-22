@@ -21,6 +21,28 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public JumpTypes Jmp0;
         public int LevSet1;
         public JumpTypes Jmp1;
+
+        public bool Equals(CombinedID otherID)
+        {
+            if ((LevSet0 == otherID.LevSet0)
+                && (Jmp0 == otherID.Jmp0)
+                && (LevSet1 == otherID.LevSet1)
+                && (Jmp1 == otherID.Jmp1))
+            {
+                return true;
+            }
+            else if ((LevSet0 == otherID.LevSet1)
+                && (Jmp0 == otherID.Jmp1)
+                && (LevSet1 == otherID.LevSet0)
+                && (Jmp1 == otherID.Jmp0))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     class CombinedLevelSet
@@ -37,24 +59,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public bool Equals(CombinedID otherID)
         {
-            if (   (iD.LevSet0 == otherID.LevSet0)
-                && (iD.Jmp0 == otherID.Jmp0)
-                && (iD.LevSet1 == otherID.LevSet1)
-                && (iD.Jmp1 == otherID.Jmp1))
-            {
-                return true;
-            }
-            else if ((iD.LevSet0 == otherID.LevSet1)
-                && (iD.Jmp0 == otherID.Jmp1)
-                && (iD.LevSet1 == otherID.LevSet0)
-                && (iD.Jmp1 == otherID.Jmp0))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return iD.Equals(otherID);
         }
     }
 
@@ -123,20 +128,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
 
             LevelSet combination = new LevelSet(new Basis(gridData, degree), name);
+            combination.Clear();
             combination.ProjectFunction(1, Min, new CellQuadratureScheme(), levSet0, levSet1);
             return combination;
-        }
-
-        //A = Max(signA*A,signB*B)
-        void Max(MultidimensionalArray A, JumpTypes typeA, MultidimensionalArray B, JumpTypes typeB)
-        {
-            for (int i = 0; i < A.Storage.Length; ++i)
-            {
-                double signA = ToDouble(typeA);
-                double signB = ToDouble(typeB);
-
-                A.Storage[i] = Math.Max(signA * A.Storage[i], signB * B.Storage[i]);
-            }
         }
 
         double ToDouble(JumpTypes type)

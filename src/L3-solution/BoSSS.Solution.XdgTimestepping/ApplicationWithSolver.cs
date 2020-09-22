@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
-    /// Not intended for direct usage, use <see cref="XdgApplicationWithSollver{T}"/> or <see cref="DgApplicationWithSollver{T}"/> instead.
+    /// Not intended for direct usage, use <see cref="XdgApplicationWithSolver{T}"/> or <see cref="DgApplicationWithSollver{T}"/> instead.
     /// Base-class for applications with a monolithic operator and a time-integrator.
     /// </summary>
     abstract public class ApplicationWithSolver<T> : Application<T>
@@ -283,7 +283,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <summary>
     /// Base-class for XDG applications with a monolithic operator and a time-integrator.
     /// </summary>
-    abstract public class XdgApplicationWithSollver<T> : ApplicationWithSolver<T>
+    abstract public class XdgApplicationWithSolver<T> : ApplicationWithSolver<T>
          where T : AppControlSolver, new() //
     {
 
@@ -412,9 +412,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         internal override void ClearOperator() {
             m_XOperator = null;
         }
-
-
-
     }
 
 

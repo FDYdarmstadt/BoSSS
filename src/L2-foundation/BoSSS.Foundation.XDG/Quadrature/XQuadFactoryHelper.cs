@@ -124,7 +124,8 @@ namespace BoSSS.Foundation.XDG {
 
         LevelSetTracker.LevelSetData[] m_LevelSetDatas;
 
-        CombinedLevelSetQuadrature doubleLevelSetQuadFactories;
+        MultiLevelSetBruteForceQuadratureFactory zwoLSBruteForceFactories;
+
 
         //LevelSetTracker lsTrk;
 
@@ -248,6 +249,15 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory for the cut edge integrals.
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
+
+            //void Phi(int x, NodeSet nodes, MultidimensionalArray inU, MultidimensionalArray outU)
+            //{
+            //    ((LevelSet)m_LevelSetDatas[levSetIndex].LevelSet).EvaluateEdge(x, 1, nodes, inU, outU);
+            //    inU.Scale(-1);
+            //};
+
+            //return new BruteForceQuadratureFactory(new BruteForceEdgeScheme(Phi));
+
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
             int D = gdat.SpatialDimension;
 
@@ -280,11 +290,11 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
         {
-            if (doubleLevelSetQuadFactories == null)
+            if (zwoLSBruteForceFactories == null)
             {
-                doubleLevelSetQuadFactories = new CombinedLevelSetQuadrature(m_LevelSetDatas);
+                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
-            return doubleLevelSetQuadFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, KrefVol);
+            return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
         }
 
         /// <summary>
@@ -373,11 +383,11 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
         {
-            if(doubleLevelSetQuadFactories == null)
+            if(zwoLSBruteForceFactories == null)
             {
-                doubleLevelSetQuadFactories = new CombinedLevelSetQuadrature(m_LevelSetDatas);
+                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
-            return doubleLevelSetQuadFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, KrefVol);
+            return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
         }
 
         /// <summary>
@@ -491,15 +501,13 @@ namespace BoSSS.Foundation.XDG {
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
         {
-            if (doubleLevelSetQuadFactories == null)
+            if (zwoLSBruteForceFactories == null)
             {
-                doubleLevelSetQuadFactories = new CombinedLevelSetQuadrature(m_LevelSetDatas);
+                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
-            return doubleLevelSetQuadFactories.GetSurfaceFactory(levSetIndex0, 
+            return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0, 
                 levSetIndex1, 
-                jmp1, 
-                KrefVol, 
-                GetSurfaceFactory(levSetIndex1, KrefVol));
+                jmp1);
         }
 
         /// <summary>

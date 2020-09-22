@@ -15,16 +15,17 @@ using static BoSSS.Foundation.XDG.XQuadFactoryHelper;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    class CombinedLevelSetQuadrature
+    class CombinedLevelSetQuadratureFactory
     {
         CombinedLevelSetData combinedLsDat;
 
         XQuadFactoryHelper combinedLevSetQuadFactories;
 
-        public CombinedLevelSetQuadrature(LevelSetData[] lsDatas)
+        public CombinedLevelSetQuadratureFactory(LevelSetData[] lsDatas)
         {
-            combinedLsDat = new CombinedLevelSetData(lsDatas, 3);
-            combinedLevSetQuadFactories = new XQuadFactoryHelper(combinedLsDat.GetCombinedLevelSetDatas(), MomentFittingVariants.Saye);
+            int degree = ((LevelSet)lsDatas[0].LevelSet).Basis.Degree + 3;
+            combinedLsDat = new CombinedLevelSetData(lsDatas, degree);
+            combinedLevSetQuadFactories = new XQuadFactoryHelper(combinedLsDat.GetCombinedLevelSetDatas(), MomentFittingVariants.Classic);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
@@ -47,7 +48,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             var rule1 = combinedLevSetQuadFactories.GetSurfaceFactory(combinedLevSetIndex1, KrefVol);
 
             var rule0plus1 = QuadRuleFactoryArithmetic.Add(rule0, rule1);
-            var rule0plus1minusLevSet1Rule = QuadRuleFactoryArithmetic.Add(QuadRuleFactoryArithmetic.Scale(-1, levSet1SurfaceRule), rule0plus1);
+            var rule0plus1minusLevSet1Rule = QuadRuleFactoryArithmetic.Add(QuadRuleFactoryArithmetic.Scale(-1.0, levSet1SurfaceRule), rule0plus1);
             var finalRule = QuadRuleFactoryArithmetic.Scale(0.5, rule0plus1minusLevSet1Rule);
 
             return finalRule;

@@ -45,7 +45,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
-    public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSollver<XdgTimesteppingTestControl> {
+    public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSolver<XdgTimesteppingTestControl> {
 
         /// <summary>
         /// Les main routine.
