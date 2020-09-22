@@ -522,7 +522,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             where W : IList<double> {
 
             if (m_includeExternalCells) {
-                if (fullVector.Count() != GetLocalandExternalDOF())
+                if (fullVector.Count() != GetLocalandExternalDOF(m_map))
                     throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (subVector.Count() != BMLoc.LocalDOF + BMExt.LocalDOF)
                     throw new ArgumentException("accVector length is not equal to length of mask");
@@ -582,7 +582,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
 
             if (m_includeExternalCells) {
-                if (fullVector.Count() != GetLocalandExternalDOF())
+                if (fullVector.Count() != GetLocalandExternalDOF(m_map))
                     throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (iBlock >= BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
@@ -603,12 +603,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         }
 
-        private int GetLocalandExternalDOF() {
-            int eCell = m_map.LocalNoOfBlocks + m_map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
-            int eVar = m_map.AggBasis.Length-1;
-            int eN = m_map.AggBasis[eVar].GetLength(eCell, m_map.DgDegree[eVar]) -1;
-            return m_map.LocalUniqueIndex(eVar, eCell, eN)+1;
-        }
+
 
         private void AuxAcc<V, W>(BlockMaskBase mask, W subVector, int iCell, V fullVector)
             where V : IList<double>
@@ -639,7 +634,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             double[] tmp;
             
             if (m_includeExternalCells) {
-                if (fullVector.Count() != GetLocalandExternalDOF())
+                if (fullVector.Count() != GetLocalandExternalDOF(m_map))
                     throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (iBlock >= BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
@@ -678,7 +673,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         public double[] GetSubVec(IList<double> fullVector) {
             double[] subVector;
             if (m_includeExternalCells) {
-                if (fullVector.Count() != GetLocalandExternalDOF())
+                if (fullVector.Count() != GetLocalandExternalDOF(m_map))
                     throw new ArgumentException("Length of targetVector not equal Length of original");
                 subVector =new double[BMLoc.LocalDOF+BMExt.LocalDOF];
                 subVector.AccV(1.0, fullVector, default(int[]), BMLoc.m_LocalMask);
@@ -750,7 +745,14 @@ namespace BoSSS.Solution.AdvancedSolvers
             return BlockMsrMatrix.Multiply(Perm, M);
         }
 
-#region stuff for Operator Testing
+        public static int GetLocalandExternalDOF(MultigridMapping map) {
+            int eCell = map.LocalNoOfBlocks + map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
+            int eVar = map.AggBasis.Length - 1;
+            int eN = map.AggBasis[eVar].GetLength(eCell, map.DgDegree[eVar]) - 1;
+            return map.LocalUniqueIndex(eVar, eCell, eN) + 1;
+        }
+
+        #region stuff for Operator Testing
         /// <summary>
         /// Extracts blocks from matrix <paramref name="source"/>, i.e. one block per cell and the coupling between these cells.
         /// This might only work for local available cells
