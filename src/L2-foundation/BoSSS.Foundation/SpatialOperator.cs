@@ -80,6 +80,14 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class SpatialOperator : ISpatialOperator {
 
+        /// <summary>
+        /// <see cref="ISpatialOperator.SolverStepValidation"/>
+        /// </summary>
+        public SolverStepValidation SolverStepValidation {
+            get;
+            set;
+        }
+
         Func<int[], int[], int[], int> m_QuadOrderFunction;
 
         /// <summary>

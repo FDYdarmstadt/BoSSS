@@ -44,6 +44,14 @@ namespace BoSSS.Foundation.XDG {
     public partial class XSpatialOperatorMk2 : ISpatialOperator {
 
         /// <summary>
+        /// <see cref="ISpatialOperator.SolverStepValidation"/>
+        /// </summary>
+        public SolverStepValidation SolverStepValidation {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
         /// </summary>
         public LinearizationHint LinearizationHint {
