@@ -717,7 +717,7 @@ namespace BoSSS.Solution {
                 // load control file, parse args
                 if (opt.ProjectName != null)
                     ctrlV2.ProjectName = opt.ProjectName;
-                if (opt.SessionName != null)
+                if (opt.SessionName != null && ctrlV2.SessionName.IsEmptyOrWhite())
                     ctrlV2.SessionName = opt.SessionName;
 
                 if (opt.ImmediatePlotPeriod != null) {
@@ -1326,9 +1326,9 @@ namespace BoSSS.Solution {
 
                 // set master git commit
                 //CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
-                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)Assembly
-                  .GetAssembly(typeof(BoSSS.Solution.Application))
-                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
+                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)
+                  (Assembly.GetAssembly(typeof(BoSSS.Solution.Application))
+                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0]))
                   .InformationalVersion;
 
                 // set deploy directory path

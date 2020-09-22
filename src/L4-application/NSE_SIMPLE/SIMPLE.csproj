@@ -92,7 +92,6 @@
     <Compile Include="LowMach\04_Solvers\LowMachSolverCorrector.cs" />
     <Compile Include="LowMach\04_Solvers\LowMachSolverTemperature.cs" />
     <Compile Include="LowMach\05_SIMPLEStep\SIMPLEStepLowMach.cs" />
-    <Compile Include="LowMach\ThermodynamicPressureMode.cs" />
     <Compile Include="Multiphase\00_ControlFiles\ControlExamples.cs" />
     <Compile Include="Multiphase\02_Operators\OperatorFactoryFlowFieldMultiphase.cs" />
     <Compile Include="Multiphase\04_Solvers\MultiphaseSolverCorrector.cs" />

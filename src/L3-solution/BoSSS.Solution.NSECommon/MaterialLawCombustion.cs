@@ -108,6 +108,7 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     rho = ThermodynamicPressureValue / (phi[0] * MassFractionsOverMolarFractions);
+                 //   rho = rho > 0.05 ? rho : 0.05;
                     Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                     Debug.Assert((rho > 0.0));
                 } else {

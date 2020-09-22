@@ -30,7 +30,9 @@ namespace BoSSS.Solution.NSECommon {
     public class ChemicalConstants {
         public ChemicalConstants() {
         }
-  
+
+
+   
         /// <summary>
         /// Molar mass of Methane, in Kg/Kmol
         /// </summary>
@@ -116,6 +118,24 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         [DataMember]
         public double HeatReleaseMolar = 802400; //  KJ/(kmol fuel)
+
+        /// <summary>
+        /// Calculates the average molecular weigth of a mixture. 
+        /// </summary>
+        /// <param name="Mws">Array with molecular weigths</param>
+        /// <param name="Ys">Mass Fractions of the mixture</param>
+        /// <returns></returns>
+        public double getAvgMW(double[] Mws, double[] Ys) {
+            double AvgMw;
+            double arg = 0;
+            for (int i = 0; i < Mws.Length; i++) {
+                arg += Ys[i] / Mws[i];
+            }
+            AvgMw = 1.0 / arg;
+
+
+            return AvgMw;
+        }
 
     }
 

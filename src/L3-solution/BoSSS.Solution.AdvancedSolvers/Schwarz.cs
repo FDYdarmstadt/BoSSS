@@ -361,7 +361,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public BlockingStrategy m_BlockingStrategy;
 
-
         MultigridOperator m_MgOp;
 
         /// <summary>
@@ -372,9 +371,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
+        private bool AnyHighOrderTerms {
+            get {
+                Debug.Assert(m_MgOp != null, "there is no matrix given yet!");
+                return m_MgOp.Mapping.DgDegree.Any(p => p > pLow);
+            }
+        }
+
         public int CoarseLowOrder {
             get { return pLow; }
             set { pLow = value; }
+        }
+
+        public bool AssignXdGCellsToLowBlocks {
+            get;
+            set;
         }
 
         /// <summary>
@@ -388,9 +399,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
-                if (UsePMGinBlocks) {
-                    Console.WriteLine("Schwarz: pmg is used as blocksolve");
-                }
 
                 if (m_MgOp != null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -415,8 +423,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
                         throw new ArgumentException("Blocking, unable to re-use");
                     }
-
-
                     return;
                 }
 
@@ -428,6 +434,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int myMpisize = MgMap.MpiSize;
                 int D = m_MgOp.GridData.SpatialDimension;
 
+                if (UsePMGinBlocks && AnyHighOrderTerms)
+                    Console.WriteLine("Schwarz: pmg is used as blocksolve");
+                if (UsePMGinBlocks && !AnyHighOrderTerms)
+                    Console.WriteLine("Schwarz: Only low order terms present. Schwarz blocks will be solved direct instead of PMG");
                 if (!Mop.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!Mop.ColPartition.EqualsPartition(MgMap.Partitioning))
@@ -588,23 +598,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     BMfullBlocks[iPart] = fullMask;
 
-                    if (UsePMGinBlocks) {
+                    if (UsePMGinBlocks && AnyHighOrderTerms) {
                         //generate selector instructions
                         var lowSel = new SubBlockSelector(op.Mapping);
                         lowSel.CellSelector(bc.ToList(), false);
-                        //lowSel.ModeSelector(p => p <= this.pLow);
                         lowSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? pLow : pLow - 1));
+                        if (AssignXdGCellsToLowBlocks) ModifyLowSelector(lowSel, op);
                         var HiSel = new SubBlockSelector(op.Mapping);
                         HiSel.CellSelector(bc.ToList(), false);
-                        //HiSel.ModeSelector(p => p > this.pLow);
                         HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? pLow : pLow - 1));
+                        if (AssignXdGCellsToLowBlocks) ModifyHighSelector(HiSel, op);
 
                         //generate Blockmasking
                         var lowMask = new BlockMask(lowSel, ExtRows);
                         Debug.Assert(lowMask != null);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         var HiMask = new BlockMask(HiSel, ExtRows);
-                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length);
+                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length || AssignXdGCellsToLowBlocks);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         BMhiBlocks[iPart] = HiMask;
                         BMloBlocks[iPart] = lowMask;
@@ -642,7 +652,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         UseDoublePrecision = false
                     };
 
-                    if (UsePMGinBlocks) {
+                    if (UsePMGinBlocks && AnyHighOrderTerms) {
                         blockSolvers[iPart].DefineMatrix(loBlock);
                     } else {
                         blockSolvers[iPart].DefineMatrix(fullBlock);
@@ -698,6 +708,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
             }
+        }
+
+        private void ModifyLowSelector(SubBlockSelector sbs, MultigridOperator op) {
+            AssignXdgBlocksModification(sbs, op, true);
+        }
+
+        private void ModifyHighSelector(SubBlockSelector sbs, MultigridOperator op) {
+            AssignXdgBlocksModification(sbs, op, false);
+        }
+
+        private void AssignXdgBlocksModification(SubBlockSelector sbs, MultigridOperator op, bool IsLowSelector) {
+            var Filter = sbs.ModeFilter;
+            Func<int, int, int, int, bool> Modification = delegate (int iCell, int iVar, int iSpec, int pDeg) {
+                int NoOfSpec = op.Mapping.AggBasis[0].GetNoOfSpecies(iCell);
+                if (NoOfSpec >= 2)
+                    return IsLowSelector;
+                else
+                    return Filter(iCell, iVar, iSpec, pDeg);
+            };
+            sbs.ModeSelector(Modification);
         }
 
         /// <summary>
@@ -831,13 +861,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Res = new double[B.Count];
                 MPIexchange<double[]> ResExchange;
                 MPIexchangeInverse<U> XExchange;
-                if (Overlap > 0) {
+                //if (Overlap > 0) {
                     ResExchange = new MPIexchange<double[]>(this.m_MgOp.Mapping, Res);
                     XExchange = new MPIexchangeInverse<U>(this.m_MgOp.Mapping, X);
-                } else {
-                    ResExchange = null;
-                    XExchange = null;
-                }
+                //} else {
+                //    ResExchange = null;
+                //    XExchange = null;
+                //}
 
                 int LocLength = m_MgOp.Mapping.LocalLength;
 
@@ -880,7 +910,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             var bi=BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                             double[] xi = new double[bi.Length];
-                            if (UsePMGinBlocks) {
+                            if (UsePMGinBlocks && AnyHighOrderTerms) {
                                 // +++++++++++++++++++++++++++++++++
                                 // P-multigrid in each Schwarz block
                                 // +++++++++++++++++++++++++++++++++
@@ -890,7 +920,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 // hack the hack
 
-                                int ExtLen=GetLocalandExternalDOF();
+                                int ExtLen=Overlap>0?BlockMask.GetLocalandExternalDOF(m_MgOp.Mapping): m_MgOp.Mapping.LocalLength;
 
                                 if (Xdummy == null) {
                                     Xdummy = new double[ExtLen];
@@ -903,6 +933,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     Resdummy.ClearEntries();
                                 }
 
+                                // solve low-order system
                                 var biLo=BMloBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                                 double[] xiLo = new double[biLo.Length];
                                 try {
@@ -914,37 +945,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 BMloBlocks[iPart].AccSubVec(xiLo,Xdummy);
 
-                                {
-                                    xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
-                                    // re-evaluate the residual
-                                    this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
-                                    BMfullBlocks[iPart].AccSubVec(bi,Resdummy);
+                                xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
+                                // re-evaluate the residual
+                                this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
+                                BMfullBlocks[iPart].AccSubVec(bi,Resdummy);
 
-                                    // solve the high-order system
-                                    var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
-                                    int NoCells = HiModeSolvers.Length;
+                                // solve the high-order system
+                                var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
+                                int NoCells = HiModeSolvers.Length;
 
-                                    double[] xiHi = null;
-                                    double[] biHi = null;
+                                double[] xiHi = null;
+                                double[] biHi = null;
 
-                                    for (int j = 0; j < NoCells; j++) {
-                                        var HiModeSolver = HiModeSolvers[j];
-                                        int Np = HiModeSolver.NoOfRows;
+                                for (int j = 0; j < NoCells; j++) {
+                                    var HiModeSolver = HiModeSolvers[j];
+                                    int Np = HiModeSolver.NoOfRows;
 
 
-                                        if (xiHi == null || xiHi.Length != Np)
-                                            xiHi = new double[Np];
-                                        if (biHi == null || biHi.Length != Np)
-                                            biHi = new double[Np];
+                                    if (xiHi == null || xiHi.Length != Np)
+                                        xiHi = new double[Np];
+                                    if (biHi == null || biHi.Length != Np)
+                                        biHi = new double[Np];
 
-                                        biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
+                                    biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
 
-                                        HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
+                                    HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
 
-                                        BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j,Xdummy);
+                                    BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j,Xdummy);
                                        
-                                    }
                                 }
+
                                 xi=BMfullBlocks[iPart].GetSubVec(Xdummy);
                                 Xdummy.ClearEntries();
                                 Resdummy.ClearEntries();
@@ -983,15 +1013,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } // end loop Schwarz iterations
 
             } // end FuncTrace
-        }
-
-
-        private int GetLocalandExternalDOF() {
-            var map = m_MgOp.Mapping;
-            int eCell = map.LocalNoOfBlocks + map.AggBasis[0].AggGrid.iLogicalCells.NoOfExternalCells - 1;
-            int eVar = m_MgOp.Mapping.AggBasis.Length-1;
-            int eN = m_MgOp.Mapping.GetLength(eCell)-1;
-            return m_MgOp.Mapping.LocalUniqueIndex(eVar,eCell,eN)+1;
         }
 
         /// <summary>

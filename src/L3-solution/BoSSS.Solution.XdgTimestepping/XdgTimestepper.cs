@@ -248,8 +248,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
 
+            SpeciesId[] spcToCompute = op.Species.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
+
             ConstructorCommon(op, UseX,
                 Fields, this.Parameters, IterationResiduals, 
+                spcToCompute,
                 _UpdateLevelset, 
                 _LevelSetHandling,
                 _MultigridOperatorConfig, 
@@ -313,6 +316,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         private void ConstructorCommon(
             ISpatialOperator op, bool UseX, 
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
+            SpeciesId[] spcToCompute,
             DelUpdateLevelset _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
             double _AgglomerationThreshold,
@@ -387,7 +391,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
                     _MultigridOperatorConfig, _MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
+                    spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
                     LinearSolver);
@@ -402,7 +406,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
                     _MultigridOperatorConfig, _MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
+                    spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
                     LinearSolver);
@@ -465,10 +469,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             this.Parameters = op.InvokeParameterFactory(Fields);
 
-            CreateDummyTracker(Fields);
+            var spc = CreateDummyTracker(Fields);
                        
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
+                new[] { spc },
                 UpdateLevelsetWithNothing,
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
@@ -477,11 +482,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                 LinearSolver, NonLinearSolver);
         }
 
-        private void CreateDummyTracker(IEnumerable<DGField> Fields) {
+        private SpeciesId CreateDummyTracker(IEnumerable<DGField> Fields) {
             var gDat = Fields.First().GridDat as GridData;
             var DummyLevSet = new LevelSet(new Basis(gDat, 1), "DummyPhi");
             DummyLevSet.AccConstant(-1.0);
             LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new[] { "A", "B" }, DummyLevSet);
+            LsTrk.UpdateTracker(0.0, __NearRegionWith: 0);
+
+            var spcA = LsTrk.GetSpeciesId("A");
+
+            Debug.Assert(LsTrk.Regions.GetSpeciesMask(spcA).NoOfItemsLocally == gDat.Cells.NoOfLocalUpdatedCells);
+
+            return spcA;
         }
 
         double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
@@ -492,9 +504,20 @@ namespace BoSSS.Solution.XdgTimestepping {
         DGField[] JacobiParameterVars = null;
 
 
-        public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
+        public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
             // compute operator
             Debug.Assert(OpAffine.L2Norm() == 0.0);
+
+            // all kinds of checks
+            if(!this.CurrentState.EqualsPartition(Mapping))
+                throw new ApplicationException("something is weired");
+            if(OpMtx != null) {
+                if(!OpMtx.RowPartitioning.EqualsPartition(Mapping))
+                    throw new ArgumentException("Codomain/Matrix Row mapping mismatch.");
+                if(!OpMtx.ColPartition.EqualsPartition(Mapping))
+                    throw new ArgumentException("Domain/Matrix column mapping mismatch.");
+            }
+
 
             if(XdgOperator != null) {
                 if(OpMtx != null) {
@@ -506,7 +529,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     switch(XdgOperator.LinearizationHint) {
 
                         case LinearizationHint.AdHoc: {
-                            this.XdgOperator.InvokeParameterUpdate(CurrentState, this.Parameters.ToArray());
+                            this.XdgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
 
                             var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
                             mtxBuilder.time = time;
@@ -516,7 +539,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         }
 
                         case LinearizationHint.FDJacobi: {
-                            var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, CurrentState, this.Parameters, Mapping);
+                            var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -529,7 +552,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             if(JacobiParameterVars == null)
                                 JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
 
-                            op.InvokeParameterUpdate(CurrentState, JacobiParameterVars);
+                            op.InvokeParameterUpdate(__CurrentState, JacobiParameterVars);
 
                             var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping);
                             mtxBuilder.time = time;
@@ -543,9 +566,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // only operator evaluation
                     // ++++++++++++++++++++++++
 
-                    this.XdgOperator.InvokeParameterUpdate(CurrentState, this.Parameters.ToArray());
+                    this.XdgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
 
-                    var eval = XdgOperator.GetEvaluatorEx(CurrentState, this.Parameters, Mapping);
+                    var eval = XdgOperator.GetEvaluatorEx(__CurrentState, this.Parameters, Mapping);
                     eval.time = time;
                     eval.MPITtransceive = true;
                     eval.Evaluate(1.0, 0.0, OpAffine);
@@ -563,7 +586,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     switch(DgOperator.LinearizationHint) {
 
                         case LinearizationHint.AdHoc: {
-                            this.DgOperator.InvokeParameterUpdate(CurrentState, this.Parameters.ToArray());
+                            this.DgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
 
                             var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
                             mtxBuilder.time = time;
@@ -573,7 +596,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         }
 
                         case LinearizationHint.FDJacobi: {
-                            var mtxBuilder = DgOperator.GetFDJacobianBuilder(CurrentState, this.Parameters, Mapping);
+                            var mtxBuilder = DgOperator.GetFDJacobianBuilder(__CurrentState, this.Parameters, Mapping);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -584,8 +607,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var op = GetJacobiDgOperator();
 
                             if(JacobiParameterVars == null)
-                                JacobiParameterVars = op.InvokeParameterFactory(CurrentState);
-                            op.InvokeParameterUpdate(CurrentState, JacobiParameterVars);
+                                JacobiParameterVars = op.InvokeParameterFactory(__CurrentState);
+                            op.InvokeParameterUpdate(__CurrentState, JacobiParameterVars);
 
                             var mtxBuilder = op.GetMatrixBuilder(Mapping, this.JacobiParameterVars, Mapping);
                             mtxBuilder.time = time;
@@ -599,9 +622,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // only operator evaluation
                     // ++++++++++++++++++++++++
 
-                    this.DgOperator.InvokeParameterUpdate(CurrentState, this.Parameters.ToArray());
+                    this.DgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
 
-                    var eval = DgOperator.GetEvaluatorEx(CurrentState, this.Parameters, Mapping);
+                    var eval = DgOperator.GetEvaluatorEx(__CurrentState, this.Parameters, Mapping);
                     eval.time = time;
                     eval.MPITtransceive = true;
                     eval.Evaluate(1.0, 0.0, OpAffine);

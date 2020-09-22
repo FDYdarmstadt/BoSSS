@@ -554,8 +554,10 @@ namespace BoSSS.Application.XdgPoisson3 {
                 return grid;
             };
 
+            C.SessionName = String.Format("XDGPoison_solver{0}_blsz{1}_Xdg2lowB", solver, blocksize);
+            C.ProjectName = "PoisonTest";
             C.GridPartType = GridPartType.Hilbert;
-            C.LinearSolver.TargetBlockSize = blocksize;
+            C.LinearSolver.TargetBlockSize = blocksize/2;
             C.SetDGdegree(2);
 
             C.LinearSolver.NoOfMultigridLevels = 2;

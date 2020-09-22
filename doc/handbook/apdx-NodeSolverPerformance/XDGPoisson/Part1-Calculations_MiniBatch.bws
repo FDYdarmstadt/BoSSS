@@ -15,68 +15,45 @@ List of 1 instances of IDatabaseInfo {
 using BoSSS.Application.XdgPoisson3;
 **************
 ==============
-var myBatch = (SlurmClient)ExecutionQueues[1];
-ExecutionQueues[1].AllowedDatabases;
+var myBatch = (MiniBatchProcessorClient)ExecutionQueues[0];
+ExecutionQueues[0].AllowedDatabases;
 **************
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-//myBatch.MonoDebug = true;
+MiniBatchProcessor.Server.StartIfNotRunning();
 **************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 29908.
+True
 ==============
-string WFlowName = "Xdg_weakscaling_test";
+string WFlowName = "Xdg_1core_ResTrend";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_weakscaling_test'.
-List of 3 instances of KeyValuePair{String,Job} {
-  0: [J42875_k2_classic_pardiso, J42875_k2_classic_pardiso: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
-  1: [J42875_k2_exp_Kcycle_schwarz, J42875_k2_exp_Kcycle_schwarz: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
-  2: [J42875_k2_exp_gmres_levelpmg, J42875_k2_exp_gmres_levelpmg: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
+Project name is set to 'Xdg_1core_ResTrend'.
+List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 **************
 ==============
 //on HHLR path has to be something, which linux can work with e.g. /work/scratch/...
-string dirname = "DB_XDGPoisson_MPI";
-string linpath = @"/work/scratch/jw52xeqa/"+dirname;
-string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
+string dirname = @"D:\Xdg_ResTrend";
+//string linpath = @"/work/scratch/jw52xeqa/"+dirname;
+//string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
-var tempDB = OpenOrCreateDatabase(winpath);
+var tempDB = OpenOrCreateDatabase(dirname);
 **************
+Opening existing database 'D:\Xdg_ResTrend'.
+
 ==============
 tempDB.Sessions
 **************
-List of 28 instances of ISessionInfo {
-  0: Xdg_weakscaling	J42875_k2_classic_pardiso	09/11/2020 19:41:17	42ea1bdf...
-  1: Xdg_weakscaling	J42875_k2_exp_Kcycle_schwarz	09/11/2020 19:41:19	da0b0216...
-  2: Xdg_weakscaling	J42875_k2_exp_gmres_levelpmg	09/11/2020 19:41:13	268669a8...
-  3: Xdg_weakscaling_s	J8000_k2_exp_gmres_levelpmg	09/10/2020 18:43:32	955b4bf4...
-  4: Xdg_weakscaling_s	J4096_k2_exp_gmres_levelpmg	09/10/2020 18:43:23	c7faeca3...
-  5: Xdg_weakscaling_s	J32768_k2_exp_gmres_levelpmg	09/10/2020 18:43:27	d199f4e2...
-  6: Xdg_weakscaling_s	J64000_k2_exp_gmres_levelpmg	09/10/2020 18:43:30	661f2480...
-  7: Xdg_weakscaling_s	J17576_k2_exp_gmres_levelpmg	09/10/2020 18:43:35	942ec92b...
-  8: Xdg_weakscaling_s	J8000_k2_exp_Kcycle_schwarz	09/07/2020 11:50:02	03f8a68d...
-  9: Xdg_weakscaling_s	J262144_k2_exp_Kcycle_schwarz	09/07/2020 12:47:35	30d85acc...
-  10: Xdg_weakscaling_s	J512000_k2_exp_Kcycle_schwarz	09/07/2020 18:18:53	756f1a1d...
-  11: Xdg_weakscaling_s	J17576_k2_classic_pardiso	09/07/2020 11:50:04	8933624d...
-  12: Xdg_weakscaling_s	J132651_k2_exp_Kcycle_schwarz_predef	09/08/2020 12:03:42	8d6690a6...
-  13: Xdg_weakscaling_s	J17576_k2_exp_Kcycle_schwarz	09/07/2020 11:49:59	96f9eadf...
-  14: Xdg_weakscaling_s	J32768_k2_classic_pardiso	09/07/2020 11:50:04	bc0f0a7e...
-  15: Xdg_weakscaling_s	J8000_k2_classic_pardiso	09/07/2020 11:50:02	c491e120...
-  16: Xdg_weakscaling_s	J4096_k2_exp_Kcycle_schwarz	09/07/2020 11:50:00	c6ce6e97...
-  17: Xdg_weakscaling_s	J32768_k2_exp_Kcycle_schwarz	09/07/2020 11:49:59	cffe8f8f...
-  18: Xdg_weakscaling_s	J64000_k2_exp_Kcycle_schwarz	09/07/2020 11:55:06	e4698a1e...
-  19: Xdg_weakscaling_s	J4096_k2_classic_pardiso	09/07/2020 11:50:00	f045d3c4...
-  20: Xdg_weakscaling_s	J64000_k2_classic_pardiso	09/07/2020 11:49:59	f312a69e...
-  21: Xdg_weakscaling	J1030301_k2_exp_Kcycle_schwarz*	09/09/2020 00:11:48	7c726c15...
-  22: Xdg_weakscaling_Debug	J132651_k2_exp_Kcycle_schwarz_METIS*	09/08/2020 12:03:42	9e35baf0...
-  23: Xdg_weakscaling_Debug	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 22:06:13	c07fec44...
-  24: Xdg_weakscaling_	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 13:11:54	15c2fe29...
-  25: Xdg_weakscaling	J262144_k2_classic_pardiso*	09/07/2020 12:34:35	45886724...
-  26: Xdg_weakscaling	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 12:00:18	8281a95d...
-  27: Xdg_weakscaling	J132651_k2_classic_pardiso*	09/07/2020 11:53:33	9c9fb483...
+List of 3 instances of ISessionInfo {
+  0: Xdg_1core_ResTrend	J9261_k5_exp_gmres_levelpmg__default	09/15/2020 20:51:40	42f62033...
+  1: PoisonTest	XDGPoison_solver3_blsz10000_default	09/15/2020 18:41:22	62c4ccb8...
+  2: PoisonTest	XDGPoison_solver3_blsz10000_Xdg2lowB	09/15/2020 18:38:19	0693ad6a...
 }
 ==============
 **************
@@ -117,10 +94,10 @@ static class Utils {
 **************
 ==============
 //Weak scaling
-int[] core_sweep = {22};
+int[] core_sweep = {1};
 //int[] core_sweep = {16};
-int p          = 2;
-int DOFperCore = 100000;
+int p          = 5;
+int DOFperCore = 500000;
 **************
 ==============
 int[] res=new int[core_sweep.Length];
@@ -136,29 +113,17 @@ cells2cores.Add(test[i],core_sweep[i]);
 cells2cores;
 **************
 List of 1 instances of KeyValuePair{Int32,Int32} {
-  0: [226981, 22]
+  0: [9261, 1]
 }
 ==============
 tempDB.Grids;
 **************
-List of 17 instances of IGridInfo {
-  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
-  1: { Guid = b37906d0-8e08-4898-9509-894e1e3d2872; Name = Xdg_weakscaling_J658503; Cell Count = 658503; Dim = 3 }
-  2: { Guid = d3f3fd62-e609-4ab9-a2e3-30b734397291; Name = Xdg_weakscaling_J328509; Cell Count = 328509; Dim = 3 }
-  3: { Guid = e7ea6bc0-f549-4b01-a7b7-fc6475ffdfa6; Name = Xdg_weakscaling_J166375; Cell Count = 166375; Dim = 3 }
-  4: { Guid = f79aed73-4648-40d1-b648-b805d8c98b2d; Name = Xdg_weakscaling_J85184; Cell Count = 85184; Dim = 3 }
-  5: { Guid = e1a02622-2663-4455-b48b-d5d1067c9157; Name = Xdg_weakscaling_J42875; Cell Count = 42875; Dim = 3 }
-  6: { Guid = 8678c786-174d-4ad9-9d55-9ab2e936bcb3; Name = Xdg_weakscaling_Debug_J132651; Cell Count = 132651; Dim = 3 }
-  7: { Guid = e0025320-5098-450c-ace8-82318cb4b390; Name = Xdg_weakscaling_J1030301; Cell Count = 1030301; Dim = 3 }
-  8: { Guid = e97cde32-f955-450b-bcfb-39896d233bad; Name = Xdg_weakscaling_J512000; Cell Count = 512000; Dim = 3 }
-  9: { Guid = 9a6d6841-8a34-4d17-9281-5120c5522361; Name = Xdg_weakscaling_J262144; Cell Count = 262144; Dim = 3 }
-  10: { Guid = 69aa4b3b-263d-478d-9d81-b8c0c6facccd; Name = Xdg_weakscaling_J132651; Cell Count = 132651; Dim = 3 }
-  11: { Guid = a87ed323-6584-42e9-9404-3afb43226cac; Name = Xdg_weakscaling_J64000; Cell Count = 64000; Dim = 3 }
-  12: { Guid = c75cbd43-a2b7-4d65-b4c9-7077b2dec485; Name = Xdg_weakscaling_J32768; Cell Count = 32768; Dim = 3 }
-  13: { Guid = 063ebea7-cae5-42d3-823f-9ae39510a379; Name = Xdg_weakscaling_J17576; Cell Count = 17576; Dim = 3 }
-  14: { Guid = ac23870f-00fe-40c8-829d-8b69bf9a3366; Name = Xdg_weakscaling_J8000; Cell Count = 8000; Dim = 3 }
-  15: { Guid = 48de75f1-78d7-43d0-8d8b-b89b1c6f556b; Name = Xdg_weakscaling_J4096; Cell Count = 4096; Dim = 3 }
-  16: { Guid = 3cdb9253-8155-4bb0-aef5-a1ec4d16e10a; Name = Xdg_Xcores_test_J166375; Cell Count = 166375; Dim = 3 }
+List of 5 instances of IGridInfo {
+  0: { Guid = 1a5c1a46-9ea8-4897-82e2-bdf1b9785d3f; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
+  1: { Guid = 0ca0f2b8-18dc-4f29-9beb-ffcbe149b9df; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
+  2: { Guid = 49016f8c-df3f-4f97-8c1d-fcc1c4450f0f; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
+  3: { Guid = d466f3bd-26d2-4183-9dfe-7eccdcfac72c; Name = thisisatestgrid; Cell Count = 13824; Dim = 3 }
+  4: { Guid = 642a15ad-25a0-40d9-8e0b-5cd8e7173b5e; Name = thisisatestgrid; Cell Count = 13824; Dim = 3 }
 }
 ==============
 double xMax = 1.0, yMax = 1.0, zMax=1.0;
@@ -216,7 +181,7 @@ static class AuxPart{
 int sx = 1;
 int sy = 1;
 int sz = 1;
-for (int i = 0; i < Math.Log(64, 2); i++) {
+for (int i = 0; i < Math.Log(1, 2); i++) {
     if (i % 3 == 0)
         sx*= 2;
     else if(i % 3 == 1)
@@ -226,7 +191,7 @@ for (int i = 0; i < Math.Log(64, 2); i++) {
 }
 Console.WriteLine("sx:{0},sy:{1},sz:{2}",sx,sy,sz);
 **************
-sx:4,sy:4,sz:4
+sx:1,sy:1,sz:1
 
 ==============
 int[] Resolutions_3D = res;
@@ -281,42 +246,31 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Creating grid with 226981 cells.
+Creating grid with 9261 cells.
 Grid Edge Tags changed.
 
 ==============
 tempDB.Grids;
 **************
-List of 17 instances of IGridInfo {
-  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
-  1: { Guid = b37906d0-8e08-4898-9509-894e1e3d2872; Name = Xdg_weakscaling_J658503; Cell Count = 658503; Dim = 3 }
-  2: { Guid = d3f3fd62-e609-4ab9-a2e3-30b734397291; Name = Xdg_weakscaling_J328509; Cell Count = 328509; Dim = 3 }
-  3: { Guid = e7ea6bc0-f549-4b01-a7b7-fc6475ffdfa6; Name = Xdg_weakscaling_J166375; Cell Count = 166375; Dim = 3 }
-  4: { Guid = f79aed73-4648-40d1-b648-b805d8c98b2d; Name = Xdg_weakscaling_J85184; Cell Count = 85184; Dim = 3 }
-  5: { Guid = e1a02622-2663-4455-b48b-d5d1067c9157; Name = Xdg_weakscaling_J42875; Cell Count = 42875; Dim = 3 }
-  6: { Guid = 8678c786-174d-4ad9-9d55-9ab2e936bcb3; Name = Xdg_weakscaling_Debug_J132651; Cell Count = 132651; Dim = 3 }
-  7: { Guid = e0025320-5098-450c-ace8-82318cb4b390; Name = Xdg_weakscaling_J1030301; Cell Count = 1030301; Dim = 3 }
-  8: { Guid = e97cde32-f955-450b-bcfb-39896d233bad; Name = Xdg_weakscaling_J512000; Cell Count = 512000; Dim = 3 }
-  9: { Guid = 9a6d6841-8a34-4d17-9281-5120c5522361; Name = Xdg_weakscaling_J262144; Cell Count = 262144; Dim = 3 }
-  10: { Guid = 69aa4b3b-263d-478d-9d81-b8c0c6facccd; Name = Xdg_weakscaling_J132651; Cell Count = 132651; Dim = 3 }
-  11: { Guid = a87ed323-6584-42e9-9404-3afb43226cac; Name = Xdg_weakscaling_J64000; Cell Count = 64000; Dim = 3 }
-  12: { Guid = c75cbd43-a2b7-4d65-b4c9-7077b2dec485; Name = Xdg_weakscaling_J32768; Cell Count = 32768; Dim = 3 }
-  13: { Guid = 063ebea7-cae5-42d3-823f-9ae39510a379; Name = Xdg_weakscaling_J17576; Cell Count = 17576; Dim = 3 }
-  14: { Guid = ac23870f-00fe-40c8-829d-8b69bf9a3366; Name = Xdg_weakscaling_J8000; Cell Count = 8000; Dim = 3 }
-  15: { Guid = 48de75f1-78d7-43d0-8d8b-b89b1c6f556b; Name = Xdg_weakscaling_J4096; Cell Count = 4096; Dim = 3 }
-  16: { Guid = 3cdb9253-8155-4bb0-aef5-a1ec4d16e10a; Name = Xdg_Xcores_test_J166375; Cell Count = 166375; Dim = 3 }
+List of 6 instances of IGridInfo {
+  0: { Guid = 7ec8f7c8-b76b-46bc-a70c-50f0a8a895f5; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
+  1: { Guid = 1a5c1a46-9ea8-4897-82e2-bdf1b9785d3f; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
+  2: { Guid = 0ca0f2b8-18dc-4f29-9beb-ffcbe149b9df; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
+  3: { Guid = 49016f8c-df3f-4f97-8c1d-fcc1c4450f0f; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
+  4: { Guid = d466f3bd-26d2-4183-9dfe-7eccdcfac72c; Name = thisisatestgrid; Cell Count = 13824; Dim = 3 }
+  5: { Guid = 642a15ad-25a0-40d9-8e0b-5cd8e7173b5e; Name = thisisatestgrid; Cell Count = 13824; Dim = 3 }
 }
 ==============
 // Overwrite Selection
-var ListOfgrids = new List<IGridInfo>();
-ListOfgrids.AddRange(tempDB.Grids.Pick(0));
-IGridInfo[] grids = ListOfgrids.ToArray();
+//var ListOfgrids = new List<IGridInfo>();
+//ListOfgrids.AddRange(tempDB.Grids.Pick(0));
+//IGridInfo[] grids = ListOfgrids.ToArray();
 **************
 ==============
 grids;
 **************
 List of 1 instances of IGridInfo {
-  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
+  0: { Guid = 7ec8f7c8-b76b-46bc-a70c-50f0a8a895f5; Name = Xdg_1core_ResTrend_J9261; Cell Count = 9261; Dim = 3 }
 }
 ==============
 **************
@@ -379,9 +333,9 @@ int[] PolyDegS = new int[] {p};
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_pardiso, 
     //LinearSolverCode.classic_mumps, 
-    LinearSolverCode.exp_Kcycle_schwarz, 
+    //LinearSolverCode.exp_Kcycle_schwarz, 
     LinearSolverCode.exp_gmres_levelpmg, 
 }; 
 **************
@@ -394,10 +348,6 @@ int MaxDof           = int.MaxValue;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
-(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
-No. of errors|warnings: 0|2.
-
 ==============
 int[] PolyDegS={p};
 **************
@@ -418,11 +368,8 @@ foreach(IGridInfo grd in grids) {
 
     var ctrl = new XdgPoisson3Control();
     
+    ctrl.DbPath = dirname;
     
-    ctrl.AlternateDbPaths = new[]{
-        new ValueTuple<string,string>(linpath, ""),
-        new ValueTuple<string,string>(winpath, "pcmit32")
-    };
     ctrl.savetodb = true;
     ctrl.GridGuid = grd.ID;
     
@@ -458,19 +405,16 @@ foreach(IGridInfo grd in grids) {
     ctrl.ProjectName   = WFlowName;
     ctrl.GridPartType  = BoSSS.Foundation.Grid.GridPartType.METIS;
     
-    ctrl.AgglomerationThreshold = 0.1;
+    ctrl.AgglomerationThreshold                       = 0.1;
+    ctrl.LinearSolver.AssignXdGCellsToLowBlocks = true;
     
     controls.Add(ctrl);
 }
 }
 }
 **************
-setting up: J226981_k2_classic_pardiso
-based on grid: Xdg_weakscaling_J226981
-setting up: J226981_k2_exp_Kcycle_schwarz
-based on grid: Xdg_weakscaling_J226981
-setting up: J226981_k2_exp_gmres_levelpmg
-based on grid: Xdg_weakscaling_J226981
+setting up: J9261_k5_exp_gmres_levelpmg
+based on grid: Xdg_1core_ResTrend_J9261
 
 ==============
 //controls[0].SessionName+="_METIS";
@@ -515,9 +459,9 @@ foreach(var ctrl in controls) {
         Console.WriteLine(" Submitting: " + ctrl.SessionName); 
         var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
         aJob.SetControlObject(ctrl);
-        ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
+        //((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
         aJob.NumberOfMPIProcs         = nocores;
-        aJob.ExecutionTime            = "02:00:00";
+        aJob.ExecutionTime            = "01:00:00";
         aJob.MemPerCPU                = "2500";
         aJob.UseComputeNodesExclusive = true;
         aJob.Activate(myBatch);
@@ -526,39 +470,15 @@ foreach(var ctrl in controls) {
     }
 }
 **************
-22:226981
- Submitting: J226981_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
+1:9261
+ Submitting: J9261_k5_exp_gmres_levelpmg
+Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200546
+Deployment directory: C:\Users\weber\AppData\Local\BoSSS-LocalJobs\Xdg_1core_ResTrend-XdgPoisson32020Sep15_221843
 copied 30 files.
    written file: control.obj
 deployment finished.
-
-15585642
-22:226981
- Submitting: J226981_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200548
-copied 30 files.
-   written file: control.obj
-deployment finished.
-
-15585645
-22:226981
- Submitting: J226981_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200551
-copied 30 files.
-   written file: control.obj
-deployment finished.
-
-15585647
 
 ==============
 **************
@@ -907,6 +827,14 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

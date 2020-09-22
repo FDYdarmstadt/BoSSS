@@ -208,7 +208,11 @@ namespace BoSSS.Solution.NSECommon {
             return this.Source(cpv.Xglobal, cpv.Parameters, U) * V;
         }
 
-        protected double Source(double[] x, double[] parameters, double[] U) {     
+        protected double Source(double[] x, double[] parameters, double[] U) {
+
+            //double Temperature = U[0]  > 1.0 ? U[0] : 1.0 ;
+            //double YF = U[1] > 0.0 ? U[1] : 0.0;
+            //double YO = U[2] > 0.0 ? U[2] : 0.0;
 
             double Temperature = U[0];
             double YF = U[1];
@@ -225,8 +229,8 @@ namespace BoSSS.Solution.NSECommon {
 
             double ReactionRate = m_Da * Math.Exp( -Ta / Temperature) * (rho * YF / MM_F) * (rho * YO / MM_O);
 
-            Debug.Assert(!double.IsNaN(ReactionRate));
-            Debug.Assert(!double.IsInfinity(ReactionRate));
+            //Debug.Assert(!double.IsNaN(ReactionRate));
+            //Debug.Assert(!double.IsInfinity(ReactionRate));
  
 
  

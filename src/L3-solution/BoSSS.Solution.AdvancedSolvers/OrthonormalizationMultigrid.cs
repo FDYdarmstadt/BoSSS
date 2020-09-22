@@ -81,61 +81,67 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// defines the problem matrix
         /// </summary>
         public void Init(MultigridOperator op) {
-            this.m_MgOperator = op;
-            var Mtx = op.OperatorMatrix;
-            var MgMap = op.Mapping;
-            //if(op.LevelIndex == 0)
-            //    viz = new MGViz(op);
+            using (var tr = new FuncTrace()) {
+                this.m_MgOperator = op;
+                var Mtx = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+                //if(op.LevelIndex == 0)
+                //    viz = new MGViz(op);
 
-            if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
+                if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
 
-            MxxHistory.Clear();
-            SolHistory.Clear();
+                MxxHistory.Clear();
+                SolHistory.Clear();
 
-            double Dim = MgMap.ProblemMapping.GridDat.SpatialDimension;
+                double Dim = MgMap.ProblemMapping.GridDat.SpatialDimension;
 
-            // set operator
-            // ============
-            //if (op.CoarserLevel == null) {
-            //    throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
-            //}
-            this.OpMatrix = Mtx;
+                // set operator
+                // ============
+                //if (op.CoarserLevel == null) {
+                //    throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
+                //}
+                this.OpMatrix = Mtx;
 
 
-            // initiate coarser level
-            // ======================
-            if (this.CoarserLevelSolver == null) {
-                //throw new NotSupportedException("Missing coarse level solver.");
-                Console.WriteLine("OrthonormalizationMultigrid: running without coarse solver.");
-            } else {
-                if (op.CoarserLevel != null) {
-                    this.CoarserLevelSolver.Init(op.CoarserLevel);
-                    CoarseOnLovwerLevel = true;
+                // initiate coarser level
+                // ======================
+                if (this.CoarserLevelSolver == null) {
+                    //throw new NotSupportedException("Missing coarse level solver.");
+                    Console.WriteLine("OrthonormalizationMultigrid: running without coarse solver.");
                 } else {
-                    Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
-                    this.CoarserLevelSolver.Init(op);
-                    CoarseOnLovwerLevel = false;
+                    if (op.CoarserLevel != null) {
+                        this.CoarserLevelSolver.Init(op.CoarserLevel);
+                        CoarseOnLovwerLevel = true;
+                    } else {
+                        Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
+                        this.CoarserLevelSolver.Init(op);
+                        CoarseOnLovwerLevel = false;
+                    }
                 }
-            }
 
-            // init smoother
-            // =============
-            if (PreSmoother != null)
-                PreSmoother.Init(op);
-            if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
-                PostSmoother.Init(op);
+                // init smoother
+                // =============
+                if (PreSmoother != null)
+                    PreSmoother.Init(op);
+                if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
+                    PostSmoother.Init(op);
+            }
         }
 
 
+#pragma warning disable 0649
         MGViz viz;
+#pragma warning restore 0649
 
         public ISolverSmootherTemplate CoarserLevelSolver;
         public ISolverSmootherTemplate PreSmoother;
         public ISolverSmootherTemplate PostSmoother;
-        public int MaxKrylovDimension;
+        public int m_omega = 1;
+        public int MaxKrylovDim = int.MaxValue;
+
         public bool SpectralAnalysis;
         /// <summary>
         /// 
@@ -150,9 +156,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///// Threshold for convergence detection
         ///// </summary>
         //public double Tolerance = 1E-10;
-
-
-
 
         /// <summary>
         /// computes the residual on this level.
@@ -597,12 +600,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // coarse grid correction
                     // ----------------------
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
-                    
-
-                    // W-cycle (gamma=2)
-                    int gamma = 1;
-                    for (int i = 0; i < gamma; i++)
-                    {
 #if DEBUG
                         {
                             double[] rTest = new double[rl.Length];
@@ -617,8 +614,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
-                            // Berechnung der Grobgitterkorrektur
-                            double[] vlc = new double[Lc];
+                        // Berechnung der Grobgitterkorrektur
+                        double[] vlc = new double[Lc];
+                        for(int i =0;i<m_omega;i++)
                             this.CoarserLevelSolver.Solve(vlc, rlc);
 
                             // Prolongation der Grobgitterkorrektur
@@ -634,7 +632,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             resNorm = MinimizeResidual(X, Sol0, Res0, rl);
                             if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
                             {
-                                Resample(iIter, X, this.m_MgOperator, "cgc"+i);
+                                Resample(iIter, X, this.m_MgOperator, "cgc");
                             }
                             if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
                             {
@@ -659,8 +657,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 break;
                             }
 
-                            usedCoarse = true;
-                        }
+                        usedCoarse = true;
                     }
 
                     PlottyMcPlot(rl, X, Xprev, Corr);

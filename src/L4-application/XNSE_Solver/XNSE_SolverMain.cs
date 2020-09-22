@@ -1244,6 +1244,9 @@ namespace BoSSS.Application.XNSE_Solver {
 #endif
 
                 Console.WriteLine("done.");
+#if TEST
+                WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+#endif
                 return dt;
             }
         }
@@ -1419,14 +1422,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 EnergyLogger.Close();
         }
 
-        #endregion
+#endregion
 
 
 
         //==========================
         // adaptive mesh refinement
         //==========================
-        #region AMR
+#region AMR
 
         CellMask NScm;
 
@@ -1707,14 +1710,14 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        #endregion
+#endregion
 
 
 
         //===========================
         // I/O (saving and plotting)
         //===========================
-        #region IO
+#region IO
 
 
         /// <summary>
@@ -1867,6 +1870,9 @@ namespace BoSSS.Application.XNSE_Solver {
             return tsi;
         }
 
+        private void WriteTrendToDatabase(ConvergenceObserver CO) {
+            CO.WriteTrendToSession(base.DatabaseDriver.FsDriver, this.CurrentSessionInfo);
+        }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
             Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
@@ -1878,7 +1884,7 @@ namespace BoSSS.Application.XNSE_Solver {
             PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, iterIndex }), 2);
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis
