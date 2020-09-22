@@ -62,8 +62,9 @@ namespace BoSSS.Foundation {
     }
 
     /// <summary>
-    /// Validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds, 
-    /// e.g. into un-physical parts of the domain.
+    /// User-defined validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds, 
+    /// e.g. to avoid un-physical 'solutions' (e.g. negative density).
+    /// ('safeguard' for the solver)
     /// </summary>
     /// <param name="OldSolution">
     /// - on input, the old solution (approximation) 
