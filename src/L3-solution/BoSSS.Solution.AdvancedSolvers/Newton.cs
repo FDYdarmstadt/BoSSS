@@ -30,7 +30,6 @@ using System.IO;
 using System.Diagnostics;
 using BoSSS.Foundation.XDG;
 using NUnit.Framework;
-using System.Security.Cryptography.X509Certificates;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -160,7 +159,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // fnorm
                 double fnorm = CurRes.MPI_L2Norm();
                 double fNormo = 1;
-                double errstep;
                 double[] step = new double[CurSol.Length];
                 double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
                 //double[] stepOld = new double[CurSol.Length];
@@ -194,9 +192,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
                             //base.EvalResidual(x, ref f0);
                             var mtxFreeSlv = new MatrixFreeGMRES() { owner = this };
-                            mtxFreeSlv.GMRESConvCrit = fnorm * 1e-5;
+                            //mtxFreeSlv.GMRESConvCrit = fnorm * 1e-5;
+                            double thresh = fnorm * 1e-5;
+                            mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                                return (R_l2 > thresh) && (iter < 100);
+                            };
 
-                            step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out errstep);
+                            step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
                             step.ScaleV(-1);
                         } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                             // +++++++++++++++++++++++++++++
@@ -232,6 +234,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // globalization
                         // -------------
+                        double[] OldSolClone;
+                        if(base.AbstractOperator.SolverStepValidation != null) {
+                            OldSolClone = SolutionVec.ToArray();
+                        } else {
+                            OldSolClone = null;
+                        }
+
                         switch(Globalization) {
                             case GlobalizationOption.Dogleg:
                             DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
@@ -244,6 +253,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             default:
                             throw new NotImplementedException();
                         }
+
+                        if(base.AbstractOperator.SolverStepValidation != null) {
+                            var newSol = SolutionVec.Fields.ToArray();
+                            var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
+                            var oldSolVec = new CoordinateVector(oldSol);
+                            oldSolVec.SetV(OldSolClone, 1.0);
+
+                            base.AbstractOperator.SolverStepValidation(oldSol, newSol);
+                        }
+
+
 
                         // fix the pressure
                         // ----------------
@@ -616,28 +636,94 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// container class for all matrix-free GMRES routines
         /// </summary>
-        class MatrixFreeGMRES {
+        class MatrixFreeGMRES : ISolverSmootherTemplate, IProgrammableTermination {
+
+            /// <summary>
+            /// ctor
+            /// </summary>
+            public MatrixFreeGMRES() {
+                this.TerminationCriterion = DefaultTermination;
+            }
+
 
             /// <summary>
             /// %
             /// </summary>
             public Newton owner;
 
+            /*
             /// <summary>
             /// Maximum number of GMRES(m) restarts
             /// </summary>
             public int restart_limit = 1000;
-            
+            */
+
             /// <summary>
             /// Maximum dimension of the krylov subspace. Equals m in GMRES(m)
             /// </summary>
             public int maxKrylovDim = 200;
-            
+
+            public Func<int, double, double, bool> TerminationCriterion { 
+                get;
+                set;
+            }
+
+            static private bool DefaultTermination(int iter, double R0_l2, double R_l2) {
+                if(iter > 100)
+                    return false;
+
+                if(R_l2 < R0_l2 * 10e-8 + 10e-8)
+                    return false;
+
+                return true;
+            }
+
+
+            int ThisRunFirstIter;
+            double rho0; // residual in first run
+
+            bool Termination(double R_l2) {
+                bool ret = TerminationCriterion(this.ThisLevelIterations - ThisRunFirstIter, rho0, R_l2);
+                if(ret)
+                    Converged = true;
+                return ret;
+            }
+
+            /// <summary>
+            /// <see cref="ISolverSmootherTemplate.IterationsInNested"/>
+            /// </summary>
+            public int IterationsInNested {
+                get {
+                    if(this.owner.Precond != null) {
+                        return this.owner.Precond.ThisLevelIterations;
+                    } else {
+                        return 0;
+                    }
+                }
+            }
+
+            /// <summary>
+            /// <see cref="ISolverSmootherTemplate.ThisLevelIterations"/>
+            /// </summary>
+            public int ThisLevelIterations {
+                get;
+                private set;
+            }
+
+            /// <summary>
+            /// true if the last solver run actually worked, which is not the case very often
+            /// </summary>
+            public bool Converged {
+                get;
+                private set;
+            }
+
+            /*
             /// <summary>
             /// Convergence for Krylov and GMRES iterations
             /// </summary>
             public double GMRESConvCrit = 1e-6;
-
+            */
 
             /// <summary>
             /// Preconditioned GMRES, using <see cref="NonlinearSolver.Precond"/> as a preconditioner
@@ -689,22 +775,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     errstep = rho;
                     double[] g = new double[m + 1];
                     g[0] = rho;
+                    rho0 = rho;
 
                     Console.WriteLine("Error NewtonGMRES:   " + rho);
 
                     // Termination of entry
-                    if(rho < GMRESConvCrit)
+                    //if(rho < GMRESConvCrit)
+                    if(Termination(rho))
                         return SolutionVec.ToArray();
 
                     V[0].SetV(r, alpha: (1.0 / rho));
                     double beta = rho;
                     int k = 1;
 
-                    while((rho > GMRESConvCrit) && k <= m) {
+                    while((!Termination(rho)) && k <= m) {
                         V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
                         //CurrentLin.OperatorMatrix.SpMV(1.0, V[k-1], 0.0, temp3);
                         // Call directional derivative
                         //V[k].SetV(f0);
+
+                        ThisLevelIterations++;
 
                         if(owner.Precond != null) {
                             var temp3 = V[k].CloneAs();
@@ -713,7 +803,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             owner.Precond.Solve(V[k], temp3);
                         }
 
-                        double normav = V[k].L2NormPow2().MPISum().Sqrt();
+                        double normav = V[k].MPI_L2Norm();
 
                         // Modified Gram-Schmidt
                         for(int j = 1; j <= k; j++) {
@@ -818,16 +908,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
+            
+
+
             /// <summary>
             /// Driver routine
             /// </summary>
             public double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
                 //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
+                
+                ThisRunFirstIter = ThisLevelIterations;
+                Converged = false;
+                rho0 = double.NaN;
+
+
                 double[] step = Solve(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
                 int kinn = 0;
                 Console.WriteLine("Error Krylov:   " + errstep);
 
-                while(kinn < restart_limit && errstep > GMRESConvCrit) {
+
+
+
+                //while(kinn < restart_limit && errstep > GMRESConvCrit) {
+                while(!Termination(errstep)) { 
                     kinn++;
 
                     step = Solve(SolutionVec, currentX, f0, step, out errstep);
@@ -849,7 +952,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <param name="f0">f0, usually has been calculated earlier</param>
             /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
             /// <returns></returns>
-            public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
+            double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
                 using(var tr = new FuncTrace()) {
                     double epsnew = 1E-7;
 
@@ -946,6 +1049,49 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     c = 1.0 / Math.Sqrt(1.0 + temp * temp);
                     s = temp * c;
                 }
+            }
+
+            /// <summary>
+            /// init
+            /// </summary>
+            public void Init(MultigridOperator op) {
+                var baseMapping = op.BaseGridProblemMapping;
+                DGField[] ff = new DGField[baseMapping.BasisS.Count];
+                for(int i = 0; i < ff.Length; i++) {
+                    var b = baseMapping.BasisS[i];
+                    if(b is XDGBasis xb) {
+                        ff[i] = new XDGField(xb);
+                    } else {
+                        ff[i] = new SinglePhaseField(b);
+                    }
+                }
+                OrgDG = new CoordinateVector(ff);
+            }
+
+            CoordinateVector OrgDG; 
+
+            /// <summary>
+            /// Solution routine as defined by interface
+            /// </summary>
+            public void Solve<U, V>(U X, V B)
+                where U : IList<double>
+                where V : IList<double> //
+            {
+                double[] sol = this.Krylov(OrgDG, X.ToArray(), B.ToArray(), out double errstep);
+                X.SetV(sol, 1.0);
+            }
+
+            /// <summary>
+            /// <see cref="ISolverSmootherTemplate.ResetStat"/>
+            /// </summary>
+            public void ResetStat() {
+                ThisLevelIterations = 0;
+                Converged = false;
+                this.ThisRunFirstIter = 0;
+            }
+
+            public object Clone() {
+                throw new NotImplementedException();
             }
         }
 
