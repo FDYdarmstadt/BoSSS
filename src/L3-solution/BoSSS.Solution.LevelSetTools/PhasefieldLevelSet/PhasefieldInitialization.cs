@@ -25,23 +25,20 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Initialize Cahn Hilliard Level Set
         /// </summary>
-        public void InitCH(PhasefieldControl _Control)
+        public void InitCH()
         {
-
-            if (_Control != null)
-                Control = _Control;
-            else
-                Control = new PhasefieldControl();
-
-
             CreateFields();
-            CreateEquationsAndSolvers(null);
 
             if (Cahn_Reinit != 0.0)
                 //RelaxationStep();
-                ReInit(Cahn_Reinit, Cahn);
+                ReInit(Cahn_Reinit, this.Control.cahn);
 
-            Cahn_Reinit = Cahn;
+            CreateEquationsAndSolvers(null);            
+
+            InitLogFile(new Guid());
+            WriteLogLine(0, 0.0);
+
+            Cahn_Reinit = this.Control.cahn;
         }
 
         
@@ -92,6 +89,10 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             phi.Clear();
             phi.Acc(1.0, phiNew);
 
+            CorrectionLevSet.Clear();
+            CorrectionLevSet.Acc(1.0, phi);
+            this.CorrectionLsTrk.UpdateTracker();
+
             // update DG LevelSet
             DGLevSet.Clear();
             DGLevSet.Acc(1.0, phi);
@@ -106,39 +107,42 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <param name="_Cahn"></param>
         /// <param name="_Diff"></param>
         /// <param name="_Lambda"></param>
-        private void SetCHCoefficents(out double _Cahn, out double _Diff, out double _Lambda)
+        private void SetCHCoefficents()
         {
-            // interface thickness = f(pOrder, D), WIP
-            double dInterface =  2.0 * Math.Pow(2.0, this.GridData.SpatialDimension) /this.phi.Basis.Degree;
-            
-            // dInterface * 1/4.164 * hmin
-            double hmin;
-            //if (this.GridData is GridData)
-            //{
-            //    hmin = ((GridData)GridData).Cells.h_minGlobal;
-            //}
-            //else if (this.GridData is AggregationGridData)
-            //{
-            //    hmin = ((AggregationGridData)GridData).AncestorGrid.Cells.h_minGlobal;
-            //}
-            //else
-            //{
-            //    throw new NotImplementedException();
-            //}
+            if (!this.Control.FixedConstants)
+            {
+                // interface thickness = f(pOrder, D), WIP
+                double dInterface = 2.0 * Math.Pow(2.0, this.GridData.SpatialDimension) / this.phi.Basis.Degree;
 
-            // set the interface width based on the largest CutCell
-            hmin = this.LsTrk.Regions.GetCutCellSubGrid().h_maxSubGrd;            
+                // dInterface * 1/4.164 * hmin
+                double hmin;
+                //if (this.GridData is GridData)
+                //{
+                //    hmin = ((GridData)GridData).Cells.h_minGlobal;
+                //}
+                //else if (this.GridData is AggregationGridData)
+                //{
+                //    hmin = ((AggregationGridData)GridData).AncestorGrid.Cells.h_minGlobal;
+                //}
+                //else
+                //{
+                //    throw new NotImplementedException();
+                //}
 
-            _Cahn = dInterface * (1.0/4.164) * hmin;
+                // set the interface width based on the largest CutCell
+                hmin = this.LsTrk.Regions.GetCutCellSubGrid().h_maxSubGrd;
 
-            Console.WriteLine("Setting Interface thickness to {0}", _Cahn);
+                this.Control.cahn = dInterface * (1.0 / 4.164) * hmin / Math.Sqrt(2);
 
-            // mobility coefficient, for now inverse of Pe = Re*Sc
-            // following Yue et. al. (2010), WARNING not correct
-            _Diff = this.ModTyp == ModelType.modelA ? 1.0 : _Cahn;// (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
+                Console.WriteLine("Setting Interface thickness to {0}", this.Control.cahn);
 
-            // 0.0 = pure bulk diffusion, 1.0 = pure surface diffusion, not implemented in model A
-            _Lambda = 0.0;
+                // mobility coefficient, could be inverse of Pe = Re*Sc
+                // following Yue et. al. (2010), see also Manzanero (2019), for now fixed mobility
+                this.Control.diff = this.Control.ModTyp == PhasefieldControl.ModelType.modelA ? 1e-4 : 1e-4;//this.Control.cahn.Pow2();// (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
+
+                // 0.0 = pure bulk diffusion, 1.0 = pure surface diffusion, not implemented in model A
+                this.Control.lambda = 0.0;
+            }
         }
         
     }

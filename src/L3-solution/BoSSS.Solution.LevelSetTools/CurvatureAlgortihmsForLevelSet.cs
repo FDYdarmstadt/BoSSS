@@ -100,7 +100,7 @@ namespace BoSSS.Solution.LevelSetTools
                     r.FilterCurvatureCycles = 3;
                     r.LevelSetSource = LevelSetSource.fromDG;
                     r.UseWholeField = false;
-                    r.FieldWidth = 1;
+                    r.FieldWidth = 2;
 
                     return r;
                 }
@@ -625,7 +625,7 @@ namespace BoSSS.Solution.LevelSetTools
 
 
                 },
-                (new CellQuadratureScheme(domain: CC)).SaveCompile(GridDat, Curvature.Basis.Degree * 3)
+                (new CellQuadratureScheme(domain: CC)).SaveCompile(GridDat, _GradPhi[0].Basis.Degree * 2 + 2) // if p(Curvature) = 0, what to do?
                     );
 
 

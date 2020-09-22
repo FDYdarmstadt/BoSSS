@@ -344,8 +344,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     case LevelSetEvolution.Phasefield:
                         this.DGLevSet.Current.Clear();
                         this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                        PhaseField = new Phasefield(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
-                        PhaseField.InitCH(this.Control.dtMin);
+                        PhaseField = new Phasefield(this.Control.PhasefieldControl, this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        PhaseField.InitCH();
                         break;
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Prescribed:

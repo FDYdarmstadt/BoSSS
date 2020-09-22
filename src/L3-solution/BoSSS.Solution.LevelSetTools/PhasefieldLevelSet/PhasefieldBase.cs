@@ -42,6 +42,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Timestepping;
 
 namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 {
@@ -128,58 +129,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// </summary>
         LevelSetTracker DummyLsTrk;
 
-        /// <summary>
-        /// Cahn number determines interface thickness
-        /// </summary>
-        double Cahn;
+        LevelSet CorrectionLevSet;
 
         /// <summary>
-        /// (Bulk) Diffusion coefficient
+        /// LevelSetTracker, used for algebraic correction operations
         /// </summary>
-        double Diff;
+        LevelSetTracker CorrectionLsTrk;
 
-        /// <summary>
-        /// effective viscosity Sqrt(mu_a*mu_b)
-        /// </summary>
-        double Viscosity;
-
-        /// <summary>
-        /// Control for Bulk vs Surface Diffusion
-        /// </summary>
-        double Lambda;
-
-        /// <summary>
-        /// Model Type of Phasefield equation, see Halperin (1977)
-        /// </summary>
-        public enum ModelType
-        {
-            /// <summary>
-            /// Order Parameter is nonconserved
-            /// </summary>
-            modelA,
-
-            /// <summary>
-            /// Order Parameter is conserved
-            /// </summary>
-            modelB,
-
-            /// <summary>
-            /// Mass is conserved
-            /// </summary>
-            modelC
-        }
-
-        /// <summary>
-        /// Set the <see cref="ModelType"/>
-        /// </summary>
-        public ModelType ModTyp = ModelType.modelA;
-
-        /// <summary>
-        /// According to Biben (2003), Correction to account for arclength diffusion
-        /// </summary>
-        public bool CurvatureCorrection = true;
-
-        public bool UseDirectCurvature = false;
+        int m_HMForder;
 
         /// <summary>
         /// Settings for solving the Phasefield equations
@@ -224,8 +181,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Phasefield instantiation, constructor
         /// </summary>
-        public Phasefield(LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq, double _viscosity = 1.0)
+        public Phasefield(PhasefieldControl _Control, LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq)
         {
+            if (_Control != null)
+                Control = _Control;
+            else
+                Control = new PhasefieldControl();
+
             LevSet = _LevSet;
             LsTrk = _LsTrk;
             DGLevSet = _DGLevSet;
@@ -233,7 +195,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             GridData = _GridData;
             ParentControl = _control;
             mgSeq = _mgSeq;
-            Viscosity = _viscosity;
+
         }
 
         /// <summary>
@@ -253,17 +215,18 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 ParentControl = _control;
                 mgSeq = _mgSeq;
 
-                double Cahn_Old = Cahn;
+                double Cahn_Old = this.Control.cahn;
 
                 CreateFields();
-                CreateEquationsAndSolvers(null);
 
-                if (Math.Abs(Cahn_Old - Cahn) > 1e-3 * Cahn_Old)
+                if (Math.Abs(Cahn_Old - this.Control.cahn) > 1e-3 * Cahn_Old)
                     //RelaxationStep();
-                    ReInit(Cahn_Old, Cahn);
+                    ReInit(Cahn_Old, this.Control.cahn);
+
+                CreateEquationsAndSolvers(null);                
 
                 // remember last cahn number for potential reinit
-                Cahn_Reinit = Cahn;
+                Cahn_Reinit = this.Control.cahn;
             }
         }
 
@@ -272,6 +235,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// </summary>
         protected override void CreateFields()
         {
+            // create fields
             phi0 = new SinglePhaseField(DGLevSet.Basis, "phi0");
             gradPhi0 = new VectorField<SinglePhaseField>(DGLevSet.GridDat.SpatialDimension.ForLoop(d => new SinglePhaseField(DGLevSet.Basis, "dPhiDG_dx[" + d + "]")));
             Curvature = new SinglePhaseField(new Basis(phi0.GridDat, 0), VariableNames.Curvature);
@@ -283,10 +247,21 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             mu_Resi = new SinglePhaseField(DGLevSet.Basis, "mu_Resi");
             curvature_Resi = new SinglePhaseField(Curvature.Basis, "curvature_Resi");
 
+            // Dummy Level Set
             DummyLevSet = new LevelSet(new Basis(this.GridData, 1), "Levset");
             DummyLevSet.AccConstant(-1);
             this.DummyLsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, DummyLevSet);
             this.DummyLsTrk.UpdateTracker();
+
+            // Actual Level Set used for correction operations
+            CorrectionLevSet = new LevelSet(phi.Basis, "Levset");
+            this.CorrectionLsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "A", "B" }, CorrectionLevSet);
+            CorrectionLevSet.Clear();
+            CorrectionLevSet.Acc(1.0, phi);
+            this.CorrectionLsTrk.UpdateTracker();
+
+            // set coefficients
+            SetCHCoefficents();
         }
 
         /// <summary>
@@ -297,262 +272,341 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         {
             using (FuncTrace tr = new FuncTrace())
             {
-
                 // create operator
-                // ===============
-                {
-
-                    int D = this.GridData.SpatialDimension;
-                    double _D = D;
-                    double penalty_base = (phi.Basis.Degree + 1) * (phi.Basis.Degree + _D) / _D;
-
-                    // Get this from where?
-                    double penalty_factor = 2.6 * penalty_base;
-
-                    //BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
-
-                    MultidimensionalArray LengthScales;
-                    if (this.GridData is GridData)
-                    {
-                        LengthScales = ((GridData)this.GridData).Cells.cj;
-                    }
-                    else if (this.GridData is AggregationGridData)
-                    {
-                        LengthScales = ((AggregationGridData)this.GridData).AncestorGrid.Cells.cj;
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
-                    }
-
-                    m_bcMap = new BoundaryCondMap<BoundaryType>(this.GridData, BoundaryTranslator(ParentControl.BoundaryValues), "phi");
-
-                    SetCHCoefficents(out Cahn, out Diff, out Lambda);
-
-                    switch (this.ModTyp)
-                    {
-                        case Phasefield.ModelType.modelA:
-
-                            CHOp = new SpatialOperator(
-                                new string[] { "phi", VariableNames.Curvature },
-                                VariableNames.VelocityVector(D).Cat("phi0").Cat("D" + VariableNames.Curvature),
-                                new string[] { "Res_phi", "Res_Curvature" },
-                                QuadOrderFunc.NonLinear(3)
-                                );
-
-                            CHOp.EquationComponents["Res_phi"].Add(
-                            new phi_Source(this.Diff)
-                            );
-
-                            CHOp.EquationComponents["Res_phi"].Add(
-                            new phi_Flux(D, m_bcMap)
-                            );
-
-                            CHOp.EquationComponents["Res_phi"].Add(
-                                new mu_Diffusion(D, penalty_factor, LengthScales, Cahn * Diff.Sqrt(), m_bcMap)
-                                );
-
-                            CHOp.EquationComponents["Res_Curvature"].Add(new curvature_Source(D));
-
-                            if (this.UseDirectCurvature)
-                            {
-                                CHOp.EquationComponents["Res_Curvature"].Add(new curvature_Direct(D));
-                            }
-                            else
-                            {
-                                CHOp.EquationComponents["Res_Curvature"].Add(new curvature_Divergence(D, penalty_factor, 0.001/Cahn, LengthScales));
-                            }
-
-                            CHOp.EquationComponents["Res_Curvature"].Add(new curvature_Source(D));
-
-                            if (this.CurvatureCorrection == true)
-                            {
-                                CHOp.EquationComponents["Res_phi"].Add(
-                                    new phi_CurvatureCorrection(D, Cahn * Diff.Sqrt())
-                                    );
-                            }
-
-                            break;
-                        case Phasefield.ModelType.modelB:
-
-                            CHOp = new SpatialOperator(
-                                new string[] { "phi", "mu", VariableNames.Curvature },
-                                VariableNames.VelocityVector(D).Cat("phi0").Cat("D" + VariableNames.Curvature),
-                                new string[] { "Res_phi", "Res_mu", "Res_Curvature" },
-                                QuadOrderFunc.NonLinear(3)
-                                );
-
-
-                            CHOp.EquationComponents["Res_phi"].Add(
-                                new phi_Diffusion(D, penalty_factor, LengthScales, Diff, Lambda, m_bcMap)
-                                );
-
-                            CHOp.EquationComponents["Res_phi"].Add(
-                                new phi_Flux(D, m_bcMap)
-                                );
-
-                            CHOp.EquationComponents["Res_mu"].Add(
-                                new mu_Diffusion(D, penalty_factor, LengthScales, Cahn, m_bcMap)
-                                );
-
-                            CHOp.EquationComponents["Res_mu"].Add(
-                                new mu_Source()
-                                );
-
-                            CHOp.EquationComponents["Res_Curvature"].Add(new curvature_Source(D));
-
-                            if (this.UseDirectCurvature)
-                            {
-                                CHOp.EquationComponents["Res_Curvature"].Add(new curvature_Direct(D));
-                            }
-                            else
-                            {
-                                CHOp.EquationComponents["Res_Curvature"].Add(new curvature_Divergence(D, penalty_factor, 0.001 / Cahn, LengthScales));
-                            }
-
-                            if (this.CurvatureCorrection == true)
-                            {
-                                CHOp.EquationComponents["Res_mu"].Add(
-                                    new phi_CurvatureCorrection(D, Cahn)
-                                    );
-                            }
-
-                            break;
-                        case Phasefield.ModelType.modelC:
-                            throw new NotImplementedException();
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                            break;
-                    }
-
-                    CHOp.ParameterUpdate = new PFParameterUpdate(this);
-
-                    CHOp.Commit();
-                    JacobiOp = CHOp._GetJacobiOperator(D);
-                }
-
+                // =============
+                this.CreateOperator();
 
                 // create solver
                 // =============
+                this.CreateTimestepper();               
+            }            
+        }
 
+        private void CreateOperator()
+        {
+            // create operator
+            // ===============
+            {
+
+                int D = this.GridData.SpatialDimension;
+                m_HMForder = phi.Basis.Degree * 2;
+                double _D = D;
+                double penalty_base = (phi.Basis.Degree + 1) * (phi.Basis.Degree + _D) / _D;
+
+                // Get this from where?
+                double penalty_factor = this.Control.penalty_poisson * penalty_base;
+
+                //BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
+
+                MultidimensionalArray LengthScales;
+                if (this.GridData is GridData)
                 {
+                    LengthScales = ((GridData)this.GridData).Cells.cj;
+                }
+                else if (this.GridData is AggregationGridData)
+                {
+                    LengthScales = ((AggregationGridData)this.GridData).AncestorGrid.Cells.cj;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
 
-                    switch (this.ModTyp)
+                m_bcMap = new BoundaryCondMap<BoundaryType>(this.GridData, BoundaryTranslator(ParentControl.BoundaryValues), "phi");
+
+                #region variables
+
+                //create Parameter and Variablelists
+                string[] paramVar = VariableNames.VelocityVector(D).Cat("phi0");
+                string[] domainVar = new string[] { "phi" };
+                string[] codomainVar = new string[] { "Res_phi" };
+
+                switch (this.Control.ModTyp)
+                {
+                    case PhasefieldControl.ModelType.modelA:
+                        break;
+                    case PhasefieldControl.ModelType.modelB:
+                        domainVar = domainVar.Cat("mu");
+                        codomainVar = codomainVar.Cat("Res_mu");
+                        break;
+                    case PhasefieldControl.ModelType.modelC:
+                    default:
+                        throw new NotImplementedException();
+                        break;
+                }
+
+                switch (this.Control.CurvatureCorrectionType)
+                {
+                    case PhasefieldControl.CurvatureCorrection.FullyCoupled:
+                        domainVar = domainVar.Cat(VariableNames.Curvature);
+                        codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
+                        break;
+                    case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
+                    case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
+                        domainVar = domainVar.Cat(VariableNames.Curvature);
+                        codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
+                        paramVar = paramVar.Cat("D" + VariableNames.Curvature);
+                        break;
+                    case PhasefieldControl.CurvatureCorrection.None:
+                    default:
+                        break;                    
+                }
+
+                #endregion
+
+                CHOp = new SpatialOperator(
+                            domainVar,
+                            paramVar,
+                            codomainVar,
+                            QuadOrderFunc.NonLinear(3)
+                            );
+
+                CHOp.ParameterUpdate = new PFParameterUpdate(this);
+
+                #region equation components
+
+                // convection term
+                CHOp.EquationComponents["Res_phi"].Add(
+                new phi_Flux(D, m_bcMap)
+                );
+
+                switch (this.Control.ModTyp)
+                {
+                    case PhasefieldControl.ModelType.modelA:
+
+                        CHOp.EquationComponents["Res_phi"].Add(
+                        new phi_Source(this.Control.diff)
+                        );
+
+
+                        CHOp.EquationComponents["Res_phi"].Add(
+                            new mu_Diffusion(D, penalty_factor, LengthScales, this.Control.cahn * this.Control.diff.Sqrt(), m_bcMap)
+                            );
+
+                        switch (this.Control.CurvatureCorrectionType)
+                        {
+                            case PhasefieldControl.CurvatureCorrection.FullyCoupled:
+                                CHOp.EquationComponents["Res_phi"].Add(
+                                    new phi_CurvatureCorrection(D, this.Control.cahn * this.Control.diff.Sqrt())
+                                    );
+
+                                CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                    new curvature_Source(D)
+                                    );
+
+                                CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                    new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
+                                    );
+                                break;
+                            case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
+                            case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
+                                CHOp.EquationComponents["Res_phi"].Add(
+                                    new phi_CurvatureCorrection(D, this.Control.cahn * this.Control.diff.Sqrt())
+                                    );
+
+                                CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                    new curvature_Direct(D)
+                                    );
+                                break;
+                            case PhasefieldControl.CurvatureCorrection.None:
+                            default:
+                                break;
+                        }
+                        break;
+                    case PhasefieldControl.ModelType.modelB:
+
+                        CHOp.EquationComponents["Res_phi"].Add(
+                            new phi_Diffusion(D, penalty_factor, LengthScales, this.Control.diff, this.Control.lambda, m_bcMap)
+                            );
+
+                        CHOp.EquationComponents["Res_mu"].Add(
+                            new mu_Diffusion(D, penalty_factor, LengthScales, this.Control.cahn, m_bcMap)
+                            );
+
+                        CHOp.EquationComponents["Res_mu"].Add(
+                            new mu_Source()
+                            );
+
+                        switch (this.Control.CurvatureCorrectionType)
+                        {
+                            case PhasefieldControl.CurvatureCorrection.FullyCoupled:
+                                CHOp.EquationComponents["Res_mu"].Add(
+                                    new phi_CurvatureCorrection(D, this.Control.cahn)
+                                    );
+
+                                CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                    new curvature_Source(D)
+                                    );
+
+                                CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                    new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
+                                    );
+                                break;
+                            case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
+                            case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
+                                CHOp.EquationComponents["Res_mu"].Add(
+                                    new phi_CurvatureCorrection(D, this.Control.cahn)
+                                    );
+
+                                CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                    new curvature_Direct(D)
+                                    );
+                                break;
+                            case PhasefieldControl.CurvatureCorrection.None:
+                            default:
+                                break;
+                        }
+                        break;
+                    case PhasefieldControl.ModelType.modelC:
+                        throw new NotImplementedException();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                        break;
+                }
+
+                #endregion
+                
+                CHOp.ParameterUpdate = new PFParameterUpdate(this);
+
+                CHOp.Commit();
+                JacobiOp = CHOp._GetJacobiOperator(D);
+            }
+        }
+
+        RungeKuttaScheme rksch = null;
+        int bdfOrder = -1000;
+        private void CreateTimestepper()
+        {
+            switch (this.Control.TimeSteppingScheme)
+            {
+                case TimeSteppingScheme.RK_ImplicitEuler:
                     {
-                        case Phasefield.ModelType.modelA:
-
-                            m_Timestepper = new XdgBDFTimestepping(
-                                 new DGField[] { phi, Curvature },
-                                 new DGField[] { phi_Resi, curvature_Resi },
-                                 this.DummyLsTrk,
-                                 false,
-                                 DelComputeOperatorMatrix, null, null,
-                                 1, // BDF order
-                                 LevelSetHandling.None, MassMatrixShapeandDependence.IsTimeDependent, SpatialOperatorType.Nonlinear,
-                                 this.MassScaleA, this.MgConfigA, mgSeq, new[] { this.DummyLsTrk.GetSpeciesId("A") }, phi.Basis.Degree * 2, 0.0, false,
-                                 GetNonLinearSolver(), GetLinearSolver()
-                                 );
-
+                        rksch = RungeKuttaScheme.ImplicitEuler;
+                        break;
+                    }
+                case TimeSteppingScheme.RK_CrankNic:
+                    {
+                        rksch = RungeKuttaScheme.CrankNicolson;
+                        break;
+                    }
+                case TimeSteppingScheme.CrankNicolson:
+                    {
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = -1;
+                        break;
+                    }
+                case TimeSteppingScheme.ImplicitEuler:
+                    {
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = 1;
+                        break;
+                    }
+                default:
+                    {
+                        if (this.Control.TimeSteppingScheme.ToString().StartsWith("BDF"))
+                        {
+                            //do not instantiate rksch, use bdf instead
+                            bdfOrder = Convert.ToInt32(this.Control.TimeSteppingScheme.ToString().Substring(3));
                             break;
-                        case Phasefield.ModelType.modelB:
-
-                            m_Timestepper = new XdgBDFTimestepping(
-                                new DGField[] { phi, mu, Curvature },
-                                new DGField[] { phi_Resi, mu_Resi, curvature_Resi },
-                                this.DummyLsTrk,
-                                false,
-                                DelComputeOperatorMatrix, null, null,
-                                1, // BDF order
-                                LevelSetHandling.None, MassMatrixShapeandDependence.IsTimeDependent, SpatialOperatorType.Nonlinear,
-                                this.MassScaleB, this.MgConfigB, mgSeq, new[] { this.DummyLsTrk.GetSpeciesId("A") }, phi.Basis.Degree * 2, 0.0, false,
-                                Control.NonLinearSolver, Control.LinearSolver
-                                );
-
-                            break;
-                        case Phasefield.ModelType.modelC:
+                        }
+                        else
                             throw new NotImplementedException();
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                            break;
-
                     }
 
-                }
+            }
+
+
+            if (rksch == null)
+            {
+                m_Timestepper = new XdgBDFTimestepping(
+                    this.CurrentSolution.Mapping.Fields,
+                    this.CurrentResidual.Mapping.Fields,
+                    this.DummyLsTrk,
+                    false,
+                    DelComputeOperatorMatrix, null, null,
+                    (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
+                    LevelSetHandling.None, MassMatrixShapeandDependence.IsTimeDependent, SpatialOperatorType.Nonlinear,
+                    this.MassScale,
+                    this.MgConfig, mgSeq,
+                    new[] { this.DummyLsTrk.GetSpeciesId("A") }, phi.Basis.Degree * 2,
+                    0.0,
+                    false,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver
+                    );
+                m_Timestepper.m_ResLogger = new ResidualLogger(this.MPIRank, null, new Guid());
+                m_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
+                m_Timestepper.m_ResLogger.WriteResidualsToTextFile = false;
+            }
+            else
+            {
+                throw new NotSupportedException();
             }
         }
 
-        /// <summary>
-        /// Generate linear solver config for Cahn-Hilliard Level Set
-        /// </summary>
-        /// <returns></returns>
-        private LinearSolverConfig GetLinearSolver()
-        {
-            LinearSolverConfig LinConfig = new LinearSolverConfig();
-            return LinConfig;
-        }
+        CoordinateVector m_CurrentSolution = null;
 
         /// <summary>
-        /// Generate nonlinear solver config for Cahn-Hilliard Level Set
+        /// Current solution vector
         /// </summary>
-        /// <returns></returns>
-        private NonLinearSolverConfig GetNonLinearSolver()
-        {
-            NonLinearSolverConfig NonLinConfig = new NonLinearSolverConfig();
-            NonLinConfig.SolverCode = NonLinearSolverCode.Newton;
-            NonLinConfig.MaxSolverIterations = 50;
-            return NonLinConfig;
-        }
-
-        MultigridOperator.ChangeOfBasisConfig[][] MgConfigA
+        public CoordinateVector CurrentSolution
         {
             get
             {
-                int p = this.phi.Basis.Degree;
-                int NoOfLevels = mgSeq.Length;
-                var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
+                m_CurrentSolution = new CoordinateVector(this.phi);
 
-                for (int iLevel = 0; iLevel < NoOfLevels; iLevel++)
+                switch (Control.ModTyp)
                 {
-                    config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
-                        new MultigridOperator.ChangeOfBasisConfig() {
-                            VarIndex = new int[] {0, 1},
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
-                            DegreeS = new int[] { Math.Max(1, p - iLevel), 0 }
-                        }
-                    };
-
+                    case PhasefieldControl.ModelType.modelA:
+                        break;
+                    case PhasefieldControl.ModelType.modelB:
+                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.mu));
+                        break;
+                    case PhasefieldControl.ModelType.modelC:
+                    default:
+                        break;
                 }
 
-                return config;
+                if (this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None)
+                {
+                    m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Curvature));
+                }
+                
+                return m_CurrentSolution;
             }
-
         }
 
-        MultigridOperator.ChangeOfBasisConfig[][] MgConfigB
+        CoordinateVector m_CurrentResidual = null;
+
+        /// <summary>
+        /// Current residual vector
+        /// </summary>
+        public CoordinateVector CurrentResidual
         {
             get
-            {
-                int p = this.phi.Basis.Degree;
-                int NoOfLevels = mgSeq.Length;
-                var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
+            {                
+                m_CurrentResidual = new CoordinateVector(this.phi_Resi);
 
-                for (int iLevel = 0; iLevel < NoOfLevels; iLevel++)
+                switch (Control.ModTyp)
                 {
-                    config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
-                        new MultigridOperator.ChangeOfBasisConfig() {
-                            VarIndex = new int[] {0, 1, 2},
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
-                            DegreeS = new int[] { Math.Max(1, p - iLevel), Math.Max(1, p - iLevel), 0 }
-                        }
-                    };
-
+                    case PhasefieldControl.ModelType.modelA:
+                        break;
+                    case PhasefieldControl.ModelType.modelB:
+                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.mu_Resi));
+                        break;
+                    case PhasefieldControl.ModelType.modelC:
+                    default:
+                        break;
                 }
 
-                return config;
+                if (this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None)
+                {
+                    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.curvature_Resi));
+                }
+                
+                return m_CurrentResidual;
             }
-
         }
 
         /// <summary>
@@ -566,7 +620,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             var domMap = Mapping;
 
             DGField[] prms;
-            prms = ArrayTools.Cat(this.Velocity, phi0, DCurvature);
+            prms = ArrayTools.Cat(this.Velocity, phi0);
+
+            if (this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledIterative ||
+                this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledOnce)
+            {
+                prms = prms.Cat(this.DCurvature);
+            }
 
             if (OpMtx != null)
             {
@@ -644,36 +704,123 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             #endregion
         }
 
-
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScaleA
+        MultigridOperator.ChangeOfBasisConfig[][] MgConfig
         {
             get
             {
+                int p = this.phi.Basis.Degree;
+                int NoOfLevels = mgSeq.Length;
+                var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
+                int m = 0;
 
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.DummyLsTrk.GetSpeciesId("A"), new double[] { 1.0, 0.0 });
+                for (int iLevel = 0; iLevel < NoOfLevels; iLevel++)
+                {
 
-                return R;
+                    switch (Control.ModTyp)
+                    {
+                        case PhasefieldControl.ModelType.modelA:
+                            m = 1;
+                            config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[m];
+                            break;
+                        case PhasefieldControl.ModelType.modelB:
+                            m = 2;
+                            config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[m];
+                            break;
+                        case PhasefieldControl.ModelType.modelC:
+                            throw new NotImplementedException();
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                            break;
+                    }
+
+                    if (this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None)
+                    {
+                        config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[m + 1];
+                    }
+
+                    config[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig()
+                    {
+                        VarIndex = new int[] { 0 },
+                        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                        DegreeS = new int[] { Math.Max(1, p - iLevel) }
+                    };
+
+                    switch (Control.ModTyp)
+                    {
+                        case PhasefieldControl.ModelType.modelA:
+                            break;
+                        case PhasefieldControl.ModelType.modelB:
+                            config[iLevel][1] = new MultigridOperator.ChangeOfBasisConfig()
+                            {
+                                VarIndex = new int[] { 1 },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                                DegreeS = new int[] { Math.Max(1, p - iLevel) }
+                            };
+
+                            break;
+                        case PhasefieldControl.ModelType.modelC:
+                            throw new NotImplementedException();
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                            break;
+                    }
+
+                    if (this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None)
+                    {
+                        config[iLevel][m] = new MultigridOperator.ChangeOfBasisConfig()
+                        {
+                            VarIndex = new int[] { m },
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            DegreeS = new int[] { Math.Max(0, this.Curvature.Basis.Degree - iLevel) }
+                        };
+                    }
+                }
+
+                return config;
             }
+
         }
 
         /// <summary>
         /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScaleB
+        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale
         {
             get
             {
 
                 Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.DummyLsTrk.GetSpeciesId("A"), new double[] { 1.0, 0.0, 0.0 });
+                double[] scale = new double[1];
+
+                switch (Control.ModTyp)
+                {
+                    case PhasefieldControl.ModelType.modelA:
+                        break;
+                    case PhasefieldControl.ModelType.modelB:
+                        scale = new double[2];
+                        break;
+                    case PhasefieldControl.ModelType.modelC:
+                        throw new NotImplementedException();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                        break;
+                }
+
+                if (this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None)
+                {
+                    scale = new double[scale.Length + 1];
+                }
+
+                scale[0] = 1.0;
+
+                R.Add(this.DummyLsTrk.GetSpeciesId("A"), scale);
 
                 return R;
             }
-        }
+        }        
 
         /// <summary>
         /// default plotting
@@ -683,8 +830,37 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             string caseStr = "";
             
             DGField[] Fields = new DGField[0];
-            Fields = Fields.Cat(this.phi, this.mu, this.Velocity, this.gradPhi0, this.Curvature);
+            SinglePhaseField phiDist = ComputeDistanceField();
+            Fields = Fields.Cat(this.phi, this.mu, this.Velocity, this.gradPhi0, this.Curvature, this.DCurvature, phiDist);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "Phasefield-" + timestepNo + caseStr, phystime, superSampling);
+        }
+
+        private SinglePhaseField ComputeDistanceField()
+        {
+            SinglePhaseField phiDist = new SinglePhaseField(phi.Basis);
+            GridData GridDat = (GridData)(phi.GridDat);
+
+            // calculate distance field phiDist = 0.5 * log(Max(1+phi, eps)/Max(1-phi, eps)) * sqrt(2) * Cahn
+            // ===================
+            phiDist.ProjectField(
+                (ScalarFunctionEx)delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result)
+                { // ScalarFunction2
+                    Debug.Assert(result.Dimension == 2);
+                    Debug.Assert(Len == result.GetLength(0));
+                    int K = result.GetLength(1); // number of nodes
+
+                    // evaluate Phi
+                    // -----------------------------
+                    phi.Evaluate(j0, Len, NS, result);
+
+                    // compute the pointwise values of the new level set
+                    // -----------------------------
+
+                    result.ApplyAll(x => 0.5 * Math.Log(Math.Max(1 + x, 1e-10) / Math.Max(1 - x, 1e-10)) * Math.Sqrt(2) * this.Control.cahn);
+                }
+            );
+
+            return phiDist;
         }
 
         private class PFParameterUpdate : IParameterUpdate
@@ -716,7 +892,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             this.gradPhi0.Clear();
             this.gradPhi0.Gradient(1.0, this.phi0);
 
-            if (this.CurvatureCorrection)
+            if (this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledIterative)
             {
                 VectorField<SinglePhaseField> filtgrad;
                 CurvatureAlgorithmsForLevelSet.CurvatureDriver(

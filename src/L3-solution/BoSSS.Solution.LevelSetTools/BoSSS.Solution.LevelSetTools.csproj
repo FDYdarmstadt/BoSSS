@@ -98,12 +98,14 @@
     <Compile Include="FastMarching\NarrowMarchingBand.cs" />
     <Compile Include="EllipticReInit\EllipticReinitControl.cs" />
     <Compile Include="Advection\ILevelSetAdvection.cs" />
+    <Compile Include="ILevSetControl.cs" />
     <Compile Include="JumpPenalization.cs" />
     <Compile Include="Advection\ScalarVelocityAdvection.cs" />
     <Compile Include="FastMarching\FastMarchReinit.cs" />
     <Compile Include="Advection\NonconservativeAdvection.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBase.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBoundaryType.cs" />
+    <Compile Include="PhasefieldLevelSet\PhasefieldControl.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldInitialization.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldMover.cs" />
     <Compile Include="ReInitialization.cs" />

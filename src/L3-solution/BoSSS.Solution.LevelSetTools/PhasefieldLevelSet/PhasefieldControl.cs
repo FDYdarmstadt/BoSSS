@@ -1,4 +1,5 @@
 ﻿using BoSSS.Solution.Control;
+using BoSSS.Solution.XdgTimestepping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,16 +8,20 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 {
-    public class PhasefieldControl : ILevSetControl
+    public class PhasefieldControl : AppControlSolver, ILevSetControl
     {
 
         /// <summary>
         /// ctor
         /// </summary>
-        public PhasefieldControl()
+        public PhasefieldControl() : base()
         {
             NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             NonLinearSolver.MaxSolverIterations = 50;
+
+            TimesteppingMode = _TimesteppingMode.Transient;
+
+            savetodb = false;
         }
 
 
@@ -44,7 +49,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Set the <see cref="ModelType"/>
         /// </summary>
-        public ModelType ModTyp = ModelType.modelA;
+        public ModelType ModTyp = ModelType.modelB;
 
         /// <summary>
         /// Type of algebraic correction that is performed
@@ -67,7 +72,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             None
         }
 
-        public Correction CorrectionType = Correction.None;
+        public Correction CorrectionType = Correction.Mass;
 
         /// <summary>
         /// Type of algebraic correction that is performed
@@ -97,9 +102,32 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public CurvatureCorrection CurvatureCorrectionType = CurvatureCorrection.None;
 
-        public LinearSolverConfig LinearSolver = new LinearSolverConfig();
+        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        public double penalty_poisson = 2.6;
 
-        public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
+        /// <summary>
+        /// Set if Phasefield constants shall be calculated according to some metric or are fixed
+        /// </summary>
+        public bool FixedConstants = false;
+
+        /// <summary>
+        /// Some parameter of Cahn Hilliard equation, to adjust surface vs bulk diffusion
+        /// </summary>
+        public double lambda = 0.0;
+
+        /// <summary>
+        /// Some parameter of Cahn Hilliard equation
+        /// diff = (kappa*lambda)/epsilon
+        /// </summary>
+        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        public double diff = 1.0;
+
+        /// <summary>
+        /// Some parameter of Cahn Hilliard equation
+        /// Cahn´s Number
+        /// </summary>
+        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        public double cahn = 1.0;
 
     }
 }
