@@ -509,13 +509,14 @@ namespace BoSSS.Application.FSI_Solver {
         internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             double[] tempForces = new double[SpatialDim];
             for (int d = 0; d < SpatialDim; d++) {
-                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-7)
+                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-12)
                     tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
                 
             }
+            tempForces[1] = 0;
             HydrodynamicForces[0] = new Vector(tempForces);
-            if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-7)
-                HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
+            if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
+                HydrodynamicTorque[0] = 0;// fullListHydrodynamics[particleID * 3 + SpatialDim];
             Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
         }

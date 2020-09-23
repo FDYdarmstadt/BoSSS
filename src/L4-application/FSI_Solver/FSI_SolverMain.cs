@@ -996,6 +996,8 @@ namespace BoSSS.Application.FSI_Solver {
                     int minimumNumberOfIterations = 4;
                     ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
                     while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minimumNumberOfIterations) {
+                        Stopwatch stopWatch = new Stopwatch();
+                        stopWatch.Start();
                         if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)
                             throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
                         if (iterationCounter < 0)
@@ -1027,6 +1029,13 @@ namespace BoSSS.Application.FSI_Solver {
                         // -------------------------------------------------
                         Auxillary.PrintResultToConsole(hydroDynForceTorqueResidual, iterationCounter);
                         //LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
+                        TimeSpan ts = stopWatch.Elapsed;
+
+                        // Format and display the TimeSpan value.
+                        string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                            ts.Hours, ts.Minutes, ts.Seconds,
+                            ts.Milliseconds / 10);
+                        Console.WriteLine("RunTime per Iteration" + elapsedTime);
                     }
 
 
@@ -1260,7 +1269,10 @@ namespace BoSSS.Application.FSI_Solver {
             var fsDriver = this.DatabaseDriver.FsDriver;
             string pathToOldSessionDir = System.IO.Path.Combine(
                 fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+            string pathToPhysicalData = "";
+            if (MPIRank == 0)
+                pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+            pathToPhysicalData = pathToPhysicalData.MPIBroadcast(0);
             string[] records = File.ReadAllLines(pathToPhysicalData);
             int timestepIndexOffset = 0;
             for (int r = 1; r < records.Length; r++) {
@@ -1297,8 +1309,8 @@ namespace BoSSS.Application.FSI_Solver {
             }
             CellColor = null;
             UpdateLevelSetParticles(time);
-            CreatePhysicalDataLogger();
-            CreateResidualLogger();
+            //CreatePhysicalDataLogger();
+            //CreateResidualLogger();
             MarkEachMPIProcess();
             CountFromRestart = 50;
         }
