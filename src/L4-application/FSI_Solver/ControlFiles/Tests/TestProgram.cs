@@ -127,7 +127,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         
 
-        [Test]
+        //[Test]
         //public static void TestHydrodynamicForces()
         //{
         //    using (FSI_SolverMain p = new FSI_SolverMain())
