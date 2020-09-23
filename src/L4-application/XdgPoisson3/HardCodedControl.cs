@@ -536,7 +536,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
 
             C.savetodb = false;
-            //C.DbPath = @"E:\\XdgPerformance";
+            //C.DbPath = @"D:\trash_db";
 
             int Res = 8;
 
@@ -554,8 +554,10 @@ namespace BoSSS.Application.XdgPoisson3 {
                 return grid;
             };
 
+            C.SessionName = String.Format("XDGPoison_solver{0}_blsz{1}_Xdg2lowB", solver, blocksize);
+            C.ProjectName = "PoisonTest";
             C.GridPartType = GridPartType.Hilbert;
-            C.LinearSolver.TargetBlockSize = blocksize;
+            C.LinearSolver.TargetBlockSize = blocksize/2;
             C.SetDGdegree(2);
 
             C.LinearSolver.NoOfMultigridLevels = 2;
@@ -574,9 +576,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("u#B", X => 0);
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.SetDefaultDiriBndCnd = true;
+            C.SetDefaultDiriBndCnd = true;  //which means ...
             //C.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             //C.xLaplaceBCs.IsDirichlet = (inp => true);
+            // ... but stuff is not serializable, therefore this workaround.
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
 
             C.AgglomerationThreshold = 0.1;

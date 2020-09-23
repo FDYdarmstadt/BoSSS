@@ -15,13 +15,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 {
     /// <summary>
     /// Movement of the Phasefield
     /// </summary>
-    partial class Phasefield : Application
+    partial class Phasefield : DgApplicationWithSolver<PhasefieldControl>
     {
         /// <summary>
         /// Move Phasefield
@@ -75,14 +76,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     CurvatureAlgorithmsForLevelSet.CurvatureDriver(
                                     CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
                                     CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
-                                    this.DCurvature, out filtgrad, LsTrk,
+                                    this.DCurvature, out filtgrad, CorrectionLsTrk,
                                     this.DCurvature.Basis.Degree * 2,
                                     phi0);
 
                 }                
 
                 //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo , 0}), 2);
-                this.m_Timestepper.Solve(_phystime, _dt);
+                base.Timestepping.Solve(_phystime, _dt);
                 //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo }), 2);
 
                 // algebraic correction
@@ -105,7 +106,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                 CorrectionLevSet.Clear();
                 CorrectionLevSet.Acc(1.0, phi);
-                this.CorrectionLsTrk.UpdateTracker();
+                this.CorrectionLsTrk.UpdateTracker(0.0);
 
                 // return
                 // ======
@@ -163,7 +164,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
             CorrectionLevSet.Clear();
             CorrectionLevSet.Acc(1.0, phi);
-            this.CorrectionLsTrk.UpdateTracker();
+            this.CorrectionLsTrk.UpdateTracker(0.0);
 
             double[] Qnts = ComputeBenchmarkQuantities();
 
@@ -204,7 +205,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // update LsTracker
                 CorrectionLevSet.Clear();
                 CorrectionLevSet.Acc(1.0, phiNew);
-                this.CorrectionLsTrk.UpdateTracker();
+                this.CorrectionLsTrk.UpdateTracker(0.0);
 
                 Qnts = ComputeBenchmarkQuantities();
 
@@ -243,7 +244,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     // update LsTracker
                     CorrectionLevSet.Clear();
                     CorrectionLevSet.Acc(1.0, phiNew);
-                    this.CorrectionLsTrk.UpdateTracker();
+                    this.CorrectionLsTrk.UpdateTracker(0.0);
 
                     Qnts = ComputeBenchmarkQuantities();
                     massDiff = Qnts_old[0] - Qnts[0];
@@ -259,7 +260,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                         // update LsTracker
                         CorrectionLevSet.Clear();
                         CorrectionLevSet.Acc(1.0, phi);
-                        this.CorrectionLsTrk.UpdateTracker();
+                        this.CorrectionLsTrk.UpdateTracker(0.0);
                         Console.WriteLine($"" +
                             $"converged with stepsize:  {step}, correction: {correction}\n" +
                             $"                     dM:  {massDiff}");
@@ -271,7 +272,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                         // reset LsTracker
                         CorrectionLevSet.Clear();
                         CorrectionLevSet.Acc(1.0, phi);
-                        this.CorrectionLsTrk.UpdateTracker();
+                        this.CorrectionLsTrk.UpdateTracker(0.0);
 
                         Qnts = ComputeBenchmarkQuantities();
                         massDiff = Qnts_old[0] - Qnts[0];

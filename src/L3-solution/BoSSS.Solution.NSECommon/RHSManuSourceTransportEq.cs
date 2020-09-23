@@ -52,7 +52,7 @@ namespace BoSSS.Solution.NSECommon {
         double b;
         double time;
         double[] MolarMasses;
-        double OneOverMolarMass0MolarMass1;
+        //double OneOverMolarMass0MolarMass1;
         PhysicsMode physicsMode;
         bool chemReactionOK;
         bool rhoOne;

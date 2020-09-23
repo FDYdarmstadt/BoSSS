@@ -925,7 +925,6 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.ComputeEnergy = false;
 
-            C.NonLinearSolver.UsePresRefPoint = false;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;

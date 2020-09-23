@@ -18,6 +18,13 @@ namespace ilPSP
 
         }
 
+        public static void PrintMostExpensiveBlocking(this MethodCallRecord mcr, int count) {
+
+            GetMostExpensiveBlocking(Console.Out, mcr, count);
+            Console.Out.Flush();
+
+        }
+
         public static void GetMostExpensiveCalls(TextWriter wrt, MethodCallRecord R, int cnt = 0) {
             int i = 1;
             var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTicks);
@@ -58,32 +65,81 @@ namespace ilPSP
             }
         }
 
-        public static Dictionary<string, Tuple<double, double, int>> GetProfilingStats(MethodCallRecord[] mcr) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mcr"></param>
+        /// <returns></returns>
+        public static Dictionary<string, Tuple<double, double, int>> GetFuncImbalance(MethodCallRecord[] mcrs) {
+            return GetImbalance(mcrs, s => s.TimeExclusive.TotalSeconds);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mcr"></param>
+        /// <returns></returns>
+        public static Dictionary<string, Tuple<double, double, int>> GetMPIImbalance(MethodCallRecord[] mcrs) {
+            return GetImbalance(mcrs, s => s.TimeSpentinBlocking.TotalSeconds);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mcr"></param>
+        /// <param name="TimeToCollect"></param>
+        /// <returns></returns>
+        private static Dictionary<string, Tuple<double, double, int>> GetImbalance(MethodCallRecord[] mcrs, Func<MethodCallRecord, double> TimeToCollect) {
             var kv = new Dictionary<string, Stats>();
             var methodImblance = new Dictionary<string, Tuple<double, double, int>>();
             List<string> method_names = new List<string>();
 
-            mcr[0].CompleteCollectiveReport().ForEach(r => method_names.Add(r.Name));
-            double[] rootTimes = new double[mcr.Length];
+            mcrs[0].CompleteCollectiveReport().ForEach(r => method_names.Add(r.Name));
+            double[] rootTimes = new double[mcrs.Length];
 
-            for (int j = 0; j < mcr.Length; j++) {
-                rootTimes[j] = mcr[j].TimeSpentInMethod.TotalSeconds;
+            for (int j = 0; j < mcrs.Length; j++) {
+                rootTimes[j] = mcrs[j].TimeSpentInMethod.TotalSeconds;
             }
 
             var rootStat = new Stats(rootTimes);
 
             foreach (string method in method_names) {
-                double[] times = new double[mcr.Length];
+                double[] times = new double[mcrs.Length];
+                int cnt = 0;
 
                 for (int j = 0; j < times.Length; j++) {
-                    mcr[j].FindChildren(method).ForEach(s => times[j]=s.TimeExclusive.TotalSeconds);
+                    mcrs[j].FindChildren(method).ForEach(s => times[j] += TimeToCollect(s));
                 }
+
+                mcrs[0].FindChildren(method).ForEach(s => cnt += s.CallCount);
 
                 var TStats = new Stats(times);
                 kv.Add(method, TStats);
-                methodImblance.Add(method, new Tuple<double, double, int>(TStats.Imbalance / rootStat.Average, TStats.Imbalance, mcr[0].CallCount));
+                methodImblance.Add(method, new Tuple<double, double, int>(TStats.Imbalance / rootStat.Average, TStats.Imbalance, cnt));
             }
             return methodImblance;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="wrt"></param>
+        /// <param name="R"></param>
+        /// <param name="printcnt"></param>
+        private static void GetMostExpensiveBlocking(TextWriter wrt, MethodCallRecord R, int printcnt = 0) {
+            int i = 1;
+            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.TicksSpentInBlocking);
+            foreach (var kv in mostExpensive) {
+                wrt.Write("#" + i + ": ");
+                wrt.WriteLine(string.Format(
+                "'{0}': {1} calls, {2:0.##E-00} sec. runtime exclusivesec",
+                    kv.Name,
+                    kv.CallCount,
+                    new TimeSpan(kv.TicksSpentInBlocking).TotalSeconds));
+                if (i == printcnt) return;
+                i++;
+            }
+            Console.Out.Flush();
         }
     }
 }

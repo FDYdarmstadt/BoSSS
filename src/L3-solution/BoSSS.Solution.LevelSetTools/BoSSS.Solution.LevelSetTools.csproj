@@ -106,6 +106,7 @@
     <Compile Include="PhasefieldLevelSet\PhasefieldBase.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBoundaryType.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldControl.cs" />
+    <Compile Include="PhasefieldLevelSet\PhasefieldEqComponents.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldInitialization.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldMover.cs" />
     <Compile Include="ReInitialization.cs" />

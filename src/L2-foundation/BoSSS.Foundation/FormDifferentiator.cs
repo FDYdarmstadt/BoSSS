@@ -13,7 +13,7 @@ namespace BoSSS.Foundation {
     /// Base-Functionality for utilities for computation of Spatial Operator Jacobians, (<see cref="SpatialOperator.GetJacobiOperator"/>,
     /// i.e. approximate differentiation of equation components.
     /// </summary>
-    abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking, IEquationComponentCoefficient {
+    abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking, IEquationComponentCoefficient, IParameterHandling {
 
 
         /// <summary>
@@ -42,6 +42,9 @@ namespace BoSSS.Foundation {
             OffsetOrgParams = m_ParameterOrdering.Length;
             if (vf.ParameterOrdering != null && vf.ParameterOrdering.Count > 0) {
                 m_ParameterOrdering = m_ParameterOrdering.Cat(vf.ParameterOrdering);
+                NoOfOrgParams = vf.ParameterOrdering.Count;
+            } else {
+                NoOfOrgParams = 0;
             }
 
             // U in linearization point
@@ -93,6 +96,11 @@ namespace BoSSS.Foundation {
         /// Offset into parameters to access parameters of original form
         /// </summary>
         protected int OffsetOrgParams;
+
+        /// <summary>
+        /// number of parameters in original component
+        /// </summary>
+        protected int NoOfOrgParams;
         
         /// <summary>
         /// Relative finite difference length
@@ -167,6 +175,38 @@ namespace BoSSS.Foundation {
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             if(m_OrgForm is IEquationComponentCoefficient eqc) {
                 eqc.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);
+            }
+        }
+
+        /// <summary>
+        /// redirects to parameter update of original form; Jacobi parameter are updated in <see cref="JacobianParamUpdate"/>
+        /// </summary>
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
+            
+            if(m_OrgForm is IParameterHandling ph) {
+                var orgParameters = Parameters.GetSubVector(OffsetOrgParams, NoOfOrgParams);
+                Parameters.SetAll(default(DGField));
+
+                ph.MyParameterUpdate(Arguments, orgParameters);
+                Parameters.SetSubVector(orgParameters, OffsetOrgParams, NoOfOrgParams); // restore what we got from original component
+            } else {
+                // nop
+                Parameters.SetAll(default(DGField)); // very secret signal that the parameter was not really updated
+            }
+        }
+
+        /// <summary>
+        /// redirects to parameter update of original form; Jacobi parameter are updated in <see cref="JacobianParamUpdate"/>
+        /// </summary>
+        public DGField[] MyParameterAlloc(DGField[] Arguments) {
+            if (m_OrgForm is IParameterHandling ph) {
+                var orgRet = ph.MyParameterAlloc(Arguments);
+                var ret = new DGField[this.m_ParameterOrdering.Length];
+                ret.SetSubVector(orgRet, OffsetOrgParams, NoOfOrgParams);
+                return ret;
+            } else {
+                var ParamNames = this.ParameterOrdering;
+                return ParamNames != null ? new DGField[ParamNames.Count] : new DGField[0];
             }
         }
     }

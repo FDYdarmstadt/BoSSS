@@ -74,7 +74,13 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        public double Prandtl { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double Prandtl { 
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// 
@@ -82,6 +88,7 @@ namespace BoSSS.Solution.NSECommon {
         //[NonSerialized]
         [DataMember]
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        
         /// <summary>
         /// 
         /// </summary>
@@ -181,10 +188,8 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetViscosity(double phi) {
 
             phi = Math.Max(0.01, phi);
-
             double visc = 0; // nondimensional viscosity
-
-            phi = phi < 0.1 ? 0.1 : phi; //////////////////
+           // phi = phi < 0.1 ? 0.1 : phi; //////////////////
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
                         visc = 1.0;

@@ -197,8 +197,70 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+        /// <summary>
+        /// As used for the 3D ipPoisson-Benchmark. Res=28 and deg=2 corresponds to 1Mio DOF.
+        /// </summary>
+        public static SipControl Benchmark3D(int Res = 10, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 2) {
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian2(8,3,deg:2)
 
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/cartesian";
+            R.savetodb = false;
 
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
+            R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
+            R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
+            R.ExactSolution_provided = true;
+            R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
+            R.LinearSolver.SolverCode = solver_name;
+            R.LinearSolver.TargetBlockSize = 1000;
+            // exp_Kcycle_schwarz
+            // exp_gmres_levelpmg
+
+            R.GridFunc = delegate () {
+                GridCommons grd = null;
+
+                double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
+                double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+                double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+
+                grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret;
+                    double x = X[0];
+                    if (Math.Abs(x - 0.0) <= 1.0e-8)
+                        ret = 1; // Dirichlet
+                    else
+                        ret = 2; // Neumann
+                    return ret;
+                });
+
+                return grd;
+            };
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     return Math.Sin(X[0]);
+                 });
+
+            R.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
+                 delegate (double[] X) {
+                     double x = X[0], y = X[1], z = X.Length > 2 ? X[2] : 0.0;
+
+                     if (Math.Abs(y - 1.0) < 1.0e-8 || Math.Abs(y + 1.0) < 1.0e-8) // y = -1, y = +1
+                         return 0;
+
+                     if (X.Length > 2 && (Math.Abs(z - 1.0) < 1.0e-8 || Math.Abs(z + 1.0) < 1.0e-8)) // z = -1, z = +1
+                         return 0;
+
+                     return Math.Cos(x);
+                 });
+            return R;
+        }
 
 
         /// <summary>

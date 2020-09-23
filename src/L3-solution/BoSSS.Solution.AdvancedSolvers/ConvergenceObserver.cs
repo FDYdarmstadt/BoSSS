@@ -27,6 +27,7 @@ using BoSSS.Solution.Gnuplot;
 using System.IO;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -76,7 +77,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             //this.DecompositionOperator = muop; this.DecompositionOperator_IsOrthonormal = false;
-            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config);
+            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config, muop.FreeMeanValue);
             this.DecompositionOperator_IsOrthonormal = true;
 
             ResNormTrend = new Dictionary<Tuple<int, int, int>, List<double>>();
@@ -179,7 +180,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else if (SepPoly == false && SepLev == true) {
                     title = string.Format("(var#{0},mg.lev.{1})", iVar, iLevel);
                 } else if (SepPoly == true && SepLev == false) {
-                    title = string.Format("(var#{0},p={2})", iVar, pDG);
+                    title = string.Format("(var#{0},p={1})", iVar, pDG);
                 } else if (SepPoly == true && SepLev == true) {
                     title = string.Format("(var#{0},mg.lev.{1},p={2})", iVar, iLevel, pDG);
                 } else {
@@ -210,10 +211,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ConvTrendData.ExtractSubArrayShallow(-1, iColkv).AccVector(1.0, Column);
 
             }
-
             ConvTrendData.ApplyAll(x => Math.Sqrt(x));
         }
-
 
         /// <summary>
         /// Decomposition of some solution vector <paramref name="Solvec"/> into the different multigrid levels.
@@ -360,7 +359,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int L0 = DecompositionOperator.Mapping.LocalLength;
             double[] Err_0 = new double[L0], Res_0 = new double[L0];
             DecompositionOperator.TransformSolInto(Err_Org, Err_0);
-            DecompositionOperator.TransformRhsInto(Res_Org, Res_0);
+            DecompositionOperator.TransformRhsInto(Res_Org, Res_0, false);
 
             IList<double[]> Err_OrthoLevels = OrthonormalMultigridDecomposition(Err_0);
             IList<double[]> Res_OrthoLevels = OrthonormalMultigridDecomposition(Res_0);
@@ -427,6 +426,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //            f.Clear();
         //    }
         //}
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="FsDriver"></param>
+        /// <param name="SI"></param>
+        public void WriteTrendToSession(IFileSystemDriver FsDriver, SessionInfo SI) {
+            this.WriteTrendToTable(false, true, true, out string[] columns, out MultidimensionalArray table);
+
+            int MPIrank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MPIrank);
+
+            if ((MPIrank == 0) && (SI.ID != Guid.Empty)) {
+                var LogRes = FsDriver.GetNewLog("ResTrend", SI.ID);
+                foreach (var col in columns) LogRes.Write(col + "\t");
+                int nocol = columns.Length;
+                int norow = table.GetLength(0);
+                Debug.Assert(nocol == table.GetLength(1));
+                LogRes.WriteLine();
+                for (int iRow = 0; iRow < norow; iRow++) {
+                    for (int iCol = 0; iCol < nocol; iCol++) {
+                        LogRes.Write(table[iRow, iCol] + "\t");
+                    }
+                    LogRes.WriteLine();
+                }
+                LogRes.Flush();
+            }
+        }
 
         private int[] Iterationcounter {
             get {

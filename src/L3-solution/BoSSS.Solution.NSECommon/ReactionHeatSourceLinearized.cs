@@ -177,12 +177,16 @@ namespace BoSSS.Solution.NSECommon {
             rho = EoS.GetDensity(U);
             Debug.Assert(!double.IsNaN(rho));
             Debug.Assert(!double.IsInfinity(rho));
+
+            double Ta = ReactionRateConstants[1];
+
+            //double Temperature = U[0]  > 1.0 ? U[0] : 1.0 ;
+            //double YF = U[1] > 0.0 ? U[1] : 0.0;
+            //double YO = U[2] > 0.0 ? U[2] : 0.0;
+
             double Temperature = U[0];
             double YF = U[1];
             double YO = U[2];
-            double Ta = ReactionRateConstants[1];
-
-
 
             if (YF * YO > 1e-6 && VariableOneStepParameters) {//  calculate one-Step model parameters
                 Ta = EoS.getTa(YF, YO) / TRef;

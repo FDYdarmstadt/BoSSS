@@ -10,17 +10,21 @@ using ilPSP;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Quadrature;
 using System.Diagnostics;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
-{
+{   
+
     /// <summary>
     /// Holds information to initialize the phasefield near its conjected equilibrium
     /// also functionalities for local p-refinement and tuning of phasefield coefficients
     /// </summary>
-    partial class Phasefield : Application
+    partial class Phasefield : DgApplicationWithSolver<PhasefieldControl>
     {
         // remember if this is a reinitialization
         private static double Cahn_Reinit;
+
+        ResidualLogger ResLogger;
 
         /// <summary>
         /// Initialize Cahn Hilliard Level Set
@@ -32,7 +36,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             if (Cahn_Reinit != 0.0)
                 //RelaxationStep();
                 ReInit(Cahn_Reinit, this.Control.cahn);
-
+            
             CreateEquationsAndSolvers(null);            
 
             InitLogFile(new Guid());
@@ -41,7 +45,47 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             Cahn_Reinit = this.Control.cahn;
         }
 
-        
+        protected override void InitSolver()
+        {
+            XdgTimestepping.XdgTimestepping solver = new XdgTimestepping.XdgTimestepping(
+                SOperator,
+                CurrentState.Fields,
+                CurrentResidual.Fields,
+                Control.TimeSteppingScheme,
+                MultigridOperatorConfig,
+                MultigridSequence,
+                Control.LinearSolver, Control.NonLinearSolver);
+
+            LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
+
+            base.Timestepping = solver;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L)
+        {
+
+            if (L == null)
+            {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                // Creation of time-integrator (initial, no balancing)
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                InitSolver();
+                Timestepping.RegisterResidualLogger(new ResidualLogger(this.MPIRank, this.DatabaseDriver, new Guid()));
+
+            }
+            else
+            {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // restore BDF time-stepper after grid redistribution (dynamic load balancing)
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
+            }
+        }
+
         /// <summary>
         /// Locally refine p-Order in Cutcells
         /// </summary>
@@ -91,7 +135,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
             CorrectionLevSet.Clear();
             CorrectionLevSet.Acc(1.0, phi);
-            this.CorrectionLsTrk.UpdateTracker();
+            this.CorrectionLsTrk.UpdateTracker(0.0);
 
             // update DG LevelSet
             DGLevSet.Clear();
@@ -116,21 +160,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                 // dInterface * 1/4.164 * hmin
                 double hmin;
-                //if (this.GridData is GridData)
-                //{
-                //    hmin = ((GridData)GridData).Cells.h_minGlobal;
-                //}
-                //else if (this.GridData is AggregationGridData)
-                //{
-                //    hmin = ((AggregationGridData)GridData).AncestorGrid.Cells.h_minGlobal;
-                //}
-                //else
-                //{
-                //    throw new NotImplementedException();
-                //}
 
                 // set the interface width based on the largest CutCell
-                hmin = this.LsTrk.Regions.GetCutCellSubGrid().h_maxSubGrd;
+                hmin = this.CorrectionLsTrk.Regions.GetCutCellSubGrid().h_maxSubGrd;
 
                 this.Control.cahn = dInterface * (1.0 / 4.164) * hmin / Math.Sqrt(2);
 
@@ -144,6 +176,6 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 this.Control.lambda = 0.0;
             }
         }
-        
+
     }
 }

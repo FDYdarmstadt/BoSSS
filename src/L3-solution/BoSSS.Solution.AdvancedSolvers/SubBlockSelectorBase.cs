@@ -755,8 +755,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // loop over cells...
             for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
                 int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be concidered, you know ...
-                emptysel &= !m_sbs.CellFilter(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
-                if (!m_sbs.CellFilter(jLoc))
+                emptysel &= !CellInstruction(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
+                if (!CellInstruction(jLoc))
                     continue;
                 var tmpVar = new List<extNi0[][]>();
 

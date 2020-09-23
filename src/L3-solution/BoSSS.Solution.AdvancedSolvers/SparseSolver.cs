@@ -90,17 +90,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public _whichSolver WhichSolver = _whichSolver.PARDISO;
 
         public void Init(MultigridOperator op) {
-            var Mtx = op.OperatorMatrix;
-            var MgMap = op.Mapping;
-            m_MultigridOp = op;
+            using (var tr = new FuncTrace()) {
+                var Mtx = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+                m_MultigridOp = op;
 
-            if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
+                if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
 
-            m_Mtx = Mtx;
-            
+                m_Mtx = Mtx;
+            }
         }
 
         MultigridOperator m_MultigridOp;

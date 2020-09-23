@@ -184,7 +184,7 @@ namespace BoSSS.Application.DerivativeTest {
         public static int GRID_CASE = 3;
 
         /// <summary>
-        /// Testing <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, DelParameterUpdate, EdgeQuadratureScheme, CellQuadratureScheme)"/>;
+        /// Testing <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, DelPartialParameterUpdate, EdgeQuadratureScheme, CellQuadratureScheme)"/>;
         /// can be expensive (if caching turned off), thus this can be de-activated
         /// </summary>
         public static bool TestFDJacobian = true;

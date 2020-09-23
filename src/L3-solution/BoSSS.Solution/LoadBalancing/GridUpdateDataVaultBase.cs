@@ -141,6 +141,11 @@ namespace BoSSS.Solution {
             /// For each time level, <see cref="LevelSetTracker.LevelSetRegions.Version"/>.
             /// </summary>
             public int[] Versions;
+
+            /// <summary>
+            /// For each time level, <see cref="LevelSetTracker.LevelSetRegions.Time"/>.
+            /// </summary>
+            public double[] Times; 
         }
 
         /// <summary>
@@ -176,15 +181,17 @@ namespace BoSSS.Solution {
                     m_LsTrkPrivData.HistoryLength = m_OldTracker.HistoryLength;
                     m_LsTrkPrivData.PopultatedHistoryLength = m_OldTracker.PopulatedHistoryLength;
                     m_LsTrkPrivData.Versions = new int[m_LsTrkPrivData.PopultatedHistoryLength + 1];
+                    m_LsTrkPrivData.Times = new double[m_LsTrkPrivData.PopultatedHistoryLength + 1];
 
                     for(int iH = 1; iH > -m_LsTrkPrivData.PopultatedHistoryLength; iH--) {
                         var TimeLevel = m_OldTracker.BackupTimeLevel(iH);
                         for(int iLs = 0; iLs < NoOfLS; iLs++) {
-                            this.BackupField(TimeLevel.Item1[iLs], GetLSbackupName(iH, iLs));
+                            this.BackupField(TimeLevel.LevelSets[iLs], GetLSbackupName(iH, iLs));
                         }
-                        this.BackupVector(TimeLevel.Item2, GetLSregioncodeName(iH));
+                        this.BackupVector(TimeLevel.Regions, GetLSregioncodeName(iH));
 
-                        m_LsTrkPrivData.Versions[1 - iH] = TimeLevel.Item3;
+                        m_LsTrkPrivData.Versions[1 - iH] = TimeLevel.Version;
+                        m_LsTrkPrivData.Times[1 - iH] = TimeLevel.time;
                     }
 
                 }

@@ -80,6 +80,14 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class SpatialOperator : ISpatialOperator {
 
+        /// <summary>
+        /// <see cref="ISpatialOperator.SolverStepValidation"/>
+        /// </summary>
+        public SolverStepValidation SolverStepValidation {
+            get;
+            set;
+        }
+
         Func<int[], int[], int[], int> m_QuadOrderFunction;
 
         /// <summary>
@@ -173,7 +181,10 @@ namespace BoSSS.Foundation {
             return (_edgeRule, _volRule);
         }
 
-        Dictionary<string, object> m_UserDefinedValues;
+        /// <summary>
+        /// internal asses for hack in <see cref="DependentTemporalOperator"/>.
+        /// </summary>
+        internal Dictionary<string, object> m_UserDefinedValues;
 
         /// <summary>
         /// Modification of <see cref="CoefficientSet.UserDefinedValues"/>, **but only if** default setting for <see cref="OperatorCoefficientsProvider"/> is used
@@ -218,6 +229,8 @@ namespace BoSSS.Foundation {
                 r.UserDefinedValues[kv.Key] = kv.Value;
             }
 
+            r.HomotopyValue = this.m_CurrentHomotopyValue;
+
             return r;
         }
 
@@ -234,7 +247,7 @@ namespace BoSSS.Foundation {
             }
             set {
                  if(IsCommited)
-                    throw new NotSupportedException("not allowed to change after Commit");
+                    throw new NotSupportedException("not allowed to change after operator is committed.");
                 m_OperatorCoefficientsProvider = value;
             }
         }
@@ -255,23 +268,75 @@ namespace BoSSS.Foundation {
             return r;
         }
 
-
-        IParameterUpdate m_ParameterUpdate;
+        List<DelPartialParameterUpdate> m_ParameterUpdates = new List<DelPartialParameterUpdate>();
 
         /// <summary>
-        /// If set, used to update parameters before evaluation.
+        /// <see cref="ISpatialOperator.ParameterUpdates"/>
         /// </summary>
-        public IParameterUpdate ParameterUpdate {
+        public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                return m_ParameterUpdate;
-            }
-            set {
-                if(IsCommited)
-                    throw new NotSupportedException("unable to change after 'Commit()'");
-                m_ParameterUpdate = value;
+                if(m_IsCommited) {
+                    return m_ParameterUpdates.AsReadOnly();
+                } else {
+                    return m_ParameterUpdates;
+                }
             }
         }
 
+        List<DelParameterFactory> m_ParameterFactories = new List<DelParameterFactory>();
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.ParameterFactories"/>
+        /// </summary>
+        public ICollection<DelParameterFactory> ParameterFactories {
+            get {
+                if(IsCommited) {
+                    return m_ParameterFactories.AsReadOnly();
+                } else {
+                    return m_ParameterFactories;
+                }
+            }
+        }
+
+
+        List<Action<double>> m_HomotopyUpdate = new List<Action<double>>();
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.HomotopyUpdate"/>
+        /// </summary>
+        public ICollection<Action<double>> HomotopyUpdate {
+            get {
+                if(m_IsCommited) {
+                    return m_HomotopyUpdate.AsReadOnly();
+                } else {
+                    return m_HomotopyUpdate;
+                }
+            }
+        }
+
+
+        double m_CurrentHomotopyValue = 1.0;
+
+        /// <summary>
+        /// Can be used by a (most likely nonlinear) solver to walk along the homotopy path.
+        /// Setting (to a different value) fires all <see cref="HomotopyUpdate"/> events
+        /// </summary>
+        public double CurrentHomotopyValue {
+            get {
+                return m_CurrentHomotopyValue;
+            }
+            set {
+                if(value < 0 || value > 1)
+                    throw new ArgumentOutOfRangeException();
+                double oldVal = m_CurrentHomotopyValue;
+                m_CurrentHomotopyValue = value;
+                if(oldVal != value) {
+                    foreach(var action in m_HomotopyUpdate) {
+                        action(value);
+                    }
+                }
+            }
+        }
 
 
         /// <summary>
@@ -415,10 +480,6 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Evaluation of the <see cref="QuadOrderFunction"/>.
         /// </summary>
-        /// <param name="DomainMap"></param>
-        /// <param name="Parameters"></param>
-        /// <param name="CodomainMap"></param>
-        /// <returns></returns>
         public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
             /// Compute Quadrature Order
             int order;
@@ -522,6 +583,10 @@ namespace BoSSS.Foundation {
         public virtual void Commit() {
             Verify();
 
+            if(TemporalOperator != null) {
+                TemporalOperator.Commit();
+            }
+
             if(m_IsCommited)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
 
@@ -596,7 +661,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public IList<string> DomainVar {
             get {
-                return (string[])m_DomainVar.Clone();
+                return m_DomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -609,7 +674,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public IList<string> CodomainVar {
             get {
-                return (string[])m_CodomainVar.Clone();
+                return m_CodomainVar.ToList().AsReadOnly();
             }
         }
 
@@ -625,7 +690,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public IList<string> ParameterVar {
             get {
-                return (string[])m_ParameterVar.Clone();
+                return m_ParameterVar.ToList().AsReadOnly();
             }
         }
 
@@ -688,8 +753,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-
-
+        
         /// <summary>
         /// returns true, if any of the equation components associated with 
         /// variable <paramref name="CodomVar"/> is linear
@@ -1422,7 +1486,7 @@ namespace BoSSS.Foundation {
             /// </summary>
             /// <param name="AffineOffset"></param>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
-                Internal_ComputeMatrixEx(default(BlockMsrMatrix), AffineOffset, true);
+                Internal_ComputeMatrixEx(default(BlockMsrMatrix), AffineOffset, true, 1.0);
             }
 
             /// <summary>
@@ -1432,16 +1496,19 @@ namespace BoSSS.Foundation {
             /// \f]
             /// </summary>
             /// <param name="Matrix">
-            /// Output, the operator matrix is accumulated here
+            /// Output, the operator matrix, scaled by <paramref name="alpha"/>, is accumulated here
             /// </param>
             /// <param name="AffineOffset">
-            /// Output, the affine part of the operator linearization is accumulated here
+            /// Output, the affine part of the operator linearization, scaled by <paramref name="alpha"/>, is accumulated here
             /// </param>
-            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
+            /// <param name="alpha">
+            /// scaling factor
+            /// </param>
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha = 1.0)
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
-                Internal_ComputeMatrixEx(Matrix, AffineOffset, false);
+                Internal_ComputeMatrixEx(Matrix, AffineOffset, false, alpha);
             }
 
             /// <summary>
@@ -1464,7 +1531,7 @@ namespace BoSSS.Foundation {
             /// matrix evaluation
             /// </summary>
             virtual protected void Internal_ComputeMatrixEx<M, V>(
-                M Matrix, V AffineOffset, bool OnlyAffine)
+                M Matrix, V AffineOffset, bool OnlyAffine, double alpha)
                 where M : IMutableMatrix
                 where V : IList<double> //
             {
@@ -1510,7 +1577,7 @@ namespace BoSSS.Foundation {
                         && _Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
-
+                            mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule,
                                 CodomainMapping, Parameters, DomainMapping,
                                 OnlyAffine ? default(M) : Matrix, AffineOffset, time);
@@ -1528,8 +1595,8 @@ namespace BoSSS.Foundation {
                          && _Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeForm_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeForm_UxV), typeof(IEdgeSource_V))) {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
+                            mxtbuilder2.m_alpha = alpha;
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            mxtbuilder2 = null;
                         }
                     }
                 }
@@ -1543,12 +1610,13 @@ namespace BoSSS.Foundation {
         public virtual IEvaluatorLinear GetFDJacobianBuilder(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
-            DelParameterUpdate __delParameterUpdate = null;
-            if(this.ParameterUpdate != null) {
-                __delParameterUpdate = this.ParameterUpdate.PerformUpdate;
-            }
-            
-            return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, __delParameterUpdate);
+
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+                };
+
+            return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, ParamUpdate);
         }
 
         static Basis[] GetBasisS(IList<DGField> ParameterMap) {
@@ -1559,22 +1627,26 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// Internal implementation and legacy API;
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
+        /// <param name="CodomainVarMap"></param>
+        /// <param name="DomainFields"></param>
+        /// <param name="ParameterMap"></param>
+        /// <param name="legayc_delParameterUpdate">
+        /// legacy: external delegate to update all parameters at once;
+        /// specifying this replaces all <see cref="IParameterHandling"/> components and all <see cref="ParameterUpdates"/> set for this operator
+        /// with the external update.
+        /// </param>
         public virtual FDJacobianBuilder GetFDJacobianBuilder_(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            DelParameterUpdate __delParameterUpdate) //
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
         {
             using(new FuncTrace()) {
                 if(!IsCommited)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-                if(__delParameterUpdate == null) {
-                    if(this.ParameterVar.Count > 0) {
-                        throw new ArgumentException("Provided parameter update delegate '__delParameterUpdate' is null, but this operator contains " + this.ParameterVar.Count + " parameters.", "__delParameterUpdate");
-                    }
-                }
-
+                
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
                     GetBasisS(ParameterMap),
                     CodomainVarMap.BasisS);
@@ -1584,7 +1656,7 @@ namespace BoSSS.Foundation {
                     this,
                     new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
                     rulz.edgeRule, rulz.volRule),
-                    __delParameterUpdate);
+                    legayc_delParameterUpdate);
                 //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
@@ -1600,7 +1672,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            public FDJacobianBuilder(IEvaluatorNonLin __Eval, DelParameterUpdate __delParameterUpdate) {
+            public FDJacobianBuilder(IEvaluatorNonLin __Eval, Action<IEnumerable<DGField>, IEnumerable<DGField>> __delParameterUpdate) {
 
                 eps = 1.0;
                 while(1.0 + eps > 1.0) {
@@ -1710,13 +1782,17 @@ namespace BoSSS.Foundation {
             /// can be dangerous to turn off
             /// </summary>
             public bool MPITtransceive {
-                get => throw new NotImplementedException();
-                set => throw new NotImplementedException();
+                get {
+                    return Eval.MPITtransceive;
+                }
+                set {
+                    Eval.MPITtransceive = value;
+                }
             }
 
             IEvaluatorNonLin Eval;
 
-            DelParameterUpdate DelParamUpdate;
+            Action<IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
 
             /// <summary>
             /// - 1st index: enumeration of color lists
@@ -2230,12 +2306,15 @@ namespace BoSSS.Foundation {
             /// \f]
             /// </summary>
             /// <param name="Matrix">
-            /// Output, the approximate Jacobian matrix of the operator is accumulated here
+            /// Output, the approximate Jacobian matrix of the operator, scaled by <paramref name="alpha"/>, is accumulated here
             /// </param>
             /// <param name="AffineOffset">
-            /// Output, the operator value in the linearization point
+            /// Output, the operator value in the linearization point, scaled by <paramref name="alpha"/>.
             /// </param>
-            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
+            /// <param name="alpha">
+            /// scaling factor
+            /// </param>
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha = 1.0)
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
@@ -2291,7 +2370,7 @@ namespace BoSSS.Foundation {
                 }
 #endif
                 Eval.Evaluate(1.0, 0.0, F0);
-                AffineOffset.AccV(1.0, F0);
+                AffineOffset.AccV(alpha, F0);
                 NoOfEvals++;
 
                 // compute epsilon's
@@ -2501,7 +2580,7 @@ namespace BoSSS.Foundation {
                                 Matrix.AccBlock(i0Row + codMap.i0,
                                     //i0Col + domMap.i0, 
                                     domMap.GlobalUniqueCoordinateIndex(0, jCol, 0),
-                                    1.0, Block);
+                                    alpha, Block);
                             }
                         }
 
@@ -2599,8 +2678,7 @@ namespace BoSSS.Foundation {
                 return ret;
             }
 
-            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension, 
-                this.ParameterUpdate != null ? this.ParameterUpdate.PerformUpdate : default(DelParameterUpdate));
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
 
             // create derivative operator
             // ==========================
@@ -2611,7 +2689,10 @@ namespace BoSSS.Foundation {
                    this.CodomainVar,
                    this.QuadOrderFunction);
 
-            foreach(string CodNmn in this.CodomainVar) {
+            if (this.TemporalOperator != null)
+                JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);
+
+            foreach (string CodNmn in this.CodomainVar) {
                 foreach(var eq in this.EquationComponents[CodNmn]) {
 
                     if(!(eq is ISupportsJacobianComponent _eq))
@@ -2628,11 +2709,187 @@ namespace BoSSS.Foundation {
                 }
             }
 
+
+
             // return
             // =====
-            JacobianOp.ParameterUpdate = h;
+
+            foreach(string domName in this.DomainVar)
+                JacobianOp.FreeMeanValue[domName] = this.FreeMeanValue[domName];
+            JacobianOp.EdgeQuadraturSchemeProvider = this.EdgeQuadraturSchemeProvider;
+            JacobianOp.VolumeQuadraturSchemeProvider = this.VolumeQuadraturSchemeProvider;
+            foreach(var kv in this.UserDefinedValues)
+                JacobianOp.UserDefinedValues.Add(kv);
+
+            JacobianOp.LinearizationHint = LinearizationHint.AdHoc;
+
+            foreach(DelParameterFactory f in this.ParameterFactories) 
+                JacobianOp.ParameterFactories.Add(f);
+            foreach (DelPartialParameterUpdate f in this.ParameterUpdates) {
+                JacobianOp.ParameterUpdates.Add(f);
+            }
+            JacobianOp.ParameterFactories.Add(h.AllocateParameters);
+            JacobianOp.ParameterUpdates.Add(h.PerformUpdate);
+            JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
+            JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
+            JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
             JacobianOp.Commit();
             return JacobianOp;
+        }
+
+        /// <summary>
+        /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
+        /// of this operator (because of the ownership, the temporal operator cannot be reused).
+        /// </summary>
+        class TemporalOperatorContainer : ITemporalOperator {
+
+            SpatialOperator m_newOwner;
+            ITemporalOperator m_encapsulatedObj;
+            public TemporalOperatorContainer(SpatialOperator __newOwner, ITemporalOperator __encapsulatedObj) {
+                m_encapsulatedObj = __encapsulatedObj;
+                m_newOwner = __newOwner;
+
+                
+            }
+
+            bool m_IsCommited;
+
+            /// <summary>
+            /// locks the configuration of the operator
+            /// </summary>
+            public void Commit() {
+                if (m_IsCommited)
+                    throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
+                m_IsCommited = true;
+
+            }
+
+            public IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+                return m_encapsulatedObj.GetMassMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+            }
+        }
+
+
+
+        ITemporalOperator m_TemporalOperator;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public ITemporalOperator TemporalOperator {
+            get {
+                return m_TemporalOperator;
+            }
+            set {
+                if (IsCommited)
+                    throw new NotSupportedException("Not allowed to change after operator is committed.");
+                m_TemporalOperator = value;
+            }
+        }
+
+        MyDict m_FreeMeanValue;
+
+        /// <summary>
+        /// Notifies the solver that the mean value for a specific value is floating.
+        /// An example is e.g. the pressure in the incompressible Navier-Stokes equation with all-walls boundary condition.
+        /// - key: the name of some domain variable
+        /// - value: false, if the mean value of the solution  is defined, true if the mean value  of the solution is floating (i.e. for some solution u, u + constant is also a solution).
+        /// </summary>
+        public IDictionary<string, bool> FreeMeanValue {
+            get {
+                if(m_FreeMeanValue == null) {
+                    m_FreeMeanValue = new MyDict(this);
+                }
+                return m_FreeMeanValue;
+            }
+        }
+
+
+        /// <summary>
+        /// I hate shit like this class - so many dumb lines of code.
+        /// </summary>
+        class MyDict : IDictionary<string, bool> {
+
+            SpatialOperator owner;
+
+            public MyDict(SpatialOperator __owner) {
+                owner = __owner;
+                InternalRep = new Dictionary<string, bool>();
+                foreach(string domName in __owner.DomainVar) {
+                    InternalRep.Add(domName, false);
+                }
+            }
+
+            Dictionary<string, bool> InternalRep;
+
+
+            public bool this[string key] {
+                get {
+                    return InternalRep[key];
+                }
+                set {
+                    if (!InternalRep.ContainsKey(key))
+                        throw new ArgumentException("Must be a name of some domain variable.");
+                    if (owner.IsCommited)
+                        throw new NotSupportedException("Changing is not allowed after operator is committed.");
+                    InternalRep[key] = value;
+                }
+            }
+
+            public ICollection<string> Keys => InternalRep.Keys;
+
+            public ICollection<bool> Values => InternalRep.Values;
+
+            public int Count => InternalRep.Count;
+
+            public bool IsReadOnly => owner.IsCommited;
+            
+
+            public void Add(string key, bool value) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Add(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public void Clear() {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Contains(KeyValuePair<string, bool> item) {
+                return InternalRep.Contains(item);
+            }
+
+            public bool ContainsKey(string key) {
+                return InternalRep.ContainsKey(key);
+            }
+
+            
+            public void CopyTo(KeyValuePair<string, bool>[] array, int arrayIndex) {
+                (InternalRep as ICollection<KeyValuePair<string,bool>>).CopyTo(array, arrayIndex);
+            }
+            
+
+            public IEnumerator<KeyValuePair<string, bool>> GetEnumerator() {
+                throw new NotImplementedException();
+            }
+
+            public bool Remove(string key) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool Remove(KeyValuePair<string, bool> item) {
+                throw new NotSupportedException("Addition/Removal of keys is not supported.");
+            }
+
+            public bool TryGetValue(string key, out bool value) {
+                return InternalRep.TryGetValue(key, out value);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() {
+                return InternalRep.GetEnumerator();
+            }
         }
     }
 }

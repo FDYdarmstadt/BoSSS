@@ -1,0 +1,1151 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XdgPoisson3;
+**************
+==============
+var myBatch = (SlurmClient)ExecutionQueues[1];
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+//myBatch.MonoDebug = true;
+**************
+==============
+string WFlowName = "Xdg_weakscaling_test";
+WorkflowMgm.Init(WFlowName);
+WorkflowMgm.AllJobs;
+**************
+Project name is set to 'Xdg_weakscaling_test'.
+List of 3 instances of KeyValuePair{String,Job} {
+  0: [J42875_k2_classic_pardiso, J42875_k2_classic_pardiso: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
+  1: [J42875_k2_exp_Kcycle_schwarz, J42875_k2_exp_Kcycle_schwarz: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
+  2: [J42875_k2_exp_gmres_levelpmg, J42875_k2_exp_gmres_levelpmg: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
+}
+==============
+**************
+==============
+//on HHLR path has to be something, which linux can work with e.g. /work/scratch/...
+string dirname = "DB_XDGPoisson_MPI";
+string linpath = @"/work/scratch/jw52xeqa/"+dirname;
+string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
+**************
+==============
+var tempDB = OpenOrCreateDatabase(winpath);
+**************
+==============
+tempDB.Sessions
+**************
+List of 28 instances of ISessionInfo {
+  0: Xdg_weakscaling	J42875_k2_classic_pardiso	09/11/2020 19:41:17	42ea1bdf...
+  1: Xdg_weakscaling	J42875_k2_exp_Kcycle_schwarz	09/11/2020 19:41:19	da0b0216...
+  2: Xdg_weakscaling	J42875_k2_exp_gmres_levelpmg	09/11/2020 19:41:13	268669a8...
+  3: Xdg_weakscaling_s	J8000_k2_exp_gmres_levelpmg	09/10/2020 18:43:32	955b4bf4...
+  4: Xdg_weakscaling_s	J4096_k2_exp_gmres_levelpmg	09/10/2020 18:43:23	c7faeca3...
+  5: Xdg_weakscaling_s	J32768_k2_exp_gmres_levelpmg	09/10/2020 18:43:27	d199f4e2...
+  6: Xdg_weakscaling_s	J64000_k2_exp_gmres_levelpmg	09/10/2020 18:43:30	661f2480...
+  7: Xdg_weakscaling_s	J17576_k2_exp_gmres_levelpmg	09/10/2020 18:43:35	942ec92b...
+  8: Xdg_weakscaling_s	J8000_k2_exp_Kcycle_schwarz	09/07/2020 11:50:02	03f8a68d...
+  9: Xdg_weakscaling_s	J262144_k2_exp_Kcycle_schwarz	09/07/2020 12:47:35	30d85acc...
+  10: Xdg_weakscaling_s	J512000_k2_exp_Kcycle_schwarz	09/07/2020 18:18:53	756f1a1d...
+  11: Xdg_weakscaling_s	J17576_k2_classic_pardiso	09/07/2020 11:50:04	8933624d...
+  12: Xdg_weakscaling_s	J132651_k2_exp_Kcycle_schwarz_predef	09/08/2020 12:03:42	8d6690a6...
+  13: Xdg_weakscaling_s	J17576_k2_exp_Kcycle_schwarz	09/07/2020 11:49:59	96f9eadf...
+  14: Xdg_weakscaling_s	J32768_k2_classic_pardiso	09/07/2020 11:50:04	bc0f0a7e...
+  15: Xdg_weakscaling_s	J8000_k2_classic_pardiso	09/07/2020 11:50:02	c491e120...
+  16: Xdg_weakscaling_s	J4096_k2_exp_Kcycle_schwarz	09/07/2020 11:50:00	c6ce6e97...
+  17: Xdg_weakscaling_s	J32768_k2_exp_Kcycle_schwarz	09/07/2020 11:49:59	cffe8f8f...
+  18: Xdg_weakscaling_s	J64000_k2_exp_Kcycle_schwarz	09/07/2020 11:55:06	e4698a1e...
+  19: Xdg_weakscaling_s	J4096_k2_classic_pardiso	09/07/2020 11:50:00	f045d3c4...
+  20: Xdg_weakscaling_s	J64000_k2_classic_pardiso	09/07/2020 11:49:59	f312a69e...
+  21: Xdg_weakscaling	J1030301_k2_exp_Kcycle_schwarz*	09/09/2020 00:11:48	7c726c15...
+  22: Xdg_weakscaling_Debug	J132651_k2_exp_Kcycle_schwarz_METIS*	09/08/2020 12:03:42	9e35baf0...
+  23: Xdg_weakscaling_Debug	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 22:06:13	c07fec44...
+  24: Xdg_weakscaling_	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 13:11:54	15c2fe29...
+  25: Xdg_weakscaling	J262144_k2_classic_pardiso*	09/07/2020 12:34:35	45886724...
+  26: Xdg_weakscaling	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 12:00:18	8281a95d...
+  27: Xdg_weakscaling	J132651_k2_classic_pardiso*	09/07/2020 11:53:33	9c9fb483...
+}
+==============
+**************
+==============
+**************
+==============
+// ===================
+// Utility definitions
+// ===================
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }    
+    
+    //Non-equidistant nodes
+    public static double[] SinLinSpacing(double l, double r, double a, int n) {
+        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
+        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
+        double[] nodes = new double[n];
+
+        for (int i = 0; i < n; i++)
+            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
+            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
+
+        for (int i = 0; i < n; i++)
+            nodes[i] = nodes[i] * (r - l)*0.5 + l;
+        return nodes;
+    }
+}
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+//Weak scaling
+int[] core_sweep = {22};
+//int[] core_sweep = {16};
+int p          = 2;
+int DOFperCore = 100000;
+**************
+==============
+int[] res=new int[core_sweep.Length];
+int[] test=new int[core_sweep.Length];
+var cells2cores = new Dictionary<int, int>();
+for(int i=0;i<core_sweep.Length;i++){
+double Res   = Math.Pow(DOFperCore/Utils.Np(p)*core_sweep[i],0.333333333);
+int ResRndup = (int)Math.Ceiling(Res);
+res[i]=ResRndup;
+test[i]=ResRndup*ResRndup*ResRndup;
+cells2cores.Add(test[i],core_sweep[i]);
+}
+cells2cores;
+**************
+List of 1 instances of KeyValuePair{Int32,Int32} {
+  0: [226981, 22]
+}
+==============
+tempDB.Grids;
+**************
+List of 17 instances of IGridInfo {
+  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
+  1: { Guid = b37906d0-8e08-4898-9509-894e1e3d2872; Name = Xdg_weakscaling_J658503; Cell Count = 658503; Dim = 3 }
+  2: { Guid = d3f3fd62-e609-4ab9-a2e3-30b734397291; Name = Xdg_weakscaling_J328509; Cell Count = 328509; Dim = 3 }
+  3: { Guid = e7ea6bc0-f549-4b01-a7b7-fc6475ffdfa6; Name = Xdg_weakscaling_J166375; Cell Count = 166375; Dim = 3 }
+  4: { Guid = f79aed73-4648-40d1-b648-b805d8c98b2d; Name = Xdg_weakscaling_J85184; Cell Count = 85184; Dim = 3 }
+  5: { Guid = e1a02622-2663-4455-b48b-d5d1067c9157; Name = Xdg_weakscaling_J42875; Cell Count = 42875; Dim = 3 }
+  6: { Guid = 8678c786-174d-4ad9-9d55-9ab2e936bcb3; Name = Xdg_weakscaling_Debug_J132651; Cell Count = 132651; Dim = 3 }
+  7: { Guid = e0025320-5098-450c-ace8-82318cb4b390; Name = Xdg_weakscaling_J1030301; Cell Count = 1030301; Dim = 3 }
+  8: { Guid = e97cde32-f955-450b-bcfb-39896d233bad; Name = Xdg_weakscaling_J512000; Cell Count = 512000; Dim = 3 }
+  9: { Guid = 9a6d6841-8a34-4d17-9281-5120c5522361; Name = Xdg_weakscaling_J262144; Cell Count = 262144; Dim = 3 }
+  10: { Guid = 69aa4b3b-263d-478d-9d81-b8c0c6facccd; Name = Xdg_weakscaling_J132651; Cell Count = 132651; Dim = 3 }
+  11: { Guid = a87ed323-6584-42e9-9404-3afb43226cac; Name = Xdg_weakscaling_J64000; Cell Count = 64000; Dim = 3 }
+  12: { Guid = c75cbd43-a2b7-4d65-b4c9-7077b2dec485; Name = Xdg_weakscaling_J32768; Cell Count = 32768; Dim = 3 }
+  13: { Guid = 063ebea7-cae5-42d3-823f-9ae39510a379; Name = Xdg_weakscaling_J17576; Cell Count = 17576; Dim = 3 }
+  14: { Guid = ac23870f-00fe-40c8-829d-8b69bf9a3366; Name = Xdg_weakscaling_J8000; Cell Count = 8000; Dim = 3 }
+  15: { Guid = 48de75f1-78d7-43d0-8d8b-b89b1c6f556b; Name = Xdg_weakscaling_J4096; Cell Count = 4096; Dim = 3 }
+  16: { Guid = 3cdb9253-8155-4bb0-aef5-a1ec4d16e10a; Name = Xdg_Xcores_test_J166375; Cell Count = 166375; Dim = 3 }
+}
+==============
+double xMax = 1.0, yMax = 1.0, zMax=1.0;
+double xMin = -1.0, yMin = -1.0,zMin = -1.0;
+**************
+==============
+//Add Predefined Partitioning
+static class AuxPart{
+    public static Func<double[], int> GenFunc(int cores){
+        Func<double[], int> MakeMyPartioning = delegate (double[] X) {
+            double x = X[0];
+            double y = X[1];
+            double z = X[2];
+            
+            int sx = 1;
+            int sy = 1;
+            int sz = 1;
+            for (int i = 0; i < Math.Log(cores, 2); i++) {
+                if (i % 3 == 0)
+                    sx*= 2;
+                else if(i % 3 == 1)
+                    sy*=2;
+                else
+                    sz*=2;
+            }
+            
+            
+            double xspan = (xMax - xMin) / sx;
+            double yspan = (yMax - yMin) / sy;
+            double zspan = (zMax - zMin) / sz;
+            int rank     = int.MaxValue;
+            int icore    = 0;
+            for (int i = 0; i < sx; i++) {
+                for (int j = 0; j < sy; j++) {
+                    for(int k=0;k<sz;k++){
+                        bool xtrue = x <= xspan * (i + 1) + xMin;
+                        bool ytrue = y <= yspan * (j + 1) + yMin;
+                        bool ztrue = z <= zspan * (k + 1) + zMin;
+                        if (xtrue && ytrue && ztrue) {
+                            rank = icore;
+                            return rank;
+                        }
+                        icore++;
+                    }
+                }
+            }
+
+            return rank;
+        };
+        return MakeMyPartioning;
+   }
+}
+**************
+==============
+int sx = 1;
+int sy = 1;
+int sz = 1;
+for (int i = 0; i < Math.Log(64, 2); i++) {
+    if (i % 3 == 0)
+        sx*= 2;
+    else if(i % 3 == 1)
+        sy*=2;
+    else
+        sz*=2;
+}
+Console.WriteLine("sx:{0},sy:{1},sz:{2}",sx,sy,sz);
+**************
+sx:4,sy:4,sz:4
+
+==============
+int[] Resolutions_3D = res;
+//int[] Resolutions_3D = new int[] { 2 };
+IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
+for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
+    int Res = Resolutions_3D[cnt];    
+    
+    //double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+    //double[] yNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    //double[] zNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    double[] xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
+    double[] yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
+    double[] zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
+    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
+    
+    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
+    
+    grids[cnt]=null;
+    foreach(IGridInfo grd in tempDB.Grids){
+        bool check = grd.Name.Contains(string.Format("_J"+ J));
+        if(check){
+          //grids[cnt]=grd;
+        }
+    }
+    
+    //grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
+    
+    if(grids[cnt] == null){
+        Console.WriteLine("Creating grid with " + J + " cells.");
+        
+        GridCommons g;
+        g      = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        g.AddPredefinedPartitioning("hallo", AuxPart.GenFunc(core_sweep[cnt]));
+        g.Name = GridName;
+        g.EdgeTagNames.Add(1, "Dirichlet");   
+        g.DefineEdgeTags(delegate (double[] X) {
+            byte ret;
+            ret = 1;
+            return ret;
+        });
+      
+        tempDB.SaveGrid(ref g, true);  
+        grids[cnt] = g;
+    } else {
+        Console.WriteLine("Found Grid: " + grids[cnt]);
+        if(grids[cnt].NumberOfCells != J)
+            throw new Exception("J mismatch");
+        
+        if(grids[cnt].SpatialDimension != 3)
+            throw new Exception("D mismatch");
+    }
+}
+**************
+Creating grid with 226981 cells.
+Grid Edge Tags changed.
+
+==============
+tempDB.Grids;
+**************
+List of 17 instances of IGridInfo {
+  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
+  1: { Guid = b37906d0-8e08-4898-9509-894e1e3d2872; Name = Xdg_weakscaling_J658503; Cell Count = 658503; Dim = 3 }
+  2: { Guid = d3f3fd62-e609-4ab9-a2e3-30b734397291; Name = Xdg_weakscaling_J328509; Cell Count = 328509; Dim = 3 }
+  3: { Guid = e7ea6bc0-f549-4b01-a7b7-fc6475ffdfa6; Name = Xdg_weakscaling_J166375; Cell Count = 166375; Dim = 3 }
+  4: { Guid = f79aed73-4648-40d1-b648-b805d8c98b2d; Name = Xdg_weakscaling_J85184; Cell Count = 85184; Dim = 3 }
+  5: { Guid = e1a02622-2663-4455-b48b-d5d1067c9157; Name = Xdg_weakscaling_J42875; Cell Count = 42875; Dim = 3 }
+  6: { Guid = 8678c786-174d-4ad9-9d55-9ab2e936bcb3; Name = Xdg_weakscaling_Debug_J132651; Cell Count = 132651; Dim = 3 }
+  7: { Guid = e0025320-5098-450c-ace8-82318cb4b390; Name = Xdg_weakscaling_J1030301; Cell Count = 1030301; Dim = 3 }
+  8: { Guid = e97cde32-f955-450b-bcfb-39896d233bad; Name = Xdg_weakscaling_J512000; Cell Count = 512000; Dim = 3 }
+  9: { Guid = 9a6d6841-8a34-4d17-9281-5120c5522361; Name = Xdg_weakscaling_J262144; Cell Count = 262144; Dim = 3 }
+  10: { Guid = 69aa4b3b-263d-478d-9d81-b8c0c6facccd; Name = Xdg_weakscaling_J132651; Cell Count = 132651; Dim = 3 }
+  11: { Guid = a87ed323-6584-42e9-9404-3afb43226cac; Name = Xdg_weakscaling_J64000; Cell Count = 64000; Dim = 3 }
+  12: { Guid = c75cbd43-a2b7-4d65-b4c9-7077b2dec485; Name = Xdg_weakscaling_J32768; Cell Count = 32768; Dim = 3 }
+  13: { Guid = 063ebea7-cae5-42d3-823f-9ae39510a379; Name = Xdg_weakscaling_J17576; Cell Count = 17576; Dim = 3 }
+  14: { Guid = ac23870f-00fe-40c8-829d-8b69bf9a3366; Name = Xdg_weakscaling_J8000; Cell Count = 8000; Dim = 3 }
+  15: { Guid = 48de75f1-78d7-43d0-8d8b-b89b1c6f556b; Name = Xdg_weakscaling_J4096; Cell Count = 4096; Dim = 3 }
+  16: { Guid = 3cdb9253-8155-4bb0-aef5-a1ec4d16e10a; Name = Xdg_Xcores_test_J166375; Cell Count = 166375; Dim = 3 }
+}
+==============
+// Overwrite Selection
+var ListOfgrids = new List<IGridInfo>();
+ListOfgrids.AddRange(tempDB.Grids.Pick(0));
+IGridInfo[] grids = ListOfgrids.ToArray();
+**************
+==============
+grids;
+**************
+List of 1 instances of IGridInfo {
+  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
+}
+==============
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - - - - - - - -
+// Initial Values & Boundary conditions
+// - - - - - - - - - - - - - - - - - - -
+**************
+==============
+static class InitialValues {
+    public static double RHS(double[] X) {
+        return -Math.Sin(X[0]);
+    }
+    
+    public static double DirichletBC(double[] X) {
+        return 0.0;
+    }
+    
+    public static double NeumannBC(double[] X) {
+       if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8)
+           return 0;
+       if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8))
+           return 0;
+
+       return Math.Cos(10.0);
+   }
+}
+**************
+==============
+InitialValues.RHS(new double[]{ 0,0});
+**************
+0
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+//int[] PolyDegS = new int[] {2, 3 ,5};
+int[] PolyDegS = new int[] {p};
+**************
+==============
+// Solvers which we want to instrument:
+LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
+    LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_mumps, 
+    LinearSolverCode.exp_Kcycle_schwarz, 
+    LinearSolverCode.exp_gmres_levelpmg, 
+}; 
+**************
+==============
+// MaxDof for one claculation (we skip fine grids for higher polynomial orders)
+//int MaxDof = 5000000;
+int MaxDof           = int.MaxValue;
+**************
+==============
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Foundation.XDG;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
+==============
+int[] PolyDegS={p};
+**************
+==============
+controls.Clear();
+foreach(LinearSolverCode solver_name in solver_nameS) {
+foreach(int k in PolyDegS) {    
+foreach(IGridInfo grd in grids) {
+    
+    int Np = Utils.Np(k);
+    int J  = grd.NumberOfCells;
+    if(J*Np > MaxDof)
+        continue;
+    
+    string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    Console.WriteLine("setting up: " + caseName);
+    Console.WriteLine("based on grid: "+grd.Name);
+
+    var ctrl = new XdgPoisson3Control();
+    
+    
+    ctrl.AlternateDbPaths = new[]{
+        new ValueTuple<string,string>(linpath, ""),
+        new ValueTuple<string,string>(winpath, "pcmit32")
+    };
+    ctrl.savetodb = true;
+    ctrl.GridGuid = grd.ID;
+    
+    ctrl.FieldOptions.Add("Phi", new FieldOpts() {
+         Degree = 2,
+         SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+    });
+    ctrl.FieldOptions.Add("u", new FieldOpts() {
+         Degree = k,
+         SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+    });
+
+    ctrl.LinearSolver.SolverCode           = solver_name;
+    ctrl.LinearSolver.NoOfMultigridLevels  = 10;
+    ctrl.LinearSolver.TargetBlockSize      = Math.Min(J*Np-1,DOFperCore);
+    ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
+    
+    double radius           = 0.7;
+    ctrl.ExcactSolSupported = false;
+    ctrl.InitialValues.Add("Phi", new Formula("X => X[0].Pow2()+X[1].Pow2()+X[2].Pow2()-"+radius+".Pow2()"));
+    ctrl.MU_A = -1;
+    ctrl.MU_B = -1000;
+    ctrl.InitialValues.Add("rhs#A", new Formula("X => 1"));
+    ctrl.InitialValues.Add("rhs#B", new Formula("X => 1"));
+    ctrl.InitialValues.Add("u#A", new Formula ("X => 0"));
+    ctrl.InitialValues.Add("u#B", new Formula ("X => 0"));
+    ctrl.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+    ctrl.SetDefaultDiriBndCnd  = true;
+    //ctrl.TracingNamespaces     = "*";
+    
+    ctrl.ViscosityMode = XLaplace_Interface.Mode.SIP;
+    ctrl.SessionName   = caseName;
+    ctrl.ProjectName   = WFlowName;
+    ctrl.GridPartType  = BoSSS.Foundation.Grid.GridPartType.METIS;
+    
+    ctrl.AgglomerationThreshold = 0.1;
+    
+    controls.Add(ctrl);
+}
+}
+}
+**************
+setting up: J226981_k2_classic_pardiso
+based on grid: Xdg_weakscaling_J226981
+setting up: J226981_k2_exp_Kcycle_schwarz
+based on grid: Xdg_weakscaling_J226981
+setting up: J226981_k2_exp_gmres_levelpmg
+based on grid: Xdg_weakscaling_J226981
+
+==============
+//controls[0].SessionName+="_METIS";
+//controls[1].GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
+//controls[1].GridPartOptions = "hallo";
+//controls[1].SessionName+="_predef";
+**************
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+//var solver = new XdgPoisson3Main();
+//solver.Init(controls[0]);
+//solver.RunSolverMode();
+//solver.Dispose();
+**************
+==============
+//WorkflowMgm.AllJobs.Pick(0);
+//WorkflowMgm.AllJobs.Pick(0).Value.Stdout;
+//WorkflowMgm.AllJobs.Pick(0).Value.Stderr;
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("softpcg") && s.Name.Contains("k2") && s.Name.Contains("mg"));//.ForEach(si => si.Delete(true));
+//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
+**************
+==============
+**************
+==============
+**************
+==============
+foreach(var ctrl in controls) {
+
+    int nocores;
+    try{
+        int nocells = tempDB.Grids.Find(ctrl.GridGuid).NumberOfCells;
+        cells2cores.TryGetValue(nocells,out nocores);
+        Console.WriteLine("{0}:{1}",nocores, nocells);
+
+        
+        Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+        var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
+        aJob.SetControlObject(ctrl);
+        ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
+        aJob.NumberOfMPIProcs         = nocores;
+        aJob.ExecutionTime            = "02:00:00";
+        aJob.MemPerCPU                = "2500";
+        aJob.UseComputeNodesExclusive = true;
+        aJob.Activate(myBatch);
+    } catch (Exception e){
+        Console.WriteLine(e.Message);
+    }
+}
+**************
+22:226981
+ Submitting: J226981_k2_classic_pardiso
+Job not submitted yet, or no result session is known - starting submission.
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200546
+copied 30 files.
+   written file: control.obj
+deployment finished.
+
+15585642
+22:226981
+ Submitting: J226981_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200548
+copied 30 files.
+   written file: control.obj
+deployment finished.
+
+15585645
+22:226981
+ Submitting: J226981_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200551
+copied 30 files.
+   written file: control.obj
+deployment finished.
+
+15585647
+
+==============
+**************
+==============
+LastError
+**************
+Renci.SshNet.Common.SshConnectionException: Client not connected.
+   at Renci.SshNet.Session.SendMessage(Message message)
+   at Renci.SshNet.Channels.ChannelSession.Open()
+   at Renci.SshNet.SshCommand.BeginExecute(AsyncCallback callback, Object state)
+   at BoSSS.Application.BoSSSpad.SlurmClient.EvaluateStatus(Job myJob, Int32& SubmitCount, Boolean& isRunning, Boolean& wasSuccessful, Boolean& isFailed, String& DeployDir) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 74
+   at BoSSS.Application.BoSSSpad.Job.GetStatus(Int32& SubmitCount, String& DD) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\Job.cs:line 534
+   at <InteractiveExpressionClass>.<Host>m__0(KeyValuePair`2 s)
+   at ilPSP.IEnumerableExtensions.ForEach[T](IEnumerable`1 source, Action`1 action) in G:\BoSSS-HHLR\public\src\ilPSP\layer_1.2-ilPSP\ilPSP\IEnumerableExtensions.cs:line 437
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 345
+==============
+var somelist = WorkflowMgm.AllJobs;
+somelist.ForEach(s=>Console.WriteLine(s.Value.Name +"Status: "+s.Value.Status));
+//somelist.ForEach(s=>Console.WriteLine(s.Value.Name));
+**************
+==============
+WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+using System.IO
+**************
+==============
+//write out stout
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+//var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccess));
+var somelist = WorkflowMgm.AllJobs;
+somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stderr.ToString()));
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stderr_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+}
+**************
+writing XdgPoissonVelocity_J8_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J64_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J512_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J4096_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J32768_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J262144_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J8_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J64_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J512_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J4096_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J32768_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J8_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J64_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J512_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J4096_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J32768_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz ...done.
+
+==============
+WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+//write out stdout of Failed Jobs
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
+somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+}
+**************
+Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
+
+==============
+//tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value;
+tempDB.Projects.Pick(0).Value.RunningOrCrashed().ForEach(s=>s.Delete(true));
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().ForEach(s=>s.ProjectName=WFlowName+"_failed");
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName+"_failed")).Pick(0).Value
+**************
+System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
+Parameter name: index. Type 'LastError' for details.
+
+==============
+tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value
+**************
+System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
+Parameter name: index. Type 'LastError' for details.
+
+==============
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed();
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().DeleteAll();
+//WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
+//WorkflowMgm.AllJobs.Where(s => s.Value.Status.Equals(JobStatus.InProgress)).Pick(0).Value.Stdout;
+//WorkflowMgm.AllJobs.Pick(0).Value.Stdout;
+**************
+==============
+//WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+**************
+==============
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Stdout;
+**************
+==============
+WorkflowMgm.SessionTable.Rows.Count;
+**************
+40
+==============
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timesteps.Last().Fields.Pick(1).Coordinates.NoOfCols;
+**************
+Interrupted!
+System.Threading.ThreadAbortException: Thread was being aborted.
+   at BoSSS.Foundation.XDG.LevelSetTracker.UpdateTracker(Int32 __NearRegionWith, Boolean incremental, Int32[] __LevSetAllowedMovement) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 1528
+   at BoSSS.Foundation.XDG.LevelSetTracker.ConstructorCommon(GridData griData, Int32 __NearRegionWidth, Int32 BruteForceDivisions, Int32 BruteForceOrder, Array SpeciesTable, MomentFittingVariants cutCellQuadratureType, ILevelSet[] levSets) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 305
+   at BoSSS.Foundation.XDG.LevelSetTracker..ctor(GridData BackgroundGrid, MomentFittingVariants cutCellquadType, Int32 __NearRegionWidth, Array SpeciesTable, ILevelSet[] levSets) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 163
+   at BoSSS.Foundation.XDG.LevelSetTracker.LevelSetTrackerInitializer.Initialize(IInitializationContext c) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker_IO.cs:line 82
+   at BoSSS.Foundation.XDG.XDGBasis.XDGBasisInitializer.Initialize(IInitializationContext c) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\XDGBasis_IO.cs:line 54
+   at BoSSS.Foundation.XDG.XDGField.XDGFieldInitializer.Initialize(IInitializationContext c) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\XDGField_IO.cs:line 45
+   at BoSSS.Foundation.IO.TimestepInfo.GetFields() in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation\TimestepInfo.cs:line 257
+   at System.Lazy`1.CreateValue()
+   at System.Lazy`1.LazyInitValue()
+   at BoSSS.Foundation.IO.TimestepInfo.get_Fields() in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation\TimestepInfo.cs:line 231
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
+//tempDB.Projects.Pick(0).Value.Pick(0).KeysAndQueries;
+//tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries;
+**************
+==============
+using ilPSP.Tracing;
+**************
+==============
+static class AddCols {
+    static public double _getMaxTime(ISessionInfo SI, string method, bool exclusive) {
+         double maxTime = 0.0;
+         var mcr        = SI.GetProfiling();
+                // Iterate over MPIs
+                for (int j = 0; j < mcr.Count(); j++) {
+                    MethodCallRecord value;
+                    // Iterate over methods
+                        // Get execution time of current method for current processor
+                        double tempTime;
+                        //double tempFractions;
+                        int occurence        = 1;
+
+                        value = mcr[j].FindChild(method);
+                        if (value == null) {
+                            value = mcr[j];
+                        }
+                        if (exclusive) {
+                            tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
+                             
+                        } else {
+                             tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;
+                               
+         
+                        }
+                        // Only save execution time if it is the highest value of all processor times
+                        if (tempTime > maxTime) {
+                            maxTime = tempTime;
+                        }
+                    }
+                    return maxTime;
+    }
+    static public double _getSumTime(ISessionInfo SI, string method, bool exclusive){
+                    double sumoftime = 0.0;
+                    var mcr          = SI.GetProfiling();
+                    // Iterate over MPIs
+                    //if(mcr.Count()!=4)
+                    //    SI.Delete(true);
+                    
+                    for (int j = 0; j < mcr.Count(); j++) {
+                        MethodCallRecord value;
+                        // Iterate over methods
+                        // Get execution time of current method for current processor
+                        double tempTime = 0;
+                        //double tempFractions;
+                        int occurence        = 1;
+                    
+                    try{
+                        value = mcr[j].FindChild(method);
+                        if (value == null) {
+                            value = mcr[j];
+                        }
+                        if (exclusive) {
+                            tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
+                        } else {
+                            tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;   
+                        }
+                    } catch(Exception e){
+                        //Console.WriteLine("count: "+mcr.Count());
+                        //Console.WriteLine(e);
+                        Console.WriteLine(SI.Name);
+                        Console.WriteLine(SI.ID);
+                        SI.Delete(true);
+                    }
+                        sumoftime+=tempTime;
+                    }
+                    
+        return sumoftime;
+        
+    }
+    //Max of Times
+    static public object SipMatrixAssembly_time(ISessionInfo SI) {
+        return (double)_getMaxTime(SI,"XdgMatrixAssembly",false);
+    }
+    static public object Aggregation_basis_init_time(ISessionInfo SI) {
+        return (double)_getMaxTime(SI,"Aggregation_basis_init",false);
+    }
+    static public object Solver_Init_time(ISessionInfo SI) {
+        return (double)_getMaxTime(SI,"Solver_Init",false);
+    }
+    static public object Solver_Run_time(ISessionInfo SI) {
+        return (double)_getMaxTime(SI,"Solver_Run",false);
+    }
+    static public object ExperimentalSolve(ISessionInfo SI) {
+        return (double)_getMaxTime(SI,"BoSSS.Application.XdgPoisson3.XdgPoisson3Main.ExperimentalSolver",false);
+    }
+    //Sum of times
+    static public object SumOfSipMatrixAssembly_time(ISessionInfo SI){
+        return (double)_getSumTime(SI,"XdgMatrixAssembly",false);
+    }
+     static public object SumOfAggregation_basis_init_time(ISessionInfo SI){
+        return (double)_getSumTime(SI,"Aggregation_basis_init",false);
+    }
+     static public object SumOfSolver_Init_time(ISessionInfo SI){
+        return (double)_getSumTime(SI,"Solver_Init",false);
+    }
+     static public object SumOfSolver_Run_time(ISessionInfo SI){
+        return (double)_getSumTime(SI,"Solver_Run",false);
+    }
+    static public object SumExperimentalSolve(ISessionInfo SI) {
+        return (double)_getSumTime(SI,"BoSSS.Application.XdgPoisson3.XdgPoisson3Main.ExperimentalSolver",false);
+    }
+}
+**************
+(58,39): warning CS0168: The variable `e' is declared but never used
+No. of errors|warnings: 0|1.
+
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+//Max Times
+WorkflowMgm.AdditionalSessionTableColums.Add("MaxMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("MaxAggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("MaxSolver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("MaxSolver_Run_time", AddCols.Solver_Run_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("MaxRunSolver",AddCols.ExperimentalSolve);
+//Sum of times
+WorkflowMgm.AdditionalSessionTableColums.Add("SumMatrixAssembly_time", AddCols.SumOfSipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("SumAggregation_basis_init_time", AddCols.SumOfAggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("SumSolver_Init_time", AddCols.SumOfSolver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("SumSolver_Run_time", AddCols.SumOfSolver_Run_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("SumRunSolver",AddCols.SumExperimentalSolve);
+**************
+==============
+// --------------------------
+// Save Session table in file
+// --------------------------
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+SessTab.Rows.Count;
+**************
+40
+==============
+// The Session column can't be serialized,
+// we have to remove it
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+using System.IO;
+**************
+==============
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
+**************
+==============
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
