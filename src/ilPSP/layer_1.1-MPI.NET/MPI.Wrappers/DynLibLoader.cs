@@ -248,7 +248,7 @@ namespace MPI.Wrappers.Utils {
 
                     if (success) {
                         // successfully loaded all library functions
-                        //Console.WriteLine("success in : " + LibNames[i]);
+                        //Console.WriteLine("success in : " + _LibNames[k]);
                         //Console.WriteLine("success.");
                         CurrentLibraryName = LibName;
                         mainLibsuccess = true;

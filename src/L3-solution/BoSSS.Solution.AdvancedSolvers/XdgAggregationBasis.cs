@@ -528,7 +528,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[] agCl = agCls[jAgg];
                 int K = agCl.Length;
 
-                MultidimensionalArray FulCoords = (K * N == Buffer.GetLength(0)) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
+                MultidimensionalArray FulCoords = (K * N == Buffer.Length) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
 
                 int i0Agg = jAgg * Nmax, i0Full;
 

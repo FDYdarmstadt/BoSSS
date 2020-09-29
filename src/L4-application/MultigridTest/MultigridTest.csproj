@@ -64,7 +64,8 @@
   <ItemGroup>
     <Compile Include="MultigridTestMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestProgram.cs" />
+    <Compile Include="TestProgramLinearMG.cs" />
+    <Compile Include="TestProgramCurvedMG.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

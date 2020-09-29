@@ -30,6 +30,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -304,7 +305,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     AnyNonX = true;
                 }
             }
-
+            
             AggregationGridData[] agSeq = _agSeq.ToArray();
             if (agSeq.Length <= 0)
                 throw new ArgumentException();
@@ -360,11 +361,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[][] Ag2Pt = agSeq[0].iLogicalCells.AggregateCellToParts;
                 Debug.Assert(Jagg == Jbase);
 
-                for (int j = 0; j < Jagg; j++) {
+                for (int j = 0; j < Jagg; j++)
+                {
                     int jGeom;
-                    if (Ag2Pt == null || Ag2Pt[j] == null) {
+                    if (Ag2Pt == null || Ag2Pt[j] == null)
+                    {
                         jGeom = j;
-                    } else {
+                    }
+                    else
+                    {
                         if (Ag2Pt[j].Length != 1)
                             throw new ArgumentException();
                         jGeom = Ag2Pt[j][0];
@@ -377,53 +382,96 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
+            // check if aggregation is performed on a curved or affine linear grid
+            if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
+            {
+                if (agSeq.Length >= 2)
+                {
+                    // directly compute the Injector for the coarsest level
+                    //int ilevel = agSeq.Length - 1;
 
-            // level 1
-            if(agSeq.Length >= 2) {
-                int iLevel = 1;
+                    if (!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
 
-                int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
-                int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
-                int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
+                    // compute the direct Injector for the coarsest mesh
+                    MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq[0].iLogicalCells.NoOfLocalUpdatedCells];
 
-                Debug.Assert(Ag2Pt.Length >= Jagg);
-                Debug.Assert(C2F.Length >= Jagg);
+                    Stopwatch stop = new Stopwatch();
+                    stop.Start();
 
-#if DEBUG
-                var InjectorsBase_clone = InjectorsBase.CloneAs();
-                var InjectorsBaseReady_clone = InjectorsBaseReady.CloneAs();
-                int[][] Ag2Pt_Fine = Jbase.ForLoop(j => new int[1] { j });
-                MultidimensionalArray[] InjCheck = BuildInjector_Lv2andup(maxDgBasis, Np, InjectorsBase_clone, InjectorsBaseReady_clone, Jagg, Ag2Pt_Fine, C2F);
-#endif
-                Injectors[iLevel] = BuildInjector_Lv1(maxDgBasis, Np, InjectorsBase, InjectorsBaseReady, Jagg, Ag2Pt, C2F);
-#if DEBUG
-                for(int jAgg = 0; jAgg < Math.Max(InjCheck.Length, Injectors[iLevel].Length); jAgg++) {
-                    double err = InjCheck[jAgg].L2Dist( Injectors[iLevel][jAgg]);
-                    Debug.Assert(err < Math.Max(InjCheck[jAgg].L2Norm(), Injectors[iLevel][jAgg].L2Norm()) * 1e-8);
+                    /*
+                    // first approach by locally ensuring continuity and smoothness at inner edges
+                    // not sure if this approach can work at all, requires more work, actual state left in code
+                    int maxMGlevel = agSeq.Length - 1;
+                    AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis, InjectorCoarse);
+
+                    // extract the hierarchical level to level injectors, recursive function
+                    AggregationGridCurvedInjector.ExtractInjectorCurved(agSeq, maxDgBasis, Injectors, InjectorCoarse, maxMGlevel);
+                    */
+
+                    // second approach by projecting a basis onto the aggregate cell
+                    AggregationGridCurvedInjector.ProjectBasis(agSeq, maxDgBasis, Injectors, InjectorCoarse, 0);
+
+                    stop.Stop();
+                    Console.WriteLine($"Construction of curved MG operators took: {stop.Elapsed}");                    
                 }
+            }
+            else
+            {       
+                // level 1
+                if (agSeq.Length >= 2)
+                {
+                    int iLevel = 1;
+
+                    int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                    int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
+                    int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
+
+                    Debug.Assert(Ag2Pt.Length >= Jagg);
+                    Debug.Assert(C2F.Length >= Jagg);
+
+#if DEBUG
+                    //var InjectorsBase_clone = InjectorsBase.CloneAs();
+                    //var InjectorsBaseReady_clone = InjectorsBaseReady.CloneAs();
+                    //int[][] Ag2Pt_Fine = Jbase.ForLoop(j => new int[1] { j });
+                    //MultidimensionalArray[] InjCheck = BuildInjector_Lv2andup(maxDgBasis, Np, InjectorsBase_clone, InjectorsBaseReady_clone, Jagg, Ag2Pt_Fine,    C2F);
 #endif
-            } else {
-                //ortho_Level = null;
+                    Injectors[iLevel] = BuildInjector_Lv1(maxDgBasis, Np, InjectorsBase, InjectorsBaseReady, Jagg, Ag2Pt, C2F);
+#if DEBUG
+                    //for(int jAgg = 0; jAgg < Math.Max(InjCheck.Length, Injectors[iLevel].Length); jAgg++) {
+                    //    double err = InjCheck[jAgg].L2Dist( Injectors[iLevel][jAgg]);
+                    //    Debug.Assert(err < Math.Max(InjCheck[jAgg].L2Norm(), Injectors[iLevel][jAgg].L2Norm()) * 1e-8);
+                    //}
+#endif
+                }
+                else
+                {
+                    //ortho_Level = null;
+                }
+
+                // all other levels
+                for (int iLevel = 2; iLevel < agSeq.Length; iLevel++)
+                { // loop over levels...
+                    int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                    int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
+                    int[][] Ag2Pt_Fine = agSeq[iLevel - 1].iLogicalCells.AggregateCellToParts;
+                    int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
+
+                    Debug.Assert(Ag2Pt.Length >= Jagg);
+                    Debug.Assert(C2F.Length >= Jagg);
+
+
+
+                    //ortho_PrevLevel = ortho_Level;
+                    //ortho_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+
+                    Injectors[iLevel] = BuildInjector_Lv2andup(maxDgBasis, Np, InjectorsBase, InjectorsBaseReady, Jagg, Ag2Pt_Fine, C2F);
+                }
             }
 
-
-            // all other levels
-            for (int iLevel = 2; iLevel < agSeq.Length; iLevel++) { // loop over levels...
-                int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
-                int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
-                int[][] Ag2Pt_Fine = agSeq[iLevel - 1].iLogicalCells.AggregateCellToParts;
-                int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
-
-                Debug.Assert(Ag2Pt.Length >= Jagg);
-                Debug.Assert(C2F.Length >= Jagg);
-
-               
-
-                //ortho_PrevLevel = ortho_Level;
-                //ortho_Level = MultidimensionalArray.Create(Jagg, Np, Np);
-
-                Injectors[iLevel] = BuildInjector_Lv2andup(maxDgBasis, Np, InjectorsBase, InjectorsBaseReady, Jagg, Ag2Pt_Fine, C2F);
-            }
+            // plot aggregation basis
+#if DEBUG
+            //PlotAggregationBasis(agSeq, maxDgBasis, Injectors);
+#endif
 
             // create basis sequence
             // ---------------------
@@ -736,7 +784,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[] agCl = agCls[jAgg];
                 int K = agCl.Length;
 
-                MultidimensionalArray coords = (K * N == Buffer.GetLength(0)) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
+                MultidimensionalArray coords = (K * N == Buffer.Length) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
 
                 for (int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                     int jCell = agCl[k];
@@ -1241,7 +1289,74 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             return m_ModeIndexForDegree[p];
         }
-        
+
+        /// <summary>
+        /// Helper routine to quickly visualize the multigrid basisfunctions on all levels,
+        /// does not yet work in parallel I think.
+        /// </summary>
+        /// <param name="_agGrd"></param>
+        /// <param name="_maxDgBasis"></param>
+        /// <param name="_Injectors"></param>
+        private static void PlotAggregationBasis(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors)
+        {
+            int cellCount = _agGrd[0].iGeomCells.NoOfLocalUpdatedCells;
+            int Np = _maxDgBasis.Length;
+            MultidimensionalArray directInjector = MultidimensionalArray.Create(cellCount, Np, Np);
+
+            // export plot data of the aggregation basis
+            DGField[] AggregatedBasisCoords = new DGField[0];
+
+            for (int ilevel = 0; ilevel < _agGrd.Length; ilevel++)
+            {
+                if (ilevel == 0)
+                {
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.NoOfLocalUpdatedCells; cell++)
+                    {
+                        directInjector.ExtractSubArrayShallow(cell, -1, -1).AccEye(1.0);
+                    }
+                }
+                else
+                {
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.NoOfLocalUpdatedCells; cell++)
+                    {
+                        int lCell = _agGrd[ilevel].iGeomCells.GeomCell2LogicalCell[cell];
+                        int lCell_before = _agGrd[ilevel - 1].iGeomCells.GeomCell2LogicalCell[cell];
+                        int cellIndex = Array.IndexOf(_agGrd[ilevel].jCellCoarse2jCellFine[lCell], lCell_before);
+                        directInjector.ExtractSubArrayShallow(cell, -1, -1).Multiply(1.0, directInjector.ExtractSubArrayShallow(cell, -1, -1).CloneAs(), _Injectors[ilevel][lCell].ExtractSubArrayShallow(cellIndex, -1, -1), 0.0, "ij", "ik", "kj");
+                    }
+                }
+
+
+
+
+                DGField[] iLevelBasis = new DGField[_maxDgBasis.Polynomials[0].Count];
+
+                // iterate over the aggregation levels
+                for (int k = 0; k < _maxDgBasis.Polynomials[0].Count; k++)
+                {
+                    iLevelBasis[k] = new SinglePhaseField(_maxDgBasis, $"ag{ilevel}_p{k}");
+                    // iterate over all cells
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.NoOfLocalUpdatedCells; cell++)
+                    {
+                        // set the coordinates for cell and basisfunction k
+                        iLevelBasis[k].Coordinates.SetRow(cell, directInjector.ExtractSubArrayShallow(cell, -1, k).To1DArray());
+                    }
+                }
+
+                AggregatedBasisCoords = AggregatedBasisCoords.Cat(iLevelBasis);
+            }
+
+            PlotBasis(AggregatedBasisCoords);
+        }
+
+
+        private static void PlotBasis(DGField[] _fields)
+        {
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(_fields, Directory.GetCurrentDirectory() + "\\AggregationBasis", 0, 2);
+        }
+
+       
+
     }
 
 }

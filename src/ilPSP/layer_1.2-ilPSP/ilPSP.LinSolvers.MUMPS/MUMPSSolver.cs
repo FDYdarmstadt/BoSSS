@@ -399,7 +399,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                 } else {
                     unsafe
                     {
-                        fixed (double* px = &__x[0])
+                        fixed (double* px = __x)
                         {
                             MPI_Status _st;
                             csMPI.Raw.Recv((IntPtr)px, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, this.m_MPI_Comm, out _st);
@@ -454,7 +454,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                     // send my part to P0
                     unsafe
                     {
-                        fixed (double* pb = &__b[0])
+                        fixed (double* pb = __b)
                         {
                             csMPI.Raw.Send((IntPtr)pb, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, this.m_MPI_Comm);
                         }
