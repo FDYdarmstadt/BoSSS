@@ -818,7 +818,10 @@ namespace ilPSP {
             if(object.ReferenceEquals(M, A))
                 throw new ArgumentException("in-place GEMM is not supported");
 
-            if (A is MultidimensionalArray _A && B is MultidimensionalArray _B && M is MultidimensionalArray _M) {
+            if (A is MultidimensionalArray && B is MultidimensionalArray && M is MultidimensionalArray) {
+                MultidimensionalArray _A = A as MultidimensionalArray;
+                MultidimensionalArray _B = B as MultidimensionalArray;
+                MultidimensionalArray _M = M as MultidimensionalArray;
                 _M.Multiply(alpha, _A, _B, beta, ref GEMM_Prog);
             } else {
 
