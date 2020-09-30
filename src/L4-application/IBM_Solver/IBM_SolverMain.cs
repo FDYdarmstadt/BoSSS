@@ -979,8 +979,10 @@ namespace BoSSS.Application.IBM_Solver {
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
-            }
+                LsTrk.UpdateTracker(0.0);
 
+            }
+            
             /*
             PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
                 LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),

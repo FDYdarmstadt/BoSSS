@@ -73,12 +73,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            //InitMPI();
+            InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(3, 0.1d, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p3(ViscosityMode.FullySymmetric);
-            //throw new Exception("fuck you ");
+            throw new Exception("fuck you ");
 
 
             _Main(args, false, delegate () {
@@ -371,26 +371,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
 
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-                    int mD = D + 1;
-                    if (this.Control.solveKineticEnergyEquation) {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
-                        mD = D + 2;
-                    }
-                    if (this.Control.solveCoupledHeatEquation) {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1];
-                        if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                            configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1 + D];
-                    }
+                    var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
-                    //if (this.Control.solveCoupledHeatEquation) {
-                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
-                    //    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                    //        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2 + D];
-                    //} else {
-                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-                    //}
-
+                    /*
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
@@ -405,41 +388,64 @@ namespace BoSSS.Application.XNSE_Solver {
                         mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { D }
                     };
-                    
+                    */
+
+                    {
+                        var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                        for(int d = 0; d < D; d++) {
+                            d.AddToArray(ref confMomConti.VarIndex);
+                            Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS);
+                        }
+                        D.AddToArray(ref confMomConti.VarIndex);
+                        Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS);
+
+                        confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                        configsLevel.Add(confMomConti);
+                    }
+                                        
                     if (this.Control.solveKineticEnergyEquation) {
                         int pKinE = this.KineticEnergy.Basis.Degree;
                         // configuration for kinetic energy
-                        configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                        var confEnergy = new MultigridOperator.ChangeOfBasisConfig() {
                             DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
                             mode = this.Control.KineticEnergyeBlockPrecondMode,
-                            VarIndex = new int[] { D + 1 }
+                            VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.KineticEnergy) }
                         };
+
+                        configsLevel.Add(confEnergy);
                     }
 
                     if (this.Control.solveCoupledHeatEquation) {
 
+                        //VariableNames.Temperature, VariableNames.HeatFluxVector(D)
+
                         int pTemp = this.Temperature.Basis.Degree;
                         // configuration for Temperature
-                        configs[iLevel][mD + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                        var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
                             DegreeS = new int[] { Math.Max(1, pTemp - iLevel) },
                             mode = this.Control.TemperatureBlockPrecondMode,
-                            VarIndex = new int[] { mD + 1 }
+                            VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.Temperature) }
                         };
+                        configsLevel.Add(confTemp);
 
                         // configuration for auxiliary heat flux
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                             int pFlux = this.HeatFlux[0].Basis.Degree;
                             for (int d = 0; d < D; d++) {
-                                configs[iLevel][mD + 1 + d] = new MultigridOperator.ChangeOfBasisConfig() {
+                                var confHeatFlux = new MultigridOperator.ChangeOfBasisConfig() {
                                     DegreeS = new int[] { Math.Max(1, pFlux - iLevel) },
                                     mode = MultigridOperator.Mode.Eye,
-                                    VarIndex = new int[] { mD + 1 + d }
+                                    VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.HeatFluxVectorComponent(d)) }
                                 };
+                                configsLevel.Add(confHeatFlux);
                             }
                         }
 
                     }
 
+
+                    configs[iLevel] = configsLevel.ToArray();
                 }
 
 
