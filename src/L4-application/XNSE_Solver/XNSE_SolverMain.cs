@@ -373,23 +373,24 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
-                    /*
-                    // configurations for velocity
-                    for (int d = 0; d < D; d++) {
-                        configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                            VarIndex = new int[] { d }
+                    /*{
+                        // configurations for velocity
+                        for(int d = 0; d < D; d++) {
+                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                                DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                                VarIndex = new int[] { d }
+                            };
+                            configsLevel.Add(configVel_d);
+                        }
+                        // configuration for pressure
+                        var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                            mode = MultigridOperator.Mode.Eye,
+                            VarIndex = new int[] { D }
                         };
-                    }
-                    // configuration for pressure
-                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
-                        VarIndex = new int[] { D }
-                    };
-                    */
-
+                        configsLevel.Add(configPres);
+                    } */
                     {
                         // using a Schur complement for velocity & pressure
                         var confMomConti = new MultigridOperator.ChangeOfBasisConfig();

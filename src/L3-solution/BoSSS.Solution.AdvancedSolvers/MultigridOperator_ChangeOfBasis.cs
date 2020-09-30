@@ -757,8 +757,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int N2 = BlockLen.Last();
                     int N = N1 + N2;
 
-                    string TestPath = @"C:\Users\flori\OneDrive\MATLAB\Schur";
-                    In_OperatorMatrixBlock.SaveToTextFile(Path.Combine(TestPath, "Opm.txt"));
+                    //string TestPath = @"C:\Users\flori\OneDrive\MATLAB\Schur";
+                    //In_OperatorMatrixBlock.SaveToTextFile(Path.Combine(TestPath, "Opm.txt"));
 
                     Debug.Assert(N == In_OperatorMatrixBlock.NoOfRows);
                     Debug.Assert(N == In_OperatorMatrixBlock.NoOfCols);

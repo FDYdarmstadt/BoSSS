@@ -1467,7 +1467,7 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
                         },
-                        Overlap = 0, // overlap seems to help; more overlap seems to help more
+                        Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true,
                         AssignXdGCellsToLowBlocks = true,
