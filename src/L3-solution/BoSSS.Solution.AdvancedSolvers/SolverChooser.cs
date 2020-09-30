@@ -1543,7 +1543,7 @@ namespace BoSSS.Solution {
                     NoOfBlocks = 8 / MPIsize;
                 } else {
                     break;
-                    useDirect = true;
+                    //useDirect = true;
                 }
 
                 if (useDirect)

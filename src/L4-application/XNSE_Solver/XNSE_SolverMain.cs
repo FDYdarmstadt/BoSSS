@@ -391,6 +391,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     */
 
                     {
+                        // using a Schur complement for velocity & pressure
                         var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
                         for(int d = 0; d < D; d++) {
                             d.AddToArray(ref confMomConti.VarIndex);
