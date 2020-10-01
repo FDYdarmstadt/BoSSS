@@ -118,6 +118,23 @@ namespace BoSSS.Solution.Control {
         selfmade = 999,
     }
 
+    public enum LinearSolverMode
+    {
+
+        /// <summary>
+        /// Standard Mode, perform the simulation (solve the linear system)
+        /// </summary>
+        Solve = 0,
+
+        //direct solvers
+
+        /// <summary>
+        /// Set RHS to zero and examine the error spectrum before and after solving
+        /// </summary>
+        SpectralAnalysis = 1,
+
+    }
+
     /// <summary>
     /// The linear solver config
     /// </summary>
@@ -166,6 +183,12 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int NoOfMultigridLevels = 1;
+
+        /// <summary>
+        /// Sets the mode for the solver to run in
+        /// </summary>
+        [DataMember]
+        public LinearSolverMode SolverMode = LinearSolverMode.Solve;
 
         //-------------------------
         // Probably legacy code: can be deleted, if exp_localPrec is removed.

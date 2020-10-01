@@ -1341,16 +1341,20 @@ namespace BoSSS.Application.Rheology {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                            DegreeS = new int[] { Math.Max(1, pVel) },
+                            //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             //mode = this.Control.VelocityBlockPrecondMode,
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            //mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
+                        DegreeS = new int[] { Math.Max(0, pPrs) },
+                        //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        //mode = MultigridOperator.Mode.Eye,
+                        mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };
 
@@ -1358,8 +1362,9 @@ namespace BoSSS.Application.Rheology {
                     // configurations for stresses
                     for (int d = 3; d < 6; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pStr - iLevel) },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            DegreeS = new int[] { Math.Max(1, pStr) },//DegreeS = new int[] { Math.Max(1, pStr - iLevel) },
+                            //mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                             VarIndex = new int[] { d }
                         };
                     }

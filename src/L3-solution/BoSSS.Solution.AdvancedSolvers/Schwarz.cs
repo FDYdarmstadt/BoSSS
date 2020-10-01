@@ -412,13 +412,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (!this.MtxFull._ColPartitioning.EqualsPartition(op.OperatorMatrix._ColPartitioning))
                         throw new ArgumentException("Matrix has changed, unable to re-use");
 #if DEBUG
-                    if (!object.ReferenceEquals(this.MtxFull, op.OperatorMatrix)) {
-                        BlockMsrMatrix Check = this.MtxFull.CloneAs();
-                        Check.Acc(-1.0, op.OperatorMatrix);
-                        if (Check.InfNorm() != 0.0) {
-                            throw new ArgumentException("Matrix has changed, unable to re-use");
-                        }
-                    }
+                    //if (!object.ReferenceEquals(this.MtxFull, op.OperatorMatrix)) {
+                    //    BlockMsrMatrix Check = this.MtxFull.CloneAs();
+                    //    Check.Acc(-1.0, op.OperatorMatrix);
+                    //    if (Check.InfNorm() != 0.0) {
+                    //        throw new ArgumentException("Matrix has changed, unable to re-use");
+                    //    }
+                    //}
 #endif
                     if (this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
                         throw new ArgumentException("Blocking, unable to re-use");
@@ -532,6 +532,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             bi.Sort();
                         }
+                    } else {
+                        //Console.WriteLine("Running Schwarz without overlap (level " + this.m_MgOp.LevelIndex + ")");
                     }
 
                     BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
@@ -791,10 +793,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             set {
                 if (value < 0) {
-                    throw new ArgumentException();
+                    throw new ArgumentException("overlap cannot be negative");
                 }
                 if (value > 2) {
-                    throw new ArgumentException();
+                    throw new ArgumentException($"overlap of {value} is not supported - maximum is 2.");
                 }
                 m_Overlap = value;
             }

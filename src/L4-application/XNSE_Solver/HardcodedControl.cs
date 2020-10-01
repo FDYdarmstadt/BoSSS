@@ -3844,7 +3844,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // basic database options
             // ======================
             #region db
-            _DbPath = @"D:\Xdg_Stokes";
+            //_DbPath = @"D:\Xdg_Stokes";
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/StokesSphere";
