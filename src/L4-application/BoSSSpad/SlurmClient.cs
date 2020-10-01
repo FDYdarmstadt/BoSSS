@@ -70,10 +70,19 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Using Lichtenberg 2?
+        /// Use Lichtenberg 2?
         /// </summary>
         [DataMember]
-        public bool LB2 {
+        public bool UseLB2 {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Use the test partition on Lichtenberg 2?
+        /// </summary>
+        [DataMember]
+        public bool UseLB2TestPartition {
             get;
             set;
         }
@@ -433,13 +442,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                if (this.LB2) {
+                if (this.UseLB2TestPartition) {
                     sw.WriteLine("#SBATCH -p test24");
                 }
                 if (HHLR_project != null) {
                     sw.WriteLine("#SBATCH -A " + HHLR_project);
                 }
-                if (this.LB2) {
+                if (this.UseLB2 || this.UseLB2TestPartition) {
                     sw.WriteLine("#SBATCH --exclusive");
                 }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
@@ -455,7 +464,9 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                sw.WriteLine("#SBATCH -C avx2");
+                if (!this.UseLB2 && !this.UseLB2TestPartition) {
+                    sw.WriteLine("#SBATCH -C avx2");
+                }
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
                 // Load modules
