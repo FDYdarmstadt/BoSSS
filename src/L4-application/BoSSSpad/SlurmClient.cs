@@ -24,8 +24,7 @@ using System.Text.RegularExpressions;
 using ilPSP.Tracing;
 using System.Linq;
 
-namespace BoSSS.Application.BoSSSpad
-{
+namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
     /// A <see cref="BatchProcessorClient"/> implementation for slurm systems on unix based hpc platforms
@@ -70,12 +69,20 @@ namespace BoSSS.Application.BoSSSpad
             set;
         }
 
+        /// <summary>
+        /// Using Lichtenberg 2?
+        /// </summary>
+        [DataMember]
+        public bool LB2 {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Base directory where the executables should be deployed,
-        /// i.e. the same location as <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>, 
+        /// i.e. the same location as <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>,
         /// but in the file system of the remote computer on which Slurm is running.
-        /// 
+        ///
         /// Example:
         ///  - <see cref="BatchProcessorClient.DeploymentBaseDirectory"/> is set to <tt>C:\serverSSFFSmount\jobdeploy</tt>
         ///  - <see cref="DeploymentBaseDirectoryAtRemote"/> is set to <tt>/home/linuxuser/jobdeploy</tt>
@@ -87,7 +94,7 @@ namespace BoSSS.Application.BoSSSpad
         }
 
         string DeploymentDirectoryAtRemote(Job myJob) {
-            if(!DeploymentBaseDirectoryAtRemote.StartsWith("/")) {
+            if (!DeploymentBaseDirectoryAtRemote.StartsWith("/")) {
                 throw new IOException($"Deployment remote base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectoryAtRemote}' is not.");
             }
 
@@ -102,7 +109,7 @@ namespace BoSSS.Application.BoSSSpad
 
         SshClient SSHConnection {
             get {
-                if(m_SSHConnection == null || m_SSHConnection.IsConnected == false) {
+                if (m_SSHConnection == null || m_SSHConnection.IsConnected == false) {
                     // SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
                     if (PrivateKeyFilePath != null) {
                         var pkf = new PrivateKeyFile(PrivateKeyFilePath);
@@ -125,7 +132,7 @@ namespace BoSSS.Application.BoSSSpad
             }
         }
 
-        
+
         /// <summary>
         /// Empty constructor for de-serialization
         /// </summary>
@@ -133,7 +140,7 @@ namespace BoSSS.Application.BoSSSpad
         }
 
         /// <summary>
-        /// runs an ls command 
+        /// runs an ls command
         /// </summary>
         public void TestSSH() {
             var output = SSHConnection.RunCommand("ls");
@@ -149,10 +156,10 @@ namespace BoSSS.Application.BoSSSpad
             this.ServerName = ServerName;
             this.PrivateKeyFilePath = PrivateKeyFilePath;
 
-            if(!Directory.Exists(base.DeploymentBaseDirectory))
+            if (!Directory.Exists(base.DeploymentBaseDirectory))
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
 
-            if(AskForPassword) {
+            if (AskForPassword) {
                 Console.WriteLine();
                 Console.WriteLine("Please enter your password...");
                 Password = ReadPassword();
@@ -271,7 +278,7 @@ namespace BoSSS.Application.BoSSSpad
                 }
             }
         }
-        
+
 
         /// <summary>
         /// Returns path to text-file for standard error stream
@@ -291,8 +298,8 @@ namespace BoSSS.Application.BoSSSpad
 
 
         void VerifyDatabases() {
-            foreach(var db in this.AllowedDatabases) {
-                if(db.AlternateDbPaths.Length <= 0) {
+            foreach (var db in this.AllowedDatabases) {
+                if (db.AlternateDbPaths.Length <= 0) {
                     throw new IOException("Missing 'AlternatePaths.txt' in database -- required for sshfs-mounted remote databases.");
                 }
             }
@@ -304,7 +311,7 @@ namespace BoSSS.Application.BoSSSpad
         public bool MonoDebug = false;
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob) {
             using (new FuncTrace()) {
@@ -426,8 +433,14 @@ namespace BoSSS.Application.BoSSSpad
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
+                if (this.LB2) {
+                    sw.WriteLine("#SBATCH -p test24");
+                }
                 if (HHLR_project != null) {
                     sw.WriteLine("#SBATCH -A " + HHLR_project);
+                }
+                if (this.LB2) {
+                    sw.WriteLine("#SBATCH --exclusive");
                 }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
@@ -498,7 +511,7 @@ namespace BoSSS.Application.BoSSSpad
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public override string ToString() {
             return "SlurmClient: " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
