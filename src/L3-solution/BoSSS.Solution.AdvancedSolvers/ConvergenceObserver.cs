@@ -38,6 +38,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class ConvergenceObserver {
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution) {
             Setup(muop, MassMatrix, __ExactSolution);
         }
@@ -133,92 +136,93 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Visualization of data from <see cref="WriteTrendToTable"/> in gnuplot
         /// </summary>
-        public void PlotIterationTrend(bool ErrorOrResidual, bool SepVars, bool SepPoly, bool SepLev) {
-            using (var gp = new BoSSS.Solution.Gnuplot.Gnuplot()) {
-                gp.Cmd("set logscale y");
-                gp.Cmd("set title " + (ErrorOrResidual ? "\"Error trend\"" : "\"Residual trend\""));
+        public Plot2Ddata PlotIterationTrend(bool ErrorOrResidual, bool SepVars, bool SepPoly, bool SepLev) {
+            var Ret = new Plot2Ddata();
 
-                string[] Titels;
-                MultidimensionalArray ConvTrendData;
-                WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out Titels, out ConvTrendData);
-                double[] IterNo = ConvTrendData.GetLength(0).ForLoop(i => ((double)i));
+            Ret.Title = ErrorOrResidual ? "\"Error trend\"" : "\"Residual trend\"";
+            Ret.LogY = true;
 
-                for (int iCol = 0; iCol < Titels.Length; iCol++) {
-                    gp.PlotXY(IterNo, ConvTrendData.GetColumn(iCol), Titels[iCol],
-                        new PlotFormat(lineColor: ((LineColors)(iCol + 1)), Style: Styles.Lines));
-                }
+            string[] Titels;
+            MultidimensionalArray ConvTrendData;
+            WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out Titels, out ConvTrendData);
+            double[] IterNo = ConvTrendData.GetLength(0).ForLoop(i => ((double)i));
 
-                gp.Execute();
+            for(int iCol = 0; iCol < Titels.Length; iCol++) {
+                var g = new Plot2Ddata.XYvalues(Titels[iCol], IterNo, ConvTrendData.GetColumn(iCol));
+                g.Format = new PlotFormat(lineColor: ((LineColors)(iCol + 1)), Style: Styles.Lines);
 
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey(true);
-                Console.WriteLine("killing gnuplot...");
             }
-            Console.WriteLine("done.");
+
+            return Ret;
         }
 
         /// <summary>
         /// Visualization of data from <see cref="WriteTrendToTable"/> in gnuplot
         /// </summary>
-        public void Waterfall(bool ErrorOrResidual, int NoOfIter = int.MaxValue) {
-            using (var gp = new BoSSS.Solution.Gnuplot.Gnuplot()) {
+        public Plot2Ddata Waterfall(bool ErrorOrResidual, int NoOfIter = int.MaxValue) {
+
+            var Ret = new Plot2Ddata();
+            Ret.Title = (ErrorOrResidual ? "\"Error Waterfall\"" : "\"Residual Waterfall\"");
 
 
-                //string[] Titels;
-                //MultidimensionalArray ConvTrendData;
-                //WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out var Titels, out ConvTrendData);
-                var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
+            //string[] Titels;
+            //MultidimensionalArray ConvTrendData;
+            //WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out var Titels, out ConvTrendData);
+            var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
 
-                int DegMax = AllData.Keys.Max(tt => tt.deg);
-                int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
-                int MaxIter = AllData.First().Value.Count - 1;
+            int DegMax = AllData.Keys.Max(tt => tt.deg);
+            int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
+            int MaxIter = AllData.First().Value.Count - 1;
 
-                var WaterfallData = new List<double[]>();
-                var Row = new List<double>();
-                var xCoords = new List<double>();
-                for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++ ) {
-                    Row.Clear();
-                    for(int iLv = MglMax; iLv >= 0; iLv--) {
-                        for(int p = 0; p <= DegMax; p++) {
-                            double Acc = 0;
+            var WaterfallData = new List<double[]>();
+            var Row = new List<double>();
+            var xCoords = new List<double>();
+            for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                Row.Clear();
+                for(int iLv = MglMax; iLv >= 0; iLv--) {
+                    for(int p = 0; p <= DegMax; p++) {
+                        double Acc = 0;
 
-                            foreach(var kv in AllData) {
-                                if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
-                                    Acc += kv.Value[iIter].Pow2();
-                            }
+                        foreach(var kv in AllData) {
+                            if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
+                                Acc += kv.Value[iIter].Pow2();
+                        }
 
-                            Acc = Acc.Sqrt();
-                            Row.Add(Acc);
+                        Acc = Acc.Sqrt();
+                        Row.Add(Acc);
 
-                            if(iIter == 0) {
-                                double xCoord = -iLv+MglMax+ 1.0 + (p) * 0.1;
-                                xCoords.Add(xCoord);
-                            }
+                        if(iIter == 0) {
+                            double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
+                            xCoords.Add(xCoord);
                         }
                     }
-
-                    WaterfallData.Add(Row.ToArray());
                 }
 
-
-                gp.Cmd("set logscale y");
-                gp.Cmd("set title " + (ErrorOrResidual ? "\"Error Waterfall\"" : "\"Residual Waterfall\""));
-                
-                for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++ ) {
-                    var PlotRow = WaterfallData[iIter];
-                    var XAxis = PlotRow.Length.ForLoop(i => i + 1.0);
-
-                    gp.PlotXY(xCoords, PlotRow, title:null,
-                        new PlotFormat(lineColor: LineColors.Red, Style: Styles.Lines));
-                }
-
-                gp.Execute();
-
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey(true);
-                Console.WriteLine("killing gnuplot...");
+                WaterfallData.Add(Row.ToArray());
             }
-            Console.WriteLine("done.");
+
+            Ret.LogY = true;
+            Ret.ShowLegend = false;
+
+            for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                var PlotRow = WaterfallData[iIter];
+                var XAxis = PlotRow.Length.ForLoop(i => i + 1.0);
+
+                var g = new Plot2Ddata.XYvalues("iter"  + iIter, XAxis, PlotRow);
+                
+                Ret.AddDataGroup(g);
+                    
+            }
+
+            /*
+            gp.Execute();
+
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey(true);
+            Console.WriteLine("killing gnuplot...");
+            */
+
+            return Ret;
         }
 
 
@@ -390,10 +394,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// 
+        /// Decomposition of a certain vector into its frequencies on all mesh levels.
         /// </summary>
         /// <param name="Vec"></param>
-        /// <param name="decompose"></param>
+        /// <param name="decompose">
+        /// - true: orthogonality (of the respective DG/XDG) representation across all mesh levels:
+        ///         the high level modes contain only contributions which cannot be represented on the lower levels.
+        /// - false: the higher level meshes include also lower frequencies;
+        /// </param>
         /// <returns>
         /// - one vector per multigrid level
         /// </returns>
@@ -573,6 +581,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
         public void ResItCallbackAtAll(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
 
             var Ptr_mgOp = mgOp;
@@ -597,6 +606,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
             //DecomposedDGFields.AddRange(DecompVec.Mapping.Fields);
         }
+        */
 
         private int CurrentMLevel_down=0;
         private int CurrentMLevel_up = 0;
@@ -641,6 +651,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Iterationcounter[5] - MG_internal_counter;
         }
 
+        /*
         public void ResItCallbackAtDownstep(int iter, double[] xI, double[] rI, MultigridOperator mgOp)
         {
 
@@ -667,6 +678,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
             }
         }
+        */
 
         private CoordinateVector InitProblemDGFields(string NamePrefix) {
             Basis[] BS = this.SolverOperator.BaseGridProblemMapping.BasisS.ToArray();

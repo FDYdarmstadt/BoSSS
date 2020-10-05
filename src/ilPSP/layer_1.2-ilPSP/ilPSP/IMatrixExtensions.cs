@@ -1291,7 +1291,7 @@ namespace ilPSP {
 
         /// <summary>
         /// Calculates the inverse of this matrix and stores the result in a
-        /// newly allocated matrix. Use <see cref="Invert(FullMatrix)"/> to
+        /// newly allocated matrix. Use <see cref="Invert{M1}(M1)"/> to
         /// avoid memory allocation.
         /// </summary>
         /// <returns>

@@ -33,9 +33,14 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CairoLatexContainer.cs" />
     <Compile Include="Gnuplot.cs" />
+    <Compile Include="GnuplotExtensions.cs" />
+    <Compile Include="GnuplotPageLayout.cs" />
     <Compile Include="LineColors.cs" />
     <Compile Include="DashTypes.cs" />
+    <Compile Include="Plot2Ddata.cs" />
+    <Compile Include="Plot2DdataExtensions.cs" />
     <Compile Include="PlotFormat.cs" />
     <Compile Include="Plot2dGrid_ext.cs" />
     <Compile Include="Styles.cs" />
@@ -48,6 +53,7 @@
       <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>

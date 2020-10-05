@@ -3725,7 +3725,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// matrix-matrix-multiplication, see <see cref="Multiply"/>.
+        /// matrix-matrix-multiplication, see <see cref="Multiply(BlockMsrMatrix, BlockMsrMatrix)"/>.
         /// </summary>
         static public BlockMsrMatrix operator *(BlockMsrMatrix left, BlockMsrMatrix right) {
             BlockMsrMatrix Res = new BlockMsrMatrix(left._RowPartitioning, right._ColPartitioning);

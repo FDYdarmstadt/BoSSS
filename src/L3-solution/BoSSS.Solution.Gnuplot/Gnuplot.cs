@@ -943,10 +943,8 @@ namespace BoSSS.Solution.Gnuplot {
         /// Sets up a multiplot environment that allows for including multiple
         /// plots (<paramref name="rows"/> rows and <paramref name="cols"/>
         /// columns) in a single graphic. Individual sub-plots are selected
-        /// via <see cref="SetSubPlot(int, int, string)"/>.
+        /// via <see cref="SetSubPlot(int, int, string, double, double)"/>.
         /// </summary>
-        /// <param name="rows"></param>
-        /// <param name="cols"></param>
         public void SetMultiplot(int rows, int cols) {
             Cmd("set multiplot");
             this.MultiplotRows = rows;
