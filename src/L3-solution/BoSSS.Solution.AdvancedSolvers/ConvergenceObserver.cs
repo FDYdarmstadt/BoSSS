@@ -39,12 +39,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public class ConvergenceObserver {
 
         /// <summary>
+        /// Performs a mode decay analysis (<see cref="Waterfall(bool, int)"/>) on this solver.
+        /// </summary>
+        public static Plot2Ddata WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
+            int L = mgOperator.BaseGridProblemMapping.LocalLength;
+
+            var RHS = new double[L];
+            var exSol = new double[L];
+
+            ConvergenceObserver co = new ConvergenceObserver(mgOperator, MassMatrix, exSol);
+            var bkup = linearSolver.IterationCallback;
+            linearSolver.IterationCallback = co.IterationCallback;
+            
+            // use a random init for intial guess.
+            Random rnd = new Random();
+            double[] x0 = new double[L];
+            for(int l = 0; l < L; l++) {
+                x0[l] = rnd.NextDouble();
+            }
+
+            // execute solver 
+            linearSolver.Init(mgOperator);
+            mgOperator.UseSolver(linearSolver, x0, RHS);
+
+            // reset and return
+            linearSolver.IterationCallback = bkup;
+            //var p = co.PlotIterationTrend(true, false, true, true);
+            var p = co.Waterfall(true, 100);
+            return p;
+        }
+
+
+
+        /// <summary>
         /// ctor
         /// </summary>
         public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution) {
             Setup(muop, MassMatrix, __ExactSolution);
         }
 
+        /// <summary>
+        /// another constructor
+        /// </summary>
         public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution, SolverFactory SF) {
             m_SF = SF;
             Setup(muop, MassMatrix, __ExactSolution);
@@ -213,20 +249,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Ret.AddDataGroup(g);
                     
             }
-
-            /*
-            gp.Execute();
-
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadKey(true);
-            Console.WriteLine("killing gnuplot...");
-            */
-
             return Ret;
         }
 
 
-
+        /// <summary>
+        /// Writes the table obtained through <see cref="WriteTrendToTable(bool, bool, bool, bool, out string[], out MultidimensionalArray)"/> into a CSV file.
+        /// </summary>
         public void WriteTrendToCSV(bool ErrorOrResidual, bool SepVars, bool SepPoly, bool SepLev, string name) {
             string[] Titels;
             MultidimensionalArray ConvTrendData;
@@ -239,7 +268,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ConvTrendData.SaveToStream(stw);
                 stw.Flush();
             }
-
         }
         
         

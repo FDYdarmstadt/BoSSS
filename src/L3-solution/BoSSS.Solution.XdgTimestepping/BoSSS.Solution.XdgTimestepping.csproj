@@ -84,6 +84,10 @@
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
+      <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
+      <Name>BoSSS.Solution.Gnuplot</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>
       <Name>BoSSS.Solution.Tecplot</Name>

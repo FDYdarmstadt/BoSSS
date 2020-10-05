@@ -213,5 +213,37 @@ namespace BoSSS.Solution.Gnuplot {
             return gp;
         }
 
+
+        /// <summary>
+        /// <see cref="Plot2Ddata"/> into an alive Gnuplot object and executes Gnuplot interactively
+        /// </summary>
+        /// <param name="_2DData"></param>
+        /// <param name="layout"></param>
+        public static void PlotInteractive(this Plot2Ddata[,] _2DData, GnuplotPageLayout layout = null) {
+            using(var gp = ToGnuplot(_2DData, layout)) {
+                Console.WriteLine("Executing Gnulpot...");
+                gp.Execute();
+
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey(true);
+                Console.WriteLine("killing gnuplot...");
+
+            }
+        }
+
+        /// <summary>
+        /// <see cref="Plot2Ddata"/> into an alive Gnuplot object and executes Gnuplot interactively
+        /// </summary>
+        public static void PlotInteractive(this Plot2Ddata _2DData, GnuplotPageLayout layout = null) {
+            using(var gp = ToGnuplot(_2DData, layout)) {
+                Console.WriteLine("Executing Gnulpot...");
+                gp.Execute();
+
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey(true);
+                Console.WriteLine("killing gnuplot...");
+
+            }
+        }
     }
 }
