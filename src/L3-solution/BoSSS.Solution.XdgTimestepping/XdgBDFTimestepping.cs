@@ -1640,11 +1640,30 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //System.SaveToTextFileSparse("MatrixNOsplitting.txt");
                     //RHS.SaveToTextFile("rhsNOsplitting.txt");
 
+
+
+
                     using (var tr = new FuncTrace()) {
                         // init linear solver
                         using (new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
                         }
+
+                        int L = m_Stack_u[0].Length;
+                        ConvergenceObserver co = new ConvergenceObserver(mgOperator, MaMa, new double[L]);
+                        ((ISolverWithCallback)linearSolver).IterationCallback = co.IterationCallback;
+                        Random rnd = new Random();
+                        double[] x0 = new double[L];
+                        for(int l = 0; l < L; l++) {
+                            x0[l] = rnd.NextDouble();
+                        }
+                        mgOperator.UseSolver(linearSolver, x0, new double[L]);
+                        co.WriteTrendToTable(true, false, true, true, out var Titels, out var Data);
+
+                        //co.PlotIterationTrend(true, false, true, true);
+                        co.Waterfall(true, 100);
+
+                        Console.WriteLine("Bla");
 
                         // try to solve the saddle-point system.
                         using (new BlockTrace("Slv Iter", tr)) {

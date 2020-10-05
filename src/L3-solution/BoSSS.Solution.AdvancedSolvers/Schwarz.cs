@@ -922,7 +922,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 // hack the hack
 
-                                int ExtLen=Overlap>0?BlockMask.GetLocalandExternalDOF(m_MgOp.Mapping): m_MgOp.Mapping.LocalLength;
+                                int ExtLen = Overlap > 0 ? BlockMask.GetLocalandExternalDOF(m_MgOp.Mapping) : m_MgOp.Mapping.LocalLength;
 
                                 if (Xdummy == null) {
                                     Xdummy = new double[ExtLen];

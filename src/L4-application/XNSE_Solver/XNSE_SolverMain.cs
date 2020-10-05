@@ -374,10 +374,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
                     /*{
+
                         // configurations for velocity
                         for(int d = 0; d < D; d++) {
                             var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
-                                DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                                DegreeS = new int[] { pVel },// Math.Max(1, pVel - iLevel) },
                                 mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                                 VarIndex = new int[] { d }
                             };
@@ -385,8 +386,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                         // configuration for pressure
                         var configPres = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                            mode = MultigridOperator.Mode.Eye,
+                            DegreeS = new int[] { pPrs }, //Math.Max(0, pPrs - iLevel) },
+                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                             VarIndex = new int[] { D }
                         };
                         configsLevel.Add(configPres);
@@ -396,10 +397,12 @@ namespace BoSSS.Application.XNSE_Solver {
                         var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
                         for(int d = 0; d < D; d++) {
                             d.AddToArray(ref confMomConti.VarIndex);
-                            Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS);
+                            //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                            pVel.AddToArray(ref confMomConti.DegreeS);
                         }
                         D.AddToArray(ref confMomConti.VarIndex);
-                        Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS);
+                        //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pPrs.AddToArray(ref confMomConti.DegreeS);
 
                         confMomConti.mode = MultigridOperator.Mode.SchurComplement;
 
@@ -410,7 +413,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         int pKinE = this.KineticEnergy.Basis.Degree;
                         // configuration for kinetic energy
                         var confEnergy = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
+                            DegreeS = new int[] { pKinE }, //Math.Max(1, pKinE - iLevel) },
                             mode = this.Control.KineticEnergyeBlockPrecondMode,
                             VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.KineticEnergy) }
                         };
@@ -425,7 +428,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         int pTemp = this.Temperature.Basis.Degree;
                         // configuration for Temperature
                         var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pTemp - iLevel) },
+                            DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
                             mode = this.Control.TemperatureBlockPrecondMode,
                             VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.Temperature) }
                         };
@@ -436,7 +439,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             int pFlux = this.HeatFlux[0].Basis.Degree;
                             for (int d = 0; d < D; d++) {
                                 var confHeatFlux = new MultigridOperator.ChangeOfBasisConfig() {
-                                    DegreeS = new int[] { Math.Max(1, pFlux - iLevel) },
+                                    DegreeS = new int[] { pFlux }, // Math.Max(1, pFlux - iLevel) },
                                     mode = MultigridOperator.Mode.Eye,
                                     VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.HeatFluxVectorComponent(d)) }
                                 };
