@@ -35,6 +35,7 @@ using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.Timestepping;
 using Newtonsoft.Json;
 using BoSSS.Solution.EnergyCommon;
+using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -306,6 +307,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public FourierLevSetControl FourierLevSetControl;
+
+        /// <summary>
+        /// Options for the initialization of the Phasefield Level-set
+        /// </summary>
+        [DataMember]
+        public PhasefieldControl PhasefieldControl;
 
         /// <summary>
         /// array of additional parameter values for some testcases

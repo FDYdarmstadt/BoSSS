@@ -76,7 +76,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(3, 0.1d, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p3(ViscosityMode.FullySymmetric);
             //throw new Exception("fuck you ");
 
@@ -371,80 +371,88 @@ namespace BoSSS.Application.XNSE_Solver {
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
 
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-                    int mD = D + 1;
-                    if (this.Control.solveKineticEnergyEquation) {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
-                        mD = D + 2;
-                    }
-                    if (this.Control.solveCoupledHeatEquation) {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1];
-                        if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                            configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1 + D];
-                    }
+                    var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
-                    //if (this.Control.solveCoupledHeatEquation) {
-                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
-                    //    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                    //        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2 + D];
-                    //} else {
-                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-                    //}
-                    if (!this.Control.UseSchurBlockPrec) {
+                    /*{
+
                         // configurations for velocity
-                        for (int d = 0; d < D; d++) {
-                            configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                                //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                                DegreeS = new int[] { pVel },
-                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                        for(int d = 0; d < D; d++) {
+                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                                DegreeS = new int[] { pVel },// Math.Max(1, pVel - iLevel) },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                                 VarIndex = new int[] { d }
                             };
+                            configsLevel.Add(configVel_d);
                         }
                         // configuration for pressure
-                        configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                            //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                            DegreeS = new int[] { pPrs },
-                            mode = MultigridOperator.Mode.IdMass,
+                        var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pPrs }, //Math.Max(0, pPrs - iLevel) },
+                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                             VarIndex = new int[] { D }
                         };
-                    } else {
-                        // Schur-Complement
-                    }
+                        configsLevel.Add(configPres);
+                    } */
                     
+                    
+                    {
+                        // using a Schur complement for velocity & pressure
+                        var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                        for(int d = 0; d < D; d++) {
+                            d.AddToArray(ref confMomConti.VarIndex);
+                            //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                            pVel.AddToArray(ref confMomConti.DegreeS);
+                        }
+                        D.AddToArray(ref confMomConti.VarIndex);
+                        //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pPrs.AddToArray(ref confMomConti.DegreeS);
+
+                        confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                        configsLevel.Add(confMomConti);
+                    }
+                                        
                     if (this.Control.solveKineticEnergyEquation) {
                         int pKinE = this.KineticEnergy.Basis.Degree;
                         // configuration for kinetic energy
-                        configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
+                        var confEnergy = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pKinE }, //Math.Max(1, pKinE - iLevel) },
                             mode = this.Control.KineticEnergyeBlockPrecondMode,
-                            VarIndex = new int[] { D + 1 }
+                            VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.KineticEnergy) }
                         };
+
+                        configsLevel.Add(confEnergy);
                     }
 
                     if (this.Control.solveCoupledHeatEquation) {
 
+                        //VariableNames.Temperature, VariableNames.HeatFluxVector(D)
+
                         int pTemp = this.Temperature.Basis.Degree;
                         // configuration for Temperature
-                        configs[iLevel][mD + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pTemp - iLevel) },
+                        var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
                             mode = this.Control.TemperatureBlockPrecondMode,
-                            VarIndex = new int[] { mD + 1 }
+                            VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.Temperature) }
                         };
+                        configsLevel.Add(confTemp);
 
                         // configuration for auxiliary heat flux
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                             int pFlux = this.HeatFlux[0].Basis.Degree;
                             for (int d = 0; d < D; d++) {
-                                configs[iLevel][mD + 1 + d] = new MultigridOperator.ChangeOfBasisConfig() {
-                                    DegreeS = new int[] { Math.Max(1, pFlux - iLevel) },
+                                var confHeatFlux = new MultigridOperator.ChangeOfBasisConfig() {
+                                    DegreeS = new int[] { pFlux }, // Math.Max(1, pFlux - iLevel) },
                                     mode = MultigridOperator.Mode.Eye,
-                                    VarIndex = new int[] { mD + 1 + d }
+                                    VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.HeatFluxVectorComponent(d)) }
                                 };
+                                configsLevel.Add(confHeatFlux);
                             }
                         }
 
                     }
 
+
+                    configs[iLevel] = configsLevel.ToArray();
                 }
 
 
@@ -1274,7 +1282,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // delegate for the initialization of previous timesteps from an analytic solution
                     BDFDelayedInitSetIntial);
             }
-
+            
             After_SetInitialOrLoadRestart(0.0, 0);
 
         }
@@ -1667,12 +1675,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
-                    int[] glb = (new int[] {
-
-                    CellsToRefineList.Count,
-                    Coarsening.Sum(L => L.Length),
-                }).MPISum();
+                    if (AnyChange.MPIOr()) {
+                    int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length)}).MPISum();                        
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
@@ -1680,8 +1684,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // Update Grid
                     // ===========
-
-                    if(AnyChange) {
+                    if (AnyChange.MPIOr()) {
 
                         //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 1 }), 2);
 

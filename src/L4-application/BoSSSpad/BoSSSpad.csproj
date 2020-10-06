@@ -113,6 +113,7 @@
   <ItemGroup>
     <Compile Include="AppControlExtensions.cs" />
     <Compile Include="BatchProcessorConfig.cs" />
+    <Compile Include="BoSSSpadGnuplotExtensions.cs" />
     <Compile Include="ResolvableAssembly.cs" />
     <Compile Include="autonomuousPlotter.cs" />
     <Compile Include="BoSSSpadMain.cs" />
@@ -123,8 +124,6 @@
     <Compile Include="ElectronWorksheet.cs" />
     <Compile Include="ExportInstruction.cs" />
     <Compile Include="CommandLineReader.cs" />
-    <Compile Include="GnuplotExtensions.cs" />
-    <Compile Include="GnuplotPageLayout.cs" />
     <Compile Include="GridExportInstruction.cs" />
     <Compile Include="IEnumerableExtensions.cs" />
     <Compile Include="IDatabaseInfoExtensions.cs" />
@@ -139,7 +138,6 @@
     <Compile Include="MsHPC2012Client.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="InstallationChecker.cs" />
-    <Compile Include="Plot2DdataExtensions.cs" />
     <Compile Include="ReadEvalPrintLoop.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResidualForm.cs">
@@ -158,7 +156,6 @@
     <Compile Include="SpatialConvergence.cs" />
     <Compile Include="TableExtensions.cs" />
     <Compile Include="TypeExtensions.cs" />
-    <Compile Include="Plot2Ddata.cs" />
     <Compile Include="WorkflowMgm.cs" />
     <Compile Include="Worksheet.cs">
       <SubType>Form</SubType>

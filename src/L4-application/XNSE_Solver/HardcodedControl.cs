@@ -3835,8 +3835,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="p"></param>
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
+        /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem = 16, string _DbPath = null) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem = 16, string _DbPath = null, int D = 3) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -3884,8 +3885,8 @@ namespace BoSSS.Application.XNSE_Solver {
             #endregion
 
 
-            // grid genration
-            // ==============
+            // grid generation
+            // ===============
             #region grid
 
 
@@ -3893,13 +3894,24 @@ namespace BoSSS.Application.XNSE_Solver {
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-1, 1, kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1, 1, kelem + 1);
-                //double[] Znodes = GenericBlas.Linspace(-1, 1, kelem + 1);
-                //var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+                double[] Znodes = GenericBlas.Linspace(-1, 1, kelem + 1);
+
+                GridCommons grd;
+                switch(D) {
+                    case 2:
+                    grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+                    break;
+
+                    case 3:
+                    grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+                    break;
+
+                    default:
+                    throw new ArgumentOutOfRangeException();
+                }
 
 
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
                     if (Math.Abs(X[0] - (-1)) <= 1.0e-8)
                         return "wall_left";
                     if (Math.Abs(X[0] - (+1)) <= 1.0e-8)
@@ -3908,10 +3920,12 @@ namespace BoSSS.Application.XNSE_Solver {
                         return "wall_front";
                     if (Math.Abs(X[1] - (+1)) <= 1.0e-8)
                         return "wall_back";
-                    //if (Math.Abs(X[2] - (-1)) <= 1.0e-8)
-                    //    return "wall_top";
-                    //if (Math.Abs(X[2] - (+1)) <= 1.0e-8)
-                    //    return "wall_bottom";
+                    if(D > 2) {
+                        if(Math.Abs(X[2] - (-1)) <= 1.0e-8)
+                            return "wall_top";
+                        if(Math.Abs(X[2] - (+1)) <= 1.0e-8)
+                            return "wall_bottom";
+                    }
 
                     throw new ArgumentException("unknown wall");
                 });
@@ -3958,8 +3972,12 @@ namespace BoSSS.Application.XNSE_Solver {
             double r = 0.5;
             double nonsp = 0.5;
 
-            //C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
-            C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2()-1", false));
+            if(D == 2)
+                C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() - 1.0", false));
+            else if(D == 3)
+                C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2() - 1.0", false));
+            else
+                throw new ArgumentOutOfRangeException();
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.None;
 

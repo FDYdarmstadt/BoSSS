@@ -41,10 +41,49 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class ConvergenceObserver {
 
+        /// <summary>
+        /// Performs a mode decay analysis (<see cref="Waterfall(bool, int)"/>) on this solver.
+        /// </summary>
+        public static Plot2Ddata WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
+            int L = mgOperator.BaseGridProblemMapping.LocalLength;
+
+            var RHS = new double[L];
+            var exSol = new double[L];
+
+            ConvergenceObserver co = new ConvergenceObserver(mgOperator, MassMatrix, exSol);
+            var bkup = linearSolver.IterationCallback;
+            linearSolver.IterationCallback = co.IterationCallback;
+            
+            // use a random init for intial guess.
+            Random rnd = new Random();
+            double[] x0 = new double[L];
+            for(int l = 0; l < L; l++) {
+                x0[l] = rnd.NextDouble();
+            }
+
+            // execute solver 
+            linearSolver.Init(mgOperator);
+            mgOperator.UseSolver(linearSolver, x0, RHS);
+
+            // reset and return
+            linearSolver.IterationCallback = bkup;
+            //var p = co.PlotIterationTrend(true, false, true, true);
+            var p = co.Waterfall(true, 100);
+            return p;
+        }
+
+
+
+        /// <summary>
+        /// ctor
+        /// </summary>
         public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution) {
             Setup(muop, MassMatrix, __ExactSolution);
         }
 
+        /// <summary>
+        /// another constructor
+        /// </summary>
         public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution, SolverFactory SF) {
             m_SF = SF;
             Setup(muop, MassMatrix, __ExactSolution);
@@ -80,17 +119,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             //this.DecompositionOperator = muop; this.DecompositionOperator_IsOrthonormal = false;
-            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config, muop.FreeMeanValue);
+            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config, new bool[Degrees.Length]);
             this.DecompositionOperator_IsOrthonormal = true;
 
-            ResNormTrend = new Dictionary<Tuple<int, int, int>, List<double>>();
-            ErrNormTrend = new Dictionary<Tuple<int, int, int>, List<double>>();
+            ResNormTrend = new Dictionary<(int, int, int), List<double>>();
+            ErrNormTrend = new Dictionary<(int, int, int), List<double>>();
             for (var mgop = this.DecompositionOperator; mgop != null; mgop = mgop.CoarserLevel) {
                 int[] _Degrees = mgop.Mapping.DgDegree;
                 for (int iVar = 0; iVar < _Degrees.Length; iVar++) {
                     for (int p = 0; p <= _Degrees[iVar]; p++) {
-                        ResNormTrend.Add(new Tuple<int, int, int>(mgop.LevelIndex, iVar, p), new List<double>());
-                        ErrNormTrend.Add(new Tuple<int, int, int>(mgop.LevelIndex, iVar, p), new List<double>());
+                        ResNormTrend.Add((mgop.LevelIndex, iVar, p), new List<double>());
+                        ErrNormTrend.Add((mgop.LevelIndex, iVar, p), new List<double>());
                     }
                 }
             }
@@ -103,56 +142,127 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private SolverFactory m_SF;
 
-        public MultigridOperator DecompositionOperator;
+        /// <summary>
+        /// Used to compute an orthonormal decomposition 
+        /// </summary>
+        public MultigridOperator DecompositionOperator {
+            get;
+            private set;
+        }
+                
+        
         MultigridOperator SolverOperator;
 
         double[] ExactSolution;
 
         /// <summary>
-        /// L2-norm of the residual per variable, multigrid level and DG polynomial degree;<br/>
-        /// 1st index: multigrid level index <br/>
-        /// 2nd index: variable index<br/>
-        /// 3rd index: polynomial degree <br/>
+        /// L2-norm of the residual per variable, multigrid level and DG polynomial degree;
+        /// - 1st index: multigrid level index
+        /// - 2nd index: variable index
+        /// - 3rd index: polynomial degree
         /// </summary>
-        Dictionary<Tuple<int, int, int>, List<double>> ResNormTrend;
+        Dictionary<(int MGlevel, int iVar, int deg), List<double>> ResNormTrend;
 
         /// <summary>
-        /// L2-norm of the error per variable, multigrid level and DG polynomial degree;<br/>
-        /// 1st index: multigrid level index <br/>
-        /// 2nd index: variable index<br/>
-        /// 3rd index: polynomial degree <br/>
+        /// L2-norm of the error per variable, multigrid level and DG polynomial degree;
+        /// - 1st index: multigrid level index
+        /// - 2nd index: variable index
+        /// - 3rd index: polynomial degree 
         /// </summary>
-        Dictionary<Tuple<int, int, int>, List<double>> ErrNormTrend;
+        Dictionary<(int MGlevel, int iVar, int deg), List<double>> ErrNormTrend;
 
 
-        public void PlotTrend(bool ErrorOrResidual, bool SepPoly, bool SepLev) {
-            using (var gp = new BoSSS.Solution.Gnuplot.Gnuplot()) {
-                gp.Cmd("set logscale y");
-                gp.Cmd("set title " + (ErrorOrResidual ? "\"Error trend\"" : "\"Residual trend\""));
+        /// <summary>
+        /// Visualization of data from <see cref="WriteTrendToTable"/> in gnuplot
+        /// </summary>
+        public Plot2Ddata PlotIterationTrend(bool ErrorOrResidual, bool SepVars, bool SepPoly, bool SepLev) {
+            var Ret = new Plot2Ddata();
 
-                string[] Titels;
-                MultidimensionalArray ConvTrendData;
-                WriteTrendToTable(ErrorOrResidual, SepPoly, SepLev, out Titels, out ConvTrendData);
-                double[] IterNo = ConvTrendData.GetLength(0).ForLoop(i => ((double)i));
+            Ret.Title = ErrorOrResidual ? "\"Error trend\"" : "\"Residual trend\"";
+            Ret.LogY = true;
 
-                for (int iCol = 0; iCol < Titels.Length; iCol++) {
-                    gp.PlotXY(IterNo, ConvTrendData.GetColumn(iCol), Titels[iCol],
-                        new PlotFormat(lineColor: ((LineColors)(iCol + 1)), Style: Styles.Lines));
-                }
-
-                gp.Execute();
-
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey(true);
-                Console.WriteLine("killing gnuplot...");
-            }
-            Console.WriteLine("done.");
-        }
-
-        public void WriteTrendToCSV(bool ErrorOrResidual, bool SepPoly, bool SepLev, string name) {
             string[] Titels;
             MultidimensionalArray ConvTrendData;
-            WriteTrendToTable(ErrorOrResidual, SepPoly, SepLev, out Titels, out ConvTrendData);
+            WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out Titels, out ConvTrendData);
+            double[] IterNo = ConvTrendData.GetLength(0).ForLoop(i => ((double)i));
+
+            for(int iCol = 0; iCol < Titels.Length; iCol++) {
+                var g = new Plot2Ddata.XYvalues(Titels[iCol], IterNo, ConvTrendData.GetColumn(iCol));
+                g.Format = new PlotFormat(lineColor: ((LineColors)(iCol + 1)), Style: Styles.Lines);
+
+            }
+
+            return Ret;
+        }
+
+        /// <summary>
+        /// Visualization of data from <see cref="WriteTrendToTable"/> in gnuplot
+        /// </summary>
+        public Plot2Ddata Waterfall(bool ErrorOrResidual, int NoOfIter = int.MaxValue) {
+
+            var Ret = new Plot2Ddata();
+            Ret.Title = (ErrorOrResidual ? "\"Error Waterfall\"" : "\"Residual Waterfall\"");
+
+
+            //string[] Titels;
+            //MultidimensionalArray ConvTrendData;
+            //WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out var Titels, out ConvTrendData);
+            var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
+
+            int DegMax = AllData.Keys.Max(tt => tt.deg);
+            int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
+            int MaxIter = AllData.First().Value.Count - 1;
+
+            var WaterfallData = new List<double[]>();
+            var Row = new List<double>();
+            var xCoords = new List<double>();
+            for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                Row.Clear();
+                for(int iLv = MglMax; iLv >= 0; iLv--) {
+                    for(int p = 0; p <= DegMax; p++) {
+                        double Acc = 0;
+
+                        foreach(var kv in AllData) {
+                            if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
+                                Acc += kv.Value[iIter].Pow2();
+                        }
+
+                        Acc = Acc.Sqrt();
+                        Row.Add(Acc);
+
+                        if(iIter == 0) {
+                            double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
+                            xCoords.Add(xCoord);
+                        }
+                    }
+                }
+
+                WaterfallData.Add(Row.ToArray());
+            }
+
+            Ret.LogY = true;
+            Ret.ShowLegend = false;
+
+            for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                var PlotRow = WaterfallData[iIter];
+                var XAxis = PlotRow.Length.ForLoop(i => i + 1.0);
+
+                var g = new Plot2Ddata.XYvalues("iter"  + iIter, XAxis, PlotRow);
+                
+                Ret.AddDataGroup(g);
+                    
+            }
+            return Ret;
+        }
+
+
+        /// <summary>
+        /// Writes the table obtained through <see cref="WriteTrendToTable(bool, bool, bool, bool, out string[], out MultidimensionalArray)"/> into a CSV file.
+        /// </summary>
+        public void WriteTrendToCSV(bool ErrorOrResidual, bool SepVars, bool SepPoly, bool SepLev, string name) {
+            string[] Titels;
+            MultidimensionalArray ConvTrendData;
+            WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out Titels, out ConvTrendData);
 
 
             using (StreamWriter stw = new StreamWriter(name)) {
@@ -161,23 +271,76 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ConvTrendData.SaveToStream(stw);
                 stw.Flush();
             }
-
         }
+        
+        
+        /// <summary>
+        /// provides data collected during a solver run in tabular form
+        /// </summary>
+        /// <param name="ErrorOrResidual">
+        /// - true: output is error against exact solution (if provided) during each iteration
+        /// - false: output is residual against exact solution (if provided) during each iteration
+        /// </param>
+        /// <param name="SepVars">
+        /// - true: separate column for each variable
+        /// - false:  l2-norm over all variables
+        /// </param>
+        /// <param name="SepPoly">
+        /// - true:   separate column for each polynomial degree
+        /// - false:  l2-norm over all polynomial degrees
+        /// </param>
+        /// <param name="SepLev">
+        /// - true:   separate column for each multi-grid level
+        /// - false:  l2-norm over all multi-grid levels
+        /// </param>
+        /// <param name="Titels">
+        /// Column names/titles
+        /// </param>
+        /// <param name="ConvTrendData">
+        /// data table:
+        /// - columns: correspond to <paramref name="Titels"/>
+        /// - rows: solver iterations
+        /// </param>
+        public void WriteTrendToTable(bool ErrorOrResidual, bool SepVars, bool SepPoly, bool SepLev, out string[] Titels, out MultidimensionalArray ConvTrendData) {
 
-        public void WriteTrendToTable(bool ErrorOrResidual, bool SepPoly, bool SepLev, out string[] Titels, out MultidimensionalArray ConvTrendData) {
-
-            Dictionary<Tuple<int, int, int>, List<double>> data = ErrorOrResidual ? ErrNormTrend : ResNormTrend;
-
+            var data = ErrorOrResidual ? ErrNormTrend : ResNormTrend;
 
             List<string> titleS = new List<string>();
             int iCol = 0;
-            Dictionary<Tuple<int, int, int>, int> ColumnIndex = new Dictionary<Tuple<int, int, int>, int>();
+            Dictionary<(int MGlevel, int iVar, int deg), int> ColumnIndex = new Dictionary<(int, int, int), int>();
             foreach (var kv in data) {
                 int iLevel = kv.Key.Item1;
                 int pDG = kv.Key.Item3;
                 int iVar = kv.Key.Item2;
 
                 string title;
+                {
+                    if(SepVars)
+                        title = $"Var{iVar}";
+                    else
+                        title = "";
+
+                    if(SepLev) {
+                        if(title.Length > 0)
+                            title = title + ",";
+                        title = title + $"Mglv{iLevel}";
+                    }
+
+                    if(SepPoly) {
+                        if(title.Length > 0)
+                            title = title + ",";
+                        title = title + $"p={pDG}";
+                    }
+
+                    if(title.Length > 0)
+                        title = "_" + title;
+
+                    if(ErrorOrResidual)
+                        title = "Err" + title;
+                    else
+                        title = "Res" + title;
+                }
+                /*
                 if (SepPoly == false && SepLev == false) {
                     title = string.Format("(var#{0})", iVar);
                 } else if (SepPoly == false && SepLev == true) {
@@ -189,6 +352,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else {
                     throw new ApplicationException();
                 }
+                */
 
                 int iColKv = titleS.IndexOf(title);
                 if (iColKv < 0) {
@@ -201,25 +365,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Titels = titleS.ToArray();
             ConvTrendData = MultidimensionalArray.Create(data.First().Value.Count, titleS.Count);
 
-            foreach (var kv in data) {
-                double[] Column = kv.Value.ToArray();
-                for (int l = 0; l < Column.Length; l++) {
-                    Column[l] = Column[l].Pow2();
-                }
+            foreach (var kv in data) { // over all data columns
+                
+                double[] ColumnSquared = kv.Value.Select(val => val.Pow2()).ToArray();
 
-                if (ConvTrendData.GetLength(0) != Column.Length)
+                if (ConvTrendData.GetLength(0) != ColumnSquared.Length)
                     throw new ApplicationException();
 
-                int iColkv = ColumnIndex[kv.Key];
-                ConvTrendData.ExtractSubArrayShallow(-1, iColkv).AccVector(1.0, Column);
+                int iColkv = ColumnIndex[kv.Key]; // output column index in which we sum up the column
+                ConvTrendData.ExtractSubArrayShallow(-1, iColkv).AccVector(1.0, ColumnSquared);
 
             }
             ConvTrendData.ApplyAll(x => Math.Sqrt(x));
         }
 
         /// <summary>
-        /// Decomposition of some solution vector <paramref name="Solvec"/> into the different multigrid levels.
+        /// Decomposition of some solution vector <paramref name="vec"/> into the different multigrid levels.
         /// </summary>
+        /// <param name="vec">
+        /// approximate solution
+        /// </param>
+        /// <param name="plotName">
+        /// name of the tecplot file
+        /// </param>
         public void PlotDecomposition<V>(V vec, string plotName)
             where V : IList<double> //
         {
@@ -256,6 +424,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        /// <summary>
+        /// Decomposition of a certain vector into its frequencies on all mesh levels.
+        /// </summary>
+        /// <param name="Vec"></param>
+        /// <param name="decompose">
+        /// - true: orthogonality (of the respective DG/XDG) representation across all mesh levels:
+        ///         the high level modes contain only contributions which cannot be represented on the lower levels.
+        /// - false: the higher level meshes include also lower frequencies;
+        /// </param>
+        /// <returns>
+        /// - one vector per multigrid level
+        /// </returns>
         public IList<double[]> OrthonormalMultigridDecomposition(double[] Vec, bool decompose = true) {
             // vector length on level 0
             int L0 = DecompositionOperator.Mapping.LocalLength;
@@ -266,9 +446,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             List<double[]> OrthoVecs = new List<double[]>();
             OrthoVecs.Add(Vec.CloneAs());
 
-            double l2pow2_Vec = OrthoVecs[0].L2NormPow2().MPISum();
-
-            MultigridOperator coarsest = null;
+            
             for (var mgop = this.DecompositionOperator.CoarserLevel; mgop != null; mgop = mgop.CoarserLevel) {
                 int L = mgop.Mapping.LocalLength;
                 int iLevel = mgop.LevelIndex;
@@ -276,27 +454,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 mgop.Restrict(OrthoVecs[iLevel - 1], OrthoVecs[iLevel]);
 
-                coarsest = mgop;
-            }
 
-            double Check_l2pow2_OrthoVecsTotal = 0.0;
-
-            for (var mgop = this.DecompositionOperator.CoarserLevel; mgop != null; mgop = mgop.CoarserLevel) {
-                int iLevel = mgop.LevelIndex;
-
-
-                if (decompose)
+                if(decompose) {
+                    double L2higher = OrthoVecs[iLevel - 1].MPI_L2NormPow2();
                     mgop.Prolongate(-1.0, OrthoVecs[iLevel - 1], 1.0, OrthoVecs[iLevel]);
 
+                    double L2higher2 = OrthoVecs[iLevel - 1].MPI_L2NormPow2();
+                    double L2lower = OrthoVecs[iLevel].MPI_L2NormPow2();
+                    double L2comb = L2higher2 + L2lower;
 
-                coarsest = mgop;
+                }
             }
-            foreach (double[] OrthoVec in OrthoVecs)
-                Check_l2pow2_OrthoVecsTotal += OrthoVec.L2NormPow2().MPISum();
 
-            // if the vectors are really orthonormal, their squared L2-norms must be additive!
-            if (decompose && this.DecompositionOperator_IsOrthonormal)
-                Debug.Assert((Math.Abs(Check_l2pow2_OrthoVecsTotal - l2pow2_Vec) / l2pow2_Vec < 1.0e-8), "something wrong with orthonormal decomposition");
 
             return OrthoVecs;
         }
@@ -317,7 +486,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int Lorg = SolverOperator.BaseGridProblemMapping.LocalLength;
 
-            // transform residual and solution back onto the orignal grid
+            // transform residual and solution back onto the original grid
             // ==========================================================
 
             double[] Res_Org = new double[Lorg];
@@ -364,8 +533,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             DecompositionOperator.TransformSolInto(Err_Org, Err_0);
             DecompositionOperator.TransformRhsInto(Res_Org, Res_0, false);
 
-            IList<double[]> Err_OrthoLevels = OrthonormalMultigridDecomposition(Err_0);
-            IList<double[]> Res_OrthoLevels = OrthonormalMultigridDecomposition(Res_0);
+            IList<double[]> Err_OrthoLevels = OrthonormalMultigridDecomposition(Err_0, decompose:true);
+            IList<double[]> Res_OrthoLevels = OrthonormalMultigridDecomposition(Res_0, decompose:true);
 
 
             // compute L2 norms on each level
@@ -378,15 +547,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int JAGG = mgop.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
 
-                for (int iVar = 0; iVar < _Degrees.Length; iVar++) {
-                    for (int p = 0; p <= _Degrees[iVar]; p++) {
-                        List<double> ResNorm = this.ResNormTrend[new Tuple<int, int, int>(mgop.LevelIndex, iVar, p)];
-                        List<double> ErrNorm = this.ErrNormTrend[new Tuple<int, int, int>(mgop.LevelIndex, iVar, p)];
+                for (int iVar = 0; iVar < _Degrees.Length; iVar++) { // loop over variables...
+                    for (int p = 0; p <= _Degrees[iVar]; p++) { // loop over degrees...
+                        List<double> ResNorm = this.ResNormTrend[(mgop.LevelIndex, iVar, p)];
+                        List<double> ErrNorm = this.ErrNormTrend[(mgop.LevelIndex, iVar, p)];
 
                         double ResNormAcc = 0.0;
                         double ErrNormAcc = 0.0;
 
-                        for (int jagg = 0; jagg < JAGG; jagg++) {
+                        for (int jagg = 0; jagg < JAGG; jagg++) { // sum of var 'iVar' of all modes with degree 'p' over all cells
                             int[] NN = mgop.Mapping.AggBasis[iVar].ModeIndexForDegree(jagg, p, _Degrees[iVar]);
 
                             foreach (int n in NN) {
@@ -404,31 +573,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        //private List<DGField> DecomposedDGFields;
-
-        //public void ItCallbackSubsolvers(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-        //    AddFieldToPlot(mgOp, xI);
-        //}
-
-        //private bool m_MainSolveCompleted =false;
-
-        //private bool MainSolveCompleted {
-        //    get {
-        //        bool alternatebool = m_MainSolveCompleted;
-        //        m_MainSolveCompleted = !m_MainSolveCompleted;
-        //        return alternatebool;
-        //    }
-        //}
-
-        //public void ItCallbackMainSolver(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-        //    AddFieldToPlot(mgOp, xI);
-        //    if (MainSolveCompleted) {
-        //        string plotName = TecplotOut + "Decomp." + iter;
-        //        Tecplot.Tecplot.PlotFields(DecomposedDGFields, plotName, 0.0, 3);
-        //        foreach (var f in DecomposedDGFields)
-        //            f.Clear();
-        //    }
-        //}
+        
 
         /// <summary>
         /// 
@@ -436,7 +581,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="FsDriver"></param>
         /// <param name="SI"></param>
         public void WriteTrendToSession(IFileSystemDriver FsDriver, SessionInfo SI) {
-            this.WriteTrendToTable(false, true, true, out string[] columns, out MultidimensionalArray table);
+            this.WriteTrendToTable(false, true, true, true, out string[] columns, out MultidimensionalArray table);
 
             int MPIrank;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MPIrank);
@@ -467,6 +612,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
         public void ResItCallbackAtAll(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
 
             var Ptr_mgOp = mgOp;
@@ -491,6 +637,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
             //DecomposedDGFields.AddRange(DecompVec.Mapping.Fields);
         }
+        */
 
         private int CurrentMLevel_down=0;
         private int CurrentMLevel_up = 0;
@@ -535,6 +682,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Iterationcounter[5] - MG_internal_counter;
         }
 
+        /*
         public void ResItCallbackAtDownstep(int iter, double[] xI, double[] rI, MultigridOperator mgOp)
         {
 
@@ -561,6 +709,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
             }
         }
+        */
 
         private CoordinateVector InitProblemDGFields(string NamePrefix) {
             Basis[] BS = this.SolverOperator.BaseGridProblemMapping.BasisS.ToArray();

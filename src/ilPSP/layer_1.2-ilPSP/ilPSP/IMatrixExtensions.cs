@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace ilPSP {
 
@@ -812,12 +813,15 @@ namespace ilPSP {
                 throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
             if (B.NoOfCols != M.NoOfCols)
                 throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            if(object.ReferenceEquals(M, A))
+                throw new ArgumentException("in-place GEMM is not supported");
+            if(object.ReferenceEquals(M, A))
+                throw new ArgumentException("in-place GEMM is not supported");
 
             if (A is MultidimensionalArray && B is MultidimensionalArray && M is MultidimensionalArray) {
                 MultidimensionalArray _A = A as MultidimensionalArray;
                 MultidimensionalArray _B = B as MultidimensionalArray;
                 MultidimensionalArray _M = M as MultidimensionalArray;
-
                 _M.Multiply(alpha, _A, _B, beta, ref GEMM_Prog);
             } else {
 
@@ -1287,7 +1291,7 @@ namespace ilPSP {
 
         /// <summary>
         /// Calculates the inverse of this matrix and stores the result in a
-        /// newly allocated matrix. Use <see cref="Invert(FullMatrix)"/> to
+        /// newly allocated matrix. Use <see cref="Invert{M1}(M1)"/> to
         /// avoid memory allocation.
         /// </summary>
         /// <returns>

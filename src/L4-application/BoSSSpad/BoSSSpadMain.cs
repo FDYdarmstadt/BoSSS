@@ -188,7 +188,7 @@ namespace BoSSS.Application.BoSSSpad {
                         Entry.Command = LatexIO.Tex2Bws(Entry.Command);
                     }
 
-                    GnuplotExtensions.UseCairoLatex = true;
+                    BoSSSpadGnuplotExtensions.UseCairoLatex = true;
                 }
 
                 // All boxes before 'restart' should not be counted as error

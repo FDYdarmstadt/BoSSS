@@ -72,8 +72,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public BlockMsrMatrix OpMatrix;
 
-
+        /// <summary>
+        /// passed in <see cref="Init"/>
+        /// </summary>
         MultigridOperator m_MgOperator;
+
 
         bool CoarseOnLovwerLevel = true;
 
@@ -96,13 +99,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MxxHistory.Clear();
                 SolHistory.Clear();
 
-                double Dim = MgMap.ProblemMapping.GridDat.SpatialDimension;
-
+                
                 // set operator
                 // ============
-                //if (op.CoarserLevel == null) {
-                //    throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
-                //}
                 this.OpMatrix = Mtx;
 
 
@@ -151,15 +150,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-
-        ///// <summary>
-        ///// Threshold for convergence detection
-        ///// </summary>
-        //public double Tolerance = 1E-10;
-
         /// <summary>
         /// computes the residual on this level.
         /// </summary>
+        /// <param name="B">input: RHS of the system</param>
+        /// <param name="X">input: solution approximation</param>
+        /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
         public void Residual(double[] Res, double[] X, double[] B) {
             Debug.Assert(Res.Length == m_MgOperator.Mapping.LocalLength);
             Debug.Assert(X.Length == m_MgOperator.Mapping.LocalLength);
@@ -212,10 +208,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        //public int m_MaxIterations = 1;
-
-
+        /// <summary>
+        /// solution guesses from smoothers
+        /// </summary>
         List<double[]> SolHistory = new List<double[]>();
+        
+        /// <summary>
+        /// - orthonormal system of matrix-vector products;
+        /// - the i-th entry is equal to  <see cref="OpMatrix"/>*<see cref="SolHistory"/>[i]
+        /// </summary>
         List<double[]> MxxHistory = new List<double[]>();
 
         
@@ -279,7 +280,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //double NormInitial = Mxx.MPI_L2Norm();
 
-            for (int jj = 0; jj < 1; jj++) { //re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
+            for (int jj = 0; jj < 2; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
                 for (int i = 0; i < KrylovDim; i++) {
                     Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
                     double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();
@@ -321,8 +322,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 alpha = alpha.MPISum();
 
 
-                //outX.SetV(Sol0);
-                //outRes.SetV(Res0);
                 Array.Copy(Sol0, outX, L);
                 Array.Copy(Res0, outRes, L);
                 for (int i = 0; i < KrylovDim; i++) {
@@ -349,7 +348,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISparseSolver PlottiesFullsolver = null;
 
-        void PlottyMcPlot(double[] rl, double[] _xl, double[] _xl_prev, double[] RawCorr) {
+
+        /// <summary>
+        /// Debug plotting / only used for development
+        /// </summary>
+        /// <param name="RawCorr">correction applied</param>
+        /// <param name="rl">current residual (for <paramref name="_xl"/>)</param>
+        /// <param name="_xl">current solution</param>
+        /// <param name="_xl_prev">solution before correction</param>
+        /// <param name="B">rhs of the system</param>
+        void PlottyMcPlot(double[] rl, double[] _xl, double[] _xl_prev, double[] RawCorr, double[] B) {
             if (viz == null)
                 return;
 
@@ -376,7 +384,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             PlottiesFullsolver.Solve(optCorr, rl);
 
             double[] OrthoCorr = _xl.CloneAs();
-            OrthoCorr.AccV(-1, _xl);
+            PlottiesFullsolver.Solve(OrthoCorr, B);
 
             double[] deltaCorr = OrthoCorr.CloneAs();
             deltaCorr.AccV(-1.0, optCorr);
@@ -384,7 +392,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             string[] Names = new[] { "Solution",
                                      "LastCorrection",
-                                     "OrthoCorr",
+                                     "ExactSol",
                                      "ExactCorrection",
                                      "DeltaCorrection",
                                      "Residual",
@@ -410,13 +418,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> //
         {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
                 double[] B, X;
-                if (_B is double[])
+                if(_B is double[])
                     B = _B as double[];
                 else
                     B = _B.ToArray();
-                if (_xl is double[])
+                if(_xl is double[])
                     X = _xl as double[];
                 else
                     X = _xl.ToArray();
@@ -439,7 +447,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int L = X.Length;
                 int Lc;
-                if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
+                if(this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
                     Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
                 else
                     Lc = -1;
@@ -480,7 +488,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }, Names);
                 }
                 */
-                PlottyMcPlot(rl, X, null, null);
+
+                PlottyMcPlot(rl, X, null, null, B);
                 double[] Xprev = null, Corr = null;
                 if(PlottiesFullsolver != null) {
                     Xprev = X.CloneAs();
@@ -489,9 +498,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double iter0_resNorm = Res0.MPI_L2Norm();
                 double resNorm = iter0_resNorm;
-                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);                
+                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
 
-                for (int iIter = 1; true; iIter++) {                    
+                for(int iIter = 1; true; iIter++) {
                     if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
@@ -512,18 +521,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
                         } 
 #endif
-                        
+
                         // compute correction
                         double[] PreCorr = new double[L];
                         PreSmoother.Solve(PreCorr, rl); // Vorglättung
-                        if (Corr != null)
+                        if(Corr != null) // only for plotting/debugging
                             Corr.SetV(PreCorr);
 
                         SpecAnalysisSample(iIter, PreCorr, "smooth1");
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
-                        if (Xprev != null)
+                        if(Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
 
@@ -534,37 +543,56 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
                     }
-                    //Console.WriteLine("Residual after Presmoother:" + rl.L2Norm());
-                    PlottyMcPlot(rl, X, Xprev, Corr);
+                    
+                    PlottyMcPlot(rl, X, Xprev, Corr, B);
 
 
                     // coarse grid correction
                     // ----------------------
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
 #if DEBUG
-                        {
-                            double[] rTest = new double[rl.Length];
-                            Residual(rTest, X, B); // Residual on this level; 
-                            // Test also fails if convergence criterium is to strict because then machine accuracy is reached
-                            Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
-                        }
+                    {
+                        double[] rTest = new double[rl.Length];
+                        Residual(rTest, X, B); // Residual on this level; 
+                                               // Test also fails if convergence criterium is to strict because then machine accuracy is reached
+                        Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                    }
 #endif
-                        bool usedCoarse = false;
-                        if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
-                        {
+                    if(this.CoarserLevelSolver != null) {
 
+                        double[] vl = new double[L];
+                        if(CoarseOnLovwerLevel) {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // coarse grid solver defined on COARSER MESH LEVEL:
+                            // this solver must perform restriction and prolongation
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            // restriction of residual
                             this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
                             // Berechnung der Grobgitterkorrektur
                             double[] vlc = new double[Lc];
-                            for(int i =0;i<m_omega;i++)
-                            this.CoarserLevelSolver.Solve(vlc, rlc);
+                            for(int i = 0; i < m_omega; i++)
+                                this.CoarserLevelSolver.Solve(vlc, rlc);
 
                             // Prolongation der Grobgitterkorrektur
-                            double[] vl = new double[L];
                             this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
-                            if (Corr != null)
-                                Corr.SetV(vl);
+
+
+                        } else {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // coarse grid solver defined on the SAME MESH LEVEL:
+                            // performs (probabaly) its own restriction/prolongation
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            // Berechnung der Grobgitterkorrektur
+                            this.CoarserLevelSolver.Solve(vl, rl);
+                        }
+
+
+                        // record correction for Debug-Plotting 
+                        if(Corr != null)
+                            Corr.SetV(vl);
 
                             SpecAnalysisSample(iIter, vl, "cgc");
 
@@ -582,32 +610,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 break;
                             }
 
-                            usedCoarse = true;
+                        // check termination:
+                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                            Converged = true;
+                            break;
                         }
-                        else
-                        {
-                            // Berechnung der Grobgitterkorrektur
-                            double[] vl = new double[L];
-                            this.CoarserLevelSolver.Solve(vl, rl);
-
-                            // orthonormalization and residual minimization
-                            AddSol(ref vl);
-                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
-                            {
-                                Converged = true;
-                                break;
-                            }
-
-                        usedCoarse = true;
                     }
 
-                    PlottyMcPlot(rl, X, Xprev, Corr);
-                    //Console.WriteLine("Residual after CGC:" + rl.L2Norm());
+                    PlottyMcPlot(rl, X, Xprev, Corr, B);
+                    
                     // post-smoother
                     // -------------
 
-                    for (int g = 0; g < 2; g++) {
+                    for(int g = 0; g < 2; g++) { // doppelt hält besser
                         // Test: Residual on this level / already computed by 'MinimizeResidual' above
 #if DEBUG
                         {
@@ -619,14 +634,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // compute correction
                         double[] PreCorr = new double[L];
                         PostSmoother.Solve(PreCorr, rl); // Vorglättung
-                        if (Corr != null)
+                        if(Corr != null)
                             Corr.SetV(PreCorr);
 
                         SpecAnalysisSample(iIter, PreCorr, "smooth2_" + g);
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
-                        if (Xprev != null)
+                        if(Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
 
@@ -637,18 +652,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
 
-                        PlottyMcPlot(rl, X, Xprev, Corr);
+                        
                     }
-                    //Console.WriteLine("Residual after Postsmoother:" + rl.L2Norm());
+                    
                     // iteration callback
                     // ------------------
 
                     this.ThisLevelIterations++;
 
-                    IterationCallback?.Invoke(iIter, X, rl, this.m_MgOperator);
+                    IterationCallback?.Invoke(iIter*2, X, Res, this.m_MgOperator);
 
                 }
-                                
+
 
                 // solution copy
                 // =============
@@ -886,6 +901,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
+
+
         /// <summary>
         /// Currently not used
         /// </summary>
@@ -895,8 +912,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Res0"></param>
         /// <param name="B"></param>
         /// <param name="L"></param>
-        private void Restart(double[] X, double[] Sol0, double[] rl, double[] Res0, double[] B, int L)
-        {
+        private void Restart(double[] X, double[] Sol0, double[] rl, double[] Res0, double[] B, int L) {
             MxxHistory.Clear();
             SolHistory.Clear();
             Array.Copy(X, Sol0, L);
@@ -926,16 +942,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// %
+        /// </summary>
         public int ThisLevelIterations {
             get;
             private set;
         }
 
+        /// <summary>
+        /// %
+        /// </summary>
         public bool Converged {
             get;
             private set;
         }
         
+        /// <summary>
+        /// %
+        /// </summary>
         public void ResetStat() {
             this.Converged = false;
             this.ThisLevelIterations = 0;
@@ -946,6 +971,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.ResetStat();
         }
+
+        /// <summary>
+        /// %
+        /// </summary>
         public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }

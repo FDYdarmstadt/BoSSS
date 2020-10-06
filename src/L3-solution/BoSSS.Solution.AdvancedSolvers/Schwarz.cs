@@ -532,6 +532,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             bi.Sort();
                         }
+                    } else {
+                        //Console.WriteLine("Running Schwarz without overlap (level " + this.m_MgOp.LevelIndex + ")");
                     }
 
                     BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
@@ -791,10 +793,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             set {
                 if (value < 0) {
-                    throw new ArgumentException();
+                    throw new ArgumentException("overlap cannot be negative");
                 }
                 if (value > 2) {
-                    throw new ArgumentException();
+                    throw new ArgumentException($"overlap of {value} is not supported - maximum is 2.");
                 }
                 m_Overlap = value;
             }
@@ -920,7 +922,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 // hack the hack
 
-                                int ExtLen=Overlap>0?BlockMask.GetLocalandExternalDOF(m_MgOp.Mapping): m_MgOp.Mapping.LocalLength;
+                                int ExtLen = Overlap > 0 ? BlockMask.GetLocalandExternalDOF(m_MgOp.Mapping) : m_MgOp.Mapping.LocalLength;
 
                                 if (Xdummy == null) {
                                     Xdummy = new double[ExtLen];

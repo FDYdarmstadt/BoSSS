@@ -32,6 +32,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using NUnit.Framework;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -1637,8 +1638,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.Config_MultigridOperator, 
                         dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
 
-                    //System.SaveToTextFileSparse("MatrixNOsplitting.txt");
-                    //RHS.SaveToTextFile("rhsNOsplitting.txt");
+                    //ConvergenceObserver.WaterfallAnalysis(linearSolver, mgOperator, MaMa);
+
 
                     using (var tr = new FuncTrace()) {
                         // init linear solver

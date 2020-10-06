@@ -27,6 +27,7 @@ using System.Diagnostics;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using System.Collections;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     partial class MultigridOperator {
@@ -117,7 +118,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// Highly experimental option, blah blah blah.
             /// </summary>
-            SymPart_DiagBlockEquilib_DropIndefinite
+            SymPart_DiagBlockEquilib_DropIndefinite,
+
+            /// <summary>
+            /// Schur complement for saddle-point systems
+            /// </summary>
+            SchurComplement
         }
 
 
@@ -244,10 +250,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray[] PCleftBlock_inv = new MultidimensionalArray[LL];
                     MultidimensionalArray[] PCrightBlock = new MultidimensionalArray[LL];
                     int[][] __i0s = new int[LL][];
+                    int[][] __Lns = new int[LL][];
 
                     for (int i = 0; i < LL; i++) {
                         var conf = m_Config[i];
                         __i0s[i] = new int[conf.VarIndex.Length];
+                        __Lns[i] = new int[conf.VarIndex.Length];
                     }
 
                     int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
@@ -265,7 +273,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             int E = conf.VarIndex.Length;
                             int[] _i0s = __i0s[i];
-                            AggregationGridBasis basis = null;
+                            int[] _Lns = __Lns[i];
+                            //AggregationGridBasis basis = null;
 
                             int DOF = 0;
                             bool AnyZeroLength = false;
@@ -282,22 +291,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 continue;
 
                             for (int e = 0; e < E; e++) {
-                                _i0s[e] = this.Mapping.LocalUniqueIndex(conf.VarIndex[e], jCell, 0) + i0;
-                                if (e == 0) {
-                                    basis = basisS[conf.VarIndex[e]];
-                                } else {
-                                    if (!object.ReferenceEquals(basis, basisS[conf.VarIndex[e]])) {
-                                        throw new NotSupportedException("All variables in a configuration item must share the same basis.");
-                                    }
-                                }
+                                int iVar = conf.VarIndex[e];
+                                _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
+                                _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
                             }
 
                             // extract blocks from operator and mass matrix
                             // --------------------------------------------
 
                             stw_Data.Start();
-                            ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, true, MassMatrix, ref MassBlock[i]);
-                            ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, true, OpMatrix, ref OperatorBlock[i]);
+                            ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
+                            ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
                             stw_Data.Stop();
                             double MassBlkNrm = MassBlock[i].InfNorm();
                             double OperatorBlkNrm = OperatorBlock[i].InfNorm();
@@ -338,9 +342,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             int Rank;
                             PCleftBlock[i].Clear();
                             PCrightBlock[i].Clear();
-                            int[] idr = ComputeChangeOfBasisBlock(MassBlock[i], OperatorBlock[i], PCleftBlock[i], PCrightBlock[i], conf.mode, out Rank, work[i]);
+                            int[] idr = ComputeChangeOfBasisBlock(_Lns, MassBlock[i], OperatorBlock[i], PCleftBlock[i], PCrightBlock[i], conf.mode, out Rank, work[i]);
                             if (Rank != NN) {
-                                IndefRows.AddRange(ConvertRowIndices(jCell, basis, Degrees, conf, E, _i0s, idr));
+                                IndefRows.AddRange(ConvertRowIndices(jCell, basisS, Degrees, conf, E, _i0s, idr));
                             } else {
                                 Debug.Assert(idr == null);
                             }
@@ -349,8 +353,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // write block back
                             // ----------------
                             stw_Data.Start();
-                            ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, LeftPreCond, ref PCleftBlock[i]);
-                            ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, RightPreCond, ref PCrightBlock[i]);
+                            ExtractBlock(_i0s, _Lns, false, LeftPreCond, ref PCleftBlock[i]);
+                            ExtractBlock(_i0s, _Lns, false, RightPreCond, ref PCrightBlock[i]);
 
 
                             // inverse precond-matrix
@@ -363,7 +367,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 PCrightBlock[i].InvertTo(PCrightBlock_inv[i]);
                             else
                                 RankDefInvert(PCrightBlock[i], PCrightBlock_inv[i]);
-                            ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, RightPreCondInv, ref PCrightBlock_inv[i]);
+                            ExtractBlock(_i0s, _Lns, false, RightPreCondInv, ref PCrightBlock_inv[i]);
 
                             // left-inverse: (required for analysis purposes, to transform residuals back onto original grid)
                             if (PCleftBlock_inv[i] == null || PCleftBlock_inv[i].NoOfRows != NN) {
@@ -373,7 +377,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 PCleftBlock[i].InvertTo(PCleftBlock_inv[i]);
                             else
                                 RankDefInvert(PCleftBlock[i], PCleftBlock_inv[i]);
-                            ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, LeftPreCondInv, ref PCleftBlock_inv[i]);
+                            ExtractBlock(_i0s, _Lns, false, LeftPreCondInv, ref PCleftBlock_inv[i]);
 
                             stw_Data.Stop();
                         }
@@ -389,13 +393,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        private static void ExtractBlock(int jCell,
-            AggregationGridBasis basis, int[] Degrees,
-            ChangeOfBasisConfig conf,
-            int E, int[] _i0s, bool Sp2Full,
-            BlockMsrMatrix MtxSp, ref MultidimensionalArray MtxFl) {
+        private static void ExtractBlock(
+            int[] _i0s, 
+            int[] _Lns,
+            bool Sp2Full,
+            BlockMsrMatrix MtxSp, ref MultidimensionalArray MtxFl) //
+        {
+            Debug.Assert(_i0s.Length == _Lns.Length);
+            int E = _i0s.Length;
 
-            int NN = conf.VarIndex.Sum(iVar => basis.GetLength(jCell, Degrees[iVar]));
+            int NN = _Lns.Sum();
             if (MtxFl == null || MtxFl.NoOfRows != NN) {
                 Debug.Assert(Sp2Full == true);
                 MtxFl = MultidimensionalArray.Create(NN, NN);
@@ -413,17 +420,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int i0Rowloc = 0;
             for (int eRow = 0; eRow < E; eRow++) { // loop over variables in configuration
                 int i0Row = _i0s[eRow];
-                int iVarRow = conf.VarIndex[eRow];
-
-                int NRow = basis.GetLength(jCell, Degrees[iVarRow]);
+                int NRow = _Lns[eRow];
 
                 int i0Colloc = 0;
                 for (int eCol = 0; eCol < E; eCol++) { // loop over variables in configuration
-
                     int i0Col = _i0s[eCol];
-                    int iVarCol = conf.VarIndex[eCol];
-
-                    int NCol = basis.GetLength(jCell, Degrees[iVarCol]);
+                    int NCol = _Lns[eCol]; 
 
                     MultidimensionalArray MtxFl_blk;
                     if (i0Rowloc == 0 && NRow == MtxFl.GetLength(0) && i0Colloc == 0 && NCol == MtxFl.GetLength(1)) {
@@ -431,20 +433,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } else {
                         MtxFl_blk = MtxFl.ExtractSubArrayShallow(new[] { i0Rowloc, i0Colloc }, new[] { i0Rowloc + NRow - 1, i0Colloc + NCol - 1 });
                     }
-
-                    /*
-                    for(int n_row = 0; n_row < NRow; n_row++) { // row loop...
-                        for(int n_col = 0; n_col < NCol; n_col++) { // column loop...
-                            if(Sp2Full) {
-                                // copy from sparse to full
-                                MtxFl[n_row + i0Rowloc, n_col + i0Colloc] = (MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row ? 1.0 : 0.0);
-                            } else {
-                                // the other way around.
-                                MtxSp[n_row + i0Row, n_col + i0Col] = MtxFl[n_row + i0Rowloc, n_col + i0Colloc];
-                            }
-                        }
-                    }
-                    */
 
                     if (Sp2Full) {
                         if (MtxSp != null) {
@@ -454,27 +442,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                     } else {
-#if DEBUG
-                        Debug.Assert(MtxSp != null);
-                        //for (int n_row = 0; n_row < NRow; n_row++) { // row loop...
-                        //    for (int n_col = 0; n_col < NCol; n_col++) { // column loop...
-                        //        Debug.Assert(MtxSp[n_row + i0Row, n_col + i0Col] == 0.0);
-                        //    }
-                        //}            
-#endif
                         MtxSp.AccBlock(i0Row, i0Col, 1.0, MtxFl_blk, 0.0);
                     }
 #if DEBUG
-
                     for(int n_row = 0; n_row < NRow; n_row++) { // row loop...
                         for(int n_col = 0; n_col < NCol; n_col++) { // column loop...
                             Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row ? 1.0 : 0.0)));
                         }
                     }
-
 #endif
-
-
                     i0Colloc += NCol;
                 }
                 i0Rowloc += NRow;
@@ -483,12 +459,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private static int[] ConvertRowIndices(
             int jCell,
-            AggregationGridBasis basis, int[] Degrees,
+            AggregationGridBasis[] basisS, int[] Degrees,
             ChangeOfBasisConfig conf,
             int E, int[] _i0s,
             int[] LocIdx) {
 
-            int NN = conf.VarIndex.Sum(iVar => basis.GetLength(jCell, Degrees[iVar]));
+            int NN = conf.VarIndex.Sum(iVar => basisS[iVar].GetLength(jCell, Degrees[iVar]));
             int[] Loc2glob = new int[NN];
 
             int i0Rowloc = 0;
@@ -496,7 +472,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int i0Row = _i0s[eRow];
                 int iVarRow = conf.VarIndex[eRow];
 
-                int NRow = basis.GetLength(jCell, Degrees[iVarRow]);
+                int NRow = basisS[iVarRow].GetLength(jCell, Degrees[iVarRow]);
 
                 for (int n_row = 0; n_row < NRow; n_row++) { // row loop...
                     //n_row = LocIdx[k];
@@ -571,10 +547,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                fixed (double* pL = L.Storage, pM = M.Storage)
+                fixed (double* _pL = L.Storage, _pM = M.Storage)
                 {
                     int RowCycL = n > 1 ? (L.Index(1, 0) - L.Index(0, 0)) : 0;
                     int RowCycM = n > 1 ? (M.Index(1, 0) - M.Index(0, 0)) : 0;
+
+                    double* pL = _pL + L.Index(0, 0);
+                    double* pM = _pM + M.Index(0, 0);
 
 
                     for (int i = 0; i < n; i++)
@@ -694,9 +673,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
-        private static int[] ComputeChangeOfBasisBlock(MultidimensionalArray In_MassMatrixBlock, MultidimensionalArray In_OperatorMatrixBlock, 
+        private static int[] ComputeChangeOfBasisBlock(
+            int[] BlockLen,
+            MultidimensionalArray In_MassMatrixBlock, MultidimensionalArray In_OperatorMatrixBlock, 
             MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC, Mode PCMode, out int Rank,
-            MultidimensionalArray work) {
+            MultidimensionalArray work) //
+        {
             Rank = In_MassMatrixBlock.NoOfCols;
 
             int[] IndefRows = null;
@@ -758,40 +740,96 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 case Mode.SymPart_DiagBlockEquilib_DropIndefinite: {
-                    var SymmPart = work;
-                    In_OperatorMatrixBlock.TransposeTo(SymmPart);
-                    SymmPart.Acc(1.0, In_OperatorMatrixBlock);
-                    SymmPart.Scale(0.5);
-                    
-                    int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false);
-                    int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
-                    IndefRows = ZerosEntries;
-                    Rank = OUT_LeftPC.NoOfCols - NoOfZeros;
+                   
+                    (Rank, IndefRows) = SymPart_DiagBlockEquilib_DropIndefinite(In_MassMatrixBlock, In_OperatorMatrixBlock, OUT_LeftPC, OUT_rightPC, work);
 
-                    if(NoOfZeros == 0) {
-                        // normal cell -- nix indefinite
-                        // +++++++++++++++++++++++++++++
+                    break;
+                }
 
-                        SymmInv(SymmPart, OUT_LeftPC, OUT_rightPC);
-                    } else {
-                        // problem-cell
-                        // ++++++++++++++
+                case Mode.SchurComplement: {
 
-                        OUT_rightPC.TransposeTo(OUT_LeftPC);
+                    //throw new NotImplementedException("todo");
 
-                        SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC);
+                    int NoVars = BlockLen.Length;
+                    if(NoVars <= 1)
+                        throw new NotSupportedException("The Schur complement requires at least 2 variables, moron!");
+                    int N1 = BlockLen.Take(NoVars - 1).Sum();
+                    int N2 = BlockLen.Last();
+                    int N = N1 + N2;
 
-                        int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, OUT_rightPC, 1.0e-12, true);
-                        OUT_rightPC.TransposeTo(OUT_LeftPC);
+                    //string TestPath = @"C:\Users\flori\OneDrive\MATLAB\Schur";
+                    //In_OperatorMatrixBlock.SaveToTextFile(Path.Combine(TestPath, "Opm.txt"));
 
-                        if(!ZerosEntries2.SetEquals(ZerosEntries))
-                            throw new ArithmeticException();
+                    Debug.Assert(N == In_OperatorMatrixBlock.NoOfRows);
+                    Debug.Assert(N == In_OperatorMatrixBlock.NoOfCols);
 
-                        
-                        break;
-
+                    (MultidimensionalArray M11, MultidimensionalArray M12, MultidimensionalArray M21, MultidimensionalArray M22) GetSubblox(MultidimensionalArray Mtx) {
+                        return (
+                            Mtx.ExtractSubArrayShallow(new[] { 0, 0 }, new[] { N1 - 1, N1 - 1 }),
+                            Mtx.ExtractSubArrayShallow(new[] { 0, N1 }, new[] { N1 - 1, N - 1 }),
+                            Mtx.ExtractSubArrayShallow(new[] { N1, 0 }, new[] { N - 1, N1 - 1 }),
+                            Mtx.ExtractSubArrayShallow(new[] { N1, N1 }, new[] { N - 1, N - 1 })
+                        );
                     }
 
+                    var OpMtxSub = GetSubblox(In_OperatorMatrixBlock);
+                    var MamaSub = GetSubblox(In_MassMatrixBlock);
+                    var workSub = GetSubblox(work);
+                    var lpcSub = GetSubblox(OUT_LeftPC);
+                    var rpcSub = GetSubblox(OUT_rightPC);
+
+                    (int Rank11, int[] IndefRows11) = SymPart_DiagBlockEquilib_DropIndefinite(MamaSub.M11, OpMtxSub.M11, lpcSub.M11, rpcSub.M11, workSub.M11);
+
+                    // compute lpcSub.M11*OpMtxSub.M11*rpcSub.M11
+                    // (without additional mem-alloc, yeah!)
+                    var Diag11 = workSub.M11;
+                    Diag11.GEMM(1.0, lpcSub.M11, OpMtxSub.M11, 0.0);
+                    OpMtxSub.M11.GEMM(1.0, Diag11, rpcSub.M11, 0.0);
+                    
+                    // invert diag
+                    if(Rank11 == N1) {
+                        OpMtxSub.M11.InvertTo(workSub.M11);
+                    } else {
+                        RankDefInvert(OpMtxSub.M11, workSub.M11);
+                    }
+
+                    //
+                    OpMtxSub.M11.GEMM(1.0, rpcSub.M11, OpMtxSub.M11, 0.0);
+                    workSub.M11.GEMM(1.0, OpMtxSub.M11, lpcSub.M11, 0.0);
+                    var Q = workSub.M11;
+
+                    //
+                    workSub.M21.GEMM(-1.0, OpMtxSub.M21, Q, 0.0);
+                    workSub.M12.GEMM(-1.0, Q, OpMtxSub.M12, 0.0);
+
+                    //rpcSub.M12.SetMatrix(workSub.M12); rpcSub.M22.AccEye(1.0);
+                    //lpcSub.M21.SetMatrix(workSub.M21); lpcSub.M22.AccEye(1.0);
+                    //OUT_LeftPC.SaveToTextFile(Path.Combine(TestPath, "Lpc.txt"));
+                    //OUT_rightPC.SaveToTextFile(Path.Combine(TestPath, "Rpc.txt"));
+
+
+                    rpcSub.M12.GEMM(1.0, Q, OpMtxSub.M12, 0.0);
+                    OpMtxSub.M22.GEMM(-1.0, OpMtxSub.M21, rpcSub.M12, 1.0);
+
+
+                    (int Rank22, int[] IndefRows22) = SymPart_DiagBlockEquilib_DropIndefinite(MamaSub.M22, OpMtxSub.M22, lpcSub.M22, rpcSub.M22, workSub.M22);
+                    
+                    lpcSub.M21.GEMM(1.0, lpcSub.M22, workSub.M21, 0.0);
+                    rpcSub.M12.GEMM(1.0, workSub.M12, rpcSub.M22, 0.0);
+
+                    //OUT_LeftPC.SaveToTextFile(Path.Combine(TestPath, "Lpc.txt"));
+                    //OUT_rightPC.SaveToTextFile(Path.Combine(TestPath, "Rpc.txt"));
+
+                    if(IndefRows11 != null && IndefRows22 != null)
+                        IndefRows = ArrayTools.Cat(IndefRows11, IndefRows22);
+                    else if(IndefRows11 != null)
+                        IndefRows = IndefRows11;
+                    else if(IndefRows22 != null)
+                        IndefRows = IndefRows22;
+                    else
+                        IndefRows = null;
+
+                    Rank = Rank11 + Rank22;
                     break;
                 }
 
@@ -831,7 +869,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     */
                 default:
-                throw new NotImplementedException();
+                throw new NotImplementedException("Unknown option: " + PCMode);
             }
 
             return IndefRows;
@@ -888,6 +926,46 @@ namespace BoSSS.Solution.AdvancedSolvers {
             for(int i = 0; i < Q; i++)
                 for(int j = 0; j < Q; j++)
                     MtxOt[NonzeroIdx[i], NonzeroIdx[j]] = TmpOt[i, j];
+        }
+
+        /// <summary>
+        /// Implementation of <see cref="Mode.SymPart_DiagBlockEquilib_DropIndefinite"/>
+        /// </summary>
+        static (int Rank, int[] IndefRows) SymPart_DiagBlockEquilib_DropIndefinite(
+            MultidimensionalArray In_MassMatrixBlock, MultidimensionalArray In_OperatorMatrixBlock, 
+            MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC,
+            MultidimensionalArray work ) {
+            var SymmPart = work;
+            In_OperatorMatrixBlock.TransposeTo(SymmPart);
+            SymmPart.Acc(1.0, In_OperatorMatrixBlock);
+            SymmPart.Scale(0.5);
+
+            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false);
+            int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
+            int[] _IndefRows = ZerosEntries;
+            int _Rank = OUT_LeftPC.NoOfCols - NoOfZeros;
+
+            if(NoOfZeros == 0) {
+                // normal cell -- nix indefinite
+                // +++++++++++++++++++++++++++++
+
+                SymmInv(SymmPart, OUT_LeftPC, OUT_rightPC);
+            } else {
+                // problem-cell
+                // ++++++++++++++
+
+                OUT_rightPC.TransposeTo(OUT_LeftPC);
+
+                SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC);
+
+                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, OUT_rightPC, 1.0e-12, true);
+                OUT_rightPC.TransposeTo(OUT_LeftPC);
+
+                if(!ZerosEntries2.SetEquals(ZerosEntries))
+                    throw new ArithmeticException();
+            }
+
+            return (_Rank, _IndefRows);
         }
 
         /// <summary>

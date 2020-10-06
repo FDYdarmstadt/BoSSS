@@ -33,7 +33,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public virtual CoordinateVector CurrentStateVector {
             get;
-            private set;
+            protected set;
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public virtual CoordinateVector CurrentResidualVector {
             get;
-            private set;
+            protected set;
         }
 
         /*
@@ -176,7 +176,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public XdgTimestepping Timestepping {
             get;
-            internal set;
+            protected set;
         }
 
 
@@ -487,7 +487,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// 
         /// </summary>
         protected override void InitSolver() {
-             if(base.Timestepping != null)
+            if (base.Timestepping != null)
                 return;
 
             XdgTimestepping solver = new XdgTimestepping(

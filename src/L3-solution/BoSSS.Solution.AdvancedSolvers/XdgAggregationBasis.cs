@@ -332,7 +332,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Number of species per composite cell; 
+        /// Number of species present (i.e. with non-zero measure) per composite cell; 
         ///  - index: composite cell index;
         /// </summary>
         int[] NoOfSpecies;
@@ -605,6 +605,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+        /// <summary>
+        /// Number of DOFs in all present species (i.e. species has a non-zero measure).
+        /// </summary>
         public override int GetLength(int jCell, int p) {
             return this.NoOfSpecies[jCell] * base.GetLength(jCell, p);
         }

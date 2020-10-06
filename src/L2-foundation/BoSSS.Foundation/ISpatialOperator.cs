@@ -236,7 +236,6 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// 
         /// Setting (to a different value) fires all <see cref="HomotopyUpdate"/> events
         /// </summary>
         double CurrentHomotopyValue {
