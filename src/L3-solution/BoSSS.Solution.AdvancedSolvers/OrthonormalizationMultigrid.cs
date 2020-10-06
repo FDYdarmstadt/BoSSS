@@ -659,6 +659,209 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// the multigrid iterations for a linear problem (experimental version)
+        /// </summary>
+        /// <param name="_xl">on input, the initial guess; on exit, the result of the multigrid iteration</param>
+        /// <param name="_B">the right-hand-side of the problem</param>
+        public void Solve__experimento<U, V>(U _xl, V _B)
+            where U : IList<double>
+            where V : IList<double> //
+        {
+            using (new FuncTrace()) {
+                double[] B, X;
+                if (_B is double[])
+                    B = _B as double[];
+                else
+                    B = _B.ToArray();
+                if (_xl is double[])
+                    X = _xl as double[];
+                else
+                    X = _xl.ToArray();
+
+                //// clear history, makes a small difference on coarse levels, which one is better?
+                //MxxHistory.Clear();
+                //SolHistory.Clear();
+
+
+                // in case of spectral analysis
+                if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis) {
+                    // Set RHS to zero and introduce random intitial guess respectively error
+                    Console.WriteLine("Performing Spectral Analysis, inserting initial error ...");
+                    B.Clear();
+                    X.Clear();
+                    var rand = new Random();
+                    X = Enumerable.Repeat(0, X.Length).Select(i => rand.NextDouble() * 2 - 1).ToArray();
+                }
+
+                int L = X.Length;
+                int Lc;
+                if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
+                    Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
+                else
+                    Lc = -1;
+
+                //double[] rl = new double[L];
+                double[] rlc = Lc > 0 ? new double[Lc] : null;
+
+                // Residual of initial solution guess
+                double[] Res = new double[L];
+                Residual(Res, X, B);
+
+
+                /*
+                if(this.m_MgOperator.LevelIndex == 0) {
+                    var op = m_MgOperator.CoarserLevel;
+
+                    double[] randCoarse = new double[Lc];
+                    Random rnd = new Random(0);
+                    for(int i = 0; i < Lc; i++)
+                        randCoarse[i] = rnd.NextDouble();
+
+                    double[] randFine = new double[L];
+                    op.Prolongate(1.0, randFine, 0.0, randCoarse);
+
+                    double[] randCoarse_PR = new double[Lc];
+                    op.Restrict(randFine, randCoarse_PR);
+
+                    double PR_factor = randCoarse_PR.MPI_InnerProd(randCoarse) / randCoarse.MPI_L2NormPow2();
+
+                    double[] PR_perEnty = new double[Lc];
+                    for(int i = 0; i < Lc; i++)
+                        PR_perEnty[i] = randCoarse_PR[i] / randCoarse[i];
+
+
+                    double[] randFine_RP = new double[L];
+                    op.Prolongate(1.0, randFine_RP, 0.0, randCoarse_PR);
+
+
+                    double RP_factor = randFine_RP.MPI_InnerProd(randFine) / randFine.MPI_L2NormPow2();
+
+
+                    double[] RP_perEnty = new double[L];
+                    for(int i = 0; i < L; i++)
+                        RP_perEnty[i] = randFine_RP[i] / randFine[i];
+
+
+
+                    Console.WriteLine("oida");
+                }
+                */
+
+
+                // solution loop
+                double iter0_resNorm = Res.MPI_L2Norm();
+                double resNorm = iter0_resNorm;
+                this.IterationCallback?.Invoke(0, X, Res, this.m_MgOperator);
+                for (int iIter = 1; true; iIter++) {
+                    if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                        Converged = true;
+                        break;
+                    }
+
+
+                    // coarse grid correction
+                    // ----------------------
+
+                    if (this.CoarserLevelSolver != null) {
+                        double[] vl = new double[L];
+                        if (CoarseOnLovwerLevel) {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // coarse grid solver defined on COARSER MESH LEVEL:
+                            // this solver must perform restriction and prolongation
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            // restriction of residual
+                            this.m_MgOperator.CoarserLevel.Restrict(Res, rlc);
+
+                            // Berechnung der Grobgitterkorrektur
+                            double[] vlc = new double[Lc];
+                            for (int i = 0; i < m_omega; i++)
+                                this.CoarserLevelSolver.Solve(vlc, rlc);
+
+                            // Prolongation der Grobgitterkorrektur
+                            this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+
+
+                        } else {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // coarse grid solver defined on the SAME MESH LEVEL:
+                            // performs (probably) its own restriction/prolongation
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            // Berechnung der Grobgitterkorrektur
+                            this.CoarserLevelSolver.Solve(vl, Res);
+                        }
+
+                        // correct solution & update residual
+                        var Xprev = X.CloneAs();
+                        BLAS.daxpy(L, 1.0, vl, 1, X, 1); // add correction: X = X + vl
+                        Residual(Res, X, B);
+
+                        IterationCallback?.Invoke(iIter * 2 - 1, X, Res, this.m_MgOperator);
+
+                        PlottyMcPlot(Res, X, Xprev, vl, B);
+
+
+                        // check termination:
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                            Converged = true;
+                            break;
+                        }
+                    }
+
+                    // smoother
+                    // ---------
+
+                    for (int g = 0; g < 2; g++) {
+
+                        // compute correction
+                        double[] PreCorr = new double[L];
+                        PreSmoother.Solve(PreCorr, Res); // 
+
+                        // orthonormalization and residual minimization
+                        double[] RawCorr = PreCorr.CloneAs();
+                        AddSol(ref PreCorr);
+                        double[] newX = new double[L];
+                        double[] newRes = new double[L];
+                        resNorm = MinimizeResidual(newX, X, Res, newRes);
+
+                        PlottyMcPlot(newRes, newX, X, RawCorr, B);
+
+                        X.SetV(newX);
+                        Res.SetV(newRes);
+
+
+                        if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis) {
+                            Resample(iIter, X, this.m_MgOperator, "post" + g);
+                        }
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                            Converged = true;
+                            break;
+                        }
+
+
+                    }
+
+                    // iteration callback
+                    // ------------------
+
+                    this.ThisLevelIterations++;
+
+                    IterationCallback?.Invoke(iIter * 2, X, Res, this.m_MgOperator);
+
+                }
+
+
+                // solution copy
+                // =============
+                //IterationCallback?.Invoke(iIter + 1, X, rl, this.m_MgOperator);
+                if (!ReferenceEquals(_xl, X)) {
+                    _xl.SetV(X);
+                }
+            }
+        }
+
         private double[] cloneofX;
 
         /// <summary>
