@@ -4,10 +4,13 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
+Unable to open database: 
+primary path: X:\bosss_db_lichtenberg
+No alternative paths specified.
+IOException caught while opening database #1 at 'X:\bosss_db_lichtenberg': Unable to open database - all given paths either don't exist or are ruled out by the machine filter.
 Databases loaded:
-List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 1; Path = C:\Users\flori\default_bosss_db }
-  1: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 0; Path = C:\Users\flori\default_bosss_db }
 }
 Setting Matlab Connector to Octave...
 
@@ -16,9 +19,8 @@ Setting Matlab Connector to Octave...
 ==============
 databases;
 **************
-List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 1; Path = C:\Users\flori\default_bosss_db }
-  1: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 0; Path = C:\Users\flori\default_bosss_db }
 }
 ==============
 var myDb = OpenOrCreateDefaultDatabase();
@@ -26,18 +28,19 @@ var myDb = OpenOrCreateDefaultDatabase();
 ==============
 ExecutionQueues;
 **************
-List of 2 instances of BatchProcessorClient {
-  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
-  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01217
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @C:\Users\flori\AppData\Local\BoSSS-LocalJobs
+  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01287
+  2: MS HPC client HPCCLUSTER, @\\dc1\userspace\kummer\cluster
 }
 ==============
 //(ExecutionQueues[1] as SlurmClient).TestSSH();
 **************
 ==============
-ExecutionQueues[1].AllowedDatabases;
+ExecutionQueues[0].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
+  0: { Session Count = 0; Grid Count = 0; Path = C:\Users\flori\default_bosss_db }
 }
 ==============
 //object.ReferenceEquals(ExecutionQueues[1].AllowedDatabases[0], databases[1]);
@@ -65,8 +68,7 @@ WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 ==============
 databases[0].Grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = ca22b2b1-39c4-48df-af23-7909804c3048; Name = ; Cell Count = 320; Dim = 2 }
+List of 0 instances of IGridInfo {
 }
 ==============
 var GridSeq = new IGridInfo[4];
@@ -133,33 +135,45 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 
+Grid Edge Tags changed.
 
+Grid Edge Tags changed.
 
+Grid Edge Tags changed.
 
+Grid Edge Tags changed.
 
 ==============
 GridSeq;
 **************
 List of 4 instances of IGridInfo {
-  0: { Guid = 8ef20294-87d4-4d66-aef5-d671d8a79482; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  1: { Guid = feaf5088-1706-4b7a-86d4-d2c5e401f6db; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  2: { Guid = bdf5ca4c-05a1-47f8-9d5e-bff2c164f4a5; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  3: { Guid = aa8f19df-8597-4b23-a5f2-1dfa032d5c6d; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  0: { Guid = 445bf1e8-5082-4100-83db-a53f2d2aeb97; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  1: { Guid = b87b95c1-10d8-4b99-bc82-9c5fec70219d; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = 3cfced02-dbe6-4449-a3d0-d9e258813608; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = 70c0393d-62b9-4c32-9c86-1173251617da; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
 }
 ==============
-//databases[0].Grids;
+//PlotGrid("name", GridSeq[0]);
 **************
+Initializing gird...
+done.
+Grid containing 6 EdgeTag names: 
+   0: inner edge -- tag = 0   (marked as 'inner_edge') in output file.
+   1: Velocity_inlet -- tag = 1
+   2: Wall_top -- tag = 2
+   3: Wall_cylinder -- tag = 3
+   4: Pressure_Outlet -- tag = 4
+   5: Wall_bottom -- tag = 5
+Writing output file C:\Users\flori\Documents\BoSSS-master\public\examples\rheology\name...
+
 ==============
 AllGrids;
 **************
-List of 7 instances of IGridInfo {
-  0: { Guid = aa8f19df-8597-4b23-a5f2-1dfa032d5c6d; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
-  1: { Guid = bdf5ca4c-05a1-47f8-9d5e-bff2c164f4a5; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  2: { Guid = feaf5088-1706-4b7a-86d4-d2c5e401f6db; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  3: { Guid = 8ef20294-87d4-4d66-aef5-d671d8a79482; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  4: { Guid = ca22b2b1-39c4-48df-af23-7909804c3048; Name = ; Cell Count = 320; Dim = 2 }
-  5: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  6: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+List of 4 instances of IGridInfo {
+  0: { Guid = 70c0393d-62b9-4c32-9c86-1173251617da; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  1: { Guid = 3cfced02-dbe6-4449-a3d0-d9e258813608; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  2: { Guid = b87b95c1-10d8-4b99-bc82-9c5fec70219d; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  3: { Guid = 445bf1e8-5082-4100-83db-a53f2d2aeb97; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
 }
 ==============
 // ======================
@@ -191,21 +205,193 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
 }
 }
 **************
-Info: setting database path to: C:\Users\flori\default_bosss_db
-System.ArgumentException occurred: Unable to serialize/deserialize initial values correctly.. Type 'LastError' for details.
-
 ==============
 **************
-System.ArgumentException: Unable to serialize/deserialize initial values correctly.
-   at BoSSS.Application.BoSSSpad.AppControlExtensions.VerifyEx(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 264
-   at BoSSS.Application.BoSSSpad.Job.SetControlObject(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\Job.cs:line 393
-   at BoSSS.Application.BoSSSpad.AppControlExtensions.CreateJob(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 101
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 346
 ==============
 Info(controls[0,0]);
 **************
+NoOfMultigridLevels: 1 (Int32)
+TimesteppingMode: Steady (_TimesteppingMode)
+ControlFileText: Null
+GeneratedFromCode: False (Boolean)
+ControlFileText_Index: 0 (Int32)
+FieldOptions:  [0]:   Key: VelocityX (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [1]:   Key: VelocityY (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [2]:   Key: Pressure (String)
+  Value:    Degree: 0 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [3]:   Key: StressXX (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [4]:   Key: StressXY (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [5]:   Key: StressYY (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [6]:   Key: ResidualMomentumX (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [7]:   Key: ResidualMomentumY (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [8]:   Key: ResidualConti (String)
+  Value:    Degree: 0 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [9]:   Key: ResidualStressXX (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [10]:   Key: ResidualStressXY (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [11]:   Key: ResidualStressYY (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [12]:   Key: PhiDG (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+ [13]:   Key: Phi (String)
+  Value:    Degree: 1 (Int32)
+   SaveToDB: TRUE (SaveToDBOpt)
+BoundaryValues:  [0]:   Key: Wall_top (String)
+  Value:    Evaluators:     [0]:      Key: VelocityX (String)
+     Value: Delegate
+   Values:     [0]:      Key: VelocityX (String)
+     Value:    type: Null
+ [1]:   Key: Velocity_inlet (String)
+  Value:    Evaluators:     [0]:      Key: VelocityX (String)
+     Value: Delegate
+    [1]:      Key: VelocityY (String)
+     Value: Delegate
+    [2]:      Key: StressXX (String)
+     Value: Delegate
+    [3]:      Key: StressXY (String)
+     Value: Delegate
+    [4]:      Key: StressYY (String)
+     Value: Delegate
+   Values:     [0]:      Key: VelocityX (String)
+     Value:     [1]:      Key: VelocityY (String)
+     Value:     [2]:      Key: StressXX (String)
+     Value:     [3]:      Key: StressXY (String)
+     Value:     [4]:      Key: StressYY (String)
+     Value:    type: Null
+ [2]:   Key: Pressure_Outlet (String)
+  Value:    Evaluators:    Values:    type: Null
+BoundaryValueChanges: InitialValues_EvaluatorsVec:  [0]:   Key: Phi (String)
+  Value: Delegate
+InitialValues_Evaluators:  [0]:   Key: Phi (String)
+  Value: Delegate
+InitialValues:  [0]:   Key: Phi (String)
+  Value: Tags: dtFixed: 1.79769313486232E+304 (Double)
+Reynolds: 1 (Double)
+Weissenberg: 0.3 (Double)
+beta: 0.59 (Double)
+alpha: 1 (Double)
+ObjectiveParam: 1 (Double)
+giesekusfactor: 0.1 (Double)
+Stokes: False (Boolean)
+StokesConvection: True (Boolean)
+SetInitialConditions: False (Boolean)
+GravitySource: False (Boolean)
+ConvCritStress: 1E-10 (Double)
+RaiseWeissenberg: True (Boolean)
+WeissenbergIncrement: 0.1001 (Double)
+UsePerssonSensor: False (Boolean)
+SensorLimit: 0.0001 (Double)
+UseArtificialDiffusion: False (Boolean)
+useFDJacobianForOperatorMatrix: False (Boolean)
+FixedStreamwisePeriodicBC: False (Boolean)
+SrcPressureGrad:  [0]: -1 (Double)
+ [1]: 0 (Double)
+ViscousPenaltyScaling: 1 (Double)
+Penalty1:  [0]: 0 (Double)
+ [1]: 0 (Double)
+Penalty2: 1 (Double)
+PresPenalty1:  [0]: 0 (Double)
+ [1]: 0 (Double)
+PresPenalty2: 1 (Double)
+StressPenalty: 1 (Double)
+RefinementLevel: 10 (Int32)
+dt: 0.1 (Double)
+Timestepper_Scheme: ImplicitEuler (TimesteppingScheme)
+ComputeL2Error: False (Boolean)
+Bodyforces: True (Boolean)
+AnalysisLevel: 2 (Int32)
+SkipSolveAndEvaluateResidual: False (Boolean)
+SetInitialPressure: False (Boolean)
+SetParamsAnalyticalSol: False (Boolean)
+VelFunctionU: Delegate
+VelFunctionV: Delegate
+PresFunction: Delegate
+ExSol_Velocity: Null
+ExSol_Pressure: Null
+ExSol_Stress: Null
+GravityX: Null
+GravityY: Null
+GravityXX: Null
+GravityXY: Null
+GravityYY: Null
+GravityDiv: Null
+deg: 0 (Int32)
+grd: 0 (Int32)
+LinearSolver:  verbose: False (Boolean)
+ MaxKrylovDim: 30 (Int32)
+ MaxSolverIterations: 500 (Int32)
+ MinSolverIterations: 1 (Int32)
+ ConvergenceCriterion: 1E-07 (Double)
+ SolverCode: classic_pardiso (LinearSolverCode)
+ NoOfMultigridLevels: 1 (Int32)
+ exp_localPrec_muA: 1 (Int32)
+ exp_localPrec_Min_dt: 0 (Int32)
+ TargetBlockSize: 100000 (Int32)
+NonLinearSolver:  verbose: False (Boolean)
+ MaxSolverIterations: 50 (Int32)
+ MinSolverIterations: 1 (Int32)
+ ConvergenceCriterion: 1E-07 (Double)
+ UnderRelax: 1 (Double)
+ SolverCode: Newton (NonLinearSolverCode)
+ constantNewtonIterations: 1 (Int32)
+ UsePresRefPoint: True (Boolean)
+ printLambda: False (Boolean)
+AgglomerationThreshold: 0.1 (Double)
+MultiStepInit: True (Boolean)
+TimeSteppingScheme: ImplicitEuler (TimeSteppingScheme)
+Queries: RestartInfo: Null
+GridGuid: GridFunc: Null
+GridPartType: METIS (GridPartType)
+GridPartOptions: Null
+SessionName: ConvStudy_k1_mesh0 (String)
+ProjectName: Cylinder (String)
+ProjectDescription: Null
+NoOfTimesteps: 1 (Int32)
+staticTimestep: True (Boolean)
+Endtime: 1.79769313486232E+308 (Double)
+saveperiod: 1 (Int32)
+rollingSaves: False (Boolean)
+dtMin: 1.79769313486232E+304 (Double)
+dtMax: 1.79769313486232E+304 (Double)
+ImmediatePlotPeriod: -1 (Int32)
+SuperSampling: 0 (Int32)
+savetodb: False (Boolean)
+TracingNamespaces: Null
+DbPath: C:\Users\flori\default_bosss_db (String)
+AlternateDbPaths: logFileDirectory: . (String)
+Paramstudy_CaseIdentification: Null
+Paramstudy_ContinueOnError: True (Boolean)
+DynamicLoadBalancing_RedistributeAtStartup: False (Boolean)
+DynamicLoadBalancing_CellCostEstimatorFactories: DynamicLoadBalancing_Period: -1 (Int32)
+DynamicLoadBalancing_ImbalanceThreshold: 0.12 (Double)
+DynamicLoadBalancing_On: False (Boolean)
+AdaptiveMeshRefinement: False (Boolean)
+AMR_startUpSweeps: 1 (Int32)
+CutCellQuadratureType: Saye (MomentFittingVariants)
+ContinueOnIoError: True (Boolean)
+BurstSave: 1 (Int32)
+
 ==============
 // ==================
 // Activate first job
@@ -335,6 +521,8 @@ rtsi.currentWeissenbergNumber;
 **************
 ==============
 //SaveExecutionQueues();
+**************
+==============
 **************
 ==============
 **************
