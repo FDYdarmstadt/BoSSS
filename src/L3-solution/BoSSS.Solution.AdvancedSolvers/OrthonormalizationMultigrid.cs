@@ -142,7 +142,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int m_omega = 1;
         public int MaxKrylovDim = int.MaxValue;
 
-        public bool SpectralAnalysis;
+        //public bool SpectralAnalysis;
         /// <summary>
         /// 
         /// </summary>
@@ -401,64 +401,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
-        // extract the Fields from the solution, Resample them equally spaced and ready to use in an fft
-        private void Resample(int iterIndex, double[] currentSol, MultigridOperator Mgop, string component)
-        {
-            if (Mgop.GridData.SpatialDimension == 2 && Mgop.LevelIndex == 0)
-            {
-                MultidimensionalArray SamplePoints;
-
-                GridData GD = (GridData)Mgop.Mapping.AggGrid.AncestorGrid;
-
-                BoundingBox BB = GD.GlobalBoundingBox;
-
-                double xDist = BB.Max[0] - BB.Min[0];
-                double yDist = BB.Max[1] - BB.Min[1];
-                double aspectRatio = xDist / yDist;
-
-                MGViz viz = new MGViz(Mgop);
-                DGField[] Fields = viz.ProlongateToDg(currentSol, "Error");
-
-                for (int p = 0; p < Fields.Length; p++)
-                {
-                    var field = Fields[p];
-
-                    int DOF = field.DOFLocal;
-                    double N = Math.Sqrt(DOF);
-                    int Nx = (int)Math.Round(Math.Sqrt(aspectRatio) * N);
-                    int Ny = (int)Math.Round(1 / Math.Sqrt(aspectRatio) * N);
-
-                    SamplePoints = MultidimensionalArray.Create(Ny, Nx);
-
-                    for (int i = 0; i < Nx; i++)
-                    {
-                        MultidimensionalArray points = MultidimensionalArray.Create(Ny, 2);
-
-                        for (int k = 0; k < Ny; k++)
-                        {
-                            points[k, 0] = BB.Min[0] + (i + 1) * xDist / (Nx + 1);
-                            points[k, 1] = BB.Min[1] + (k + 1) * yDist / (Ny + 1);
-                        }
-
-                        List<DGField> fields = new List<DGField>();
-                        fields.Add(field);
-
-                        FieldEvaluation FE = new FieldEvaluation(GD);
-
-                        MultidimensionalArray Result = MultidimensionalArray.Create(Ny, 1);
-
-                        FE.Evaluate(1.0, fields, points, 1.0, Result);
-
-                        SamplePoints.ExtractSubArrayShallow(-1, i).Acc(1.0, Result.ExtractSubArrayShallow(-1, 0));
-                    }
-
-                    SamplePoints.SaveToTextFile("ResampleFFT_lvl" + Mgop.LevelIndex + "_" + iterIndex + "_" + component + "_" + field.Identification + ".txt");
-                }
-                
-            }
-
-        }
-
         /// <summary>
         /// the multigrid iterations for a linear problem
         /// </summary>
@@ -484,16 +426,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //SolHistory.Clear();
 
 
-                // in case of spectral analysis
-                if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
-                {
-                    // Set RHS to zero and introduce random intitial guess respectively error
-                    Console.WriteLine("Performing Spectral Analysis, inserting initial error ...");
-                    B.Clear();
-                    X.Clear();
-                    var rand = new Random();
-                    X = Enumerable.Repeat(0, X.Length).Select(i => rand.NextDouble() * 2 - 1).ToArray();                    
-                }
+                //// in case of spectral analysis
+                //if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
+                //{
+                //    // Set RHS to zero and introduce random intitial guess respectively error
+                //    Console.WriteLine("Performing Spectral Analysis, inserting initial error ...");
+                //    B.Clear();
+                //    X.Clear();
+                //    var rand = new Random();
+                //    X = Enumerable.Repeat(0, X.Length).Select(i => rand.NextDouble() * 2 - 1).ToArray();                    
+                //}
 
                 int L = X.Length;
                 int Lc;
@@ -554,10 +496,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Converged = true;
                         break;
                     }
-                    if (this.m_MgOperator.LevelIndex == 0 && iIter == 1 && SpectralAnalysis)
-                    {
-                        Resample(0, X, this.m_MgOperator, "initial");
-                    }
+
+                    SpecAnalysisSample(iIter, X, "initial");
 
                     // pre-smoother
                     // ------------
@@ -579,15 +519,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if (Corr != null)
                             Corr.SetV(PreCorr);
 
+                        SpecAnalysisSample(iIter, PreCorr, "smooth1");
+
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
                         if (Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
-                        {
-                            Resample(iIter, X, this.m_MgOperator, "pre");
-                        }
+
+                        SpecAnalysisSample(iIter, X, "ortho1");
+
                         if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
@@ -614,9 +555,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
-                        // Berechnung der Grobgitterkorrektur
-                        double[] vlc = new double[Lc];
-                        for(int i =0;i<m_omega;i++)
+                            // Berechnung der Grobgitterkorrektur
+                            double[] vlc = new double[Lc];
+                            for(int i =0;i<m_omega;i++)
                             this.CoarserLevelSolver.Solve(vlc, rlc);
 
                             // Prolongation der Grobgitterkorrektur
@@ -625,15 +566,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             if (Corr != null)
                                 Corr.SetV(vl);
 
+                            SpecAnalysisSample(iIter, vl, "cgc");
+
                             // orthonormalization and residual minimization
                             AddSol(ref vl);
                             if (Xprev != null)
                                 Xprev.SetV(X);
                             resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                            if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
-                            {
-                                Resample(iIter, X, this.m_MgOperator, "cgc");
-                            }
+
+                            SpecAnalysisSample(iIter, X, "ortho2");
+
                             if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
                             {
                                 Converged = true;
@@ -680,15 +622,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if (Corr != null)
                             Corr.SetV(PreCorr);
 
+                        SpecAnalysisSample(iIter, PreCorr, "smooth2_" + g);
+
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
                         if (Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
-                        {
-                            Resample(iIter, X, this.m_MgOperator, "post"+g);
-                        }
+
+                        SpecAnalysisSample(iIter, X, "ortho3_"+g);
+
                         if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
@@ -716,6 +659,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        private double[] cloneofX;
+
+        /// <summary>
+        /// RealX is left unchanged, no worries
+        /// </summary>
+        /// <param name="iter"></param>
+        /// <param name="RealX"></param>
+        /// <param name="name"></param>
+        private void SpecAnalysisSample(int iter, double[] RealX, string name) {
+            if (cloneofX == null) cloneofX = new double[RealX.Length];
+            cloneofX.SetV(RealX);
+            if (this.m_MgOperator.LevelIndex == 0)
+                ExtractSamples?.Invoke(iter, cloneofX, name);
+        }
+
+        /// <summary>
+        /// gefrickel, could be integrated into IterationCallback
+        /// without individual string of course
+        /// </summary>
+        public Action<int, double[],string> ExtractSamples {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Currently not used

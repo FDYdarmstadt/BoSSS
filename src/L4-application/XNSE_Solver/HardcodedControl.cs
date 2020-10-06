@@ -3840,11 +3840,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSE_Control C = new XNSE_Control();
 
-
             // basic database options
             // ======================
             #region db
-            _DbPath = @"D:\Xdg_Stokes";
+            //_DbPath = @"D:\Xdg_Stokes";
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/StokesSphere";
@@ -3894,9 +3893,9 @@ namespace BoSSS.Application.XNSE_Solver {
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-1, 1, kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1, 1, kelem + 1);
-                double[] Znodes = GenericBlas.Linspace(-1, 1, kelem + 1);
-                var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
-
+                //double[] Znodes = GenericBlas.Linspace(-1, 1, kelem + 1);
+                //var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
 
                 grd.DefineEdgeTags(delegate (double[] X) {
@@ -3909,10 +3908,10 @@ namespace BoSSS.Application.XNSE_Solver {
                         return "wall_front";
                     if (Math.Abs(X[1] - (+1)) <= 1.0e-8)
                         return "wall_back";
-                    if (Math.Abs(X[2] - (-1)) <= 1.0e-8)
-                        return "wall_top";
-                    if (Math.Abs(X[2] - (+1)) <= 1.0e-8)
-                        return "wall_bottom";
+                    //if (Math.Abs(X[2] - (-1)) <= 1.0e-8)
+                    //    return "wall_top";
+                    //if (Math.Abs(X[2] - (+1)) <= 1.0e-8)
+                    //    return "wall_bottom";
 
                     throw new ArgumentException("unknown wall");
                 });
@@ -3959,7 +3958,8 @@ namespace BoSSS.Application.XNSE_Solver {
             double r = 0.5;
             double nonsp = 0.5;
 
-            C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
+            //C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
+            C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2()-1", false));
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.None;
 
@@ -3996,8 +3996,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             C.LinearSolver.NoOfMultigridLevels = 4;
-            C.LinearSolver.MaxSolverIterations = 200;
-            C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.MaxSolverIterations = 2;
+            C.LinearSolver.TargetBlockSize = 1000;
             C.LinearSolver.MaxKrylovDim = 1000;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.verbose = true;

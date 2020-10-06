@@ -915,6 +915,17 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="physTime"></param>
+        /// <param name="timestepNo"></param>
+        /// <param name="superSampling"></param>
+        /// <param name="addsomething"></param>
+        protected void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling, string addsomething) {
+            Tecplot.PlotFields(m_RegisteredFields, "IBM_Solver" + timestepNo + "_"+addsomething, physTime, superSampling);
+        }
+
+        /// <summary>
         /// DG field instantiation.
         /// </summary>
         protected override void CreateFields() {
@@ -979,15 +990,19 @@ namespace BoSSS.Application.IBM_Solver {
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
+                LsTrk.UpdateTracker(0.0);
             }
 
-            /*
-            PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
-                LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
-                false);
-            LsTrk.UpdateTracker(0.0);
-            */
+            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("before_smoothing");
+            //PlotCurrentState(0.0,0,4,"before_smoothing");
 
+            //PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
+            //    LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
+            //    false);
+            //LsTrk.UpdateTracker(0.0);
+
+            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("after_smoothing");
+            //PlotCurrentState(0.0,0,4,"after_smoothing");
 
             // =======================OUTPUT FOR GMRES=====================================
             //if(this.MPISize == 1) {

@@ -27,6 +27,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
@@ -44,7 +45,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 30, int cells_yz = 10, bool only_channel = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 4, int cells_x = 30, int cells_yz = 10, bool only_channel = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
             C.OperatorMatrixAnalysis = false;
 
@@ -112,7 +113,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                         // x-direction
                         var _xNodes = GenericBlas.Linspace(0, 3, cells_x + 1);
-
+                        //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                         // y-direction
                         var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
@@ -334,7 +335,9 @@ namespace BoSSS.Application.IBM_Solver {
                 if (only_channel) {
                     C.InitialValues_Evaluators.Add("Phi", X => -1);
                 } else {
-                    C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                    C.InitialValues_Evaluators.Add("Phi", X => -Math.Pow((X[0]-1),10) -Math.Pow((X[1]),10) -Math.Pow((X[2]),10) + Math.Pow(C.particleRadius,10));
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]) + -(X[1]) + -(X[2]) + C.particleRadius);
                 }
 
             }
@@ -343,7 +346,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 0.1;
+            C.particleRadius = 0.15;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.0001 / 1;
 
@@ -362,7 +365,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 200;
+            C.LinearSolver.NoOfMultigridLevels = 4;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
@@ -371,6 +375,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.NonLinearSolver.verbose = true;
             //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             // Timestepping
             // ============

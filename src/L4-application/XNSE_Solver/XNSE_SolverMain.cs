@@ -390,21 +390,26 @@ namespace BoSSS.Application.XNSE_Solver {
                     //} else {
                     //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
                     //}
-
-                    // configurations for velocity
-                    for (int d = 0; d < D; d++) {
-                        configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                            VarIndex = new int[] { d }
+                    if (!this.Control.UseSchurBlockPrec) {
+                        // configurations for velocity
+                        for (int d = 0; d < D; d++) {
+                            configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
+                                //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                                DegreeS = new int[] { pVel },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                                VarIndex = new int[] { d }
+                            };
+                        }
+                        // configuration for pressure
+                        configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
+                            //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                            DegreeS = new int[] { pPrs },
+                            mode = MultigridOperator.Mode.IdMass,
+                            VarIndex = new int[] { D }
                         };
+                    } else {
+                        // Schur-Complement
                     }
-                    // configuration for pressure
-                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
-                        VarIndex = new int[] { D }
-                    };
                     
                     if (this.Control.solveKineticEnergyEquation) {
                         int pKinE = this.KineticEnergy.Basis.Degree;
@@ -1201,6 +1206,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 //Console.WriteLine("y-momentum balance norm = {0}", momBal_Norm[1]);
 
 
+
                 // ++++++++++++++++++++++++++++++++++++++++++
                 // The actual solution of the System
                 // ++++++++++++++++++++++++++++++++++++++++++
@@ -1213,7 +1219,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         lockUpdate = false;
 
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                        
+
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
                     }
@@ -1224,29 +1230,29 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.Control.solveCoupledHeatEquation && (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP))
                     this.ComputeHeatFlux();
 
-
+#if !TEST
                 Postprocessing(TimestepInt, phystime, dt, TimestepNo);
-
-
-
+#endif
+#if TEST
+                // Reference Solver for spectral-Analysis ...
+                m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
+                //WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+#endif
                 // ================
                 // Good bye
                 // ================
-                if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
+                if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
                     ExtVelMover.FinishTimeStep();
                 }
 
 #if DEBUG
-            // in case of Debugging Save first Timesteps
-            //if(TimestepNo[1] <= 2) {
-            //    this.SaveToDatabase(TimestepNo, phystime);
-            //}
+                // in case of Debugging Save first Timesteps
+                //if(TimestepNo[1] <= 2) {
+                //    this.SaveToDatabase(TimestepNo, phystime);
+                //}
 #endif
 
                 Console.WriteLine("done.");
-#if TEST
-                WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
-#endif
                 return dt;
             }
         }
