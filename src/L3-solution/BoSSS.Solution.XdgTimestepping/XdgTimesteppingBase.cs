@@ -407,8 +407,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns either a solver for the Navier-Stokes or the Stokes system.
         /// E.g. for testing purposes, one might also use a nonlinear solver on a Stokes system.
         /// </summary>
-        /// <param name="nonlinSolver"></param>
-        /// <param name="linearSolver"></param>
         protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             nonlinSolver = null;
             linearSolver = null;
@@ -442,12 +440,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        //void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-        //    double resiNorm = currentRes.MPI_L2Norm();
-        //    Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
-        //}
-
-
+        
         /// <summary>
         /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
         /// </summary>

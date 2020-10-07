@@ -81,7 +81,7 @@
     <Compile Include="OpAnalysisBase.cs" />
     <Compile Include="OrthonormalizationMultigrid.cs" />
     <Compile Include="SolverChooser.cs" />
-    <Compile Include="SparseSolver.cs" />
+    <Compile Include="DirectSolver.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fixpoint.cs" />
     <Compile Include="ILU.cs" />

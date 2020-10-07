@@ -132,7 +132,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+        public void SolverDriver_original<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
 
             using(var tr = new FuncTrace()) {
 
@@ -200,6 +200,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
                             step.ScaleV(-1);
+
+
                         } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                             // +++++++++++++++++++++++++++++
                             // Option: use 'external' solver
@@ -211,6 +213,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             var check = CurRes.CloneAs();
                             solver.ResetStat();
 
+                           
                             if(solver is IProgrammableTermination pt) {
                                 // iterative solver with programmable termination is used - so use it
 
@@ -235,7 +238,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // globalization
                         // -------------
                         double[] OldSolClone;
-                        if(base.AbstractOperator.SolverStepValidation != null) {
+                        if(base.AbstractOperator.SolverSafeguard != null) {
                             OldSolClone = SolutionVec.ToArray();
                         } else {
                             OldSolClone = null;
@@ -254,13 +257,229 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             throw new NotImplementedException();
                         }
 
-                        if(base.AbstractOperator.SolverStepValidation != null) {
+                        if(base.AbstractOperator.SolverSafeguard != null) {
                             var newSol = SolutionVec.Fields.ToArray();
                             var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
                             var oldSolVec = new CoordinateVector(oldSol);
                             oldSolVec.SetV(OldSolClone, 1.0);
 
-                            base.AbstractOperator.SolverStepValidation(oldSol, newSol);
+                            base.AbstractOperator.SolverSafeguard(oldSol, newSol);
+                        }
+
+
+
+                        // fix the pressure
+                        // ----------------
+                        if(CurrentLin.FreeMeanValue.Any()) {
+
+                            DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
+                            bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
+                            if(flds.Length != FreeMeanValue.Length)
+                                throw new ApplicationException();
+
+                            for(int iFld = 0; iFld < flds.Length; iFld++) {
+                                if(FreeMeanValue[iFld]) {
+                                    double mean = flds[iFld].GetMeanValueTotal(null);
+                                    flds[iFld].AccConstant(-mean);
+                                }
+                            }
+                        }
+
+
+
+                        // update linearization
+                        // --------------------
+                        if(itc % constant_newton_it == 0) {
+                            //base.UpdateLinearization(SolutionVec.Mapping.Fields);
+                            base.Update(SolutionVec.Mapping.Fields, ref CurSol);
+                            if(constant_newton_it != 1) {
+                                Console.WriteLine("Jacobian is updated: it {0}", itc);
+                            }
+                        }
+
+                        // residual evaluation & callback
+                        // ------------------------------
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes);
+                        fnorm = CurRes.MPI_L2Norm();
+
+
+                        OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
+
+                        #region second criterium
+                        // Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
+                        // this criterium is useful to "ensure that even finer physical details of the flow and are resolved"
+
+
+                        //double[] WMat_s = new double[x.Length];
+                        //double psi_r = 1e-3;
+                        //double psi_a = 1e-8;
+                        //double[] truestep = step;
+                        //truestep.ScaleV(lambda);
+                        //for(int i = 0; i < WMat_s.Length; i++) {
+                        //    WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
+                        //}
+                        //WMat_s.CheckForNanOrInfV();
+
+                        //double secondCriterium = WMat_s.L2Norm()/x.Length;
+
+                        //if(secondCriterium < 1) {
+                        //    secondCriteriumConverged = true;
+                        //}
+                        ////Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
+                        ////if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
+                        ////    Console.WriteLine("Criterium 1 fulfilled");
+                        ////if((secondCriteriumConverged == true))
+                        ////    Console.WriteLine("Criterium 2 fulfilled");
+                        ////if(itc > MaxIter)
+                        ////    Console.WriteLine("Criterium 3 fulfilled");
+
+                        #endregion
+
+                    }
+                }
+
+
+            }
+        }
+     
+        /// <summary>
+        /// Main solver routine with homotopy;
+        /// </summary>
+        public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+
+            using(var tr = new FuncTrace()) {
+
+
+                int itc = 0;
+                double[] CurSol, // "current (approximate) solution", i.e.
+                    CurRes; // residual associated with 'CurSol'
+                double rat;
+
+
+                // Eval_F0
+
+                using(new BlockTrace("Slv Init", tr)) {
+                    base.Init(SolutionVec, RHS, out CurSol, out CurRes);
+                };
+
+                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
+                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes);
+
+                Console.WriteLine("Residual base.init:   " + CurRes.L2NormPow2().MPISum().Sqrt());
+                //base.EvalResidual(x, ref f0);
+
+                // fnorm
+                double fnorm = CurRes.MPI_L2Norm();
+                double fNormo = 1;
+                double[] step = new double[CurSol.Length];
+                double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
+                //double[] stepOld = new double[CurSol.Length];
+                //BlockMsrMatrix CurrentJac;
+                //bool secondCriteriumConverged = false;
+                OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
+                double fnorminit = fnorm;
+
+
+
+                using(new BlockTrace("Slv Iter", tr)) {
+                    while((fnorm > ConvCrit * fnorminit + ConvCrit
+                        //&& secondCriteriumConverged == false
+                        && itc < MaxIter)
+                        || itc < MinIter) {
+                        rat = fnorm / fNormo;
+                        //if (Math.Abs(fNormo - fnorm) < 1e-12)
+                        //    break;
+                        fNormo = fnorm;
+                        itc++;
+
+                        // computation of Newton step
+                        // --------------------------
+
+
+                        // How should the inverse of the Jacobian be approximated?
+                        if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
+                            // ++++++++++++++++++++++++++
+                            // Option: Matrix-Free GMRES
+                            // ++++++++++++++++++++++++++
+
+                            if(Precond != null) {
+                                Precond.Init(CurrentLin);
+                            }
+                            //base.EvalResidual(x, ref f0);
+                            var mtxFreeSlv = new MatrixFreeGMRES() { owner = this };
+                            //mtxFreeSlv.GMRESConvCrit = fnorm * 1e-5;
+                            double thresh = fnorm * 1e-5;
+                            mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                                return (R_l2 > thresh) && (iter < 100);
+                            };
+
+                            step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
+                            step.ScaleV(-1);
+
+
+                        } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
+                            // +++++++++++++++++++++++++++++
+                            // Option: use 'external' solver
+                            // +++++++++++++++++++++++++++++
+
+                            var solver = this.Precond;
+                            solver.Init(CurrentLin);
+                            step.ClearEntries();
+                            var check = CurRes.CloneAs();
+                            solver.ResetStat();
+
+                            Console.WriteLine("Using solver: " + solver.GetType().ToString());
+                           
+                            if(solver is IProgrammableTermination pt) {
+                                // iterative solver with programmable termination is used - so use it
+
+                                //double f0_L2 = CurRes.MPI_L2Norm();
+                                //double thresh = f0_L2 * 1e-5;
+                                double thresh = fnorm * 1e-5;
+                                Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
+                                pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                                    return (R_l2 > thresh) && (iter < 100);
+                                };
+
+
+                            }
+
+                            solver.Solve(step, CurRes);
+                            step.ScaleV(-1);
+
+                        } else {
+                            throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
+                        }
+
+                        // globalization
+                        // -------------
+                        double[] OldSolClone;
+                        if(base.AbstractOperator.SolverSafeguard != null) {
+                            OldSolClone = SolutionVec.ToArray();
+                        } else {
+                            OldSolClone = null;
+                        }
+
+                        switch(Globalization) {
+                            case GlobalizationOption.Dogleg:
+                            DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
+                            break;
+
+                            case GlobalizationOption.LineSearch:
+                            LineSearch(SolutionVec, CurSol, CurRes, step);
+                            break;
+
+                            default:
+                            throw new NotImplementedException();
+                        }
+
+                        if(base.AbstractOperator.SolverSafeguard != null) {
+                            var newSol = SolutionVec.Fields.ToArray();
+                            var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
+                            var oldSolVec = new CoordinateVector(oldSol);
+                            oldSolVec.SetV(OldSolClone, 1.0);
+
+                            base.AbstractOperator.SolverSafeguard(oldSol, newSol);
                         }
 
 

@@ -34,11 +34,13 @@ using BoSSS.Solution.Control;
 namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
-    /// A sparse direct solver. Actually, this class is just a 
-    /// wrapper around either PARDISO (<see cref="PARDISOSolver"/>)
-    /// or MUMPS (<see cref="MUMPSSolver"/>).
+    /// Sparse direct solver. 
+    /// This class is a wrapper around either 
+    /// - PARDISO (<see cref="PARDISOSolver"/>) or 
+    /// - MUMPS (<see cref="MUMPSSolver"/>) or
+    /// - LAPACK.
     /// </summary>
-    public class SparseSolver : ISolverSmootherTemplate, ISolverWithCallback {
+    public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
         /// <summary>
         /// 
@@ -56,31 +58,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MUMPS,
 
             /// <summary>
-            /// Using LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>
+            /// Conversion to dense matrix, solution 
+            /// via LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>.
+            /// Only suitable for small systems (less than 10000 DOF).
             /// </summary>
             Lapack,
 
             /// <summary>
             /// MATLAB 'backslash' solver, see <see cref="ilPSP.Connectors.Matlab.Extensions.SolveMATLAB{T1, T2}(IMutableMatrixEx, T1, T2, string)"/> 
             /// </summary>
-            Matlab,
-
-            /// <summary>
-            /// conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.CG"/>
-            /// </summary>
-            CG,
-
-            /// <summary>
-            /// preconditioned conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.PCG"/>
-            /// </summary>
-            PCG
+            Matlab
         }
 
    
 
         /// <summary>
         /// Set the type of Parallelism to be used for the linear Solver.
-        /// You may define a comma seperated list out of the following: "SEQ","MPI","OMP"
+        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
         /// </summary>
         public Parallelism SolverVersion = Parallelism.SEQ;
 
@@ -203,17 +197,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     solver = new DenseSolverWrapper();
                     break;
 
-                case _whichSolver.CG:
-                    solver = new CG();
-                    ((CG)solver).DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
-                    ((CG)solver).MaxIterations = Switcher<int>(((CG)solver).MaxIterations,LinConfig.MaxSolverIterations);
-                    ((CG)solver).Tolerance = Switcher<double>(((CG)solver).Tolerance, LinConfig.ConvergenceCriterion);
-                    break;
-
-                case _whichSolver.PCG:
-                    solver = new PCG();
-                    break;
-
                 default:
                     throw new NotImplementedException();
 
@@ -271,6 +254,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         X.SaveToTextFile("X.txt");
                         B.SaveToTextFile("B.txt");
 #endif
+
                         string ErrMsg;
                         using (var stw = new StringWriter()) {
                             stw.WriteLine("High residual from direct solver (using {0}).", SolverName);
@@ -279,7 +263,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
                             stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
                             stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+#if TEST
                             stw.WriteLine("Dumping text versions of Matrix, Solution and RHS.");
+#endif
                             ErrMsg = stw.ToString();
                         }
                         Console.Error.WriteLine(ErrMsg);
@@ -348,6 +334,179 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
+        public object Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
+        /// <summary>
+        /// Release internal memory
+        /// </summary>
+        public void Dispose() {
+            this.m_Mtx = null;
+        }
+
+    }
+
+
+
+    /// <summary>
+    /// Wrapper around the monkey solver (supports GPU acceleration).
+    /// </summary>
+    public class MonkeySolver : ISolverSmootherTemplate {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public enum _whichSolver {
+
+            
+            /// <summary>
+            /// conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.CG"/>
+            /// </summary>
+            CG,
+
+            /// <summary>
+            /// preconditioned conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.PCG"/>
+            /// </summary>
+            PCG
+            
+        }
+
+   
+
+        /// <summary>
+        /// Set the type of Parallelism to be used for the linear Solver.
+        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
+        /// </summary>
+        public Parallelism SolverVersion = Parallelism.SEQ;
+
+        /// <summary>
+        /// Switch between PARDISO and MUMPS.
+        /// </summary>
+        public _whichSolver WhichSolver = _whichSolver.CG;
+
+        public void Init(MultigridOperator op) {
+            using (var tr = new FuncTrace()) {
+                var Mtx = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+                m_MultigridOp = op;
+
+                if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
+
+                m_Mtx = Mtx;
+            }
+        }
+
+        MultigridOperator m_MultigridOp;
+
+        
+        ilPSP.LinSolvers.monkey.Solver GetSolver(IMutableMatrixEx Mtx) {
+            ilPSP.LinSolvers.monkey.Solver solver;
+
+
+            switch (WhichSolver) {
+
+                case _whichSolver.CG: {
+                    var _solver = new CG(); solver = _solver;
+                    _solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
+                    _solver.MaxIterations = Switcher<int>(_solver.MaxIterations, LinConfig.MaxSolverIterations);
+                    _solver.Tolerance = Switcher<double>(_solver.Tolerance, LinConfig.ConvergenceCriterion);
+                    break;
+                }
+                case _whichSolver.PCG: {
+                    var _solver = new PCG();solver = _solver;
+                    _solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
+                    _solver.MaxIterations = Switcher<int>(_solver.MaxIterations, LinConfig.MaxSolverIterations);
+                    _solver.Tolerance = Switcher<double>(_solver.Tolerance, LinConfig.ConvergenceCriterion);
+                    break;
+                }
+
+                default:
+                    throw new NotImplementedException();
+
+            }
+
+            solver.DefineMatrix(Mtx);
+
+            return solver;
+        }
+
+        BlockMsrMatrix m_Mtx;
+       
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public void Solve<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> //
+        {
+            using (var tr = new FuncTrace()) {
+                
+                using (var solver = GetSolver(m_Mtx)) {
+                    var result = solver.Solve(X, B);
+                    this.Converged = result.Converged;
+                    this.ThisLevelIterations += result.NoOfIterations;
+                }
+
+                
+            }
+        }
+
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public int IterationsInNested {
+            get { return 0; }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int ThisLevelIterations {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool Converged {
+            get;
+            private set;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void ResetStat() {
+            ThisLevelIterations = 0;
+            Converged = false;
+        }
+
+        private static T Switcher<T>(T origin,T setter) {
+            T thisreturn;
+            if (setter != null) {
+                thisreturn = setter;
+            } else {
+                thisreturn = origin;
+            }
+            return thisreturn;
+        }
+
+        public LinearSolverConfig LinConfig {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }

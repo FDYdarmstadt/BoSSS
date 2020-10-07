@@ -43,7 +43,7 @@ namespace AdvancedSolverTests.SolverChooser
                 SF.Clear();
                 lconfig.SolverCode = code;
                 if(code==LinearSolverCode.selfmade)
-                    SF.Selfmade_linsolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.PARDISO };
+                    SF.Selfmade_linsolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
                 Assert.DoesNotThrow(lindlg, "", null);
                 Assert.IsNotNull(LinSolver);
             }
