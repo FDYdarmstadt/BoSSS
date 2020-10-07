@@ -33,6 +33,13 @@ namespace BoSSS.Foundation.XDG {
 
         protected XSpatialOperatorMk2 m_XOp;
 
+        public XSpatialOperatorMk2 Xop {
+            get {
+                return m_XOp;
+            }
+        }
+
+
         protected LevelSetTracker LsTrk;
 
 
@@ -47,7 +54,7 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-
+        /*
         /// <summary>
         /// base matrix assembly
         /// </summary>
@@ -104,7 +111,7 @@ namespace BoSSS.Foundation.XDG {
 
             }
         }
-
+        */
 
         public void AssembleMatrix<T>(BlockMsrMatrix OpMatrix, double[] OpAffine,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,

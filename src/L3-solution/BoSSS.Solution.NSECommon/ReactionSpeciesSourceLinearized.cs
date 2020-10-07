@@ -137,29 +137,32 @@ namespace BoSSS.Solution.NSECommon {
         int SpeciesIndex; //Species index, not to be confused with alpha = SpeciesIndex + 1
         double[] MolarMasses;
         double rho;
-        MaterialLaw EoS;
+        MaterialLawCombustion EoS;
         double m_Da;
-
-
+        double TRef;
+        double cpRef;
+        bool VariableOneStepParameters;
         /// <summary>
         /// Ctor.
         /// </summary>
         /// <param name="ReactionRateConstants">constants[0]=PreExpFactor, constants[1]=ActivationTemperature, constants[2]=MassFraction0Exponent, constants[3]=MassFraction1Exponent</param>
         /// <param name="StoichiometricCoefficients"></param>        
-     
+
         /// <param name="MolarMasses">Array of molar masses. 0 Fuel. 1 Oxidizer, 2 to ns products.</param>   
         /// <param name="EoS">MaterialLawCombustion</param>  
         /// <param name="NumberOfReactants">The number of reactants (i.e. ns)</param> 
         /// <param name="SpeciesIndex">Index of the species being balanced. (I.e. 0 for fuel, 1 for oxidizer, 2 for CO2, 3 for water)</param> 
-        public ReactionSpeciesSourceJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients , double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex) {
+        public ReactionSpeciesSourceJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients , double[] MolarMasses, MaterialLawCombustion EoS, int NumberOfReactants, int SpeciesIndex, double TRef, double cpRef, bool VariableOneStepParameters) {
             m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfReactants - 1));// Y4 is not a variable!!!!;
             this.StoichiometricCoefficients = StoichiometricCoefficients;
             this.ReactionRateConstants = ReactionRateConstants;
             this.SpeciesIndex = SpeciesIndex;
             this.MolarMasses = MolarMasses;
-            this.EoS = EoS;
+            this.EoS =EoS;
             this.m_Da = ReactionRateConstants[0];
-
+            this.TRef = TRef;
+            this.cpRef = cpRef;
+            this.VariableOneStepParameters = VariableOneStepParameters;
         }
 
 
@@ -205,27 +208,30 @@ namespace BoSSS.Solution.NSECommon {
             return this.Source(cpv.Xglobal, cpv.Parameters, U) * V;
         }
 
-        protected double Source(double[] x, double[] parameters, double[] U) {     
+        protected double Source(double[] x, double[] parameters, double[] U) {
+
+            //double Temperature = U[0]  > 1.0 ? U[0] : 1.0 ;
+            //double YF = U[1] > 0.0 ? U[1] : 0.0;
+            //double YO = U[2] > 0.0 ? U[2] : 0.0;
 
             double Temperature = U[0];
-            double Y0 = U[1];
-            double Y1 = U[2];
+            double YF = U[1];
+            double YO = U[2];
             double Ta = ReactionRateConstants[1];
             double MM_F = MolarMasses[0];
             double MM_O = MolarMasses[1];
-            //Temperature = Temperature < 1 ? 1 : Temperature;
-            
-            double ReactionRate = 0.0;
+ 
+            if (YF * YO > 1e-6 && VariableOneStepParameters) {//  calculate one-Step model parameters
+                Ta = EoS.getTa(YF, YO) / TRef;                
+            }
+
              rho = EoS.GetDensity(U);
 
-            double Tb = 2300/300;
-            //ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
-            ReactionRate = m_Da * Math.Exp(Ta / Tb*0 - Ta / Temperature) * (rho * Y0 / MM_F) * (rho * Y1 / MM_O);
+            double ReactionRate = m_Da * Math.Exp( -Ta / Temperature) * (rho * YF / MM_F) * (rho * YO / MM_O);
 
-            Debug.Assert(!double.IsNaN(ReactionRate));
-            Debug.Assert(!double.IsInfinity(ReactionRate));
-            //if (ReactionRate < 0)
-            //    ReactionRate = 0;
+            //Debug.Assert(!double.IsNaN(ReactionRate));
+            //Debug.Assert(!double.IsInfinity(ReactionRate));
+ 
 
  
 

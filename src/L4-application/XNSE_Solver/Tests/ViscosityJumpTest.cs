@@ -192,7 +192,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double[] AcceptableL2Error {
             get {
-                return new double[] { 5.0e-10, 5.0e-10, 1.0e-7 };
+                return new double[] { 5.0e-9, 5.0e-9, 1.0e-7 };
             }
         }
 

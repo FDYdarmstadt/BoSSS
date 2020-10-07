@@ -69,7 +69,10 @@ namespace BoSSS.Foundation {
         bool MPITtransceive { get; set; }
 
 
-       
+        /// <summary>
+        /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
+        /// </summary>
+        ISpatialOperator Owner { get; }
     }
 
     /// <summary>
@@ -107,51 +110,23 @@ namespace BoSSS.Foundation {
         /// where \f$ \tilde{U} \f$ are the DG coordinates of the trial function.
         /// </summary>
         /// <param name="Matrix">
-        /// On entry, some pre-allocated matrix; on exit, the operator matrix will be accumulated.
+        /// On entry, some pre-allocated matrix; on exit, the operator matrix, scaled by <paramref name="alpha"/>, will be accumulated.
         /// - <see cref="ISparseMatrix.RowPartitioning"/> correlates with <see cref="IEvaluator.CodomainMapping"/>.
         /// - <see cref="ISparseMatrix.ColPartition"/> correlates with <see cref="IEvaluator.DomainMapping"/>
         /// </param>
         /// <param name="AffineOffset">
-        /// On entry, some pre-allocated vector; on exit, the affine vector  will be accumulated.
+        /// On entry, some pre-allocated vector; on exit, the affine vector, scaled by <paramref name="alpha"/>, will be accumulated.
         /// Length correlates with <see cref="IEvaluator.CodomainMapping"/>.
         /// </param>
-        void ComputeMatrix<M, V>(M Matrix, V AffineOffset) where M : IMutableMatrixEx where V : IList<double>;
+        /// <param name="alpha">
+        /// scaling factor 
+        /// </param>
+        void ComputeMatrix<M, V>(M Matrix, V AffineOffset, double alpha = 1.0) where M : IMutableMatrixEx where V : IList<double>;
 
         /// <summary>
-        /// only the affine part of <see cref="ComputeMatrix{M, V}(M, V)"/>
+        /// only the affine part of <see cref="ComputeMatrix{M, V}(M, V, double)"/>
         /// </summary>
         void ComputeAffine<V>(V AffineOffset) where V : IList<double>;
     }
 
-
-    /// <summary>
-    /// temporary hack; methods/properties which are specific for the single-phase evaluators, but not for XDG
-    /// </summary>
-    public interface IEvaluator_ {
-        /// <summary>
-        /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
-        /// </summary>
-        SpatialOperator Owner { get; }
-
-        
-        /// <summary>
-        /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
-        /// </summary>
-        CoefficientSet OperatorCoefficients { get; set; }
-        
-    }
-
-    /// <summary>
-    /// Temporary hack: methods/properties which are specific for the single-phase evaluators, but not for XDG
-    /// </summary>
-    public interface IEvaluatorNonLin_ : IEvaluatorNonLin, IEvaluator_ {
-
-    }
-
-    /// <summary>
-    /// Temporary hack: methods/properties which are specific for the single-phase evaluators, but not for XDG
-    /// </summary>
-    public interface IEvaluatorLinear_ : IEvaluatorLinear, IEvaluator_ {
-
-    }
 }

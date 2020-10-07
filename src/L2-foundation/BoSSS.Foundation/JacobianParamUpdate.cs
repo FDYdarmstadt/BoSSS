@@ -11,14 +11,13 @@ namespace BoSSS.Foundation {
     /// <summary>
     /// Utility to define parameter variables for Jacobian operators (<see cref="SpatialOperator.GetJacobiOperator"/>)
     /// </summary>
-    public class JacobianParamUpdate : IParameterUpdate {
+    public class JacobianParamUpdate {
 
         /// <summary>
         /// Not intended for direct user interaction, but for use by <see cref="SpatialOperator.GetJacobiOperator"/>
         /// </summary>
-        public JacobianParamUpdate(IEnumerable<string> __DomainVar, IEnumerable<string> __ParamterVar, List<IEquationComponent> comps, Func<IEquationComponent,TermActivationFlags> extractTaf, int SpatialDimension, DelParameterUpdate __originalUpdate) {
+        public JacobianParamUpdate(IEnumerable<string> __DomainVar, IEnumerable<string> __ParamterVar, List<IEquationComponent> comps, Func<IEquationComponent,TermActivationFlags> extractTaf, int SpatialDimension) {
             Components.AddRange(comps);
-            originalUpdate = __originalUpdate;
             DomainVar = __DomainVar.ToArray();
             var ParameterVar = __ParamterVar != null ? __ParamterVar.ToArray() : new string[0];
             FindJacobianParams(SpatialDimension, ParameterVar, extractTaf);
@@ -94,7 +93,7 @@ namespace BoSSS.Foundation {
             private set;
         }
 
-        DelParameterUpdate originalUpdate;
+        //DelPartialParameterUpdate originalUpdate;
 
         int NoOfOrgParams;
 
@@ -108,15 +107,15 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Parameter update function, 
-        /// compatible with <see cref="DelParameterUpdate"/>.
+        /// compatible with <see cref="DelPartialParameterUpdate"/>.
         /// </summary>
-        virtual public void ParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
-            DGField[] __DomainVar = DomainVar.ToArray();
-            DGField[] __ParameterVar = ParameterVar.ToArray();
+        virtual public void PerformUpdate(IReadOnlyDictionary<string, DGField> _DomainVar, IReadOnlyDictionary<string, DGField> _ParameterVar) {
+            DGField[] __DomainVar = this.DomainVar.Select(name => _DomainVar[name]).ToArray();
+            DGField[] __ParameterVar = this.JacobianParameterVars.Select(name => _ParameterVar[name]).ToArray();
 
-            if(originalUpdate != null) {
-                originalUpdate(DomainVar, __ParameterVar.GetSubVector(0, NoOfOrgParams));
-            }
+            //if(originalUpdate != null) {
+            //    originalUpdate(DomainVar, __ParameterVar.GetSubVector(0, NoOfOrgParams));
+            //}
 
 
             int D = __DomainVar[0].GridDat.SpatialDimension;
@@ -126,6 +125,7 @@ namespace BoSSS.Foundation {
             if (__DomainVar.Length != DomainToParam.Length)
                 throw new ApplicationException("mismatch in number of domain variables");
 
+            // set parameters for the linearization point
             for (int i = 0; i < __DomainVar.Length; i++) {
                 int iDest = DomainToParam[i];
                 if (iDest < 0)
@@ -141,7 +141,7 @@ namespace BoSSS.Foundation {
                 dst.Acc(1.0, src);
             }
 
-
+            // set derivatives of linearization point
             for (int i = 0; i < __DomainVar.Length; i++) {
                 for (int d = 0; d < D; d++) {
 
@@ -162,35 +162,33 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// creates clones of the domain fields to store parameter fields
+        /// creates clones of the domain fields to store parameter fields;
+        /// compiles with <see cref="DelParameterFactory"/>
         /// </summary>
-        virtual public DGField[] AllocateParameters(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
-            DGField[] ret = new DGField[this.JacobianParameterVars.Length];
-            DGField[] __DomainVar = DomainVar.ToArray();
-            DGField[] __ParameterVar = ParameterVar != null ? ParameterVar.ToArray() : new DGField[0];
+        virtual public (string ParameterName, DGField ParamField)[] AllocateParameters(IReadOnlyDictionary<string, DGField> _DomainVar) {
+            var ret = new List<(string ParameterName, DGField ParamField)>(); 
+            DGField[] __DomainVar = this.DomainVar.Select(name => _DomainVar[name]).ToArray();
+
             
             if (DomainVar.Count() != DomainToParam.Length)
                 throw new ApplicationException("mismatch in number of domain variables");
-            if (__ParameterVar.Count() != NoOfOrgParams)
-                throw new ApplicationException("mismatch in number of parameter variables");
             int GAMMA = DomainToParam.Length;
-            int D = DomainVar.First().GridDat.SpatialDimension;
+            int D = __DomainVar.First().GridDat.SpatialDimension;
             if (D != DomainDerivToParam.GetLength(1))
                 throw new ApplicationException("spatial dimension mismatch.");
 
-            for(int i = 0; i < __ParameterVar.Length; i++) {
-                ret[i] = __ParameterVar[i];
-            }
             
             for (int i = 0; i < __DomainVar.Length; i++) {
                 int iDest = DomainToParam[i];
                 if (iDest < 0)
                     continue;
 
+                string nameDest = JacobianParameterVars[iDest];
+
                 DGField src = __DomainVar[i];
                 DGField dst = src;
 
-                ret[iDest] = dst;
+                ret.Add((nameDest, dst));
             }
 
 
@@ -200,16 +198,17 @@ namespace BoSSS.Foundation {
                     int iDest = DomainDerivToParam[i, d];
                     if (iDest < 0)
                         continue;
+                    string nameDest = JacobianParameterVars[iDest];
 
                     DGField src = __DomainVar[i];
                     DGField dst = src.CloneAs();
                     dst.Identification = dst.Identification + "_d[" + d + "]";
 
-                    ret[iDest] = dst;
+                    ret.Add((nameDest, dst));
                 }
             }
 
-            return ret;
+            return ret.ToArray();
         }
     }
 }

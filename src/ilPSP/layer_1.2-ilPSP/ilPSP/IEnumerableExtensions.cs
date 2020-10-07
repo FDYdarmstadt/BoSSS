@@ -214,8 +214,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Returns the element at the index returned by
-        /// <see cref="IndexOfMax"/>.
+        /// Returns the element at the index returned by <see cref="IndexOfMax{TSource, TCompare}(IEnumerable{TSource}, Func{TSource, TCompare})"/>.
         /// </summary>
         /// <typeparam name="TSource"></typeparam>
         /// <typeparam name="TCompare"></typeparam>
@@ -234,7 +233,7 @@ namespace ilPSP {
 
         /// <summary>
         /// Returns the element at the index returned by
-        /// <see cref="IndexOfMin"/>.
+        /// <see cref="IndexOfMin{TSource, TCompare}(IEnumerable{TSource}, Func{TSource, TCompare})"/>.
         /// </summary>
         /// <typeparam name="TSource"></typeparam>
         /// <typeparam name="TCompare"></typeparam>

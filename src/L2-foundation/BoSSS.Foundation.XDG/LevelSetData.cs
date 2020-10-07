@@ -57,6 +57,14 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
+            /// physical/simulation time associated with this Level-Set state
+            /// </summary>
+            public double Time {
+                get;
+                internal set;
+            }
+
+            /// <summary>
             /// Level set region codes for locally updated and external cells
             /// </summary>
             public ushort[] RegionsCode {
@@ -1711,6 +1719,7 @@ namespace BoSSS.Foundation.XDG {
                 L.m_LenToNextChange = this.m_LenToNextChange.CloneAs();
                 L.m_LevSetRegions = this.m_LevSetRegions.CloneAs();
                 L.Version = this.Version;
+                L.Time = this.Time;
                 L.m_ColorMap4Spc = this.m_ColorMap4Spc.CloneNonShallow(L);
                 
                 return L;

@@ -158,7 +158,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             // project new level-set
             double s = 1.0;
             LevSet.ProjectField((x, y) => -(x - s * t).Pow2() - y.Pow2() + (2.4).Pow2());
-            LsTrk.UpdateTracker(incremental: _incremental);
+            LsTrk.UpdateTracker(t, incremental: _incremental);
             LsTrk.PushStacks();
 
             // exact solution for new timestep
@@ -290,12 +290,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             bool AnyChange;
             List<int> CellsToRefineList;
             List<int[]> Coarsening;
+            GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, LsTrk.Regions.GetCutCellMask());
             if (MPISize > 1) {
                 List<Tuple<int, BitArray>> cellMaskRefinementLevel = GetCellMaskWithRefinementLevels();
-                AnyChange = GridRefinementController.ComputeGridChange((GridData)this.GridData, LsTrk.Regions.GetCutCellMask().GetBitMask(), cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
+                AnyChange = gridRefinementController.ComputeGridChange(cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
             }
             else
-                AnyChange = GridRefinementController.ComputeGridChange((GridData) this.GridData, LsTrk.Regions.GetCutCellMask(), LevelIndicator, out CellsToRefineList, out Coarsening);
+                AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out CellsToRefineList, out Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {

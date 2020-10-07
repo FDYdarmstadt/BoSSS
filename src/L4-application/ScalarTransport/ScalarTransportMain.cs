@@ -167,9 +167,11 @@ namespace BoSSS.Application.ScalarTransport {
         public void PerformanceVsCachesize() {
             double[] dummy = new double[this.u.CoordinateVector.Count];
 
-            var eval = diffOp.GetEvaluatorEx(new DGField[] { this.u }, this.Velocity.ToArray(), this.u.Mapping,
-                edgeQrCtx:new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.GridData)),
-                volQrCtx:new CellQuadratureScheme(true,null));
+            
+            diffOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(g));
+            diffOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, null);
+
+            var eval = diffOp.GetEvaluatorEx(new DGField[] { this.u }, this.Velocity.ToArray(), this.u.Mapping);
 
             Stopwatch stw = new Stopwatch();
             int NoOfRuns = 1;

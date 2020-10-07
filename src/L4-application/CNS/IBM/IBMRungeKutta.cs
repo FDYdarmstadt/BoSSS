@@ -84,12 +84,12 @@ namespace CNS.IBM {
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
             this.m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate () {
+                this.Operator.EdgeQuadraturSchemeProvider = g => edgeScheme;
+                this.Operator.VolumeQuadraturSchemeProvider = g => volumeScheme;
                 var opi = this.Operator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
-                    Mapping,
-                    edgeScheme,
-                    volumeScheme);
+                    Mapping);
                 opi.ActivateSubgridBoundary(volumeScheme.Domain.ToLogicalMask(), subGridBoundaryTreatment: SubGridBoundaryModes.InnerEdgeLTS);
                 return opi;
             });
@@ -98,20 +98,21 @@ namespace CNS.IBM {
             CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetquadScheme(
                 0, cutCells, control.LevelSetQuadratureOrder);
 
-            this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(() =>
-                boundaryOperator.GetEvaluatorEx(
+            this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(delegate() {
+                boundaryOperator.EdgeQuadraturSchemeProvider = g => null; // Contains no boundary terms
+                boundaryOperator.VolumeQuadraturSchemeProvider = g => boundaryVolumeScheme;
+                return boundaryOperator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
-                    Mapping,
-                    null, // Contains no boundary terms
-                    boundaryVolumeScheme));
+                    Mapping);
+            });
         }
 
         protected void MoveLevelSetTo(double time) {
             LevelSet levelSet = speciesMap.Tracker.LevelSets[0].As<LevelSet>();
             levelSet.Clear();
             levelSet.ProjectField(X => speciesMap.Control.LevelSetFunction(X, time));
-            speciesMap.Tracker.UpdateTracker();
+            speciesMap.Tracker.UpdateTracker(time);
 
             cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);

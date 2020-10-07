@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -568,9 +569,9 @@ namespace BoSSS.Application.BoSSSpad {
                 // write result / out-file
                 // ------------------------------------
 
-                if (Entry.Result is GnuplotExtensions.CairolatexContainer) {
+                if (Entry.Result is CairolatexContainer) {
                     // graphical output
-                    var CairoHack = (GnuplotExtensions.CairolatexContainer)Entry.Result;
+                    var CairoHack = (CairolatexContainer)Entry.Result;
                     //File.WriteAllText(Path.Combine(OutDir, "out" + iEntry + ".tex"), CairoHack.LatexCode);
                     File.WriteAllText(Path.Combine(OutDir, "empty" + iEntry + ".txt"), "");
                     //File.WriteAllBytes(Path.Combine(OutDir, CairoHack.GraphicsFilename), CairoHack.GraphicsData);

@@ -262,15 +262,22 @@ namespace CNS.Tests.ArtificialViscosity {
             double pStar, uStar;
             riemannSolver.GetStarRegionValues(out pStar, out uStar);
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
-                CompressibleVariables.Density,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
-            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
-                CNSVariables.Velocity.xComponent,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(
-                CNSVariables.Pressure,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure));
+            double DensityAnalytical(double[] X, double t) {
+                var v = riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density;
+                return v;
+            }
+            double VelocityAnalytical(double[] X, double t) {
+                var v = riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x;
+                return v;
+            }
+            double PressureAnalytical(double[] X, double t) {
+                var v = riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure;
+                return v;
+            }
+
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, DensityAnalytical));
+            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, VelocityAnalytical));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, PressureAnalytical));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;

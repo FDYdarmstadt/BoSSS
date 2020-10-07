@@ -198,7 +198,7 @@ namespace BoSSS.Solution.EnergyCommon {
             this.m_bcMap = bcMap;
             m_spcId = spcId;
             mu = _mu;
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
 
             transposedTerm = transposed;
 
@@ -212,7 +212,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -481,13 +481,13 @@ namespace BoSSS.Solution.EnergyCommon {
             mu = _mu;
             m_spcId = spcId;
             transposedTerm = transposed;
-            validSpeciesId = spcNmn;
+            ValidSpecies = spcNmn;
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }
@@ -600,14 +600,14 @@ namespace BoSSS.Solution.EnergyCommon {
             m_D = SpatDim;
             mu = _mu;
             m_spcId = spcId;
-            validSpeciesId = spcNmn;
+            ValidSpecies = spcNmn;
             this.withPressure = _withPressure;
         }
 
 
         SpeciesId m_spcId;
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

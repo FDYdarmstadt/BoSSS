@@ -324,6 +324,23 @@ namespace MPI.Wrappers {
         void Waitall(int count, MPI_Request[] array_of_requests, MPI_Status[] array_of_statuses);
 
         /// <summary>
+        /// Gets the Count of a MPI_Status struct
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        int GetCount(MPI_Status status, MPI_Datatype type);
+
+        /// <summary>
+        /// Gets Status of a Request without freeing the Request. Useful for Debugging.
+        /// Consider it a destruction-free MPI_Test: referto MPI_REQUEST_GET_STATUS.
+        /// </summary>
+        /// <param name="request">the MPI_Request</param>
+        /// <param name="isSetted">false states the MPI_Status is not set yet and values of it are arbitrary</param>
+        /// <param name="status">the MPI_Status</param>
+        void MPI_GetStatusOfRequest(MPI_Request request, out bool isSetted, out MPI_Status status);
+
+        /// <summary>
         /// Cancels a communication request
         /// </summary>
         void Cancel(ref MPI_Request r);
@@ -357,5 +374,19 @@ namespace MPI.Wrappers {
             get;
         }
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IMPIdriver_wTimeTracer : IMPIdriver
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        long TicksSpent {
+            get;
+        }
+    }
+
 }
 

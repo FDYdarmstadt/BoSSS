@@ -325,13 +325,13 @@ namespace BoSSS.Application.XNSE_Solver {
                 XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping);
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                    this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
                 }
 
                 if(this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach(var kv in InterfaceLengths)
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                 }
 
                 mtxBuilder.time = time;
@@ -343,14 +343,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     CurrentState.ToArray(), Params, RowMapping);
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    eval.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = kv.Value;
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    eval.CellLengthScales[kv.Key] = kv.Value;
+                    eval.EdgeLengthScales[kv.Key] = kv.Value;
+                    this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
                 }
 
                 if(this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach(var kv in InterfaceLengths)
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                 }
 
                 eval.time = time;

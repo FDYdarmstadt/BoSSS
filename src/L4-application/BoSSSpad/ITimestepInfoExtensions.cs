@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.Statistic;
 using ilPSP;
 using System;

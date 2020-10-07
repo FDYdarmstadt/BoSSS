@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregationGridBasis.cs" />
+    <Compile Include="AggregationGridCurvedInjector.cs" />
     <Compile Include="BlockJacobi.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConditionNumberScalingTest.cs" />
@@ -161,6 +162,10 @@
     <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
+      <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
+      <Name>BoSSS.Solution.Statistic</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>

@@ -260,20 +260,32 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// <see cref="IBlockPartitioning.FirstBlock"/>
+        /// </summary>
         public int FirstBlock {
             get {
                 return m_Context.CellPartitioning.i0;
             }
         }
 
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetFirstBlock"/>
+        /// </summary>
         public int GetFirstBlock(int proc) {
             return m_Context.CellPartitioning.GetI0Offest(proc);
         }
 
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetLocalNoOfBlocks"/>
+        /// </summary>
         public int GetLocalNoOfBlocks(int proc) {
             return m_Context.CellPartitioning.GetLocalLength(proc);
         }
 
+        /// <summary>
+        /// <see cref="IBlockPartitioning.FindProcessForBlock"/>
+        /// </summary>
         public int FindProcessForBlock(int iBlk) {
             return m_Context.CellPartitioning.FindProcess(iBlk);
         }
@@ -989,7 +1001,21 @@ namespace BoSSS.Foundation {
 
             return R.ToArray();
         }
+    
 
-        
+        /// <summary>
+        /// implicit conversion
+        /// </summary>
+        public static implicit operator UnsetteledCoordinateMapping(Basis[] bss) {
+            return new UnsetteledCoordinateMapping(bss);
+        }
+
+        /// <summary>
+        /// implicit conversion
+        /// </summary>
+        public static implicit operator Basis[](UnsetteledCoordinateMapping cm) {
+            return cm.BasisS.ToArray();
+        }    
+    
     }
 }

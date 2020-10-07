@@ -38,6 +38,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
 using System.IO;
+using BoSSS.Platform.Utils.Geom;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -64,6 +65,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         [InstantiateFromControlFile("RHS", "T", IOListOption.ControlFileDetermined)]
         protected SinglePhaseField RHS;
+
+        
 #pragma warning restore 649
 
         /// <summary>
@@ -77,6 +80,11 @@ namespace BoSSS.Application.SipPoisson {
         private SinglePhaseField Error;
 
         /// <summary>
+        /// MPI rank coloring
+        /// </summary>
+        private SinglePhaseField MPIrank;
+
+        /// <summary>
         /// DG field instantiation
         /// </summary>
         protected override void CreateFields() {
@@ -87,6 +95,10 @@ namespace BoSSS.Application.SipPoisson {
 
             Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
             base.m_IOFields.Add(Error);
+
+            // MPI rank coloring
+            MPIrank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
+            MPIrank.AccConstant(this.MPIRank);
 
             // mg coloring
             int iLevel = 0;
@@ -662,8 +674,8 @@ namespace BoSSS.Application.SipPoisson {
                         return CurrentLevel;
                 }
 
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData,null);
+                bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -775,25 +787,8 @@ namespace BoSSS.Application.SipPoisson {
                 int NoOfIterations;
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
-                switch (solvercodes) {
 
-                    case LinearSolverCode.classic_cg:
-                    case LinearSolverCode.classic_mumps:
-                    case LinearSolverCode.classic_pardiso:
-                        ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                        break;
-
-                    //case SolverCodes.nix:
-                    //NoOfIterations = 0;
-                    //mintime = 0;
-                    //maxtime = 0;
-                    //converged = false;
-                    //break;
-
-                    default:
-                        ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                        break;
-                }
+                ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
                 Console.WriteLine("converged? " + converged);
@@ -829,7 +824,7 @@ namespace BoSSS.Application.SipPoisson {
                         this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
                     }
 
-                    var ev = this.LapaceIp.GetEvaluator(T.Mapping, ResiualKP1.Mapping);
+                    var ev = this.LapaceIp.GetEvaluatorEx(T.Mapping, null, ResiualKP1.Mapping);
                     ev.Evaluate(-1.0, 1.0, ResiualKP1.CoordinateVector);
                 }
 
@@ -997,7 +992,7 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("Setting up multigrid operator...");
                     var mgsetup = new Stopwatch();
                     mgsetup.Start();
-                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig);
+                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig, LapaceIp.DomainVar.Select(varName => LapaceIp.FreeMeanValue[varName]).ToArray());
                     //double[] condests;
                     //int[] DOFs, Level;
                     //GimmeKondnumber(MultigridOp, out condests, out DOFs, out Level);
@@ -1010,7 +1005,7 @@ namespace BoSSS.Application.SipPoisson {
                     solverSetup.Start();
                     ISolverSmootherTemplate solver;
 
-                    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
+                    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver, this.m_queryHandler);
 
                     T.Clear();
                     T.AccLaidBack(1.0, Tex);
@@ -1060,6 +1055,7 @@ namespace BoSSS.Application.SipPoisson {
                         
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
+
                         MultigridOp.UseSolver(solver, T2, RHSvec);
                         T.CoordinateVector.SetV(T2);
                     }
@@ -1154,7 +1150,7 @@ namespace BoSSS.Application.SipPoisson {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(
                     this.LaplaceMtx, this.LaplaceAffine,
                     this.T.Mapping,
-                    this.MgConfig);
+                    this.MgConfig, this.LapaceIp);
 
                 return ana.GetNamedProperties();
             }

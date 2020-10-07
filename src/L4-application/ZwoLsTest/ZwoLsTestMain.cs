@@ -188,7 +188,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             Phi0.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.85).Pow2());
             Phi1.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (2.4).Pow2());
-            LsTrk.UpdateTracker();
+            LsTrk.UpdateTracker(t);
             LsTrk.PushStacks();
 
             if(usePhi0 && usePhi1)

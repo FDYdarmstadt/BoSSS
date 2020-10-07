@@ -213,22 +213,7 @@ namespace BoSSS.Application.Rheology
                 solver.RunSolverMode();
                 solver.CheckJacobian();
 
-                // matrix analysis
-                // ===============
-
-                BlockMsrMatrix OpMatrix;
-                double[] OpAffine;
-                solver.AssembleMatrix(out OpMatrix, out OpAffine, solver.CurrentSolution.Mapping.ToArray(), true);
-                if (OpMatrix.NoOfRows < 1000)
-                {
-                    //int rnk = (int)Math.Round(OpMatrix.rank());
-                    //Assert.IsTrue(OpMatrix.NoOfRows == rnk, "Matrix is degenerated: Rank out of range.");
-
-                    //double Cond = OpMatrix.cond();
-                    //Assert.LessOrEqual(Cond, 1.0e8, "Matrix is degenerated: Condition no out of range.");
-                }
-
-
+                
                 // check residuals and errors
                 // ==========================
 
