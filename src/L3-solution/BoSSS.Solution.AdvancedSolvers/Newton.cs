@@ -133,212 +133,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Main solver routine
         /// </summary>
         public void SolverDriver_original<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
-
             using(var tr = new FuncTrace()) {
 
+                // Initialization
+                /// =============
 
-                int itc = 0;
                 double[] CurSol, // "current (approximate) solution", i.e.
                     CurRes; // residual associated with 'CurSol'
-                //TempRes;
-                double rat;
-
-
-                // Eval_F0
-
+                
+                                
                 using(new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
 
                 this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
-                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes);
+                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
 
-                Console.WriteLine("Residual base.init:   " + CurRes.L2NormPow2().MPISum().Sqrt());
-                //base.EvalResidual(x, ref f0);
+                // intial residual evaluation
+                double norm_CurRes = CurRes.MPI_L2Norm();
+                OnIterationCallback(0, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
+                double fnorminit = norm_CurRes;
 
-                // fnorm
-                double fnorm = CurRes.MPI_L2Norm();
-                double fNormo = 1;
-                double[] step = new double[CurSol.Length];
+
+                // Main Loop
+                // =========
+
+                int itc = 0;
                 double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
-                //double[] stepOld = new double[CurSol.Length];
-                //BlockMsrMatrix CurrentJac;
-                //bool secondCriteriumConverged = false;
-                OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
-                double fnorminit = fnorm;
                 using(new BlockTrace("Slv Iter", tr)) {
-                    while((fnorm > ConvCrit * fnorminit + ConvCrit
-                        //&& secondCriteriumConverged == false
+                    while((norm_CurRes > ConvCrit * fnorminit + ConvCrit
                         && itc < MaxIter)
                         || itc < MinIter) {
-                        rat = fnorm / fNormo;
-                        //if (Math.Abs(fNormo - fnorm) < 1e-12)
-                        //    break;
-                        fNormo = fnorm;
+                        
+                                                
                         itc++;
-
-                        // computation of Newton step
-                        // --------------------------
-
-
-                        // How should the inverse of the Jacobian be approximated?
-                        if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
-                            // ++++++++++++++++++++++++++
-                            // Option: Matrix-Free GMRES
-                            // ++++++++++++++++++++++++++
-
-                            if(Precond != null) {
-                                Precond.Init(CurrentLin);
-                            }
-                            //base.EvalResidual(x, ref f0);
-                            var mtxFreeSlv = new MatrixFreeGMRES() { owner = this };
-                            //mtxFreeSlv.GMRESConvCrit = fnorm * 1e-5;
-                            double thresh = fnorm * 1e-5;
-                            mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                                return (R_l2 > thresh) && (iter < 100);
-                            };
-
-                            step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
-                            step.ScaleV(-1);
-
-
-                        } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
-                            // +++++++++++++++++++++++++++++
-                            // Option: use 'external' solver
-                            // +++++++++++++++++++++++++++++
-
-                            var solver = this.Precond;
-                            solver.Init(CurrentLin);
-                            step.ClearEntries();
-                            var check = CurRes.CloneAs();
-                            solver.ResetStat();
-
-                           
-                            if(solver is IProgrammableTermination pt) {
-                                // iterative solver with programmable termination is used - so use it
-
-                                //double f0_L2 = CurRes.MPI_L2Norm();
-                                //double thresh = f0_L2 * 1e-5;
-                                double thresh = fnorm * 1e-5;
-                                Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
-                                pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                                    return (R_l2 > thresh) && (iter < 100);
-                                };
-
-
-                            }
-
-                            solver.Solve(step, CurRes);
-                            step.ScaleV(-1);
-
-                        } else {
-                            throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
-                        }
-
-                        // globalization
-                        // -------------
-                        double[] OldSolClone;
-                        if(base.AbstractOperator.SolverSafeguard != null) {
-                            OldSolClone = SolutionVec.ToArray();
-                        } else {
-                            OldSolClone = null;
-                        }
-
-                        switch(Globalization) {
-                            case GlobalizationOption.Dogleg:
-                            DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
-                            break;
-
-                            case GlobalizationOption.LineSearch:
-                            LineSearch(SolutionVec, CurSol, CurRes, step);
-                            break;
-
-                            default:
-                            throw new NotImplementedException();
-                        }
-
-                        if(base.AbstractOperator.SolverSafeguard != null) {
-                            var newSol = SolutionVec.Fields.ToArray();
-                            var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
-                            var oldSolVec = new CoordinateVector(oldSol);
-                            oldSolVec.SetV(OldSolClone, 1.0);
-
-                            base.AbstractOperator.SolverSafeguard(oldSol, newSol);
-                        }
-
-
-
-                        // fix the pressure
-                        // ----------------
-                        if(CurrentLin.FreeMeanValue.Any()) {
-
-                            DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
-                            bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
-                            if(flds.Length != FreeMeanValue.Length)
-                                throw new ApplicationException();
-
-                            for(int iFld = 0; iFld < flds.Length; iFld++) {
-                                if(FreeMeanValue[iFld]) {
-                                    double mean = flds[iFld].GetMeanValueTotal(null);
-                                    flds[iFld].AccConstant(-mean);
-                                }
-                            }
-                        }
-
-
-
-                        // update linearization
-                        // --------------------
-                        if(itc % constant_newton_it == 0) {
-                            //base.UpdateLinearization(SolutionVec.Mapping.Fields);
-                            base.Update(SolutionVec.Mapping.Fields, ref CurSol);
-                            if(constant_newton_it != 1) {
-                                Console.WriteLine("Jacobian is updated: it {0}", itc);
-                            }
-                        }
-
-                        // residual evaluation & callback
-                        // ------------------------------
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes);
-                        fnorm = CurRes.MPI_L2Norm();
-
-
-                        OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
-
-                        #region second criterium
-                        // Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
-                        // this criterium is useful to "ensure that even finer physical details of the flow and are resolved"
-
-
-                        //double[] WMat_s = new double[x.Length];
-                        //double psi_r = 1e-3;
-                        //double psi_a = 1e-8;
-                        //double[] truestep = step;
-                        //truestep.ScaleV(lambda);
-                        //for(int i = 0; i < WMat_s.Length; i++) {
-                        //    WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
-                        //}
-                        //WMat_s.CheckForNanOrInfV();
-
-                        //double secondCriterium = WMat_s.L2Norm()/x.Length;
-
-                        //if(secondCriterium < 1) {
-                        //    secondCriteriumConverged = true;
-                        //}
-                        ////Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
-                        ////if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
-                        ////    Console.WriteLine("Criterium 1 fulfilled");
-                        ////if((secondCriteriumConverged == true))
-                        ////    Console.WriteLine("Criterium 2 fulfilled");
-                        ////if(itc > MaxIter)
-                        ////    Console.WriteLine("Criterium 3 fulfilled");
-
-                        #endregion
+                        NewtonStep(SolutionVec, itc, CurSol, CurRes, 1.0, ref norm_CurRes, ref TrustRegionDelta);
 
                     }
                 }
-
-
             }
         }
      
@@ -347,215 +179,223 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
+            //SolverDriver_original(SolutionVec, RHS);
+            //return;
+
             using(var tr = new FuncTrace()) {
 
 
-                int itc = 0;
+                // Initialization
+                // =============
+
+                
+
                 double[] CurSol, // "current (approximate) solution", i.e.
                     CurRes; // residual associated with 'CurSol'
-                double rat;
-
-
-                // Eval_F0
-
+                
+                                
                 using(new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
 
-                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
-                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes);
+                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol); // CurSol -> SolutionVec
+                EvaluateOperator(1, SolutionVec.Fields, CurRes, 1.0);
 
-                Console.WriteLine("Residual base.init:   " + CurRes.L2NormPow2().MPISum().Sqrt());
-                //base.EvalResidual(x, ref f0);
+                double Homotopy = 0.0;
+                EvaluateOperator(1, SolutionVec.Fields, CurRes, Homotopy);
 
-                // fnorm
-                double fnorm = CurRes.MPI_L2Norm();
-                double fNormo = 1;
-                double[] step = new double[CurSol.Length];
+
+                // intial residual evaluation
+                double norm_CurRes = CurRes.MPI_L2Norm();
+                OnIterationCallback(0, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
+                double fnorminit = norm_CurRes;
+
+
+                // Main Loop:
+                // ==========
+
+                int itc = 0;
                 double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
-                //double[] stepOld = new double[CurSol.Length];
-                //BlockMsrMatrix CurrentJac;
-                //bool secondCriteriumConverged = false;
-                OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
-                double fnorminit = fnorm;
-
-
-
                 using(new BlockTrace("Slv Iter", tr)) {
-                    while((fnorm > ConvCrit * fnorminit + ConvCrit
-                        //&& secondCriteriumConverged == false
-                        && itc < MaxIter)
-                        || itc < MinIter) {
-                        rat = fnorm / fNormo;
-                        //if (Math.Abs(fNormo - fnorm) < 1e-12)
-                        //    break;
-                        fNormo = fnorm;
-                        itc++;
 
-                        // computation of Newton step
-                        // --------------------------
+                    bool ResidualCrit(double fac = 1.0) {
+                        return norm_CurRes <= ConvCrit * fnorminit * fac + ConvCrit * fac;
+                    }
 
 
-                        // How should the inverse of the Jacobian be approximated?
-                        if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
-                            // ++++++++++++++++++++++++++
-                            // Option: Matrix-Free GMRES
-                            // ++++++++++++++++++++++++++
+                    while((!ResidualCrit() && itc < MaxIter) || itc < MinIter || Homotopy < 1.0) {
+                        
+                        if(ResidualCrit(10.0) && Homotopy <= 1.0) {
 
-                            if(Precond != null) {
-                                Precond.Init(CurrentLin);
-                            }
-                            //base.EvalResidual(x, ref f0);
-                            var mtxFreeSlv = new MatrixFreeGMRES() { owner = this };
-                            //mtxFreeSlv.GMRESConvCrit = fnorm * 1e-5;
-                            double thresh = fnorm * 1e-5;
-                            mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                                return (R_l2 > thresh) && (iter < 100);
-                            };
+                            double allowedIncrease = 1000000;
+                            double targetResNorm = norm_CurRes * allowedIncrease;
 
-                            step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
-                            step.ScaleV(-1);
+                            Console.WriteLine("Trying to raise homotopy value...");
+
+                            for(int i = 0; i < 100000; i++) {
+                                double tryHomotopyValue;
+                                if(i == 0)
+                                    tryHomotopyValue = 1.0; // nail it exactly, avoid any round-off-error
+                                else
+                                    tryHomotopyValue = Math.Pow(2.0, -i) * (1.0 - Homotopy) + Homotopy;
 
 
-                        } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
-                            // +++++++++++++++++++++++++++++
-                            // Option: use 'external' solver
-                            // +++++++++++++++++++++++++++++
+                                EvaluateOperator(1, SolutionVec.Fields, CurRes, tryHomotopyValue);
+                                double norm_TryValue = CurRes.MPI_L2Norm();
 
-                            var solver = this.Precond;
-                            solver.Init(CurrentLin);
-                            step.ClearEntries();
-                            var check = CurRes.CloneAs();
-                            solver.ResetStat();
-
-                            Console.WriteLine("Using solver: " + solver.GetType().ToString());
-                           
-                            if(solver is IProgrammableTermination pt) {
-                                // iterative solver with programmable termination is used - so use it
-
-                                //double f0_L2 = CurRes.MPI_L2Norm();
-                                //double thresh = f0_L2 * 1e-5;
-                                double thresh = fnorm * 1e-5;
-                                Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
-                                pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                                    return (R_l2 > thresh) && (iter < 100);
-                                };
-
-
-                            }
-
-                            solver.Solve(step, CurRes);
-                            step.ScaleV(-1);
-
-                        } else {
-                            throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
-                        }
-
-                        // globalization
-                        // -------------
-                        double[] OldSolClone;
-                        if(base.AbstractOperator.SolverSafeguard != null) {
-                            OldSolClone = SolutionVec.ToArray();
-                        } else {
-                            OldSolClone = null;
-                        }
-
-                        switch(Globalization) {
-                            case GlobalizationOption.Dogleg:
-                            DogLeg(SolutionVec, CurSol, CurRes, step, itc, ref TrustRegionDelta);
-                            break;
-
-                            case GlobalizationOption.LineSearch:
-                            LineSearch(SolutionVec, CurSol, CurRes, step);
-                            break;
-
-                            default:
-                            throw new NotImplementedException();
-                        }
-
-                        if(base.AbstractOperator.SolverSafeguard != null) {
-                            var newSol = SolutionVec.Fields.ToArray();
-                            var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
-                            var oldSolVec = new CoordinateVector(oldSol);
-                            oldSolVec.SetV(OldSolClone, 1.0);
-
-                            base.AbstractOperator.SolverSafeguard(oldSol, newSol);
-                        }
-
-
-
-                        // fix the pressure
-                        // ----------------
-                        if(CurrentLin.FreeMeanValue.Any()) {
-
-                            DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
-                            bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
-                            if(flds.Length != FreeMeanValue.Length)
-                                throw new ApplicationException();
-
-                            for(int iFld = 0; iFld < flds.Length; iFld++) {
-                                if(FreeMeanValue[iFld]) {
-                                    double mean = flds[iFld].GetMeanValueTotal(null);
-                                    flds[iFld].AccConstant(-mean);
+                                if(norm_TryValue < targetResNorm) {
+                                    Homotopy = tryHomotopyValue;
+                                    break;
                                 }
                             }
+
+                            Console.WriteLine("   raised to " + Homotopy);
+
                         }
 
 
-
-                        // update linearization
-                        // --------------------
-                        if(itc % constant_newton_it == 0) {
-                            //base.UpdateLinearization(SolutionVec.Mapping.Fields);
-                            base.Update(SolutionVec.Mapping.Fields, ref CurSol);
-                            if(constant_newton_it != 1) {
-                                Console.WriteLine("Jacobian is updated: it {0}", itc);
-                            }
-                        }
-
-                        // residual evaluation & callback
-                        // ------------------------------
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes);
-                        fnorm = CurRes.MPI_L2Norm();
-
-
-                        OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
-
-                        #region second criterium
-                        // Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
-                        // this criterium is useful to "ensure that even finer physical details of the flow and are resolved"
-
-
-                        //double[] WMat_s = new double[x.Length];
-                        //double psi_r = 1e-3;
-                        //double psi_a = 1e-8;
-                        //double[] truestep = step;
-                        //truestep.ScaleV(lambda);
-                        //for(int i = 0; i < WMat_s.Length; i++) {
-                        //    WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
-                        //}
-                        //WMat_s.CheckForNanOrInfV();
-
-                        //double secondCriterium = WMat_s.L2Norm()/x.Length;
-
-                        //if(secondCriterium < 1) {
-                        //    secondCriteriumConverged = true;
-                        //}
-                        ////Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
-                        ////if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
-                        ////    Console.WriteLine("Criterium 1 fulfilled");
-                        ////if((secondCriteriumConverged == true))
-                        ////    Console.WriteLine("Criterium 2 fulfilled");
-                        ////if(itc > MaxIter)
-                        ////    Console.WriteLine("Criterium 3 fulfilled");
-
-                        #endregion
+                                                
+                        itc++;
+                        NewtonStep(SolutionVec, itc, CurSol, CurRes, Homotopy, ref norm_CurRes, ref TrustRegionDelta);
 
                     }
                 }
 
 
             }
+        }
+
+        private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue,
+            ref double norm_CurRes, ref double TrustRegionDelta) {
+            
+            // computation of Newton step
+            // --------------------------
+
+            double[] step = new double[CurSol.Length];
+                
+
+            // How should the inverse of the Jacobian be approximated?
+            if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
+                // ++++++++++++++++++++++++++
+                // Option: Matrix-Free GMRES
+                // ++++++++++++++++++++++++++
+
+                if(Precond != null) {
+                    Precond.Init(CurrentLin);
+                }
+                var mtxFreeSlv = new MatrixFreeGMRES() { owner = this, HomotopyValue = HomotopyValue };
+                double thresh = norm_CurRes * 1e-5;
+                mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                    return (R_l2 > thresh) && (iter < 100);
+                };
+
+                step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
+                step.ScaleV(-1);
+
+
+            } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
+                // +++++++++++++++++++++++++++++
+                // Option: use 'external' solver
+                // +++++++++++++++++++++++++++++
+
+                var solver = this.Precond;
+                solver.Init(CurrentLin);
+                step.ClearEntries();
+                var check = CurRes.CloneAs();
+                solver.ResetStat();
+
+                if(solver is IProgrammableTermination pt) {
+                    // iterative solver with programmable termination is used - so use it
+
+                    //double f0_L2 = CurRes.MPI_L2Norm();
+                    //double thresh = f0_L2 * 1e-5;
+                    double thresh = norm_CurRes * 1e-5;
+                    Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
+                    pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                        return (R_l2 > thresh) && (iter < 100);
+                    };
+
+
+                }
+
+                solver.Solve(step, CurRes);
+                step.ScaleV(-1);
+
+            } else {
+                throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
+            }
+
+            // globalization
+            // -------------
+            double[] OldSolClone;
+            if(base.AbstractOperator.SolverSafeguard != null) {
+                OldSolClone = SolutionVec.ToArray();
+            } else {
+                OldSolClone = null;
+            }
+
+            switch(Globalization) {
+                case GlobalizationOption.Dogleg:
+                DogLeg(SolutionVec, CurSol, CurRes, step, HomotopyValue, itc, ref TrustRegionDelta);
+                break;
+
+                case GlobalizationOption.LineSearch:
+                LineSearch(SolutionVec, CurSol, CurRes, step, HomotopyValue);
+                break;
+
+                default:
+                throw new NotImplementedException();
+            }
+
+            if(base.AbstractOperator.SolverSafeguard != null) {
+                var newSol = SolutionVec.Fields.ToArray();
+                var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
+                var oldSolVec = new CoordinateVector(oldSol);
+                oldSolVec.SetV(OldSolClone, 1.0);
+
+                base.AbstractOperator.SolverSafeguard(oldSol, newSol);
+            }
+
+
+
+            // fix the pressure
+            // ----------------
+            if(CurrentLin.FreeMeanValue.Any()) {
+
+                DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
+                bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
+                if(flds.Length != FreeMeanValue.Length)
+                    throw new ApplicationException();
+
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+                    if(FreeMeanValue[iFld]) {
+                        double mean = flds[iFld].GetMeanValueTotal(null);
+                        flds[iFld].AccConstant(-mean);
+                    }
+                }
+            }
+
+
+
+            // update linearization
+            // --------------------
+            if(itc % constant_newton_it == 0) {
+                //base.UpdateLinearization(SolutionVec.Mapping.Fields);
+
+                base.Update(SolutionVec.Mapping.Fields, CurSol, HomotopyValue);
+               
+                if(constant_newton_it != 1) {
+                    Console.WriteLine("Jacobian is updated: it {0}", itc);
+                }
+            }
+
+            // residual evaluation & callback
+            // ------------------------------
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue);
+            norm_CurRes = CurRes.MPI_L2Norm();
+
+
+            OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
         }
 
         /// <summary>
@@ -576,7 +416,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns>
         /// Updated Solution
         /// </returns>
-        private void LineSearch(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] step) {
+        private void LineSearch(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] step, double HomotopyValue) {
 
             double[] TempSol;
             double[] TempRes;
@@ -595,7 +435,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
 
             TempRes = new double[TempSol.Length];
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes);
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue);
 
             double nft = TempRes.L2NormPow2().MPISum().Sqrt();
             double nf0 = CurRes.L2NormPow2().MPISum().Sqrt();
@@ -620,7 +460,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 lamc = lambda;
 
                 this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue);
 
                 nft = TempRes.L2NormPow2().MPISum().Sqrt();
                 ffm = ffc;
@@ -661,12 +501,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Estimated in <paramref name="NewtonIterCnt"/>==1;
         /// value must be stored externally for later iterations.
         /// </param>
+        /// <param name="HomotopyValue">
+        /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+        /// </param>
         /// <remarks>
         /// See:
         /// - Pawlowski et. al., 2006, Globalization Techniques for Newton–Krylov Methods and Applications to the Fully Coupled Solution of the Navier–Stokes Equations, SIAM Review, Vol. 48, No. 4, pp 700-721.
         /// - Pawlowski et. al., 2008, Inexact Newton Dogleg Methods, SIAM Journal on Numerical Analysis, Vol. 46, No. 4, pp 2112-2132.
         /// </remarks>
-        private void DogLeg(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] stepIN, int NewtonIterCnt, ref double TrustRegionDelta) {
+        private void DogLeg(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] stepIN, double HomotopyValue, int NewtonIterCnt, ref double TrustRegionDelta) {
 
             // algorithm constants taken from [Pawlowski et. al. 2006]
             // =======================================================
@@ -798,7 +641,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // actual residual reduction
             double ared() {
                 this.CurrentLin.TransformSolFrom(SolutionVec, NewSol);
-                base.EvaluateOperator(1.0, SolutionVec.Fields, temp);
+                base.EvaluateOperator(1.0, SolutionVec.Fields, temp, HomotopyValue);
 
                 return l2_CurRes - temp.MPI_L2Norm();
             }
@@ -869,6 +712,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// %
             /// </summary>
             public Newton owner;
+
+            /// <summary>
+            /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+            /// </summary>
+            internal double HomotopyValue;
 
             /*
             /// <summary>
@@ -1208,7 +1056,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                     //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
                     if(linearization == false) {
-                        owner.EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
+                        owner.EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx, this.HomotopyValue);
                     }
                     //else {
                     //    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray(), true);

@@ -186,6 +186,14 @@ namespace BoSSS.Application.Rheology {
                 return ((double) XOP.UserDefinedValues["Weissenbergnumber"]);
             }
             set {
+                double odVal;
+                if(XOP.UserDefinedValues.ContainsKey("Weissenbergnumber"))
+                    odVal = currentWeissenberg;
+                else
+                    odVal = double.NegativeInfinity;
+                                    
+                //if(odVal != value)
+                //    Console.WriteLine("setting Weissenberg Number to " + value);
                 XOP.UserDefinedValues["Weissenbergnumber"] = value;
             }
         }
