@@ -381,7 +381,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         static public RheologyControl ConfinedCylinder(
             string path = null,
-            int degree = 1) {
+            int degree = 3) {
 
             RheologyControl C = new RheologyControl();
 
@@ -461,7 +461,7 @@ namespace BoSSS.Application.Rheology {
             C.Bodyforces = true;
 
             // Homotopy:
-            C.RaiseWeissenberg = true;
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Debugging and Solver Analysis
@@ -481,7 +481,7 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 0.1;
-            C.Weissenberg = 0.700001; //aim Weissenberg number!
+            C.Weissenberg = 0.70000; //aim Weissenberg number!
             C.giesekusfactor = 0.0;
 
             //Penalties
@@ -518,8 +518,8 @@ namespace BoSSS.Application.Rheology {
             // Create Grid
             // grids used by florian
             //string grid = "445bf1e8-5082-4100-83db-a53f2d2aeb97"; // Florian new laptop (full, level 0); Cell Count = 640; Dim = 2 }
-            string grid = "b87b95c1-10d8-4b99-bc82-9c5fec70219d"; // Florian new laptop (full, level 1); Cell Count = 2416; Dim = 2 }
-            //string grid = "3cfced02-dbe6-4449-a3d0-d9e258813608"; // Florian new laptop (full, level 2); Cell Count = 8504; Dim = 2 }
+            //string grid = "b87b95c1-10d8-4b99-bc82-9c5fec70219d"; // Florian new laptop (full, level 1); Cell Count = 2416; Dim = 2 }
+            string grid = "3cfced02-dbe6-4449-a3d0-d9e258813608"; // Florian new laptop (full, level 2); Cell Count = 8504; Dim = 2 }
             //string grid = "70c0393d-62b9-4c32-9c86-1173251617da"; // Florian new laptop (full, level 3); Cell Count = 29424; Dim = 2 }
             //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)

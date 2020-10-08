@@ -121,18 +121,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Options for Globalization, i.e. means to ensure convergence of Newton iterations
         /// when the initial guess is far away from the solution.
         /// </summary>
-        public GlobalizationOption Globalization = GlobalizationOption.LineSearch;
+        public GlobalizationOption Globalization = GlobalizationOption.Dogleg;
 
         /// <summary>
         /// Prints the step reduction factor
         /// </summary>
         public bool printLambda = false;
 
+        /// <summary>
+        /// Switch the use of the Homotopy-Path (<see cref="ISpatialOperator.HomotopyUpdate"/>) on/off
+        /// </summary>
+        public bool UseHomotopy = false;
+
 
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public void SolverDriver_original<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
+        public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+            if(UseHomotopy)
+                HomotopyNewton(SolutionVec, RHS);
+            else 
+                GlobalizedNewton(SolutionVec, RHS);
+        }
+
+
+        /// <summary>
+        /// Main solver routine
+        /// </summary>
+        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
             using(var tr = new FuncTrace()) {
 
                 // Initialization
@@ -177,7 +193,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Main solver routine with homotopy;
         /// </summary>
-        public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+        public void HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
 
             //SolverDriver_original(SolutionVec, RHS);
             //return;
@@ -199,10 +215,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 };
 
                 this.CurrentLin.TransformSolFrom(SolutionVec, CurSol); // CurSol -> SolutionVec
-                EvaluateOperator(1, SolutionVec.Fields, CurRes, 1.0);
+                EvaluateOperator(1, SolutionVec.Fields, CurRes, 1.0); // seems redundant, but don't dare to remove!
 
-                double Homotopy = 0.0;
-                EvaluateOperator(1, SolutionVec.Fields, CurRes, Homotopy);
+                double HomotopyParameter = 0.0;
+                EvaluateOperator(1, SolutionVec.Fields, CurRes, HomotopyParameter);
 
 
                 // intial residual evaluation
@@ -211,10 +227,81 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double fnorminit = norm_CurRes;
 
 
-                // Main Loop:
-                // ==========
+                // Homotopy Solution extrapolation
+                // ===============================
 
-                int itc = 0;
+                var AcceptedHomoSolutions = new List<(double HomoValue, double[] HomoSolution, double norm_Res)>();
+
+                // Lagrange polynomial (aka. nodal interpolation) over the last 'N' accepted solutions
+                double Lagrange(int N, int n, double alpha) {
+                    if(N > AcceptedHomoSolutions.Count)
+                        throw new ArgumentOutOfRangeException();
+                    if(n < 0 || n >= N)
+                        throw new ArgumentOutOfRangeException();
+
+                    int M0 = AcceptedHomoSolutions.Count - N;
+                    double polyVal = 1.0;
+
+                    double alpha_n = AcceptedHomoSolutions[n + M0].HomoValue;
+                    for(int i = 0; i < N; i++) {
+                        if(i != n) {
+                            double alpha_i = AcceptedHomoSolutions[i + M0].HomoValue;
+                            polyVal *= (alpha - alpha_i) / (alpha_n - alpha_i);
+                        }
+                    }
+
+                    return polyVal;
+                }
+
+                // extrapolation from accepted solutions to new homotopy parameter values
+                void SolutionExtrapolation(double newHomoParam, int N) {
+                    if(N > AcceptedHomoSolutions.Count || N < 0)
+                        throw new ArgumentOutOfRangeException();
+
+                    SolutionVec.Clear();
+                    int M0 = AcceptedHomoSolutions.Count - N;
+                    for(int n = 0; n < N; n++) {
+                        if(Math.Abs(Lagrange(N, n, AcceptedHomoSolutions[n + M0].HomoValue) - 1.0) > 1.0e-10)
+                            throw new ArithmeticException("Error in Lagrange");
+                        for(int i = 0; i < N; i++) {
+                            if(i != n) {
+                                if(Math.Abs(Lagrange(N, i, AcceptedHomoSolutions[n + M0].HomoValue)) > 1.0e-10)
+                                    throw new ArithmeticException("Error in Lagrange (2)");
+                            }
+                        }
+
+                        double sss = Lagrange(N, n, newHomoParam);
+                        SolutionVec.AccV(sss, AcceptedHomoSolutions[n + M0].HomoSolution);
+                    }
+                }
+
+                // hard-coded constants
+                // ===============================
+                const double HomotopyStepAcceptedFactor = 10.0; // a solution for a specific homotopy value is accepted, 
+                //                                                 if the residual is below the convergence criterion, scaled by this factor
+
+                double allowedIncrease = 1e6; // initial value for acceptable residual increase when the homotopy parameter is increased.
+
+                // preventing step width being to long:
+                // ---------------------------------------
+             
+                const int HomotopyStepLongFail = 10; // If, for a specific homotopy parameter value, Newton does not converges successfully,
+                //   (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
+                const double StepWidthReductionFactor = 0.2; // Reduction factor (must be smaller 1.0) for the homotopy step (if homotopy step failed)
+
+                // preventing step width being to short:
+                // ---------------------------------------
+             
+                const int HomotopyStepShortFail = 3; // If, for a specific homotopy parameter value, Newton converges successfully
+                //       with less than this number of iterations, the step width should be increased.
+                const double StepWidthIncreaseFactor = 8; // Increase factor (must be bigger then the inverse of the reduction factor) for the homotopy step (if homotopy step failed)
+
+
+                // main Loop
+                // ===============================
+                
+                int IterCounter = 0;
+                int HomoStepCounter = 0; // no of iterations spent in current Homotopy step
                 double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
                 using(new BlockTrace("Slv Iter", tr)) {
 
@@ -223,40 +310,113 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 
-                    while((!ResidualCrit() && itc < MaxIter) || itc < MinIter || Homotopy < 1.0) {
-                        
-                        if(ResidualCrit(10.0) && Homotopy <= 1.0) {
+                    while(!ResidualCrit() || IterCounter < MinIter || HomotopyParameter < 1.0) {
+                        if(IterCounter > MaxIter) {
+                            Console.WriteLine($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
+                            break;
+                        }
 
-                            double allowedIncrease = 1000000;
+
+                        // test 
+
+                        bool GoodForHomoIncrease = ResidualCrit(HomotopyStepAcceptedFactor) && HomotopyParameter < 1.0;
+                        bool BadHomo = (HomoStepCounter >= HomotopyStepLongFail) && (AcceptedHomoSolutions.Count > 0);
+
+                        if(!GoodForHomoIncrease && BadHomo) {
+                            allowedIncrease *= StepWidthReductionFactor;
+                            
+                            if(allowedIncrease < 1) {
+                                Console.WriteLine($"Failed Newton: unable to raise Homotopy parameter without loosing convergence.");
+                                break;
+                            }
+
+                            var ll = AcceptedHomoSolutions.Last();
+                            HomotopyParameter = ll.HomoValue;
+                            SolutionVec.SetV(ll.HomoSolution);
+                            this.UpdateLinearization(SolutionVec.Fields, HomotopyParameter);
+                            
+                            this.CurrentLin.TransformSolInto(SolutionVec, CurSol);
+                            this.EvaluateOperator(1, SolutionVec.Fields, CurRes, HomotopyParameter);
+                            norm_CurRes = CurRes.MPI_L2Norm();
+
+                            //Console.WriteLine($"Homo Rollback: homotopy value {Homotopy}, old Res norm {ll.norm_Res}, now {norm_CurRes}");
+                        }
+
+                        if(GoodForHomoIncrease) {
+                            // +++++++++++++++
+                            // accept solution
+                            // +++++++++++++++
+                            AcceptedHomoSolutions.Add((HomotopyParameter, SolutionVec.ToArray(), norm_CurRes));
+                            while(AcceptedHomoSolutions.Count > 8)
+                                AcceptedHomoSolutions.RemoveAt(0);
+                        }
+
+
+                        if(GoodForHomoIncrease || BadHomo) {
+
+
+                            Debug.Assert(AcceptedHomoSolutions.Count > 0);
+
                             double targetResNorm = norm_CurRes * allowedIncrease;
 
-                            Console.WriteLine("Trying to raise homotopy value...");
+                            Console.WriteLine($"Trying to raise homotopy value (target residual is {targetResNorm}) ...");
 
-                            for(int i = 0; i < 100000; i++) {
+                            int i;
+                            int LastN = -1;
+
+                            //int PlotCount = 0;
+
+                            for(i = 0; i < 100; i++) {
                                 double tryHomotopyValue;
                                 if(i == 0)
                                     tryHomotopyValue = 1.0; // nail it exactly, avoid any round-off-error
                                 else
-                                    tryHomotopyValue = Math.Pow(2.0, -i) * (1.0 - Homotopy) + Homotopy;
+                                    tryHomotopyValue = Math.Pow(2.0, -i) * (1.0 - HomotopyParameter) + HomotopyParameter;
+
+                                LastN = -1;
+                                for(int N = AcceptedHomoSolutions.Count; N > 0; N--) {
+                                    SolutionExtrapolation(tryHomotopyValue, N);
+                                    EvaluateOperator(1, SolutionVec.Fields, CurRes, tryHomotopyValue);
+                                    double norm_TryValue = CurRes.MPI_L2Norm();
+
+                                    //Console.WriteLine($"({i},{N}) resNorm: {norm_TryValue}");
+
+                                    if(norm_TryValue < targetResNorm) {
+                                        HomotopyParameter = tryHomotopyValue;
+
+                                        if(N > 1) {
+                                            this.UpdateLinearization(SolutionVec.Fields, HomotopyParameter);
+                            
+                                            this.CurrentLin.TransformSolInto(SolutionVec, CurSol);
+                                            this.EvaluateOperator(1, SolutionVec.Fields, CurRes, HomotopyParameter);
+                                            norm_CurRes = CurRes.MPI_L2Norm();
+                                            norm_TryValue = norm_CurRes;
+                                        }
 
 
-                                EvaluateOperator(1, SolutionVec.Fields, CurRes, tryHomotopyValue);
-                                double norm_TryValue = CurRes.MPI_L2Norm();
-
-                                if(norm_TryValue < targetResNorm) {
-                                    Homotopy = tryHomotopyValue;
-                                    break;
+                                        norm_CurRes = norm_TryValue;
+                                        LastN = N;
+                                        break;
+                                    }
                                 }
+
+                                if(LastN > 0)
+                                    break;
                             }
 
-                            Console.WriteLine("   raised to " + Homotopy);
+                            Console.WriteLine($"   raised to {HomotopyParameter}, (new residual {norm_CurRes}, tried {i+1} times, used {LastN}-th order extrapolation.");
 
+                            if(HomoStepCounter < HomotopyStepShortFail)
+                                allowedIncrease *= StepWidthIncreaseFactor;
+                            HomoStepCounter = 0;
                         }
 
 
-                                                
-                        itc++;
-                        NewtonStep(SolutionVec, itc, CurSol, CurRes, Homotopy, ref norm_CurRes, ref TrustRegionDelta);
+                        // perform a Newton step
+                        // ---------------------
+                        IterCounter++;
+                        HomoStepCounter++;
+                        NewtonStep(SolutionVec, IterCounter, CurSol, CurRes, HomotopyParameter, ref norm_CurRes, ref TrustRegionDelta);
 
                     }
                 }

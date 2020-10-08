@@ -171,6 +171,9 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     abstract public class XdgTimesteppingBase {
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected XdgTimesteppingBase(
             Control.NonLinearSolverConfig nonlinconfig,
             Control.LinearSolverConfig linearconfig) {
@@ -334,14 +337,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected AggregationGridBasis[][] MultigridBasis;
 
         /// <summary>
-        /// Last solver residuals.
+        /// Latest solver residuals.
         /// </summary>
         public CoordinateVector Residuals {
             get;
             protected set;
         }
-
-        
 
         /// <summary>
         /// Initialization of the solver/preconditioner.
@@ -475,7 +476,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // transform current solution and residual back to the DG domain
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    //var X = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
                     var R = this.Residuals;
                     R.Clear();
 
@@ -484,6 +484,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //this.m_Agglomerator.Extrapolate(X, X.Mapping);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
 
+                    /*
+                    CoordinateVector Solution = new CoordinateVector(this.Residuals.Fields.Select(delegate (DGField f) {
+                        DGField r = f.CloneAs();
+                        r.Identification = "Sol_" + r.Identification;
+                        return r;
+                    }));
+                    Mgop.TransformSolFrom(Solution, currentSol);
+                    Tecplot.Tecplot.PlotFields(Solution.Fields.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
+                    */
+                    
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
