@@ -47,6 +47,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
+        [Test]
+        public static void SimpleViscosityJumpTest(
+            [Values(1)] int deg,
+            [Values(0.0, 0.1)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode)
+        {
+            var Tst = new ViscosityJumpTest();
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
+            C.ImmediatePlotPeriod = 1;
+            OperatorWithSolverTest(Tst, C);
+        }
+
         /// <summary>
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
@@ -273,6 +286,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             GenericTest(Tst, C);
         }
 
+
+        private static void OperatorWithSolverTest(ITest Tst, XNSE_Control C)
+        {
+            using (var solver = new XNSE())
+            {
+
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 4;
+
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
 
 
         private static void GenericTest(ITest Tst, XNSE_Control C) {
