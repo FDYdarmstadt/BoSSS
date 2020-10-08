@@ -893,7 +893,9 @@ namespace BoSSS.Solution {
 
         private void SetLinItCallback(ISolverSmootherTemplate solverwithoutcallback, bool IsLinPrecond) {
 
-            ISolverWithCallback _solverwithcallback = (ISolverWithCallback)solverwithoutcallback;
+            ISolverWithCallback _solverwithcallback = solverwithoutcallback as ISolverWithCallback;
+            if(_solverwithcallback == null)
+                return;
 
             string _type = null;
             int _caseselect = -1;

@@ -294,7 +294,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
              
                 const int HomotopyStepShortFail = 3; // If, for a specific homotopy parameter value, Newton converges successfully
                 //       with less than this number of iterations, the step width should be increased.
-                const double StepWidthIncreaseFactor = 8; // Increase factor (must be bigger then the inverse of the reduction factor) for the homotopy step (if homotopy step failed)
+                const double StepWidthIncreaseFactor = 8; // Increase factor (must be bigger then the inverse of the reduction factor) for the homotopy step
 
 
                 // main Loop
