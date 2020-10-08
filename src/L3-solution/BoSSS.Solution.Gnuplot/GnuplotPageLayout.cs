@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Solution.Gnuplot  {
 
     /// <summary>
     /// Additional layout options for gnuplot output which are not put into the <see cref="Plot2Ddata"/> container.
@@ -20,9 +20,5 @@ namespace BoSSS.Application.BoSSSpad {
         /// In Cairolatex mode, the vertical size in centimeters.
         /// </summary>
         public double Cairolatex_ySizeCm = 10.5;
-
-
-
-
     }
 }

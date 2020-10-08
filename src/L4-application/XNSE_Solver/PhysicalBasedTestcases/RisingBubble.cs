@@ -349,20 +349,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-
+            _DbPath = @"D:\rieckmann\BoSSS_DB";
 
             // basic database options
             // ======================
             #region db
 
-            C.DbPath = _DbPath;
+            C.DbPath = null;//_DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Bubble";
             C.ProjectDescription = "rising bubble";
             C.Tags.Add("benchmark setup");
 
             C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-            C.LogPeriod = 30;
+            C.LogPeriod = 1;
 
             #endregion
 
@@ -387,10 +387,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                Degree = p + 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
+                Degree = p + 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
@@ -406,21 +407,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
-            C.Tags.Add("Testcase 1");
-            C.PhysicalParameters.rho_A = 100;
-            C.PhysicalParameters.rho_B = 1000;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 10;
-            double sigma = 24.5;
-            C.PhysicalParameters.Sigma = sigma;
-
-            //C.Tags.Add("Testcase 2");
-            //C.PhysicalParameters.rho_A = 1;
+            //C.Tags.Add("Testcase 1");
+            //C.PhysicalParameters.rho_A = 100;
             //C.PhysicalParameters.rho_B = 1000;
-            //C.PhysicalParameters.mu_A = 0.1;
+            //C.PhysicalParameters.mu_A = 1;
             //C.PhysicalParameters.mu_B = 10;
-            //double sigma = 1.96;
+            //double sigma = 24.5;
             //C.PhysicalParameters.Sigma = sigma;
+
+            C.Tags.Add("Testcase 2");
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1000;
+            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.mu_B = 10;
+            double sigma = 1.96;
+            C.PhysicalParameters.Sigma = sigma;
 
 
             C.PhysicalParameters.IncludeConvection = true;
@@ -469,20 +470,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 //    return rank;
                 //});
 
-                //grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
-                //    int rank;
-                //    double x = X[0];
-                //    if (x < 0.35)
-                //        rank = 0;
-                //    else if (x < 0.5)
-                //        rank = 1;
-                //    else if (x < 0.75)
-                //        rank = 2;
-                //    else
-                //        rank = 3;
+                grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X)
+                {
+                    int rank;
+                    double x = X[0];
+                    if (x < 0.3)
+                        rank = 0;
+                    else if (x < 0.5)
+                        rank = 1;
+                    else if (x < 0.7)
+                        rank = 2;
+                    else
+                        rank = 3;
 
-                //    return rank;
-                //});
+                    return rank;
+                });
 
 
                 return grd;
@@ -490,7 +492,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "VierProcSplit";
-
             #endregion
 
 
@@ -501,8 +502,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double[] center = new double[] { 0.5, 0.5 };
             double radius = 0.25;
 
+            double cahn = (1.0 / 4.164) * h * 8.0 / (p + 1);
             //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
-            Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
+            Func<double[], double> PhiFunc = (X => Math.Tanh((((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)/(Math.Sqrt(2)*cahn))); // signed-distance form
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
@@ -513,7 +515,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
             C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
-
 
             //var database = new DatabaseInfo(_DbPath);
             //Guid restartID = new Guid("b90c5f79-9b82-47cd-b400-e9abbbd83e19");  //new Guid("2953cd96-ea27-4989-abd3-07e99d35de5f"); 
@@ -536,13 +537,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =================
             #region Fourier
 
-            int numSp = 1024;
-            double[] FourierP = new double[numSp];
-            double[] samplP = new double[numSp];
-            for (int sp = 0; sp < numSp; sp++) {
-                FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
-                samplP[sp] = radius;
-            }
+            //int numSp = 1024;
+            //double[] FourierP = new double[numSp];
+            //double[] samplP = new double[numSp];
+            //for (int sp = 0; sp < numSp; sp++) {
+            //    FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
+            //    samplP[sp] = radius;
+            //}
 
             //double circum = 2.0 * Math.PI * radius;
             //double filter = (circum * 20.0) / ((double)numSp / 2.0);
@@ -556,8 +557,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #endregion
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
 
             // misc. solver options
             // ====================
@@ -580,7 +580,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
@@ -598,8 +598,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.LS_TrackerWidth = 2;
             C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
-
+            C.RefinementLevel = 2;
+            C.BaseRefinementLevel = 2;
+            C.LS_TrackerWidth = 2;            
 
             #endregion
 
@@ -608,17 +609,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
-            double dt = 1e-2;
+            double dt = 0.1 * 1e-1;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.NoOfTimesteps = 3000;
-            C.saveperiod = 3;
+            C.NoOfTimesteps = (int)Math.Ceiling(3.0/dt);
+            C.Endtime = 300;
+            C.SuperSampling = 1;
+            C.saveperiod = 1;
+            C.rollingSaves = true;
 
 
             #endregion
@@ -627,6 +631,192 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         }
 
+        /// <summary>
+        /// predefined Control settings for the Rising Bubble Benchmark
+        /// </summary>
+        /// <param name="setup"></param>
+        /// <returns></returns>
+        public static XNSE_Control RB_ForWorksheet(int setup)
+        {
+            XNSE_Control C = new XNSE_Control();
+
+            // basic database options
+            // ======================
+            #region db
+
+            //C.DbPath = set by workflowMgm during job creation
+            C.savetodb = true;
+            C.ContinueOnIoError = false;
+
+            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+
+            #endregion
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            int p = 2;
+
+            // need to be set by user via setDGdegree() in worksheet
+            C.FieldOptions.Add("VelocityX", new FieldOpts()
+            {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts()
+            {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY", new FieldOpts()
+            {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts()
+            {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts()
+            {
+                Degree = p + 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts()
+            {
+                Degree = p + 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics  
+
+
+            // Physical Parameters
+            // ===================
+
+            switch (setup) {
+                case 1:
+                    C.Tags.Add("Testcase 1");
+                    C.PhysicalParameters.rho_A = 100;
+                    C.PhysicalParameters.rho_B = 1000;
+                    C.PhysicalParameters.mu_A = 1;
+                    C.PhysicalParameters.mu_B = 10;
+                    C.PhysicalParameters.Sigma = 24.5;
+                    break;
+                case 2:
+                    C.Tags.Add("Testcase 2");
+                    C.PhysicalParameters.rho_A = 1;
+                    C.PhysicalParameters.rho_B = 1000;
+                    C.PhysicalParameters.mu_A = 0.1;
+                    C.PhysicalParameters.mu_B = 10;
+                    C.PhysicalParameters.Sigma = 1.96;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            // need to be set during job creation 
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid genration
+            // ==============
+            #region grid
+
+            // need to be set by user via setGrid() in worksheet
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            // need to be set during job creation 
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            // need to be set during job creation 
+
+            #endregion
+
+
+            // additional parameters (evaluation)
+            // ==================================
+
+            // need to be set during job creation 
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            #endregion
+
+
+            // Level-Set options (AMR)
+            // =======================
+            #region levset
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            #endregion
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+
+            //C.dtMax = dt; // need to be set according to grid and DG degree
+            //C.dtMin = dt;
+            C.Endtime = 1000;
+            //C.NoOfTimesteps = 0; 
+
+            C.saveperiod = 1;
+            C.LogPeriod = 1;
+
+            #endregion
+
+
+            return C;
+        }
 
         /// <summary>
         /// Control for TestProgramm (not to be changed!!!)

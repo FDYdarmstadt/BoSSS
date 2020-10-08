@@ -707,8 +707,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 
-                m_BDF_Timestepper.Solve(phystime, dt); 
-                
+                m_BDF_Timestepper.Solve(phystime, dt);
+
 
                 // Residual();
                 this.ResLogger.NextTimestep(false);
@@ -979,8 +979,10 @@ namespace BoSSS.Application.IBM_Solver {
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
-            }
+                LsTrk.UpdateTracker(0.0);
 
+            }
+            
             /*
             PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
                 LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
@@ -1165,14 +1167,14 @@ namespace BoSSS.Application.IBM_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                            DegreeS = new int[] { Math.Max(1, pVel) },//DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        DegreeS = new int[] { Math.Max(0, pPrs) },//DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };

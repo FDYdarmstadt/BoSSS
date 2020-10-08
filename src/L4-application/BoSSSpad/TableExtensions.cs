@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.Gnuplot;
 using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;

@@ -58,6 +58,7 @@ using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Application.SemiLagrangianLevelSetTestSuite;
+using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -126,6 +127,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         EllipticReInit ReInitPDE;
 
+        /// <summary>
+        /// Phasefield object
+        /// </summary>
+        Phasefield PhaseField;
 
         /// <summary>
         /// The velocity for the level-set evolution; 
@@ -181,6 +186,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.RegisterField(this.DGLevSet.Current);
             this.DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.DGLevSet.Current.Basis, "dPhiDG_dx[" + d + "]")));
             base.RegisterField(this.DGLevSetGradient);
+
 
         }
 
@@ -335,6 +341,12 @@ namespace BoSSS.Application.XNSE_Solver {
                         //this.LevSetGradient.Gradient(1.0, this.LevSet);
                         Corrector.Initialize();
                         break;
+                    case LevelSetEvolution.Phasefield:
+                        this.DGLevSet.Current.Clear();
+                        this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
+                        PhaseField = new Phasefield(this.Control.PhasefieldControl, this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        PhaseField.InitCH();
+                        break;
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.ScalarConvection:
@@ -363,17 +375,17 @@ namespace BoSSS.Application.XNSE_Solver {
                     gridData: GridData,
                     Option: Control.LSContiProjectionMethod
                     );
-
+                
                 //var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
                 var Near1 = this.LsTrk.Regions.GetNearMask4LevSet(0, 1);
                 var Near = this.LsTrk.Regions.GetNearMask4LevSet(0, this.Control.LS_TrackerWidth);
                 var PosFF = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
-                if (this.Control.Option_LevelSetEvolution != LevelSetEvolution.ExtensionVelocity)
+                if (this.Control.Option_LevelSetEvolution != LevelSetEvolution.ExtensionVelocity && this.Control.Option_LevelSetEvolution != LevelSetEvolution.Phasefield)
                     ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
 
                 ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near, PosFF);
-
+                
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
 
                 this.LsTrk.UpdateTracker(0.0);
@@ -758,6 +770,25 @@ namespace BoSSS.Application.XNSE_Solver {
                         // advect particles and retrieve LevelSet
                         Corrector.Timestep(dt, 1, iTimestep);
 
+                        break;
+                    case LevelSetEvolution.Phasefield:
+                        ExtensionVelocity.Push();
+                        //CellMask CutCells = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
+                        //CellMask NegCells = this.LsTrk.Regions.GetLevelSetWing(0, -1).VolumeMask;
+                        //CellMask PosCells = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
+
+                        for (int g = 0; g < this.XDGvelocity.Velocity.Count; g++)
+                        {
+                            // Momentan Projektion, wenn nicht materielles Interface nochmal überlegen wie zu lösen
+                            ExtensionVelocity.Current[g].Clear();
+                            ExtensionVelocity.Current[g].Acc(1.0, XDGvelocity.Velocity[g].ProjectToSinglePhaseField());
+                            //ExtensionVelocity.Current[g].Acc(1.0, XDGvelocity.Velocity[g].GetSpeciesShadowField("A"), NegCells);
+                            //ExtensionVelocity.Current[g].Acc(1.0, XDGvelocity.Velocity[g].GetSpeciesShadowField("B"), PosCells);
+                            //ExtensionVelocity.Current[g].Acc(-0.5, XDGvelocity.Velocity[g].GetSpeciesShadowField("A"), CutCells);
+                            //ExtensionVelocity.Current[g].Acc(-0.5, XDGvelocity.Velocity[g].GetSpeciesShadowField("B"), CutCells);
+                        }
+                        PhaseField.UpdateFields(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        PhaseField.MovePhasefield(iTimestep, dt, Phystime);
                         break;
                     default:
                         throw new ApplicationException();
