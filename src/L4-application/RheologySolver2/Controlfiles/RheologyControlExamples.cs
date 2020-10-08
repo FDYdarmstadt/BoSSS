@@ -135,16 +135,7 @@ namespace BoSSS.Application.Rheology {
             //C.ExSol_Stress = new Func<double[], double, double>[] { StressXXfunction, StressXYfunction, StressYYfunction };
 
             // Create Fields
-            //int degree = 2;
-            C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-            C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.SetDGdegree(degree);
 
             // Create Grid
 
@@ -277,14 +268,7 @@ namespace BoSSS.Application.Rheology {
                     grd.EdgeTagNames.Add(1, "Velocity_inlet");
                     grd.EdgeTagNames.Add(4, "Pressure_Outlet");
                 }
-
-                //grd.EdgeTagNames.Add(2, "FreeSlip");
-                grd.EdgeTagNames.Add(2, "Wall_bottom");
-                grd.EdgeTagNames.Add(3, "Wall_top");
-
-
-                grd.EdgeTagNames.Add(5, "Wall_Contraction_bottom");
-                grd.EdgeTagNames.Add(6, "Wall_Contraction_top");
+                               
 
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     var X = _X;
@@ -294,49 +278,49 @@ namespace BoSSS.Application.Rheology {
                     if (!C.FixedStreamwisePeriodicBC) {
                         if (Math.Abs(x - (0)) < 1.0e-6) {
                             //left
-                            return 1;
+                            return "Velocity_inlet";
                         }
 
                         if (Math.Abs(x - (L)) < 1.0e-6) {
                             //right
-                            return 4;
+                            return "Pressure_Outlet";
                         }
                     }
 
                     if (Math.Abs(y - (-H)) < 1.0e-6 && x < L / 2 + 1.0e-6) {
                         //bottom front
-                        return 2;
+                        return "Wall_bottom";
                     }
 
                     //if (Math.Abs(y - (0)) < 1.0e-6)
                     //{
                     //    //symmetry line
-                    //    return 2;
+                    //    return "Wall_bottom";
                     //}
 
                     if (Math.Abs(y - (+H)) < 1.0e-6 && x < L / 2 + 1.0e-6) {
                         //top front
-                        return 3;
+                        return "Wall_top";
                     }
 
                     if (Math.Abs(y - (-H / 4)) < 1.0e-6 && x > L / 2 - 1.0e-6) {
                         // bottom back
-                        return 2;
+                        return "Wall_bottom";
                     }
 
                     if (Math.Abs(y - (H / 4)) < 1.0e-6 && x > L / 2 - 1.0e-6) {
                         // top back
-                        return 3;
+                        return "Wall_top";
                     }
 
                     if (Math.Abs(x - (L / 2)) < 1.0e-6 && y < -H / 4 - 1.0e-6) {
                         // bottom contraction
-                        return 5;
+                        return "Wall_Contraction_bottom";
                     }
 
                     if (Math.Abs(x - (L / 2)) < 1.0e-6 && y > H / 4 - 1.0e-6) {
                         //top contraction
-                        return 6;
+                        return "Wall_Contraction_top";
                     }
 
                     throw new ArgumentOutOfRangeException("at x = " + x + "and y = " + y);
@@ -397,16 +381,10 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         static public RheologyControl ConfinedCylinder(
             string path = null,
-            //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
-            int degree = 1) {
-            //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
+            int degree = 3) {
+
             RheologyControl C = new RheologyControl();
 
-            //Path für cluster
-            //\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder
-
-            //Path für lokale DB
-            //C:\AnnesBoSSSdb\ConfinedCylinder
                                           
             //Solver Options
             C.NoOfTimesteps = 1;
@@ -444,20 +422,23 @@ namespace BoSSS.Application.Rheology {
             // linear solver config 
             // ====================
 
+            /*
             C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.TargetBlockSize = 10000;//100000;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
             C.LinearSolver.NoOfMultigridLevels = 4;
+            */
 
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             // nonlinear solver config
             // =======================
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-8;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady; //Transient;//   Steady;
@@ -479,6 +460,10 @@ namespace BoSSS.Application.Rheology {
 
             C.Bodyforces = true;
 
+            // Homotopy:
+            C.RaiseWeissenberg = false;
+            C.WeissenbergIncrement = 0.1;
+
             //Debugging and Solver Analysis
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
@@ -487,6 +472,7 @@ namespace BoSSS.Application.Rheology {
             C.ComputeL2Error = false;
 
             //Physical Params
+            // ==============
             double u0 = 1.5; // 0.375;// 0.66;// 3 / 2;
             double h = 4;
 
@@ -495,9 +481,7 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 0.1;
-            C.Weissenberg = 0.3001; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
-            C.WeissenbergIncrement = 0.1;
+            C.Weissenberg = 0.70000; //aim Weissenberg number!
             C.giesekusfactor = 0.0;
 
             //Penalties
@@ -534,9 +518,9 @@ namespace BoSSS.Application.Rheology {
             // Create Grid
             // grids used by florian
             //string grid = "445bf1e8-5082-4100-83db-a53f2d2aeb97"; // Florian new laptop (full, level 0); Cell Count = 640; Dim = 2 }
-            string grid = "b87b95c1-10d8-4b99-bc82-9c5fec70219d"; // Florian new laptop (full, level 0); Cell Count = 2416; Dim = 2 }
-            //string grid = "3cfced02-dbe6-4449-a3d0-d9e258813608"; // Florian new laptop (full, level 0); Cell Count = 8504; Dim = 2 }
-            //string grid = "70c0393d-62b9-4c32-9c86-1173251617da"; // Florian new laptop (full, level 0); Cell Count = 29424; Dim = 2 }
+            //string grid = "b87b95c1-10d8-4b99-bc82-9c5fec70219d"; // Florian new laptop (full, level 1); Cell Count = 2416; Dim = 2 }
+            string grid = "3cfced02-dbe6-4449-a3d0-d9e258813608"; // Florian new laptop (full, level 2); Cell Count = 8504; Dim = 2 }
+            //string grid = "70c0393d-62b9-4c32-9c86-1173251617da"; // Florian new laptop (full, level 3); Cell Count = 29424; Dim = 2 }
             //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
             //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
@@ -621,7 +605,6 @@ namespace BoSSS.Application.Rheology {
                         C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
                     }
                 }
-                C.AddInitialValue("Phi", "X => -1", false);
             }
 
             // Set Boundary Conditions

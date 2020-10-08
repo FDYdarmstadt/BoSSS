@@ -34,11 +34,13 @@ using BoSSS.Solution.Control;
 namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
-    /// A sparse direct solver. Actually, this class is just a 
-    /// wrapper around either PARDISO (<see cref="PARDISOSolver"/>)
-    /// or MUMPS (<see cref="MUMPSSolver"/>).
+    /// Sparse direct solver. 
+    /// This class is a wrapper around either 
+    /// - PARDISO (<see cref="PARDISOSolver"/>) or 
+    /// - MUMPS (<see cref="MUMPSSolver"/>) or
+    /// - LAPACK.
     /// </summary>
-    public class SparseSolver : ISolverSmootherTemplate, ISolverWithCallback {
+    public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
         /// <summary>
         /// 
@@ -56,31 +58,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MUMPS,
 
             /// <summary>
-            /// Using LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>
+            /// Conversion to dense matrix, solution 
+            /// via LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>.
+            /// Only suitable for small systems (less than 10000 DOF).
             /// </summary>
             Lapack,
 
             /// <summary>
             /// MATLAB 'backslash' solver, see <see cref="ilPSP.Connectors.Matlab.Extensions.SolveMATLAB{T1, T2}(IMutableMatrixEx, T1, T2, string)"/> 
             /// </summary>
-            Matlab,
-
-            /// <summary>
-            /// conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.CG"/>
-            /// </summary>
-            CG,
-
-            /// <summary>
-            /// preconditioned conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.PCG"/>
-            /// </summary>
-            PCG
+            Matlab
         }
 
    
 
         /// <summary>
         /// Set the type of Parallelism to be used for the linear Solver.
-        /// You may define a comma seperated list out of the following: "SEQ","MPI","OMP"
+        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
         /// </summary>
         public Parallelism SolverVersion = Parallelism.SEQ;
 
@@ -203,17 +197,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     solver = new DenseSolverWrapper();
                     break;
 
-                case _whichSolver.CG:
-                    solver = new CG();
-                    ((CG)solver).DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
-                    ((CG)solver).MaxIterations = Switcher<int>(((CG)solver).MaxIterations,LinConfig.MaxSolverIterations);
-                    ((CG)solver).Tolerance = Switcher<double>(((CG)solver).Tolerance, LinConfig.ConvergenceCriterion);
-                    break;
-
-                case _whichSolver.PCG:
-                    solver = new PCG();
-                    break;
-
                 default:
                     throw new NotImplementedException();
 
@@ -271,6 +254,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         X.SaveToTextFile("X.txt");
                         B.SaveToTextFile("B.txt");
 #endif
+
                         string ErrMsg;
                         using (var stw = new StringWriter()) {
                             stw.WriteLine("High residual from direct solver (using {0}).", SolverName);
@@ -279,7 +263,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
                             stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
                             stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+#if TEST
                             stw.WriteLine("Dumping text versions of Matrix, Solution and RHS.");
+#endif
                             ErrMsg = stw.ToString();
                         }
                         Console.Error.WriteLine(ErrMsg);
@@ -360,4 +346,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
     }
+
+
+
 }

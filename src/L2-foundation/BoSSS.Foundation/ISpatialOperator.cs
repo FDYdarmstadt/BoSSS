@@ -73,7 +73,7 @@ namespace BoSSS.Foundation {
     /// - on input: new solution (approximation) proposed by the solver
     /// - on exit: optionally, solution (approximation) modified by the user
     /// </param>
-    public delegate void SolverStepValidation(DGField[] OldSolution, DGField[] NewSolution);
+    public delegate void SolverSafeguard(DGField[] OldSolution, DGField[] NewSolution);
 
 
 
@@ -244,9 +244,9 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// 
+        /// 'safeguard' for  solvers to avoid unphysical solutions (mostly relevant for implicit, nonlinear systems)
         /// </summary>
-        SolverStepValidation SolverStepValidation {
+        SolverSafeguard SolverSafeguard {
             get;
             set;
         }
