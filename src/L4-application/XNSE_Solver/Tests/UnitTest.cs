@@ -243,9 +243,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
 
         }
+      
 
-
-
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.TranspiratingChannelTest"/>
+        /// </summary>
         [Test]
         public static void TranspiratingChannelTest(
             [Values(2)] int deg,
@@ -266,10 +268,29 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
             //}
         }
+        
+        /// <summary>
+        /// <see cref="Tests.TranspiratingChannelTest"/>
+        /// </summary>
+        [Test]
+        public static void SimpleTranspiratingChannelTest(
+            [Values(2)] int deg,
+            [Values(0.1)] double AgglomerationTreshold,
+            [Values(0.0, 0.1)] double U2,
+            [Values(ViscosityMode.Standard)] ViscosityMode vmode,
+            [Values(true, false)] bool periodicity
+            ) {
+
+            var Tst = new TranspiratingChannelTest(U2, periodicity);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            OperatorWithSolverTest(Tst, C);
+        }
 
 
         /// <summary>
-        /// <see cref="PolynomialTestForConvection"/>
+        /// <see cref="Tests.PolynomialTestForConvection"/>
         /// </summary>
         [Test]
         public static void PolynomialTestForConvectionTest(
@@ -287,10 +308,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        private static void OperatorWithSolverTest(ITest Tst, XNSE_Control C)
-        {
-            using (var solver = new XNSE())
-            {
+        private static void OperatorWithSolverTest(ITest Tst, XNSE_Control C) {
+            using(var solver = new XNSE()) {
 
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 4;

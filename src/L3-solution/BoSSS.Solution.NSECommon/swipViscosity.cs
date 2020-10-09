@@ -270,9 +270,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Update of penalty length scales.
         /// </summary>
-        /// <param name="cs"></param>
-        /// <param name="DomainDGdeg"></param>
-        /// <param name="TestDGdeg"></param>
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             m_D = cs.GrdDat.SpatialDimension;
             double _D = m_D;

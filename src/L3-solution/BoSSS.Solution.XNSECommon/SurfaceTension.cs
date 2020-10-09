@@ -989,6 +989,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         protected double m_penalty;
 
+        /// <summary>
+        /// penalty computation
+        /// </summary>
         protected double penalty(int jCellIn, int jCellOut) {
 
             double penaltySizeFactor_A = (this.m_InterLen[jCellIn] > 0) ? 1.0 / this.m_InterLen[jCellIn] : 0;
@@ -1000,39 +1003,53 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
             //throw new NotImplementedException("this penalty might be unsuitable");
-            return this.m_penalty * penaltySizeFactor;
+            double penalty_base = (double)((m_degU + 1) * (m_degU + m_D)) / ((double)m_D);
+            return this.m_penalty * penaltySizeFactor * penalty_base;
 
         }
 
 
         protected IncompressibleBcType[] m_edgeTag2Type;
 
-
+        /// <summary>
+        /// required the normal vector
+        /// </summary>
         public virtual IList<string> ParameterOrdering {
             get {
                 return VariableNames.NormalVector(m_D);
             }
         }
 
+        /// <summary>
+        /// the velocity vector
+        /// </summary>
         public virtual IList<string> ArgumentOrdering {
             get {
                 return VariableNames.VelocityVector(m_D);
             }
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.GradUxGradV;
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual TermActivationFlags InnerEdgeTerms {
             get {
                 return TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.UxV;
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public virtual TermActivationFlags BoundaryEdgeTerms {
             get {
                 return TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.UxV;
@@ -1129,8 +1146,20 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return res;
         }
 
+        /// <summary>
+        /// currently used DG degree for velocity
+        /// </summary>
+        protected int m_degU;
 
         public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_degU = DomainDGdeg[0];
+            for(int i = 1; i < DomainDGdeg.Length; i++)
+                if(DomainDGdeg[i] != m_degU)
+                    throw new ApplicationException("something is weird with the velocity DG degrees");
+            if(DomainDGdeg.Length != m_D)
+                throw new ApplicationException("Spatial dimension mismatch");
+            if(m_D != cs.GrdDat.SpatialDimension)
+                throw new ApplicationException("Spatial dimension mismatch");
 
             m_InterLen = (MultidimensionalArray)cs.UserDefinedValues["InterfaceLengths"]; 
         }

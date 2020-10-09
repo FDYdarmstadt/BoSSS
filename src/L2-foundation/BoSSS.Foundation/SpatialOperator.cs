@@ -1790,7 +1790,13 @@ namespace BoSSS.Foundation {
                 }
             }
 
-            IEvaluatorNonLin Eval;
+            /// <summary>
+            /// Internally used explicit evaluator
+            /// </summary>
+            public IEvaluatorNonLin Eval {
+                get;
+                private set;
+            }
 
             Action<IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
 

@@ -388,8 +388,7 @@ namespace BoSSS.Solution.XNSECommon {
                     double lamI = physParams.lambda_I;
                     double lamI_t = (physParams.lambdaI_tilde < 0) ? (lamI - muI) : physParams.lambdaI_tilde;
 
-                    double penalty_base = (degU + 1) * (degU + D) / D;
-                    double penalty = penalty_base * dntParams.PenaltySafety;
+                    double penalty = dntParams.PenaltySafety; // Note: scaling by velocity degree moved into equation component
 
                     // surface dilatational viscosity
                     if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceDivergence ||

@@ -4,6 +4,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,6 +62,7 @@ namespace BoSSS.Application.XNSE_Solver
         {
             SpeciesName = spcName;
             CodomainName = EquationNames.MomentumEquationComponent(d);
+            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat( BoSSS.Solution.NSECommon.VariableNames.Pressure);
 
             SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             PhysicalParameters physParams = config.getPhysParams;
@@ -181,6 +183,15 @@ namespace BoSSS.Application.XNSE_Solver
                         throw new NotImplementedException();
                 }
             }
+
+            
+        }
+
+        string[] m_VariableNames;
+        public override string[] VariableNames {
+            get {
+                return m_VariableNames;
+            }
         }
     }
 
@@ -195,6 +206,7 @@ namespace BoSSS.Application.XNSE_Solver
             IncompressibleMultiphaseBoundaryCondMap BcMap)
         {
             CodomainName = EquationNames.ContinuityEquation;
+            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
             SpeciesName = spcName;
             MassScale = 0;
 
@@ -218,14 +230,20 @@ namespace BoSSS.Application.XNSE_Solver
                 AddComponent(flx);
             }
         }
+
+        string[] m_VariableNames;
+        public override string[] VariableNames {
+            get {
+                return m_VariableNames;
+            }
+        }
     }
 
-    class InterfaceContinuity : SurfaceEquation
-    {
+    class InterfaceContinuity : SurfaceEquation {
         //Methode aus der XNSF_OperatorFactory
-        public InterfaceContinuity(IXNSE_Configuration config, int D, LevelSetTracker LsTrk)
-        {
+        public InterfaceContinuity(IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
             CodomainName = EquationNames.ContinuityEquation;
+            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -238,8 +256,18 @@ namespace BoSSS.Application.XNSE_Solver
             var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.isMatInt, dntParams.ContiSign, dntParams.RescaleConti);
             AddComponent(divPen);
         }
+
+        string[] m_VariableNames;
+        public override string[] VariableNames {
+            get {
+                return m_VariableNames;
+            }
+        }
     }
 
+    /// <summary>
+    /// Incompressible, Newtonian momentum equation, interface part
+    /// </summary>
     class NSEInterface : SurfaceEquation
     {
         //Methode aus der XNSF_OperatorFactory
@@ -250,11 +278,19 @@ namespace BoSSS.Application.XNSE_Solver
             int dimension,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
-            IXNSE_Configuration config) : base()
-        {
+            IXNSE_Configuration config) : base() {
             CodomainName = EquationNames.MomentumEquationComponent(d);
             AddInterfaceNSE(dimension, d, boundaryMap, LsTrk, config);
+            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure);
         }
+
+        string[] m_VariableNames;
+        public override string[] VariableNames {
+            get {
+                return m_VariableNames;
+            }
+        }
+
 
         //Methode aus der XNSF_OperatorFactory
         void AddInterfaceNSE(
@@ -334,6 +370,9 @@ namespace BoSSS.Application.XNSE_Solver
 
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     class NSESurfaceTensionForce : SurfaceEquation
     {
         //Methode aus der XNSF_OperatorFactory
@@ -342,12 +381,12 @@ namespace BoSSS.Application.XNSE_Solver
             string phaseB,
             int d,
             int dimension,
-            int degU,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
             IXNSE_Configuration config)
         {
             CodomainName = EquationNames.MomentumEquationComponent(d);
+            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure);
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -404,8 +443,8 @@ namespace BoSSS.Application.XNSE_Solver
                     double lamI = physParams.lambda_I;
                     double lamI_t = (physParams.lambdaI_tilde < 0) ? (lamI - muI) : physParams.lambdaI_tilde;
 
-                    double penalty_base = (degU + 1) * (degU + dimension) / dimension;
-                    double penalty = penalty_base * dntParams.PenaltySafety;
+                    
+                    double penalty = dntParams.PenaltySafety;
 
                     // surface dilatational viscosity
                     if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceDivergence ||
@@ -451,6 +490,13 @@ namespace BoSSS.Application.XNSE_Solver
             if (config.isPressureGradient && physParams.useArtificialSurfaceForce)
             {
                 AddComponent(new SurfaceTension_ArfForceSrc(d, dimension, LsTrk));
+            }
+        }
+
+        string[] m_VariableNames;
+        public override string[] VariableNames {
+            get {
+                return m_VariableNames;
             }
         }
     }

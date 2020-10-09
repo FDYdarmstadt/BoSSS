@@ -76,10 +76,11 @@ namespace BoSSS.Application.XNSE_Solver {
             InitMPI();
             DeleteOldPlotFiles();
             BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleTranspiratingChannelTest(1, 0.1, 0.1, ViscosityMode.TransposeTermMissing, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p3(ViscosityMode.FullySymmetric);
-            //throw new Exception("fuck you ");
+            throw new Exception("Remove Me.");
 
 
             _Main(args, false, delegate () {

@@ -11,74 +11,88 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ilPSP;
+using ilPSP.Utils;
+using System.Diagnostics;
 
 namespace BoSSS.Application.XNSE_Solver
 {
     class XNSE : XdgApplicationWithSolver<XNSE_Control>
     {
-        VectorField<XDGField> velocity;
-
-        XDGField pressure;
+ 
 
         LevelSet levelSet;
 
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
 
-        protected override IEnumerable<DGField> InstantiateSolutionFields()
-        {
-            pressure = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Pressure].Degree), VariableNames.Pressure);
-            pressure.GetSpeciesShadowField("A").ProjectField(Control.InitialValues_Evaluators["Pressure#A"]);
-            pressure.GetSpeciesShadowField("B").ProjectField(Control.InitialValues_Evaluators["Pressure#B"]);
-            XDGField vx = new XDGField(new XDGBasis(this.LsTrk, 1), VariableNames.VelocityX);
-            vx.GetSpeciesShadowField("A").ProjectField(Control.InitialValues_Evaluators["VelocityX#A"]);
-            vx.GetSpeciesShadowField("B").ProjectField(Control.InitialValues_Evaluators["VelocityX#B"]);
-            XDGField vy = new XDGField(new XDGBasis(this.LsTrk, 1), VariableNames.VelocityY);
-            vy.GetSpeciesShadowField("A").ProjectField(Control.InitialValues_Evaluators["VelocityY#A"]);
-            vy.GetSpeciesShadowField("B").ProjectField(Control.InitialValues_Evaluators["VelocityY#B"]);
-            velocity = new VectorField<XDGField>(vx, vy);
 
-            return new DGField[] { vx, vy, pressure };
-        }
 
-        protected override void SetInitial()
-        {
-            
-        }
-
-        protected override LevelSetTracker InstantiateTracker()
-        {
-            levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), VariableNames.LevelSet);
+        protected override LevelSetTracker InstantiateTracker() {
+            levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-            LevelSetTracker myLsTrk = new LevelSetTracker((GridData)GridData, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B"}, levelSet);
+            LevelSetTracker myLsTrk = new LevelSetTracker((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
             return myLsTrk;
         }
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D)
-        {
-            int degU = velocity.Max(field => field.Basis.Degree);
-            int order = degU * 2 + 1;
+
+        VectorField<XDGField> Gravity;
+
+        protected override IEnumerable<DGField> CreateAdditionalFields() {
+            int D = this.GridData.SpatialDimension;
+            Gravity = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.CurrentState.BasisS[d] as XDGBasis, VariableNames.Gravity_d(d))));
+
+            return Gravity;
+        }
+
+
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
             IXNSE_Configuration config = new XNSFE_OperatorConfiguration(this.Control);
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
             //Build Equations
             SystemOfEquations equationSystem = new SystemOfEquations();
-            for (int d = 0; d < D; ++d)
-            {
+            for(int d = 0; d < D; ++d) {
                 equationSystem.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
                 equationSystem.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
                 equationSystem.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config));
-                equationSystem.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, degU, boundaryMap, LsTrk, config));
+                equationSystem.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
 
             }
             equationSystem.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
             equationSystem.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
             equationSystem.AddEquation(new InterfaceContinuity(config, D, LsTrk));
 
-            //Get Spatial Operator
-            XSpatialOperatorMk2 xSpatialOperator = equationSystem.GetSpatialOperator(order);
 
-            xSpatialOperator.Commit();
-            return xSpatialOperator;
+            int QuadOrderFunc(int[] DomvarDegs, int[] ParamDegs, int[] CodvarDegs) {
+                int degU = DomvarDegs[0];
+                int QuadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+                if(this.Control.solveKineticEnergyEquation)
+                    QuadOrder *= 2;
+                return QuadOrder;
+            }
+
+
+            //Get Spatial Operator
+
+            XSpatialOperatorMk2 XOP = equationSystem.GetSpatialOperator(QuadOrderFunc);
+
+            // final settings
+            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.Commit();
+
+            // test the ordering
+            Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityX) < XOP.DomainVar.IndexOf(VariableNames.VelocityY));
+            Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
+            Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationX) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY));
+            Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
+            if(D > 3) {
+                Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.VelocityZ));
+                Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityZ) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
+                Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ));
+                Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
+            }
+                        
+            return XOP;
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt)
