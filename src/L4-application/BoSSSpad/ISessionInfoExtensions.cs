@@ -427,6 +427,86 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Gets a profiling tree for a given MPI-rank, of a session
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static MethodCallRecord GetProfilingOfRank(this ISessionInfo session, int rank) {
+
+            // check if within bounds
+            int MPISize = session.ComputeNodeNames.Count;
+            if (MPISize < rank) {
+                Console.WriteLine("WARNING: the searched rank (" + rank + ") is greater then MPI-size (" + MPISize + ").");
+            }
+
+            // check if exists
+            string sessDir = DatabaseDriver.GetSessionDirectory(session);
+            string pathf = String.Concat(sessDir, @"\profiling_bin.", rank, ".txt");
+            string namef = String.Concat("profiling_bin.", rank, ".txt");
+            if (!File.Exists(pathf))
+                throw new IOException("Unable to locate '" + pathf + "'.");
+
+            // check if unique
+            int many = Directory.GetFiles(sessDir, namef).Length;
+            if (many > 1)
+                throw new ArgumentException("profiling is not unique, occurances: " + many);
+
+            // load 
+            var f = pathf;
+            var JSON = File.ReadAllText(f);
+            var mcr = MethodCallRecord.Deserialize(JSON);
+
+            return mcr;
+        }
+
+        private static void PrintImbalance(Dictionary<string, Tuple<double, double, int>> dictImbalances, int printcnt) {
+            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.Item1);
+            int i = 1;
+            var wrt = Console.Out;
+            foreach (var kv in mostimbalance) {
+                wrt.Write("#" + i + ": ");
+                wrt.WriteLine(string.Format(
+                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusivesec",
+                    kv.Key,
+                    kv.Value.Item3,
+                    kv.Value.Item1,
+                    kv.Value.Item2));
+                if (i == printcnt) return;
+                i++;
+            }
+            Console.Out.Flush();
+        }
+
+        /// <summary>
+        /// Prints the methods with the highest Imbalance of runtime over MPI-ranks,
+        /// which reflects load imbalance. Runtime of FuncTraces are taken.
+        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// NOTE: this consideres no idle time within methods!
+        /// </summary>
+        /// <param name="SI"></param>
+        /// <param name="printcnt"></param>
+        public static void PrintTotalImbalance(this ISessionInfo SI, int printcnt = 0) {
+            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling());
+            PrintImbalance(dictImbalances, printcnt);
+        }
+
+        /// <summary>
+        /// Prints the methods with the highest Imbalance within MPI blocking methods,
+        /// which reflects communication delay.
+        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// NOTE: Nonblocking MPI-Methods are not included! Refer to this as a hint rather beeing accurate
+        /// If <see cref="PrintTotalImbalance"/> and this show same tendency, it is likley,
+        /// that <see cref="PrintTotalImbalance"/> is dominated by communication delays.
+        /// </summary>
+        /// <param name="SI"></param>
+        /// <param name="printcnt"></param>
+        public static void PrintMPIImbalance(this ISessionInfo SI, int printcnt = 0) {
+            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling());
+            PrintImbalance(dictImbalances, printcnt);
+        }
+
+        /// <summary>
         /// Reads tabulated text files.
         /// </summary>
         /// <param name="session">

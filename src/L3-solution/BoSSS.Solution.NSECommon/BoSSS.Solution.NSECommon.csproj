@@ -23,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -35,6 +36,7 @@
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <DocumentationFile>bin\Release\BoSSS.Solution.NSECommon.XML</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -57,8 +59,11 @@
     <Compile Include="DivergenceAtIB.cs" />
     <Compile Include="IBMSolverUtils.cs" />
     <Compile Include="ipLaplace.cs" />
+    <Compile Include="MaterialLawMixtureFraction.cs" />
     <Compile Include="NSEOperatorConfiguration.cs" />
+    <Compile Include="NusseltNumber.cs" />
     <Compile Include="PressureFormAtIB.cs" />
+    <Compile Include="ThermodynamicPressureMode.cs" />
     <Compile Include="TimeDerivativeLinearSource.cs" />
     <Compile Include="CoupledLaxFriedrichsScalar.cs" />
     <Compile Include="CoupledLaxFriedrichsVelocity.cs" />

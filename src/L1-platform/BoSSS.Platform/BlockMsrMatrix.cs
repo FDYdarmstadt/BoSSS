@@ -135,7 +135,7 @@ namespace ilPSP.LinSolvers {
     public class BlockMsrMatrix : IMutableMatrixEx {
 
         /*
-        static void Debug.Assert(bool cond) {
+        static void Debug_Assert(bool cond) {
             if(!cond) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
                 string err = $"BlockMsrMatrix rank{rank} error";
@@ -152,7 +152,7 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-        static void Debug.Assert(bool cond, string message) {
+        static void Debug_Assert(bool cond, string message) {
             if(!cond) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
                 string err = $"BlockMsrMatrix rank{rank} error: {message}";
@@ -3725,7 +3725,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// matrix-matrix-multiplication, see <see cref="Multiply"/>.
+        /// matrix-matrix-multiplication, see <see cref="Multiply(BlockMsrMatrix, BlockMsrMatrix)"/>.
         /// </summary>
         static public BlockMsrMatrix operator *(BlockMsrMatrix left, BlockMsrMatrix right) {
             BlockMsrMatrix Res = new BlockMsrMatrix(left._RowPartitioning, right._ColPartitioning);

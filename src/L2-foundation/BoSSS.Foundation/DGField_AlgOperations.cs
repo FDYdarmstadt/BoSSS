@@ -328,6 +328,10 @@ namespace BoSSS.Foundation {
 
             SpatialOperator powOp = new SpatialOperator(args, new string[] { "res" }, QuadOrderFunc.SumOfMaxDegrees());
             powOp.EquationComponents["res"].Add(new AbsSource(args));
+
+            powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat));
+            powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
+
             powOp.Commit();
 
             CoordinateVector coDom = new CoordinateVector(this);
@@ -335,9 +339,7 @@ namespace BoSSS.Foundation {
             var ev = powOp.GetEvaluatorEx(
                 new CoordinateMapping(vec),
                 null,
-                coDom.Mapping,
-                edgeQrCtx: new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
-                volQrCtx: new CellQuadratureScheme(true, em));
+                coDom.Mapping);
 
             ev.Evaluate<CoordinateVector>(alpha, 1.0, coDom); // only sources, no edge integrals required
         }
@@ -432,14 +434,15 @@ namespace BoSSS.Foundation {
                                                         new string[] { "res" },
                                                         QuadOrderFunc.SumOfMaxDegrees());
             powOp.EquationComponents["res"].Add(new PowSource(pow));
+            powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat));
+            powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
+
             powOp.Commit();
 
             CoordinateVector coDom = this.CoordinateVector;
 
             var ev = powOp.GetEvaluatorEx(
-                new CoordinateMapping(f), null, coDom.Mapping,
-                edgeQrCtx: new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
-                volQrCtx: new CellQuadratureScheme(true, em));
+                new CoordinateMapping(f), null, coDom.Mapping);
 
             ev.Evaluate<CoordinateVector>(alpha, 1.0, coDom); // only sources, no edge integrals required
         }
@@ -620,12 +623,12 @@ namespace BoSSS.Foundation {
 
             SpatialOperator src = new SpatialOperator(Dom, Cod, QuadOrderFunc.NonLinear(3));
             src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(Dom, f));
+            src.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.Basis.GridDat));
+            src.VolumeQuadraturSchemeProvider = g => cqs;
             src.Commit();
 
             var ev = src.GetEvaluatorEx(
-                new CoordinateMapping(U), null, this.Mapping,
-                edgeQrCtx: new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
-                volQrCtx: cqs);
+                new CoordinateMapping(U), null, this.Mapping);
 
             ev.Evaluate(alpha, 1.0, this.CoordinateVector);
         }
@@ -706,13 +709,13 @@ namespace BoSSS.Foundation {
             SpatialOperator multOp = new SpatialOperator(new string[] { "a", "b" },
                                                           new string[] { "res" },
                                                           QuadOrderFunc.NonLinear(2));
+            multOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
+            multOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
             multOp.EquationComponents["res"].Add(new MultiplySource());
             multOp.Commit();
 
             var ev = multOp.GetEvaluatorEx(
-                new CoordinateMapping(a, b), null, this.Mapping,
-                edgeQrCtx: new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
-                volQrCtx: new CellQuadratureScheme(true, em));
+                new[] { a, b }, null, this.Mapping);
 
             ev.Evaluate<CoordinateVector>(alpha, 1.0, this.CoordinateVector);
         }
@@ -820,15 +823,16 @@ namespace BoSSS.Foundation {
             SpatialOperator fracOp = new SpatialOperator(new string[] { "a", "b" },
                                                           new string[] { "res" },
                                                           QuadOrderFunc.Linear());
+                                                          //QuadOrderFunc.NonLinear(2));
+            fracOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
+            fracOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, cm);
             fracOp.EquationComponents["res"].Add(new QuotientSource());
             fracOp.Commit();
 
             CoordinateVector coDom = this.CoordinateVector;
 
             var ev = fracOp.GetEvaluatorEx(
-                new CoordinateMapping(a, b), null, coDom.Mapping,
-                edgeQrCtx: new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
-                volQrCtx: new CellQuadratureScheme(true, cm));
+                new CoordinateMapping(a, b), null, coDom.Mapping);
 
             ev.Evaluate<CoordinateVector>(alpha, 1.0, coDom);
         }

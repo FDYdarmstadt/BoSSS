@@ -1,0 +1,3 @@
+4: string path = @"W:\work\scratch\TuID\test_DB";
+5: var tempDB  = OpenOrCreateDatabase(path);
+6: tempDB.Sessions;

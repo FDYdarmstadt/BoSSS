@@ -68,6 +68,7 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2, MatrixShape.full);
             //AdvancedSolverTests.SubBlocking.ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
             AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
+            
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
         }
     }

@@ -590,9 +590,9 @@ namespace BoSSS.Application.IBM_Solver {
                                 {
                                     CoarserLevelSolver = new ClassicMultigrid()
                                     {
-                                        CoarserLevelSolver = new SparseSolver()
+                                        CoarserLevelSolver = new DirectSolver()
                                         {
-                                            WhichSolver = SparseSolver._whichSolver.MUMPS
+                                            WhichSolver = DirectSolver._whichSolver.MUMPS
                                         },
                                     },
                                 },

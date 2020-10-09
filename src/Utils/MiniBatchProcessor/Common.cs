@@ -258,17 +258,20 @@ namespace MiniBatchProcessor {
         /// The jobs id, see <see cref="JobData.ID"/>.
         /// </param>
         /// <returns></returns>
-        public JobStatus GetStatusFromID(int JobId, out int ExitCode) {
+        public (JobStatus stat, int ExitCode) GetStatusFromID(int JobId) {
             using(new FuncTrace()) {
                 UpdateLists();
                 Tuple<JobData, JobStatus> jd = null;
                 lock(padlock_AllJobs) {
+                    if(!m_AllJobs.ContainsKey(JobId)) {
+                        return (JobStatus.Undefined, -1);
+                    }
                     jd = m_AllJobs[JobId];
                 }
 
                 {
                     if(jd.Item1.ID == JobId) {
-                        ExitCode = 0;
+                        int ExitCode = 0;
 
                         if(jd.Item2 == JobStatus.Finished) {
                             try {
@@ -281,7 +284,7 @@ namespace MiniBatchProcessor {
                             }
                         }
 
-                        return jd.Item2;
+                        return (jd.Item2, ExitCode);
                     }
                 }
                 throw new ArgumentException("Unable to find job with id '" + JobId + "'.");

@@ -134,14 +134,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool Continuity;
 
-        /// <summary>
-        /// include heat equation
-        /// </summary>
+        // <summary>
+        // include heat equation
+        // </summary>
         //public bool Heat;
 
-        /// <summary>
-        /// include evaporation
-        /// </summary>
+        // <summary>
+        // include evaporation
+        // </summary>
         //public bool Evaporation;
 
         /// <summary>
@@ -312,7 +312,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool HeatTransport;
 
         /// <summary>
-        /// ujse upwind discreitzation
+        /// use upwind discretization
         /// </summary>
         public bool HeatUpwinding = false;
 
@@ -345,9 +345,5 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool isEvaporation {
             get { return Evaporation; }
         }
-
-        //public override bool isPInterfaceSet {
-        //    get { return Evaporation; }
-        //}
     }
 }

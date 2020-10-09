@@ -7,7 +7,7 @@ restart
 \BoSSSexeSilent
 \BoSSScmd{
 /// This tutorial demostrates the definition, resp. the import of 
-/// data for boundary ans initial values. 
+/// data for boundary and initial values. 
 /// In order to demonstrate the usage, 
 /// we employ the exemplaric Poisson solver.
  }
@@ -140,6 +140,10 @@ c1.AddBoundaryValue(BoundaryType.Dirichlet.ToString(),\newline
 \BoSSSexe
 \BoSSScmd{
 var J1 = c1.RunBatch();
+ }
+\BoSSSexe
+\BoSSScmd{
+LastError;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -356,7 +360,7 @@ NUnit.Framework.Assert.Less(H1err, 1.0e-10, "Check (2) on ForeignGridValue faile
 \BoSSSexe
 \BoSSScmd{
 /// Dummy sessions are kind of fake siolver runs, with the only purpose 
-/// of using them for a restart. 
+/// of using them for a restart.
  }
 \BoSSSexe
 \BoSSScmd{

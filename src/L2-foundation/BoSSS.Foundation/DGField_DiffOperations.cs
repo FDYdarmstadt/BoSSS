@@ -464,18 +464,19 @@ namespace BoSSS.Foundation {
                 throw new ArgumentException("spatial dimension out of range.", "d");
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
+            EdgeMask emEdge = (optionalSubGrid != null) ? optionalSubGrid.AllEdgesMask : null;
+            CellMask emVol = (optionalSubGrid != null) ? optionalSubGrid.VolumeMask : null;
+
             SpatialOperator d_dx = new SpatialOperator(1, 1, QuadOrderFunc.Linear(),"in", "out");
+            d_dx.EdgeQuadraturSchemeProvider = g => new Quadrature.EdgeQuadratureScheme(true, emEdge);
+            d_dx.VolumeQuadraturSchemeProvider = g => new Quadrature.CellQuadratureScheme(true, emVol);
             var flux = CreateDerivativeFlux(d, f.Identification);
             d_dx.EquationComponents["out"].Add(flux);
             d_dx.Commit();
 
-            EdgeMask emEdge = (optionalSubGrid != null) ? optionalSubGrid.AllEdgesMask : null;
-            CellMask emVol = (optionalSubGrid != null) ? optionalSubGrid.VolumeMask : null;
 
             var ev = d_dx.GetEvaluatorEx(
-                new CoordinateMapping(f), null, this.Mapping,
-                edgeQrCtx: new Quadrature.EdgeQuadratureScheme(true, emEdge),
-                volQrCtx: new Quadrature.CellQuadratureScheme(true, emVol));
+                new CoordinateMapping(f), null, this.Mapping);
 
             if(optionalSubGrid != null) {
                 ev.ActivateSubgridBoundary(optionalSubGrid.VolumeMask, bndMode);

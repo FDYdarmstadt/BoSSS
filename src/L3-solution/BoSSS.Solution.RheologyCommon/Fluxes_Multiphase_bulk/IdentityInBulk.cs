@@ -26,13 +26,13 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Initialize identity
         /// </summary>
         public IdentityInBulk(int component, double giesekusfactor, double Weissenberg, double beta, string spcName, SpeciesId spcId) : base(component, giesekusfactor, Weissenberg, beta) {
-            this.validSpeciesId = spcName;
+            this.ValidSpecies = spcName;
         }
         //public IdentityInBulk(int component, string spcName, SpeciesId spcId) : base(component) {
         //    this.validSpeciesId = spcId;
         //}
 
-        public string validSpeciesId { 
+        public string ValidSpecies { 
             get;
             private set;
         }

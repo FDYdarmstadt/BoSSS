@@ -274,11 +274,11 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             {
                 SpatialOperator op = new SpatialOperator(1, 2, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx0", "dPhi_dx1", "cod1");
                 op.EquationComponents["cod1"].Add(new ReinitOperator());
+                op.EdgeQuadraturSchemeProvider = g => (new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(g)));
+                op.VolumeQuadraturSchemeProvider = g => (new CellQuadratureScheme(domain: jCellGrid.VolumeMask));
                 op.Commit();
 
-                evo = op.GetEvaluatorEx(Phi.Mapping.Fields, gradPhi.Mapping.Fields, Phi.Mapping,
-                    edgeQrCtx: (new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(this.GridDat))),
-                    volQrCtx: (new CellQuadratureScheme(domain: jCellGrid.VolumeMask)));
+                evo = op.GetEvaluatorEx(Phi.Mapping.Fields, gradPhi.Mapping.Fields, Phi.Mapping);
                 evo.ActivateSubgridBoundary(jCellGrid.VolumeMask, subGridBoundaryTreatment: SubGridBoundaryModes.InnerEdge);
             }
 

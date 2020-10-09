@@ -75,9 +75,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
-            //Tests.UnitTest.OneTimeTearDown();
-            //return;
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(3, 0.1d, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p3(ViscosityMode.FullySymmetric);
+            //throw new Exception("fuck you ");
 
 
             _Main(args, false, delegate () {
@@ -214,9 +215,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// output of <see cref="AssembleMatrix"/>;
         /// </summary>
         MassMatrixFactory MassFact;
-        
+
         /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// Block scaling of the mass matrix/temporal operator: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
         IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
@@ -370,75 +371,88 @@ namespace BoSSS.Application.XNSE_Solver {
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
 
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-                    int mD = D + 1;
-                    if (this.Control.solveKineticEnergyEquation) {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
-                        mD = D + 2;
-                    }
-                    if (this.Control.solveCoupledHeatEquation) {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1];
-                        if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                            configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1 + D];
-                    }
+                    var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
-                    //if (this.Control.solveCoupledHeatEquation) {
-                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
-                    //    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                    //        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2 + D];
-                    //} else {
-                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-                    //}
+                    /*{
 
-                    // configurations for velocity
-                    for (int d = 0; d < D; d++) {
-                        configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                            VarIndex = new int[] { d }
+                        // configurations for velocity
+                        for(int d = 0; d < D; d++) {
+                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                                DegreeS = new int[] { pVel },// Math.Max(1, pVel - iLevel) },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                                VarIndex = new int[] { d }
+                            };
+                            configsLevel.Add(configVel_d);
+                        }
+                        // configuration for pressure
+                        var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pPrs }, //Math.Max(0, pPrs - iLevel) },
+                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                            VarIndex = new int[] { D }
                         };
-                    }
-                    // configuration for pressure
-                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
-                        VarIndex = new int[] { D }
-                    };
+                        configsLevel.Add(configPres);
+                    } */
                     
+                    
+                    {
+                        // using a Schur complement for velocity & pressure
+                        var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                        for(int d = 0; d < D; d++) {
+                            d.AddToArray(ref confMomConti.VarIndex);
+                            //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                            pVel.AddToArray(ref confMomConti.DegreeS);
+                        }
+                        D.AddToArray(ref confMomConti.VarIndex);
+                        //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pPrs.AddToArray(ref confMomConti.DegreeS);
+
+                        confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                        configsLevel.Add(confMomConti);
+                    }
+                                        
                     if (this.Control.solveKineticEnergyEquation) {
                         int pKinE = this.KineticEnergy.Basis.Degree;
                         // configuration for kinetic energy
-                        configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
+                        var confEnergy = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pKinE }, //Math.Max(1, pKinE - iLevel) },
                             mode = this.Control.KineticEnergyeBlockPrecondMode,
-                            VarIndex = new int[] { D + 1 }
+                            VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.KineticEnergy) }
                         };
+
+                        configsLevel.Add(confEnergy);
                     }
 
                     if (this.Control.solveCoupledHeatEquation) {
 
+                        //VariableNames.Temperature, VariableNames.HeatFluxVector(D)
+
                         int pTemp = this.Temperature.Basis.Degree;
                         // configuration for Temperature
-                        configs[iLevel][mD + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pTemp - iLevel) },
+                        var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
                             mode = this.Control.TemperatureBlockPrecondMode,
-                            VarIndex = new int[] { mD + 1 }
+                            VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.Temperature) }
                         };
+                        configsLevel.Add(confTemp);
 
                         // configuration for auxiliary heat flux
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                             int pFlux = this.HeatFlux[0].Basis.Degree;
                             for (int d = 0; d < D; d++) {
-                                configs[iLevel][mD + 1 + d] = new MultigridOperator.ChangeOfBasisConfig() {
-                                    DegreeS = new int[] { Math.Max(1, pFlux - iLevel) },
+                                var confHeatFlux = new MultigridOperator.ChangeOfBasisConfig() {
+                                    DegreeS = new int[] { pFlux }, // Math.Max(1, pFlux - iLevel) },
                                     mode = MultigridOperator.Mode.Eye,
-                                    VarIndex = new int[] { mD + 1 + d }
+                                    VarIndex = new int[] { this.XNSFE_Operator.Xop.DomainVar.IndexOf(VariableNames.HeatFluxVectorComponent(d)) }
                                 };
+                                configsLevel.Add(confHeatFlux);
                             }
                         }
 
                     }
 
+
+                    configs[iLevel] = configsLevel.ToArray();
                 }
 
 
@@ -485,9 +499,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XOpConfig = new XNSFE_OperatorConfiguration(this.Control);
 
-            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU);
+            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU, this.MassScale);
             updateSolutionParams = new bool[CurrentResidual.Mapping.Fields.Count];
 
+            
+            
             #endregion
 
 
@@ -728,7 +744,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
 
-
+                /* not required anymore; 
                 // ============================
                 // Set Pressure Reference Point
                 // ============================
@@ -748,6 +764,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.LsTrk, OpAffine);
                     }
                 }
+                */
 
                 // transform from RHS to Affine
                 OpAffine.ScaleV(-1.0);
@@ -884,16 +901,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (rksch == null) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(
-                    this.CurrentSolution.Mapping.Fields,
-                    this.CurrentResidual.Mapping.Fields,
+                    this.CurrentSolution.Fields,
+                    XNSFE_Operator.Xop.InvokeParameterFactory(this.CurrentSolution.Fields),
+                    this.CurrentResidual.Fields,
                     LsTrk,
                     true,
-                    DelComputeOperatorMatrix, null, DelUpdateLevelSet,
+                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop, DelUpdateLevelSet,
                     (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                     this.Control.Timestepper_LevelSetHandling,
                     this.XOpConfig.mmsd,
                     (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
                     this.MultigridOperatorConfig, base.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
                     this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
@@ -923,7 +940,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                                 NoOfPartsPerProcess = this.CurrentSolution.Count / 10000,
                                             },
                                             Overlap = 1,
-                                            CoarseSolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }
+                                            CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS }
                                         };
                 } else {
                     //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
@@ -970,7 +987,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
                 this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
 
-                this.LsTrk.UpdateTracker(incremental: true);
+                this.LsTrk.UpdateTracker(Time, incremental: true);
 
                 // solution
                 // --------
@@ -1240,6 +1257,9 @@ namespace BoSSS.Application.XNSE_Solver {
 #endif
 
                 Console.WriteLine("done.");
+#if TEST
+                WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+#endif
                 return dt;
             }
         }
@@ -1261,7 +1281,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // delegate for the initialization of previous timesteps from an analytic solution
                     BDFDelayedInitSetIntial);
             }
-
+            
             After_SetInitialOrLoadRestart(0.0, 0);
 
         }
@@ -1415,14 +1435,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 EnergyLogger.Close();
         }
 
-        #endregion
+#endregion
 
 
 
         //==========================
         // adaptive mesh refinement
         //==========================
-        #region AMR
+#region AMR
 
         CellMask NScm;
 
@@ -1650,16 +1670,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-
-                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, BlockedCells);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
-                    int[] glb = (new int[] {
-
-                    CellsToRefineList.Count,
-                    Coarsening.Sum(L => L.Length),
-                }).MPISum();
+                    if (AnyChange.MPIOr()) {
+                    int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length)}).MPISum();                        
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
@@ -1667,8 +1683,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // Update Grid
                     // ===========
-
-                    if(AnyChange) {
+                    if (AnyChange.MPIOr()) {
 
                         //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 1 }), 2);
 
@@ -1703,14 +1718,14 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        #endregion
+#endregion
 
 
 
         //===========================
         // I/O (saving and plotting)
         //===========================
-        #region IO
+#region IO
 
 
         /// <summary>
@@ -1863,6 +1878,9 @@ namespace BoSSS.Application.XNSE_Solver {
             return tsi;
         }
 
+        private void WriteTrendToDatabase(ConvergenceObserver CO) {
+            CO.WriteTrendToSession(base.DatabaseDriver.FsDriver, this.CurrentSessionInfo);
+        }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
             Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
@@ -1874,7 +1892,7 @@ namespace BoSSS.Application.XNSE_Solver {
             PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, iterIndex }), 2);
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis

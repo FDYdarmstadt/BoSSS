@@ -49,6 +49,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+
             _Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -132,7 +133,8 @@ namespace BoSSS.Application.IBM_Solver {
                 int D = this.GridData.SpatialDimension;
 
                 double[] _rho = new double[D + 1];
-                _rho.SetAll(rho);
+                if (!this.Control.IsStationary)
+                    _rho.SetAll(rho);
                 //No MassMatrix for the pressure
                 _rho[D] = 0;
 
@@ -282,12 +284,29 @@ namespace BoSSS.Application.IBM_Solver {
                     (A, B, C) => this.HMForder, 
                     FluidSpecies.Select(sId => LsTrk.GetSpeciesName(sId)));
 
+                IBM_Op.FreeMeanValue[VariableNames.Pressure] = !this.boundaryCondMap.DirichletPressureBoundary;
+
 
                 // Momentum equation
                 // =================
                 AddBulkEquationComponentsToIBMOp(IBM_Op_config, CodName);
                 AddInterfaceEquationComponentsToIBMOp(IBM_Op_config, CodName);
-                
+
+                // temporal operator
+                // =================
+
+                {
+                    var tempOp = new ConstantXTemporalOperator(IBM_Op, 0.0);
+                    foreach (var kv in this.MassScale) {
+                        tempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
+                    }
+                    IBM_Op.TemporalOperator = tempOp;
+
+                }
+
+
+                // Finalize
+                // ========
                 IBM_Op.Commit();
 
 
@@ -346,17 +365,17 @@ namespace BoSSS.Application.IBM_Solver {
 
             XdgBDFTimestepping m_BDF_Timestepper = new XdgBDFTimestepping(
                 Unknowns,
+                this.IBM_Op.InvokeParameterFactory(Unknowns),
                 Residual,
                 LsTrk,
                 true,
                 DelComputeOperatorMatrix,
-                null,
+                this.IBM_Op,
                 DelUpdateLevelset,
                 bdfOrder,
                 lsh,
                 MassMatrixShapeandDependence.IsTimeDependent,
                 SpatialOp,
-                MassScale,
                 this.MultigridOperatorConfig,
                 base.MultigridSequence,
                 this.FluidSpecies,
@@ -369,7 +388,6 @@ namespace BoSSS.Application.IBM_Solver {
                 m_ResLogger = base.ResLogger,
                 m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(
                     f => f.Identification), this.ResidualContinuity.Identification),
-                SessionPath = SessionPath,
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
             };
             return m_BDF_Timestepper;
@@ -572,7 +590,7 @@ namespace BoSSS.Application.IBM_Solver {
                 ParameterUpdate(CurrentState, Params);
                 var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping);
                 mtxBuilder.time = phystime;
-                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using finite difference Jacobi:
@@ -619,7 +637,7 @@ namespace BoSSS.Application.IBM_Solver {
                 ParameterUpdate(CurrentState, Params);
                 var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping);
                 eval.time = phystime;
-                eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                eval.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
 
@@ -633,7 +651,7 @@ namespace BoSSS.Application.IBM_Solver {
             OpAffine.CheckForNanOrInfV();
 
 
-
+            /*
             // Set Pressure Reference Point
             if (!this.boundaryCondMap.DirichletPressureBoundary) {
                 if (OpMatrix != null) {
@@ -651,6 +669,7 @@ namespace BoSSS.Application.IBM_Solver {
                         OpAffine);
                 }
             }
+            */
         }
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
@@ -688,8 +707,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 
-                m_BDF_Timestepper.Solve(phystime, dt); 
-                
+                m_BDF_Timestepper.Solve(phystime, dt);
+
 
                 // Residual();
                 this.ResLogger.NextTimestep(false);
@@ -960,7 +979,16 @@ namespace BoSSS.Application.IBM_Solver {
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
+                LsTrk.UpdateTracker(0.0);
+
             }
+            
+            /*
+            PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
+                LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
+                false);
+            LsTrk.UpdateTracker(0.0);
+            */
 
 
             // =======================OUTPUT FOR GMRES=====================================
@@ -983,7 +1011,7 @@ namespace BoSSS.Application.IBM_Solver {
             //}
 
             CreateEquationsAndSolvers(null);
-            After_SetInitialOrLoadRestart();
+            After_SetInitialOrLoadRestart(0.0);
             m_BDF_Timestepper.SingleInit();
         }
 
@@ -1011,7 +1039,7 @@ namespace BoSSS.Application.IBM_Solver {
             this.DGLevSet.Current.Clear();
             this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
 
-            this.LsTrk.UpdateTracker(incremental: true);
+            this.LsTrk.UpdateTracker(time, incremental: true);
 
             // solution
             // --------
@@ -1023,7 +1051,7 @@ namespace BoSSS.Application.IBM_Solver {
             St[D] = this.Pressure.CloneAs();
         }
 
-        private void After_SetInitialOrLoadRestart() {
+        private void After_SetInitialOrLoadRestart(double time) {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
                 
@@ -1034,7 +1062,7 @@ namespace BoSSS.Application.IBM_Solver {
              
                 
                 // we push the current state of the level-set, so we have an initial value
-                this.LsTrk.UpdateTracker();
+                this.LsTrk.UpdateTracker(time);
                 this.DGLevSet.IncreaseHistoryLength(1);
                 this.LsTrk.PushStacks();
                 this.DGLevSet.Push();
@@ -1043,7 +1071,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         /// <summary>
-        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true
+        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true. Note that this is not necessary if the order of the level-set function of the particles is equal to the polynomial DG order.
         /// </summary>
         protected void PerformLevelSetSmoothing(CellMask domain, CellMask NegMask, bool SetFarField) {
 
@@ -1101,10 +1129,10 @@ namespace BoSSS.Application.IBM_Solver {
                         BDFDelayedInitLoadRestart);
                 }
 
-                After_SetInitialOrLoadRestart();
+                After_SetInitialOrLoadRestart(Time);
             } else {
                 if (m_BDF_Timestepper != null) {
-                    After_SetInitialOrLoadRestart();
+                    After_SetInitialOrLoadRestart(Time);
                     m_BDF_Timestepper.SingleInit();
                 }
             }
@@ -1139,14 +1167,14 @@ namespace BoSSS.Application.IBM_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                            DegreeS = new int[] { Math.Max(1, pVel) },//DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        DegreeS = new int[] { Math.Max(0, pPrs) },//DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };
@@ -1398,7 +1426,8 @@ namespace BoSSS.Application.IBM_Solver {
                 //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
                 // Only CutCells are NoCoarseningCells 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)(this.GridData), CutCells);
+                bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {

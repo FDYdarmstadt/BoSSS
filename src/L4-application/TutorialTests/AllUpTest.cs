@@ -77,21 +77,21 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
-        [Test]
+        //[Test]
         static public void Run__BoundaryAndInitialData() {
             RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
-        [Test]
+        //[Test]
         static public void Run__MetaJobManager() {
             RunWorksheet("MetaJobManager/MetaJobManager.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
-        [Test]
+        //[Test]
         static public void Run__GridGeneration() {
             RunWorksheet("GridGeneration/GridGeneration.tex");
         }
@@ -168,7 +168,7 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
-        [Test]
+        //[Test]
         static public void Run__convStudy() {
             RunWorksheet("convergenceStudyTutorial/convStudy.tex");
         }
@@ -192,15 +192,17 @@ namespace BoSSS.Application.TutorialTests {
             // start the minibatchprocessor which is used internally
             bool iStartedThisShit = OneTimeSetUp();
 
-            // run test:
-            int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
+            try {
+                // run test:
+                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
 
-            Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
-            Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
-            Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
-
-            // shutting down the local mini batch processor:
-            OneTimeTearDown(iStartedThisShit);
+                Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
+                Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
+                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
+            } finally {
+                // shutting down the local mini batch processor:
+                OneTimeTearDown(iStartedThisShit);
+            }
         }
 
 

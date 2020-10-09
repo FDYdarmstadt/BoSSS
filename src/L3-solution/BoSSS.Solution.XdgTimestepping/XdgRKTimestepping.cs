@@ -38,6 +38,9 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     public class XdgRKTimestepping : XdgTimesteppingBase {
 
+        /// <summary>
+        /// The specifically used Runge-Kutta scheme
+        /// </summary>
         public RungeKuttaScheme m_RKscheme {
             get;
             private set;
@@ -51,13 +54,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="LsTrk"></param>
         /// <param name="_ComputeOperatorMatrix">See <see cref="ComputeOperatorMatrix"/>.</param>
         /// <param name="_UpdateLevelset">See <see cref="UpdateLevelset"/>.</param>
-        /// <param name="BDForder">
-        /// The order of the BDF scheme from 1 to 6; in addition, 0 encodes Explicit Euler and -1 encodes Crank-Nicolson.
-        /// </param>
         /// <param name="_LevelSetHandling"></param>
         /// <param name="_MassMatrixShapeandDependence"></param>
         /// <param name="_SpatialOperatorType"></param>
-        /// <param name="_MassScale"></param>
         /// <param name="_AgglomerationThreshold"></param>
         /// <param name="_RKscheme"></param>
         /// <param name="useX">
@@ -69,16 +68,21 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="_MultigridOperatorConfig">
         /// Configuration of block-preconditioner, if null a default value is chosen.
         /// </param>
+        /// <param name="abstractOperator"></param>
+        /// <param name="linearconfig"></param>
+        /// <param name="nonlinconfig"></param>
+        /// <param name="__Parameters"></param>
         public XdgRKTimestepping(DGField[] Fields,
+            IEnumerable<DGField> __Parameters,
             DGField[] IterationResiduals,
             LevelSetTracker LsTrk,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
+            ISpatialOperator abstractOperator,
             DelUpdateLevelset _UpdateLevelset,
             RungeKuttaScheme _RKscheme,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             SpatialOperatorType _SpatialOperatorType,
-            IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
@@ -97,11 +101,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ArgumentException(string.Format("Mismatch between {0}-th basis of fields and residuals.", iFld));
             }
 
-            if (_MassScale != null) {
-                if (!IEnumerableExtensions.SetEquals(_SpId, _MassScale.Keys))
-                    throw new ArgumentException();
-            }
-
             base.Residuals = new CoordinateVector(IterationResiduals);
 
             if (!(_RKscheme.IsExplicit || _RKscheme.IsDiagonallyImplicit)) {
@@ -114,12 +113,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.Config_SpatialOperatorType = _SpatialOperatorType;
             base.ComputeOperatorMatrix = _ComputeOperatorMatrix;
             base.UpdateLevelset = _UpdateLevelset;
-            base.Config_MassScale = _MassScale;
+            base.AbstractOperator = abstractOperator;
             base.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.m_RKscheme = _RKscheme.CloneAs();
             base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
+            base.CurrentParameters = __Parameters.ToArray();
             if (_MultigridSequence == null || _MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
@@ -338,7 +338,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     int NF = this.CurrentStateMapping.Fields.Count;
                     //MassFact.AccMassMatrix(ScaledMassMatrix, CurrentStateMapping, _alpha: Config_MassScale);
-                    base.ComputeMassMatrixImpl(ScaledMassMatrix, time);
+                    base.ComputeMassMatrixImpl(ScaledMassMatrix, m_LsTrk.RegionsHistory.Current.Time); // we need a better concept here
                 } else {
                     throw new NotSupportedException();
                 }
@@ -346,10 +346,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         bool OneTimeMgInit = false;
-
-        //public Action<double[]> ChangeRate;
-        //public Action<double[]> BeforeBlockSol;
-        //public Action<double[]> AfterBlockSol;
 
         /// <summary>
         /// Performs one timestep, on the DG fields in <see cref="XdgTimesteppingBase.CurrentStateMapping"/>.
@@ -420,18 +416,15 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // init mass matrix & cut-cell metrics 
             BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[performSplitting ? 1 : 2];
-            //m_AllCCM.Clear();
             m_RequiredTimeLevels = 0;
             m_LsTrk.PushStacks();
+            
             this.UpdateAgglom(false);
             base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
             BlockMsrMatrix PM, SM;
             UpdateMassMatrix(out PM, out SM, phystime);
             MassMatrix[0] = SM;
             m_PrecondMassMatrix = PM;
-
-
-            //SM.SaveToTextFileSparse("massMatrix.txt");
 
             // initial value
             CoordinateVector u0 = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
@@ -457,9 +450,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ===========================================
 
             if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
-                // remember which old cells had values
-                //var oldCCM = this.UpdateCutCellMetrics();
-
                 // evolve the level set
                 m_LsTrk.PushStacks();
 
@@ -476,8 +466,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
 
                 // in the case of splitting, the fields must be extrapolated 
-                //var newCCM = this.UpdateCutCellMetrics();
-                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
                 Debug.Assert(m_LsTrk.HistoryLength >= 1);
                 var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                     __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
@@ -568,13 +556,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // build the saddle-point matrix
                 BlockMsrMatrix System, MaMa;
                 double[] RHS;
-                this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true);
+                this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
                 RHS.ScaleV(-1);
 
                 // update the multigrid operator
                 MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
                     System, MaMa,
-                    this.Config_MultigridOperator);
+                    this.Config_MultigridOperator,
+                    opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
 
                 // init linear solver
                 linearSolver.Init(mgOperator);
@@ -591,8 +580,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ================
             m_ImplStParams = null;
         }
-
-        BlockMsrMatrix m_PrecondMassMatrix;
 
         ImplicitStage_AssiParams m_ImplStParams = null;
 
@@ -615,8 +602,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Matrix/Affine assembly in the case of an implicit RK stage.
         /// </summary>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization) {
+        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
 
+            abstractOp = base.AbstractOperator;
             if (Linearization == false)
                 throw new NotImplementedException("todo");
 
@@ -793,18 +781,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(k[i] != null);
             }
 
-
             int Ndof = CurrentStateMapping.LocalLength;
             BlockMsrMatrix System;
             double[] RHS = new double[Ndof];
-
 
             if (RelTime > 0) {
                 //
                 // some ordinary stage above stage 0
                 //
 
-                if (base.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative
+                if(base.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative
                      || base.Config_LevelSetHandling == LevelSetHandling.Coupled_Once) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Moving interface, RK stage 'i':
@@ -814,7 +800,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                     // move level-set:
-                    if (Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
+                    if(Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
 
                         this.m_LsTrk.PushStacks();
                         this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, IterUnderrelax, Mass, k);
@@ -829,7 +815,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var Ms = Mass[1];
 
                     // left-hand-side
-                    if (Ms != null) {
+                    if(Ms != null) {
                         System = Ms.CloneAs();
                         System.Scale(1.0 / dt);
                     } else {
@@ -838,18 +824,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     // right-hand-side
-                    if (M0 != null) {
+                    if(M0 != null) {
                         M0.SpMV(1.0 / dt, u0, 0.0, RHS);
                     } else {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         RHS.SetV(u0, 1.0 / dt);
                     }
-                    for (int l = 0; l < s; l++) {
-                        if (RK_as[l] != 0.0)
+                    for(int l = 0; l < s; l++) {
+                        if(RK_as[l] != 0.0)
                             RHS.AccV(-RK_as[l], k[l]);
                     }
 
-                } else if (base.Config_LevelSetHandling == LevelSetHandling.LieSplitting
+                } else if(base.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                      || base.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
                      || base.Config_LevelSetHandling == LevelSetHandling.None) {
 
@@ -863,29 +849,26 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var Ms = Mass[0];
 
                     // left-hand-side
-                    if (Ms != null) {
+                    if(Ms != null) {
                         System = Ms.CloneAs();
                         System.Scale(1.0 / dt);
-                        
+
                     } else {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         System = null;
                     }
 
                     // right-hand-side
-                    if (Ms != null) {
+                    if(Ms != null) {
                         Ms.SpMV(1.0 / dt, u0, 0.0, RHS);
                     } else {
                         Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                         RHS.SetV(u0, 1.0 / dt);
                     }
-                    for (int l = 0; l < s; l++) {
-                        if(RK_as[l] != 0.0) {
-                            Debug.Assert(l == 0);
+                    for(int l = 0; l < s; l++) {
+                        if(RK_as[l] != 0.0)
                             RHS.AccV(-RK_as[l], k[l]);
-                        }
                     }
-
                 } else {
                     throw new NotImplementedException();
                 }
@@ -903,7 +886,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, this.CurrentStateMapping, this.CurrentStateMapping);
                     BlockSol(System, m_CurrentState, RHS);
-                    //m_CurrentAgglomeration.PlotAgglomerationPairs($"agglo.{m_CurrentState.Mapping.MpiRank + 1}of{this.CurrentStateMapping.MpiSize}");
                     m_CurrentAgglomeration.Extrapolate(this.CurrentStateMapping);
                 } else {
                     // system is diagonal: 1/dt
@@ -922,12 +904,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         protected virtual void UpdateChangeRate(double PhysTime, double[] k) {
 
-            BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
+            //BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
-            base.ComputeOperatorMatrix(OpMtx, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
+            base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
 
             k.SetV(OpAff);
-            OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
+            //OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
         }
 
         void BlockSol<V1, V2>(BlockMsrMatrix M, V1 X, V2 B)

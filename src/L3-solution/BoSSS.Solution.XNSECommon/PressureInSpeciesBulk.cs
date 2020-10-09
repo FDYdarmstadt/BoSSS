@@ -42,10 +42,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             this.m_bcMap = bcMap;
             //this.m_spcName = spcName;
             this.m_spcId = spcId;
-            validSpeciesId = spcName;
+            ValidSpecies = spcName;
         }
 
-        public string validSpeciesId {
+        public string ValidSpecies {
             get;
             private set;
         }

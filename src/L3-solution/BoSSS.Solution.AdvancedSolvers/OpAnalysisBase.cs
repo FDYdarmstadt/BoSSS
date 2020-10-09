@@ -27,8 +27,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Constructor for DG solvers
         /// </summary>
-        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig) 
-            : this(null, Mtx, RHS, Mapping, null, null, OpConfig) //
+        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, ISpatialOperator abstractOperator) 
+            : this(null, Mtx, RHS, Mapping, null, null, OpConfig, abstractOperator) //
         {
 
         }
@@ -37,7 +37,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Constructor for XDG solvers
         /// </summary>
-        public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig) {
+        public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, ISpatialOperator abstractOperator) {
 
 
             int RHSlen = Mapping.TotalLength;
@@ -61,7 +61,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             m_MultigridOp = new MultigridOperator(XAggB, Mapping,
                 m_OpMtx,
                 _mass,
-                OpConfig);
+                OpConfig,
+                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
         }
 
 

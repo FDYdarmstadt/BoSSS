@@ -1,0 +1,52 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+ExecutionQueues;
+**************
+List of 1 instances of BatchProcessorClient {
+  0: SlurmClient: TuID@host, Slurm account: project12345
+}
+==============
+var myBatch = (SlurmClient)ExecutionQueues[0];
+**************
+==============
+string path = @"W:\work\scratch\TuID\test_DB";
+var tempDB  = OpenOrCreateDatabase(path);
+tempDB.Sessions;
+**************
+Opening existing database 'W:\work\scratch\TuID\test_DB'.
+
+==============
+using BoSSS.Application.SipPoisson;
+**************
+==============
+var ctrl         = new SipControl();
+ctrl.savetodb    = true;
+ctrl.SessionName = "SIP_test";
+ctrl.AlternateDbPaths = new[]{
+        new ValueTuple<string,string>(@"/work/scratch/TuID/test_DB", ""),
+        new ValueTuple<string,string>(@"W:\work\scratch\TuID\test_DB", "")
+    };
+**************
+==============
+var aJob = new Job(ctrl.SessionName, typeof(SipPoissonMain));
+aJob.SetControlObject(ctrl);
+((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project12345";
+aJob.NumberOfMPIProcs         = 2;
+aJob.ExecutionTime            = "01:00:00";
+aJob.HHLR_project             = "project12345";
+aJob.MemPerCPU                = "5000";
+aJob.UseComputeNodesExclusive = true;
+aJob.Activate(myBatch);
+**************
+==============

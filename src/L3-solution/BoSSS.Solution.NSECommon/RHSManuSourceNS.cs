@@ -37,9 +37,10 @@ namespace BoSSS.Solution.NSECommon {
         double Reynolds;
         double Froude;
         PhysicsMode physMode;
-        double phystime;
+        //double phystime;
         bool rhoOne;
         public Func<double[], double, double> SourceTerm;
+        
         /// <summary>
         /// <param name="Reynolds"></param>
         /// <param name="Froude"></param>

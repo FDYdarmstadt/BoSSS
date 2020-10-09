@@ -426,6 +426,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //double[] SurfaceNormal = (new double[] { -inp.Xglobal[0], -inp.Xglobal[1] }).Normalize();
             double NX = SurfaceNormal[0];
             double NY = SurfaceNormal[1];
+            Debug.Assert(!NX.IsNaNorInf(), "Surface normal x NAN or INf");
+            Debug.Assert(!NY.IsNaNorInf(), "Surface normal y NAN or INf");
 
             switch (m_comp) {
                 case 0:
