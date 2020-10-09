@@ -120,8 +120,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     // coarsest level
-                    PrecondS[PrecondS.Length - 1] = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    PrecondS[PrecondS.Length - 1] = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
 

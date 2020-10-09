@@ -432,12 +432,6 @@ namespace BoSSS.Solution.XdgTimestepping {
          where T : AppControlSolver, new() {
 
 
-        ///// <summary>
-        ///// Block scaling of the mass matrix: for each codomain variable (row) in the spatial operator, 
-        ///// a single number..
-        ///// </summary>
-        //abstract protected IEnumerable<double> GetMassScale(int D);
-
         /// <summary>
         /// initialization of the main spatial operator
         /// </summary>

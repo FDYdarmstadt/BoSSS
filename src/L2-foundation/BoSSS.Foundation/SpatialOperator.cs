@@ -81,9 +81,9 @@ namespace BoSSS.Foundation {
     public class SpatialOperator : ISpatialOperator {
 
         /// <summary>
-        /// <see cref="ISpatialOperator.SolverStepValidation"/>
+        /// <see cref="ISpatialOperator.SolverSafeguard"/>
         /// </summary>
-        public SolverStepValidation SolverStepValidation {
+        public SolverSafeguard SolverSafeguard {
             get;
             set;
         }
