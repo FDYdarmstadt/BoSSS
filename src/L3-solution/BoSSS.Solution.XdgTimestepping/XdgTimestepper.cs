@@ -263,57 +263,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-        /*
-        /// <summary>
-        /// Legacy-Constructor for user-specified <see cref="DelComputeOperatorMatrix"/>
-        /// </summary>
-        public XdgTimestepping(
-            DelComputeOperatorMatrix userComputeOperatorMatrix,
-            IEnumerable<DGField> Fields,
-            IEnumerable<DGField> IterationResiduals,
-            TimeSteppingScheme __Scheme,
-            DelUpdateLevelset _UpdateLevelset,
-            LevelSetHandling _LevelSetHandling,
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
-            double _AgglomerationThreshold,
-            LinearSolverConfig LinearSolver, NonLinearSolverConfig NonLinearSolver) //
-        {
-            this.Scheme = __Scheme;
-            this.XdgOperator = op;
-
-            this.Parameters = op.InvokeParameterFactory(Fields);
-
-
-            foreach (var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
-                if (f != null && f is XDGField xf) {
-                    if (LsTrk == null) {
-                        LsTrk = xf.Basis.Tracker;
-                    } else {
-                        if (!object.ReferenceEquals(LsTrk, xf.Basis.Tracker))
-                            throw new ArgumentException();
-                    }
-                }
-            }
-            if (LsTrk == null)
-                throw new ArgumentException("unable to get Level Set Tracker reference");
-
-            bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
-
-            ConstructorCommon(op, UseX,
-                Fields, this.Parameters, IterationResiduals,
-                myDelComputeXOperatorMatrix,
-                _UpdateLevelset,
-                _LevelSetHandling,
-                _MultigridOperatorConfig,
-                _MultigridSequence,
-                _AgglomerationThreshold,
-                LinearSolver, NonLinearSolver);
-
-        }
-        */
-
-
         private void ConstructorCommon(
             ISpatialOperator op, bool UseX, 
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
@@ -470,7 +419,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             this.Parameters = op.InvokeParameterFactory(Fields);
 
-            var spc = CreateDummyTracker(Fields);
+            var spc = CreateDummyTracker(Fields.First().GridDat);
                        
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
@@ -483,8 +432,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                 LinearSolver, NonLinearSolver);
         }
 
-        private SpeciesId CreateDummyTracker(IEnumerable<DGField> Fields) {
-            var gDat = Fields.First().GridDat as GridData;
+        /// <summary>
+        /// some hack to help with load balancing
+        /// </summary>
+        internal void RecreateDummyTracker(IGridData newMesh) {
+            CreateDummyTracker(newMesh);
+        }
+
+        private SpeciesId CreateDummyTracker(IGridData _gDat) {
+            var gDat = (GridData) _gDat;
             var DummyLevSet = new LevelSet(new Basis(gDat, 1), "DummyPhi");
             DummyLevSet.AccConstant(-1.0);
             LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new[] { "A", "B" }, DummyLevSet);
@@ -711,11 +667,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence) //
         {
-            if(LsTrk != null) {
-                this.LsTrk = LsTrk;
-            } else {
-                CreateDummyTracker(Fields);
-            }
+            var gDat = Fields.First().GridDat;
+            if(!object.ReferenceEquals(LsTrk.GridDat, gDat))
+                throw new ApplicationException();
             
             Parameters = this.Operator.InvokeParameterFactory(Fields);
             
