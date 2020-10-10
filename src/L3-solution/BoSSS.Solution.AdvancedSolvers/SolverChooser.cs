@@ -1475,19 +1475,7 @@ namespace BoSSS.Solution {
                         AssignXdGCellsToLowBlocks = true,
                     }; 
                     
-                    /*
-                    var smoother2 = new Schwarz() {
-                        FixedNoOfIterations = 1,
-                        CoarseSolver = null,
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                        },
-                        Overlap = 0, 
-                        EnableOverlapScaling = true,
-                        UsePMGinBlocks = true,
-                        AssignXdGCellsToLowBlocks = true
-                    };
-                    */
+                    
                     if (iLevel == 0) SetQuery("XdgCellsToLowBlock", ((Schwarz)smoother1).AssignXdGCellsToLowBlocks ? 1 : 0, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {

@@ -2399,21 +2399,22 @@ namespace BoSSS.Solution {
                         //    }
                         //}
 
-                        //set dg co�rdinates
+                        //set dg coordinates
                         foreach (var f in m_RegisteredFields) {
                             if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            if (f.Identification == "Phi")
-                                continue;
+                            if(f.Identification == "Phi")
+                                throw new ApplicationException("ask Smuda why he did this");
+                                //continue;
                             //f.Clear();
 
                             remshDat.RestoreDGField(f);
                         }
 
-                        // re-create solvers, blablabla
+                        // re-create solvers, etc.
                         CreateEquationsAndSolvers(remshDat);
                     }
                 } //end of adapt mesh branch

@@ -611,58 +611,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
                     }
 #endif
-                    if(this.CoarserLevelSolver != null) {
 
-                        double[] vl = new double[L];
-                        if(CoarseOnLovwerLevel) {
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            // coarse grid solver defined on COARSER MESH LEVEL:
-                            // this solver must perform restriction and prolongation
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    for(int i = 0; i < m_omega; i++) {
+                        if(this.CoarserLevelSolver != null) {
 
-                            // restriction of residual
-                            this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
+                            double[] vl = new double[L];
+                            if(CoarseOnLovwerLevel) {
+                                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // coarse grid solver defined on COARSER MESH LEVEL:
+                                // this solver must perform restriction and prolongation
+                                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                            // Berechnung der Grobgitterkorrektur
-                            double[] vlc = new double[Lc];
-                            for(int i = 0; i < m_omega; i++)
+                                // restriction of residual
+                                this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
+
+                                // Berechnung der Grobgitterkorrektur
+                                double[] vlc = new double[Lc];
                                 this.CoarserLevelSolver.Solve(vlc, rlc);
 
-                            // Prolongation der Grobgitterkorrektur
-                            this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+                                // Prolongation der Grobgitterkorrektur
+                                this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
 
 
-                        } else {
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            // coarse grid solver defined on the SAME MESH LEVEL:
-                            // performs (probabaly) its own restriction/prolongation
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            } else {
+                                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // coarse grid solver defined on the SAME MESH LEVEL:
+                                // performs (probabaly) its own restriction/prolongation
+                                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                            // Berechnung der Grobgitterkorrektur
-                            this.CoarserLevelSolver.Solve(vl, rl);
-                        }
+                                // Berechnung der Grobgitterkorrektur
+                                this.CoarserLevelSolver.Solve(vl, rl);
+                            }
 
 
-                        // record correction for Debug-Plotting 
-                        if(Corr != null)
-                            Corr.SetV(vl);
+                            // record correction for Debug-Plotting 
+                            if(Corr != null)
+                                Corr.SetV(vl);
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref vl);
-                        if(Xprev != null) // debug-plotting
-                            Xprev.SetV(X);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if(this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis) {
-                            Resample(iIter, X, this.m_MgOperator, "cgc");
-                        }
+                            // orthonormalization and residual minimization
+                            AddSol(ref vl);
+                            if(Xprev != null) // debug-plotting
+                                Xprev.SetV(X);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                            if(this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis) {
+                                Resample(iIter, X, this.m_MgOperator, "cgc");
+                            }
 
-                        // check termination:
-                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                            Converged = true;
-                            break;
+                            // check termination:
+                            if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                                Converged = true;
+                                break;
+                            }
                         }
                     }
-
                     PlottyMcPlot(rl, X, Xprev, Corr, B);
                     
                     // post-smoother
