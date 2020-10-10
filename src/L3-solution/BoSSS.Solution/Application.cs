@@ -2407,8 +2407,8 @@ namespace BoSSS.Solution {
                                     throw new ApplicationException();
                             }
                             if(f.Identification == "Phi")
-                                throw new ApplicationException("ask Smuda why he did this");
-                                //continue;
+                                //throw new ApplicationException("ask Smuda why he did this");
+                                continue;
                             //f.Clear();
 
                             remshDat.RestoreDGField(f);
