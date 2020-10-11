@@ -112,7 +112,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             CreateAdditionalFields();
 
 
-            LsTrk = null;
+
         }
 
         /// <summary>

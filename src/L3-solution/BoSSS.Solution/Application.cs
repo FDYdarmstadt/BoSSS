@@ -2237,6 +2237,7 @@ namespace BoSSS.Solution {
                     // release old DG fields
                     this.m_RegisteredFields.Clear();
                     this.m_IOFields.Clear();
+                    this.LsTrk = null;
 
                     // re-create fields
                     if (this.Control != null) {
@@ -2346,6 +2347,7 @@ namespace BoSSS.Solution {
                             if (this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
                             }
+                            LsTrk = null;
                             oldGridData = null;
 
                             if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
