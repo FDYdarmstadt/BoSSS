@@ -670,6 +670,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             var gDat = Fields.First().GridDat;
             if(!object.ReferenceEquals(LsTrk.GridDat, gDat))
                 throw new ApplicationException();
+            if(LsTrk != null)
+                this.LsTrk = LsTrk;
             
             Parameters = this.Operator.InvokeParameterFactory(Fields);
             
