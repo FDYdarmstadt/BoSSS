@@ -177,7 +177,7 @@ namespace BoSSS.Solution {
     /// <summary>
     /// Base class for BoSSS applications that helps with the organization of
     /// the general work-flow and offers a simple control file handling. The
-    /// standard mode of execution is defined by <see cref="RunSolverMode"/>. 
+    /// standard mode of execution is defined by <see cref="RunSolverMode"/>.
     /// The <see cref="_Main"/> method
     /// offers a convenient way to start a BoSSS application with minimal
     /// effort.
@@ -286,7 +286,7 @@ namespace BoSSS.Solution {
         /// </param>
         /// <returns>
         /// Whether this call actually initialized MPI
-        /// - true, if this routine actually called <see cref="IMPIdriver.Init"/>; then, the call should be 
+        /// - true, if this routine actually called <see cref="IMPIdriver.Init"/>; then, the call should be
         ///   an other call to <see cref="FinalizeMPI"/>.
         /// - false, if not.
         /// </returns>
@@ -580,7 +580,7 @@ namespace BoSSS.Solution {
 
             if (ControlFilePath.ToLower().StartsWith("cs:")) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // C#-instruction provided as argument 
+                // C#-instruction provided as argument
                 // usually redicts to some pre-compiled static function
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -630,7 +630,7 @@ namespace BoSSS.Solution {
                 //} else if (controlObj is IEnumerable<T>) {
                 //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
 
-                //} 
+                //}
 
                 if (ctrlV2 == null) {
                     throw new ApplicationException(string.Format(
@@ -746,7 +746,7 @@ namespace BoSSS.Solution {
                     app.RunSolverMode();
                 }
             } else {
-                // no control file 
+                // no control file
 
 
                 throw new ArgumentException();
@@ -1283,7 +1283,7 @@ namespace BoSSS.Solution {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
-                CreateFields(); // full user control                
+                CreateFields(); // full user control
 
                 // load queries from control file
                 //========================
@@ -1547,7 +1547,7 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// see <see cref="IOFields"/>
-        /// </summary>        
+        /// </summary>
         protected ICollection<DGField> m_IOFields = new List<DGField>();
 
         /// <summary>
@@ -1578,7 +1578,7 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// If data logging is turned on, saves all fields in
-        /// <see cref="m_IOFields"/> to the database 
+        /// <see cref="m_IOFields"/> to the database
         /// </summary>
         /// <param name="t">
         /// time value which will be associated with the field
@@ -1891,7 +1891,7 @@ namespace BoSSS.Solution {
         /// physical time prior to the call of this time step
         /// </param>
         /// <param name="TimestepNo">
-        /// Time-step number 
+        /// Time-step number
         /// </param>
         /// <param name="dt">
         /// A desired time-step size; if greater than 0.0, then exactly this
@@ -1905,7 +1905,7 @@ namespace BoSSS.Solution {
         protected abstract double RunSolverOneStep(int TimestepNo, double phystime, double dt);
 
         /// <summary>
-        /// Override this method to implement plotting (by e.g. the use of the 
+        /// Override this method to implement plotting (by e.g. the use of the
         /// Tecplot interface) of the current state.
         /// </summary>
         /// <param name="physTime">
@@ -1981,7 +1981,7 @@ namespace BoSSS.Solution {
                             throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
                                 + " both cannot be unequal null at the same time.");
 
-                        if(this.Control.RestartInfo != null) {
+                        if (this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
                             TimeStepNoRestart = i0;
                         } else {
@@ -2015,13 +2015,13 @@ namespace BoSSS.Solution {
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
                     if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
-                            PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
                 }
                 {
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
                         ResetInitial();
-                        
+
                     }
 
                     bool RunLoop(int i) {
@@ -2044,8 +2044,8 @@ namespace BoSSS.Solution {
                         }
 
 
-                        for(int sb = 0; sb < this.BurstSave; sb++) {
-                            if((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
+                        for (int sb = 0; sb < this.BurstSave; sb++) {
+                            if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
                                 tsi = SaveToDatabase(i, physTime);
                                 this.ProfilingLog();
                                 break;
@@ -2097,11 +2097,11 @@ namespace BoSSS.Solution {
                             try {
                                 queryLogFile_Txt = new StreamWriter("queryResults.txt");
                             } catch (Exception e) {
-                                // in a parameter study, 
+                                // in a parameter study,
                                 //     - when running in different processes
                                 //     - but simultaneously
                                 //     - without database
-                                //  two or more processes may try to access queryResults.txt 
+                                //  two or more processes may try to access queryResults.txt
                                 //  => Exception
                                 // this is such a rare case, that I don't implement a smarter solution
                                 // (in the parameter study case, the query results will be in the ParameterStudy file anyway
@@ -2244,7 +2244,7 @@ namespace BoSSS.Solution {
                         InitFromAttributes.CreateFieldsAuto(
                             this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
-                    CreateFields(); // full user control   
+                    CreateFields(); // full user control
                     PostRestart(physTime, TimeStepNo);
 
 
@@ -2385,7 +2385,7 @@ namespace BoSSS.Solution {
                             InitFromAttributes.CreateFieldsAuto(
                                 this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                         }
-                        CreateFields(); // full user control   
+                        CreateFields(); // full user control
                         PostRestart(physTime, TimeStepNo);
 
 
@@ -2408,9 +2408,9 @@ namespace BoSSS.Solution {
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            if(f.Identification == "Phi")
-                                //throw new ApplicationException("ask Smuda why he did this");
-                                continue;
+                            if (f.Identification == "Phi")
+                                throw new ApplicationException("ask Smuda why he did this");
+                            //continue;
                             //f.Clear();
 
                             remshDat.RestoreDGField(f);
@@ -2442,7 +2442,7 @@ namespace BoSSS.Solution {
             // tau   is the GlobalID-permutation of the **old** grid
             tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
 
-            // backup level-set tracker 
+            // backup level-set tracker
             if (this.LsTrk != null) {
                 loadbal.BackupTracker();
             }
@@ -2634,7 +2634,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// writes the profiling report 
+        /// writes the profiling report
         /// </summary>
         protected virtual void ProfilingLog() {
             var R = Tracer.Root;
@@ -2848,8 +2848,7 @@ namespace BoSSS.Solution {
                             var w = new StreamWriter(nlog_stream_session);
                             nlog.WriteToStream(w, RowFilter: nlog.CurrentKeyHistory);
                             w.Flush();
-                        }
-                        finally {
+                        } finally {
                             nlog_stream_session.Flush();
                             nlog_stream_session.Close();
                         }
@@ -3390,7 +3389,7 @@ namespace BoSSS.Solution {
         /// would be loaded delayed (when de-serializing the Grid),
         /// in contrast to other dependencies like BoSSS.Foundation.dll which
         /// are loaded at start-up time. The direct inclusion of
-        /// BoSSS.Foundation.Grid.dll into the manifest of BoSSS.Solution.dll  
+        /// BoSSS.Foundation.Grid.dll into the manifest of BoSSS.Solution.dll
         /// helps Visual Studio and other tools, e.g. "bcl deploy-at" to find
         /// and copy really all dependencies to the binary directory.
         /// </summary>
@@ -3409,4 +3408,3 @@ namespace BoSSS.Solution {
     }
 
 }
-

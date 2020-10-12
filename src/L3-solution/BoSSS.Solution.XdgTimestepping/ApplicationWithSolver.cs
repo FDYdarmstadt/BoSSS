@@ -25,7 +25,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 return CurrentStateVector.Mapping;
             }
-           
+
         }
 
         /// <summary>
@@ -68,14 +68,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public override IDictionary<string, double> OperatorAnalysis() {
             return this.Timestepping.OperatorAnalysis();
-        }      
+        }
 
 
         abstract internal void CreateTrackerHack();
 
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
@@ -86,14 +86,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             // solution:
             var solFields = InstantiateSolutionFields();
             CurrentStateVector = new CoordinateVector(solFields);
-            foreach(var f in solFields) {
+            foreach (var f in solFields) {
                 base.RegisterField(f);
             }
 
             // residuals:
             var resFields = InstantiateResidualFields();
             CurrentResidualVector = new CoordinateVector(resFields);
-            foreach(var f in resFields) {
+            foreach (var f in resFields) {
                 base.RegisterField(f);
             }
 
@@ -112,11 +112,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             CreateAdditionalFields();
 
 
-
+            LsTrk = null;
         }
 
         /// <summary>
-        /// intended for the initialization of additional DG fields, which are not 
+        /// intended for the initialization of additional DG fields, which are not
         /// either solution, residuals of parameters.
         /// </summary>
         protected virtual void CreateAdditionalFields() {
@@ -146,11 +146,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             var SolFields = this.CurrentState.Fields;
 
             var CodNames = this.Operator.CodomainVar;
-            if(CodNames.Count != SolFields.Count)
+            if (CodNames.Count != SolFields.Count)
                 throw new NotSupportedException("Unable to instantiate residual fields automatically - number of codomain variables is different than number of solution fields.");
 
             DGField[] R = new DGField[SolFields.Count];
-            for(int i = 0; i < R.Length; i++) {
+            for (int i = 0; i < R.Length; i++) {
                 R[i] = SolFields[i].CloneAs();
                 R[i].Identification = "Residual-" + CodNames[i];
                 R[i].Clear();
@@ -189,11 +189,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override int BurstSave {
             get {
                 int Timestepping_bs;
-                if(Timestepping != null) {
+                if (Timestepping != null) {
                     Timestepping_bs = Timestepping.BurstSave;
                 } else {
                     string schStr = Control.TimeSteppingScheme.ToString().ToLower();
-                    if(schStr.StartsWith("bdf")) {
+                    if (schStr.StartsWith("bdf")) {
                         Timestepping_bs = Convert.ToInt32(schStr.Substring(3));
                     } else {
                         Timestepping_bs = 1;
@@ -210,15 +210,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-           
-            if(L == null) {
+
+            if (L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Creation of time-integrator (initial, no balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
-                
+
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
 
@@ -231,7 +231,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Step 2 of 2 for dynamic load balancing: restore this objects 
+        /// Step 2 of 2 for dynamic load balancing: restore this objects
         /// status after the grid has been re-distributed.
         /// </summary>
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
@@ -285,7 +285,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        
+
         //protected override void SetInitial() {
         //    base.SetInitial();
         //}
@@ -338,7 +338,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         abstract protected XSpatialOperatorMk2 GetOperatorInstance(int D);
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public override ISpatialOperator Operator {
             get {
@@ -358,15 +358,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         internal override void CreateTrackerHack() {
             var trk = InstantiateTracker();
 
-            if(base.LsTrk == null) {
+            if (base.LsTrk == null) {
                 base.LsTrk = trk;
             } else {
-                if(!object.ReferenceEquals(trk, base.LsTrk))
+                if (!object.ReferenceEquals(trk, base.LsTrk))
                     throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
             }
 
-            foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
-                if(ls is DGField f) {
+            foreach (var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
+                if (ls is DGField f) {
                     base.RegisterField(f);
                 }
             }
@@ -380,7 +380,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         virtual public XSpatialOperatorMk2 XOperator {
             get {
-                if(m_XOperator == null) {
+                if (m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
                 }
                 return m_XOperator;
@@ -397,7 +397,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// instantiation of <see cref="ApplicationWithSolver{T}.Timestepping"/>
         /// </summary>
         protected override void InitSolver() {
-            if(base.Timestepping != null)
+            if (base.Timestepping != null)
                 return;
 
             XdgTimestepping solver = new XdgTimestepping(
@@ -445,15 +445,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// empty in the DG case
         /// </summary>
         internal override void CreateTrackerHack() {
-               
+
         }
 
         /// <summary>
-        /// Contains hack 
+        /// Contains hack
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
-            if(Timestepping != null && Timestepping.LsTrk == null) {
+            if (Timestepping != null && Timestepping.LsTrk == null) {
                 // re-create the internal Dummy-Tracker after dynamic load-balancing/mesh refinement
                 Timestepping.RecreateDummyTracker(this.GridData);
                 this.LsTrk = Timestepping.LsTrk;
@@ -462,7 +462,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public override ISpatialOperator Operator {
             get {
@@ -478,7 +478,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         virtual public SpatialOperator SOperator {
             get {
-                if(m_SOperator == null) {
+                if (m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
                 }
                 return m_SOperator;
@@ -493,7 +493,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         protected override void InitSolver() {
             if (base.Timestepping != null)
