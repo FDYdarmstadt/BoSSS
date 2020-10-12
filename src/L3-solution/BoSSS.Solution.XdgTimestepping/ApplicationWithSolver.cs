@@ -110,6 +110,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
             */
             CreateAdditionalFields();
+
+
+
         }
 
         /// <summary>
@@ -443,6 +446,18 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         internal override void CreateTrackerHack() {
                
+        }
+
+        /// <summary>
+        /// Contains hack 
+        /// </summary>
+        protected override void CreateFields() {
+            base.CreateFields();
+            if(Timestepping != null && Timestepping.LsTrk == null) {
+                // re-create the internal Dummy-Tracker after dynamic load-balancing/mesh refinement
+                Timestepping.RecreateDummyTracker(this.GridData);
+                this.LsTrk = Timestepping.LsTrk;
+            }
         }
 
 
