@@ -3837,7 +3837,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem = 16, string _DbPath = null, int D = 3) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem = 32, string _DbPath = null, int D = 2) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -4013,8 +4013,10 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 4;
-            C.LinearSolver.MaxSolverIterations = 2;
+            C.UseSchurBlockPrec = false;
+
+            C.LinearSolver.NoOfMultigridLevels = 2;
+            C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.TargetBlockSize = 1000;
             C.LinearSolver.MaxKrylovDim = 1000;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;

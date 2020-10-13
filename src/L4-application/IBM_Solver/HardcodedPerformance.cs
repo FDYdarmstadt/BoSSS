@@ -45,7 +45,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 4, int cells_x = 30, int cells_yz = 10, bool only_channel = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 15, int cells_yz = 5, bool only_channel = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
             C.OperatorMatrixAnalysis = false;
 
@@ -54,7 +54,7 @@ namespace BoSSS.Application.IBM_Solver {
             //C.DbPath = _DbPath;
 
 
-            C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -336,7 +336,7 @@ namespace BoSSS.Application.IBM_Solver {
                     C.InitialValues_Evaluators.Add("Phi", X => -1);
                 } else {
                     //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
-                    C.InitialValues_Evaluators.Add("Phi", X => -Math.Pow((X[0]-1),10) -Math.Pow((X[1]),10) -Math.Pow((X[2]),10) + Math.Pow(C.particleRadius,10));
+                    C.InitialValues_Evaluators.Add("PhiDG", X => -Math.Pow((X[0]-1),10) -Math.Pow((X[1]),10) -Math.Pow((X[2]),10) + Math.Pow(C.particleRadius,10));
                     //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]) + -(X[1]) + -(X[2]) + C.particleRadius);
                 }
 
@@ -346,7 +346,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 0.15;
+            C.particleRadius = 0.3;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.0001 / 1;
 
@@ -363,7 +363,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.IncludeConvection = false;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 200;
             C.LinearSolver.NoOfMultigridLevels = 4;

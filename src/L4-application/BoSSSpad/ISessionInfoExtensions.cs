@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Application.BoSSSpad;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
@@ -1545,7 +1546,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Computes the total number of DOF for DG field
+        /// Computes the total number of DOF for DG or XDG field for the first timestep.
         /// <paramref name="fieldName"/> for the given
         /// <paramref name="session"/>. Note that the result is only meaningful
         /// if the number of DOF is constant over time.
@@ -1557,11 +1558,14 @@ namespace BoSSS.Foundation.IO {
         /// The name of the DG field.
         /// </param>
         /// <returns>
-        /// The total number of degrees of freedom for DG field
+        /// The total number of degrees of freedom for DG/XDG field
         /// <paramref name="fieldName"/>.
         /// </returns>
         public static int GetDOF(this ISessionInfo session, string fieldName) {
+
+            int cellCount = session.Timesteps.First().Grid.NumberOfCells;
             int order = session.GetOrder(fieldName);
+            var targetfield = session.Timesteps.First().Fields.Find(fieldName);
 
             int dofPerCell = 1;
             int D = session.Timesteps.First().Grid.SpatialDimension;
@@ -1572,7 +1576,14 @@ namespace BoSSS.Foundation.IO {
             }
             dofPerCell = dofPerCell / faculty;
 
-            int cellCount = session.Timesteps.First().Grid.NumberOfCells;
+            if (targetfield.GetType() == typeof(XDGField)) {
+                var phi = session.Timesteps.First().Fields.ElementAt(0);
+                var LevSet = new LevelSet(phi.Basis, "LevelSet");
+                LevSet.Acc(1.0, phi);
+                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+                int numCC = LsTrk.Regions.GetCutCellMask().Count();
+                cellCount += numCC;
+            }
             return dofPerCell * cellCount;
         }
 

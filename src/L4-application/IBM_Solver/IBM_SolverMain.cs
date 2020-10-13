@@ -36,6 +36,7 @@ using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -679,9 +680,25 @@ namespace BoSSS.Application.IBM_Solver {
 
             //LevsetEvo(phystime, dt, null);
 
+            SmoothLevelSet();
+            LsTrk.UpdateTracker(0.0);
+
             return 0.0;
         }
 
+        void SmoothLevelSet() {
+            CellMask near = this.LevsetTracker.Regions.GetNearMask4LevSet(0, 1);
+            ContinuityProjectionCDG projecter = new ContinuityProjectionCDG(this.LevSet.Basis);
+            projecter.MakeContinuous(this.DGLevSet.Current, this.LevSet, near);
+
+            CellMask posFar = this.LevsetTracker.Regions.GetLevelSetWing(0, +1).VolumeMask.Except(near);
+            CellMask negFar = this.LevsetTracker.Regions.GetLevelSetWing(0, -1).VolumeMask.Except(near);
+
+            this.LevSet.Clear(posFar);
+            this.LevSet.AccConstant(1, posFar);
+            this.LevSet.Clear(negFar);
+            this.LevSet.AccConstant(-1, negFar);
+        }
 
         //protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] Test_Force = new double[3];
@@ -993,16 +1010,21 @@ namespace BoSSS.Application.IBM_Solver {
                 LsTrk.UpdateTracker(0.0);
             }
 
-            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("before_smoothing");
-            //PlotCurrentState(0.0,0,4,"before_smoothing");
 
-            //PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
-            //    LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
-            //    false);
+            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("before_smoothing");
+            //PlotCurrentState(0.0, 0, 4, "before_smoothing");
+
+            PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
+               LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
+               false);
+            LsTrk.UpdateTracker(0.0);
+            //SmoothLevelSet();
             //LsTrk.UpdateTracker(0.0);
 
             //LsTrk.Regions.GetCutCellMask().SaveToTextFile("after_smoothing");
-            //PlotCurrentState(0.0,0,4,"after_smoothing");
+            //PlotCurrentState(0.0, 0, 4, "after_smoothing");
+
+
 
             // =======================OUTPUT FOR GMRES=====================================
             //if(this.MPISize == 1) {

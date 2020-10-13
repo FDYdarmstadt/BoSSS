@@ -1,0 +1,490 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+var tmpDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_XdgStokes");
+**************
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes'.
+
+==============
+tmpDB.Sessions.Pick(0).NumberOfCores()
+**************
+1
+==============
+tmpDB.Sessions.Pick(0).
+**************
+==============
+tmpDB.Sessions.Where(p=>p.ProjectName=="Xdg_Stokes_run0");
+**************
+List of 9 instances of ISessionInfo {
+  0: Xdg_Stokes_run0	J512_p3_exp_Kcycle_schwarz	10/08/2020 00:45:15	6ef96597...
+  1: Xdg_Stokes_run0	J13824_p2_classic_pardiso	10/08/2020 00:39:29	20006d5a...
+  2: Xdg_Stokes_run0	J4096_p3_classic_pardiso	10/08/2020 00:40:09	aa3b8fdb...
+  3: Xdg_Stokes_run0	J4096_p2_exp_Kcycle_schwarz	10/08/2020 00:44:21	6b43cf59...
+  4: Xdg_Stokes_run0	J512_p5_classic_pardiso	10/08/2020 00:42:22	c93a360c...
+  5: Xdg_Stokes_run0	J4096_p2_classic_pardiso	10/08/2020 00:39:30	87c6878e...
+  6: Xdg_Stokes_run0	J512_p2_exp_Kcycle_schwarz	10/08/2020 00:43:25	ccf76cf1...
+  7: Xdg_Stokes_run0	J512_p3_classic_pardiso	10/08/2020 00:41:25	0c72d2cd...
+  8: Xdg_Stokes_run0	J512_p2_classic_pardiso	10/08/2020 00:39:27	7849ff64...
+}
+==============
+tmpDB.Sessions.Pick(0).Actions()
+**************
+You can invoke the following methods (more actions may exist):
+- Actions()
+- AddTags(String[] newTags)
+- Ancestors()
+- AncestorsAndSelf()
+- As()
+- Cast()
+- Copy(IDatabaseInfo targetDB)
+- CopyFor(IDatabaseInfo targetDatabase)
+- CreateRestartControl()
+- CreateRestartJob()
+- Delete(Boolean force)
+- Describe()
+- Describe(String methodName)
+- Diff(ISessionInfo other)
+- Dispose()
+- Equals(ISessionInfo other)
+- Export()
+- FilesInSessionDir(String searcPattern)
+- GetApproximateRunTime(Int32 firstIndex, Int32 lastIndex)
+- GetAverageComputingTimePerTimestep(Int32 firstIndex, Int32 lastIndex)
+- GetAverageCPUTimePerTimestep(Int32 firstIndex, Int32 lastIndex)
+- GetControl(Type t)
+- GetDOF(String fieldName)
+- GetGrids()
+- GetOrder(String fieldName)
+- GetProfiling()
+- GetProfilingOfRank(Int32 rank)
+- GetRun()
+- IsInParameterStudy()
+- Move(IDatabaseInfo targetDB)
+- NumberOfCores()
+- OpenDeployDirectory(Int32 Clientidx)
+- OpenExportDirectory()
+- OpenSessionDirectory()
+- OpenTextFile(String TextFile)
+- PlotTemperatureProfileAt(Int32[] timestepIndex)
+- PrintExportDirectory()
+- PrintMPIImbalance(Int32 printcnt)
+- PrintSessionDirectory()
+- PrintTotalImbalance(Int32 printcnt)
+- QueryResults(String path)
+- QueryResults(String QueryId, String path)
+- ReadTabulatedTextFileAsDoubles(String TextFile, Char[] SepChars)
+- ReadTabulatedTextFileAsStrings(String TextFile, Char[] SepChars)
+- RemoveTag(String tag)
+- Residuals(String norm, Int32 stride, String[] variables)
+- Summary()
+- ToClipboard()
+- ToString()
+
+==============
+**************
+==============
+**************
+==============
+string WFlowName = "Xdg_Stokes_run0";
+WorkflowMgm.Init(WFlowName);
+WorkflowMgm.AllJobs;
+**************
+Project name is set to 'Xdg_Stokes_run0'.
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+// Umbenennen der fehlgeschlagenen Runs
+tmpDB.Sessions.Where(s=>!s.SuccessfulTermination).Where(s=>s.ProjectName==WFlowName).ForEach(s=>s.ProjectName=WFlowName+"_failure")
+**************
+==============
+WorkflowMgm.Sessions
+**************
+List of 9 instances of ISessionInfo {
+  0: Xdg_Stokes_run0	J512_p3_exp_Kcycle_schwarz	10/08/2020 00:45:15	6ef96597...
+  1: Xdg_Stokes_run0	J13824_p2_classic_pardiso	10/08/2020 00:39:29	20006d5a...
+  2: Xdg_Stokes_run0	J4096_p3_classic_pardiso	10/08/2020 00:40:09	aa3b8fdb...
+  3: Xdg_Stokes_run0	J4096_p2_exp_Kcycle_schwarz	10/08/2020 00:44:21	6b43cf59...
+  4: Xdg_Stokes_run0	J512_p5_classic_pardiso	10/08/2020 00:42:22	c93a360c...
+  5: Xdg_Stokes_run0	J4096_p2_classic_pardiso	10/08/2020 00:39:30	87c6878e...
+  6: Xdg_Stokes_run0	J512_p2_exp_Kcycle_schwarz	10/08/2020 00:43:25	ccf76cf1...
+  7: Xdg_Stokes_run0	J512_p3_classic_pardiso	10/08/2020 00:41:25	0c72d2cd...
+  8: Xdg_Stokes_run0	J512_p2_classic_pardiso	10/08/2020 00:39:27	7849ff64...
+}
+==============
+WorkflowMgm.SessionTable.Rows.Count;
+**************
+9
+==============
+using System.IO;
+**************
+==============
+//DirectoryInfo dir = Directory.CreateDirectory(CurrentDocDir+@"\"+WFlowName);
+//string dirpath    = dir.FullName;
+string dirpath = CurrentDocDir;
+**************
+==============
+static class AddCols {
+    static public object XdgMatrixAssembly_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("XdgMatrixAssembly");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Aggregation_basis_init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Aggregation_basis_init");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Solver_Init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Slv Init");
+        var nd  = ndS.ElementAt(0);
+        //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );
+        return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;
+    }
+    static public object Solver_Run_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Slv Iter");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object NoOfCores(ISessionInfo SI){
+        return SI.GetProfiling().Length;
+        }
+    static public object DOFs(ISessionInfo SI){
+        var fields    = SI.Timesteps.First().Fields;
+        var fieldlist = new List<string>();
+        fieldlist.AddRange("Pressure","VelocityX","VelocityY","VelocityZ");
+        int totalDOF = 0;
+        foreach(string field in fieldlist){
+            if(fields.Find(field)==null)
+                throw new Exception("not found: "+field);
+            else
+                totalDOF+=SI.GetDOF(field);
+            }
+        
+        return totalDOF;
+    }
+    // ugly hack, works only for V-cycle
+    static public object NoIter(ISessionInfo SI){
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("BoSSS.Solution.AdvancedSolvers.SparseSolver.Solve");
+        var nd  = ndS.ElementAt(0);
+        return nd.CallCount;
+    }
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "XdgMatrixAssembly", AddCols.XdgMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Run_time", AddCols.Solver_Run_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "NoOfCores", AddCols.NoOfCores);
+WorkflowMgm.AdditionalSessionTableColums.Add("DOFs",AddCols.DOFs);  
+WorkflowMgm.AdditionalSessionTableColums.Add("NoIter",AddCols.NoIter);
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+SessTab.GetColumnNames().OrderBy(s=>s);
+**************
+List of 197 instances of String {
+  0: AdaptiveMeshRefinement
+  1: AdvancedDiscretizationOptions.alpha
+  2: AdvancedDiscretizationOptions.CellAgglomerationThreshold
+  3: AdvancedDiscretizationOptions.ContiSign
+  4: AdvancedDiscretizationOptions.CurvatureNeeded
+  5: AdvancedDiscretizationOptions.FilterConfiguration.CurvatureLimiting
+  6: AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles
+  7: AdvancedDiscretizationOptions.FilterConfiguration.gradOpt
+  8: AdvancedDiscretizationOptions.FilterConfiguration.hessOpt
+  9: AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource
+  10: AdvancedDiscretizationOptions.FilterConfiguration.NoOfPatchRecoverySweeps
+  11: AdvancedDiscretizationOptions.FilterConfiguration.PatchRecoveryDomWidth
+  12: AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetGrad
+  13: AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetHess
+  14: AdvancedDiscretizationOptions.FilterConfiguration.UseWholeField
+  15: AdvancedDiscretizationOptions.GNBC_Localization
+  16: AdvancedDiscretizationOptions.GNBC_SlipLength
+  17: AdvancedDiscretizationOptions.LFFA
+  18: AdvancedDiscretizationOptions.LFFB
+  19: AdvancedDiscretizationOptions.ObjectiveParam
+  20: AdvancedDiscretizationOptions.Penalty1[0]
+  21: AdvancedDiscretizationOptions.Penalty1[1]
+  22: AdvancedDiscretizationOptions.Penalty2
+  23: AdvancedDiscretizationOptions.PenaltySafety
+  24: AdvancedDiscretizationOptions.PresPenalty1[0]
+  25: AdvancedDiscretizationOptions.PresPenalty1[1]
+  26: AdvancedDiscretizationOptions.PresPenalty2
+  27: AdvancedDiscretizationOptions.RescaleConti
+  28: AdvancedDiscretizationOptions.SST_isotropicMode
+  29: AdvancedDiscretizationOptions.StressPenalty
+  30: AdvancedDiscretizationOptions.SurfStressTensor
+  31: AdvancedDiscretizationOptions.UseGhostPenalties
+  32: AdvancedDiscretizationOptions.UseLevelSetStabilization
+  33: AdvancedDiscretizationOptions.UseWeightedAverages
+  34: AdvancedDiscretizationOptions.ViscosityMode
+  35: AgglomerationThreshold
+  36: Aggregation_basis_init_time
+  37: AlternateDbPaths[0].Item1
+  38: AlternateDbPaths[0].Item2
+  39: AlternateDbPaths[1].Item1
+  40: AlternateDbPaths[1].Item2
+  41: AMR_startUpSweeps
+  42: BaseRefinementLevel
+  43: BurstSave
+  44: CheckInterfaceProps
+  45: CheckJumpConditions
+  46: ComputeEnergyProperties
+  47: conductMode
+  48: ContinueOnIoError
+  49: ControlFileText_Index
+  50: CutCellQuadratureType
+  51: DGdegree:Curvature
+  52: DGdegree:GravityY
+  53: DGdegree:Phi
+  54: DGdegree:PhiDG
+  55: DGdegree:Pressure
+  56: DGdegree:Velocity*
+  57: DOFs
+  58: dtFixed
+  59: dtMax
+  60: dtMin
+  61: DynamicLoadBalancing_ImbalanceThreshold
+  62: DynamicLoadBalancing_On
+  63: DynamicLoadBalancing_Period
+  64: DynamicLoadBalancing_RedistributeAtStartup
+  65: EllipticExtVelAlgoControl.FluxVariant
+  66: EllipticExtVelAlgoControl.IsotropicViscosity
+  67: EllipticExtVelAlgoControl.PenaltyMultiplierFlux
+  68: EllipticExtVelAlgoControl.PenaltyMultiplierInterface
+  69: EllipticExtVelAlgoControl.subGridRestriction
+  70: Endtime
+  71: EnforceLevelSetConservation
+  72: GeneratedFromCode
+  73: Grid:hMax
+  74: Grid:hMin
+  75: Grid:NoOfCells
+  76: Grid:SpatialDimension
+  77: GridPartType
+  78: ImmediatePlotPeriod
+  79: incrementTimesteps
+  80: InitialValues_EvaluatorsVec[0].Key
+  81: InterAverage
+  82: kinEPressureDiscretization
+  83: KineticEnergyeBlockPrecondMode
+  84: kinEViscousDiscretization
+  85: LevelSet_ConvergenceCriterion
+  86: LinearSolver.ConvergenceCriterion
+  87: LinearSolver.exp_localPrec_Min_dt
+  88: LinearSolver.exp_localPrec_muA
+  89: LinearSolver.MaxKrylovDim
+  90: LinearSolver.MaxSolverIterations
+  91: LinearSolver.MinSolverIterations
+  92: LinearSolver.NoOfMultigridLevels
+  93: LinearSolver.SolverCode
+  94: LinearSolver.SolverMode
+  95: LinearSolver.TargetBlockSize
+  96: LinearSolver.verbose
+  97: logFileDirectory
+  98: LogPeriod
+  99: LogValues
+  100: LS_TrackerWidth
+  101: LSContiProjectionMethod
+  102: LSunderrelax
+  103: MultiStepInit
+  104: NoIter
+  105: NonLinearSolver.constantNewtonIterations
+  106: NonLinearSolver.ConvergenceCriterion
+  107: NonLinearSolver.Globalization
+  108: NonLinearSolver.MaxSolverIterations
+  109: NonLinearSolver.MinSolverIterations
+  110: NonLinearSolver.printLambda
+  111: NonLinearSolver.SolverCode
+  112: NonLinearSolver.UnderRelax
+  113: NonLinearSolver.verbose
+  114: NoOfCores
+  115: NoOfMultigridLevels
+  116: NoOfTimesteps
+  117: Option_LevelSetEvolution
+  118: Paramstudy_ContinueOnError
+  119: PhysicalParameters.beta_a
+  120: PhysicalParameters.beta_b
+  121: PhysicalParameters.betaL
+  122: PhysicalParameters.betaS_A
+  123: PhysicalParameters.betaS_B
+  124: PhysicalParameters.Giesekus_a
+  125: PhysicalParameters.Giesekus_b
+  126: PhysicalParameters.giesekusfactor_a
+  127: PhysicalParameters.giesekusfactor_b
+  128: PhysicalParameters.IncludeConvection
+  129: PhysicalParameters.lambda_I
+  130: PhysicalParameters.lambdaI_tilde
+  131: PhysicalParameters.Material
+  132: PhysicalParameters.mu_A
+  133: PhysicalParameters.mu_B
+  134: PhysicalParameters.mu_I
+  135: PhysicalParameters.reynolds_A
+  136: PhysicalParameters.reynolds_B
+  137: PhysicalParameters.rho_A
+  138: PhysicalParameters.rho_B
+  139: PhysicalParameters.Sigma
+  140: PhysicalParameters.sliplength
+  141: PhysicalParameters.theta_e
+  142: PhysicalParameters.useArtificialSurfaceForce
+  143: PhysicalParameters.Weissenberg_a
+  144: PhysicalParameters.Weissenberg_b
+  145: ProjectName
+  146: RefinementLevel
+  147: RefineNavierSlipBoundary
+  148: RefineStrategy
+  149: RegisterUtilitiesToIOFields
+  150: RegularTerminated
+  151: ReInitControl.ConvergenceCriterion
+  152: ReInitControl.FastMarchingPrecond
+  153: ReInitControl.MaxIt
+  154: ReInitControl.PenaltyMultiplierFlux
+  155: ReInitControl.PenaltyMultiplierInterface
+  156: ReInitControl.Potential
+  157: ReInitControl.PrintIterations
+  158: ReInitControl.underrelaxation
+  159: ReInitControl.Upwinding
+  160: ReInitPeriod
+  161: rollingSaves
+  162: saveperiod
+  163: savetodb
+  164: Session
+  165: SessionName
+  166: SkipSolveAndEvaluateResidual
+  167: solveCoupledHeatEquation
+  168: solveKineticEnergyEquation
+  169: Solver_Init_time
+  170: Solver_Run_time
+  171: staticTimestep
+  172: SuperSampling
+  173: TemperatureBlockPrecondMode
+  174: TestMode
+  175: ThermalParameters.c_A
+  176: ThermalParameters.c_B
+  177: ThermalParameters.fc
+  178: ThermalParameters.hVap
+  179: ThermalParameters.IncludeConvection
+  180: ThermalParameters.k_A
+  181: ThermalParameters.k_B
+  182: ThermalParameters.p_sat
+  183: ThermalParameters.pc
+  184: ThermalParameters.Rc
+  185: ThermalParameters.rho_A
+  186: ThermalParameters.rho_B
+  187: ThermalParameters.T_sat
+  188: Timestepper_BDFinit
+  189: Timestepper_LevelSetHandling
+  190: TimesteppingMode
+  191: TimeSteppingScheme
+  192: UseSchurBlockPrec
+  193: useSolutionParamUpdate
+  194: withDissipativePressure
+  195: WriteInterfaceP
+  196: XdgMatrixAssembly
+}
+==============
+**************
+==============
+// The Session column can't be serialized,
+// we have to remove it
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+// ==================================
+// Testing if every Column has values
+// ==================================
+**************
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+var SubTab = SessTab.ExtractColumns("SessionName","DGdegree:Velocity*", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "XdgMatrixAssembly",
+"Aggregation_basis_init_time",
+"Solver_Init_time",
+"Solver_Run_time", "NoIter");
+SubTab.Print();
+**************
+   SessionName                 DGdegree:Velocity* Grid:NoOfCells LinearSolver.SolverCode DOFs   XdgMatrixAssembly Aggregation_basis_init_time Solver_Init_time Solver_Run_time NoIter 
+0: J512_p3_exp_Kcycle_schwarz  3                  512            41                      71680  16.0629728        0.3345547                   5.3094744        6248.7751193    1528   
+1: J13824_p2_classic_pardiso   2                  13824          2                       940032 112.1505878       5.7238134                   25.2363529       4796.9658146    1      
+2: J4096_p3_classic_pardiso    3                  4096           2                       573440 103.4613754       2.8042084                   20.8770093       2341.5859196    1      
+3: J4096_p2_exp_Kcycle_schwarz 2                  4096           41                      278528 37.6873518        1.0646712                   16.9992262       1056.768777     298    
+4: J512_p5_classic_pardiso     5                  512            2                       207872 157.5178781       5.1108825                   22.8012036       692.7747814     1      
+5: J4096_p2_classic_pardiso    2                  4096           2                       278528 37.7531976        1.0893064                   7.475476         248.8116871     1      
+6: J512_p2_exp_Kcycle_schwarz  2                  512            41                      34816  6.239593          0.1102899                   2.1161228        34.2092565      94     
+7: J512_p3_classic_pardiso     3                  512            2                       71680  16.2297513        0.33788                     2.6940423        20.8425555      1      
+8: J512_p2_classic_pardiso     2                  512            2                       34816  6.2894708         0.1104408                   1.035706         4.4214412       1      
+==============
+// ===========
+// Export json
+// ===========
+**************
+==============
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = WFlowName + "_" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(dirpath, SessTab.TableName + ".json");
+**************
+==============
+SessTab.SaveToFile(docpath);
+**************
+==============
+docpath
+**************
+B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes\Xdg_Stokes_run0_2020-10-8.json
+==============
+SubTab.ToCSVFile(dirpath+@"\"+WFlowName+"_scaling.txt");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

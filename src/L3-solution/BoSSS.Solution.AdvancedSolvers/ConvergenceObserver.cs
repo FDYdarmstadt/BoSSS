@@ -776,7 +776,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         FE.Evaluate(1.0, fields, points, 1.0, Result);
 
-                        points.SaveToTextFile("points_of_"+i+"th_col_"+ p + "th_field");
+                        //points.SaveToTextFile("points_of_"+i+"th_col_"+ p + "th_field");
 
                         SamplePoints.ExtractSubArrayShallow(-1, i).Acc(1.0, Result.ExtractSubArrayShallow(-1, 0));
                     }

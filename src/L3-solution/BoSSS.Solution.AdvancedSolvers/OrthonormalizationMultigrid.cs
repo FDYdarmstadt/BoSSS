@@ -429,9 +429,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     X = _xl.ToArray();
 
-                //// clear history, makes a small difference on coarse levels, which one is better?
-                //MxxHistory.Clear();
-                //SolHistory.Clear();
+                // clear history of coarse solvers
+                MxxHistory.Clear();
+                SolHistory.Clear();
 
 
                 //// in case of spectral analysis
@@ -500,13 +500,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
 
+                //var tmpX = new double[L];
+
                 for(int iIter = 1; true; iIter++) {
                     if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
                     }
-
-                    SpecAnalysisSample(iIter, X, "initial");
 
                     // pre-smoother
                     // ------------
@@ -528,7 +528,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(Corr != null) // only for plotting/debugging
                             Corr.SetV(PreCorr);
 
-                        SpecAnalysisSample(iIter, PreCorr, "smooth1");
+                        //tmpX.SetV(X);
+                        //tmpX.AccV(1.0, PreCorr);
+                        //SpecAnalysisSample(iIter, PreCorr, "smooth1");
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
@@ -594,27 +596,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(Corr != null)
                             Corr.SetV(vl);
 
-                            SpecAnalysisSample(iIter, vl, "cgc");
+                        //tmpX.SetV(X);
+                        //tmpX.AccV(1.0, vl);
+                        //SpecAnalysisSample(iIter, tmpX, "cgc");
 
-                            // orthonormalization and residual minimization
-                            AddSol(ref vl);
-                            if (Xprev != null)
-                                Xprev.SetV(X);
-                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                        // orthonormalization and residual minimization
+                        AddSol(ref vl);
+                        if (Xprev != null)
+                            Xprev.SetV(X);
+                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
 
-                            SpecAnalysisSample(iIter, X, "ortho2");
+                        SpecAnalysisSample(iIter, X, "ortho2");
 
-                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
-                            {
-                                Converged = true;
-                                break;
-                            }
-
-                        // check termination:
-                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
+                        {
                             Converged = true;
                             break;
                         }
+
                     }
 
                     PlottyMcPlot(rl, X, Xprev, Corr, B);
@@ -637,7 +636,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(Corr != null)
                             Corr.SetV(PreCorr);
 
-                        SpecAnalysisSample(iIter, PreCorr, "smooth2_" + g);
+                        //tmpX.SetV(X);
+                        //tmpX.AccV(1.0, PreCorr);
+                        //SpecAnalysisSample(iIter, tmpX, "smooth2_" + g);
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
@@ -660,14 +661,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     this.ThisLevelIterations++;
 
-                    IterationCallback?.Invoke(iIter*2, X, Res, this.m_MgOperator);
+                    IterationCallback?.Invoke(iIter, X, rl, this.m_MgOperator);
 
                 }
 
 
                 // solution copy
                 // =============
-                //IterationCallback?.Invoke(iIter + 1, X, rl, this.m_MgOperator);
                 if(!ReferenceEquals(_xl, X)) {
                     _xl.SetV(X);
                 }
@@ -699,15 +699,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //SolHistory.Clear();
 
 
-                // in case of spectral analysis
-                if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis) {
-                    // Set RHS to zero and introduce random intitial guess respectively error
-                    Console.WriteLine("Performing Spectral Analysis, inserting initial error ...");
-                    B.Clear();
-                    X.Clear();
-                    var rand = new Random();
-                    X = Enumerable.Repeat(0, X.Length).Select(i => rand.NextDouble() * 2 - 1).ToArray();
-                }
+                //// in case of spectral analysis
+                //if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis) {
+                //    // Set RHS to zero and introduce random intitial guess respectively error
+                //    Console.WriteLine("Performing Spectral Analysis, inserting initial error ...");
+                //    B.Clear();
+                //    X.Clear();
+                //    var rand = new Random();
+                //    X = Enumerable.Repeat(0, X.Length).Select(i => rand.NextDouble() * 2 - 1).ToArray();
+                //}
 
                 int L = X.Length;
                 int Lc;
@@ -846,10 +846,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         X.SetV(newX);
                         Res.SetV(newRes);
 
-
-                        if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis) {
-                            Resample(iIter, X, this.m_MgOperator, "post" + g);
-                        }
                         if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
@@ -886,6 +882,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="RealX"></param>
         /// <param name="name"></param>
         private void SpecAnalysisSample(int iter, double[] RealX, string name) {
+            if (iter % 5 != 0 && iter!=1)
+                return;
             if (cloneofX == null) cloneofX = new double[RealX.Length];
             cloneofX.SetV(RealX);
             if (this.m_MgOperator.LevelIndex == 0)
