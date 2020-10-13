@@ -54,7 +54,7 @@ namespace BoSSS.Solution.Gnuplot {
                 DashType = DashTypes.Solid,
                 LineColor = LineColors.Black,
                 LineWidth = 1,
-                PointSize = 3,
+                PointSize = 0.7,
                 Style = Styles.LinesPoints
             };
 

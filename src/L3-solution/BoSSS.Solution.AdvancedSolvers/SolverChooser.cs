@@ -427,8 +427,8 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                             Depth = lc.NoOfMultigridLevels-1,
                         },
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,    //PARDISO
                             LinConfig = lc
                         },
 
@@ -449,8 +449,8 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks,
                         },
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,
                             LinConfig = lc
                         },
                         Overlap = 1
@@ -472,8 +472,8 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
 
                     precond[0] = new Schwarz() {
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS
                         },
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
@@ -600,15 +600,15 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.classic_mumps:
-                    templinearSolve = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                    templinearSolve = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         LinConfig = lc
                     };
                     break;
 
                 case LinearSolverCode.classic_pardiso:
-                    templinearSolve = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    templinearSolve = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         SolverVersion = Parallelism.OMP,
                         LinConfig = lc
                     };
@@ -621,8 +621,8 @@ namespace BoSSS.Solution {
                             NoOfPartsPerProcess = NoOfBlocks,
                         },
                         Overlap = 1,
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.PARDISO,
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.PARDISO,
                             LinConfig = lc
                         }
                     };
@@ -643,8 +643,8 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.classic_cg:
-                    templinearSolve = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.CG,
+                    templinearSolve = new MonkeySolver() {
+                        WhichSolver = MonkeySolver._whichSolver.CG,
                         LinConfig = lc
                     };
                     break;
@@ -893,7 +893,9 @@ namespace BoSSS.Solution {
 
         private void SetLinItCallback(ISolverSmootherTemplate solverwithoutcallback, bool IsLinPrecond) {
 
-            ISolverWithCallback _solverwithcallback = (ISolverWithCallback)solverwithoutcallback;
+            ISolverWithCallback _solverwithcallback = solverwithoutcallback as ISolverWithCallback;
+            if(_solverwithcallback == null)
+                return;
 
             string _type = null;
             int _caseselect = -1;
@@ -999,14 +1001,14 @@ namespace BoSSS.Solution {
 
                 switch (D) {
                     case 1:
-                        tempsolve = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        tempsolve = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,
                             LinConfig = lc
                         };
                         break;
                     case 2:
-                        tempsolve = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        tempsolve = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,
                             LinConfig = lc
                         };
                         break;
@@ -1033,8 +1035,8 @@ namespace BoSSS.Solution {
                                 },
                             };
                         } else {
-                            tempsolve = new SparseSolver() {
-                                WhichSolver = SparseSolver._whichSolver.MUMPS,
+                            tempsolve = new DirectSolver() {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS,
                                 LinConfig = lc
                             };
                         }
@@ -1064,8 +1066,8 @@ namespace BoSSS.Solution {
             if (MGlevels > 0) {
                 solver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(MGlevels - 1, lc) };
             } else {
-                solver = new SparseSolver() {
-                    WhichSolver = SparseSolver._whichSolver.MUMPS,
+                solver = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.MUMPS,
                     LinConfig = lc
                 };
             }
@@ -1184,8 +1186,8 @@ namespace BoSSS.Solution {
                 useDirect |= NoOfBlocks.MPISum() <= 1;
 
                 if (useDirect) {
-                    MultigridChain[iLevel] = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                    MultigridChain[iLevel] = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         TestSolution = false
                     };
                 } else {
@@ -1269,8 +1271,8 @@ namespace BoSSS.Solution {
                 useDirect |= NoOfBlocks.MPISum() <= 1;
 
                 if (useDirect) {
-                    MultigridChain[iLevel] = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                    MultigridChain[iLevel] = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         TestSolution = false
                     };
                 } else {
@@ -1380,9 +1382,9 @@ namespace BoSSS.Solution {
                     solvertoinject = toplevelsmootherchain.CloneAs();
                 }
                 else if (iDepth == MaxMGLevel) {
-                    solvertoinject = new SparseSolver()
+                    solvertoinject = new DirectSolver()
                     {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         TestSolution = false
                     };
                     SetLinItCallback(solvertoinject, true);
@@ -1455,8 +1457,8 @@ namespace BoSSS.Solution {
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
-                    levelSolver = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    levelSolver = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
                 } else {
@@ -1555,8 +1557,8 @@ namespace BoSSS.Solution {
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
-                    levelSolver = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    levelSolver = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
                 } else {
@@ -1683,7 +1685,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_Kcycle_schwarz:
 
                     Schwarz kcycleSchwarz = null;
-                    if (solver.GetType() == typeof(SparseSolver))
+                    if (solver.GetType() == typeof(DirectSolver))
                         break; //we meet PARDISO here, because no MG descend
                     try {
                         kcycleSchwarz = (Schwarz)((OrthonormalizationMultigrid)solver).PreSmoother;
@@ -1711,14 +1713,14 @@ namespace BoSSS.Solution {
                     CompareAttributes("UseDiagonalPmg", true, TGP.UseDiagonalPmg);
                     break;
                 case LinearSolverCode.classic_pardiso:
-                    SparseSolver sparsesolver = null;
+                    DirectSolver sparsesolver = null;
                     try {
-                        sparsesolver = (SparseSolver)solver;
+                        sparsesolver = (DirectSolver)solver;
                     } catch (Exception e) {
                         throw new ApplicationException("someone messed up classic pardiso settings");
                     }
 
-                    if (sparsesolver.WhichSolver != SparseSolver._whichSolver.PARDISO)
+                    if (sparsesolver.WhichSolver != DirectSolver._whichSolver.PARDISO)
                         throw new ApplicationException("someone messed up classic pardiso settings");
                     CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
                     break;

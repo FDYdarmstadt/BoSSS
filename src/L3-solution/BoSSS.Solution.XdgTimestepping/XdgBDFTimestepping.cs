@@ -1638,11 +1638,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.Config_MultigridOperator, 
                         dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
 
-                    //ConvergenceObserver.WaterfallAnalysis(linearSolver, mgOperator, MaMa);
 
 
                     using (var tr = new FuncTrace()) {
                         // init linear solver
+
+
+                        //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
+                        //p.PlotInteractive();
+
                         using (new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
                         }

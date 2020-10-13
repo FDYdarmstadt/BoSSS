@@ -168,7 +168,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.CurrentLin.TransformSolFrom(SolutionVec, Solution);
 
                         // update linearization
-                        base.Update(SolutionVec.Mapping.Fields, ref Solution);
+                        base.Update(SolutionVec.Fields, Solution, 1.0); // SolutionVec -> Solution
 
                         // residual evaluation & callback
                         base.EvalLinearizedResidual(Solution, ref Residual);

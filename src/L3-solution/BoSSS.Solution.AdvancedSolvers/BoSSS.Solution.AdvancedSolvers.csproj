@@ -76,12 +76,13 @@
     <Compile Include="LevelPmg.cs" />
     <Compile Include="LinearSolverConfig.cs" />
     <Compile Include="MGviz.cs" />
+    <Compile Include="MonkeySolver.cs" />
     <Compile Include="NLSolverSequence.cs" />
     <Compile Include="NonLinearSolverConfig.cs" />
     <Compile Include="OpAnalysisBase.cs" />
     <Compile Include="OrthonormalizationMultigrid.cs" />
     <Compile Include="SolverChooser.cs" />
-    <Compile Include="SparseSolver.cs" />
+    <Compile Include="DirectSolver.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fixpoint.cs" />
     <Compile Include="ILU.cs" />

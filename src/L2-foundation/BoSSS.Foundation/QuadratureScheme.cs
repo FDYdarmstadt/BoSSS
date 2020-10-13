@@ -22,6 +22,7 @@ using System.Linq;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.RefElements;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -301,11 +302,18 @@ namespace BoSSS.Foundation.Quadrature {
                         + factoryDomainPair.RuleFactory.RefElement.GetType().ToString() + "'-elements.");
                 }
 
-                //// Causes parallel issues for classic HMF
-                //// -> deactivated by Björn until classic HMF is fixed
-                //if(currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
-                //    continue;
-                //}
+                // Causes parallel issues for classic HMF
+                // -> deactivated by Björn until classic HMF is fixed
+                if(gridData.MpiSize > 1) {
+                    var FactoryName = factoryDomainPair.RuleFactory.GetType().FullName;
+                    if(FactoryName.Contains("LevelSetSurfaceQuadRuleFactory"))
+                        throw new NotSupportedException("there is still an MPI BUG in the classic HMF");
+                }
+
+                if(currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
+                    continue;
+                }
+                
 
                 CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
                     factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain);
