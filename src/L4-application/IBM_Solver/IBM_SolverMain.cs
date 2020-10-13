@@ -1014,12 +1014,18 @@ namespace BoSSS.Application.IBM_Solver {
             //LsTrk.Regions.GetCutCellMask().SaveToTextFile("before_smoothing");
             //PlotCurrentState(0.0, 0, 4, "before_smoothing");
 
-            PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
-               LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
-               false);
-            LsTrk.UpdateTracker(0.0);
-            //SmoothLevelSet();
             //LsTrk.UpdateTracker(0.0);
+            //PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
+            //   LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
+            //   false);
+
+            ////var Fullmask = CellMask.GetFullMask(GridData);
+            ////PerformLevelSetSmoothing(Fullmask,
+            ////   LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
+            ////   false);
+            //LsTrk.UpdateTracker(0.0);
+            ////SmoothLevelSet();
+            ////LsTrk.UpdateTracker(0.0);
 
             //LsTrk.Regions.GetCutCellMask().SaveToTextFile("after_smoothing");
             //PlotCurrentState(0.0, 0, 4, "after_smoothing");

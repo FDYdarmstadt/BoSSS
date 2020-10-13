@@ -336,7 +336,7 @@ namespace BoSSS.Application.IBM_Solver {
                     C.InitialValues_Evaluators.Add("Phi", X => -1);
                 } else {
                     //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
-                    C.InitialValues_Evaluators.Add("PhiDG", X => -Math.Pow((X[0]-1),10) -Math.Pow((X[1]),10) -Math.Pow((X[2]),10) + Math.Pow(C.particleRadius,10));
+                    C.InitialValues_Evaluators.Add("Phi", X => -Math.Pow((X[0]-1),10) -Math.Pow((X[1]),10) -Math.Pow((X[2]),10) + Math.Pow(C.particleRadius,10));
                     //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]) + -(X[1]) + -(X[2]) + C.particleRadius);
                 }
 
