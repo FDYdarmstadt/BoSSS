@@ -418,13 +418,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> //
         {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 double[] B, X;
-                if(_B is double[])
+                if (_B is double[])
                     B = _B as double[];
                 else
                     B = _B.ToArray();
-                if(_xl is double[])
+                if (_xl is double[])
                     X = _xl as double[];
                 else
                     X = _xl.ToArray();
@@ -447,7 +447,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int L = X.Length;
                 int Lc;
-                if(this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
+                if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
                     Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
                 else
                     Lc = -1;
@@ -491,7 +491,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 PlottyMcPlot(rl, X, null, null, B);
                 double[] Xprev = null, Corr = null;
-                if(PlottiesFullsolver != null) {
+                if (PlottiesFullsolver != null) {
                     Xprev = X.CloneAs();
                     Corr = new double[Xprev.Length];
                 }
@@ -502,8 +502,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 //var tmpX = new double[L];
 
-                for(int iIter = 1; true; iIter++) {
-                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                for (int iIter = 1; true; iIter++) {
+                    if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
                     }
@@ -519,13 +519,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             double[] rTest = new double[rl.Length];
                             Residual(rTest, X, B); // Residual on this level; 
                             Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
-                        } 
+                        }
 #endif
 
                         // compute correction
                         double[] PreCorr = new double[L];
                         PreSmoother.Solve(PreCorr, rl); // Vorglättung
-                        if(Corr != null) // only for plotting/debugging
+                        if (Corr != null) // only for plotting/debugging
                             Corr.SetV(PreCorr);
 
                         //tmpX.SetV(X);
@@ -534,7 +534,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
-                        if(Xprev != null)
+                        if (Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
 
@@ -545,7 +545,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
                     }
-                    
+
                     PlottyMcPlot(rl, X, Xprev, Corr, B);
 
 
@@ -561,11 +561,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 #endif
 
-                    for(int i = 0; i < m_omega; i++) {
-                        if(this.CoarserLevelSolver != null) {
+                    for (int i = 0; i < m_omega; i++) {
+                        if (this.CoarserLevelSolver != null) {
 
                             double[] vl = new double[L];
-                            if(CoarseOnLovwerLevel) {
+                            if (CoarseOnLovwerLevel) {
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 // coarse grid solver defined on COARSER MESH LEVEL:
                                 // this solver must perform restriction and prolongation
@@ -594,83 +594,83 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                             // record correction for Debug-Plotting 
-                            if(Corr != null)
+                            if (Corr != null)
                                 Corr.SetV(vl);
 
-                        //tmpX.SetV(X);
-                        //tmpX.AccV(1.0, vl);
-                        //SpecAnalysisSample(iIter, tmpX, "cgc");
+                            //tmpX.SetV(X);
+                            //tmpX.AccV(1.0, vl);
+                            //SpecAnalysisSample(iIter, tmpX, "cgc");
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref vl);
-                        if (Xprev != null)
-                            Xprev.SetV(X);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                            // orthonormalization and residual minimization
+                            AddSol(ref vl);
+                            if (Xprev != null)
+                                Xprev.SetV(X);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
 
-                        SpecAnalysisSample(iIter, X, "ortho2");
+                            SpecAnalysisSample(iIter, X, "ortho2");
 
-                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm))
-                        {
-                            Converged = true;
-                            break;
+                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                                Converged = true;
+                                break;
+                            }
+
                         }
 
-                    }
+                        PlottyMcPlot(rl, X, Xprev, Corr, B);
 
-                    PlottyMcPlot(rl, X, Xprev, Corr, B);
-                    
-                    // post-smoother
-                    // -------------
+                        // post-smoother
+                        // -------------
 
-                    for(int g = 0; g < 2; g++) { // doppelt hält besser
-                        // Test: Residual on this level / already computed by 'MinimizeResidual' above
+                        for (int g = 0; g < 2; g++) { // doppelt hält besser
+                                                      // Test: Residual on this level / already computed by 'MinimizeResidual' above
 #if DEBUG
-                        {
-                            double[] rTest = new double[rl.Length];
-                            Residual(rTest, X, B); // Residual on this level; 
-                            Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
-                        } 
+                            {
+                                double[] rTest = new double[rl.Length];
+                                Residual(rTest, X, B); // Residual on this level; 
+                                Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                            }
 #endif
-                        // compute correction
-                        double[] PreCorr = new double[L];
-                        PostSmoother.Solve(PreCorr, rl); // Vorglättung
-                        if(Corr != null)
-                            Corr.SetV(PreCorr);
+                            // compute correction
+                            double[] PreCorr = new double[L];
+                            PostSmoother.Solve(PreCorr, rl); // Vorglättung
+                            if (Corr != null)
+                                Corr.SetV(PreCorr);
 
-                        //tmpX.SetV(X);
-                        //tmpX.AccV(1.0, PreCorr);
-                        //SpecAnalysisSample(iIter, tmpX, "smooth2_" + g);
+                            //tmpX.SetV(X);
+                            //tmpX.AccV(1.0, PreCorr);
+                            //SpecAnalysisSample(iIter, tmpX, "smooth2_" + g);
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref PreCorr);
-                        if(Xprev != null)
-                            Xprev.SetV(X);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                            // orthonormalization and residual minimization
+                            AddSol(ref PreCorr);
+                            if (Xprev != null)
+                                Xprev.SetV(X);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, rl);
 
-                        SpecAnalysisSample(iIter, X, "ortho3_"+g);
+                            SpecAnalysisSample(iIter, X, "ortho3_" + g);
 
-                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                            Converged = true;
-                            break;
+                            if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                                Converged = true;
+                                break;
+                            }
+
+
                         }
 
-                        
+                        // iteration callback
+                        // ------------------
+
+                        this.ThisLevelIterations++;
+
+                        IterationCallback?.Invoke(iIter, X, rl, this.m_MgOperator);
+
                     }
-                    
-                    // iteration callback
-                    // ------------------
-
-                    this.ThisLevelIterations++;
-
-                    IterationCallback?.Invoke(iIter, X, rl, this.m_MgOperator);
-
-                }
 
 
-                // solution copy
-                // =============
-                if(!ReferenceEquals(_xl, X)) {
-                    _xl.SetV(X);
+                    // solution copy
+                    // =============
+                    if (!ReferenceEquals(_xl, X)) {
+                        _xl.SetV(X);
+                    }
                 }
             }
         }

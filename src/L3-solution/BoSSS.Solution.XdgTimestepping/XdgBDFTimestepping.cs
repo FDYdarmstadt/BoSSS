@@ -1869,8 +1869,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             usmall = new double[Lsmall];
             ubig = new double[Lbig];
 
-            var ReferenceSolver = new SparseSolver() {
-                WhichSolver = SparseSolver._whichSolver.PARDISO,
+            var ReferenceSolver = new DirectSolver() {
+                WhichSolver = DirectSolver._whichSolver.PARDISO,
                 SolverVersion = Parallelism.SEQ,
             };
 
