@@ -1836,6 +1836,7 @@ namespace BoSSS.Foundation.XDG {
             this.m_SpeciesId2Index = null;
             this.TestNodes = null;
             this.TestNodesPerFace = null;
+            this.m_LevelSets = null;
         }
 
         /// <summary>

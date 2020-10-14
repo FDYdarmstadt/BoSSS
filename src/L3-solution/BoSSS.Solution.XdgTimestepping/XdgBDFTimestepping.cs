@@ -32,6 +32,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using NUnit.Framework;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -1637,11 +1638,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.Config_MultigridOperator, 
                         dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
 
-                    //System.SaveToTextFileSparse("MatrixNOsplitting.txt");
-                    //RHS.SaveToTextFile("rhsNOsplitting.txt");
+
 
                     using (var tr = new FuncTrace()) {
                         // init linear solver
+
+
+                        //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
+                        //p.PlotInteractive();
+
                         using (new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
                         }
@@ -1786,33 +1791,35 @@ namespace BoSSS.Solution.XdgTimestepping {
                 this.Config_MultigridOperator,
                 opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
 
-            // create solver
-            ISolverWithCallback linearSolver = new OrthonormalizationScheme() {
-                MaxIter = 50000,
-                PrecondS = new ISolverSmootherTemplate[] {
-                        ClassicMultigrid.InitMultigridChain(mgOperator,
-                        i => new Schwarz() {
-                            // this creates the pre-smoother for each level
-                            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                Depth = 1
-                            },
-                            Overlap = 0
-                        },
-                        i => new Schwarz() {
-                            // this creates the post-smoother for each level
-                            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                Depth = 1
-                            },
-                            Overlap = 0
-                        },
-                        (i, mg) => {
-                            mg.Gamma = 1;
-                            mg.TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1);
-                        },
-                        () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
-                Tolerance = 1.0e-10
-            };
-
+            //// create solver
+            //ISolverWithCallback linearSolver = new OrthonormalizationScheme() {
+            //    MaxIter = 50000,
+            //    PrecondS = new ISolverSmootherTemplate[] {
+            //            ClassicMultigrid.InitMultigridChain(mgOperator,
+            //            i => new Schwarz() {
+            //                // this creates the pre-smoother for each level
+            //                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+            //                    Depth = 1
+            //                },
+            //                Overlap = 0
+            //            },
+            //            i => new Schwarz() {
+            //                // this creates the post-smoother for each level
+            //                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+            //                    Depth = 1
+            //                },
+            //                Overlap = 0
+            //            },
+            //            (i, mg) => {
+            //                mg.Gamma = 1;
+            //                mg.TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1);
+            //            },
+            //            () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
+            //    Tolerance = 1.0e-10
+            //};
+            ISolverSmootherTemplate linearSolver;
+            NonlinearSolver NonlinearSolver;
+            GetSolver(out NonlinearSolver, out linearSolver);
 
             // set-up the convergence observer
             double[] uEx = this.m_Stack_u[0].ToArray();
@@ -1830,6 +1837,76 @@ namespace BoSSS.Solution.XdgTimestepping {
             // try to solve the saddle-point system.
             mgOperator.UseSolver(linearSolver, new double[L], RHS);
 
+
+            // return
+            return CO;
+        }
+
+        public ConvergenceObserver GetFAMatrices(string OutputDir) {
+            // build the saddle-point matrix
+            //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
+            BlockMsrMatrix System, MaMa;
+            double[] RHSsmall, RHSbig, RHS;
+            double[] usmall, ubig;
+            double[] changeOfu;
+            int Lsmall, Lbig;
+            
+
+            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
+            RHS.ScaleV(-1);
+
+            // update the multigrid operator
+            MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                System, MaMa,
+                this.Config_MultigridOperator,
+                opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
+
+            // Get Reference Solver
+            Lbig = mgOperator.Mapping.ProblemMapping.LocalLength;
+            Lsmall = mgOperator.Mapping.LocalLength;
+            RHSbig = RHS.CloneAs();
+            RHSsmall = new double[Lsmall];
+            usmall = new double[Lsmall];
+            ubig = new double[Lbig];
+
+            var ReferenceSolver = new DirectSolver() {
+                WhichSolver = DirectSolver._whichSolver.PARDISO,
+                SolverVersion = Parallelism.SEQ,
+            };
+
+            //var EqSys = mgOperator.OperatorMatrix.ToMsrMatrix();
+            //for (int iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
+            //    if (EqSys.GetNoOfNonZerosPerRow(iRow) <= 0)
+            //        EqSys[iRow, iRow] = 1.0;
+            //}
+            ReferenceSolver.Init(mgOperator);
+            mgOperator.TransformRhsInto(RHSbig, RHSsmall,true);
+
+            ReferenceSolver.Solve(usmall, RHSsmall);
+            mgOperator.TransformSolFrom( ubig, usmall);
+
+            // Get the configured solvers
+            ISolverSmootherTemplate linearSolver;
+            NonlinearSolver NonlinearSolver;
+            GetSolver(out NonlinearSolver, out linearSolver);
+
+            // set-up the convergence observer
+            m_CurrentAgglomeration.ClearAgglomerated(ubig, this.m_Stack_u[0].Mapping);
+            var CO = new ConvergenceObserver(mgOperator, MaMa, ubig);
+            CO.TecplotOut = OutputDir;
+            changeOfu = new double[Lsmall];
+            ((OrthonormalizationMultigrid)linearSolver).ExtractSamples = delegate (int iter, double[] u, string name){
+                Debug.Assert(u.Length== usmall.Length);
+                changeOfu.SetV(u);
+                changeOfu.AccV(-1.0, usmall);
+                CO.Resample(iter, changeOfu, name);
+            };
+            
+            // init linear solver
+            linearSolver.Init(mgOperator);
+
+            // try to solve the saddle-point system.
+            mgOperator.UseSolver(linearSolver, new double[Lbig], RHS);
 
             // return
             return CO;

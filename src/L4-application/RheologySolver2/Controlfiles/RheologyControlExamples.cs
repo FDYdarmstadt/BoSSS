@@ -57,13 +57,17 @@ namespace BoSSS.Application.Rheology {
             //Solver Options          
             C.savetodb = false;
             C.DbPath = path;
-            C.ProjectName = "Contration";
+            C.ProjectName = "Contraction";
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
+
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            //C.NoOfMultigridLevels = 3;
+            //C.LinearSolver.TargetBlockSize = 1000;
             C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
@@ -131,16 +135,7 @@ namespace BoSSS.Application.Rheology {
             //C.ExSol_Stress = new Func<double[], double, double>[] { StressXXfunction, StressXYfunction, StressYYfunction };
 
             // Create Fields
-            //int degree = 2;
-            C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-            C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.SetDGdegree(degree);
 
             // Create Grid
 
@@ -163,6 +158,7 @@ namespace BoSSS.Application.Rheology {
                 var _xNodes = GenericBlas.Linspace(0, L, cellsX + 1);
                 var _yNodes = GenericBlas.Linspace(-H, H, (cellsY + 1));
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC, false, null, boundingBox1, boundingBox2);
+                //var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_9, C.FixedStreamwisePeriodicBC, false, null, boundingBox1, boundingBox2);
 
                 #region grids
                 //var _xNodes = GenericBlas.Linspace(0, 10, cells2 + 1);// 10 * GridLevel + 1); //(10 * kelem + 1));
@@ -272,14 +268,7 @@ namespace BoSSS.Application.Rheology {
                     grd.EdgeTagNames.Add(1, "Velocity_inlet");
                     grd.EdgeTagNames.Add(4, "Pressure_Outlet");
                 }
-
-                //grd.EdgeTagNames.Add(2, "FreeSlip");
-                grd.EdgeTagNames.Add(2, "Wall_bottom");
-                grd.EdgeTagNames.Add(3, "Wall_top");
-
-
-                grd.EdgeTagNames.Add(5, "Wall_Contraction_bottom");
-                grd.EdgeTagNames.Add(6, "Wall_Contraction_top");
+                               
 
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     var X = _X;
@@ -289,49 +278,49 @@ namespace BoSSS.Application.Rheology {
                     if (!C.FixedStreamwisePeriodicBC) {
                         if (Math.Abs(x - (0)) < 1.0e-6) {
                             //left
-                            return 1;
+                            return "Velocity_inlet";
                         }
 
                         if (Math.Abs(x - (L)) < 1.0e-6) {
                             //right
-                            return 4;
+                            return "Pressure_Outlet";
                         }
                     }
 
                     if (Math.Abs(y - (-H)) < 1.0e-6 && x < L / 2 + 1.0e-6) {
                         //bottom front
-                        return 2;
+                        return "Wall_bottom";
                     }
 
                     //if (Math.Abs(y - (0)) < 1.0e-6)
                     //{
                     //    //symmetry line
-                    //    return 2;
+                    //    return "Wall_bottom";
                     //}
 
                     if (Math.Abs(y - (+H)) < 1.0e-6 && x < L / 2 + 1.0e-6) {
                         //top front
-                        return 3;
+                        return "Wall_top";
                     }
 
                     if (Math.Abs(y - (-H / 4)) < 1.0e-6 && x > L / 2 - 1.0e-6) {
                         // bottom back
-                        return 2;
+                        return "Wall_bottom";
                     }
 
                     if (Math.Abs(y - (H / 4)) < 1.0e-6 && x > L / 2 - 1.0e-6) {
                         // top back
-                        return 3;
+                        return "Wall_top";
                     }
 
                     if (Math.Abs(x - (L / 2)) < 1.0e-6 && y < -H / 4 - 1.0e-6) {
                         // bottom contraction
-                        return 5;
+                        return "Wall_Contraction_bottom";
                     }
 
                     if (Math.Abs(x - (L / 2)) < 1.0e-6 && y > H / 4 - 1.0e-6) {
                         //top contraction
-                        return 6;
+                        return "Wall_Contraction_top";
                     }
 
                     throw new ArgumentOutOfRangeException("at x = " + x + "and y = " + y);
@@ -392,20 +381,14 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         static public RheologyControl ConfinedCylinder(
             string path = null,
-            //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
-            int degree = 1) {
-            //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
+            int degree = 3) {
+
             RheologyControl C = new RheologyControl();
 
-            //Path für cluster
-            //\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder
-
-            //Path für lokale DB
-            //C:\AnnesBoSSSdb\ConfinedCylinder
                                           
             //Solver Options
             C.NoOfTimesteps = 1;
-            C.savetodb = true;
+            C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
@@ -430,7 +413,7 @@ namespace BoSSS.Application.Rheology {
 
             // transient calculation
             // =====================
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.dt = 0.1;
             C.dtMax = C.dt;
@@ -439,13 +422,16 @@ namespace BoSSS.Application.Rheology {
             // linear solver config 
             // ====================
 
+            /*
             C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.TargetBlockSize = 100000;
-            C.LinearSolver.ConvergenceCriterion = 1E-7;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.TargetBlockSize = 10000;//100000;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
+            C.LinearSolver.NoOfMultigridLevels = 4;
+            */
 
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             // nonlinear solver config
             // =======================
@@ -474,6 +460,10 @@ namespace BoSSS.Application.Rheology {
 
             C.Bodyforces = true;
 
+            // Homotopy:
+            C.RaiseWeissenberg = false;
+            C.WeissenbergIncrement = 0.1;
+
             //Debugging and Solver Analysis
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
@@ -482,18 +472,17 @@ namespace BoSSS.Application.Rheology {
             C.ComputeL2Error = false;
 
             //Physical Params
+            // ==============
             double u0 = 1.5; // 0.375;// 0.66;// 3 / 2;
             double h = 4;
 
             C.Stokes = false;
-            C.StokesConvection = true;
+            C.StokesConvection = false;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
-            C.Reynolds = 1;
-            C.Weissenberg = 0.3; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
-            C.WeissenbergIncrement = 0.1001;
-            C.giesekusfactor = 0.1;
+            C.Reynolds = 0.1;
+            C.Weissenberg = 0.70000; //aim Weissenberg number!
+            C.giesekusfactor = 0.0;
 
             //Penalties
             C.ViscousPenaltyScaling = 1.0;
@@ -528,14 +517,20 @@ namespace BoSSS.Application.Rheology {
 
             // Create Grid
             // grids used by florian
-            //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
-            //string grid = "bb3239f2-479d-46e4-9187-ba47dc8cfc63"; // florian laptop (full, level 1)
-            //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
+            //string grid = "445bf1e8-5082-4100-83db-a53f2d2aeb97"; // Florian new laptop (full, level 0); Cell Count = 640; Dim = 2 }
+            //string grid = "b87b95c1-10d8-4b99-bc82-9c5fec70219d"; // Florian new laptop (full, level 1); Cell Count = 2416; Dim = 2 }
+            string grid = "3cfced02-dbe6-4449-a3d0-d9e258813608"; // Florian new laptop (full, level 2); Cell Count = 8504; Dim = 2 }
+            //string grid = "70c0393d-62b9-4c32-9c86-1173251617da"; // Florian new laptop (full, level 3); Cell Count = 29424; Dim = 2 }
             //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
             //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
             //string grid = "ab9b8f9a-e1aa-469d-8eea-b56a88e672a4"; // florian terminal03 (full, level 3)
 
+            // grids Matthias
+            //string grid = "5cce8f67-adbd-4aba-976f-c900a1f934c3"; // (full, level 0)
+            //string grid = "7fdc59c1-3e10-4817-8fb3-1807d97bac2a"; // (full, level 1)
+            //string grid = "3a4bf165-6464-4450-b7e2-b7d9d2436556"; // (full, level 2)
+            //string grid = "8dfdf2cd-952c-4394-a141-ae42e88b5ed7"; // (full, level 3)
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
@@ -544,7 +539,7 @@ namespace BoSSS.Application.Rheology {
             //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
 
             // full channel mesh0 for cond tests comparison - schneller?
-            string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
+            //string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
 
             //fine grid - only on cluster!           
             //string grid = "70797022-eba0-4c77-b179-334c665044b5";
@@ -576,38 +571,6 @@ namespace BoSSS.Application.Rheology {
                 };
             }
             
-            /*
-            C.GridFunc = delegate () {
-
-                int res = 16;
-                double[] xNodes = GenericBlas.Linspace(-15, 15, res * 30 / 4 + 1);
-                xNodes = xNodes.Select(x => Math.Sin(x / 15.0 * (Math.PI / 2)) * 15).ToArray();
-                double[] yNodes = GenericBlas.Linspace(-2, 2, res + 1);
-
-                GridCommons bosssGrid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-
-                Func<Vector, string> edgeTagFunc = delegate (Vector X) {
-                    double x = X[0];
-                    double y = X[1];
-
-                    if (Math.Abs(x - (-15)) < 1.0e-10)
-                        return "Velocity_inlet";
-                    if (Math.Abs(x - (15)) < 1.0e-10)
-                        return "Pressure_Outlet";
-                    if (Math.Abs(y - (-2)) < 1.0e-10)
-                        return "Wall_bottom";
-                    if (Math.Abs(y - (+2)) < 1.0e-10)
-                        return "Wall_top";
-                    if (-1.0 < y && y < 1.0 && -1.0 < x && x < 1.0)
-                        return "Wall_cylinder";
-
-                    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " + y);
-                };
-                bosssGrid.DefineEdgeTags(edgeTagFunc);
-
-                return bosssGrid;
-            };
-            //*/
 
             // Analytical Sol for Params
             if (C.SetParamsAnalyticalSol == true)
@@ -620,22 +583,8 @@ namespace BoSSS.Application.Rheology {
             // restart (florian, terminal03)
             //Guid restartID = new Guid("45c813f2-8be5-43ab-9e41-7abbca99cc99"); 
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 4)); // Weissenberg 0.4, deg = 2
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 5)); // Weissenberg 0.5, deg = 2
-
-            // another restart session (florian, terminal03)
-            //Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5"); 
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7, deg = 2
-
-            // another restart session (florian, terminal03)
-            //Guid restartID = new Guid("e74f4933-0739-4edf-997c-bdd3054aba63"); 
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(3, 2)); // Weissenberg 0.9, deg = 2
-
-            // another restart session (florian, terminal03)
-            //Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5");
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7
             
-            //Guid restartID = new Guid("056c96f6-7ce0-440c-8826-2b08395ffafa");
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(3, 0)); // Weissenberg 0.7, deg = 2
+            
 
             if (C.RestartInfo == null) {
 
@@ -656,7 +605,6 @@ namespace BoSSS.Application.Rheology {
                         C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
                     }
                 }
-                C.AddInitialValue("Phi", "X => -1", false);
             }
 
             // Set Boundary Conditions

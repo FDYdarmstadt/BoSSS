@@ -61,6 +61,21 @@ namespace BoSSS.Foundation {
 
     }
 
+    /// <summary>
+    /// User-defined validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds, 
+    /// e.g. to avoid un-physical 'solutions' (e.g. negative density).
+    /// ('safeguard' for the solver)
+    /// </summary>
+    /// <param name="OldSolution">
+    /// - on input, the old solution (approximation) 
+    /// </param>
+    /// <param name="NewSolution">
+    /// - on input: new solution (approximation) proposed by the solver
+    /// - on exit: optionally, solution (approximation) modified by the user
+    /// </param>
+    public delegate void SolverSafeguard(DGField[] OldSolution, DGField[] NewSolution);
+
+
 
     /// <summary>
     /// Common interface for spatial operators in the DG and the XDG context
@@ -73,8 +88,8 @@ namespace BoSSS.Foundation {
         /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
         /// </summary>
         IList<string> CodomainVar { get; }
-        
-        
+
+
         /// <summary>
         /// names of (DG-) variables that represent the domain of this  differential operator;
         /// These names/strings should not be confused with field identification strings
@@ -98,7 +113,7 @@ namespace BoSSS.Foundation {
         /// collection of equation components that define the operator.
         /// </summary>
         IEquationComponents EquationComponents { get; }
-        
+
         /// <summary>
         /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
         /// or not.
@@ -140,8 +155,8 @@ namespace BoSSS.Foundation {
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
         void Commit();
-        
-        
+
+
         /// <summary>
         /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
         /// </summary>
@@ -149,7 +164,7 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
-       
+
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
@@ -164,8 +179,8 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
-        
-        
+
+
         /// <summary>
         /// Constructs a new evaluator object for the explicit evaluation of this spatial operator.
         /// </summary>
@@ -194,7 +209,7 @@ namespace BoSSS.Foundation {
         /// Computes the Jacobian matrix of the operator by finite differences.
         /// </summary>
         IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
-         
+
         /// <summary>
         /// Evaluation of the operator matrix
         /// (only for linear operators or ad-hoc linearizations)
@@ -221,10 +236,17 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// 
         /// Setting (to a different value) fires all <see cref="HomotopyUpdate"/> events
         /// </summary>
         double CurrentHomotopyValue {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 'safeguard' for  solvers to avoid unphysical solutions (mostly relevant for implicit, nonlinear systems)
+        /// </summary>
+        SolverSafeguard SolverSafeguard {
             get;
             set;
         }

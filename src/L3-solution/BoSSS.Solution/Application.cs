@@ -717,7 +717,7 @@ namespace BoSSS.Solution {
                 // load control file, parse args
                 if (opt.ProjectName != null)
                     ctrlV2.ProjectName = opt.ProjectName;
-                if (opt.SessionName != null)
+                if (opt.SessionName != null && ctrlV2.SessionName.IsEmptyOrWhite())
                     ctrlV2.SessionName = opt.SessionName;
 
                 if (opt.ImmediatePlotPeriod != null) {
@@ -2236,6 +2236,7 @@ namespace BoSSS.Solution {
                     // release old DG fields
                     this.m_RegisteredFields.Clear();
                     this.m_IOFields.Clear();
+                    this.LsTrk = null;
 
                     // re-create fields
                     if (this.Control != null) {
@@ -2345,6 +2346,7 @@ namespace BoSSS.Solution {
                             if (this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
                             }
+                            LsTrk = null;
                             oldGridData = null;
 
                             if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
@@ -2398,21 +2400,22 @@ namespace BoSSS.Solution {
                         //    }
                         //}
 
-                        //set dg co�rdinates
+                        //set dg coordinates
                         foreach (var f in m_RegisteredFields) {
                             if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            if (f.Identification == "Phi")
+                            if(f.Identification == "Phi")
+                                //throw new ApplicationException("ask Smuda why he did this");
                                 continue;
                             //f.Clear();
 
                             remshDat.RestoreDGField(f);
                         }
 
-                        // re-create solvers, blablabla
+                        // re-create solvers, etc.
                         CreateEquationsAndSolvers(remshDat);
                     }
                 } //end of adapt mesh branch

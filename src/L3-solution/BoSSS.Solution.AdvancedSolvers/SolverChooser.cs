@@ -29,6 +29,11 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP;
 using ilPSP.Utils;
+using System.IO;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.Statistic;
+using BoSSS.Foundation.IO;
 using static BoSSS.Solution.AdvancedSolvers.MultigridOperator;
 using BoSSS.Solution.Queries;
 
@@ -422,8 +427,8 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                             Depth = lc.NoOfMultigridLevels-1,
                         },
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,    //PARDISO
                             LinConfig = lc
                         },
 
@@ -444,8 +449,8 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks,
                         },
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,
                             LinConfig = lc
                         },
                         Overlap = 1
@@ -467,8 +472,8 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
 
                     precond[0] = new Schwarz() {
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS
                         },
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
@@ -478,7 +483,8 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1 };
+                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1, AssignXdGCellsToLowBlocks = true};
+                    SetQuery("XdgCellsToLowBlock", ((LevelPmg)precond[0]).AssignXdGCellsToLowBlocks ? 1 : 0, true);
                     break;
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
@@ -594,15 +600,15 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.classic_mumps:
-                    templinearSolve = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                    templinearSolve = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         LinConfig = lc
                     };
                     break;
 
                 case LinearSolverCode.classic_pardiso:
-                    templinearSolve = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    templinearSolve = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         SolverVersion = Parallelism.OMP,
                         LinConfig = lc
                     };
@@ -615,8 +621,8 @@ namespace BoSSS.Solution {
                             NoOfPartsPerProcess = NoOfBlocks,
                         },
                         Overlap = 1,
-                        CoarseSolver = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.PARDISO,
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.PARDISO,
                             LinConfig = lc
                         }
                     };
@@ -637,8 +643,8 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.classic_cg:
-                    templinearSolve = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.CG,
+                    templinearSolve = new MonkeySolver() {
+                        WhichSolver = MonkeySolver._whichSolver.CG,
                         LinConfig = lc
                     };
                     break;
@@ -672,7 +678,7 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
                     Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize;  };
-                    templinearSolve = KcycleMultiSchwarz(lc, MaxMGDepth, LocalDOF, SblkSizeFunc);
+                    templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
@@ -887,7 +893,9 @@ namespace BoSSS.Solution {
 
         private void SetLinItCallback(ISolverSmootherTemplate solverwithoutcallback, bool IsLinPrecond) {
 
-            ISolverWithCallback _solverwithcallback = (ISolverWithCallback)solverwithoutcallback;
+            ISolverWithCallback _solverwithcallback = solverwithoutcallback as ISolverWithCallback;
+            if(_solverwithcallback == null)
+                return;
 
             string _type = null;
             int _caseselect = -1;
@@ -993,14 +1001,14 @@ namespace BoSSS.Solution {
 
                 switch (D) {
                     case 1:
-                        tempsolve = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        tempsolve = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,
                             LinConfig = lc
                         };
                         break;
                     case 2:
-                        tempsolve = new SparseSolver() {
-                            WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        tempsolve = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS,
                             LinConfig = lc
                         };
                         break;
@@ -1027,8 +1035,8 @@ namespace BoSSS.Solution {
                                 },
                             };
                         } else {
-                            tempsolve = new SparseSolver() {
-                                WhichSolver = SparseSolver._whichSolver.MUMPS,
+                            tempsolve = new DirectSolver() {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS,
                                 LinConfig = lc
                             };
                         }
@@ -1058,8 +1066,8 @@ namespace BoSSS.Solution {
             if (MGlevels > 0) {
                 solver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(MGlevels - 1, lc) };
             } else {
-                solver = new SparseSolver() {
-                    WhichSolver = SparseSolver._whichSolver.MUMPS,
+                solver = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.MUMPS,
                     LinConfig = lc
                 };
             }
@@ -1111,18 +1119,54 @@ namespace BoSSS.Solution {
             }
             return solver;
         }
+            
+        private int MGOcc = 0;
+        private Stopwatch MGTimer = new Stopwatch();
+        private void MultigridAnalysis(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
+        {
+            if (Mgop.LevelIndex == 0 && Mgop.GridData.MpiRank == 0)
+            {
+                string file = "MG-Analysis.txt";
+                if (MGOcc == 0) { MultigridAnalysisHeader(file); MGTimer.Start(); }
+                if (iterIndex == 0) { MGOcc++; MGTimer.Restart(); }
+                StreamWriter sw = new StreamWriter(file, true);
+                // IMPLEMENT A WAY TO KNOW IF THIS IS A SEPERATE MG OCCURRENCE
+                var time = MGTimer.Elapsed;
+                sw.Write(MGOcc);
+                sw.Write(",");
+                sw.Write(iterIndex);
+                sw.Write(",");
+                sw.Write(time);
+                sw.Write(",");
+                sw.Write(currentRes.L2Norm());
+                sw.WriteLine();
+                sw.Flush();
+                sw.Close();
+            }
+        }
 
+        private void MultigridAnalysisHeader(string file)
+        {
+            StreamWriter sw = new StreamWriter(file, false);
+            sw.Write("MG-Occurrence");
+            sw.Write(",");
+            sw.Write("MG-Iteration");
+            sw.Write(",");
+            sw.Write("Time");
+            sw.Write(",");
+            sw.Write("Residual");
+            sw.WriteLine();
+            sw.Flush();
+            sw.Close();
+        }
 
+        private ISolverSmootherTemplate My_MG_Precond(LinearSolverConfig _lc, int[] _LocalDOF, int MGLength, ISolverSmootherTemplate[] prechain, ISolverSmootherTemplate[] postchain, ISolverSmootherTemplate toplevelpre, ISolverSmootherTemplate toplevelpst)
+        {
 
-        
-
-
-
-        private ISolverSmootherTemplate My_MG_Precond(LinearSolverConfig _lc, int[] _LocalDOF, int MGLength, ISolverSmootherTemplate[] prechain, ISolverSmootherTemplate[] postchain, ISolverSmootherTemplate toplevelpre, ISolverSmootherTemplate toplevelpst) {
-
-            int MGDepth = Math.Min(MGLength,_lc.NoOfMultigridLevels);
+            int MGDepth = Math.Min(MGLength, _lc.NoOfMultigridLevels);
 
             bool isLinPrecond = true;
+            
 
             int DirectKickIn = _lc.TargetBlockSize;
             if (DirectKickIn < _LocalDOF.Last()) {
@@ -1142,8 +1186,8 @@ namespace BoSSS.Solution {
                 useDirect |= NoOfBlocks.MPISum() <= 1;
 
                 if (useDirect) {
-                    MultigridChain[iLevel] = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                    MultigridChain[iLevel] = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         TestSolution = false
                     };
                 } else {
@@ -1156,6 +1200,7 @@ namespace BoSSS.Solution {
                     };
 
                     ((ISolverWithCallback)MgLevel).IterationCallback += MultigridCallback;
+
 
                     MultigridChain[iLevel] = MgLevel;
 
@@ -1226,8 +1271,8 @@ namespace BoSSS.Solution {
                 useDirect |= NoOfBlocks.MPISum() <= 1;
 
                 if (useDirect) {
-                    MultigridChain[iLevel] = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                    MultigridChain[iLevel] = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         TestSolution = false
                     };
                 } else {
@@ -1337,9 +1382,9 @@ namespace BoSSS.Solution {
                     solvertoinject = toplevelsmootherchain.CloneAs();
                 }
                 else if (iDepth == MaxMGLevel) {
-                    solvertoinject = new SparseSolver()
+                    solvertoinject = new DirectSolver()
                     {
-                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
                         TestSolution = false
                     };
                     SetLinItCallback(solvertoinject, true);
@@ -1367,15 +1412,14 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Come with me, if you want to converge ...
-        /// -terminator algorithm
+        /// I want to ride my k-cycle ...
         /// </summary>
-        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int MaxMGDepth, int[] _LocalDOF, Func<int,int> SchwarzblockSize) {
+        ISolverSmootherTemplate KcycleMultiSchwarz(int MaxMGDepth, int[] _LocalDOF, Func<int,int> SchwarzblockSize) {
 
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
 
-            int DirectKickIn = _lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
+            int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
             int LocSysSizeZeroLvl = _LocalDOF[0];
             if (DirectKickIn < _LocalDOF.Last()) {
                 Console.WriteLine("WARNING: target blocksize ({0}) < smallest blocksize of MG ({1}).", DirectKickIn, _LocalDOF.Last());
@@ -1400,7 +1444,7 @@ namespace BoSSS.Solution {
                 // It has to be ensured, that directKickin takes place on all ranks at same level
                 // therefore only global criterions have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
-                useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
+                useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect |= TotalNoOfSchwarzBlocks < GetMPIsize;
 
                 if (useDirect && iLevel == 0)
@@ -1413,8 +1457,8 @@ namespace BoSSS.Solution {
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
-                    levelSolver = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    levelSolver = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
                 } else {
@@ -1427,12 +1471,18 @@ namespace BoSSS.Solution {
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = true
+                        UsePMGinBlocks = true,
+                        CoarseSolveOfCutcells = true,
                     };
+
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
                         PostSmoother = smoother1,
+                        m_omega = 1,
                     };
 
                     if (iLevel > 0) {
@@ -1444,6 +1494,9 @@ namespace BoSSS.Solution {
                             double renorm = Res.MPI_L2Norm();
                             Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
                         };
+
+                    // Extended Multigrid Analysis
+                    //((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
 
                 }
                 SolverChain.Add(levelSolver);
@@ -1494,7 +1547,7 @@ namespace BoSSS.Solution {
                     NoOfBlocks = 8 / MPIsize;
                 } else {
                     break;
-                    useDirect = true;
+                    //useDirect = true;
                 }
 
                 if (useDirect)
@@ -1504,8 +1557,8 @@ namespace BoSSS.Solution {
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
-                    levelSolver = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    levelSolver = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
                 } else {
@@ -1632,7 +1685,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_Kcycle_schwarz:
 
                     Schwarz kcycleSchwarz = null;
-                    if (solver.GetType() == typeof(SparseSolver))
+                    if (solver.GetType() == typeof(DirectSolver))
                         break; //we meet PARDISO here, because no MG descend
                     try {
                         kcycleSchwarz = (Schwarz)((OrthonormalizationMultigrid)solver).PreSmoother;
@@ -1660,14 +1713,14 @@ namespace BoSSS.Solution {
                     CompareAttributes("UseDiagonalPmg", true, TGP.UseDiagonalPmg);
                     break;
                 case LinearSolverCode.classic_pardiso:
-                    SparseSolver sparsesolver = null;
+                    DirectSolver sparsesolver = null;
                     try {
-                        sparsesolver = (SparseSolver)solver;
+                        sparsesolver = (DirectSolver)solver;
                     } catch (Exception e) {
                         throw new ApplicationException("someone messed up classic pardiso settings");
                     }
 
-                    if (sparsesolver.WhichSolver != SparseSolver._whichSolver.PARDISO)
+                    if (sparsesolver.WhichSolver != DirectSolver._whichSolver.PARDISO)
                         throw new ApplicationException("someone messed up classic pardiso settings");
                     CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
                     break;

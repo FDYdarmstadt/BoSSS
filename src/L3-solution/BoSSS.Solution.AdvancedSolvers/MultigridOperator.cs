@@ -380,6 +380,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // =======================
                 int[] IndefRows = this.ComputeChangeOfBasis(RawOpMatrix, RawMassMatrix, out m_LeftChangeOfBasis, out m_RightChangeOfBasis, out m_LeftChangeOfBasis_Inverse, out m_RightChangeOfBasis_Inverse);
 
+              
 
                 // apply change of basis to operator matrix
                 // ========================================
@@ -828,6 +829,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="solver"></param>
+        /// <param name="INOUT_X">
+        /// - on exit: (hopefully) the solution to the linear problem
+        /// </param>
+        /// <param name="IN_RHS">
+        /// input: right-hand-side of the linear problem
+        /// </param>
+        /// <param name="UseGuess">
+        /// - true: use <paramref name="INOUT_X"/> on entry as an initial guess
+        /// </param>
         public void UseSolver<T1, T2>(ISolverSmootherTemplate solver, T1 INOUT_X, T2 IN_RHS, bool UseGuess = true)
             where T1 : IList<double>
             where T2 : IList<double> 

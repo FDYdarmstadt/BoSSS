@@ -35,6 +35,7 @@ using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.Timestepping;
 using Newtonsoft.Json;
 using BoSSS.Solution.EnergyCommon;
+using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -63,6 +64,13 @@ namespace BoSSS.Application.XNSE_Solver {
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
         }
+
+        /// <summary>
+        /// default: Symmetric_diag for velocity and IdMass for pressure block preconditioning,
+        /// if true Schur complement is used instead.
+        /// </summary>
+        [DataMember]
+        public bool UseSchurBlockPrec = false;
 
         /// <summary>
         /// Type of <see cref="XNSE_SolverMain"/>.
@@ -299,6 +307,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public FourierLevSetControl FourierLevSetControl;
+
+        /// <summary>
+        /// Options for the initialization of the Phasefield Level-set
+        /// </summary>
+        [DataMember]
+        public PhasefieldControl PhasefieldControl;
 
         /// <summary>
         /// array of additional parameter values for some testcases

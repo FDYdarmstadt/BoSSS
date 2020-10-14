@@ -27,6 +27,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
@@ -38,30 +39,26 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="cells_x"></param>
         /// <param name="cells_yz"></param>
         /// <param name="only_channel"></param>
-        /// <param name="pardiso"></param>
         /// <param name="no_p"></param>
         /// <param name="no_it"></param>
         /// <param name="restart"></param>
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 3, int cells_x = 128, int cells_yz = 32, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 15, int cells_yz = 5, bool only_channel = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
             C.OperatorMatrixAnalysis = false;
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             // basic database options
             // ======================
             //C.DbPath = _DbPath;
 
 
-            C.DbPath = @"G:\test_db";
+            //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
             C.savetodb = C.DbPath != null;
-            //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
-            //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
             //C.DynamicLoadBalancing_Period = 1;
             //C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
@@ -70,32 +67,22 @@ namespace BoSSS.Application.IBM_Solver {
             //    return new StaticCellCostEstimator(map);
             //});
 
-            C.GridPartType = GridPartType.none;
-            C.SetDGdegree(1);
+            C.GridPartType = GridPartType.METIS;
+            C.SetDGdegree(k);
             C.DynamicLoadBalancing_Period = 1;
 
             // Assign correct names
-
-            if(pardiso) {
-                if(only_channel) {
-                    C.SessionName = "Channel_Pardiso_k" + k + "_" + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
-
-                } else {
-                    C.SessionName = "Sphere_Pardiso_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
-                }
+            if (only_channel) {
+                C.SessionName = "Channel_Mumps_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
             } else {
-                if(only_channel) {
-                    C.SessionName = "Channel_Mumps_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
-                } else {
-                    C.SessionName = "Sphere_Mumps_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
-                }
+                C.SessionName = "Sphere_Mumps_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
             }
+
             C.saveperiod = 1;
             //C.SessionName = "Sphere_k" + k + "_h" + h+"Re100";
             C.ProjectName = "Sphere3D_Stokes";
             C.ProjectDescription = "Sphere_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz;
             C.Tags.Add("with immersed boundary method");
-            C.Tags.Add("Pardiso " + pardiso);
             C.Tags.Add("only channel " + only_channel);
             C.Tags.Add("k " + k);
             C.Tags.Add("no_p" + no_p);
@@ -113,9 +100,9 @@ namespace BoSSS.Application.IBM_Solver {
             //    C.GridGuid = new Guid(restartGrid);
             //}
             // Load Grid
-            if(!restart) {
+            if (!restart) {
 
-                if(load_Grid == true) {
+                if (load_Grid == true) {
                     Console.WriteLine("...loading grid");
                     C.GridGuid = new Guid(_GridGuid);
                 } else {
@@ -125,8 +112,8 @@ namespace BoSSS.Application.IBM_Solver {
                     C.GridFunc = delegate {
 
                         // x-direction
-                        var _xNodes = GenericBlas.Linspace(-0.5, 3, cells_x + 1);
-
+                        var _xNodes = GenericBlas.Linspace(0, 3, cells_x + 1);
+                        //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                         // y-direction
                         var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
@@ -146,28 +133,28 @@ namespace BoSSS.Application.IBM_Solver {
                             double y = X[1];
                             double z = X[2];
 
-                            if(Math.Abs(x - (-0.5)) < 1.0e-6)
+                            if (Math.Abs(x - (0)) < 1.0e-6)
                                 // inlet
                                 return 1;
 
-                            if(Math.Abs(x - (3)) < 1.0e-6)
+                            if (Math.Abs(x - (3)) < 1.0e-6)
                                 // outlet
                                 return 3;
 
-                            if(Math.Abs(y - (-0.5)) < 1.0e-6)
+                            if (Math.Abs(y - (-0.5)) < 1.0e-6)
                                 // left
                                 return 2;
 
-                            if(Math.Abs(y - (0.5)) < 1.0e-6)
+                            if (Math.Abs(y - (0.5)) < 1.0e-6)
                                 // right
                                 return 2;
 
-                            if(Math.Abs(z - (-0.5)) < 1.0e-6)
-                                // top left
+                            if (Math.Abs(z - (-0.5)) < 1.0e-6)
+                                // top
                                 return 2;
 
-                            if(Math.Abs(z - (0.5)) < 1.0e-6)
-                                // top right
+                            if (Math.Abs(z - (0.5)) < 1.0e-6)
+                                // bottom
                                 return 2;
 
                             throw new ArgumentOutOfRangeException();
@@ -345,10 +332,12 @@ namespace BoSSS.Application.IBM_Solver {
                 C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
                 C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
-                if(only_channel) {
+                if (only_channel) {
                     C.InitialValues_Evaluators.Add("Phi", X => -1);
                 } else {
-                    C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                    C.InitialValues_Evaluators.Add("Phi", X => -Math.Pow((X[0]-1),10) -Math.Pow((X[1]),10) -Math.Pow((X[2]),10) + Math.Pow(C.particleRadius,10));
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]) + -(X[1]) + -(X[2]) + C.particleRadius);
                 }
 
             }
@@ -357,7 +346,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 0.1;
+            C.particleRadius = 0.3;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.0001 / 1;
 
@@ -374,17 +363,20 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.IncludeConvection = false;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 200;
+            C.LinearSolver.NoOfMultigridLevels = 4;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_schwarz_Kcycle_directcoarse;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.verbose = true;
             C.NonLinearSolver.verbose = true;
             //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             // Timestepping
             // ============
@@ -408,8 +400,6 @@ namespace BoSSS.Application.IBM_Solver {
 
             return C;
         }
-
-
 
         static public IBM_Control SphereFlow(string _DbPath = null, int k = 2, int cells_x = 11, int cells_yz = 9, bool only_channel = true, bool pardiso = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();

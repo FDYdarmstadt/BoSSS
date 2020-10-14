@@ -44,6 +44,14 @@ namespace BoSSS.Foundation.XDG {
     public partial class XSpatialOperatorMk2 : ISpatialOperator {
 
         /// <summary>
+        /// <see cref="ISpatialOperator.SolverSafeguard"/>
+        /// </summary>
+        public SolverSafeguard SolverSafeguard {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
         /// </summary>
         public LinearizationHint LinearizationHint {
@@ -1477,7 +1485,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// 
+        /// <see cref="OperatorCoefficientsProvider"/>
         /// </summary>
         /// <param name="lstrk">current level-set tracker</param>
         /// <param name="spc">species which should be integrated, one of <see cref="Species"/></param>

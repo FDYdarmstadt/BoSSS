@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Solution.Gnuplot  {
 
     /// <summary>
     /// Formatting tools for <see cref="Plot2Ddata"/>.

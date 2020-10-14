@@ -36,6 +36,7 @@ using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -679,9 +680,25 @@ namespace BoSSS.Application.IBM_Solver {
 
             //LevsetEvo(phystime, dt, null);
 
+            SmoothLevelSet();
+            LsTrk.UpdateTracker(0.0);
+
             return 0.0;
         }
 
+        void SmoothLevelSet() {
+            CellMask near = this.LevsetTracker.Regions.GetNearMask4LevSet(0, 1);
+            ContinuityProjectionCDG projecter = new ContinuityProjectionCDG(this.LevSet.Basis);
+            projecter.MakeContinuous(this.DGLevSet.Current, this.LevSet, near);
+
+            CellMask posFar = this.LevsetTracker.Regions.GetLevelSetWing(0, +1).VolumeMask.Except(near);
+            CellMask negFar = this.LevsetTracker.Regions.GetLevelSetWing(0, -1).VolumeMask.Except(near);
+
+            this.LevSet.Clear(posFar);
+            this.LevSet.AccConstant(1, posFar);
+            this.LevSet.Clear(negFar);
+            this.LevSet.AccConstant(-1, negFar);
+        }
 
         //protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] Test_Force = new double[3];
@@ -707,8 +724,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 
-                m_BDF_Timestepper.Solve(phystime, dt); 
-                
+                m_BDF_Timestepper.Solve(phystime, dt);
+
 
                 // Residual();
                 this.ResLogger.NextTimestep(false);
@@ -915,6 +932,17 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="physTime"></param>
+        /// <param name="timestepNo"></param>
+        /// <param name="superSampling"></param>
+        /// <param name="addsomething"></param>
+        protected void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling, string addsomething) {
+            Tecplot.PlotFields(m_RegisteredFields, "IBM_Solver" + timestepNo + "_"+addsomething, physTime, superSampling);
+        }
+
+        /// <summary>
         /// DG field instantiation.
         /// </summary>
         protected override void CreateFields() {
@@ -979,14 +1007,29 @@ namespace BoSSS.Application.IBM_Solver {
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
+                LsTrk.UpdateTracker(0.0);
             }
 
-            /*
-            PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
-                LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
-                false);
-            LsTrk.UpdateTracker(0.0);
-            */
+
+            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("before_smoothing");
+            //PlotCurrentState(0.0, 0, 4, "before_smoothing");
+
+            //LsTrk.UpdateTracker(0.0);
+            //PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
+            //   LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
+            //   false);
+
+            ////var Fullmask = CellMask.GetFullMask(GridData);
+            ////PerformLevelSetSmoothing(Fullmask,
+            ////   LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
+            ////   false);
+            //LsTrk.UpdateTracker(0.0);
+            ////SmoothLevelSet();
+            ////LsTrk.UpdateTracker(0.0);
+
+            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("after_smoothing");
+            //PlotCurrentState(0.0, 0, 4, "after_smoothing");
+
 
 
             // =======================OUTPUT FOR GMRES=====================================
@@ -1166,14 +1209,14 @@ namespace BoSSS.Application.IBM_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                            DegreeS = new int[] { Math.Max(1, pVel) },//DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        DegreeS = new int[] { Math.Max(0, pPrs) },//DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };

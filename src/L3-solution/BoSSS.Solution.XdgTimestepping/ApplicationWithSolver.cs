@@ -33,7 +33,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public virtual CoordinateVector CurrentStateVector {
             get;
-            private set;
+            protected set;
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public virtual CoordinateVector CurrentResidualVector {
             get;
-            private set;
+            protected set;
         }
 
         /*
@@ -110,6 +110,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
             */
             CreateAdditionalFields();
+
+
+
         }
 
         /// <summary>
@@ -176,7 +179,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public XdgTimestepping Timestepping {
             get;
-            internal set;
+            protected set;
         }
 
 
@@ -432,12 +435,6 @@ namespace BoSSS.Solution.XdgTimestepping {
          where T : AppControlSolver, new() {
 
 
-        ///// <summary>
-        ///// Block scaling of the mass matrix: for each codomain variable (row) in the spatial operator, 
-        ///// a single number..
-        ///// </summary>
-        //abstract protected IEnumerable<double> GetMassScale(int D);
-
         /// <summary>
         /// initialization of the main spatial operator
         /// </summary>
@@ -449,6 +446,18 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         internal override void CreateTrackerHack() {
                
+        }
+
+        /// <summary>
+        /// Contains hack 
+        /// </summary>
+        protected override void CreateFields() {
+            base.CreateFields();
+            if(Timestepping != null && Timestepping.LsTrk == null) {
+                // re-create the internal Dummy-Tracker after dynamic load-balancing/mesh refinement
+                Timestepping.RecreateDummyTracker(this.GridData);
+                this.LsTrk = Timestepping.LsTrk;
+            }
         }
 
 
@@ -487,7 +496,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// 
         /// </summary>
         protected override void InitSolver() {
-             if(base.Timestepping != null)
+            if (base.Timestepping != null)
                 return;
 
             XdgTimestepping solver = new XdgTimestepping(

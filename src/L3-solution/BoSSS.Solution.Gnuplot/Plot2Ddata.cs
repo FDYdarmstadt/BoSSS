@@ -26,7 +26,7 @@ using ilPSP;
 using System.Runtime.Serialization;
 using ilPSP.Utils;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Solution.Gnuplot {
 
     /// <summary>
     /// The high-level Gnuplot interface; contains 
@@ -54,7 +54,7 @@ namespace BoSSS.Application.BoSSSpad {
                 DashType = DashTypes.Solid,
                 LineColor = LineColors.Black,
                 LineWidth = 1,
-                PointSize = 3,
+                PointSize = 0.7,
                 Style = Styles.LinesPoints
             };
 
@@ -103,15 +103,18 @@ namespace BoSSS.Application.BoSSSpad {
             /// that the length must be equal to the length of
             /// <paramref name="abscissas"/>.
             /// </param>
-            public XYvalues(string name, double[] abscissas, double[] values) {
-                if (abscissas.Length != values.Length) {
+            public XYvalues(string name, IEnumerable<double> abscissas, IEnumerable<double> values) {
+                double[] _abscissas = abscissas.ToArray().CloneAs();
+                double[] _values = values.ToArray().CloneAs();
+                
+                if (_abscissas.Length != _values.Length) {
                     throw new ArgumentException(
                         "Number of x and y values must be identical within each group");
                 }
 
                 this.Name = name;
-                this.Abscissas = abscissas;
-                this.Values = values;
+                this.Abscissas = _abscissas;
+                this.Values = _values;
             }
 
             /// <summary>
@@ -539,7 +542,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Another copy constructor used by <see cref="Merge"/> and <see cref="Extract"/>
+        /// Another copy constructor used by <see cref="Merge(Plot2Ddata[])"/> and <see cref="Extract"/>
         /// </summary>
         /// <param name="groups">
         /// The data groups (see <see cref="dataGroups"/>) to be included in

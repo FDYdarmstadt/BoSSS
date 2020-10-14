@@ -166,6 +166,9 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     abstract public class XdgTimesteppingBase {
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected XdgTimesteppingBase(
             Control.NonLinearSolverConfig nonlinconfig,
             Control.LinearSolverConfig linearconfig) {
@@ -329,14 +332,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected AggregationGridBasis[][] MultigridBasis;
 
         /// <summary>
-        /// Last solver residuals.
+        /// Latest solver residuals.
         /// </summary>
         public CoordinateVector Residuals {
             get;
             protected set;
         }
-
-        
 
         /// <summary>
         /// Initialization of the solver/preconditioner.
@@ -402,8 +403,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns either a solver for the Navier-Stokes or the Stokes system.
         /// E.g. for testing purposes, one might also use a nonlinear solver on a Stokes system.
         /// </summary>
-        /// <param name="nonlinSolver"></param>
-        /// <param name="linearSolver"></param>
         protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             nonlinSolver = null;
             linearSolver = null;
@@ -425,7 +424,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; 
+                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi;
                 }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
@@ -437,12 +436,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        //void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-        //    double resiNorm = currentRes.MPI_L2Norm();
-        //    Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
-        //}
-
-
+        
         /// <summary>
         /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
         /// </summary>
@@ -477,7 +471,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // transform current solution and residual back to the DG domain
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    //var X = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
                     var R = this.Residuals;
                     R.Clear();
 
@@ -486,6 +479,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //this.m_Agglomerator.Extrapolate(X, X.Mapping);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
 
+                    /*
+                    CoordinateVector Solution = new CoordinateVector(this.Residuals.Fields.Select(delegate (DGField f) {
+                        DGField r = f.CloneAs();
+                        r.Identification = "Sol_" + r.Identification;
+                        return r;
+                    }));
+                    Mgop.TransformSolFrom(Solution, currentSol);
+                    Tecplot.Tecplot.PlotFields(Solution.Fields.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
+                    */
+                    
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);

@@ -85,7 +85,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         private int m_CoarseLowOrder = 1;
 
-
+        /// <summary>
+        /// If true multispecies blocks are assigned to low order block solver.
+        /// This hopefully is better than the default approach
+        /// </summary>
+        public bool AssignXdGCellsToLowBlocks {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Krankplätze müssen verdichtet werden
@@ -107,18 +114,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
 
             int D = this.m_op.GridData.SpatialDimension;
-           
+
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1)); // dirty hack for mixed order stokes
-            //DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= CoarseLowOrder);
+            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1);
+            DGlowSelect.ModeSelector(lowFilter);
+
+            if (AssignXdGCellsToLowBlocks)
+                ModifyLowSelector(DGlowSelect, op);
+
             lMask = new BlockMask(DGlowSelect);
             m_lowMaskLen = lMask.GetNoOfMaskedRows;
 
             if (UseHiOrderSmoothing) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
-                DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1));
-                //DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > CoarseLowOrder );
+                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1);
+                DGhighSelect.ModeSelector(highFilter);
+
+                if (AssignXdGCellsToLowBlocks)
+                    ModifyHighSelector(DGhighSelect, op);
+
                 hMask = new BlockMask(DGhighSelect);
                 m_highMaskLen = hMask.GetNoOfMaskedRows;
 
@@ -179,6 +194,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             BlockI0.SaveToTextFileDebug("BlockI0");
             Block_N.SaveToTextFileDebug("Block_N");
 #endif
+        }
+
+        private void ModifyLowSelector(SubBlockSelector sbs, MultigridOperator op) {
+            AssignXdgBlocksModification(sbs, op, true);
+        }
+
+        private void ModifyHighSelector(SubBlockSelector sbs, MultigridOperator op) {
+            AssignXdgBlocksModification(sbs, op, false);
+        }
+
+        private void AssignXdgBlocksModification(SubBlockSelector sbs, MultigridOperator op, bool IsLowSelector) {
+            var Filter = sbs.ModeFilter;
+            Func<int, int, int, int, bool> Modification = delegate (int iCell, int iVar, int iSpec, int pDeg) {
+                int NoOfSpec = op.Mapping.AggBasis[0].GetNoOfSpecies(iCell);
+                if (NoOfSpec >= 2)
+                    return IsLowSelector;
+                else
+                    return Filter(iCell, iVar, iSpec, pDeg);
+            };
+            sbs.ModeSelector(Modification);
         }
 
         ISparseSolver intSolver;
@@ -245,7 +280,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     var Map = m_op.Mapping;
                     int NoVars = Map.AggBasis.Length;
                     int j0 = Map.FirstBlock;
-                    int J = Map.LocalNoOfBlocks;
+                    int J = HighOrderBlocks_LU.Length;
                     int[] degs = m_op.Degrees;
                     var BS = Map.AggBasis;
 
@@ -283,9 +318,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             X.AccV(1.0,Cor_f);
 
-            if (IterationCallback != null) {
-                IterationCallback(m_Iter, X.ToArray(), Res_f, m_op);
-            }
+            //IterationCallback?.Invoke(m_Iter, X.ToArray(), Res_f, m_op);
+
             m_Iter++;
         }
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
