@@ -1085,21 +1085,23 @@ namespace BoSSS.Application.IBM_Solver {
 
             
 
-
             if (this.Control.LevelSetSmoothing) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // smoothing on: perform some kind of C0-projection
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
-                    ContBasis: this.LevSet.Basis,
-                    DGBasis: this.DGLevSet.Current.Basis,
-                    gridData: GridData,
-                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
+                int TotNoOfCells = SmoothingDomain.NoOfItemsLocally.MPISum();
 
-                //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
+                if(TotNoOfCells > 0) {
+                    var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
+                        ContBasis: this.LevSet.Basis,
+                        DGBasis: this.DGLevSet.Current.Basis,
+                        gridData: GridData,
+                        Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
 
-                ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, SmoothingDomain, null, false);
+                    ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, SmoothingDomain, null, false);
+                }
+                
                 if(SetFarField) {
                     var NegMask = LsTrk.Regions.GetSpeciesMask("A").Except(SmoothingDomain);
                     LevSet.Clear(NegMask);
