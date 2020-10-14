@@ -3837,10 +3837,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem = 16, string _DbPath = null, int D = 3) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem =64, string _DbPath = null, int D = 2) {
 
             XNSE_Control C = new XNSE_Control();
-
 
             // basic database options
             // ======================
@@ -3910,7 +3909,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     default:
                     throw new ArgumentOutOfRangeException();
                 }
-
 
 
                 grd.DefineEdgeTags(delegate (double[] X) {
@@ -4015,12 +4013,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 4;
-            C.LinearSolver.MaxSolverIterations = 200;
-            if(D == 2)
-                C.LinearSolver.TargetBlockSize = 2000;
-            else 
-                C.LinearSolver.TargetBlockSize = 10000;
+            C.UseSchurBlockPrec = false;
+
+            C.LinearSolver.NoOfMultigridLevels = 2;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.TargetBlockSize = 1000;
             C.LinearSolver.MaxKrylovDim = 1000;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.verbose = true;

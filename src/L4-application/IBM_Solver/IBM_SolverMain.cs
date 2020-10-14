@@ -36,6 +36,7 @@ using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -679,9 +680,25 @@ namespace BoSSS.Application.IBM_Solver {
 
             //LevsetEvo(phystime, dt, null);
 
+            SmoothLevelSet();
+            LsTrk.UpdateTracker(0.0);
+
             return 0.0;
         }
 
+        void SmoothLevelSet() {
+            CellMask near = this.LevsetTracker.Regions.GetNearMask4LevSet(0, 1);
+            ContinuityProjectionCDG projecter = new ContinuityProjectionCDG(this.LevSet.Basis);
+            projecter.MakeContinuous(this.DGLevSet.Current, this.LevSet, near);
+
+            CellMask posFar = this.LevsetTracker.Regions.GetLevelSetWing(0, +1).VolumeMask.Except(near);
+            CellMask negFar = this.LevsetTracker.Regions.GetLevelSetWing(0, -1).VolumeMask.Except(near);
+
+            this.LevSet.Clear(posFar);
+            this.LevSet.AccConstant(1, posFar);
+            this.LevSet.Clear(negFar);
+            this.LevSet.AccConstant(-1, negFar);
+        }
 
         //protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] Test_Force = new double[3];
@@ -915,6 +932,17 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="physTime"></param>
+        /// <param name="timestepNo"></param>
+        /// <param name="superSampling"></param>
+        /// <param name="addsomething"></param>
+        protected void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling, string addsomething) {
+            Tecplot.PlotFields(m_RegisteredFields, "IBM_Solver" + timestepNo + "_"+addsomething, physTime, superSampling);
+        }
+
+        /// <summary>
         /// DG field instantiation.
         /// </summary>
         protected override void CreateFields() {
@@ -978,7 +1006,6 @@ namespace BoSSS.Application.IBM_Solver {
                 LevSet.AccConstant(-1.0);
                 LsTrk.UpdateTracker(0.0);
             }
-
 
             CreateEquationsAndSolvers(null);
             After_SetInitialOrLoadRestart(0.0);

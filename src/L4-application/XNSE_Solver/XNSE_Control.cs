@@ -66,6 +66,13 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// default: Symmetric_diag for velocity and IdMass for pressure block preconditioning,
+        /// if true Schur complement is used instead.
+        /// </summary>
+        [DataMember]
+        public bool UseSchurBlockPrec = false;
+
+        /// <summary>
         /// Type of <see cref="XNSE_SolverMain"/>.
         /// </summary>
         public override Type GetSolverType() {

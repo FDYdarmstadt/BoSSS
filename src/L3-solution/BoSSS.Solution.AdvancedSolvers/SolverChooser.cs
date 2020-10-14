@@ -1472,11 +1472,12 @@ namespace BoSSS.Solution {
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true,
-                        AssignXdGCellsToLowBlocks = true,
-                    }; 
-                    
-                    
-                    if (iLevel == 0) SetQuery("XdgCellsToLowBlock", ((Schwarz)smoother1).AssignXdGCellsToLowBlocks ? 1 : 0, true);
+                        CoarseSolveOfCutcells = true,
+                    };
+
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,

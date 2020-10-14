@@ -383,7 +383,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set { pLow = value; }
         }
 
-        public bool AssignXdGCellsToLowBlocks {
+        public bool CoarseSolveOfCutcells {
             get;
             set;
         }
@@ -605,18 +605,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var lowSel = new SubBlockSelector(op.Mapping);
                         lowSel.CellSelector(bc.ToList(), false);
                         lowSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? pLow : pLow - 1));
-                        if (AssignXdGCellsToLowBlocks) ModifyLowSelector(lowSel, op);
+                        if (CoarseSolveOfCutcells) ModifyLowSelector(lowSel, op);
                         var HiSel = new SubBlockSelector(op.Mapping);
                         HiSel.CellSelector(bc.ToList(), false);
                         HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? pLow : pLow - 1));
-                        if (AssignXdGCellsToLowBlocks) ModifyHighSelector(HiSel, op);
+                        if (CoarseSolveOfCutcells) ModifyHighSelector(HiSel, op);
 
                         //generate Blockmasking
                         var lowMask = new BlockMask(lowSel, ExtRows);
                         Debug.Assert(lowMask != null);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         var HiMask = new BlockMask(HiSel, ExtRows);
-                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length || AssignXdGCellsToLowBlocks);
+                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length || CoarseSolveOfCutcells);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         BMhiBlocks[iPart] = HiMask;
                         BMloBlocks[iPart] = lowMask;
