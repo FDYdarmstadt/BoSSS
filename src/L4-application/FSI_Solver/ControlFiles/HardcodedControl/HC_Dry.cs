@@ -28,17 +28,18 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_Dry : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control SingleParticleFalling(int k = 2, int amrLevel = 2) {
+        public static FSI_Control SingleParticleFalling(int k = 2, int amrLevel = 1) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
-            C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 0.5, lengthY: 0.5, cellsPerUnitLength: 40, periodicX: false, periodicY: false);
+            //C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 1, lengthY: 1, cellsPerUnitLength: 4, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties

@@ -126,6 +126,19 @@ namespace BoSSS.Foundation.Grid.Classic {
                 cellsToRefineBitmask.MPIExchange(this);
                 cellsToCoarseBitmask.MPIExchange(this);
 
+
+                List<Tuple<int, byte, bool>> CellFaceTagsWithPeriodicInverse = new List<Tuple<int, byte, bool>>();
+                int noOfEdges = this.Edges.Count;
+                for(int j = 0; j < J; j++) {
+                    var cellFaceTags = this.Grid.GridData.Cells.GetCell(j).CellFaceTags;
+                    if (cellFaceTags.IsNullOrEmpty())
+                        continue;
+                    for(int c = 0; c < cellFaceTags.Length; c++) {
+                        if (cellFaceTags[c].EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG)
+                            CellFaceTagsWithPeriodicInverse.Add(new Tuple<int, byte, bool>(j, cellFaceTags[c].EdgeTag, cellFaceTags[c].PeriodicInverse));
+                    }
+                }
+
                 // Handle unchanged cells
                 // ========================= 
                 for (int j = 0; j < J; j++) {
@@ -272,6 +285,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     Cell[] adaptedCells1 = new Cell[1];
                     Cell[] adaptedCells2 = new Cell[1];
+
+                    bool periodicInverse1 = true;
+                    bool periodicInverse2 = false;
                     
                     int i0 = CellPartitioning.i0;
                     if (IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2)) {
@@ -283,20 +299,23 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int iKref = Cells.GetRefElementIndex(localCellIndex2);
                         RefElement Kref = KrefS[iKref];
                         RefElement.SubdivisionTreeNode[] Leaves = KrefS_SubdivLeaves[iKref];
-                        adaptedCells2 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex2, Leaves.Length);
+                        adaptedCells2 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex2, Leaves.Length, out int neighbourProcess);
+                        periodicInverse1 = neighbourProcess > MpiRank;
                         CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
                     }
                     else if (!IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2)) {
                         int iKref = Cells.GetRefElementIndex(localCellIndex1);
                         RefElement Kref = KrefS[iKref];
                         RefElement.SubdivisionTreeNode[] Leaves = KrefS_SubdivLeaves[iKref];
-                        adaptedCells1 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex1, Leaves.Length);
+                        adaptedCells1 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex1, Leaves.Length, out int neighbourProcess);
                         adaptedCells2 = adaptedCells[localCellIndex2];
+                        periodicInverse1 = neighbourProcess < MpiRank;
                         CheckIfCellIsMissing(localCellIndex1, adaptedCells1, i0);
                     }
                     else
                         throw new Exception("Error in refinement and coarsening algorithm: Both cells not on the current process");
 
+                    periodicInverse2 = !periodicInverse1;
                     CheckIfCellIsMissing(localCellIndex1, adaptedCells1, i0);
                     CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
 
@@ -344,7 +363,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                         Cell Cl1 = adaptedCells1[i1];
-
                         foreach (int i2 in idx2) {
 
                             Cell Cl2 = adaptedCells2[i2];
@@ -399,12 +417,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (Converged.Any(t => t == false))
                                     throw new ArithmeticException("Newton divergence");
                             }
-
                             bool bIntersect = EdgeData.FaceIntersect(VtxFace1, VtxFace2,
                                     Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
                                     VerticesFor_KrefEdge,
                                     out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
 
+                            bool periodicInverse = false;
+                           for(int j = 0; j < CellFaceTagsWithPeriodicInverse.Count(); j++) {
+                                if(CellFaceTagsWithPeriodicInverse[j].Item1 == localCellIndex1 && CellFaceTagsWithPeriodicInverse[j].Item2 == iEdgeTag) {
+                                    periodicInverse = CellFaceTagsWithPeriodicInverse[j].Item3;
+                                    break;
+                                }
+                            }
 
                             if (bIntersect) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
@@ -412,7 +436,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     NeighCell_GlobalID = Cl2.GlobalID,
                                     FaceIndex = iFace1,
                                     EdgeTag = iEdgeTag,
-                                    PeriodicInverse = (iEdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) ? true : false
+                                    PeriodicInverse = periodicInverse
                                 }, ref Cl1.CellFaceTags);
 
                                 ArrayTools.AddToArray(new CellFaceTag() {
@@ -420,7 +444,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     NeighCell_GlobalID = Cl1.GlobalID,
                                     FaceIndex = iFace2,
                                     EdgeTag = iEdgeTag,
-                                    PeriodicInverse = false
+                                    PeriodicInverse = !periodicInverse
                                 }, ref Cl2.CellFaceTags);
                             }
                         }
@@ -546,6 +570,12 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         private int[] GetNeighboursViaEdgesAndVertices(int currentCellIndex) {
             this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCellsEdges, out _);
+            Tuple<int, int, int>[] edgeNeighbours = this.GetCellNeighboursViaEdges(currentCellIndex);
+            List<int> testSomething = new List<int>();
+            foreach(Tuple<int, int, int> i in edgeNeighbours) {
+                testSomething.Add(i.Item1);
+            }
+            neighbourCellsEdges = testSomething.ToArray();
             this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaVertices, out int[] neighbourCellsVertices, out _);
             int[] neighbourCells = new int[neighbourCellsEdges.Length + neighbourCellsVertices.Length];
             for (int i = 0; i < neighbourCellsEdges.Length; i++) {
@@ -968,15 +998,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="leavesLength">
         /// No of cell subdivisions
         /// </param>
-        private Cell[] FindCellOnNeighbourProcess(List<Tuple<int, Cell[]>> cellsOnNeighbourProcess, int localCellIndex, int leavesLength) {
+        private Cell[] FindCellOnNeighbourProcess(List<Tuple<int, Cell[]>> cellsOnNeighbourProcess, int localCellIndex, int leavesLength, out int neighbourProcess) {
             Cell[] adaptedCell = new Cell[leavesLength];
             int noOfLocalCells = Cells.NoOfLocalUpdatedCells;
             long[] externalCellsGlobalIndices = iParallel.GlobalIndicesExternalCells;
             int globalIndex = (int)externalCellsGlobalIndices[localCellIndex - noOfLocalCells];
             bool foundNothing = true;
+            neighbourProcess = 0;
             for (int j = 0; j < cellsOnNeighbourProcess.Count(); j++) {
                 if (globalIndex == cellsOnNeighbourProcess[j].Item1) {
                     adaptedCell = cellsOnNeighbourProcess[j].Item2;
+                    neighbourProcess = cellsOnNeighbourProcess[j].Item1;
                     foundNothing = false;
                     break;
                 }

@@ -1086,10 +1086,10 @@ namespace BoSSS.Application.IBM_Solver {
                     Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
 
                 //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
+                //domain = domain.Union(domain.AllNeighbourCells());
 
                 ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, domain, null, false);
-                if (SetFarField)
-                {
+                if (SetFarField) {
                     LevSet.Clear(NegMask);
                     LevSet.AccConstant(-1, NegMask);
                 }

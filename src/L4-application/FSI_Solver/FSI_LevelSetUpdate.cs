@@ -46,7 +46,7 @@ namespace FSI_Solver {
             int[] coloredCells = new int[J];
             for (int p = 0; p < Particles.Length; p++) {
                 for (int j = 0; j < J; j++) {
-                    if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength))
+                    if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength / 2))
                         coloredCells[j] = p + 1;
                 }
             }

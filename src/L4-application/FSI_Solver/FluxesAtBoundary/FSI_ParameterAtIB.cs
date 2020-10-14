@@ -19,6 +19,14 @@ using System;
 
 namespace FSI_Solver {
     public class FSI_ParameterAtIB {
+
+        private readonly Particle m_CurrentParticle;
+        private Vector m_RadialVector;
+        private double activeStress;
+        private double angle;
+        private Vector translationalVelocity;
+        private Vector pointVelocity;
+
         /// <summary>
         /// Coupling parameters at immersed boundary
         /// </summary>
@@ -31,39 +39,54 @@ namespace FSI_Solver {
             if (m_CurrentParticle.Area <= 0)
                 throw new ArithmeticException("no particle with an positive domain assigned.");
             m_RadialVector = m_CurrentParticle.CalculateRadialVector(currentPoint);
+
+            pointVelocity = new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0] - m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[1],
+                              m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1] + m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[0]);
+            translationalVelocity = new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0],
+                              m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
+            angle = m_CurrentParticle.Motion.GetAngle(0);
+            activeStress = m_CurrentParticle.ActiveStress;
         }
 
-        private readonly Particle m_CurrentParticle;
-        private Vector m_RadialVector;
+        /// <summary>
+        /// Coupling parameters at immersed boundary
+        /// </summary>
+        /// <param name="currentParticle">The particle which contains the current point</param>
+        /// <param name="currentPoint">The current point</param>
+        public FSI_ParameterAtIB() {
+            pointVelocity = new Vector(0,0);
+            translationalVelocity = new Vector(0,0);
+            angle = 0;
+            activeStress =0;
+        }
+
 
         /// <summary>
         /// Veloctiy of the point X
         /// </summary>
         public Vector VelocityAtPointOnLevelSet() {
-            return new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0] - m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[1],
-                              m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1] + m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[0]);
+            return pointVelocity;
         }
 
         /// <summary>
         /// Veloctiy of the point X
         /// </summary>
         public Vector TranslationalVelocity() {
-            return new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0],
-                              m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
+            return translationalVelocity;
         }
 
         /// <summary>
         /// Current particle angle
         /// </summary>
         public double Angle() {
-            return m_CurrentParticle.Motion.GetAngle(0);
+            return angle;
         }
 
         /// <summary>
         /// Active tangential stress on the surface of the particle.
         /// </summary>
         public double ActiveStress() {
-            return m_CurrentParticle.ActiveStress;
+            return activeStress;
         }
     }
 }

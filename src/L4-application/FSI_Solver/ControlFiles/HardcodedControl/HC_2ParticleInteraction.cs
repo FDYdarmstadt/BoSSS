@@ -21,19 +21,19 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(double angle = 100, double distance = 5, int amr = 0) {
+        public static FSI_Control Main(double angle = 180, double verticalDistance = 0.25, double distance = 5.25, double particleLength = 2.5, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
-            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             //C.AlternateDbPaths = new[] { new ValueTuple<string, string>(@"/work/scratch/ij83requ/default_bosss_db", ""), new ValueTuple<string, string>(@"U:\default_bosss_db", "") };
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Wall"
+                "Pressure_Outlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 100, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amr);
+            C.SetGrid(lengthX: 50, lengthY: 50, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(3);
 
             // Coupling Properties
             // =============================
@@ -49,17 +49,15 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             C.IsStationary = true;
-            double particleDensity = 1;
+            double particleDensity = 100;
 
             // Particle Properties
             // =============================   
             C.fixPosition = true;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5, true);
-            double particleRadius = 0.5;
-            double aspectRatio = 2;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -distance / 2, 0.0 }, angle, 1),
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { distance / 2, 0.0 }, 180 - angle, 1)
+                new Particle_Ellipsoid(motion, particleLength, aspectRatio * particleLength, new double[] { -distance / 2, -verticalDistance / 2 }, 0, 1),
+                new Particle_Ellipsoid(motion, particleLength, aspectRatio * particleLength, new double[] { distance / 2, verticalDistance / 2 }, angle, 1)
             };
 
             // misc. solver options
@@ -74,12 +72,12 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 20);
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 100);
 
             return C;
         }
 
-        public static FSI_Control Single(double angle = 0, double distance = 0, double aspectRatio = 0.1, double activeStress = 1) {
+        public static FSI_Control Single(double angle = 0, double distance = 0, double aspectRatio = 0.5, double activeStress = 1) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
@@ -91,11 +89,11 @@ namespace BoSSS.Application.FSI_Solver {
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Pressure_Outlet"
+                "Pressure_Dirichlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 50, lengthY: 50, cellsPerUnitLength: 1.5, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(4);
+            C.SetGrid(lengthX: 100, lengthY: 100, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(2);
 
             // Coupling Properties
             // =============================

@@ -733,7 +733,7 @@ namespace FSI_Solver {
             Vector velocityP0 = CalculateNormalAndTangentialVelocity(particleID, normalVector);
             Vector radialVectorP0 = Particles[particleID].CalculateRadialVector(ClosestPoints[particleID][secondObjectID]);
             Vector tempVel0 = Particles[particleID].Motion.IncludeTranslation 
-                ? (velocityP0[0] + collisionCoefficient / Particles[particleID].Motion.ParticleMass) * normalVector + CoefficientOfRestitution * velocityP0[1] * tangentialVector 
+                ? (velocityP0[0] + collisionCoefficient / Particles[particleID].Motion.ParticleMass) * normalVector + velocityP0[1] * tangentialVector 
                 : new Vector(0, 0);
             TemporaryVelocity[particleID][0] = tempVel0[0];
             TemporaryVelocity[particleID][1] = tempVel0[1];
@@ -744,7 +744,7 @@ namespace FSI_Solver {
             if (IsParticle(secondObjectID)) {
                 Vector velocityP1 = CalculateNormalAndTangentialVelocity(secondObjectID, normalVector);
                 Vector tempVel1 = Particles[secondObjectID].Motion.IncludeTranslation
-                    ? (velocityP1[0] - collisionCoefficient / Particles[secondObjectID].Motion.ParticleMass) * normalVector + CoefficientOfRestitution * velocityP1[1] * tangentialVector
+                    ? (velocityP1[0] - collisionCoefficient / Particles[secondObjectID].Motion.ParticleMass) * normalVector + velocityP1[1] * tangentialVector
                     : new Vector(0, 0);
                 Vector radialVectorP1 = Particles[secondObjectID].CalculateRadialVector(ClosestPoints[secondObjectID][particleID]);
                 TemporaryVelocity[secondObjectID][0] = tempVel1[0];

@@ -80,6 +80,12 @@ namespace BoSSS.Application.FSI_Solver {
 
         private int iterationCounter = 0;
 
+        [DataMember]
+        private double oldTimestep;
+
+        [DataMember]
+        private bool initAddedDamping = true;
+
         /// <summary>
         /// A list for all particles
         /// </summary>
@@ -534,7 +540,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns an array with all coupling parameters. 
         /// </summary>
         private FSI_ParameterAtIB CreateCouplingAtParticleBoundary(Vector X) {
-            FSI_ParameterAtIB couplingParameters = null;
+            FSI_ParameterAtIB couplingParameters = new FSI_ParameterAtIB(); 
             foreach (Particle p in ParticleList) {
                 bool containsParticle = ParticleList.Count == 1 ? true : p.Contains(X, 2 * MaxGridLength);
                 if (containsParticle) {
@@ -839,7 +845,7 @@ namespace BoSSS.Application.FSI_Solver {
             Vector particlePosition = currentParticle.Motion.GetPosition();
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
-            double additionalWallThreshold = 0;
+            double additionalWallThreshold = 2*MaxGridLength;
             if (d2 == 0)
                 additionalWallThreshold *= -1;
             if (Math.Abs(distance) < particleMaxLength) {
@@ -891,10 +897,6 @@ namespace BoSSS.Application.FSI_Solver {
             return true;
         }
 
-        [DataMember]
-        private double oldTimestep;
-        [DataMember]
-        bool initAddedDamping = true;
 
         private double CalculateTimestep(double phystime, int TimestepInt) {
             double dt = DtMax;
@@ -919,6 +921,8 @@ namespace BoSSS.Application.FSI_Solver {
                     dt = Math.Min(DtMax, GetMinGridLength() / (2 * maxVelocityL2Norm));
                     if (dt / oldTimestep > 1.1)
                         dt = oldTimestep * 1.1;
+                    if (dt / oldTimestep < 0.9)
+                        dt = oldTimestep * 0.9;
                     dt = dt.MPIMin();
                     if (dt < 1e-6)
                         dt = 1e-6;
@@ -1309,10 +1313,11 @@ namespace BoSSS.Application.FSI_Solver {
             }
             CellColor = null;
             UpdateLevelSetParticles(time);
-            //CreatePhysicalDataLogger();
-            //CreateResidualLogger();
+            CreatePhysicalDataLogger();
+            CreateResidualLogger();
             MarkEachMPIProcess();
             CountFromRestart = 50;
+            ((FSI_Control)Control).IsRestart = false;
         }
 
         /// <summary>
@@ -1425,7 +1430,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
-
+        BitArray PeriodicBoundaryCells = null;
         /// <summary>
         /// Adaptive mesh refinement
         /// </summary>
@@ -1445,7 +1450,24 @@ namespace BoSSS.Application.FSI_Solver {
             List<int[]> Coarsening = new List<int[]>();
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
                 CellMask cutCells = LsTrk.Regions.GetCutCellMask();
-                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells);
+                PeriodicBoundaryCells = new BitArray(gridData.Cells.NoOfLocalUpdatedCells);
+                var hmin = gridData.Cells.h_minGlobal;
+                Console.WriteLine("hmin " + hmin);
+                for (int d = 0; d < spatialDim; d++) {
+                    if (IsPeriodic[d]) {
+                        for (int j = 0; j < gridData.Cells.NoOfLocalUpdatedCells; j++) {
+                            Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
+                            if((cellCenter[d] - BoundaryCoordinates[d][0]) < 2 * hmin) {
+                                PeriodicBoundaryCells[j] = true;
+                            }
+                            if ((-cellCenter[d] + BoundaryCoordinates[d][1]) < 2 * hmin) {
+                                PeriodicBoundaryCells[j] = true;
+                            }
+                        }
+                    }
+                }
+                Console.WriteLine("HERE");
+                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null, PeriodicBoundaryCells);
                 if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
                     AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementForStartUpSweeps(), out CellsToRefineList, out Coarsening);
                 else
@@ -1478,16 +1500,16 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (!particleNearRegionCells[j]) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, refinementLevel * MaxGridLength);
+                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, MaxGridLength);
                     }
                     if (!particleFarRegionCells[j]) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleFarRegionCells[j] = ParticleList[p].Contains(cellCenter, 2 * refinementLevel * MaxGridLength);
+                        particleFarRegionCells[j] = ParticleList[p].Contains(cellCenter, 2 * MaxGridLength);
                     }
                 }
             }
             return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, particleNearRegionCells),
-                                    new Tuple<int, BitArray>(refinementLevel2, particleNearRegionCells),
+                                    //new Tuple<int, BitArray>(refinementLevel2, particleFarRegionCells),
             };
         }
         /// <summary>
@@ -1501,11 +1523,11 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (!particleNearRegionCells[j]) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, ParticleList[p].GetLengthScales().Min());
+                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, ParticleList[p].GetLengthScales().Max());
                     }
                 }
             }
-            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(3, particleNearRegionCells), };
+            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, particleNearRegionCells), };
         }
     }
 }

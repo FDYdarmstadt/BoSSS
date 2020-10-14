@@ -513,10 +513,10 @@ namespace BoSSS.Application.FSI_Solver {
                     tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
                 
             }
-            tempForces[1] = 0;
+            //tempForces[1] = 0;
             HydrodynamicForces[0] = new Vector(tempForces);
             if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
-                HydrodynamicTorque[0] = 0;// fullListHydrodynamics[particleID * 3 + SpatialDim];
+                HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
             Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
         }
