@@ -981,9 +981,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             CreateEquationsAndSolvers(null);
-            PlotCurrentState(0.0, new TimestepNumber(0, 0), 4);
             After_SetInitialOrLoadRestart(0.0);
-            PlotCurrentState(0.0, new TimestepNumber(0, 1), 4);
 
             m_BDF_Timestepper.SingleInit();
         }
