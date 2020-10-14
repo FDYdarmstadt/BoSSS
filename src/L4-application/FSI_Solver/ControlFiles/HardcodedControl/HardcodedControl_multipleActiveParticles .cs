@@ -305,7 +305,7 @@ namespace BoSSS.Application.FSI_Solver {
             //    "Wall"
             //};
             //C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: domainLength, lengthY: domainLength, cellsPerUnitLength, periodicX: true, periodicY: true);
+            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             C.minDistanceThreshold = 0.03;
@@ -339,7 +339,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             C.SetTimesteps(1e-3, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.15;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
             C.LevelSetSmoothing = true;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;

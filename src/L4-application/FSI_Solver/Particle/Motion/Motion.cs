@@ -81,16 +81,6 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private double CollisionTimestep = 0;
         [DataMember]
-        private Vector NormalAndTangetialVelocityPreCollision = new Vector(SpatialDim);
-        [DataMember]
-        private readonly List<Vector> m_CollisionTranslationalVelocity = new List<Vector>();
-        [DataMember]
-        private readonly List<double> m_CollisionRotationalVelocity = new List<double>();
-        [DataMember]
-        private readonly List<Vector> m_CollisionNormalVector = new List<Vector>();
-        [DataMember]
-        private readonly List<Vector> m_CollisionTangentialVector = new List<Vector>();
-        [DataMember]
         public readonly double Density;
         [DataMember]
         public double ParticleArea;

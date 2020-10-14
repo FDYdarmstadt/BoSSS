@@ -1466,7 +1466,6 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                     }
                 }
-                Console.WriteLine("HERE");
                 GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null, PeriodicBoundaryCells);
                 if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
                     AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementForStartUpSweeps(), out CellsToRefineList, out Coarsening);
