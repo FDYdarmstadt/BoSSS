@@ -521,15 +521,15 @@ namespace PublicTestRunner {
 
 
                 const double TimeOutSec = 220 * 60;
-                using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
+                using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
-                        using (var trr = new FuncTrace("UpdateFinishedJobs")) {
+                        using(var trr = new FuncTrace("UpdateFinishedJobs")) {
                             string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
 
                             var RecentlyFinished = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
-                            for (int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
+                            for(int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
                                 var s = jj.job.Status;
 
@@ -537,15 +537,15 @@ namespace PublicTestRunner {
                                     string resultArg = "--result=";
                                     string resArg = jj.job.EnvironmentVars.Values.Single(arg => arg.StartsWith(resultArg));
                                     string _resFile = resArg.Replace(resultArg, "");
-                                    if (_resFile != jj.ResFile) {
+                                    if(_resFile != jj.ResFile) {
                                         throw new ApplicationException("internal mismatch in result file name");
                                     }
                                 }
 
 
-                                if (s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
+                                if(s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
                                     // message:
-                                    if (s == JobStatus.FinishedSuccessful)
+                                    if(s == JobStatus.FinishedSuccessful)
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.DeploymentDirectory + " (" + DateTime.Now + ")");
@@ -554,26 +554,26 @@ namespace PublicTestRunner {
                                     LogResultFile(ot, jj.job, jj.testname, jj.ResFile);
 
                                     // copy xml result file
-                                    using (new BlockTrace("copy_nunit_xml_result", trr)) {
+                                    using(new BlockTrace("copy_nunit_xml_result", trr)) {
                                         try {
                                             string[] sourceFiles = Directory.GetFiles(jj.job.DeploymentDirectory, "result-*.xml");
 
-                                            foreach (var orig in sourceFiles) {
+                                            foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
                                                 string dest = Path.Combine(CurrentDir, n);
                                                 File.Copy(orig, dest);
                                             }
-                                        } catch (IOException ioe) {
+                                        } catch(IOException ioe) {
                                             Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
                                             returnCode--;
                                         }
                                     }
                                     // delete deploy directory directory
-                                    using (new BlockTrace("delete_deploy_dir", trr)) {
-                                        if (s == JobStatus.FinishedSuccessful) {
+                                    using(new BlockTrace("delete_deploy_dir", trr)) {
+                                        if(s == JobStatus.FinishedSuccessful) {
                                             try {
                                                 Directory.Delete(jj.job.DeploymentDirectory, true);
-                                            } catch (Exception e) {
+                                            } catch(Exception e) {
                                                 Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
                                             }
                                         }
@@ -595,13 +595,26 @@ namespace PublicTestRunner {
 
                     UpdateFinishedJobs();
                     double RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
-                    while (RestTime > 1.0 && AllOpenJobs.Count > 0) {
-                        using (new BlockTrace("Sleeping", tr)) {
+                    while(RestTime > 1.0 && AllOpenJobs.Count > 0) {
+                        using(new BlockTrace("Sleeping", tr)) {
                             Thread.Sleep(2 * 60 * 1000); // sleep for 2 minutes
                         }
                         var ll = UpdateFinishedJobs();
                         RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
                         Console.WriteLine("Remaining minutes until timeout: " + Math.Round(RestTime / 60.0));
+                        Console.Write("     Waiting for: ");
+                        int i = 0;
+                        foreach(var j in AllOpenJobs) {
+                            Console.Write(j.job.Name);
+                            Console.Write(" ");
+                            i++;
+                            if(i >= 8)
+                                break;
+                        }
+                        if(i < AllOpenJobs.Count)
+                            Console.WriteLine($"... (and {AllOpenJobs.Count - i} more.)");
+                        else
+                            Console.WriteLine();
                     }
                 }
 
