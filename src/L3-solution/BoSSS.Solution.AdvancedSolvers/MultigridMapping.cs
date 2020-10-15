@@ -182,7 +182,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (m_DgDegree[i] > __ProblemMapping.BasisS[i].Degree)
                         throw new ArgumentException("DG degree on sub-level can not exceed DG degree of the original problem.");
                 }
-
+                
                 // create basis for this level
                 // ===========================
                 this.AggBasis = __aggGrdB;
@@ -190,15 +190,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // min/max length
                 // ==============
                 {
+                    
                     int Smin = 0;
                     int Smax = 0;
                     int Nofields = this.m_DgDegree.Length;
+                    
                     for (int ifld = 0; ifld < Nofields; ifld++) {
                         Smin += this.AggBasis[ifld].GetMinimalLength(this.m_DgDegree[ifld]);
                         Smax += this.AggBasis[ifld].GetMaximalLength(this.m_DgDegree[ifld]);
                     }
-                    this.MinimalLength = Smin;
-                    this.MaximalLength = Smax;
+                    this.MinimalLength = Smin.MPIMin();
+                    this.MaximalLength = Smax.MPIMax();
                 }
 
                 // offsets

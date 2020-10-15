@@ -28,17 +28,18 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_Dry : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control SingleParticleFalling(int k = 2, int amrLevel = 2) {
+        public static FSI_Control SingleParticleFalling(int k = 2, int amrLevel = 1) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
-            C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 0.5, lengthY: 0.5, cellsPerUnitLength: 40, periodicX: false, periodicY: false);
+            //C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 1, lengthY: 1, cellsPerUnitLength: 4, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
@@ -85,7 +86,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         public static FSI_Control TwoParticleCollision(int k = 2, int amrLevel = 2) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
-            //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             // Domain
             // =============================
@@ -117,8 +118,8 @@ namespace BoSSS.Application.FSI_Solver {
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, true, false, false);
             double particleRadius = 0.1;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0.25 },0, 0, new double[] {0,-0.1 }),
-                new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0 },0, 0, new double[] {0,0.1 })
+                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] { -0.1, 0.0 },0, 0, new double[] {0,-0.05 }, -0.05),
+                new Particle_Ellipsoid(motion, particleRadius, 0.25 * particleRadius, new double[] {-0,0.125 },0, 0, new double[] {0,-0.1 }, 1)
             };
 
             // misc. solver options
@@ -135,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 100);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 300);
 
             return C;
         }
