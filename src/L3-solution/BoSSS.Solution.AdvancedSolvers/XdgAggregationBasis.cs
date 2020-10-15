@@ -615,6 +615,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         public override int GetMaximalLength(int p) {
+            if (XDGBasis.Tracker.TotalNoOfSpecies == 0)
+                throw new Exception("0 SPecies");
             return this.XDGBasis.Tracker.TotalNoOfSpecies * base.GetMaximalLength(p);
         }
 

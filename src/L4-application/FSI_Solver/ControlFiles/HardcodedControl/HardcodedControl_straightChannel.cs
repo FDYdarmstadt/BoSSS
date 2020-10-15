@@ -28,22 +28,25 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int amrLevel = 1, double aspectRatio = 2, double activeStress = 1) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int angle = 20, double aspectRatio = 3, double activeStress = 10) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-
+            string ID = "3debf19b-821a-4a76-8b06-e1b945b4393e";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            C.IsRestart = true;
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Pressure_Outlet_left",
-                "Pressure_Outlet_right",
                 "Wall_lower",
-                "Wall_upper"
+                "Wall_upper",
+                "Pressure_Dirichlet_right",
+                "Pressure_Dirichlet_left"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 1, cellsPerUnitLength: 20, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel);
+            C.SetGrid(lengthX: 2.5, lengthY: 0.5, cellsPerUnitLength: 25, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(3);
+            C.minDistanceThreshold = 0.005;
 
             // Coupling Properties
             // =============================
@@ -51,21 +54,21 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 10;
+            double particleDensity = 500;
 
             // Particle Properties
             // =============================   
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
-            double particleRadius = 0.1;
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
+            double particleRadius = 0.05;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0.0, 0.0 }, 0, activeStress)
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0, 0.0 }, angle, activeStress)
             };   
 
             // misc. solver options

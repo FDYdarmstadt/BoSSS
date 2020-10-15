@@ -282,11 +282,11 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.095, double aspectRatio = 0.5) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 60) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "ad6c038b-8fb8-4d4d-8bb0-e214856d3061";
+            string ID = "66b7dd59-bec7-4970-8e84-da3d368be1b5";
             C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             C.IsRestart = true;
             // Fluid Properties
@@ -297,36 +297,42 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 10;
+            double particleDensity = 100;
             double activeStress = 10;
-            double domainLength = 2.5;
-            C.SetGrid(lengthX: domainLength, lengthY: domainLength, cellsPerUnitLength: 35, periodicX: true, periodicY: true);
+            double nextParticleDistance = 0.2;
+            double domainLength = nextParticleDistance * 9;
+            //List<string> boundaryValues = new List<string> {
+            //    "Wall"
+            //};
+            //C.SetBoundaries(boundaryValues);
+            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
-            C.minDistanceThreshold = 0.015;
-            C.CoefficientOfRestitution = 0.5;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            C.minDistanceThreshold = 0.03;
+            C.CoefficientOfRestitution = 1;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
-            double leftCorner = -1.1;
-            double nextParticleDistance = 0.20;
+            double leftCorner = -0.9;
             Random angle = new Random();
             Random insertParticle = new Random();
             int j = 0;
             while(leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
-                while (leftCorner + i * nextParticleDistance < domainLength / 2) {
-                    double temp_insertParticle = insertParticle.Next(0, 3);
+                while (leftCorner+ i * nextParticleDistance < domainLength / 2) {
+                    double temp_insertParticle = insertParticle.Next(0, 6);
                     temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
-                    if (temp_insertParticle != 0) {
-                        double temp_angle = angle.Next(0, 360);
+                    if (temp_insertParticle != 0) 
+                    {
+                        double temp_angle = angle.Next(0, 2);
+                        double temp_angle2 = angle.Next(0, 361);
                         temp_angle = temp_angle.MPIBroadcast(0);
-                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, temp_angle, activeStress, new double[] { 0.05 * Math.Cos(temp_angle * Math.PI / 180), 0.05 * Math.Sin(temp_angle * Math.PI / 180) }));
+                        temp_angle2 = temp_angle2.MPIBroadcast(0);
+                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance}, temp_angle * 180 + temp_angle2 * Math.Pow(-1,i * j), activeStress, new double[] { 0, 0}));
                     }
                     i += 1;
                 }
                 j += 1;
             }
-
 
             // misc. solver options
             // =============================  
@@ -334,7 +340,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetTimesteps(1e-3, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -342,6 +348,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.TargetBlockSize = 10000;
 
             // Coupling Properties
             // =============================
