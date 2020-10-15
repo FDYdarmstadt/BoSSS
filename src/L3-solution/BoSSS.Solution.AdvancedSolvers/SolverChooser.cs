@@ -1471,7 +1471,7 @@ namespace BoSSS.Solution {
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = true,
+                        UsePMGinBlocks = false,
                         CoarseSolveOfCutcells = true,
                     };
 

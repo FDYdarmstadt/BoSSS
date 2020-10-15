@@ -346,7 +346,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="Residual"></param>
         protected virtual XdgBDFTimestepping CreateTimeStepper(IEnumerable<DGField> Unknowns, IEnumerable<DGField> Residual)
         {
-            LevelSetHandling lsh = LevelSetHandling.None;
+            LevelSetHandling lsh = LevelSetHandling.Coupled_Once;
+            //LevelSetHandling lsh = LevelSetHandling.None;
             SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
 
             if (this.Control.PhysicalParameters.IncludeConvection)
@@ -391,6 +392,7 @@ namespace BoSSS.Application.IBM_Solver {
                     f => f.Identification), this.ResidualContinuity.Identification),
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
             };
+           
             return m_BDF_Timestepper;
         }
 
@@ -675,13 +677,17 @@ namespace BoSSS.Application.IBM_Solver {
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
-            //this.LevSet.ProjectField(X => this.Control.Ph(X, phystime + dt));
-            //this.LsTrk.UpdateTracker(incremental: true);
+            Console.WriteLine("I N F O: Updating the Levelset");
+
+            this.LevSet.ProjectField(X => this.Control.ForcedPhi(X, phystime + dt));
+            this.LsTrk.UpdateTracker(phystime + dt);
 
             //LevsetEvo(phystime, dt, null);
 
-            SmoothLevelSet();
-            LsTrk.UpdateTracker(0.0);
+            //SmoothLevelSet();
+            //LsTrk.UpdateTracker(0.0);
+
+
 
             return 0.0;
         }
@@ -1017,7 +1023,8 @@ namespace BoSSS.Application.IBM_Solver {
             //LsTrk.UpdateTracker(0.0);
             //PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
             //   LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
-            //   false);
+            //   true);
+            //LsTrk.UpdateTracker(0.0);
 
             ////var Fullmask = CellMask.GetFullMask(GridData);
             ////PerformLevelSetSmoothing(Fullmask,
@@ -1051,6 +1058,11 @@ namespace BoSSS.Application.IBM_Solver {
             //    }
             //}
 
+            
+            
+            
+            
+            
             CreateEquationsAndSolvers(null);
             After_SetInitialOrLoadRestart(0.0);
             m_BDF_Timestepper.SingleInit();
@@ -1340,8 +1352,11 @@ namespace BoSSS.Application.IBM_Solver {
                 string[] fields_line2 = line2.Split('\t');
 
                 double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
-            } catch (FileNotFoundException) {
-                Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
+            } catch (Exception ex) {
+                if (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                    Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
+                else
+                    Console.WriteLine("An unexpected error occured. This might lead to bad behavior.");
             }
             //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
@@ -1413,7 +1428,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Attention: SENSITIVE TO LEVEL INDICATOR
         /// </summary>
-        readonly bool debug = true;
+        readonly bool debug = false;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.
