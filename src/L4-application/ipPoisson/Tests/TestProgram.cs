@@ -117,7 +117,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
-                ctrl.TracingNamespaces = "*";
+                //ctrl.TracingNamespaces = "*";
                 p.Init(ctrl);
                 p.RunSolverMode();
                 
@@ -166,7 +166,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
-                ctrl.TracingNamespaces = "*";
+                //ctrl.TracingNamespaces = "*";
                 p.Init(ctrl);
                 p.RunSolverMode();
 
