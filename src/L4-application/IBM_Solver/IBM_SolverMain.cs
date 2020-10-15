@@ -957,9 +957,6 @@ namespace BoSSS.Application.IBM_Solver {
                 base.LsTrk = this.LevsetTracker;
                 if (Control.CutCellQuadratureType != this.LevsetTracker.CutCellQuadratureType)
                     throw new ApplicationException();
-                //if (this.Control.LevelSetSmoothing) {
-                //    SmoothedLevelSet = new SpecFemField(new SpecFemBasis((GridData)LevSet.GridDat, LevSet.Basis.Degree + 1));
-                //}
             }
         }
 
@@ -1016,55 +1013,9 @@ namespace BoSSS.Application.IBM_Solver {
                 LsTrk.UpdateTracker(0.0);
             }
 
-
-            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("before_smoothing");
-            //PlotCurrentState(0.0, 0, 4, "before_smoothing");
-
-            //LsTrk.UpdateTracker(0.0);
-            //PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask(),
-            //   LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
-            //   true);
-            //LsTrk.UpdateTracker(0.0);
-
-            ////var Fullmask = CellMask.GetFullMask(GridData);
-            ////PerformLevelSetSmoothing(Fullmask,
-            ////   LsTrk.Regions.GetSpeciesMask("B").Except(LsTrk.Regions.GetCutCellMask()),
-            ////   false);
-            //LsTrk.UpdateTracker(0.0);
-            ////SmoothLevelSet();
-            ////LsTrk.UpdateTracker(0.0);
-
-            //LsTrk.Regions.GetCutCellMask().SaveToTextFile("after_smoothing");
-            //PlotCurrentState(0.0, 0, 4, "after_smoothing");
-
-
-
-            // =======================OUTPUT FOR GMRES=====================================
-            //if(this.MPISize == 1) {
-            //    Console.WriteLine("!!!GMRES solver stats are saved in .txt file!!!");
-            //    if(this.Control.savetodb) {
-            //        SessionPath = this.Control.DbPath + "\\sessions\\" + this.CurrentSessionInfo.ID;
-            //        using(StreamWriter writer = new StreamWriter(SessionPath + "\\GMRES_Stats.txt", true)) {
-            //            writer.WriteLine("#GMRESIter" + "   " + "error");
-            //        }
-            //    } else {
-            //        SessionPath = Directory.GetCurrentDirectory();
-            //        if(File.Exists("GMRES_Stats.txt")) {
-            //            File.Delete("GMRES_Stats.txt");
-            //        }
-            //        using(StreamWriter writer = new StreamWriter("GMRES_Stats.txt", true)) {
-            //            writer.WriteLine("#GMRESIter" + "   " + "error");
-            //        }
-            //    }
-            //}
-
-            
-            
-            
-            
-            
             CreateEquationsAndSolvers(null);
             After_SetInitialOrLoadRestart(0.0);
+
             m_BDF_Timestepper.SingleInit();
         }
 
@@ -1112,48 +1063,68 @@ namespace BoSSS.Application.IBM_Solver {
                 // therefore, after re-start we have to copy LevSet->DGLevSet
                 this.DGLevSet.Current.Clear();
                 this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-             
-                
+
+                // perform smooting
+                this.LsTrk.UpdateTracker(time);
+                PerformLevelSetSmoothing(LsTrk.Regions.GetCutCellMask());
+                LsTrk.UpdateTracker(time);
+                             
                 // we push the current state of the level-set, so we have an initial value
                 this.LsTrk.UpdateTracker(time);
                 this.DGLevSet.IncreaseHistoryLength(1);
                 this.LsTrk.PushStacks();
                 this.DGLevSet.Push();
-
             }
         }
 
         /// <summary>
         /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true. Note that this is not necessary if the order of the level-set function of the particles is equal to the polynomial DG order.
         /// </summary>
-        protected void PerformLevelSetSmoothing(CellMask domain, CellMask NegMask, bool SetFarField) {
+        /// <param name="SmoothingDomain">
+        /// Domain in which C0-continuity should be enforced; typically the cut-cells, but may include the near-band too.
+        /// </param>
+        /// <param name="NegMask">
+        /// All fluid cell
+        /// </param>
+        protected void PerformLevelSetSmoothing(CellMask SmoothingDomain) {
+            const bool SetFarField = true;
 
-            if (this.Control.LevelSetSmoothing) {
+            
+
+            if (this.Control.LevelSetSmoothing) 
+                {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // smoothing on: perform some kind of C0-projection
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
-                    ContBasis: this.LevSet.Basis,
-                    DGBasis: this.DGLevSet.Current.Basis,
-                    gridData: GridData,
-                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
+                int TotNoOfCells = SmoothingDomain.NoOfItemsLocally.MPISum();
 
-                //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
+                if(TotNoOfCells > 0) {
+                    var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
+                        ContBasis: this.LevSet.Basis,
+                        DGBasis: this.DGLevSet.Current.Basis,
+                        gridData: GridData,
+                        Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
 
-                ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, domain, null, false);
-                if (SetFarField)
-                {
+                    ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, SmoothingDomain, null, false);
+                }
+                
+                if(SetFarField) {
+                    var NegMask = LsTrk.Regions.GetSpeciesMask("A").Except(SmoothingDomain);
                     LevSet.Clear(NegMask);
                     LevSet.AccConstant(-1, NegMask);
-                }
+
+                    var PosMask = NegMask.Complement().Except(SmoothingDomain);
+                    LevSet.Clear(PosMask);
+                    LevSet.AccConstant(+1, PosMask);
+               }
             } else {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // no smoothing (not recommended): copy DGLevSet -> LevSet
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                //this.LevSet.Clear(domain);
-                //this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
+                this.LevSet.Clear(SmoothingDomain);
+                this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, SmoothingDomain);
                 this.LevSet.Clear();
                 this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current);
             }
@@ -1403,27 +1374,6 @@ namespace BoSSS.Application.IBM_Solver {
             */
         }
 
-        protected override void Bye() {
-            /*
-            if (Log_DragAndLift != null) {
-                try {
-                    Log_DragAndLift.Flush();
-                    Log_DragAndLift.Close();
-                    Log_DragAndLift.Dispose();
-                } catch (Exception) { }
-                Log_DragAndLift = null;
-            }
-
-            if(Log_DragAndLift_P1 != null) {
-                try {
-                    Log_DragAndLift_P1.Flush();
-                    Log_DragAndLift_P1.Close();
-                    Log_DragAndLift_P1.Dispose();
-                } catch (Exception) { }
-                Log_DragAndLift_P1 = null;
-            }
-            */
-        }
 
         /// <summary>
         /// Attention: SENSITIVE TO LEVEL INDICATOR

@@ -87,8 +87,8 @@ namespace BoSSS.Foundation {
                     //solver.MatrixType = ilPSP.LinSolvers.monkey.MatrixType.Auto;
                     //solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.CPU;
                     //solver.Tolerance = 1.0e-12;
-                    //var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                    var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                    //var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                     m_OpSolver = solver;
                 }
 

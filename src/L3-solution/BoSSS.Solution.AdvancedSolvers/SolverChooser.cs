@@ -803,9 +803,9 @@ namespace BoSSS.Solution {
                         catch (Exception e) {
                             Console.WriteLine("WARNING: internal error occured during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
                             return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-                        }
-                    }
-                }
+        }
+    }
+}
             }
 
             return LocalDOF;

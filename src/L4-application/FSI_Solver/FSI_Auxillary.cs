@@ -137,7 +137,7 @@ namespace FSI_Solver {
         /// <param name="phystime"></param>
         /// <param name="IterationCounter"> </param>
         internal void PrintResultToConsole(double residual, int IterationCounter) {
-            Console.WriteLine("Iteration, Residual: {1}, {0}", residual, IterationCounter);
+            Console.WriteLine("Iteration: {1}, Residual:  {0}", residual, IterationCounter);
         }
 
         /// <summary>
@@ -158,6 +158,7 @@ namespace FSI_Solver {
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
             double[] ParticleReynoldsNumber = new double[Particles.Count()];
+            double highestReNumber = 0;
             double[] ParticleStokesNumber = new double[Particles.Count()];
             double volumeFraction = 0;
 
@@ -172,6 +173,8 @@ namespace FSI_Solver {
                 totalKE[1] += SingleParticleKineticEnergy[1];
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
                 ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleReynoldsNumber(FluidViscosity);
+                if (ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] > highestReNumber)
+                    highestReNumber = ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)];
                 ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleStokesNumber(FluidViscosity, FluidDensity);
                 volumeFraction += CurrentParticle.Area;
             }
@@ -194,7 +197,7 @@ namespace FSI_Solver {
                 OutputBuilder.AppendLine("Particle type of first particle: " + Particles[0]);
                 OutputBuilder.AppendLine("Particle density of first particle: " + Particles[0].Motion.Density);
                 OutputBuilder.AppendLine("Maximum length of first particle: " + Particles[0].GetLengthScales().Max() + ", minimum length: " + Particles[0].GetLengthScales().Min());
-                OutputBuilder.AppendLine("Particle Reynolds number of first particle: " + ParticleReynoldsNumber[0]);
+                OutputBuilder.AppendLine("Particle Reynolds number of fastest particle: " + highestReNumber);
                 OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
                 OutputBuilder.AppendLine();
                 for (int p = 0; p < Particles.Count(); p++) {
