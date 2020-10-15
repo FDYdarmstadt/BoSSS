@@ -282,13 +282,13 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 50) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 60) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            //string ID = "5bc4685d-86b6-477b-96ec-e54f637de1f4";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 3480);
-            //C.IsRestart = true;
+            string ID = "66b7dd59-bec7-4970-8e84-da3d368be1b5";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -309,7 +309,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             C.minDistanceThreshold = 0.03;
-            C.CoefficientOfRestitution = 0.01;
+            C.CoefficientOfRestitution = 1;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             double leftCorner = -0.9;
@@ -319,7 +319,7 @@ namespace BoSSS.Application.FSI_Solver {
             while(leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
                 while (leftCorner+ i * nextParticleDistance < domainLength / 2) {
-                    double temp_insertParticle = insertParticle.Next(0, 8);
+                    double temp_insertParticle = insertParticle.Next(0, 6);
                     temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
                     if (temp_insertParticle != 0) 
                     {
@@ -339,7 +339,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             C.SetTimesteps(1e-3, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = true;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
