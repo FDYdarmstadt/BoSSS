@@ -108,7 +108,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 #else
             [Values(3,4)]int dgDeg,
             [Values(8)]int res,
-            [Values(3)]int dim,
+            [Values(3)]int dim
             //[Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
 #endif
             ) {
@@ -117,8 +117,10 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
+                ctrl.TracingNamespaces = "*";
                 p.Init(ctrl);
                 p.RunSolverMode();
+                
 
 
                 //Application<SipControl>._Main(new string[] {
@@ -164,6 +166,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
+                ctrl.TracingNamespaces = "*";
                 p.Init(ctrl);
                 p.RunSolverMode();
 
