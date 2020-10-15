@@ -650,7 +650,7 @@ namespace BoSSS.Application.FSI_Solver {
                 CellMask fluidCells = allParticleMask != null ? allParticleMask.Complement() : CellMask.GetFullMask(GridData);
                 SetLevelSet(levelSetFunctionFluid, fluidCells, phystime);
 
-                PerformLevelSetSmoothing(allParticleMask, fluidCells, SetFarField: true);
+                PerformLevelSetSmoothing(allParticleMask);
             }
 
             try {
