@@ -518,7 +518,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         {
                             double[] rTest = new double[rl.Length];
                             Residual(rTest, X, B); // Residual on this level; 
-                            Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                            double resDist = rTest.MPI_L2Dist(rl);
+                            double resNormTst = rl.MPI_L2Norm();
+                            if(resDist > resNormTst * 10e-5)
+                                Console.WriteLine($"Residual vector (before pre-smoother) is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+                            //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
                         }
 #endif
 
@@ -557,7 +561,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         double[] rTest = new double[rl.Length];
                         Residual(rTest, X, B); // Residual on this level; 
                                                // Test also fails if convergence criterium is to strict because then machine accuracy is reached
-                        Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                        double resDist = rTest.MPI_L2Dist(rl);
+                        double resNormTst = rl.MPI_L2Norm();
+                        if(resDist > resNormTst * 10e-5)
+                            Console.WriteLine($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+                        //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
                     }
 #endif
 
@@ -627,7 +635,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             {
                                 double[] rTest = new double[rl.Length];
                                 Residual(rTest, X, B); // Residual on this level; 
-                                Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                                double resDist = rTest.MPI_L2Dist(rl);
+                                double resNormTst = rl.MPI_L2Norm();
+                                if(resDist > resNormTst * 10e-5)
+                                    Console.WriteLine($"Residual vector (before post-smoother run #{g}) is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+                                //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
                             }
 #endif
                             // compute correction
