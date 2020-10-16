@@ -148,12 +148,13 @@ namespace MiniBatchProcessor {
 
                 ServerExternal = p;
                 MiniBatchThreadIsMyChild = true;
+
             } else {
                 Console.WriteLine("Starting mini batch processor in background thread...");
 
                 Thread ServerThread = (new Thread(delegate () {
                     var s = new Server(null);
-                    s._Main(new string[0]);
+                    s._Main(new string[0], Reset);
                 }));
                 ServerThread.Start();
 
@@ -161,8 +162,40 @@ namespace MiniBatchProcessor {
                 MiniBatchThreadIsMyChild = true;
             }
 
-            
+            int timeout = 0;
+            while(!GetIsRunning(BatchInstructionDir)) {
+                Console.WriteLine("waiting for startup...");
+                Thread.Sleep(4875);
+                timeout++;
+                if(timeout > 20) {
+                    Console.WriteLine("giving up.");
+                    if(ServerExternal != null) {
+                        if(!ServerExternal.HasExited) {
+                            try {
+                                ServerExternal.Kill();
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"Server startup fail: {e.GetType().Name}: {e.Message}");
+                            }
+                        }
+                        ServerExternal = null;
+                    }
 
+                    if(ServerInternal != null) {
+                        if(ServerInternal.IsAlive) {
+                            try {
+                                ServerInternal.Abort();
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"Server startup fail: {e.GetType().Name}: {e.Message}");
+                            }
+                        }
+                        ServerInternal = null;
+                    }
+
+                    return false;
+                }
+            }
+
+            Console.WriteLine("started.");
             return true;
         }
 

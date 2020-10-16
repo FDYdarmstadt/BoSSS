@@ -113,7 +113,33 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                return m_AllowedDatabases.AsReadOnly();
+                var ret = new List<IDatabaseInfo>();
+                ret.AddRange(m_AllowedDatabases);
+
+                // add any local database which might be acceptable
+                /*
+                if(InteractiveShell.databases != null) {
+                    foreach(var db in InteractiveShell.databases) {
+
+                        bool found = false;
+                        foreach(var odb in m_AllowedDatabases) {
+                            if(odb.Equals(db)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if(found)
+                            continue;
+
+                        if(!found) {
+                            // 'db' is not in the list to return, but is it located on the local machine?
+
+                            db.
+                        }
+                    }
+                }
+                */
+                return ret.AsReadOnly();
             }
         }
 
