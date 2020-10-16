@@ -110,7 +110,7 @@ namespace MiniBatchProcessor {
         /// - true: the server was just started
         /// - false: the server is already running
         /// </returns>
-        public static bool StartIfNotRunning(bool RunExternal = true, string BatchInstructionDir = null) {
+        public static bool StartIfNotRunning(bool RunExternal = true, string BatchInstructionDir = null, bool Reset = false) {
             BatchInstructionDir = BatchInstructionDir != null ? BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
             
             if (ServerExternal != null && ServerExternal.HasExited) {
@@ -132,6 +132,9 @@ namespace MiniBatchProcessor {
                 Console.WriteLine("Mini batch processor is already running.");
                 return false;
             }
+
+
+
 
             if(RunExternal) {
                 Console.WriteLine("Starting mini batch processor in external process...");
@@ -157,6 +160,9 @@ namespace MiniBatchProcessor {
                 ServerInternal = ServerThread;
                 MiniBatchThreadIsMyChild = true;
             }
+
+            
+
             return true;
         }
 
@@ -248,7 +254,7 @@ namespace MiniBatchProcessor {
             }
         }
 
-        bool Init() {
+        bool Init(bool Reset) {
 
 
             string MutexFileName = Path.Combine(GetServerMutexPath(config.BatchInstructionDir));
@@ -287,6 +293,27 @@ namespace MiniBatchProcessor {
                 return false;
             }
 
+            // Delete Que and working
+            if(Reset) {
+                foreach(string q in new[]{ 
+                    Path.Combine(config.BatchInstructionDir, QUEUE_DIR),
+                    Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR) }) {
+
+                    if(Directory.Exists(q)) {
+                        foreach(string f in Directory.GetFiles(q)) {
+                            try {
+                                File.Delete(f);
+                            } catch(Exception) {
+                                // ignore
+                            }
+                        }
+                    }
+
+                }
+            }
+
+
+
             // see if there are any zombies left in the 'working' directory
             foreach (var J in Working) {
                 //MoveWorkingToFinished(J);
@@ -298,6 +325,8 @@ namespace MiniBatchProcessor {
                     File.WriteAllText(exitTokenPath, "-9876");
                 }
             }
+
+          
 
             return true;
         }
@@ -411,7 +440,10 @@ namespace MiniBatchProcessor {
         }
 
 
-        static void Main(string[] args) {
+        /// <summary>
+        /// Entry Point for server running as separate process
+        /// </summary>
+        public static int Main(string[] args) {
 
             string dir = null;
             if(args.Length > 0) {
@@ -423,22 +455,24 @@ namespace MiniBatchProcessor {
 
             if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
                 Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
-                return;
+                return -777;
             }
 
             var s = new Server(dir);
-            s._Main(args);
+            var r = s._Main(args, false);
+
+            return r ? -777 : 0;
         }
        
         /// <summary>
         /// Main routine of the server; continuously checks the respective 
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
         /// </summary>
-        void _Main(string[] args) {
+        bool _Main(string[] args, bool Reset) {
             
-            if(!Init()) {
+            if(!Init(Reset)) {
                 Console.WriteLine("Terminating server init.");
-                return;
+                return false;
             }
             LogMessage("server started.");
 
@@ -466,7 +500,7 @@ namespace MiniBatchProcessor {
                     LogFile = null;
 
                     File.Delete(GetServerMutexPath(config.BatchInstructionDir));
-                    return;
+                    return true;
                 }
 
                 // see if any of the running jobs is finished
@@ -542,6 +576,8 @@ namespace MiniBatchProcessor {
                     th.Start();
                 }
             }
+
+            return true;
         }
 
         /// <summary>

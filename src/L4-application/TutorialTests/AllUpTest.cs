@@ -77,21 +77,21 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
-        //[Test]
+        [Test]
         static public void Run__BoundaryAndInitialData() {
             RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
-        //[Test]
+        [Test]
         static public void Run__MetaJobManager() {
             RunWorksheet("MetaJobManager/MetaJobManager.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
-        //[Test]
+        [Test]
         static public void Run__GridGeneration() {
             RunWorksheet("GridGeneration/GridGeneration.tex");
         }
@@ -126,21 +126,21 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial5/uebung5tutorial.tex")]
-        //[Test]
+        [Test]
         static public void Run__uebung5tutorial() {
             RunWorksheet("tutorial5/uebung5tutorial.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial6/tutorial6.tex")]
-        //[Test]
+        [Test]
         static public void Run__tutorial6() {
             RunWorksheet("tutorial6/tutorial6.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial9-SIP/sip.tex")]
-        //[Test]
+        [Test]
         static public void Run__sip() {
             RunWorksheet("tutorial9-SIP/sip.tex");
         }
@@ -168,7 +168,7 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
-        //[Test]
+        [Test]
         static public void Run__convStudy() {
             RunWorksheet("convergenceStudyTutorial/convStudy.tex");
         }

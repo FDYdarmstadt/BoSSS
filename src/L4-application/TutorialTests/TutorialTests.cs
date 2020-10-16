@@ -56,7 +56,7 @@ namespace BoSSS.Application.TutorialTests {
             var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
             
             int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
-                //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad" 
+                //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData" 
             });
 
 
