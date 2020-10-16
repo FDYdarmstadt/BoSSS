@@ -373,31 +373,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
-                    /*{
 
-                        // configurations for velocity
-                        for(int d = 0; d < D; d++) {
-                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
-                                DegreeS = new int[] { pVel },// Math.Max(1, pVel - iLevel) },
-                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                                VarIndex = new int[] { d }
-                            };
-                            configsLevel.Add(configVel_d);
-                        }
-                        // configuration for pressure
-                        var configPres = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { pPrs }, //Math.Max(0, pPrs - iLevel) },
-                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
-                            VarIndex = new int[] { D }
-                        };
-                        configsLevel.Add(configPres);
-                    } */
-                    
-                    
-                    {
+                    if (this.Control.UseSchurBlockPrec) {
                         // using a Schur complement for velocity & pressure
                         var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
-                        for(int d = 0; d < D; d++) {
+                        for (int d = 0; d < D; d++) {
                             d.AddToArray(ref confMomConti.VarIndex);
                             //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
                             pVel.AddToArray(ref confMomConti.DegreeS);
@@ -409,6 +389,25 @@ namespace BoSSS.Application.XNSE_Solver {
                         confMomConti.mode = MultigridOperator.Mode.SchurComplement;
 
                         configsLevel.Add(confMomConti);
+                    } else {
+                        // configurations for velocity
+                        for (int d = 0; d < D; d++) {
+                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                                DegreeS = new int[] { pVel },
+                                //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                                VarIndex = new int[] { d }
+                            };
+                            configsLevel.Add(configVel_d);
+                        }
+                        // configuration for pressure
+                        var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pPrs },
+                            //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                            VarIndex = new int[] { D }
+                        };
+                        configsLevel.Add(configPres);
                     }
                                         
                     if (this.Control.solveKineticEnergyEquation) {
@@ -492,7 +491,8 @@ namespace BoSSS.Application.XNSE_Solver {
             m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if (this.Control.solveKineticEnergyEquation)
                 m_HMForder *= 2;
-
+            
+            //m_HMForder *= 2; // may have an influence on no of iterations of lin sovler for small Operator-Matrix
 
             // Create Spatial Operator
             // ======================= 
@@ -1214,6 +1214,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 //Console.WriteLine("y-momentum balance norm = {0}", momBal_Norm[1]);
 
 
+
                 // ++++++++++++++++++++++++++++++++++++++++++
                 // The actual solution of the System
                 // ++++++++++++++++++++++++++++++++++++++++++
@@ -1226,7 +1227,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         lockUpdate = false;
 
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                        
+
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
                     }
@@ -1237,29 +1238,29 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.Control.solveCoupledHeatEquation && (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP))
                     this.ComputeHeatFlux();
 
-
+#if !TEST
                 Postprocessing(TimestepInt, phystime, dt, TimestepNo);
-
-
-
+#endif
+#if TEST
+                // Reference Solver for spectral-Analysis ...
+                m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
+                //WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+#endif
                 // ================
                 // Good bye
                 // ================
-                if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
+                if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
                     ExtVelMover.FinishTimeStep();
                 }
 
 #if DEBUG
-            // in case of Debugging Save first Timesteps
-            //if(TimestepNo[1] <= 2) {
-            //    this.SaveToDatabase(TimestepNo, phystime);
-            //}
+                // in case of Debugging Save first Timesteps
+                //if(TimestepNo[1] <= 2) {
+                //    this.SaveToDatabase(TimestepNo, phystime);
+                //}
 #endif
 
                 Console.WriteLine("done.");
-#if TEST
-                WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
-#endif
                 return dt;
             }
         }

@@ -40,8 +40,8 @@ namespace BoSSS.Application.TutorialTests {
 
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
-            
-          
+
+                    
             //var losScriptos = GetListOfScripts();
             //int r = 0;
             //AllUpTest.RunWorksheet(losScriptos[int.Parse(args[0])]);

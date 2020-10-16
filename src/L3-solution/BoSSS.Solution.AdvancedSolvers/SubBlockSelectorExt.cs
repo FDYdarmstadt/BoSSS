@@ -523,7 +523,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             if (m_includeExternalCells) {
                 if (fullVector.Count() != GetLocalandExternalDOF(m_map))
-                    throw new ArgumentException("Length of targetVector not equal Length of original");
+                //    throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (subVector.Count() != BMLoc.LocalDOF + BMExt.LocalDOF)
                     throw new ArgumentException("accVector length is not equal to length of mask");
                 fullVector.AccV(1.0, subVector, BMLoc.m_LocalMask, default(int[]));
