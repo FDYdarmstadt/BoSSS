@@ -37,7 +37,7 @@ namespace BoSSS.Application.TutorialTests {
         /// </summary>
         static public void OneTimeTearDown(bool killBatch) {
             
-            if (killBatch || MiniBatchProcessor.Server.MiniBatchThreadIsMyChild) {
+            if (killBatch) {
                 Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
                 Console.Out.Flush();
 
@@ -63,7 +63,7 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         static public bool OneTimeSetUp() {
-            return MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
+            return MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: false);
         }
 
         internal static string DirectoryOffset = "";

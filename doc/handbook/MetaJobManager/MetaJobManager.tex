@@ -53,6 +53,10 @@ WorkflowMgm.Init("MetaJobManager\_Tutorial");
  }
 \BoSSSexe
 \BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
 /// We verify that we have no jobs defined so far
 WorkflowMgm.AllJobs;
  }
@@ -90,17 +94,24 @@ databases;
  }
 \BoSSSexe
 \BoSSScmd{
-/// We have to initialize all batch systems that we want to use.
-/// Normally, one would put these statements into the 
-/// {\tt $\sim$/.BoSSS/etc/DBErc.cs}-file
-var myBatch = new MiniBatchProcessorClient();
+/// We have to pick a batch systems that we want to use:
+/// Normally, these are configured in the 
+/// {\tt $\sim$/.BoSSS/etc/BatchProcessorConfig.json}-file and 
+/// can be accessed through:
+ExecutionQueues;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For the sake of simplicuity, we pick the first one:
+var myBatch = ExecutionQueues[0];
  }
 \BoSSSexe
 \BoSSScmd{
 /// The batch processor for local jobs can be started separately (by launching
 /// {\tt MiniBatchProcessor.exe}), or from the worksheet as follows.
 /// In the latter case, it depends on the operating system, whether the 
-/// \newline {\tt MiniBatchProcessor.exe} is terminated with the worksheet, or not.
+/// \newline {\tt MiniBatchProcessor.exe} is terminated with the worksheet, 
+/// or not.
 MiniBatchProcessor.Server.StartIfNotRunning(false);
  }
 \BoSSSexe
@@ -271,6 +282,11 @@ JobLocal.Status;
  }
 \BoSSSexe
 \BoSSScmd{
+///BoSSScmdsilent
+NUnit.Framework.Assert.IsTrue(JobLocal.Status == JobStatus.PreActivation);
+ }
+\BoSSSexe
+\BoSSScmd{
 /// One can change e.g. the number of MPI processes:
  }
 \BoSSSexe
@@ -299,13 +315,20 @@ WorkflowMgm.AllJobs
 JobLocal.Status;
  }
 \BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+NUnit.Framework.Assert.IsTrue(\newline 
+   JobLocal.Status == JobStatus.PendingInExecutionQueue\newline 
+   || JobLocal.Status == JobStatus.InProgress);
+ }
+\BoSSSexeSilent
 \BoSSScmd{
 /// Here, we block until both of our jobs have finished:
 WorkflowMgm.BlockUntilAllJobsTerminate(3600);
  }
 \BoSSSexe
 \BoSSScmd{
-/// We examine the output and error stream of the job on the HPC cluster:
+/// We examine the output and error stream of the job:
 /// This directly accesses the {\tt stdout}-redirection of the respective job
 /// manager, which may contain a bit more information than the 
 /// {\tt stdout}-copy in the session directory.
