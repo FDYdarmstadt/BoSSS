@@ -49,8 +49,8 @@ namespace BoSSS.Application.TutorialTests {
             int r = 0;
             int i = 1;
             foreach(var s in losScriptos) {
-                //AllUpTest.RunWorksheet(s);
-                Console.WriteLine($"{i} : {s}");
+                AllUpTest.RunWorksheet(s);
+                //Console.WriteLine($"{i} : {s}");
                 i++;
             }
 
@@ -88,6 +88,9 @@ namespace BoSSS.Application.TutorialTests {
             csMPI.Raw.mpiFinalize();
             return r;
         }
+
+
+
 
         static string[] GetListOfScripts() {
             var r = new List<string>();
