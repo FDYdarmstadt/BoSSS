@@ -77,6 +77,13 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("InitialValues/InitialValues.tex")]
+        [Test]
+        static public void Run__InitialValues() {
+            RunWorksheet("InitialValues/InitialValues.tex");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
         [Test]
         static public void Run__BoundaryAndInitialData() {
@@ -112,16 +119,16 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial2/uebung2tutorial.tex")]
+        [NUnitFileToCopyHack("ue2Basics/ue2Basics.tex")]
         [Test]
-        static public void Run__uebung2tutorial() {
-            RunWorksheet("tutorial2/uebung2tutorial.tex");
+        static public void Run__ue2Basics() {
+            RunWorksheet("ue2Basics/ue2Basics.tex");
         }
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex")]
-        //[Test]
+        [Test]
         static public void Run__SpatialOperatorNexpTimeInt() {
             RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex");
         }
@@ -138,10 +145,10 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial6/tutorial6.tex")]
+        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.tex")]
         [Test]
-        static public void Run__tutorial6() {
-            RunWorksheet("tutorial6/tutorial6.tex");
+        static public void Run__ue6ScalarConvStability() {
+            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.tex");
         }
 #endif
 
