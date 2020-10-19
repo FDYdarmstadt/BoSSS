@@ -40,8 +40,8 @@ namespace BoSSS.Application.TutorialTests {
 
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
-            
-          
+
+                    
             //var losScriptos = GetListOfScripts();
             //int r = 0;
             //AllUpTest.RunWorksheet(losScriptos[int.Parse(args[0])]);
@@ -50,19 +50,35 @@ namespace BoSSS.Application.TutorialTests {
             //    break;
             //}
 
+            // start the minibatchprocessor which is used internally
+            bool iStartedThisShit = AllUpTest.OneTimeSetUp();
+
             
-
-
             var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
             
             int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
-                //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad" 
+                //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData" 
             });
-
-
-            csMPI.Raw.mpiFinalize();
-
             
+            //int r = 0;
+            //AllUpTest.Run__BoundaryAndInitialData();
+            //AllUpTest.Run__channel();
+            //AllUpTest.Run__convStudy();
+            //AllUpTest.Run__CsharpAndBoSSSpad();
+            //AllUpTest.Run__GridGeneration();
+            //AllUpTest.Run__IsentropicVortex();
+            //AllUpTest.Run__MetaJobManager();
+            //AllUpTest.Run__Poisson();
+            //AllUpTest.Run__sip();
+            //AllUpTest.Run__StokesEq();
+            //AllUpTest.Run__tutorial4();
+            //AllUpTest.Run__tutorial6();
+            //AllUpTest.Run__tutorialMatlab();
+            //AllUpTest.Run__uebung2tutorial();
+            //AllUpTest.Run__uebung5tutorial();
+
+            AllUpTest.OneTimeTearDown(iStartedThisShit);
+            csMPI.Raw.mpiFinalize();
             return r;
         }
 

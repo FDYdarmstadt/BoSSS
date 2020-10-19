@@ -803,9 +803,9 @@ namespace BoSSS.Solution {
                         catch (Exception e) {
                             Console.WriteLine("WARNING: internal error occured during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
                             return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-                        }
-                    }
-                }
+        }
+    }
+}
             }
 
             return LocalDOF;
@@ -1472,23 +1472,12 @@ namespace BoSSS.Solution {
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true,
-                        AssignXdGCellsToLowBlocks = true,
-                    }; 
-                    
-                    /*
-                    var smoother2 = new Schwarz() {
-                        FixedNoOfIterations = 1,
-                        CoarseSolver = null,
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                        },
-                        Overlap = 0, 
-                        EnableOverlapScaling = true,
-                        UsePMGinBlocks = true,
-                        AssignXdGCellsToLowBlocks = true
+                        CoarseSolveOfCutcells = true,
                     };
-                    */
-                    if (iLevel == 0) SetQuery("XdgCellsToLowBlock", ((Schwarz)smoother1).AssignXdGCellsToLowBlocks ? 1 : 0, true);
+
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,

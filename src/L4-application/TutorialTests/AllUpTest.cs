@@ -37,7 +37,7 @@ namespace BoSSS.Application.TutorialTests {
         /// </summary>
         static public void OneTimeTearDown(bool killBatch) {
             
-            if (killBatch || MiniBatchProcessor.Server.MiniBatchThreadIsMyChild) {
+            if (killBatch) {
                 Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
                 Console.Out.Flush();
 
@@ -63,7 +63,8 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         static public bool OneTimeSetUp() {
-            return MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false);
+            bool r= MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
+            return r;
         }
 
         internal static string DirectoryOffset = "";
@@ -77,21 +78,21 @@ namespace BoSSS.Application.TutorialTests {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
-        //[Test]
+        [Test]
         static public void Run__BoundaryAndInitialData() {
             RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
-        //[Test]
+        [Test]
         static public void Run__MetaJobManager() {
             RunWorksheet("MetaJobManager/MetaJobManager.tex");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
-        //[Test]
+        [Test]
         static public void Run__GridGeneration() {
             RunWorksheet("GridGeneration/GridGeneration.tex");
         }
@@ -117,40 +118,52 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("tutorial2/uebung2tutorial.tex");
         }
 
+#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial4/tutorial4.tex")]
         //[Test]
         static public void Run__tutorial4() {
             RunWorksheet("tutorial4/tutorial4.tex");
         }
+#endif
 
+#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial5/uebung5tutorial.tex")]
-        //[Test]
+        [Test]
         static public void Run__uebung5tutorial() {
             RunWorksheet("tutorial5/uebung5tutorial.tex");
         }
+#endif
 
+#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial6/tutorial6.tex")]
-        //[Test]
+        [Test]
         static public void Run__tutorial6() {
             RunWorksheet("tutorial6/tutorial6.tex");
         }
+#endif
 
+#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial9-SIP/sip.tex")]
-        //[Test]
+        [Test]
         static public void Run__sip() {
             RunWorksheet("tutorial9-SIP/sip.tex");
         }
+#endif
 
+#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.tex")]
         [Test]
         static public void Run__Poisson() {
             RunWorksheet("tutorial10-PoissonSystem/Poisson.tex");
         }
+#endif
+
+#if !DEBUG
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.tex")]
@@ -158,20 +171,25 @@ namespace BoSSS.Application.TutorialTests {
         static public void Run__StokesEq() {
             RunWorksheet("tutorial11-Stokes/StokesEq.tex");
         }
-
+#endif
+ 
+#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex")]
         [Test]
         static public void Run__CsharpAndBoSSSpad() {
             RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex");
         }
+#endif
 
+#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
-        //[Test]
+        [Test]
         static public void Run__convStudy() {
             RunWorksheet("convergenceStudyTutorial/convStudy.tex");
         }
+#endif
 
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
@@ -192,6 +210,8 @@ namespace BoSSS.Application.TutorialTests {
             // start the minibatchprocessor which is used internally
             bool iStartedThisShit = OneTimeSetUp();
 
+            BoSSSpad.Job.UndocumentedSuperHack = true;
+            
             try {
                 // run test:
                 int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
