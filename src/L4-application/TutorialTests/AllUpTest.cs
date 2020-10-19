@@ -120,19 +120,19 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial4/tutorial4.tex")]
+        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex")]
         //[Test]
-        static public void Run__tutorial4() {
-            RunWorksheet("tutorial4/tutorial4.tex");
+        static public void Run__SpatialOperatorNexpTimeInt() {
+            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial5/uebung5tutorial.tex")]
+        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.tex")]
         [Test]
-        static public void Run__uebung5tutorial() {
-            RunWorksheet("tutorial5/uebung5tutorial.tex");
+        static public void Run__ue5NumFluxConv() {
+            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.tex");
         }
 #endif
 

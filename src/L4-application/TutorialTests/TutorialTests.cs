@@ -54,29 +54,30 @@ namespace BoSSS.Application.TutorialTests {
             bool iStartedThisShit = AllUpTest.OneTimeSetUp();
 
             
-            var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
+            //var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
             
-            int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
-                //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData" 
-            });
+            //int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
+            //    //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData" 
+            //});
             
-            //int r = 0;
-            //AllUpTest.Run__BoundaryAndInitialData();
-            //AllUpTest.Run__channel();
-            //AllUpTest.Run__convStudy();
-            //AllUpTest.Run__CsharpAndBoSSSpad();
-            //AllUpTest.Run__GridGeneration();
-            //AllUpTest.Run__IsentropicVortex();
-            //AllUpTest.Run__MetaJobManager();
-            //AllUpTest.Run__Poisson();
-            //AllUpTest.Run__sip();
-            //AllUpTest.Run__StokesEq();
-            //AllUpTest.Run__tutorial4();
-            //AllUpTest.Run__tutorial6();
-            //AllUpTest.Run__tutorialMatlab();
-            //AllUpTest.Run__uebung2tutorial();
-            //AllUpTest.Run__uebung5tutorial();
-
+            int r = 0;
+            AllUpTest.Run__BoundaryAndInitialData();
+            AllUpTest.Run__channel();
+            AllUpTest.Run__GridGeneration();
+            AllUpTest.Run__IsentropicVortex();
+            AllUpTest.Run__MetaJobManager();
+            AllUpTest.Run__tutorialMatlab();
+            AllUpTest.Run__uebung2tutorial();
+#if !DEBUG
+            AllUpTest.Run__CsharpAndBoSSSpad();
+            AllUpTest.Run__convStudy();
+            AllUpTest.Run__Poisson();
+            AllUpTest.Run__sip();
+            AllUpTest.Run__StokesEq();
+            AllUpTest.Run__SpatialOperatorNexpTimeInt();
+            AllUpTest.Run__tutorial6();
+            AllUpTest.Run__ue5NumFluxConv();
+#endif
             AllUpTest.OneTimeTearDown(iStartedThisShit);
             csMPI.Raw.mpiFinalize();
             return r;
