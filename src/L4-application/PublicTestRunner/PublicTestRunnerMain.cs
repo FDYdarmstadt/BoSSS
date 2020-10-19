@@ -543,7 +543,7 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if(s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
+                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
                                     // message:
                                     if(s == JobStatus.FinishedSuccessful)
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
@@ -818,6 +818,7 @@ namespace PublicTestRunner {
 
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
+                j.SessionReqForSuccess = false;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {

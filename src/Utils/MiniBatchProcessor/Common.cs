@@ -75,6 +75,8 @@ namespace MiniBatchProcessor {
 
         private void ReadWorkDir(Dictionary<int, Tuple<JobData, JobStatus>> R) {
             string dir = Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR);
+            if(!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
                 int id;
@@ -141,6 +143,8 @@ namespace MiniBatchProcessor {
 
         private void ReadQueueDir(Dictionary<int, Tuple<JobData, JobStatus>> R) {
             string dir = Path.Combine(config.BatchInstructionDir, QUEUE_DIR);
+            if(!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
                 int id;

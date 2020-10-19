@@ -63,7 +63,8 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         static public bool OneTimeSetUp() {
-            return MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: false);
+            bool r= MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
+            return r;
         }
 
         internal static string DirectoryOffset = "";
@@ -208,8 +209,9 @@ namespace BoSSS.Application.TutorialTests {
 
             // start the minibatchprocessor which is used internally
             bool iStartedThisShit = OneTimeSetUp();
-            Assert.IsFalse(iStartedThisShit, "fhjsdafhkjashfdkaklj");
 
+            BoSSSpad.Job.UndocumentedSuperHack = true;
+            
             try {
                 // run test:
                 int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });

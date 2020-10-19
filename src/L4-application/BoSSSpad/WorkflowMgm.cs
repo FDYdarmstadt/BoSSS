@@ -358,7 +358,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Blocks until all jobs in <see cref="AllJobs"/> are either <see cref="JobStatus.Failed"/>
+        /// Blocks until all jobs in <see cref="AllJobs"/> are either <see cref="JobStatus.FailedOrCanceled"/>
         /// or <see cref="JobStatus.FinishedSuccessful"/>.
         /// </summary>
         /// <param name="TimeOutSeconds">
@@ -385,7 +385,7 @@ namespace BoSSS.Application.BoSSSpad {
                 bool terminate = true;
                 foreach(var J in this.AllJobs) {
                     var s = J.Value.Status;
-                    if(s!= JobStatus.Failed && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
+                    if(s!= JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
                         terminate = false;
                         break;
                     }
@@ -407,7 +407,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         /// <summary>
         /// Blocks until any running or queued job in <see cref="AllJobs"/> reaches 
-        /// either <see cref="JobStatus.Failed"/>
+        /// either <see cref="JobStatus.FailedOrCanceled"/>
         /// or <see cref="JobStatus.FinishedSuccessful"/>.
         /// </summary>
         /// <param name="TimeOutSeconds">
@@ -427,7 +427,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             var QueueAndRun = this.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) {
                 var s = j.Status;
-                if (s == JobStatus.Failed)
+                if (s == JobStatus.FailedOrCanceled)
                     return false;
                 if (s == JobStatus.FinishedSuccessful)
                     return false;
@@ -453,7 +453,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 foreach(var J in QueueAndRun) {
                     var s = J.Status;
-                    if(s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
+                    if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
                         JustFinished = J;
                         return QueueAndRun.Length;
                     }

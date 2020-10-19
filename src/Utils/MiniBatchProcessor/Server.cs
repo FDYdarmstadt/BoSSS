@@ -133,9 +133,6 @@ namespace MiniBatchProcessor {
                 return false;
             }
 
-
-
-
             if(RunExternal) {
                 Console.WriteLine("Starting mini batch processor in external process...");
 
@@ -194,6 +191,8 @@ namespace MiniBatchProcessor {
                     return false;
                 }
             }
+
+           
 
             Console.WriteLine("started.");
             return true;
