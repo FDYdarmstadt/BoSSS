@@ -182,9 +182,9 @@ namespace BoSSS.Application.BoSSSpad {
     }
 
     /// <summary>
-    /// File IO utilities 
+    /// File IO utilities for unreliable file-systems (perform 10x re-try if operation fails)
     /// </summary>
-    internal static class MetaJobMgrIO { 
+    public static class MetaJobMgrIO { 
 
         /// <summary>
         /// Generic IO operation with re-try (seems to be necessary when working with network file systems).
