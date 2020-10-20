@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Grid {
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
         /// </returns>
         public bool ComputeGridChange(Func<int, int, int> levelIndicator, out List<int> cellsToRefine, out List<int[]> cellsToCoarsen) {
-            throw new Exception("Legacy method. Will be deleted at 01.11.2020");
+            //throw new Exception("Legacy method. Will be deleted at 01.11.2020");
             int[][] globalCellNeigbourship = GetGlobalCellNeigbourship();
             int[] globalDesiredLevel = GetGlobalDesiredLevel(levelIndicator, globalCellNeigbourship);
             cellsToRefine = GetCellsToRefine(globalDesiredLevel);
