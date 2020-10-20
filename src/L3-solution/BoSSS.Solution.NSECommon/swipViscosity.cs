@@ -284,14 +284,17 @@ namespace BoSSS.Solution.NSECommon {
             m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             cj = cs.CellLengthScales;
-
-            if(cs.UserDefinedValues.Keys.Contains("SlipLengths"))
-                Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
-            // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
-            // Useful in case that the Reynolds number changes during a simulation...
-            if(cs.UserDefinedValues.Keys.Contains("Reynolds"))
-                m_reynolds = (double)cs.UserDefinedValues["Reynolds"];
+            if(cs.UserDefinedValues != null)
+            {
+                if (cs.UserDefinedValues.Keys.Contains("SlipLengths"))
+                    Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
+                // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
+                // Useful in case that the Reynolds number changes during a simulation...
+                if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
+                    m_reynolds = (double)cs.UserDefinedValues["Reynolds"];
+            }
         }
+
 
         /// <summary>
         /// penalty adapted for spatial dimension and DG-degree
