@@ -39,6 +39,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
 using System.IO;
 using BoSSS.Platform.Utils.Geom;
+using System.Collections;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -673,6 +674,7 @@ namespace BoSSS.Application.SipPoisson {
                     else
                         return CurrentLevel;
                 }
+
 
                 GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData,null);
                 bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);

@@ -1098,7 +1098,8 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         if (jCellNeigh_max < 0) {
-
+                            Vector cellCenter = new Vector(grdDat.iGeomCells.GetCenter(jCell));
+                            throw new Exception("Fail: " + cellCenter);
                             failCells.Add(jCell);
                         } else {
                             _AccEdgesMask[jEdge_max] = true;

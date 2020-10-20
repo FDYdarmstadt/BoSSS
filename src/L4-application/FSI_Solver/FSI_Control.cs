@@ -111,6 +111,8 @@ namespace BoSSS.Application.FSI_Solver {
         public bool[] BoundaryIsPeriodic;
         public double MaxGridLength;
         public double MinGridLength;
+        public double domainLengthX;
+        public double domainLengthY;
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             MaxGridLength = 1 / cellsPerUnitLength;
             BoundaryPositionPerDimension = new double[2][];
@@ -122,6 +124,8 @@ namespace BoSSS.Application.FSI_Solver {
             BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
             BoundaryIsPeriodic[0] = periodicX;
             BoundaryIsPeriodic[1] = periodicY;
+            domainLengthY = lengthY / 2;
+            domainLengthX = lengthX / 2;
             if (IsRestart)
                 return;
             if (m_BoundaryValues.IsNullOrEmpty() && !BoundaryIsPeriodic[0] && !BoundaryIsPeriodic[1])

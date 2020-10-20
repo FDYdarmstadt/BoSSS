@@ -634,6 +634,9 @@ namespace BoSSS.Application.FSI_Solver {
                         int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(globalParticleColor, currentColor);
                         double levelSetFunctionParticlesPerColor(double[] X, double t) {
                             double levelSetFunction = -double.MaxValue;
+                            //levelSetFunction = (X[0]).Pow2() + (X[1]).Pow2() - (((FSI_Control)Control).domainLengthX.Pow2() + ((FSI_Control)Control).domainLengthY.Pow2()) + 2 * MaxGridLength;
+                            levelSetFunction = -(X[0] - 0.888888888888889).Pow2() - (X[1] - 0.555555555555556).Pow2() + ((MaxGridLength/2).Pow2());
+                            //levelSetFunction = -(X[0] - 0.311111111111111).Pow2() - (X[1] - 0.577777777777778).Pow2() + ((MaxGridLength/10).Pow2());
                             for (int p = 0; p < particlesOfCurrentColor.Length; p++) {
                                 Particle currentParticle = ParticleList[particlesOfCurrentColor[p]];
                                 if (levelSetFunction < currentParticle.LevelSetFunction(X))
@@ -649,6 +652,7 @@ namespace BoSSS.Application.FSI_Solver {
                 double levelSetFunctionFluid(double[] X, double t) { return -1; }
                 CellMask fluidCells = allParticleMask != null ? allParticleMask.Complement() : CellMask.GetFullMask(GridData);
                 SetLevelSet(levelSetFunctionFluid, fluidCells, phystime);
+
 
                 PerformLevelSetSmoothing(allParticleMask, fluidCells, SetFarField: true);
             }
@@ -1468,9 +1472,9 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null, PeriodicBoundaryCells);
                 if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementForStartUpSweeps(), out CellsToRefineList, out Coarsening);
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetDesiredLevelBasedOnParticleScale(), out CellsToRefineList, out Coarsening);
                 else
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementBasedOnParticleLength(), out CellsToRefineList, out Coarsening);
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetDesiredLevelBasedOnGridScale(), out CellsToRefineList, out Coarsening);
             }
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
@@ -1489,44 +1493,37 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Finds all cells to be refined with the perssonsensor.
         /// </summary>
-        private List<Tuple<int, BitArray>> GetCellMaskRefinementBasedOnParticleLength() {
+        private int[] GetDesiredLevelBasedOnGridScale() {
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
-            int refinementLevel2 = refinementLevel >= 2 ? ((FSI_Control)Control).RefinementLevel / 2 : 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            BitArray particleNearRegionCells = new BitArray(noOfLocalCells);
-            BitArray particleFarRegionCells = new BitArray(noOfLocalCells);
+            int[] localCellDesiredLevel = new int[noOfLocalCells];
             for (int p = 0; p < ParticleList.Count(); p++) {
                 for (int j = 0; j < noOfLocalCells; j++) {
-                    if (!particleNearRegionCells[j]) {
+                    if (localCellDesiredLevel[j] < refinementLevel) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, MaxGridLength);
-                    }
-                    if (!particleFarRegionCells[j]) {
-                        Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleFarRegionCells[j] = ParticleList[p].Contains(cellCenter, 2 * MaxGridLength);
+                        localCellDesiredLevel[j] = ParticleList[p].Contains(cellCenter, MaxGridLength) ? refinementLevel : localCellDesiredLevel[j];
                     }
                 }
             }
-            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, particleNearRegionCells),
-                                    //new Tuple<int, BitArray>(refinementLevel2, particleFarRegionCells),
-            };
+            return localCellDesiredLevel;
         }
+
         /// <summary>
         /// Finds all cells to be refined with the perssonsensor.
         /// </summary>
-        private List<Tuple<int, BitArray>> GetCellMaskRefinementForStartUpSweeps() {
+        private int[] GetDesiredLevelBasedOnParticleScale() {
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            BitArray particleNearRegionCells = new BitArray(noOfLocalCells);
+            int[] localCellDesiredLevel = new int[noOfLocalCells];
             for (int p = 0; p < ParticleList.Count(); p++) {
                 for (int j = 0; j < noOfLocalCells; j++) {
-                    if (!particleNearRegionCells[j]) {
+                    if (localCellDesiredLevel[j] < refinementLevel) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, ParticleList[p].GetLengthScales().Max());
+                        localCellDesiredLevel[j] = ParticleList[p].Contains(cellCenter, ParticleList[p].GetLengthScales().Max()) ? refinementLevel : localCellDesiredLevel[j];
                     }
                 }
             }
-            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, particleNearRegionCells), };
+            return localCellDesiredLevel;
         }
     }
 }
