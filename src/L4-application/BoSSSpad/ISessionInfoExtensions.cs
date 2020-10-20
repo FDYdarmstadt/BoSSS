@@ -614,6 +614,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// true, if the BoSSS app which wrote the session is successfully terminated (w.o. exceptions, etc.)
+        /// </summary>
+        public static bool SuccessfulTermination(this ISessionInfo session) {
+            return !session.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG);
+        }
+
+        /// <summary>
         /// Removes a tag from a session.
         /// </summary>
         /// <param name="session">The session in question.</param>

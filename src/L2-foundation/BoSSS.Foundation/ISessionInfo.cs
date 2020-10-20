@@ -70,7 +70,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// path to deploy directory
+        /// path to deploy directory (at the machine at which the session has been computed)
         /// </summary>
         string DeployPath {
             get;

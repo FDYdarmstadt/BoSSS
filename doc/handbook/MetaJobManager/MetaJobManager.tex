@@ -53,29 +53,20 @@ WorkflowMgm.Init("MetaJobManager\_Tutorial");
  }
 \BoSSSexe
 \BoSSScmd{
-/// We verify that we have no jobs defined so far
+/// We verify that we have no jobs defined so far ...
 WorkflowMgm.AllJobs;
  }
 \BoSSSexe
 \BoSSScmdSilent{
 /// BoSSScmdSilent BoSSSexeSilent
-// first, do some cleanup\newline 
-//if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db")) \{\newline 
-//    try \{\newline 
-//        System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db",true);\newline 
-//    \} catch(Exception) \{ \}\newline 
-//\}\newline 
-//if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash deploy"))\{\newline 
-//    try \{\newline 
-//        System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash deploy",true);\newline 
-//    \} catch(Exception) \{ \}\newline 
-// \newline 
-//\}
+NUnit.Framework.Assert.IsTrue(WorkflowMgm.AllJobs.Count == 0, "MetaJobManager tutorial: expecting 0 jobs on entry.");
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// and create, resp. open a \BoSSS database on a local drive.
-var myLocalDb = CreateTempDatabase();
+/// ... and create, resp. open a \BoSSS database on a local drive:
+var myLocalDb = CreateTempDatabase();\newline 
+/// To specify the exact directory of the database, you might use
+/// \code{OpenOrCreateDatabase}.
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -90,17 +81,24 @@ databases;
  }
 \BoSSSexe
 \BoSSScmd{
-/// We have to initialize all batch systems that we want to use.
-/// Normally, one would put these statements into the 
-/// {\tt $\sim$/.BoSSS/etc/DBErc.cs}-file
-var myBatch = new MiniBatchProcessorClient();
+/// We have to pick a batch systems that we want to use:
+/// Normally, these are configured in the 
+/// {\tt $\sim$/.BoSSS/etc/BatchProcessorConfig.json}-file and 
+/// can be accessed through:
+ExecutionQueues;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For the sake of simplicuity, we pick the first one:
+var myBatch = ExecutionQueues[0];
  }
 \BoSSSexe
 \BoSSScmd{
 /// The batch processor for local jobs can be started separately (by launching
 /// {\tt MiniBatchProcessor.exe}), or from the worksheet as follows.
 /// In the latter case, it depends on the operating system, whether the 
-/// \newline {\tt MiniBatchProcessor.exe} is terminated with the worksheet, or not.
+/// \newline {\tt MiniBatchProcessor.exe} is terminated with the worksheet, 
+/// or not.
 MiniBatchProcessor.Server.StartIfNotRunning(false);
  }
 \BoSSSexe
@@ -120,22 +118,18 @@ using BoSSS.Application.IBM\_Solver;
 var xNodes       = GenericBlas.Linspace(0, 10 , 41); \newline 
 var yNodes       = GenericBlas.Linspace(-1, 1, 9); \newline 
 GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
-grid.EdgeTagNames.Add(1, "wall");  \newline 
-grid.EdgeTagNames.Add(2, "Velocity\_Inlet");  \newline 
-grid.EdgeTagNames.Add(3, "Pressure\_Outlet");\newline 
 grid.DefineEdgeTags(delegate (double[] X) \{ \newline 
 \btab double x = X[0];\newline 
-\btab double y = X[1];\newline 
-\btab byte et  = 0; \newline 
+\btab double y = X[1]; \newline 
 \btab if (Math.Abs(y - (-1)) <= 1.0e-8) \newline 
-\btab \btab et = 1; // lower wall\newline 
+\btab \btab return "wall"; // lower wall\newline 
 \btab if (Math.Abs(y - (+1)) <= 1.0e-8) \newline 
-\btab \btab et = 1; // upper wall\newline 
+\btab \btab return "wall"; // upper wall\newline 
 \btab if (Math.Abs(x - (0.0)) <= 1.0e-8) \newline 
-\btab \btab et = 2; // inlet\newline 
+\btab \btab return "Velocity\_Inlet"; // inlet\newline 
 \btab if (Math.Abs(x - (+10.0)) <= 1.0e-8) \newline 
-\btab \btab et = 3; // outlet\newline 
-\btab return et; \newline 
+\btab \btab return "Pressure\_Outlet"; // outlet\newline 
+\btab throw new ArgumentOutOfRangeException("unknown domain"); \newline 
 \});
  }
 \BoSSSexe
@@ -172,10 +166,7 @@ c.PhysicalParameters.mu\_A  = 1.0/reynolds;\newline
 // Timestepping properties:\newline 
 c.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.ImplicitEuler; \newline 
 c.dtFixed            = 1E20;  \newline 
-c.NoOfTimesteps      = 1;\newline 
-// Properties for the Picard Iterations:\newline 
-c.NonLinearSolver.MaxSolverIterations = 50; \newline 
-c.NonLinearSolver.MinSolverIterations = 1;
+c.NoOfTimesteps      = 1;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -257,7 +248,6 @@ c.AddBoundaryValue("Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
-/// 
 /// First, a \code{Job}-object is created from the control object:
 var JobLocal = c.CreateJob();
  }
@@ -271,6 +261,11 @@ JobLocal.Status;
  }
 \BoSSSexe
 \BoSSScmd{
+///BoSSScmdsilent
+NUnit.Framework.Assert.IsTrue(JobLocal.Status == JobStatus.PreActivation);
+ }
+\BoSSSexe
+\BoSSScmd{
 /// One can change e.g. the number of MPI processes:
  }
 \BoSSSexe
@@ -279,11 +274,31 @@ JobLocal.NumberOfMPIProcs = 1;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Then, the job is activated, resp. submitted to one batch system:
+/// Note that these jobs are desigend to be \emph{persistent}:
+/// This means the computation is only started 
+/// \emph{once for a given control object}, no matter how often the worksheet
+/// is executed. 
+///
+/// Such a behaviour is useful for expensive simulations, which run on HPC
+/// servers over days or even weeks. The user (you) can close the worksheet
+/// and maybe open and execute it a few days later, and he can access
+/// the original job which he submitted a few days ago (maybe it is finished
+/// now).
  }
 \BoSSSexe
 \BoSSScmd{
-JobLocal.Activate(myBatch); // execute the job in 'myBatch'
+/// Then, the job is activated, resp. submitted, resp. deployed 
+/// to one batch system.
+/// If job persistency is not wanted, traces of the job can be removed 
+/// on request dureing activation, causing a fresh job deployment at the
+/// batch system:
+ }
+\BoSSSexe
+\BoSSScmd{
+bool DeleteOldDeploymentsAndSessions = true; // use with care! Normally, you \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab  // dont want this!!!\newline 
+JobLocal.Activate(myBatch,  // execute the job in 'myBatch'\newline 
+\btab \btab \btab \btab   DeleteOldDeploymentsAndSessions); // causes fresh deployment
  }
 \BoSSSexe
 \BoSSScmd{
@@ -299,13 +314,20 @@ WorkflowMgm.AllJobs
 JobLocal.Status;
  }
 \BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+NUnit.Framework.Assert.IsTrue(\newline 
+   JobLocal.Status == JobStatus.PendingInExecutionQueue\newline 
+   || JobLocal.Status == JobStatus.InProgress);
+ }
+\BoSSSexeSilent
 \BoSSScmd{
 /// Here, we block until both of our jobs have finished:
-WorkflowMgm.BlockUntilAllJobsTerminate(3600);
+WorkflowMgm.BlockUntilAllJobsTerminate(360);
  }
 \BoSSSexe
 \BoSSScmd{
-/// We examine the output and error stream of the job on the HPC cluster:
+/// We examine the output and error stream of the job:
 /// This directly accesses the {\tt stdout}-redirection of the respective job
 /// manager, which may contain a bit more information than the 
 /// {\tt stdout}-copy in the session directory.
@@ -318,8 +340,8 @@ JobLocal.Stderr;
  }
 \BoSSSexe
 \BoSSScmd{
-/// We can also obtain the session which was stored during the execution of the 
-/// job:
+/// We can also obtain the session 
+/// which was stored during the execution of the job:
  }
 \BoSSSexe
 \BoSSScmd{
@@ -328,6 +350,16 @@ Sloc;
  }
 \BoSSSexe
 \BoSSScmd{
+/// We can also list all attempts to run the job at the assigend processor:
+JobLocal.AllDeployments;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+NUnit.Framework.Assert.IsTrue(JobLocal.AllDeployments.Count == 1, "MetaJobManager tutorial: Found more than one deployment.");
+ }
+\BoSSSexeSilent
+\BoSSScmd{
 /// Finally, we check the status of our jobs:
  }
 \BoSSSexe
@@ -335,8 +367,17 @@ Sloc;
 JobLocal.Status;
  }
 \BoSSSexe
+\BoSSScmd{
+/// If anything failed, hints on the reason why are provides by the 
+/// \code{GetStatus} method:
+ }
+\BoSSSexe
+\BoSSScmd{
+JobLocal.GetStatus(WriteHints:true);
+ }
+\BoSSSexe
 \BoSSScmdSilent{
 /// BoSSScmdSilent BoSSSexeSilent
-NUnit.Framework.Assert.IsTrue(JobLocal.Status == JobStatus.FinishedSuccessful);
+NUnit.Framework.Assert.IsTrue(JobLocal.Status == JobStatus.FinishedSuccessful, "MetaJobManager tutorial: Job was not successful.");
  }
 \BoSSSexeSilent

@@ -14,8 +14,8 @@
 
 %\maketitle
 
-\BoSSSopen{tutorial4/tutorial4}
-\graphicspath{{tutorial4/tutorial4.texbatch/}}
+\BoSSSopen{SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt}
+\graphicspath{{SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.texbatch/}}
 
 \BoSSScmd{
 ///\section*{What's new:} 
@@ -116,18 +116,18 @@ using BoSSS.Solution.Tecplot;
 uint superSampling = 0;  \newline 
 Tecplot tecplot    = new Tecplot(gridData, superSampling);\newline 
 //tecplot.PlotFields( \newline 
-//\btab "plot\_tutorial4\_superSampling0", \newline 
-//\btab 0.0, \newline 
-//\btab ch);
+//    "plot\_tutorial4\_superSampling0", \newline 
+//    0.0, \newline 
+//    ch);
  }
 \BoSSSexe
 \BoSSScmd{
 superSampling = 3;  \newline 
 tecplot    = new Tecplot(gridData, superSampling); \newline 
 //tecplot.PlotFields( \newline 
-//\btab "plot\_tutorial4\_superSampling3", \newline 
-//\btab 0.0, \newline 
-//\btab ch);
+//    "plot\_tutorial4\_superSampling3", \newline 
+//    0.0, \newline 
+//    ch);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -288,7 +288,7 @@ var DGCoordinates = new CoordinateVector(mapping);
 \BoSSSexe
 \BoSSScmd{
 /// Now, we can create an evaluator of the \code{SpatialOperator} for the \code{DGField} \emph{ch} 
-var evaluator = spatialTerm.GetEvaluator(mapping.Fields, mapping);
+var evaluator = spatialTerm.GetEvaluatorEx(mapping.Fields, null, mapping);
  }
 \BoSSSexe
 \BoSSScmd{
