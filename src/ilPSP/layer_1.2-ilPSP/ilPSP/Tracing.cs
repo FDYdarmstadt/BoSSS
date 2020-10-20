@@ -99,6 +99,7 @@ namespace ilPSP.Tracing {
         internal static void Push_MethodCallRecord(string _name) {
             Debug.Assert(InstrumentationSwitch == true);
             
+
             //if (Tracer.Current != null) {
             MethodCallRecord mcr;
             if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
