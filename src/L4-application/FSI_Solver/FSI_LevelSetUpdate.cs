@@ -232,7 +232,7 @@ namespace FSI_Solver {
         }
 
         private void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
-            int neighbourSearchDepth = 1;
+            int neighbourSearchDepth = 0;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int k = 0; k < neighbourSearchDepth; k++) {
                 for (int j = 0; j < noOfLocalCells; j++) {

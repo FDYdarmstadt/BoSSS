@@ -1440,6 +1440,28 @@ namespace BoSSS.Application.IBM_Solver {
             return DesiredLevel_j;
         }
 
+        int[] DesiredLevel() {
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] desiredLevel = new int[noOfLocalCells];
+            var LevSetCells = LsTrk.Regions.GetCutCellMask();
+            var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
+            for (int j = 0; j < noOfLocalCells; j++) {
+                if (!debug) {
+                    if (LevSetCells.Contains(j))
+                        desiredLevel[j] = 1;
+                }
+                else {
+                    if (LevSetCells.Contains(j)) {
+                        desiredLevel[j] = 2;
+                        Console.WriteLine(" ich störe");
+                    }
+                    else
+                        if (LevSetNeighbours.Contains(j)) { desiredLevel[j] = 2; }
+                }
+            }
+            return desiredLevel;
+        }
+
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
             if (this.Control.AdaptiveMeshRefinement) {
@@ -1469,7 +1491,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // Only CutCells are NoCoarseningCells 
                 GridRefinementController gridRefinementController = new GridRefinementController((GridData)(this.GridData), CutCells);
-                bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = gridRefinementController.ComputeGridChange(DesiredLevel(), out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
