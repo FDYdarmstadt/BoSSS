@@ -680,11 +680,11 @@ namespace BoSSS.Application.IBM_Solver {
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
-            Console.WriteLine("I N F O: Updating the Levelset");
-
-            this.LevSet.ProjectField(X => this.Control.ForcedPhi(X, phystime + dt));
+            //Console.WriteLine("I N F O: Updating the Levelset");
+            if (this.Control.ForcedPhi !=null) {
+                this.LevSet.ProjectField(X => this.Control.ForcedPhi(X, phystime + dt));
+            }
             this.LsTrk.UpdateTracker(phystime + dt);
-
             //LevsetEvo(phystime, dt, null);
 
             //SmoothLevelSet();
