@@ -15,35 +15,16 @@ namespace AdvancedSolverTests {
     
     public class AdvancedSolverMain {
 
-        /// <summary>
-        /// MPI init
-        /// </summary>
-        public static void SetUp() {
-            //bool dummy;
-            //ilPSP.Environment.Bootstrap(
-            //    new string[0],
-            //    BoSSS.Solution.Application.GetBoSSSInstallDir(),
-            //    out dummy);
-            //Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
-            BoSSS.Solution.Application.InitMPI();
-        }
-
-        /// <summary>
-        /// MPI shutdown.
-        /// </summary>
-        public static void TestFixtureTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
+      
 
         public static void Main() {
-            SetUp();
+            BoSSS.Solution.Application.InitMPI();
             Test();
-            TestFixtureTearDown();
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
         public static void Test() {
-            System.Threading.Thread.Sleep(10000);
-            //SubBlockTests.LocalIndexTest(XDGusage.all,2);
+           //SubBlockTests.LocalIndexTest(XDGusage.all,2);
             //SubBlockTests.ExternalIndexTest(XDGusage.all, 2);
             //SubBlockTests.MapConsistencyTest(XDGusage.all, 2);
             //SubBlockTests.WriteOutTestMatrices();
