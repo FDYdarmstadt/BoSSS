@@ -434,7 +434,7 @@ namespace PublicTestRunner {
                 if (!bpc.DeployRuntime) {
                     NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + "_amd64"));
                     NativeOverride.Create();
-                    BatchProcessorClient.CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName, null);
+                    MetaJobMgrIO.CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName, null);
                 } else {
                     NativeOverride = null;
                 }
@@ -543,12 +543,12 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if(s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
+                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
                                     // message:
                                     if(s == JobStatus.FinishedSuccessful)
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
-                                        Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.DeploymentDirectory + " (" + DateTime.Now + ")");
+                                        Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
 
                                     // copy stdout and stderr to logfile
                                     LogResultFile(ot, jj.job, jj.testname, jj.ResFile);
@@ -556,7 +556,7 @@ namespace PublicTestRunner {
                                     // copy xml result file
                                     using(new BlockTrace("copy_nunit_xml_result", trr)) {
                                         try {
-                                            string[] sourceFiles = Directory.GetFiles(jj.job.DeploymentDirectory, "result-*.xml");
+                                            string[] sourceFiles = Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "result-*.xml");
 
                                             foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
@@ -572,7 +572,7 @@ namespace PublicTestRunner {
                                     using(new BlockTrace("delete_deploy_dir", trr)) {
                                         if(s == JobStatus.FinishedSuccessful) {
                                             try {
-                                                Directory.Delete(jj.job.DeploymentDirectory, true);
+                                                Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
                                             } catch(Exception e) {
                                                 Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
                                             }
@@ -643,7 +643,7 @@ namespace PublicTestRunner {
 
                 int OtherStatCount = 0;
                 foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) {
-                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.DeploymentDirectory}");
+                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.LatestDeployment.DeploymentDirectory.FullName}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
@@ -686,15 +686,15 @@ namespace PublicTestRunner {
                 ot.WriteLine("########################################################################");
                 ot.WriteLine("########################################################################");
                 ot.WriteLine("########################################################################");
-                ot.WriteLine("#### Deploy directory: " + j.DeploymentDirectory);
+                ot.WriteLine("#### Deploy directory: " + j.LatestDeployment.DeploymentDirectory.FullName);
                 ot.WriteLine("#### Full test name:   " + j.Name);
                 ot.WriteLine("#### Number of procs:  " + j.NumberOfMPIProcs);
                 ot.WriteLine("#### Status:           " + j.Status);
-                ot.WriteLine("#### Job ID:           " + j.BatchProcessorIdentifierToken);
+                ot.WriteLine("#### Job ID:           " + j.LatestDeployment.BatchProcessorIdentifierToken);
                 //                                   +   +   +   +
                 if (j.NumberOfMPIProcs <= 1) {
                     ot.WriteLine("#### Result File:      " + ResFile);
-                    ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.DeploymentDirectory, ResFile)));
+                    ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.LatestDeployment.DeploymentDirectory.FullName, ResFile)));
                 } else {
                     for (int i = 0; i < sz; i++) {
                         if (i == 0)
@@ -704,9 +704,9 @@ namespace PublicTestRunner {
                     }
                     for (int i = 0; i < sz; i++) {
                         if (i == 0)
-                            ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.DeploymentDirectory, MpiResFileNameMod(i, sz, ResFile))));
+                            ot.WriteLine("####    exists?        " + File.Exists(Path.Combine(j.LatestDeployment.DeploymentDirectory.FullName, MpiResFileNameMod(i, sz, ResFile))));
                         else
-                            ot.WriteLine("####                   " + File.Exists(Path.Combine(j.DeploymentDirectory, MpiResFileNameMod(i, sz, ResFile))));
+                            ot.WriteLine("####                   " + File.Exists(Path.Combine(j.LatestDeployment.DeploymentDirectory.FullName, MpiResFileNameMod(i, sz, ResFile))));
                     }
                 }
                 ot.WriteLine("########################################################################");
@@ -734,7 +734,7 @@ namespace PublicTestRunner {
                         if (line.StartsWith(magic)) {
                             string file = line.Replace(magic, "");
                             if (file != ResFile) {
-                                throw new ArgumentException("Internal result file mismatch: " + file + " vs. " + ResFile + " on job " + j.BatchProcessorIdentifierToken);
+                                throw new ArgumentException("Internal result file mismatch: " + file + " vs. " + ResFile + " on job " + j.LatestDeployment.BatchProcessorIdentifierToken);
                             }
 
                             break;
@@ -818,6 +818,7 @@ namespace PublicTestRunner {
 
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
+                j.SessionReqForSuccess = false;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {

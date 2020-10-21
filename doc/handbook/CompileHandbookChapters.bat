@@ -1,0 +1,16 @@
+pdflatex main_BoundaryAndInitialData.tex     
+pdflatex main_convergenceStudyTutorial.tex   
+pdflatex main_CsharpAndBoSSSpad.tex          
+pdflatex main_GridGeneration.tex             
+pdflatex main_InitialValues.tex              
+pdflatex main_MetaJobManager.tex                
+pdflatex main_ParameterStudy.tex             
+pdflatex main_quickStartCNS.tex              
+pdflatex main_quickStartIBM.tex              
+pdflatex main_SpatialOperatorNexpTimeInt.tex 
+pdflatex main_tutorial10-PoissonSystem.tex   
+pdflatex main_tutorial11-Stokes.tex          
+pdflatex main_tutorial9-SIP.tex              
+pdflatex main_ue2Basics.tex                  
+pdflatex main_ue5NumFluxConv.tex             
+pdflatex main_ue6ScalarConvStability.tex     

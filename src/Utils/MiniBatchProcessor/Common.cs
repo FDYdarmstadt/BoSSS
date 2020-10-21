@@ -73,46 +73,10 @@ namespace MiniBatchProcessor {
         /// </summary>
         public const string WORK_FINISHED_DIR = "work";
 
-        /*
-
-        private void ReadDir(string RelDir, Dictionary<int, Tuple<JobData, JobStatus>> R, JobStatus s0) {
-            string dir = Path.Combine(config.BatchInstructionDir, RelDir);
-
-            foreach (var fName in Directory.GetFiles(dir, "*")) {
-                int id;
-                bool IsInt = Int32.TryParse(Path.GetFileName(fName), out id);
-
-                JobStatus s = s0;
-
-                if (!IsInt)
-                    continue;
-
-                var J = JobData.FromFile(Path.Combine(dir, fName));
-
-                if(s == JobStatus.Working) {
-                    string exit_token = id + "_exit.txt";
-                    if(File.Exists(Path.Combine(dir, exit_token)))
-                        s = JobStatus.Finished;
-                }
-                
-                if (J == null)
-                    continue;
-
-                if(J.ID != id)
-                    throw new ApplicationException("Mismatch between job id in file and file name.");
-
-                if(s0 != JobStatus.Queued && R.ContainsKey(J.ID)) {
-                    if(R[J.ID].Item2 == JobStatus.Queued)
-                        R.Remove(J.ID);
-                }
-                
-                R.Add(J.ID, new Tuple<JobData, JobStatus>(J, s));
-            }
-        }
-        */
-
         private void ReadWorkDir(Dictionary<int, Tuple<JobData, JobStatus>> R) {
             string dir = Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR);
+            if(!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
                 int id;
@@ -179,6 +143,8 @@ namespace MiniBatchProcessor {
 
         private void ReadQueueDir(Dictionary<int, Tuple<JobData, JobStatus>> R) {
             string dir = Path.Combine(config.BatchInstructionDir, QUEUE_DIR);
+            if(!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
                 int id;
@@ -236,20 +202,7 @@ namespace MiniBatchProcessor {
             }
         }
 
-        /*
-        /// <summary>
-        /// Returns a currently unused job id.
-        /// </summary>
-        internal int GetNewId() {
-            UpdateLists();
-            if (m_AllJobs.Count <= 0) {
-                return 1;
-            } else {
-                int newId = m_AllJobs.Keys.Max() + 1;
-                return newId;
-            }
-        }
-        */
+     
 
         /// <summary>
         /// %

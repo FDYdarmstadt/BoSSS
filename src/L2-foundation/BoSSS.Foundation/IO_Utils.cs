@@ -578,7 +578,7 @@ namespace BoSSS.Foundation.IO {
             try {
                 string sessFolderPath = Directory.GetDirectories(
                     Path.Combine(session.Database.Controller.DBDriver.FsDriver.BasePath, StandardFsDriver.SessionsDir),
-                    session.ID.ToString()).SingleOrDefault();
+                    session.ID.ToString()).FirstOrDefault();
                 if (sessFolderPath == null) {
                     // Session has probably been deleted; Setting it to max
                     // value makes sure cached data disappears
