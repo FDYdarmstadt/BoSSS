@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ilPSP.Tracing;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -42,7 +43,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Non-recommended SSH password for authentification.
+        /// Non-recommended SSH password for authentication.
         /// This is not encrypted, the <see cref="PrivateKeyFilePath"/>
         /// </summary>
         [DataMember]
@@ -102,14 +103,18 @@ namespace BoSSS.Application.BoSSSpad {
             protected set;
         }
 
-        string DeploymentDirectoryAtRemote(Job myJob) {
+        string DeploymentDirectoryAtRemote(Job myJob, string DeploymentDirectory) {
             if (!DeploymentBaseDirectoryAtRemote.StartsWith("/")) {
                 throw new IOException($"Deployment remote base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectoryAtRemote}' is not.");
             }
 
-            var tmp = DeploymentBaseDirectoryAtRemote.TrimEnd('/');
+            string RelativeDeploymentDirectory = DeploymentDirectory
+                .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries)
+                .Last()
+                .TrimEnd('/', '\\');
+            var tmp = DeploymentBaseDirectoryAtRemote;
 
-            return tmp + "/" + myJob.RelativeDeploymentDirectory;
+            return tmp + "/" + RelativeDeploymentDirectory;
         }
 
 
@@ -201,7 +206,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// .
         /// </summary>
-        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override (BoSSSpad.JobStatus,int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) { 
+        //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (var tr = new FuncTrace()) {
                 //string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
                 //DeployDir = null;
@@ -213,14 +219,14 @@ namespace BoSSS.Application.BoSSSpad {
                 using (new BlockTrace("FILE_CHECK", tr)) {
                     string exitFile = Path.Combine(DeployDir, "exit.txt");
                     if (File.Exists(exitFile)) {
-                        isTerminated = true;
-                        isRunning = false;
+
+                        int ExitCode;
                         try {
                             ExitCode = int.Parse(File.ReadAllText(exitFile).Trim());
                         } catch (Exception) {
                             ExitCode = int.MinValue;
                         }
-                        return;
+                        return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
                     }
 
                     string runningFile = Path.Combine(DeployDir, "isrunning.txt");
@@ -229,11 +235,14 @@ namespace BoSSS.Application.BoSSSpad {
                         // e.g. assume that slurm terminated the Job after 24 hours => maybe 'isrunning.txt' is not deleted and 'exit.txt' does not exist
 
                     } else {
-                        // job may be pending in queue
-                        isRunning = false;
-                        isTerminated = false;
-                        ExitCode = 0;
-                        return;
+                        // no 'isrunning.txt'-token and no 'exit.txt' token: job should be pending in queue
+
+                        return (JobStatus.PendingInExecutionQueue, null);
+
+                        //isRunning = false;
+                        //isTerminated = false;
+                        //ExitCode = 0;
+                        //return;
                     }
                 }
 
@@ -252,36 +261,25 @@ namespace BoSSS.Application.BoSSSpad {
 
                         switch (jobstatus.ToUpperInvariant()) {
                             case "PENDING":
-                                isRunning = false;
-                                isTerminated = false;
-                                ExitCode = 0;
-                                return;
+                               return (JobStatus.PendingInExecutionQueue, null);
 
                             case "RUNNING":
                             case "COMPLETING":
-                                isRunning = true;
-                                isTerminated = false;
-                                ExitCode = 0;
-                                break;
+                                return (JobStatus.InProgress, null);
 
                             case "SUSPENDED":
                             case "STOPPED":
                             case "PREEMPTED":
                             case "FAILED":
-                                isTerminated = true;
-                                isRunning = false;
-                                ExitCode = int.MinValue;
-                                return;
+                                return (JobStatus.FailedOrCanceled, int.MinValue);
 
                             case "":
                             case "COMPLETED":
-                                isRunning = true;
-                                isTerminated = false;
-                                ExitCode = -1; // 'exit.txt' does not exist, something is shady here
-                                break;
+                                // completed, but 'exit.txt' does not exist, something is shady here
+                                return (JobStatus.FailedOrCanceled,-1);
 
                             default:
-                                throw new NotImplementedException("Unknown job state: " + jobstatus);
+                                return (JobStatus.Unknown, null);
                         }
                     }
                 }
@@ -292,16 +290,16 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Returns path to text-file for standard error stream
         /// </summary>
-        public override string GetStderrFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+        public override string GetStderrFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
 
         /// <summary>
         /// Returns path to text-file for standard output stream
         /// </summary>
-        public override string GetStdoutFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
+        public override string GetStdoutFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
         }
 
@@ -322,20 +320,20 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         ///
         /// </summary>
-        public override (string id, object optJobObj) Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             using (new FuncTrace()) {
                 VerifyDatabases();
 
 
                 // load users .bashrc with all dependencies
-                buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" });
+                buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
 
                 //string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
                 // Converting script to unix format
                 //string convertCmd = " dos2unix " + path + "\\batch.sh";
 
                 // Submitting script to sbatch system
-                string sbatchCmd = "sbatch " + DeploymentDirectoryAtRemote(myJob) + "/batch.sh";
+                string sbatchCmd = "sbatch " + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/batch.sh";
 
 
                 // Convert from Windows to Unix and submit job
@@ -396,11 +394,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="myJob"></param>
         /// <param name="moduleLoad"></param>
-        public void buildSlurmScript(Job myJob, string[] moduleLoad) {
+        void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
 
             //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
             //string jobpath_unix = jobpath_win.Replace("\\", "/");
-            string jobpath_unix = DeploymentDirectoryAtRemote(myJob);
+            string jobpath_unix = DeploymentDirectoryAtRemote(myJob, DeploymentDirectory);
 
             string jobname = myJob.Name;
             string executiontime = myJob.ExecutionTime;
@@ -435,7 +433,7 @@ namespace BoSSS.Application.BoSSSpad {
                 startupstring = str.ToString();
             }
 
-            string path = Path.Combine(myJob.DeploymentDirectory, "batch.sh");
+            string path = Path.Combine(DeploymentDirectory, "batch.sh");
 
             using (StreamWriter sw = File.CreateText(path)) {
                 sw.NewLine = "\n"; // Unix file endings
@@ -475,11 +473,11 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 // Set startupstring
-                string RunningToken = DeploymentDirectoryAtRemote(myJob) + "/isrunning.txt";
+                string RunningToken = DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
-                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(myJob)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
+                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
                 sw.WriteLine(startupstring);
-                sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob) + "/exit.txt'");
+                sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/exit.txt'");
                 sw.WriteLine($"rm '{RunningToken}'");
                 sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
                 sw.WriteLine($"rm core.*");
