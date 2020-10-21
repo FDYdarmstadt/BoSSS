@@ -110,7 +110,7 @@ namespace BoSSS.Solution.NSECommon {
                 this.ThermodynamicPressure = ThermodynamicPressure;
                 this.ThermodynamicPressureValue = ThermodynamicPressureValue;
             } else {
-                throw new ApplicationException("Initialize() can be called only once.");
+               // throw new ApplicationException("Initialize() can be called only once.");
             }
         }
 

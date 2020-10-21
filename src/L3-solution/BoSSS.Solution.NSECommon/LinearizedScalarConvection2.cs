@@ -559,7 +559,7 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException("PhysicsMode not implemented");
             }
-            Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
+            //Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
 
             r += rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);
             r += rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
