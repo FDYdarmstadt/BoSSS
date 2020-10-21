@@ -123,8 +123,8 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
-                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
-                        typeof(AdvancedSolverTests.AdvancedSolverMain)
+                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
+                        //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
         }
@@ -135,8 +135,8 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
-                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
+                        (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+                        //(typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }
