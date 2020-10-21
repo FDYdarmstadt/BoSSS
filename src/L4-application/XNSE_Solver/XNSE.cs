@@ -30,7 +30,6 @@ namespace BoSSS.Application.XNSE_Solver
             return myLsTrk;
         }
 
-
         VectorField<XDGField> Gravity;
 
         protected override IEnumerable<DGField> CreateAdditionalFields() {
@@ -39,7 +38,6 @@ namespace BoSSS.Application.XNSE_Solver
 
             return Gravity;
         }
-
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
             IXNSE_Configuration config = new XNSFE_OperatorConfiguration(this.Control);
@@ -57,7 +55,6 @@ namespace BoSSS.Application.XNSE_Solver
             equationSystem.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
             equationSystem.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
             equationSystem.AddEquation(new InterfaceContinuity(config, D, LsTrk));
-
 
             int QuadOrderFunc(int[] DomvarDegs, int[] ParamDegs, int[] CodvarDegs) {
                 int degU = DomvarDegs[0];
@@ -85,15 +82,14 @@ namespace BoSSS.Application.XNSE_Solver
                 Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ));
                 Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
             }
-                        
             return XOP;
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt)
         {
             //Update Calls
-            dt = base.GetFixedTimestep();
-            Timestepping.Solve(phystime, 1E100, true);
+            dt = GetFixedTimestep();
+            Timestepping.Solve(phystime, dt, true);
             return dt;
         }
     }

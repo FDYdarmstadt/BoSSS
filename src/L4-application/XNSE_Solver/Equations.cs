@@ -8,6 +8,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -51,18 +52,23 @@ namespace BoSSS.Application.XNSE_Solver
 
     class NavierStokes : BulkEquation
     {
-        //Methode aus der XNSF_OperatorFactory
+        string speciesName;
+
+        string codomainName;
+
+        double massScale;
+
         public NavierStokes(
             string spcName,
             int d,
             LevelSetTracker LsTrk,
-            int dimension,
+            int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             IXNSE_Configuration config)
         {
-            SpeciesName = spcName;
-            CodomainName = EquationNames.MomentumEquationComponent(d);
-            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat( BoSSS.Solution.NSECommon.VariableNames.Pressure);
+            speciesName = spcName;
+            codomainName = EquationNames.MomentumEquationComponent(d);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat( BoSSS.Solution.NSECommon.VariableNames.Pressure));
 
             SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             PhysicalParameters physParams = config.getPhysParams;
@@ -77,14 +83,16 @@ namespace BoSSS.Application.XNSE_Solver
                 default: throw new ArgumentException("Unknown species.");
             }
             
-            MassScale = rhoSpc;
+            massScale = rhoSpc;
 
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport)
             {
-                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(dimension, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
-                AddComponent( conv);
+                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
+                AddComponent(conv);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d], Velocity0Factory(d,D));
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d], Velocity0MeanFactory(d,D, LsTrk), Velocity0MeanUpdate(d, D));
             }
 
             // pressure gradient
@@ -109,7 +117,7 @@ namespace BoSSS.Application.XNSE_Solver
                         // Bulk operator:
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, dimension, physParams.mu_A, physParams.mu_B);
+                            boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                         AddComponent( Visc1);
 
                         if (dntParams.UseGhostPenalties)
@@ -118,7 +126,7 @@ namespace BoSSS.Application.XNSE_Solver
                             {
                                 var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                     penalty, 0.0,
-                                    boundaryMap, spcName, spcId, d, dimension, physParams.mu_A, physParams.mu_B);
+                                    boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                                 AddGhostComponent(Visc1Penalty);
                             }
                         }
@@ -130,12 +138,12 @@ namespace BoSSS.Application.XNSE_Solver
                         // Bulk operator
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, dimension, physParams.mu_A, physParams.mu_B);
+                            boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                         AddComponent(Visc1);
 
                         var Visc2 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, dimension, physParams.mu_A, physParams.mu_B);
+                            boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                         AddComponent(Visc2);
 
 
@@ -143,10 +151,10 @@ namespace BoSSS.Application.XNSE_Solver
                         {
                             var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                 penalty, 0.0,
-                                boundaryMap, spcName, spcId, d, dimension, physParams.mu_A, physParams.mu_B);
+                                boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                             var Visc2Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
                                 penalty, 0.0,
-                                boundaryMap, spcName, spcId, d, dimension, physParams.mu_A, physParams.mu_B);
+                                boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                             AddGhostComponent(Visc1Penalty);
                             AddGhostComponent(Visc2Penalty);
                         }
@@ -166,12 +174,12 @@ namespace BoSSS.Application.XNSE_Solver
                         // Bulk operator:
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, dimension, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
                         AddComponent(Visc1);
 
                         var Visc2 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, dimension, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
                         AddComponent(Visc2);
 
                         var div = new StressDivergenceInBulk(d, boundaryMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
@@ -183,21 +191,54 @@ namespace BoSSS.Application.XNSE_Solver
                         throw new NotImplementedException();
                 }
             }
-
-            
         }
 
-        string[] m_VariableNames;
-        public override string[] VariableNames {
-            get {
-                return m_VariableNames;
+        public override string SpeciesName => speciesName;
+
+        public override double MassScale => massScale;
+
+        public override string CodomainName => codomainName;
+
+        ParameterFactory Velocity0Factory(int d, int D)
+        {
+            DGField Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+            {
+                return DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
             }
+            return Velocity0Factory;
+        }
+        
+        ParameterFactory Velocity0MeanFactory(int d, int D, LevelSetTracker LsTrk)
+        {
+            DGField Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+            {
+                XDGBasis U0meanBasis = new XDGBasis(LsTrk, 0);
+                XDGField U0mean = new XDGField(U0meanBasis, BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
+                return U0mean;
+            }
+            return Velocity0MeanFactory;
+        }
+
+        DelPartialParameterUpdate Velocity0MeanUpdate(int d, int D)
+        {
+            void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+            {
+                XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
+                XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
+            }
+            return Velocity0MeanUpdate;
         }
     }
 
     class Continuity : BulkEquation
     {
         //Methode aus der XNSF_OperatorFactory
+        string speciesName;
+
+        string codomainName;
+
+        double massScale;
+
         public Continuity(
             INSE_Configuration config,
             int D,
@@ -205,10 +246,10 @@ namespace BoSSS.Application.XNSE_Solver
             SpeciesId spcId, 
             IncompressibleMultiphaseBoundaryCondMap BcMap)
         {
-            CodomainName = EquationNames.ContinuityEquation;
-            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
-            SpeciesName = spcName;
-            MassScale = 0;
+            codomainName = EquationNames.ContinuityEquation;
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            speciesName = spcName;
+            massScale = 0;
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -231,19 +272,21 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
-        string[] m_VariableNames;
-        public override string[] VariableNames {
-            get {
-                return m_VariableNames;
-            }
-        }
+        public override string SpeciesName => speciesName;
+
+        public override double MassScale => massScale;
+
+        public override string CodomainName => codomainName;
     }
 
-    class InterfaceContinuity : SurfaceEquation {
+    class InterfaceContinuity : SurfaceEquation 
+    {
+        string codomainName;
+
         //Methode aus der XNSF_OperatorFactory
         public InterfaceContinuity(IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
-            CodomainName = EquationNames.ContinuityEquation;
-            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
+            codomainName = EquationNames.ContinuityEquation;
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -257,12 +300,11 @@ namespace BoSSS.Application.XNSE_Solver
             AddComponent(divPen);
         }
 
-        string[] m_VariableNames;
-        public override string[] VariableNames {
-            get {
-                return m_VariableNames;
-            }
-        }
+        public override string FirstSpeciesName => "A";
+
+        public override string SecondSpeciesName => "B";
+
+        public override string CodomainName => codomainName;
     }
 
     /// <summary>
@@ -270,6 +312,8 @@ namespace BoSSS.Application.XNSE_Solver
     /// </summary>
     class NSEInterface : SurfaceEquation
     {
+        string codomainName;
+
         //Methode aus der XNSF_OperatorFactory
         public NSEInterface(
             string phaseA,
@@ -279,17 +323,16 @@ namespace BoSSS.Application.XNSE_Solver
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
             IXNSE_Configuration config) : base() {
-            CodomainName = EquationNames.MomentumEquationComponent(d);
+            codomainName = EquationNames.MomentumEquationComponent(d);
             AddInterfaceNSE(dimension, d, boundaryMap, LsTrk, config);
-            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
         }
 
-        string[] m_VariableNames;
-        public override string[] VariableNames {
-            get {
-                return m_VariableNames;
-            }
-        }
+        public override string FirstSpeciesName => "A";
+
+        public override string SecondSpeciesName => "B";
+
+        public override string CodomainName => codomainName;
 
 
         //Methode aus der XNSF_OperatorFactory
@@ -375,6 +418,8 @@ namespace BoSSS.Application.XNSE_Solver
     /// </summary>
     class NSESurfaceTensionForce : SurfaceEquation
     {
+        string codomainName;
+
         //Methode aus der XNSF_OperatorFactory
         public NSESurfaceTensionForce(
             string phaseA,
@@ -385,8 +430,8 @@ namespace BoSSS.Application.XNSE_Solver
             LevelSetTracker LsTrk,
             IXNSE_Configuration config)
         {
-            CodomainName = EquationNames.MomentumEquationComponent(d);
-            m_VariableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure);
+            codomainName = EquationNames.MomentumEquationComponent(d);
+            AddVariableNames( BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -492,12 +537,10 @@ namespace BoSSS.Application.XNSE_Solver
                 AddComponent(new SurfaceTension_ArfForceSrc(d, dimension, LsTrk));
             }
         }
+        public override string FirstSpeciesName => "A";
 
-        string[] m_VariableNames;
-        public override string[] VariableNames {
-            get {
-                return m_VariableNames;
-            }
-        }
+        public override string SecondSpeciesName => "B";
+
+        public override string CodomainName => codomainName;
     }
 }

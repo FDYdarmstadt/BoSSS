@@ -317,10 +317,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 solver.Init(C);
                 solver.RunSolverMode();
-                ErrorEvaluator evaluator = new ErrorEvaluator(solver);
+
+                //solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
                 //Spaghett, spaghett, why not another spaghett?! 
+                ErrorEvaluator evaluator = new ErrorEvaluator(solver);
                 double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;

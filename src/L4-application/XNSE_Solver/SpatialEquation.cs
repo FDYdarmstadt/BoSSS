@@ -5,6 +5,7 @@ using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,29 +14,77 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver {
+
+
+    delegate DGField ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields);
+
+    struct Parameter
+    {
+        public string Name;
+
+        public ParameterFactory Factory;
+
+        public DelPartialParameterUpdate Update;
+    }
+
     abstract class SpatialEquation {
-        public SpatialEquation() {
+
+        public SpatialEquation() 
+        {
             Components = new LinkedList<IEquationComponent>();
         }
 
         public LinkedList<IEquationComponent> Components { get; set; }
 
-        public string CodomainName { get; set; }
+        public abstract string CodomainName { get; }
 
+        public string[] VariableNames { get; private set; }
 
-        public abstract string[] VariableNames { get; }
+        public Parameter[] Parameters { get; private set; }
 
-        public void AddComponent(IEquationComponent component) {
+        public void AddVariableNames(params string[] names)
+        {
+            if(VariableNames == null)
+            {
+                VariableNames = names;
+            }
+            else
+            {
+                VariableNames.Cat(names);
+            }
+        }
+        
+        public void AddParameter(string name, ParameterFactory factory = null, DelPartialParameterUpdate update = null)
+        {
+            Parameter parameter = new Parameter
+            {
+                Name = name,
+                Factory = factory,
+                Update = update
+            };
+            if (Parameters == null)
+            {
+                Parameters = new Parameter[] { parameter };
+            }
+            else
+            {
+                VariableNames.Cat(parameter);
+            }
+        }
+
+        public void AddComponent(IEquationComponent component) 
+        {
             Components.AddLast(component);
         }
     }
 
-    abstract class SurfaceEquation : SpatialEquation {
-        public string FirstSpeciesName { get; set; }
+    abstract class SurfaceEquation : SpatialEquation 
+    {
+        public abstract string FirstSpeciesName { get; }
 
-        public string SecondSpeciesName { get; set; }
+        public abstract string SecondSpeciesName { get; }
 
-        public LinkedList<IEquationComponent> SurfaceComponents { get; set; }
+        public LinkedList<IEquationComponent> SurfaceComponents { get; private set; }
 
         public SurfaceEquation() {
             SurfaceComponents = new LinkedList<IEquationComponent>();
@@ -46,12 +95,13 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    abstract class BulkEquation : SpatialEquation {
-        public string SpeciesName { get; set; }
+    abstract class BulkEquation : SpatialEquation 
+    {
+        public abstract string SpeciesName { get; }
 
-        public double MassScale { get; set; }
+        public abstract double MassScale { get; }
 
-        public LinkedList<IEquationComponent> GhostComponents { get; set; }
+        public LinkedList<IEquationComponent> GhostComponents { get; private set; }
 
         public BulkEquation() {
             GhostComponents = new LinkedList<IEquationComponent>();
@@ -62,7 +112,8 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class SystemOfEquations {
+    class SystemOfEquations 
+    {
         protected LinkedList<SurfaceEquation> interfaceEquations;
 
         protected LinkedList<BulkEquation> bulkEquations;
@@ -141,23 +192,20 @@ namespace BoSSS.Application.XNSE_Solver {
         string[] ExtractDomainVarsFromEquations() {
             LinkedList<string> domainVars = new LinkedList<string>();
             foreach(SpatialEquation equation in bulkEquations) {
-
-                /*foreach(IEquationComponent component in equation.Components) {
-                    IList<string> equationVariables = component.ArgumentOrdering;
-                    foreach(string equationVariable in equationVariables) {
-                        if(!domainVars.Contains(equationVariable)) {
-                            domainVars.AddLast(equationVariable);
-                        }
-                    }
-                }*/
-
-                if(domainVars.Count == 0) {
+                if(domainVars.Count == 0) 
+                {
                     domainVars.AddRange(equation.VariableNames);
-                } else {
+                } 
+                else 
+                {
                     // a real, sorted merging would be nicer, but it is really tricky to implement
                     foreach(string n in equation.VariableNames)
-                        if(!domainVars.Contains(n))
+                    {
+                        if (!domainVars.Contains(n))
+                        {
                             domainVars.AddLast(n);
+                        }
+                    }
                 }
             }
             return domainVars.ToArray();
