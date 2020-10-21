@@ -3837,7 +3837,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem =64, string _DbPath = null, int D = 2) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem =8, string _DbPath = null, int D = 3) {
 
             XNSE_Control C = new XNSE_Control();
 

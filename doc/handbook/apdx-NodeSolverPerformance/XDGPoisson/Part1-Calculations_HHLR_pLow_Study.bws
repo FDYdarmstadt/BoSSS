@@ -5,9 +5,8 @@ restart
   _______________________
 
 Databases loaded:
-List of 2 instances of IDatabaseInfo {
+List of 1 instances of IDatabaseInfo {
   0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
-  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
 }
 
  Console ready for input. Type 'help' for help.
@@ -16,45 +15,40 @@ List of 2 instances of IDatabaseInfo {
 using BoSSS.Application.XdgPoisson3;
 **************
 ==============
+var myBatch = (SlurmClient)ExecutionQueues[1];
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+//myBatch.MonoDebug = true;
 **************
 ==============
-string WFlowName = "Xdg_4cores_run0";
+string WFlowName = "Xdg_pLow_study";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_4cores_run0'.
+Project name is set to 'Xdg_pLow_study'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
+**************
+==============
 //on HHLR path has to be something, which linux can work with e.g. /work/scratch/...
-string DBpathLinux = @"/work/scratch/jw52xeqa/DB_trash";
+string dirname = "DB_XDGPoisson_pLow";
+string linpath = @"/work/scratch/jw52xeqa/"+dirname;
+string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
-//var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
-var tempDB = OpenOrCreateDatabase(DBpathLinux);
-//var tempDB = OpenOrCreateDatabase(@"G:\DB_SFB_Paper");
-//var tempDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
+var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database '/work/scratch/jw52xeqa/DB_trash'.
+Creating database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_pLow'.
 
 ==============
-var tempDB = OpenOrCreateDatabase(@"V:\SyncHHLR\DB_4cores_test");
+tempDB.Sessions
 **************
-Opening existing database 'V:\SyncHHLR\DB_4cores_test'.
-
-==============
-//var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
-var myBatch = new SlurmClient(@"X:\Deployerie","lcluster8.hrz.tu-darmstadt.de","jw52xeqa");
-//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\weber\dply","hpccluster",ComputeNodes : new[] {"hpccluster"});
-**************
-Please enter your password...
-*************
-Connecting to lcluster8.hrz.tu-darmstadt.de...
-
-
-==============
-//MiniBatchProcessor.Se#rver.StartIfNotRunning();
-**************
+List of 0 instances of ISessionInfo {
+}
 ==============
 // ===================
 // Utility definitions
@@ -91,27 +85,28 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = b11811f8-ec84-4727-823b-a0a70dd46973; Name = Xdg_SFB_4cores_test_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = d2cf9b27-e70f-4e92-8fed-9ffce30764f1; Name = Xdg_SFB_4cores_test_J32768; Cell Count = 32768; Dim = 3 }
-  2: { Guid = 9dbbea63-9fcb-4de4-aaec-edfa4a800db9; Name = Xdg_SFB_4cores_test_J4096; Cell Count = 4096; Dim = 3 }
-  3: { Guid = 419a8c62-46c0-454c-b134-208e75967a57; Name = Xdg_SFB_4cores_test_J512; Cell Count = 512; Dim = 3 }
-  4: { Guid = ab397f56-1334-4b18-8ff9-70e464951062; Name = Xdg_SFB_4cores_test_J64; Cell Count = 64; Dim = 3 }
-  5: { Guid = 8421ce3a-153b-4a17-a2e0-429b1f550153; Name = Xdg_SFB_4cores_test_J8; Cell Count = 8; Dim = 3 }
+List of 0 instances of IGridInfo {
 }
 ==============
-int[] Resolutions_3D = new int[] { 2,4,8,16,32,64 };
-//int[] Resolutions_3D = new int[] { 2 };
+double xMax = 1.0, yMax = 1.0, zMax=1.0;
+double xMin = -1.0, yMin = -1.0,zMin = -1.0;
+**************
+==============
+**************
+==============
+**************
+==============
+var res = new int[] { 8,16};
+**************
+==============
+int[] Resolutions_3D = res;
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     int Res = Resolutions_3D[cnt];    
     
-    //double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
-    //double[] yNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
-    //double[] zNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
-    double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
-    double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
-    double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+    double[] xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
+    double[] yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
+    double[] zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
     int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
     
     string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
@@ -120,7 +115,7 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     foreach(IGridInfo grd in tempDB.Grids){
         bool check = grd.Name.Contains(string.Format("_J"+ J));
         if(check){
-          grids[cnt]=grd;
+          //grids[cnt]=grd;
         }
     }
     
@@ -132,20 +127,14 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
         GridCommons g;
         g      = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
         g.Name = GridName;
-        
-        g.EdgeTagNames.Add(1, "Dirichlet");
-        //g.EdgeTagNames.Add(2, "Neumann");
-    
+        g.EdgeTagNames.Add(1, "Dirichlet");   
         g.DefineEdgeTags(delegate (double[] X) {
             byte ret;
-//            if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
-                ret = 1;
-//            else
-//                ret = 2;
+            ret = 1;
             return ret;
         });
       
-        tempDB.SaveGrid(ref g);  
+        tempDB.SaveGrid(ref g, true);  
         grids[cnt] = g;
     } else {
         Console.WriteLine("Found Grid: " + grids[cnt]);
@@ -157,24 +146,27 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = 8421ce3a-153b-4a17-a2e0-429b1f550153; Name = Xdg_SFB_4cores_test_J8; Cell Count = 8; Dim = 3 }
-Found Grid: { Guid = ab397f56-1334-4b18-8ff9-70e464951062; Name = Xdg_SFB_4cores_test_J64; Cell Count = 64; Dim = 3 }
-Found Grid: { Guid = 419a8c62-46c0-454c-b134-208e75967a57; Name = Xdg_SFB_4cores_test_J512; Cell Count = 512; Dim = 3 }
-Found Grid: { Guid = 9dbbea63-9fcb-4de4-aaec-edfa4a800db9; Name = Xdg_SFB_4cores_test_J4096; Cell Count = 4096; Dim = 3 }
-Found Grid: { Guid = d2cf9b27-e70f-4e92-8fed-9ffce30764f1; Name = Xdg_SFB_4cores_test_J32768; Cell Count = 32768; Dim = 3 }
-Found Grid: { Guid = b11811f8-ec84-4727-823b-a0a70dd46973; Name = Xdg_SFB_4cores_test_J262144; Cell Count = 262144; Dim = 3 }
+Creating grid with 512 cells.
+Grid Edge Tags changed.
+Creating grid with 4096 cells.
+Grid Edge Tags changed.
 
+==============
+tempDB.Grids;
+**************
+List of 2 instances of IGridInfo {
+  0: { Guid = 4197351a-c11d-4ade-813a-249e3eef03f4; Name = Xdg_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+  1: { Guid = 529dc7dc-7f52-4754-a746-dac78663f6aa; Name = Xdg_pLow_study_J512; Cell Count = 512; Dim = 3 }
+}
+==============
+// Overwrite Selection
+//var ListOfgrids = new List<IGridInfo>();
+//ListOfgrids.AddRange(tempDB.Grids.Pick(2));
+//IGridInfo[] grids = ListOfgrids.ToArray();
+**************
 ==============
 grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = 8421ce3a-153b-4a17-a2e0-429b1f550153; Name = Xdg_SFB_4cores_test_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = ab397f56-1334-4b18-8ff9-70e464951062; Name = Xdg_SFB_4cores_test_J64; Cell Count = 64; Dim = 3 }
-  2: { Guid = 419a8c62-46c0-454c-b134-208e75967a57; Name = Xdg_SFB_4cores_test_J512; Cell Count = 512; Dim = 3 }
-  3: { Guid = 9dbbea63-9fcb-4de4-aaec-edfa4a800db9; Name = Xdg_SFB_4cores_test_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = d2cf9b27-e70f-4e92-8fed-9ffce30764f1; Name = Xdg_SFB_4cores_test_J32768; Cell Count = 32768; Dim = 3 }
-  5: { Guid = b11811f8-ec84-4727-823b-a0a70dd46973; Name = Xdg_SFB_4cores_test_J262144; Cell Count = 262144; Dim = 3 }
-}
 ==============
 **************
 ==============
@@ -210,8 +202,9 @@ static class InitialValues {
 }
 **************
 ==============
-//InitialValues.RHS(new double[]{ 1,1});
+InitialValues.RHS(new double[]{ 0,0});
 **************
+0
 ==============
 **************
 ==============
@@ -229,72 +222,57 @@ List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
 ==============
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-//int[] PolyDegS = new int[] {2, 3 ,5};
-int[] PolyDegS = new int[] {2};
+int[] PolyDegS = new int[] {2,3,5};
+int[] NoOfSblocks = new int[]{2,4,8,16,32};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso,
-    //LinearSolverCode.exp_OrthoS_pMG,
-    LinearSolverCode.exp_gmres_levelpmg,
-    //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
-    LinearSolverCode.exp_Kcycle_schwarz,
-    //LinearSolverConfig.Code.classic_mumps, 
-    //LinearSolverConfig.Code.classic_cg,
-    //LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
-    //LinearSolverConfig.Code.exp_softpcg_mg
+    //LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_mumps, 
+    LinearSolverCode.exp_Kcycle_schwarz, 
+    //LinearSolverCode.exp_gmres_levelpmg, 
 }; 
 **************
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
-int MaxDof = 5000000;
+int MaxDof = 3000000;
 **************
 ==============
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
-==============
-//IGridInfo tmp_grd = 
-IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(2)};
-//IGridInfo[] t_grids = grids;
-t_grids;
-**************
-List of 1 instances of IGridInfo {
-  0: { Guid = ae2d222d-c2e6-4333-842d-425c390efad1; Name = Xdg_SFB_4cores_test_J512; Cell Count = 512; Dim = 3 }
-}
+(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
 ==============
 controls.Clear();
 foreach(LinearSolverCode solver_name in solver_nameS) {
-foreach(int k in PolyDegS) {
-int iGrd = 0;    
-foreach(IGridInfo grd in t_grids) {
-    iGrd ++;
-    //if(k >= 3 && iGrd > 6)
-    //    continue; 
-    //if(k >= 4 && iGrd > 5)
-    //    continue; 
-    //if(k >= 5 && iGrd > 4)
-    //    continue; 
+foreach(int k in PolyDegS) {    
+foreach(IGridInfo grd in grids) {
+foreach(int nsb in NoOfSblocks){
+for(int pLow=0;pLow<=k;pLow++){
     
     int Np = Utils.Np(k);
     int J  = grd.NumberOfCells;
     if(J*Np > MaxDof)
         continue;
     
-    string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    int sBlocksize  = J*Np/nsb;
+    string caseName = string.Format("J{0}_k{1}_{2}_pLow{3}_sBlocks{4}", J, k, solver_name,pLow,nsb);
     Console.WriteLine("setting up: " + caseName);
+    Console.WriteLine("based on grid: "+grd.Name);
 
     var ctrl = new XdgPoisson3Control();
     
     
-    //ctrl.SessionName = caseName;
-    
-    ctrl.savetodb = true; //for debug's sake
-    ctrl.DbPath   = DBpathLinux;
-    //ctrl.SetDatabase(tmpDB); 
+    ctrl.AlternateDbPaths = new[]{
+        new ValueTuple<string,string>(linpath, ""),
+        new ValueTuple<string,string>(winpath, "pcmit32")
+    };
+    ctrl.savetodb = true;
     ctrl.GridGuid = grd.ID;
-    //ctrl.SetDGdegree(k);
     
     ctrl.FieldOptions.Add("Phi", new FieldOpts() {
          Degree = 2,
@@ -307,6 +285,7 @@ foreach(IGridInfo grd in t_grids) {
 
     ctrl.LinearSolver.SolverCode           = solver_name;
     ctrl.LinearSolver.NoOfMultigridLevels  = 10;
+    ctrl.LinearSolver.TargetBlockSize      = sBlocksize;
     ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
     
     double radius           = 0.7;
@@ -318,19 +297,14 @@ foreach(IGridInfo grd in t_grids) {
     ctrl.InitialValues.Add("rhs#B", new Formula("X => 1"));
     ctrl.InitialValues.Add("u#A", new Formula ("X => 0"));
     ctrl.InitialValues.Add("u#B", new Formula ("X => 0"));
-    //ctrl.AddBoundaryValue("Dirichlet", "u#A",
-    //    GetFormulaObject(InitialValues.DirichletBC));
-    //ctrl.AddBoundaryValue("Dirichlet", "u#B",
-    //    GetFormulaObject(InitialValues.DirichletBC));
-    //ctrl.AddBoundaryValue("Neumann", "u#A",
-    //    GetFormulaObject(InitialValues.NeumannBC));
-    //ctrl.AddBoundaryValue("Neumann", "u#B",
-    //    GetFormulaObject(InitialValues.NeumannBC));
     ctrl.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
     ctrl.SetDefaultDiriBndCnd  = true;
-    ctrl.ViscosityMode         = XLaplace_Interface.Mode.SIP;
-    ctrl.SessionName           = "XdgPoissonVelocity_"+caseName;
-    ctrl.ProjectName           = WFlowName;
+    //ctrl.TracingNamespaces     = "*";
+    
+    ctrl.ViscosityMode = XLaplace_Interface.Mode.SIP;
+    ctrl.SessionName   = caseName;
+    ctrl.ProjectName   = WFlowName;
+    ctrl.GridPartType  = BoSSS.Foundation.Grid.GridPartType.METIS;
     
     ctrl.AgglomerationThreshold = 0.1;
     
@@ -338,22 +312,16 @@ foreach(IGridInfo grd in t_grids) {
 }
 }
 }
+}
+}
 **************
-setting up: J512_k2_classic_pardiso
-setting up: J512_k2_exp_gmres_levelpmg
-setting up: J512_k2_exp_Kcycle_schwarz
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
 
 ==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+//controls[0].SessionName+="_METIS";
+//controls[1].GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
+//controls[1].GridPartOptions = "hallo";
+//controls[1].SessionName+="_predef";
 **************
 ==============
 // ==========
@@ -376,41 +344,60 @@ setting up: J512_k2_exp_Kcycle_schwarz
 //tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
 **************
 ==============
+LastError
+**************
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
+==============
+**************
+==============
 foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
     var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
     aJob.SetControlObject(ctrl);
-    aJob.NumberOfMPIProcs         = 4;
+    ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
+    aJob.NumberOfMPIProcs         = 1;
     aJob.ExecutionTime            = "02:00:00";
-    //aJob.HHLR_project             = "project00880";
-    aJob.HHLR_project             = "project00747";
-    aJob.MemPerCPU                = "5000";
+    aJob.MemPerCPU                = "2500";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
-    //ctrl.RunBatch(myBatch);
 }
 **************
- Submitting: XdgPoissonVelocity_J512_k2_classic_pardiso
+ Submitting: J4096_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
+
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Oct07_15-24-34
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
+Deployment directory: X:\Deployerie\Xdg_single_test-XdgPoisson32020Sep21_184929
+copied 30 files.
+   written file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish................Interrupted!
-System.Threading.ThreadAbortException: Thread was being aborted.
-   at System.Threading.Thread.SleepInternal(Int32 millisecondsTimeout)
-   at BoSSS.Application.BoSSSpad.SlurmClient.Submit(Job myJob) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 145
-   at BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\Job.cs:line 681
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+15691774
+ Submitting: J4096_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_single_test-XdgPoisson32020Sep21_184936
+copied 30 files.
+   written file: control.obj
+deployment finished.
+
+15691775
+ Submitting: J4096_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_single_test-XdgPoisson32020Sep21_184939
+copied 30 files.
+   written file: control.obj
+deployment finished.
+
+15691776
 
 ==============
 **************
-Incomplete statement - missing closing parentheses?.
-
 ==============
 LastError
 **************
@@ -756,6 +743,52 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

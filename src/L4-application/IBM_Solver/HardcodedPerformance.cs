@@ -49,7 +49,7 @@ namespace BoSSS.Application.IBM_Solver {
             IBM_Control C = new IBM_Control();
             
 
-            C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -272,7 +272,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 0.1;
+            double dt = 0.01;
             C.dtFixed = dt;
             //C.dtMax = dt;
             //C.dtMin = 0;

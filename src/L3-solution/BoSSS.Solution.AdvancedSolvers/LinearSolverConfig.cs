@@ -214,6 +214,12 @@ namespace BoSSS.Solution.Control {
         public int TargetBlockSize = 10000;
 
         /// <summary>
+        /// Determines maximal DG order within coarse system of a p-Multigrid. Only applicable for p-two-grid, e.g. Schwarz with p-MG or PTG <see cref="exp_gmres_levelpmg"/> preconditioner.
+        /// </summary>
+        [DataMember]
+        public int pMaxOfCoarseSolver = 1;
+
+        /// <summary>
         /// Clones the LinearConfig
         /// </summary>
         /// <returns></returns>

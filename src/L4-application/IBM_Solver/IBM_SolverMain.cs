@@ -629,6 +629,9 @@ namespace BoSSS.Application.IBM_Solver {
                     Err.Acc(+1.0, pGradT);
                     double ErrInfAbs = Err.InfNorm();
                     double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
+                    //pGradT.SaveToTextFileSparseDebug("pGradT");du 
+                    //divVel.SaveToTextFileSparseDebug("divVel");
+
                     double ErrInfRel = ErrInfAbs / denom;
                     if (ErrInfRel >= 1e-8)
                         throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
@@ -1436,7 +1439,8 @@ namespace BoSSS.Application.IBM_Solver {
                 bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
+
+                if (AnyChange.MPIOr()) {
                     int[] glb = (new int[] {
                     CellsToRefineList.Count,
                     Coarsening.Sum(L => L.Length),
@@ -1449,7 +1453,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // Update Grid
                 // ===========
 
-                if (AnyChange) {
+                if (AnyChange.MPIOr()) {
 
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");

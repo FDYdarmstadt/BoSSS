@@ -483,7 +483,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1, AssignXdGCellsToLowBlocks = true};
+                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = m_lc.pMaxOfCoarseSolver, AssignXdGCellsToLowBlocks = true};
                     SetQuery("XdgCellsToLowBlock", ((LevelPmg)precond[0]).AssignXdGCellsToLowBlocks ? 1 : 0, true);
                     break;
 
@@ -1468,11 +1468,13 @@ namespace BoSSS.Solution {
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
+                            //NoOfPartsPerProcess  = 2
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = false,
+                        UsePMGinBlocks = true,
                         CoarseSolveOfCutcells = true,
+                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver
                     };
 
                     if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
@@ -1595,7 +1597,7 @@ namespace BoSSS.Solution {
 
                     var CoarseSolver = new LevelPmg() {
                         UseHiOrderSmoothing = true,
-                        CoarseLowOrder = 1
+                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
                     };
 
                     levelSolver = new OrthonormalizationMultigrid() {

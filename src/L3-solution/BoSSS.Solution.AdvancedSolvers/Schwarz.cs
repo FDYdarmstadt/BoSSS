@@ -911,6 +911,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         for (int iPart = 0; iPart < NoParts; iPart++) {
 
                             var bi=BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
+                            var newbi = bi.CloneAs();
                             double[] xi = new double[bi.Length];
                             if (UsePMGinBlocks && AnyHighOrderTerms) {
                                 // +++++++++++++++++++++++++++++++++
@@ -935,8 +936,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     Resdummy.ClearEntries();
                                 }
 
+
                                 // solve low-order system
-                                var biLo=BMloBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
+                                var biLo = BMloBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                                 double[] xiLo = new double[biLo.Length];
                                 try {
                                     blockSolvers[iPart].Solve(xiLo, biLo);
@@ -945,12 +947,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     throw ae;
                                 }
 
-                                BMloBlocks[iPart].AccSubVec(xiLo,Xdummy);
+                                BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
 
                                 xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
                                 // re-evaluate the residual
                                 this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
-                                BMfullBlocks[iPart].AccSubVec(bi,Resdummy);
+                                BMfullBlocks[iPart].AccSubVec(bi, Resdummy);
 
                                 // solve the high-order system
                                 var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
@@ -963,7 +965,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     var HiModeSolver = HiModeSolvers[j];
                                     int Np = HiModeSolver.NoOfRows;
 
-
                                     if (xiHi == null || xiHi.Length != Np)
                                         xiHi = new double[Np];
                                     if (biHi == null || biHi.Length != Np)
@@ -973,11 +974,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                     HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
 
-                                    BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j,Xdummy);
-                                       
+                                    BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xdummy);
                                 }
 
-                                xi=BMfullBlocks[iPart].GetSubVec(Xdummy);
+
+
+                                //// evaluate Res
+                                //xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
+                                //// re-evaluate the residual
+                                //this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, newbi);
+                                //Resdummy.ClearEntries();
+
+                                //BMfullBlocks[iPart].AccSubVec(newbi, Resdummy);
+                                //// solve low-order system
+                                //biLo = BMloBlocks[iPart].GetSubVec(Resdummy);
+                                //xiLo = new double[biLo.Length];
+                                //try {
+                                //    blockSolvers[iPart].Solve(xiLo, biLo);
+                                //} catch (ArithmeticException ae) {
+                                //    Console.Error.WriteLine(ae.Message);
+                                //    throw ae;
+                                //}
+                                //BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
+
+
+
+                                xi =BMfullBlocks[iPart].GetSubVec(Xdummy);
                                 Xdummy.ClearEntries();
                                 Resdummy.ClearEntries();
 
