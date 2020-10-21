@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP.Utils;
@@ -14,42 +15,6 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver
 {
-    class NavierStokesX : NavierStokes
-    {
-        public NavierStokesX(
-            string spcName,
-            LevelSetTracker LsTrk,
-            int dimension,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            IXNSE_Configuration config)
-            : base(
-                spcName,
-                0,
-                LsTrk,
-                dimension,
-                boundaryMap,
-                config)
-        { }
-    }
-
-    class NavierStokesY : NavierStokes
-    {
-        public NavierStokesY(
-            string spcName,
-            LevelSetTracker LsTrk,
-            int dimension,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            IXNSE_Configuration config)
-            : base(
-                spcName,
-                1,
-                LsTrk,
-                dimension,
-                boundaryMap,
-                config)
-        { }
-    }
-
     class NavierStokes : BulkEquation
     {
         string speciesName;
@@ -91,7 +56,7 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
                 AddComponent(conv);
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d], Velocity0Factory(d,D));
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d], Velocity0Factory(d,D), Velocity0Update(d,D));
                 AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d], Velocity0MeanFactory(d,D, LsTrk), Velocity0MeanUpdate(d, D));
             }
 
@@ -199,24 +164,37 @@ namespace BoSSS.Application.XNSE_Solver
 
         public override string CodomainName => codomainName;
 
-        ParameterFactory Velocity0Factory(int d, int D)
+        DelParameterFactory Velocity0Factory(int d, int D)
         {
-            DGField Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+            (string ,DGField)[] Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields)
             {
-                return DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
+                string velocityname = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
+                DGField velocity = DomainVarFields[velocityname];
+                string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d];
+                return new (string, DGField)[] {( paramName, velocity)};
             }
             return Velocity0Factory;
         }
         
-        ParameterFactory Velocity0MeanFactory(int d, int D, LevelSetTracker LsTrk)
+        DelParameterFactory Velocity0MeanFactory(int d, int D, LevelSetTracker LsTrk)
         {
-            DGField Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+            (string, DGField)[] Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
             {
                 XDGBasis U0meanBasis = new XDGBasis(LsTrk, 0);
-                XDGField U0mean = new XDGField(U0meanBasis, BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
-                return U0mean;
+                string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d];
+                XDGField U0mean = new XDGField(U0meanBasis, paramName);
+                return new (string, DGField)[] { (paramName, U0mean) };
             }
             return Velocity0MeanFactory;
+        }
+
+        DelPartialParameterUpdate Velocity0Update(int d, int D)
+        {
+            void Velocity0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+            {
+                Console.WriteLine("Update Velocity0");
+            }
+            return Velocity0Update;
         }
 
         DelPartialParameterUpdate Velocity0MeanUpdate(int d, int D)
@@ -224,7 +202,14 @@ namespace BoSSS.Application.XNSE_Solver
             void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
             {
                 XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
+                DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
+
                 XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
+                DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
+
+                speciesParam.ProjectPow(1.0, speciesVelocity, 1.0);
+                Console.WriteLine("Update Velocity0Mean");
+                Tecplot.PlotFields(new DGField[] { paramMeanVelocity, velocity }, "params-", 0, 3);
             }
             return Velocity0MeanUpdate;
         }

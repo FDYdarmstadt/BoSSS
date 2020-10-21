@@ -15,14 +15,11 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver {
 
-
-    delegate DGField ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields);
-
     struct Parameter
     {
         public string Name;
 
-        public ParameterFactory Factory;
+        public DelParameterFactory Factory;
 
         public DelPartialParameterUpdate Update;
     }
@@ -50,11 +47,11 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             else
             {
-                VariableNames.Cat(names);
+                VariableNames = VariableNames.Cat(names);
             }
         }
         
-        public void AddParameter(string name, ParameterFactory factory = null, DelPartialParameterUpdate update = null)
+        public void AddParameter(string name, DelParameterFactory factory = null, DelPartialParameterUpdate update = null)
         {
             Parameter parameter = new Parameter
             {
@@ -68,7 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             else
             {
-                VariableNames.Cat(parameter);
+                Parameters = Parameters.Cat(parameter);
             }
         }
 
@@ -137,6 +134,7 @@ namespace BoSSS.Application.XNSE_Solver {
             AddSurfaceEquationComponents(spatialOperator);
             AddGhostEquationComponents(spatialOperator);
             AddTemporalOperator(spatialOperator);
+            AddParameterDelegates(spatialOperator);
 
             return spatialOperator;
         }
@@ -223,32 +221,34 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         string[] ExtractParametersFromEquations() {
-            LinkedList<string> parameters = new LinkedList<string>();
-            foreach(SpatialEquation equation in interfaceEquations) {
-                foreach(IEquationComponent component in equation.Components) {
-                    IList<string> equationParameters = component.ParameterOrdering;
-                    if(equationParameters != null) {
-                        foreach(string equationparameter in equationParameters) {
-                            if(!parameters.Contains(equationparameter)) {
-                                parameters.AddLast(equationparameter);
-                            }
+            LinkedList<string> parameterNames = new LinkedList<string>();
+            foreach(SpatialEquation equation in interfaceEquations) 
+            {
+                if(equation.Parameters != null)
+                {
+                    foreach (Parameter parameter in equation.Parameters)
+                    {
+                        if (!parameterNames.Contains(parameter.Name))
+                        {
+                            parameterNames.AddLast(parameter.Name);
                         }
                     }
                 }
             }
-            foreach(SpatialEquation equation in bulkEquations) {
-                foreach(IEquationComponent component in equation.Components) {
-                    IList<string> equationParameters = component.ParameterOrdering;
-                    if(equationParameters != null) {
-                        foreach(string equationparameter in equationParameters) {
-                            if(!parameters.Contains(equationparameter)) {
-                                parameters.AddLast(equationparameter);
-                            }
+            foreach(SpatialEquation equation in bulkEquations) 
+            {
+                if (equation.Parameters != null)
+                {
+                    foreach (Parameter parameter in equation.Parameters)
+                    {
+                        if (!parameterNames.Contains(parameter.Name))
+                        {
+                            parameterNames.AddLast(parameter.Name);
                         }
                     }
                 }
             }
-            return parameters.ToArray();
+            return VariableNames.Velocity0Vector(2).Cat(VariableNames.Velocity0MeanVector(2));
         }
 
         string[] ExtractSpeciesFromEquations() {
@@ -344,6 +344,45 @@ namespace BoSSS.Application.XNSE_Solver {
                 value = default(T);
                 return false;
             }
+        }
+
+        void AddParameterDelegates(XSpatialOperatorMk2 spatialOperator)
+        {
+            foreach (SpatialEquation equation in interfaceEquations)
+            {
+                if (equation.Parameters != null)
+                {
+                    foreach (Parameter parameter in equation.Parameters)
+                    {
+                        if(parameter.Factory != null)
+                        {
+                            spatialOperator.ParameterFactories.Add(parameter.Factory);
+                        }
+                        if(parameter.Update != null)
+                        {
+                            spatialOperator.ParameterUpdates.Add(parameter.Update);
+                        }
+                    }
+                }
+            }
+            foreach (SpatialEquation equation in bulkEquations)
+            {
+                if (equation.Parameters != null)
+                {
+                    foreach (Parameter parameter in equation.Parameters)
+                    {
+                        if (parameter.Factory != null)
+                        {
+                            spatialOperator.ParameterFactories.Add(parameter.Factory);
+                        }
+                        if (parameter.Update != null)
+                        {
+                            spatialOperator.ParameterUpdates.Add(parameter.Update);
+                        }
+                    }
+                }
+            }
+            
         }
     }
 }

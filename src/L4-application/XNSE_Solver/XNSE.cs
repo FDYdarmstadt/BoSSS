@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using ilPSP;
 using ilPSP.Utils;
 using System.Diagnostics;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.XNSE_Solver
 {
@@ -89,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver
         {
             //Update Calls
             dt = GetFixedTimestep();
-            Timestepping.Solve(phystime, dt, true);
+            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             return dt;
         }
     }

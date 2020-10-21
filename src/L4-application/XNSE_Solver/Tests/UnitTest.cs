@@ -312,8 +312,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         private static void OperatorWithSolverTest(ITest Tst, XNSE_Control C) {
             using(var solver = new XNSE()) {
 
-                //C.ImmediatePlotPeriod = 1;
-                //C.SuperSampling = 4;
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 3;
 
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -321,7 +321,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
-                //Spaghett, spaghett, why not another spaghett?! 
                 ErrorEvaluator evaluator = new ErrorEvaluator(solver);
                 double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
