@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using ilPSP;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
+using XNSE_Solver;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -316,6 +317,35 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 solver.Init(C);
                 solver.RunSolverMode();
+                ErrorEvaluator evaluator = new ErrorEvaluator(solver);
+
+                //-------------------Evaluate Error ---------------------------------------- 
+                //Spaghett, spaghett, why not another spaghett?! 
+                double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+
+                double[] ErrThresh = Tst.AcceptableL2Error;
+                if (LastErrors.Length != ErrThresh.Length)
+                    throw new ApplicationException();
+                for (int i = 0; i < ErrThresh.Length; i++)
+                {
+                    Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+                }
+
+                double[] ResThresh = Tst.AcceptableResidual;
+                double[] ResNorms = new double[ResThresh.Length];
+                if (solver.CurrentResidual.Fields.Count != ResThresh.Length)
+                    throw new ApplicationException();
+                for (int i = 0; i < ResNorms.Length; i++)
+                {
+                    ResNorms[i] = solver.CurrentResidual.Fields[i].L2Norm();
+                    Console.WriteLine("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+                }
+
+                for (int i = 0; i < ErrThresh.Length; i++)
+                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
+
+                for (int i = 0; i < ResNorms.Length; i++)
+                    Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
             }
         }
 

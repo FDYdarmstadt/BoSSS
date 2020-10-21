@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Equations.cs" />
+    <Compile Include="ErrorEvaluator.cs" />
     <Compile Include="Fluids.cs" />
     <Compile Include="SpatialEquation.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />

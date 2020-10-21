@@ -19,13 +19,9 @@ namespace BoSSS.Application.XNSE_Solver
 {
     class XNSE : XdgApplicationWithSolver<XNSE_Control>
     {
- 
-
         LevelSet levelSet;
 
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
-
-
 
         protected override LevelSetTracker InstantiateTracker() {
             levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
@@ -71,9 +67,7 @@ namespace BoSSS.Application.XNSE_Solver
                 return QuadOrder;
             }
 
-
             //Get Spatial Operator
-
             XSpatialOperatorMk2 XOP = equationSystem.GetSpatialOperator(QuadOrderFunc);
 
             // final settings
@@ -85,7 +79,7 @@ namespace BoSSS.Application.XNSE_Solver
             Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
             Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationX) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY));
             Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
-            if(D > 3) {
+            if(D > 2) {
                 Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.VelocityZ));
                 Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityZ) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
                 Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ));
