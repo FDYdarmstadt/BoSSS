@@ -123,7 +123,8 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
-                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
+                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
+                        typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
         }
