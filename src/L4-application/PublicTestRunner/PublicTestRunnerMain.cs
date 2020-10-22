@@ -467,7 +467,7 @@ namespace PublicTestRunner {
 
                 Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
 
-                using(var debugYAML = new StreamWriter("debug-jobs.yaml")) {
+                using(var debugYAML = new StreamWriter("debug-jobs.yml")) {
 
                     debugYAML.WriteLine("################################################################################");
                     debugYAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
@@ -1187,6 +1187,11 @@ namespace PublicTestRunner {
                 break;
 
                 case "yaml":
+#if DEBUG
+                discoverRelease = false;
+#else
+                discoverRelease = true;
+#endif
                 ret = BuildYaml();
                 break;
 
