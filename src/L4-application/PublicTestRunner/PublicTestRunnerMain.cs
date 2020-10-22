@@ -410,13 +410,7 @@ namespace PublicTestRunner {
             if (MpiSize != 1) {
                 throw new NotSupportedException("yaml subprogram must be executed serially");
             }
-            //string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
-            //Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
 
-            //Tracer.NamespacesToLog = new string[] { "" };
-            //InitTraceFile(DateNtime);
-
-            int returnCode = 0;
             using(var tr = new FuncTrace()) {
 
                 // ===================================
@@ -467,12 +461,23 @@ namespace PublicTestRunner {
 
                 Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
 
-                using(var debugYAML = new StreamWriter("debug-jobs.yml")) {
+                string yamlName;
+#if DEBUG
+                yamlName = "debug-jobs.yml";
+#else
+                yamlName = "release-jobs.yml";
+#endif
 
-                    debugYAML.WriteLine("################################################################################");
-                    debugYAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
-                    debugYAML.WriteLine("# any modification might get over-written");
-                    debugYAML.WriteLine("################################################################################");
+
+                using(var YAML = new StreamWriter(yamlName)) {
+
+                    YAML.WriteLine("################################################################################");
+                    YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
+                    YAML.WriteLine("# any modification might get over-written");
+                    YAML.WriteLine($"# created: {DateTime.Now}");
+                    YAML.WriteLine($"# user:    {System.Environment.UserName}");
+                    YAML.WriteLine($"# system:  {System.Environment.MachineName}");
+                    YAML.WriteLine("################################################################################");
 
 
                     cnt = 0;
@@ -480,40 +485,23 @@ namespace PublicTestRunner {
 
                     foreach(var t in allTests) {
 
-                        debugYAML.WriteLine(t.shortname + ":" + t.testname + ":");
-                        debugYAML.WriteLine("   extends: .DebugTest");
+                        YAML.WriteLine(t.shortname + ":" + t.testname + ":");
+                        YAML.WriteLine("   extends: .DebugTest");
                         if(t.NoOfProcs == 1) 
-                            debugYAML.WriteLine("   stage: test");
+                            YAML.WriteLine("   stage: test");
                         else
-                            debugYAML.WriteLine("   stage: test parallel");
-                        debugYAML.WriteLine("   script:");
+                            YAML.WriteLine("   stage: test parallel");
+                        YAML.WriteLine("   script:");
                         if(t.NoOfProcs == 1) 
-                            debugYAML.WriteLine($"     - ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
+                            YAML.WriteLine($"     - ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
                         else
-                            debugYAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
+                            YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
                         if(t.NoOfProcs > 1) {
-                            debugYAML.WriteLine("   tags:");
-                            debugYAML.WriteLine($"    - {t.NoOfProcs}cores");
+                            YAML.WriteLine("   tags:");
+                            YAML.WriteLine($"    - {t.NoOfProcs}cores");
                         }
-                        debugYAML.WriteLine();
+                        YAML.WriteLine();
 
-
-
-
-                        //try {
-                        //    cnt++;
-                        //    Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                        //    var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, cnt);
-                        //    if(checkResFileName.Add(j.resultFile) == false) {
-                        //        throw new IOException($"Result file name {j.resultFile} is used multiple times.");
-                        //    }
-
-                        //    Console.WriteLine($"Successfully submitted {j.j.Name}.");
-                        //    AllOpenJobs.Add(j);
-                        //} catch(Exception e) {
-                        //    Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
-                        //    returnCode--;
-                        //}
                     }
 
                 }
