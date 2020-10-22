@@ -218,10 +218,11 @@ namespace PublicTestRunner {
                 }
             }
 
-
-
             return R.ToArray();
         }
+
+        //static bool IsReleaseOnlyAssembly
+
 
         static (Assembly Asbly, int NoOfProcs)[] GetAllMpiAssemblies() {
             var R = new List<(Assembly Asbly, int NoOfProcs)>();
@@ -403,6 +404,126 @@ namespace PublicTestRunner {
             return false;
         }
 
+        static public int BuildYaml() {
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
+            if (MpiSize != 1) {
+                throw new NotSupportedException("yaml subprogram must be executed serially");
+            }
+            //string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
+            //Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
+
+            //Tracer.NamespacesToLog = new string[] { "" };
+            //InitTraceFile(DateNtime);
+
+            int returnCode = 0;
+            using(var tr = new FuncTrace()) {
+
+                // ===================================
+                // phase 1: submit jobs
+                // ===================================
+
+
+           
+                var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
+                {
+                    var assln = GetAllAssemblies();
+                    if(assln != null) {
+                        foreach(var a in assln) {
+                            if(FilterAssembly(a, null)) {
+                                var allTst4Assi = GetTestsInAssembly(a);
+                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                                }
+                            }
+                        }
+                    }
+                }
+                {
+                    var ParAssln = GetAllMpiAssemblies();
+                    if(ParAssln != null) {
+                        foreach(var TT in ParAssln) {
+                            if(FilterAssembly(TT.Asbly, null)) {
+
+                                var a = TT.Asbly;
+                                var allTst4Assi = GetTestsInAssembly(a);
+
+                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
+                int cnt = 0;
+                foreach(var t in allTests) {
+                    cnt++;
+                    Console.WriteLine($"  #{cnt}: {t.testname}");
+                    Console.WriteLine($"     {t.shortname}");
+                    Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
+                }
+
+                Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
+
+                using(var debugYAML = new StreamWriter("debug-jobs.yaml")) {
+
+                    debugYAML.WriteLine("################################################################################");
+                    debugYAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
+                    debugYAML.WriteLine("# any modification might get over-written");
+                    debugYAML.WriteLine("################################################################################");
+
+
+                    cnt = 0;
+                    var checkResFileName = new HashSet<string>();
+
+                    foreach(var t in allTests) {
+
+                        debugYAML.WriteLine(t.shortname + ":" + t.testname + ":");
+                        debugYAML.WriteLine("   extends: .DebugTest");
+                        if(t.NoOfProcs == 1) 
+                            debugYAML.WriteLine("   stage: test");
+                        else
+                            debugYAML.WriteLine("   stage: test parallel");
+                        debugYAML.WriteLine("   script:");
+                        if(t.NoOfProcs == 1) 
+                            debugYAML.WriteLine($"     - ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
+                        else
+                            debugYAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
+                        if(t.NoOfProcs > 1) {
+                            debugYAML.WriteLine("   tags:");
+                            debugYAML.WriteLine($"    - {t.NoOfProcs}cores");
+                        }
+                        debugYAML.WriteLine();
+
+
+
+
+                        //try {
+                        //    cnt++;
+                        //    Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
+                        //    var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, cnt);
+                        //    if(checkResFileName.Add(j.resultFile) == false) {
+                        //        throw new IOException($"Result file name {j.resultFile} is used multiple times.");
+                        //    }
+
+                        //    Console.WriteLine($"Successfully submitted {j.j.Name}.");
+                        //    AllOpenJobs.Add(j);
+                        //} catch(Exception e) {
+                        //    Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
+                        //    returnCode--;
+                        //}
+                    }
+
+                }
+                
+            }
+
+            return 0;
+        }
+
+
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
@@ -421,9 +542,6 @@ namespace PublicTestRunner {
                 // ===================================
                 // phase 1: submit jobs
                 // ===================================
-
-
-
 
                 InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
@@ -966,6 +1084,7 @@ namespace PublicTestRunner {
             Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
             Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
             Console.WriteLine("         help          : prints this message.");
+            Console.WriteLine("         yaml          : write 'debug.yml' or 'release.yml' file for Gitlab.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
 
@@ -1004,7 +1123,7 @@ namespace PublicTestRunner {
             ll.Add(new MyListener());
 
 
-            if(args.Length < 2) {
+            if(args.Length < 1) {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
@@ -1016,6 +1135,11 @@ namespace PublicTestRunner {
             int ret = -1;
             switch(args[0]) {
                 case "nunit3":
+                if(args.Length < 2) {
+                    Console.WriteLine("Insufficient number of arguments.");
+                    PrintMainUsage();
+                    return -7777;
+                }
                 ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
                 break;
 
@@ -1038,7 +1162,7 @@ namespace PublicTestRunner {
                 discoverRelease = runRelease;
 
                 int iQueue = 1;
-                string filter = args[1];
+                string filter = args.Length > 1 ? args[1] : "*";
                 if(args.Length == 3) {
                     Console.WriteLine("arg 2 is:" + args[2]);
                     if(args[2].StartsWith("queue#")) {
@@ -1060,6 +1184,10 @@ namespace PublicTestRunner {
                 }
 
                 ret = JobManagerRun(filter, iQueue);
+                break;
+
+                case "yaml":
+                ret = BuildYaml();
                 break;
 
                 case "help":
