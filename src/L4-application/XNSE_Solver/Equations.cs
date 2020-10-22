@@ -207,7 +207,7 @@ namespace BoSSS.Application.XNSE_Solver
                 XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
                 DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
 
-                speciesParam.ProjectPow(1.0, speciesVelocity, 1.0);
+                speciesParam.SetMeanValue(speciesVelocity);
                 Console.WriteLine("Update Velocity0Mean");
                 Tecplot.PlotFields(new DGField[] { paramMeanVelocity, velocity }, "params-", 0, 3);
             }
@@ -328,8 +328,6 @@ namespace BoSSS.Application.XNSE_Solver
             LevelSetTracker LsTrk,
             IXNSE_Configuration config)
         {
-            
-
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 

@@ -262,17 +262,23 @@ namespace BoSSS.Application.XNSE_Solver {
             return species.ToArray();
         }
 
-        void AddTemporalOperator(XSpatialOperatorMk2 spatialOperator) {
+        void AddTemporalOperator(XSpatialOperatorMk2 spatialOperator) 
+        {
             (string, double[])[] diagonal = GetMassDiagonal(spatialOperator);
             spatialOperator.TemporalOperator = new ConstantXTemporalOperator(spatialOperator, diagonal);
         }
 
-        (string, double[])[] GetMassDiagonal(XSpatialOperatorMk2 spatialOperator) {
+        (string, double[])[] GetMassDiagonal(XSpatialOperatorMk2 spatialOperator) 
+        {
             StringArrayDictionary<StringArrayDictionary<double>> diag = new StringArrayDictionary<StringArrayDictionary<double>>(spatialOperator.Species);
-            foreach(BulkEquation equation in bulkEquations) {
-                if(diag.TryGetValue(equation.SpeciesName, out StringArrayDictionary<double> scales)) {
+            foreach(BulkEquation equation in bulkEquations) 
+            {
+                if(diag.TryGetValue(equation.SpeciesName, out StringArrayDictionary<double> scales)) 
+                {
                     scales.Add(equation.CodomainName, equation.MassScale);
-                } else {
+                } 
+                else 
+                {
                     scales = new StringArrayDictionary<double>(spatialOperator.CodomainVar);
                     scales.Add(equation.CodomainName, equation.MassScale);
                     diag.Add(equation.SpeciesName, scales);
@@ -284,7 +290,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static (string, double[])[] ToTupleArray(StringArrayDictionary<StringArrayDictionary<double>> d) {
             (string, double[])[] diagonal = new (string, double[])[d.Length];
-            for(int i = 0; i < diagonal.Length; ++i) {
+            for(int i = 0; i < diagonal.Length; ++i) 
+            {
                 diagonal[i] = (d.Keys[i], d.Values[i].Values);
             }
             return diagonal;
