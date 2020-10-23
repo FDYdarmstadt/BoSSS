@@ -462,6 +462,7 @@ namespace PublicTestRunner {
                 Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
 
                 string yamlName;
+                 
 #if DEBUG
                 yamlName = "debug-jobs.yml";
 #else
@@ -479,14 +480,19 @@ namespace PublicTestRunner {
                     YAML.WriteLine($"# system:  {System.Environment.MachineName}");
                     YAML.WriteLine("################################################################################");
 
+                    Debug.Assert(allTests.Any(ttt => ttt.testname.Contains("CNS")) == false);
 
                     cnt = 0;
                     var checkResFileName = new HashSet<string>();
 
                     foreach(var t in allTests) {
 
-                        YAML.WriteLine(t.shortname + ":" + t.testname + ":");
+                        YAML.WriteLine(DebugOrReleaseSuffix + t.shortname + ":" + t.testname + ":");
+#if DEBUG
                         YAML.WriteLine("   extends: .DebugTest");
+#else
+                        YAML.WriteLine("   extends: .ReleaseTest");
+#endif
                         if(t.NoOfProcs == 1) 
                             YAML.WriteLine("   stage: test");
                         else
