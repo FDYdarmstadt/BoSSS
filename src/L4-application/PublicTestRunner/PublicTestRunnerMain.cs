@@ -480,14 +480,19 @@ namespace PublicTestRunner {
                     YAML.WriteLine($"# system:  {System.Environment.MachineName}");
                     YAML.WriteLine("################################################################################");
 
-                    Debug.Assert(allTests.Any(ttt => ttt.testname.Contains("CNS")) == false);
-
                     cnt = 0;
                     var checkResFileName = new HashSet<string>();
 
                     foreach(var t in allTests) {
 
-                        YAML.WriteLine(DebugOrReleaseSuffix + t.shortname + ":" + t.testname + ":");
+                        if(t.testname.Contains("TutorialTest")) {
+                            Console.WriteLine("skipping: " + t.testname);
+                            continue;
+                        }
+
+
+
+                        YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
 #if DEBUG
                         YAML.WriteLine("   extends: .DebugTest");
 #else
@@ -499,9 +504,9 @@ namespace PublicTestRunner {
                             YAML.WriteLine("   stage: test parallel");
                         YAML.WriteLine("   script:");
                         if(t.NoOfProcs == 1) 
-                            YAML.WriteLine($"     - ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
+                            YAML.WriteLine($"     - ./InternalTestRunner.exe nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
                         else
-                            YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./InternalTestRunner.exe nunit3 {t.ass.GetName().Name}* --test={t.testname} --result=TestResult.xml");
+                            YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./InternalTestRunner.exe nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
                         if(t.NoOfProcs > 1) {
                             YAML.WriteLine("   tags:");
                             YAML.WriteLine($"    - {t.NoOfProcs}cores");
