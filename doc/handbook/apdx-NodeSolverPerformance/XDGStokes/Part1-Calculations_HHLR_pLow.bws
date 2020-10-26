@@ -29,22 +29,22 @@ ExQueque.AllowedDatabases;
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-string WFlowName = "Xdg_Stokes_pLow_study";
+string WFlowName = "Xdg_Stokes_Schwarz-Schur_scaling_Sayex1";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_pLow_study'.
+Project name is set to 'Xdg_Stokes_Schwarz-Schur_scaling_Sayex1'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
-string dirname = "DB_XdgStokes_pLow_study";
+string dirname = "DB_XdgStokes_Schurprec";
 string linpath = @"/work/scratch/jw52xeqa/"+dirname;
 string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes_pLow_study'.
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes_Schurprec'.
 
 ==============
 **************
@@ -87,12 +87,13 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 2 instances of IGridInfo {
-  0: { Guid = 277f1746-28a7-4ecb-ae14-6089b8314b25; Name = Xdg_Stokes_pLow_study_J512; Cell Count = 512; Dim = 3 }
-  1: { Guid = e430f552-61ba-47fe-b033-e593bad2c24a; Name = Xdg_Stokes_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+List of 3 instances of IGridInfo {
+  0: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
+  1: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 16 };
+int[] Resolutions_3D = new int[] { 8,16,32 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -153,13 +154,17 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = e430f552-61ba-47fe-b033-e593bad2c24a; Name = Xdg_Stokes_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
+Found Grid: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = e430f552-61ba-47fe-b033-e593bad2c24a; Name = Xdg_Stokes_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+List of 3 instances of IGridInfo {
+  0: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
+  1: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
 }
 ==============
 **************
@@ -183,14 +188,6 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping ;
 **************
-(1,2): warning CS0105: The using directive for `BoSSS.Application.XNSE_Solver' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Solution.LevelSetTools' appeared previously in this namespace
-(3,1): warning CS0105: The using directive for `BoSSS.Solution.AdvancedSolvers' appeared previously in this namespace
-(4,1): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-(5,1): warning CS0105: The using directive for `BoSSS.Solution.Timestepping' appeared previously in this namespace
-(6,1): warning CS0105: The using directive for `BoSSS.Solution.XdgTimestepping' appeared previously in this namespace
-No. of errors|warnings: 0|6.
-
 ==============
 Func<LinearSolverCode, int, IGridInfo, int, int,int,XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int p, IGridInfo grid, int DOF, int NoSblocks, int pLow){
     
@@ -273,7 +270,7 @@ Func<LinearSolverCode, int, IGridInfo, int, int,int,XNSE_Control> GenerateCObj =
     
     //C.VelocityBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
     //C.PressureBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
-    C.UseSchurBlockPrec                = false;
+    C.UseSchurBlockPrec                = true;
     C.LinearSolver.NoOfMultigridLevels = 2;
     C.LinearSolver.MaxSolverIterations = 5000;
     
@@ -316,17 +313,17 @@ Func<LinearSolverCode, int, IGridInfo, int, int,int,XNSE_Control> GenerateCObj =
 // - - - - - - - - - - - - -
 **************
 ==============
-int[] PolyDegS = new int[] {2,3,5};
+int[] PolyDegS = new int[] {2};
 //int[] PolyDegS = new int[] {2};
 **************
 ==============
 //int[] NoSblocks = new int[]{8};
-int[] NoSblocks = new int[]{2,4,8,16,32};
+int[] NoSblocks = new int[]{2,4};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    //LinearSolverCode.classic_pardiso,
+    LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
     //LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
@@ -344,8 +341,10 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = e430f552-61ba-47fe-b033-e593bad2c24a; Name = Xdg_Stokes_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+List of 3 instances of IGridInfo {
+  0: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
+  1: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
@@ -356,8 +355,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
 (1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
-No. of errors|warnings: 0|2.
+No. of errors|warnings: 0|1.
 
 ==============
 List<XNSE_Control> controls = new List<XNSE_Control>();
@@ -386,71 +384,18 @@ for(int pLow=0;pLow<=k;pLow++){
 }
 }
 **************
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow0
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow1
+setting up: J512_p2_classic_pardiso_Sblocks2_pLow2
+setting up: J512_p2_classic_pardiso_Sblocks4_pLow2
+setting up: J4096_p2_classic_pardiso_Sblocks2_pLow2
+setting up: J4096_p2_classic_pardiso_Sblocks4_pLow2
+setting up: J32768_p2_classic_pardiso_Sblocks2_pLow2
+setting up: J32768_p2_classic_pardiso_Sblocks4_pLow2
+setting up: J512_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+setting up: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
 setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow0
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
 setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks8_pLow0
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks8_pLow1
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks8_pLow2
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks16_pLow0
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks16_pLow1
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks16_pLow2
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks32_pLow0
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks32_pLow1
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks32_pLow2
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow0
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow1
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow2
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow3
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow0
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow1
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow2
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow3
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow0
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow1
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow2
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow3
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow0
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow1
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow2
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow3
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow0
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow1
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow2
-setting up: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow3
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow0
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow1
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow2
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow3
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow4
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow5
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow0
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow1
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow2
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow3
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow4
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow5
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow0
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow1
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow2
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow3
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow4
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow5
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow0
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow1
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow2
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow3
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow4
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow5
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow0
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow1
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow2
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow3
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow4
-setting up: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow5
+setting up: J32768_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+setting up: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
 
 ==============
 **************
@@ -492,662 +437,120 @@ foreach(var ctrl in controls) {
     aJob.SetControlObject(ctrl);
     ((SlurmClient)ExQueque).SlurmAccount = "project01217";  // Jens 
     aJob.NumberOfMPIProcs         = 1;
-    aJob.ExecutionTime            = "02:00:00";
+    aJob.ExecutionTime            = "05:00:00";
     aJob.MemPerCPU                = "50000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow0
-Job not submitted yet, or no result session is known - starting submission.
+ Submitting: J512_p2_classic_pardiso_Sblocks2_pLow2
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220844
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140513
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16006797
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow1
-Job not submitted yet, or no result session is known - starting submission.
+16074379
+ Submitting: J512_p2_classic_pardiso_Sblocks4_pLow2
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220848
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140517
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16006801
+16074380
+ Submitting: J4096_p2_classic_pardiso_Sblocks2_pLow2
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140520
+copied 32 files.
+   written file: control.obj
+deployment finished.
+
+16074381
+ Submitting: J4096_p2_classic_pardiso_Sblocks4_pLow2
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140524
+copied 32 files.
+   written file: control.obj
+deployment finished.
+
+16074382
+ Submitting: J32768_p2_classic_pardiso_Sblocks2_pLow2
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140527
+copied 32 files.
+   written file: control.obj
+deployment finished.
+
+16074383
+ Submitting: J32768_p2_classic_pardiso_Sblocks4_pLow2
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140530
+copied 32 files.
+   written file: control.obj
+deployment finished.
+
+16074384
+ Submitting: J512_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140533
+copied 32 files.
+   written file: control.obj
+deployment finished.
+
+16074385
+ Submitting: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140536
+copied 32 files.
+   written file: control.obj
+deployment finished.
+
+16074386
  Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
-Job not submitted yet, or no result session is known - starting submission.
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220852
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140539
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16006803
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220855
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006805
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220859
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006807
+16074387
  Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-Job not submitted yet, or no result session is known - starting submission.
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220903
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140542
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16006809
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks8_pLow0
-Job not submitted yet, or no result session is known - starting submission.
+16074388
+ Submitting: J32768_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220906
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140545
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16006810
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks8_pLow1
-Job not submitted yet, or no result session is known - starting submission.
+16074389
+ Submitting: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220911
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140548
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16006811
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks8_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220915
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006812
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks16_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220919
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006813
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks16_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220923
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006814
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks16_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220928
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006815
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks32_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220932
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006816
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks32_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220936
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006817
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks32_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220940
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006818
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220944
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006819
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220949
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006820
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220954
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006821
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks2_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_220959
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006822
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221005
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006823
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221009
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006824
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221014
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006825
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks4_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221018
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006826
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221023
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006827
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221027
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006828
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221031
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006829
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks8_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221036
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006830
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221041
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006831
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221046
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006832
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221050
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006833
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks16_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221055
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006834
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221059
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006835
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221104
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006836
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221109
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006838
- Submitting: J4096_p3_exp_Kcycle_schwarz_Sblocks32_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221114
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006841
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221119
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006844
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221123
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006847
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221128
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006849
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221133
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006852
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow4
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221137
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006855
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks2_pLow5
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221141
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006858
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221146
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006862
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221150
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006865
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221155
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006866
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221200
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006867
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow4
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221204
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006868
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks4_pLow5
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221209
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006869
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221214
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006870
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221220
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006871
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221227
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006872
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221235
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006873
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow4
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221240
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006874
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks8_pLow5
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221245
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006875
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221249
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006876
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221254
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006877
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221259
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006878
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221304
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006879
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow4
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221308
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006880
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks16_pLow5
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221313
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006881
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow0
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221318
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006882
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow1
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221322
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006883
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow2
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221328
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006884
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow3
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221333
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006885
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow4
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221337
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006886
- Submitting: J4096_p5_exp_Kcycle_schwarz_Sblocks32_pLow5
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_pLow_study-XNSE_Solver2020Oct16_221342
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16006887
+16074390
 
 ==============
 **************
@@ -1530,6 +933,12 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

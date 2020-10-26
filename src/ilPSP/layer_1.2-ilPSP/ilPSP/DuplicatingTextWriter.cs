@@ -103,12 +103,13 @@ namespace ilPSP {
         }
 
         private void ExecuteOnWriter(Action<TextWriter> a) {
-            try {
-                a(Writer0);
-            } catch(ObjectDisposedException) {
+            if (!surpressStream0) {
+                try {
+                    a(Writer0);
+                } catch (ObjectDisposedException) {
 
+                }
             }
-
 
             List<TextWriter> WritersToRemove = null;
             foreach(TextWriter tw in m__WriterS) {

@@ -1,7 +1,36 @@
 This section covers basic performance tests, i.e. how specific algorithms scale in parallel with increasing \emph{number of processors}. So far, all calculations for this research were conducted on the Lichtenberg high performance computer of the TU Darmstadt.
 
 \section{Weak scaling - XdgPoisson}
+Weak scaling is investigated of the test problem introduced in \ref{sec:XdgPoisson}. This means the problem size per processor is constant during the study (in this case approximately 10.000 DOF / core). So the total problem size grows with increasing number of cores. The expectation is that wall clock time remains constant trough the study. This means in the same time frame with $N$ cores we are able to solve a system, which is $N$ times the size of a single core run.
 
+In \ref{weakXdgPoissonScaling} the scaling of V-krylov-cycle is shown:
+
+\subsection{solver scaling}
+
+\graphicspath{{./apdx-MPISolverPerformance/weakScaling/XdgPoisson/plots/}} 
+\begin{figure}[h!]
+	\begin{center}
+		\input{./apdx-MPISolverPerformance/weakScaling/XdgPoisson/plots/Scaling_2.tex}
+	\end{center}
+	\caption{
+		Solver wall clock time vs. no of processors, for polynomial degree $k=2$ and approximately 10.000 DOF / processor, Grid partitioning with METIS (except 128 cores with predefined partitioning),
+		for problem/Equation (\ref{eq:poisson-jump-problem-def}).
+	}
+	\label{fig:weakXdgPoissonScaling}
+\end{figure}
+
+\subsection{kcycle profiling}
+\graphicspath{{./apdx-MPISolverPerformance/weakScaling/XdgPoisson/plots/}} 
+\begin{figure}[h!]
+	\begin{center}
+		\input{./apdx-MPISolverPerformance/weakScaling/XdgPoisson/plots/Profiling_2.tex}
+	\end{center}
+	\caption{
+		profiling of the V-kcycle run for the same setting:
+		for problem/Equation (\ref{eq:poisson-jump-problem-def}).
+	}
+	\label{fig:weakXdgPoisson-kcycle-profiling}
+\end{figure}
 
 
 \section{Parallel Efficiency - Navier-Stokes problems}

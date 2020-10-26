@@ -378,11 +378,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// The maximum order of the coarse system, which is solved by a direct solver.
+        /// NOTE: there is a hack, which consideres <see cref="CoarseLowOrder"/>-1 for pressure.
+        /// pressure is assumed to be the Dimension-1-th variable
+        /// </summary>
         public int CoarseLowOrder {
             get { return pLow; }
             set { pLow = value; }
         }
 
+        /// <summary>
+        /// Determines, if cutcells are fully assigned (<see cref="CoarseLowOrder"/>=p) to the coarse solver
+        /// </summary>
         public bool CoarseSolveOfCutcells {
             get;
             set;
@@ -863,13 +871,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Res = new double[B.Count];
                 MPIexchange<double[]> ResExchange;
                 MPIexchangeInverse<U> XExchange;
-                //if (Overlap > 0) {
-                    ResExchange = new MPIexchange<double[]>(this.m_MgOp.Mapping, Res);
-                    XExchange = new MPIexchangeInverse<U>(this.m_MgOp.Mapping, X);
-                //} else {
-                //    ResExchange = null;
-                //    XExchange = null;
-                //}
+                // Reminder: eventhough no overlap concidered, these Vectors have to be there ...
+                ResExchange = new MPIexchange<double[]>(this.m_MgOp.Mapping, Res);
+                XExchange = new MPIexchangeInverse<U>(this.m_MgOp.Mapping, X);
 
                 int LocLength = m_MgOp.Mapping.LocalLength;
 
@@ -911,7 +915,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         for (int iPart = 0; iPart < NoParts; iPart++) {
 
                             var bi=BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
-                            var newbi = bi.CloneAs();
                             double[] xi = new double[bi.Length];
                             if (UsePMGinBlocks && AnyHighOrderTerms) {
                                 // +++++++++++++++++++++++++++++++++
@@ -935,73 +938,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 } else {
                                     Resdummy.ClearEntries();
                                 }
-
-
-                                // solve low-order system
-                                var biLo = BMloBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
-                                double[] xiLo = new double[biLo.Length];
-                                try {
-                                    blockSolvers[iPart].Solve(xiLo, biLo);
-                                } catch (ArithmeticException ae) {
-                                    Console.Error.WriteLine(ae.Message);
-                                    throw ae;
-                                }
-
-                                BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
-
-                                xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
-                                // re-evaluate the residual
-                                this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
+                                Debug.Assert(Resdummy.Length == ResExchange.Vector_Ext.Length + Res.Length, "not same length");
                                 BMfullBlocks[iPart].AccSubVec(bi, Resdummy);
 
-                                // solve the high-order system
-                                var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
-                                int NoCells = HiModeSolvers.Length;
+                                // solve low-order system
+                                SolveLoSystem(iPart);
 
-                                double[] xiHi = null;
-                                double[] biHi = null;
+                                // re-evaluate residual
+                                ReEvaluateRes(iPart, bi);
+                                // hi order smoother
+                                SolveHiSystem(iPart);
 
-                                for (int j = 0; j < NoCells; j++) {
-                                    var HiModeSolver = HiModeSolvers[j];
-                                    int Np = HiModeSolver.NoOfRows;
+                                // re-evaluate residual
+                                ReEvaluateRes(iPart, bi);
+                                // hi order smoother
+                                SolveLoSystem(iPart);
 
-                                    if (xiHi == null || xiHi.Length != Np)
-                                        xiHi = new double[Np];
-                                    if (biHi == null || biHi.Length != Np)
-                                        biHi = new double[Np];
-
-                                    biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
-
-                                    HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
-
-                                    BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xdummy);
-                                }
-
-
-
-                                //// evaluate Res
-                                //xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
-                                //// re-evaluate the residual
-                                //this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, newbi);
-                                //Resdummy.ClearEntries();
-
-                                //BMfullBlocks[iPart].AccSubVec(newbi, Resdummy);
-                                //// solve low-order system
-                                //biLo = BMloBlocks[iPart].GetSubVec(Resdummy);
-                                //xiLo = new double[biLo.Length];
-                                //try {
-                                //    blockSolvers[iPart].Solve(xiLo, biLo);
-                                //} catch (ArithmeticException ae) {
-                                //    Console.Error.WriteLine(ae.Message);
-                                //    throw ae;
-                                //}
-                                //BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
-
-
-
-                                xi =BMfullBlocks[iPart].GetSubVec(Xdummy);
-                                Xdummy.ClearEntries();
-                                Resdummy.ClearEntries();
+                                xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
 
                             } else {
                                 // ++++++++++++++++++++++++++++++
@@ -1037,6 +990,46 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } // end loop Schwarz iterations
 
             } // end FuncTrace
+        }
+
+        private void ReEvaluateRes(int iPart, double[] res) {
+            var ri = res.CloneAs();
+            Resdummy.ClearEntries();
+            var xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
+            this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, ri);
+            BMfullBlocks[iPart].AccSubVec(ri, Resdummy);
+        }
+
+        private void SolveHiSystem(int iPart ) {
+            var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
+            int NoCells = HiModeSolvers.Length;
+
+            double[] xiHi = null;
+            double[] biHi = null;
+
+            for (int j = 0; j < NoCells; j++) {
+                var HiModeSolver = HiModeSolvers[j];
+                int Np = HiModeSolver.NoOfRows;
+                if (xiHi == null || xiHi.Length != Np)
+                    xiHi = new double[Np];
+                if (biHi == null || biHi.Length != Np)
+                    biHi = new double[Np];
+                biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
+                HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
+                BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xdummy);
+            }
+        }
+
+        private void SolveLoSystem(int iPart) {
+            var rLo = BMloBlocks[iPart].GetSubVec(Resdummy);
+            double[] xiLo = new double[rLo.Length];
+            try {
+                blockSolvers[iPart].Solve(xiLo, rLo);
+            } catch (ArithmeticException ae) {
+                Console.Error.WriteLine(ae.Message);
+                throw ae;
+            }
+            BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
         }
 
         /// <summary>

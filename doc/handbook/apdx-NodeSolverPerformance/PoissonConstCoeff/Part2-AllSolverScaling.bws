@@ -1,5 +1,16 @@
 restart
 **************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
 ==============
 string WFlowName = "SIP_SingleNodePerformance_0";
 WorkflowMgm.Init(WFlowName);
@@ -11,7 +22,7 @@ using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2019-3-7";
+string dateString = "2020-10-23";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -27,90 +38,111 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 80 instances of String {
-  0: SessionName
-  1: DGdegree:T
-  2: DGdegree:Tex
-  3: Bndtype:Dirichlet
-  4: Bndtype:Neumann
-  5: GeneratedFromCode
-  6: ControlFileText_Index
-  7: dtFixed
-  8: penalty_poisson
-  9: NoOfSolverRuns
-  10: ExactSolution_provided
-  11: SuppressExceptionPrompt
-  12: GridPartType
-  13: ProjectName
-  14: NoOfTimesteps
-  15: Endtime
-  16: saveperiod
-  17: rollingSaves
-  18: dtMin
-  19: dtMax
-  20: CompMode
-  21: ImmediatePlotPeriod
-  22: SuperSampling
-  23: savetodb
-  24: logFileDirectory
-  25: Paramstudy_ContinueOnError
-  26: LinearSolver.verbose
-  27: LinearSolver.MaxKrylovDim
-  28: LinearSolver.MaxSolverIterations
-  29: LinearSolver.MinSolverIterations
-  30: LinearSolver.ConvergenceCriterion
-  31: LinearSolver.SolverCode
-  32: LinearSolver.NoOfMultigridLevels
-  33: LinearSolver.exp_localPrec_muA
-  34: LinearSolver.exp_localPrec_Min_dt
-  35: LinearSolver.TargetBlockSize
-  36: NonLinearSolver.verbose
-  37: NonLinearSolver.PrecondSolver.verbose
-  38: NonLinearSolver.PrecondSolver.MaxKrylovDim
-  39: NonLinearSolver.PrecondSolver.MaxSolverIterations
-  40: NonLinearSolver.PrecondSolver.MinSolverIterations
-  41: NonLinearSolver.PrecondSolver.ConvergenceCriterion
-  42: NonLinearSolver.PrecondSolver.SolverCode
-  43: NonLinearSolver.PrecondSolver.NoOfMultigridLevels
-  44: NonLinearSolver.PrecondSolver.exp_localPrec_muA
-  45: NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt
-  46: NonLinearSolver.PrecondSolver.TargetBlockSize
-  47: NonLinearSolver.MaxSolverIterations
-  48: NonLinearSolver.MinSolverIterations
-  49: NonLinearSolver.ConvergenceCriterion
-  50: NonLinearSolver.UnderRelax
-  51: NonLinearSolver.SolverCode
-  52: DynamicLoadBalancing_RedistributeAtStartup
-  53: DynamicLoadBalancing_Period
-  54: DynamicLoadBalancing_ImbalanceThreshold
-  55: DynamicLoadBalancing_On
-  56: AdaptiveMeshRefinement
-  57: CutCellQuadratureType
-  58: ContinueOnIoError
-  59: Grid:NoOfCells
-  60: Grid:hMax
-  61: Grid:hMin
-  62: UsedNoOfMultigridLevels
-  63: MtxBlkSz
-  64: NNZMtx
-  65: NNZblk
-  66: MtxMB
-  67: minSolRunT
-  68: maxSolRunT
-  69: Conv
-  70: NoIter
-  71: NoOfCells
-  72: DOFs
-  73: BlockSize
-  74: maxMultigridlvl
-  75: RegularTerminated
-  76: SipMatrixAssembly_time
-  77: Aggregation_basis_init_time
-  78: Solver_Init_time
-  79: Solver_Run_time
+List of 101 instances of String {
+  0: ProjectName
+  1: SessionName
+  2: DGdegree:T
+  3: DGdegree:MPIrank
+  4: DGdegree:Tex
+  5: Bndtype:Dirichlet
+  6: Bndtype:Neumann
+  7: NoOfMultigridLevels
+  8: TimesteppingMode
+  9: GeneratedFromCode
+  10: ControlFileText_Index
+  11: InitialValues_EvaluatorsVec[0].Key
+  12: dtFixed
+  13: penalty_poisson
+  14: NoOfSolverRuns
+  15: ExactSolution_provided
+  16: SuppressExceptionPrompt
+  17: LinearSolver.verbose
+  18: LinearSolver.MaxKrylovDim
+  19: LinearSolver.MaxSolverIterations
+  20: LinearSolver.MinSolverIterations
+  21: LinearSolver.ConvergenceCriterion
+  22: LinearSolver.SolverCode
+  23: LinearSolver.NoOfMultigridLevels
+  24: LinearSolver.SolverMode
+  25: LinearSolver.exp_localPrec_muA
+  26: LinearSolver.exp_localPrec_Min_dt
+  27: LinearSolver.TargetBlockSize
+  28: LinearSolver.pMaxOfCoarseSolver
+  29: NonLinearSolver.verbose
+  30: NonLinearSolver.MaxSolverIterations
+  31: NonLinearSolver.MinSolverIterations
+  32: NonLinearSolver.ConvergenceCriterion
+  33: NonLinearSolver.UnderRelax
+  34: NonLinearSolver.SolverCode
+  35: NonLinearSolver.constantNewtonIterations
+  36: NonLinearSolver.printLambda
+  37: NonLinearSolver.Globalization
+  38: AgglomerationThreshold
+  39: MultiStepInit
+  40: TimeSteppingScheme
+  41: GridPartType
+  42: NoOfTimesteps
+  43: staticTimestep
+  44: Endtime
+  45: saveperiod
+  46: rollingSaves
+  47: dtMin
+  48: dtMax
+  49: ImmediatePlotPeriod
+  50: SuperSampling
+  51: savetodb
+  52: AlternateDbPaths[0].Item1
+  53: AlternateDbPaths[0].Item2
+  54: AlternateDbPaths[1].Item1
+  55: AlternateDbPaths[1].Item2
+  56: logFileDirectory
+  57: Paramstudy_ContinueOnError
+  58: DynamicLoadBalancing_RedistributeAtStartup
+  59: DynamicLoadBalancing_Period
+  60: DynamicLoadBalancing_ImbalanceThreshold
+  61: DynamicLoadBalancing_On
+  62: AdaptiveMeshRefinement
+  63: AMR_startUpSweeps
+  64: CutCellQuadratureType
+  65: ContinueOnIoError
+  66: BurstSave
+  67: Grid:NoOfCells
+  68: Grid:SpatialDimension
+  69: Grid:hMax
+  70: Grid:hMin
+  71: MtxBlkSz
+  72: NNZMtx
+  73: NNZblk
+  74: MtxMB
+  75: XdgCellsToLowBlock
+  76: UsedMGDepth
+  77: minSolRunT
+  78: maxSolRunT
+  79: Conv
+  80: NoIter
+  81: NoOfCells
+  82: DOFs
+  83: BlockSize
+  84: RegularTerminated
+  85: MatrixAssembly
+  86: Aggregation_basis_init_time
+  87: Solver_Init_time
+  88: Solver_Run_time
+  89: NoOfCores
+  90: GlobalSblocks at Lvl0
+  91: SblockSize at Lvl0
+  92: KcycleSchwarz:XdgCellsToLowBlock
+  93: KcycleSchwarz:OverlapON
+  94: KcycleSchwarz:OverlapScale
+  95: GlobalSblocks at Lvl1
+  96: SblockSize at Lvl1
+  97: GlobalSblocks at Lvl2
+  98: SblockSize at Lvl2
+  99: GlobalSblocks at Lvl3
+  100: SblockSize at Lvl3
 }
 ==============
-var SubTab_1 = SessTab.ExtractColumns("SessionName","DGdegree:T", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv","SipMatrixAssembly_time","Aggregation_basis_init_time","Solver_Init_time","Solver_Run_time","BlockSize");
+var SubTab_1 = SessTab.ExtractColumns("SessionName","DGdegree:T", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv","MatrixAssembly","Aggregation_basis_init_time","Solver_Init_time","Solver_Run_time","BlockSize");
 **************
 ==============
 var SubTab_2 = SubTab_1.ExtractRows(delegate(int i, IDictionary<string,object> row) {
@@ -124,26 +156,85 @@ var SubTab = SubTab_2.ExtractColumns("SessionName","DGdegree:T", "Grid:NoOfCells
 ==============
 SubTab.Print();
 **************
-    SessionName                                                     DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT    maxSolRunT    NoIter 
-0:  PoissonConstCoeff_J20480_k2_classic_mumps_1                     2          20480          1                       204800  122.4512579   122.4512579   1      
-1:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_2                    2          20480          42                      204800  124.9530279   124.9530279   44     
-2:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_1  2          20480          44                      204800  286.9949845   286.9949845   5      
-3:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_4                    2          20480          42                      204800  121.6572022   121.6572022   44     
-4:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_4  2          20480          44                      204800  807.7566881   807.7566881   17     
-5:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_1                    2          20480          42                      204800  289.3189869   289.3189869   5      
-6:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_2  2          20480          44                      204800  1007.1664985  1007.1664985  17     
-7:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_1                   2          163840         42                      1638400 1267.7870369  1267.7870369  40     
-8:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_2                   2          163840         42                      1638400 1441.2931192  1441.2931192  41     
-9:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_4                   2          163840         42                      1638400 2001.520484   2001.520484   87     
-10: PoissonConstCoeff_J163840_k2_classic_mumps_1                    2          163840         1                       1638400 4980.6094286  4980.6094286  1      
-11: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_4 2          163840         44                      1638400 43836.3262862 43836.3262862 16     
-12: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_1 2          163840         44                      1638400 18001.6300445 18001.6300445 5      
-13: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_2 2          163840         44                      1638400 48037.9727554 48037.9727554 16     
+    SessionName                       DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT   maxSolRunT   NoIter 
+0:  SIP_J69120_k5_exp_gmres_levelpmg  5          69120          47                      3870720 3691.5151736 3691.5151736 103    
+1:  SIP_J163840_k3_exp_Kcycle_schwarz 3          163840         41                      3276800 2517.186656  2517.186656  21     
+2:  SIP_J163840_k3_exp_gmres_levelpmg 3          163840         47                      3276800 1051.6243541 1051.6243541 79     
+3:  SIP_J163840_k2_exp_gmres_levelpmg 2          163840         47                      1638400 585.9579707  585.9579707  65     
+4:  SIP_J163840_k2_exp_Kcycle_schwarz 2          163840         41                      1638400 550.9416691  550.9416691  16     
+5:  SIP_J20480_k5_exp_Kcycle_schwarz  5          20480          41                      1146880 652.7183506  652.7183506  26     
+6:  SIP_J20480_k5_exp_gmres_levelpmg  5          20480          47                      1146880 258.6270584  258.6270584  99     
+7:  SIP_J69120_k2_classic_pardiso     2          69120          2                       691200  909.112378   909.112378   1      
+8:  SIP_J69120_k3_exp_Kcycle_schwarz  3          69120          41                      1382400 460.9360909  460.9360909  22     
+9:  SIP_J69120_k3_exp_gmres_levelpmg  3          69120          47                      1382400 253.9679551  253.9679551  77     
+10: SIP_J69120_k2_exp_gmres_levelpmg  2          69120          47                      691200  165.6028718  165.6028718  63     
+11: SIP_J69120_k2_exp_Kcycle_schwarz  2          69120          41                      691200  172.4035375  172.4035375  17     
+12: SIP_J20480_k3_classic_pardiso     3          20480          2                       409600  377.4868821  377.4868821  1      
+13: SIP_J20480_k3_exp_gmres_levelpmg  3          20480          47                      409600  62.7893274   62.7893274   75     
+14: SIP_J20480_k3_exp_Kcycle_schwarz  3          20480          41                      409600  94.7274814   94.7274814   19     
+15: SIP_J2560_k5_exp_gmres_levelpmg   5          2560           47                      143360  29.2391732   29.2391732   94     
+16: SIP_J2560_k5_exp_Kcycle_schwarz   5          2560           41                      143360  49.3384686   49.3384686   25     
+17: SIP_J20480_k2_exp_gmres_levelpmg  2          20480          47                      204800  35.3901368   35.3901368   59     
+18: SIP_J20480_k2_exp_Kcycle_schwarz  2          20480          41                      204800  38.599941    38.599941    14     
+19: SIP_J2560_k5_classic_pardiso      5          2560           2                       143360  130.312176   130.312176   1      
+20: SIP_J2560_k3_exp_gmres_levelpmg   3          2560           47                      51200   7.5287469    7.5287469    71     
+21: SIP_J320_k5_exp_gmres_levelpmg    5          320            47                      17920   3.3212212    3.3212212    89     
+22: SIP_J320_k3_exp_gmres_levelpmg    3          320            47                      6400    0.7502694    0.7502694    67     
+23: SIP_J2560_k3_exp_Kcycle_schwarz   3          2560           41                      51200   16.5793748   16.5793748   18     
+24: SIP_J320_k5_exp_Kcycle_schwarz    5          320            41                      17920   10.6015284   10.6015284   24     
+25: SIP_J2560_k2_exp_gmres_levelpmg   2          2560           47                      25600   3.8275055    3.8275055    56     
+26: SIP_J2560_k2_exp_Kcycle_schwarz   2          2560           41                      25600   5.3577363    5.3577363    13     
+27: SIP_J320_k3_exp_Kcycle_schwarz    3          320            41                      6400    1.6634091    1.6634091    18     
+28: SIP_J320_k2_exp_gmres_levelpmg    2          320            47                      3200    0.4916763    0.4916763    54     
+29: SIP_J320_k2_exp_Kcycle_schwarz    2          320            41                      3200    0.6622035    0.6622035    14     
+30: SIP_J20480_k2_classic_pardiso     2          20480          2                       204800  49.2819202   49.2819202   1      
+31: SIP_J320_k5_classic_pardiso       5          320            2                       17920   2.990597     2.990597     1      
+32: SIP_J2560_k3_classic_pardiso      3          2560           2                       51200   8.8077095    8.8077095    1      
+33: SIP_J320_k3_classic_pardiso       3          320            2                       6400    0.479898     0.479898     1      
+34: SIP_J2560_k2_classic_pardiso      2          2560           2                       25600   1.8802046    1.8802046    1      
+35: SIP_J320_k2_classic_pardiso       2          320            2                       3200    0.204163     0.204163     1      
 ==============
 //Extract to excel-File
 SubTab_2.Print();
 //SubTab_2.ToCSVFile(WFlowName);
 **************
+    SessionName                       DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT   maxSolRunT   NoIter RegularTerminated Conv MatrixAssembly Aggregation_basis_init_time Solver_Init_time Solver_Run_time BlockSize 
+0:  SIP_J69120_k5_exp_gmres_levelpmg  5          69120          47                      3870720 3691.5151736 3691.5151736 103    True              1    1268.0562725   880.4759187                 184.9218741      3505.3984299    56        
+1:  SIP_J163840_k3_exp_Kcycle_schwarz 3          163840         41                      3276800 2517.186656  2517.186656  21     True              1    249.5459149    570.3163531                 302.9525228      2211.0842085    20        
+2:  SIP_J163840_k3_exp_gmres_levelpmg 3          163840         47                      3276800 1051.6243541 1051.6243541 79     True              1    249.956006     572.3740089                 120.5569136      929.6386771     20        
+3:  SIP_J163840_k2_exp_gmres_levelpmg 2          163840         47                      1638400 585.9579707  585.9579707  65     True              1    79.0747036     458.2480642                 80.1474715       504.846068      10        
+4:  SIP_J163840_k2_exp_Kcycle_schwarz 2          163840         41                      1638400 550.9416691  550.9416691  16     True              1    80.3595772     461.8008262                 112.4120125      436.8053642     10        
+5:  SIP_J20480_k5_exp_Kcycle_schwarz  5          20480          41                      1146880 652.7183506  652.7183506  26     True              1    373.8752294    195.2897873                 101.9346196      550.5242476     56        
+6:  SIP_J20480_k5_exp_gmres_levelpmg  5          20480          47                      1146880 258.6270584  258.6270584  99     True              1    373.3723234    194.5082298                 42.2699779       216.2097563     56        
+7:  SIP_J69120_k2_classic_pardiso     2          69120          2                       691200  909.112378   909.112378   1      True              1    32.8791876     93.1473111                  10.0672425       898.6970594     10        
+8:  SIP_J69120_k3_exp_Kcycle_schwarz  3          69120          41                      1382400 460.9360909  460.9360909  22     True              1    102.6257748    126.6468071                 74.6488534       385.6276159     20        
+9:  SIP_J69120_k3_exp_gmres_levelpmg  3          69120          47                      1382400 253.9679551  253.9679551  77     True              1    103.1562287    127.8648294                 34.6843714       218.8565182     20        
+10: SIP_J69120_k2_exp_gmres_levelpmg  2          69120          47                      691200  165.6028718  165.6028718  63     True              1    32.2119287     93.2511116                  20.8229685       144.4316557     10        
+11: SIP_J69120_k2_exp_Kcycle_schwarz  2          69120          41                      691200  172.4035375  172.4035375  17     True              1    32.2115773     92.8439499                  35.0835668       136.7988979     10        
+12: SIP_J20480_k3_classic_pardiso     3          20480          2                       409600  377.4868821  377.4868821  1      True              1    30.1143119     20.0833186                  6.4050326        370.9517763     20        
+13: SIP_J20480_k3_exp_gmres_levelpmg  3          20480          47                      409600  62.7893274   62.7893274   75     True              1    30.2423824     19.8986714                  8.170378         54.4908895      20        
+14: SIP_J20480_k3_exp_Kcycle_schwarz  3          20480          41                      409600  94.7274814   94.7274814   19     True              1    30.0864258     19.7204477                  18.4960603       76.0740393      20        
+15: SIP_J2560_k5_exp_gmres_levelpmg   5          2560           47                      143360  29.2391732   29.2391732   94     True              1    46.2872883     23.868451                   5.0908015        24.1141013      56        
+16: SIP_J2560_k5_exp_Kcycle_schwarz   5          2560           41                      143360  49.3384686   49.3384686   25     True              1    46.6920947     23.9966244                  11.1344942       38.1633444      56        
+17: SIP_J20480_k2_exp_gmres_levelpmg  2          20480          47                      204800  35.3901368   35.3901368   59     True              1    9.7931525      10.6693672                  4.2808528        30.9973395      10        
+18: SIP_J20480_k2_exp_Kcycle_schwarz  2          20480          41                      204800  38.599941    38.599941    14     True              1    9.7536322      10.8398539                  9.0565345        29.4025784      10        
+19: SIP_J2560_k5_classic_pardiso      5          2560           2                       143360  130.312176   130.312176   1      True              1    46.2884991     23.9274206                  4.8001225        125.4790239     56        
+20: SIP_J2560_k3_exp_gmres_levelpmg   3          2560           47                      51200   7.5287469    7.5287469    71     True              1    4.004404       1.8039003                   1.0187533        6.4770007       20        
+21: SIP_J320_k5_exp_gmres_levelpmg    5          320            47                      17920   3.3212212    3.3212212    89     True              1    6.0294106      3.2975375                   0.6558098        2.6438687       56        
+22: SIP_J320_k3_exp_gmres_levelpmg    3          320            47                      6400    0.7502694    0.7502694    67     True              1    0.6900123      0.2231889                   0.1306317        0.6003852       20        
+23: SIP_J2560_k3_exp_Kcycle_schwarz   3          2560           41                      51200   16.5793748   16.5793748   18     True              1    3.9418475      1.7431322                   1.897305         14.6449044      20        
+24: SIP_J320_k5_exp_Kcycle_schwarz    5          320            41                      17920   10.6015284   10.6015284   24     True              1    6.0552632      3.1677413                   1.2164938        9.3620902       56        
+25: SIP_J2560_k2_exp_gmres_levelpmg   2          2560           47                      25600   3.8275055    3.8275055    56     True              1    1.3954226      0.6118792                   0.488576         3.3075548       10        
+26: SIP_J2560_k2_exp_Kcycle_schwarz   2          2560           41                      25600   5.3577363    5.3577363    13     True              1    1.406613       0.6095136                   0.976012         4.3455424       10        
+27: SIP_J320_k3_exp_Kcycle_schwarz    3          320            41                      6400    1.6634091    1.6634091    18     True              1    0.6987078      0.2267716                   0.2545101        1.38862         20        
+28: SIP_J320_k2_exp_gmres_levelpmg    2          320            47                      3200    0.4916763    0.4916763    54     True              1    0.3598744      0.067121                    0.0719622        0.4008486       10        
+29: SIP_J320_k2_exp_Kcycle_schwarz    2          320            41                      3200    0.6622035    0.6622035    14     True              1    0.3590487      0.0660583                   0.142927         0.4995474       10        
+30: SIP_J20480_k2_classic_pardiso     2          20480          2                       204800  49.2819202   49.2819202   1      True              1    9.7880202      10.6683638                  2.9384369        46.2334335      10        
+31: SIP_J320_k5_classic_pardiso       5          320            2                       17920   2.990597     2.990597     1      True              1    6.0366697      3.1461943                   0.5990608        2.3632321       56        
+32: SIP_J2560_k3_classic_pardiso      3          2560           2                       51200   8.8077095    8.8077095    1      True              1    3.908375       1.7370425                   0.8253875        7.9537034       20        
+33: SIP_J320_k3_classic_pardiso       3          320            2                       6400    0.479898     0.479898     1      True              1    0.6805518      0.220814                    0.1055417        0.3562918       20        
+34: SIP_J2560_k2_classic_pardiso      2          2560           2                       25600   1.8802046    1.8802046    1      True              1    1.3975837      0.6065053                   0.4018343        1.4499697       10        
+35: SIP_J320_k2_classic_pardiso       2          320            2                       3200    0.204163     0.204163     1      True              1    0.3583903      0.0658237                   0.0527662        0.1336057       10        
 ==============
 **************
 ==============
@@ -177,8 +268,10 @@ for(int i=0;i<tmp.Length;i++){
 }
 DGdegrees;
 **************
-List of 1 instances of Int32 {
+List of 3 instances of Int32 {
   0: 2
+  1: 3
+  2: 5
 }
 ==============
 **************
@@ -200,8 +293,8 @@ List of 1 instances of Int32 {
 ==============
 int rows    = 3;
 int columns = 1;
-LinearSolverConfig.Code[] ignore_solvers = {LinearSolverConfig.Code.classic_pardiso, LinearSolverConfig.Code.classic_cg, LinearSolverConfig.Code.exp_softpcg_schwarz, LinearSolverConfig.Code.exp_direct_lapack};
-
+//LinearSolverCode[] ignore_solvers = {LinearSolverCode.classic_pardiso, LinearSolverCode.classic_cg, LinearSolverCode.exp_softpcg_schwarz, LinearSolverConfig.Code.exp_direct_lapack};
+LinearSolverCode[] ignore_solvers ={};
 Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
 int pDegree = 0;
 for(int iRow = 0; iRow < rows; iRow++) {
@@ -232,9 +325,9 @@ for(int iCol = 0; iCol < columns; iCol++) {
                 return;
            }
  
-           LinearSolverConfig.Code solver_name = (LinearSolverConfig.Code)Convert.ToInt32(Row["LinearSolver.SolverCode"]);
+           LinearSolverCode solver_name = (LinearSolverCode)Convert.ToInt32(Row["LinearSolver.SolverCode"]);
            //ignore the solvers specified in ingore_solvers
-           foreach(LinearSolverConfig.Code sc in ignore_solvers){
+           foreach(LinearSolverCode sc in ignore_solvers){
                if(solver_name==sc){
                    System.Console.WriteLine("skipped");
                    Nmn = null;
@@ -249,39 +342,23 @@ for(int iCol = 0; iCol < columns; iCol++) {
            //process the other solvers
            Fmt = new PlotFormat();
            switch(solver_name) {
-           case LinearSolverConfig.Code.classic_pardiso: 
+           case LinearSolverCode.classic_pardiso: 
                Nmn           = "Pardiso"; 
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
-           case LinearSolverConfig.Code.classic_mumps: 
+           case LinearSolverCode.classic_mumps: 
                Nmn           = "Mumps"; 
                Fmt.PointType = PointTypes.OpenUpperTriangle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
-           case LinearSolverConfig.Code.classic_cg: 
-               Nmn           = "CG"; 
+           case LinearSolverCode.exp_gmres_levelpmg: 
+               Nmn           = "gmres lvlpmg"; 
                Fmt.PointType = PointTypes.Asterisk;
                break;
-           //case LinearSolverConfig.Code.exp_direct: 
-           //    Fmt.PointType = PointTypes.OpenBox;
-           //    Nmn           = "Pardiso w Blk PC"; 
-           //    break;
-           case LinearSolverConfig.Code.exp_softpcg_schwarz: 
-               Nmn           = "Add Swz"; 
+           case LinearSolverCode.exp_Kcycle_schwarz: 
+               Nmn           = "kcycle schwarz"; 
                Fmt.PointType = PointTypes.LowerTriangle;
-               break;
-           case LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse: 
-               Nmn           = "Add Swz w Coarse";
-               Fmt.PointType = PointTypes.UpperTriangle;
-               break;
-           case LinearSolverConfig.Code.exp_softpcg_mg:
-               Nmn           = "Mult Gr w Blk Jac";
-               Fmt.PointType = PointTypes.Box;
-               break;
-           case LinearSolverConfig.Code.exp_direct_lapack: 
-               Nmn           = "LAPACK"; 
-               Fmt.PointType = PointTypes.Plus;
                break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
@@ -340,10 +417,45 @@ for(int iCol = 0; iCol < columns; iCol++) {
 //multiplots.AddDummyPlotsForLegend(3,0);
 multiplots.PlotNow()
 **************
-name is: classic_mumps
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_mg
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: classic_pardiso
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: classic_pardiso
+name is: classic_pardiso
+name is: classic_pardiso
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: classic_pardiso
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: exp_Kcycle_schwarz
+name is: classic_pardiso
+name is: classic_pardiso
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: classic_pardiso
+name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
+name is: classic_pardiso
+Using gnuplot: B:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"inside top left Left reverse 
+System.Drawing.Bitmap
 ==============
 LastError;
 **************
@@ -354,15 +466,14 @@ LastError;
 ==============
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
 **************
-Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: B:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"inside top left Left reverse 
+
 ==============
 //CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
 **************
 ==============
-CL.PlotNow();
 **************
-Unable to convert to png, 'magick.exe' exited with: -1073740791
-
 ==============
 LastError
 **************
@@ -372,4 +483,71 @@ CL.WriteMinimalCompileableExample(
    "ConstCoeffPoissonScaling.tex");
 **************
 ==============
-
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

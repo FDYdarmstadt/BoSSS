@@ -1468,7 +1468,7 @@ namespace BoSSS.Solution {
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                            //NoOfPartsPerProcess  = 2
+                            //NoOfPartsPerProcess = 2
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,

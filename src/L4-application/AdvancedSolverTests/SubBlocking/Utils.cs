@@ -195,10 +195,10 @@ namespace AdvancedSolverTests.SubBlocking
             var comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Rank(comm, out rank);
             double[] vec = new double[Length];
-            var rndgen = new Random();
+            var rndgen = new Random(rank);
             for (int i = 0; i < Length; i++) {
-                //vec[i] = rndgen.NextDouble() * (rank+1);
-                vec[i] = (rank + 1);
+                vec[i] = rndgen.NextDouble();
+                //vec[i] = (rank + 1);
                 Debug.Assert(vec[i]!=0);
             }
             return vec;

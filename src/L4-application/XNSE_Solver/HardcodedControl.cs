@@ -3837,7 +3837,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem =8, string _DbPath = null, int D = 3) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem =16, string _DbPath = null, int D = 3) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -4004,7 +4004,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.ComputeEnergyProperties = false;
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.000001;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
@@ -4013,7 +4013,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-            C.UseSchurBlockPrec = false;
+            C.UseSchurBlockPrec = true;
 
             C.LinearSolver.NoOfMultigridLevels = 2;
             C.LinearSolver.MaxSolverIterations = 1000;
@@ -4022,6 +4022,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.verbose = true;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;

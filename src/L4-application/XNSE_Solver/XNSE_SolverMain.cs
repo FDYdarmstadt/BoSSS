@@ -492,7 +492,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (this.Control.solveKineticEnergyEquation)
                 m_HMForder *= 2;
             
-            //m_HMForder *= 2; // may have an influence on no of iterations of lin sovler for small Operator-Matrix
+            //m_HMForder *= 2; // more points, better results you know ...                      
 
             // Create Spatial Operator
             // ======================= 
@@ -557,7 +557,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
             #endregion
-
+                                
         }
 
 
@@ -1245,6 +1245,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // Reference Solver for spectral-Analysis ...
                 m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
                 //WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+                OperatorAnalysis();
 #endif
                 // ================
                 // Good bye
@@ -1252,7 +1253,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
                     ExtVelMover.FinishTimeStep();
                 }
-
+                
 #if DEBUG
                 // in case of Debugging Save first Timesteps
                 //if(TimestepNo[1] <= 2) {
