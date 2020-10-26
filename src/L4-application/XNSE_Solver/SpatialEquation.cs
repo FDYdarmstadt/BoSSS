@@ -248,7 +248,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
             }
-            return VariableNames.Velocity0Vector(2).Cat(VariableNames.Velocity0MeanVector(2));
+            Console.WriteLine("Achtung ParameterHack!");
+            return VariableNames.Velocity0Vector(2).Cat(VariableNames.Velocity0MeanVector(2)).Cat(VariableNames.GravityVector(2));
         }
 
         string[] ExtractSpeciesFromEquations() {

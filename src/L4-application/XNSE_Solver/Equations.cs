@@ -72,7 +72,6 @@ namespace BoSSS.Application.XNSE_Solver
             // ================
             if (config.isViscous && !(muSpc == 0.0))
             {
-
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode)
                 {
@@ -156,6 +155,11 @@ namespace BoSSS.Application.XNSE_Solver
                         throw new NotImplementedException();
                 }
             }
+
+            //Gravity
+            // ================
+            var gravity = new Solution.XNSECommon.Operator.MultiPhaseSource(BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d], spcName);
+            AddComponent(gravity);
         }
 
         public override string SpeciesName => speciesName;
@@ -209,7 +213,7 @@ namespace BoSSS.Application.XNSE_Solver
 
                 speciesParam.SetMeanValue(speciesVelocity);
                 Console.WriteLine("Update Velocity0Mean");
-                Tecplot.PlotFields(new DGField[] { paramMeanVelocity, velocity }, "params-", 0, 3);
+                //Tecplot.PlotFields(new DGField[] { paramMeanVelocity, velocity }, "params-", 0, 3);
             }
             return Velocity0MeanUpdate;
         }

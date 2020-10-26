@@ -51,7 +51,6 @@ namespace BoSSS.Application.XNSE_Solver
                 equationSystem.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
                 equationSystem.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config));
                 equationSystem.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
-
             }
             equationSystem.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
             equationSystem.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
