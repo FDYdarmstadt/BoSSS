@@ -499,7 +499,7 @@ namespace BoSSS.Foundation {
         /// Set mean value to mean value of field
         /// </summary>
         /// <param name="field"></param>
-        public void SetMeanValue(DGField field, CellMask mask = null)
+        public void SetMeanValueTo(DGField field, CellMask mask = null)
         {
             if(field.GridDat.GridID != this.GridDat.GridID)
             {
