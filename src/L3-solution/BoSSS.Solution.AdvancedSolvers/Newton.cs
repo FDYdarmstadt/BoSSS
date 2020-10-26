@@ -138,34 +138,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Main solver routine
         /// </summary>
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
-            UseHomotopy = this.AbstractOperator.HomotopyUpdate != null;
-            Console.WriteLine("Hello from Newton! Homotopy is null? " + this.AbstractOperator.HomotopyUpdate != null);
+            double[] CurSol, // "current (approximate) solution", i.e.
+                CurRes; // residual associated with 'CurSol'
+            base.Init(SolutionVec, RHS, out CurSol, out CurRes);
+            EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
+            UseHomotopy = this.AbstractOperator.HomotopyUpdate.Count > 0;
             if (UseHomotopy)
-                HomotopyNewton(SolutionVec, RHS);
+                HomotopyNewton(SolutionVec, RHS, CurSol, CurRes);
             else
-                GlobalizedNewton(SolutionVec, RHS);
+                GlobalizedNewton(SolutionVec, RHS, CurSol, CurRes);
         }
 
 
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
+        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS, double[] CurSol, double[] CurRes) where S : IList<double> {
             using (var tr = new FuncTrace()) {
 
                 // Initialization
                 /// =============
 
-                double[] CurSol, // "current (approximate) solution", i.e.
-                    CurRes; // residual associated with 'CurSol'
+                // double[] CurSol, // "current (approximate) solution", i.e.
+                //     CurRes; // residual associated with 'CurSol'
 
 
-                using (new BlockTrace("Slv Init", tr)) {
-                    base.Init(SolutionVec, RHS, out CurSol, out CurRes);
-                };
+                // using (new BlockTrace("Slv Init", tr)) {
+                //     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
+                // };
 
-                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
-                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
+                // this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
+                // EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
 
                 // intial residual evaluation
                 double norm_CurRes = CurRes.MPI_L2Norm();
@@ -195,7 +198,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Main solver routine with homotopy;
         /// </summary>
-        public void HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
+        public void HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS, double[] CurSol, double[] CurRes) where S : IList<double> {
 
             //SolverDriver_original(SolutionVec, RHS);
             //return;
@@ -208,16 +211,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-                double[] CurSol, // "current (approximate) solution", i.e.
-                    CurRes; // residual associated with 'CurSol'
+                // double[] CurSol, // "current (approximate) solution", i.e.
+                //     CurRes; // residual associated with 'CurSol'
 
 
-                using (new BlockTrace("Slv Init", tr)) {
-                    base.Init(SolutionVec, RHS, out CurSol, out CurRes);
-                };
+                // using (new BlockTrace("Slv Init", tr)) {
+                //     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
+                // };
 
-                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol); // CurSol -> SolutionVec
-                EvaluateOperator(1, SolutionVec.Fields, CurRes, 1.0); // seems redundant, but don't dare to remove!
+                // this.CurrentLin.TransformSolFrom(SolutionVec, CurSol); // CurSol -> SolutionVec
+                // EvaluateOperator(1, SolutionVec.Fields, CurRes, 1.0); // seems redundant, but don't dare to remove!
 
                 double HomotopyParameter = 0.0;
                 EvaluateOperator(1, SolutionVec.Fields, CurRes, HomotopyParameter);
