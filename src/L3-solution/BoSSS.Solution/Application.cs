@@ -1333,7 +1333,7 @@ namespace BoSSS.Solution {
 
                 // set deploy directory path
                 string path = typeof(BoSSS.Solution.Application).Assembly.Location;
-                string outpath = path.Substring(0, path.Length - "BoSSS.Solution.dll".Length - 1); // skip "\BoSSS.Solution.dll" at end of path
+                string outpath = Path.GetDirectoryName(path); // skip "\BoSSS.Solution.dll" at end of path
 
                 CurrentSessionInfo.DeployPath = outpath;
 
@@ -2151,7 +2151,6 @@ namespace BoSSS.Solution {
                     // ==============================================================
 
                     //int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
-
 
                     int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
 

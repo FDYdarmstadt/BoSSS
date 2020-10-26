@@ -176,6 +176,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
 
+                if(cache != null)
+                    return cache;
+
                 var MgMap = op.Mapping;
 
                 //if(!M.RowPartitioning.Equals(MgMap.Partitioning))
@@ -263,9 +266,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(_Blocks.Count < NoOfPartsPerProcess)
                         Console.WriteLine("METIS WARNING: requested " + NoOfPartsPerProcess + " blocks, but got " + _Blocks.Count);
 
-                    return _Blocks.ToArray();
+                    cache = _Blocks.ToArray();
+                    Console.WriteLine("MetisBlocking Testcode active !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    return cache;
                 }
             }
+
+            List<int>[] cache;
 
 
             /// <summary>
@@ -277,6 +284,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         public class SimpleBlocking : BlockingStrategy {
 
             /// <summary>
@@ -383,7 +393,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set { pLow = value; }
         }
 
-        public bool AssignXdGCellsToLowBlocks {
+        public bool CoarseSolveOfCutcells {
             get;
             set;
         }
@@ -605,18 +615,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var lowSel = new SubBlockSelector(op.Mapping);
                         lowSel.CellSelector(bc.ToList(), false);
                         lowSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? pLow : pLow - 1));
-                        if (AssignXdGCellsToLowBlocks) ModifyLowSelector(lowSel, op);
+                        if (CoarseSolveOfCutcells) ModifyLowSelector(lowSel, op);
                         var HiSel = new SubBlockSelector(op.Mapping);
                         HiSel.CellSelector(bc.ToList(), false);
                         HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? pLow : pLow - 1));
-                        if (AssignXdGCellsToLowBlocks) ModifyHighSelector(HiSel, op);
+                        if (CoarseSolveOfCutcells) ModifyHighSelector(HiSel, op);
 
                         //generate Blockmasking
                         var lowMask = new BlockMask(lowSel, ExtRows);
                         Debug.Assert(lowMask != null);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         var HiMask = new BlockMask(HiSel, ExtRows);
-                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length || AssignXdGCellsToLowBlocks);
+                        Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length || CoarseSolveOfCutcells);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         BMhiBlocks[iPart] = HiMask;
                         BMloBlocks[iPart] = lowMask;
@@ -823,17 +833,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate CoarseSolver;
 
 
+        /// <summary>
+        /// If the <see cref="CoarseSolver"/> is specified, setting this to true
+        /// causes the residual to be re-evaluated before the coarse correction; in this fashion, the Schwarz method can be written multiplicative.
+        /// </summary>
         public bool CoarseSolverIsMultiplicative = true;
 
         int NoIter = 0;
-
-
-        //static void SingleFilter(double[] V) {
-        //    for(int i = 0; i < V.Length; i++) {
-        //        float vi = (float)(V[i]);
-        //        V[i] = vi;
-        //    }
-        //}
 
         private double[] Xdummy, Resdummy;
 
@@ -953,7 +959,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 BMfullBlocks[iPart].AccSubVec(bi,Resdummy);
 
                                 // solve the high-order system
-                                var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
+                                MultidimensionalArray[] HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
                                 int NoCells = HiModeSolvers.Length;
 
                                 double[] xiHi = null;
@@ -1029,12 +1035,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// <see cref="ISolverSmootherTemplate.ThisLevelIterations"/>
+        /// </summary>
         public int ThisLevelIterations {
             get {
                 return this.NoIter;
             }
         }
 
+        /// <summary>
+        /// <see cref="ISolverSmootherTemplate.Converged"/>
+        /// </summary>
         public bool Converged {
             get {
                 return m_Converged;
@@ -1043,6 +1055,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool m_Converged = false;
 
+        /// <summary>
+        /// <see cref="ISolverSmootherTemplate.ResetStat"/> 
+        /// </summary>
         public void ResetStat() {
             this.m_Converged = false;
             this.NoIter = 0;

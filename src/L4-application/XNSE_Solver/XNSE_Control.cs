@@ -66,6 +66,13 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// default: Symmetric_diag for velocity and IdMass for pressure block preconditioning,
+        /// if true Schur complement is used instead.
+        /// </summary>
+        [DataMember]
+        public bool UseSchurBlockPrec = false;
+
+        /// <summary>
         /// Type of <see cref="XNSE_SolverMain"/>.
         /// </summary>
         public override Type GetSolverType() {
@@ -84,6 +91,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+            if(VelDegree < 1)
+                throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
+            
             FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE

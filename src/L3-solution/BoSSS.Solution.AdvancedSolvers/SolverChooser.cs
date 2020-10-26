@@ -803,9 +803,9 @@ namespace BoSSS.Solution {
                         catch (Exception e) {
                             Console.WriteLine("WARNING: internal error occured during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
                             return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-                        }
-                    }
-                }
+        }
+    }
+}
             }
 
             return LocalDOF;
@@ -1435,6 +1435,9 @@ namespace BoSSS.Solution {
                 if (SizeFraction < 1 && iLevel == 0)
                     Console.WriteLine("WARNING: Schwarzblock size ({0}) exceeds local system size ({1}); \n resetting local number of Schwarzblocks to 1.", SchwarzblockSize, _LocalDOF[iLevel]);
                 int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Ceiling(SizeFraction));
+
+                Console.WriteLine("KcycleMultiSchwarz: Testcode active !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                LocalNoOfSchwarzBlocks = 16;
                 int TotalNoOfSchwarzBlocks = LocalNoOfSchwarzBlocks.MPISum();
                 //SetQuery("LocalSblocks at Lvl" + iLevel, LocalNoOfSchwarzBlocks, true);
                 SetQuery("GlobalSblocks at Lvl" + iLevel, TotalNoOfSchwarzBlocks, true);
@@ -1473,14 +1476,27 @@ namespace BoSSS.Solution {
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true,
-                        AssignXdGCellsToLowBlocks = true,
-                    }; 
-                    
-                    
-                    if (iLevel == 0) SetQuery("XdgCellsToLowBlock", ((Schwarz)smoother1).AssignXdGCellsToLowBlocks ? 1 : 0, true);
+                        CoarseSolveOfCutcells = true,
+                    };
+
+                    var smoother2 = new Schwarz() {
+                        FixedNoOfIterations = 1,
+                        CoarseSolver = null,
+                        m_BlockingStrategy = smoother1.m_BlockingStrategy,
+                        Overlap = 1, // overlap seems to help; more overlap seems to help more
+                        EnableOverlapScaling = true,
+                        UsePMGinBlocks = false,
+                        CoarseSolveOfCutcells = true,
+                    };
+
+
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
+                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
+                        DebugSmoother = smoother2,
                         PostSmoother = smoother1,
                         m_omega = 1,
                     };

@@ -28,6 +28,9 @@ using System.IO;
 using System.Diagnostics;
 using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -44,12 +47,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public static Plot2Ddata WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
             int L = mgOperator.BaseGridProblemMapping.LocalLength;
 
+            Console.WriteLine($"Waterfall analysis for {mgOperator.GridData.CellPartitioning.TotalLength} cells, {L} DOFs...");
+
             var RHS = new double[L];
             var exSol = new double[L];
 
             ConvergenceObserver co = new ConvergenceObserver(mgOperator, MassMatrix, exSol);
             var bkup = linearSolver.IterationCallback;
             linearSolver.IterationCallback = co.IterationCallback;
+
+            var pc = linearSolver as IProgrammableTermination;
+            var termBkup = pc?.TerminationCriterion;
+            if(pc != null) {
+                pc.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                        return (R_l2/R0_l2 > 1e-8) && (iter < 500);
+                    };
+            }
             
             // use a random init for intial guess.
             double[] x0 = GenericBlas.RandomVec(L, 0);
@@ -60,7 +73,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // reset and return
             linearSolver.IterationCallback = bkup;
+            if(termBkup != null) {
+                pc.TerminationCriterion = termBkup;
+            }
             //var p = co.PlotIterationTrend(true, false, true, true);
+
+            double resReduction = Math.Pow(co.LastResidualNorm / co.Iter0ResidualNorm, 1.0 / co.NumberOfIterations);
+            double errReduction = Math.Pow(co.LastSolNorm / co.Iter0SolNorm, 1.0 / co.NumberOfIterations);
+
+            Console.WriteLine("Residual reduction:   " + (co.LastResidualNorm / co.Iter0ResidualNorm));
+            Console.WriteLine("Error    reduction:   " + (co.LastSolNorm / co.Iter0SolNorm));
+            Console.WriteLine("Residual reduction per iteration:   " + resReduction);
+            Console.WriteLine("Error    reduction per iteration:   " + errReduction);
+            
+            
             var p = co.Waterfall(true, 100);
             return p;
         }
@@ -238,9 +264,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
                 var PlotRow = WaterfallData[iIter];
-                var XAxis = PlotRow.Length.ForLoop(i => i + 1.0);
-
-                var g = new Plot2Ddata.XYvalues("iter"  + iIter, XAxis, PlotRow);
+                
+                var g = new Plot2Ddata.XYvalues("iter"  + iIter, xCoords, PlotRow);
                 
                 Ret.AddDataGroup(g);
                     
@@ -469,6 +494,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public string TecplotOut = null;
 
         /// <summary>
+        /// L2 norm of residual in last/most recent iteration
+        /// </summary>
+        public double LastResidualNorm;
+
+        /// <summary>
+        /// L2 norm of solution (= error against 0 RHS) in last/most recent iteration
+        /// </summary>
+        public double LastSolNorm;
+
+
+        /// <summary>
+        /// L2 norm of residual in first iteration
+        /// </summary>
+        public double Iter0ResidualNorm;
+
+        /// <summary>
+        /// L2 norm of solution (= error against 0 RHS) in first recent iteration
+        /// </summary>
+        public double Iter0SolNorm;
+
+
+        private bool firstLog = false;
+
+        /// <summary>
+        /// Highest iteration number
+        /// </summary>
+        public int NumberOfIterations = 0;
+
+        /// <summary>
         /// Callback routine, see <see cref="ISolverWithCallback.IterationCallback"/> or <see cref="NonlinearSolver.IterationCallback"/>.
         /// </summary>
         public void IterationCallback(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
@@ -476,6 +530,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentException();
             if (rI.Length != SolverOperator.Mapping.LocalLength)
                 throw new ArgumentException();
+
+            NumberOfIterations = Math.Max(NumberOfIterations, iter);
 
             int Lorg = SolverOperator.BaseGridProblemMapping.LocalLength;
 
@@ -515,6 +571,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
             double l2_ERR = Err_Org.L2NormPow2().MPISum().Sqrt();
             Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}", iter, l2_RES, l2_ERR);
+
+            LastResidualNorm = l2_RES;
+            LastSolNorm = l2_ERR;
+            if(firstLog == false) {
+                Iter0ResidualNorm = l2_RES;
+                Iter0SolNorm = l2_ERR;
+                firstLog = true;
+            }
 
 
             // decompose error and residual into orthonormal vectors
@@ -718,6 +782,117 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             return new CoordinateVector(Fields);
+        }
+
+        // extract the Fields from the solution, Resample them equally spaced and ready to use in an fft
+        public void Resample(int iterIndex, double[] currentSol, string component) {
+            var Mgop = this.SolverOperator;
+
+            if (Mgop.GridData.SpatialDimension == 2 && Mgop.LevelIndex == 0) {
+                MultidimensionalArray SamplePoints;
+
+                GridData GD = (GridData)Mgop.Mapping.AggGrid.AncestorGrid;
+
+                BoundingBox BB = GD.GlobalBoundingBox;
+
+                double xDist = BB.Max[0] - BB.Min[0];
+                double yDist = BB.Max[1] - BB.Min[1];
+                double aspectRatio = xDist / yDist;
+
+                MGViz viz = new MGViz(Mgop);
+                DGField[] Fields = viz.ProlongateToDg(currentSol, "Error");
+
+                for (int p = 0; p < Fields.Length; p++) {
+                    var field = Fields[p];
+
+                    int DOF = field.DOFLocal;
+                    double N = Math.Sqrt(DOF);
+                    int Nx = (int)Math.Round(Math.Sqrt(aspectRatio) * N);
+                    int Ny = (int)Math.Round(1 / Math.Sqrt(aspectRatio) * N);
+
+                    // make sure we have always uneven number of frequencys
+                    if(Nx % 2 == 0) Nx++;
+                    if (Ny % 2 == 0) Ny++;
+
+                    SamplePoints = MultidimensionalArray.Create(Ny, Nx);
+
+                    for (int i = 0; i < Nx; i++) {
+                        MultidimensionalArray points = MultidimensionalArray.Create(Ny, 2);
+
+                        for (int k = 0; k < Ny; k++) {
+                            points[k, 0] = BB.Min[0] + (i + 1) * xDist / (Nx + 1);
+                            points[k, 1] = BB.Min[1] + (k + 1) * yDist / (Ny + 1);
+                        }
+
+                        List<DGField> fields = new List<DGField>();
+                        fields.Add(field);
+
+                        FieldEvaluation FE = new FieldEvaluation(GD);
+
+                        MultidimensionalArray Result = MultidimensionalArray.Create(Ny, 1);
+
+                        FE.Evaluate(1.0, fields, points, 1.0, Result);
+
+                        //points.SaveToTextFile("points_of_"+i+"th_col_"+ p + "th_field");
+
+                        SamplePoints.ExtractSubArrayShallow(-1, i).Acc(1.0, Result.ExtractSubArrayShallow(-1, 0));
+                    }
+
+                    SamplePoints.SaveToTextFile("ResampleFFT_lvl" + Mgop.LevelIndex + "_" + iterIndex + "_" + component + "_" + field.Identification + ".txt");
+                }
+
+            }
+            if (Mgop.GridData.SpatialDimension == 3 && Mgop.LevelIndex == 0) {
+                MultidimensionalArray SamplePoints;
+
+                GridData GD = (GridData)Mgop.Mapping.AggGrid.AncestorGrid;
+
+                BoundingBox BB = GD.GlobalBoundingBox;
+
+                double xDist = BB.Max[0] - BB.Min[0];
+                double yDist = BB.Max[1] - BB.Min[1];
+                double zDist = BB.Max[2] - BB.Min[2];
+
+                MGViz viz = new MGViz(Mgop);
+                DGField[] Fields = viz.ProlongateToDg(currentSol, "Error");
+                double xy_ratio = yDist / xDist;
+                double xz_ratio = zDist / xDist;
+
+                for (int p = 0; p < Fields.Length; p++) {
+                    var field = Fields[p];
+
+                    int DOF = field.DOFLocal;
+                    int Nx = (int)Math.Round(Math.Sqrt(1 / xy_ratio * 1 / xz_ratio * DOF));
+                    int Ny = (int)Math.Round(Nx * xy_ratio * DOF);
+                    int Nz = (int)Math.Round(Nx * xz_ratio * DOF);
+
+                    SamplePoints = MultidimensionalArray.Create(Nx, Ny, Nz);
+
+                    for (int x = 0; x < Nx; x++) {
+                        for (int y = 0; y < Ny; y++) {
+                            MultidimensionalArray points = MultidimensionalArray.Create(Nz, 3);
+                            for (int z = 0; z < Nz; z++) {
+                                points[z, 0] = BB.Min[0] + (x + 1) * xDist / (Nx + 1);
+                                points[z, 1] = BB.Min[1] + (y + 1) * yDist / (Ny + 1);
+                                points[z, 2] = BB.Min[2] + (z + 1) * yDist / (Nz + 1);
+                            }
+
+                            List<DGField> fields = new List<DGField>();
+                            fields.Add(field);
+
+                            FieldEvaluation FE = new FieldEvaluation(GD);
+
+                            MultidimensionalArray Result = MultidimensionalArray.Create(Nz, 1);
+
+                            FE.Evaluate(1.0, fields, points, 1.0, Result);
+
+                            SamplePoints.ExtractSubArrayShallow(x, y, -1).Acc(1.0, Result.ExtractSubArrayShallow(-1, 0));
+                        }
+                    }
+                    // Entweder neues Format nötig oder Frickel-Lsg alias wie hoch ist der Leidensdruck?
+                    //SamplePoints.SaveToTextFile("ResampleFFT_lvl" + Mgop.LevelIndex + "_" + iterIndex + "_" + component + "_" + field.Identification + ".txt");
+                }
+            }
         }
     }
 }

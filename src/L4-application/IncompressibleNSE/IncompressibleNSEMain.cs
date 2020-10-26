@@ -178,6 +178,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             return op;
         }
 
+
         /// <summary>
         /// Declares Velocity and Pressure as those variables that we want to solve for
         /// </summary>

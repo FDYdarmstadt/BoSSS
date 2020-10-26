@@ -316,8 +316,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Get Array of diagonal Cellblocks covert by <see cref="BlockMask"/>. With the ignore flags,
         /// coupling blocks can be left out (e.g. blocks containing level-set).
-        /// index i : block of ith cell within mask (note: if some cell selection specified, i corresponds not to local cell index)
-        /// content : matrix corresponding to masking
+        /// - index i : block of ith cell within mask (note: if some cell selection specified, i corresponds not to local cell index)
+        /// - content : matrix corresponding to masking
         /// </summary>
         /// <param name="source">matrix to apply masking to</param>
         /// <param name="ignoreCellCoupling">flag to ignore cell coupling</param>
@@ -523,7 +523,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             if (m_includeExternalCells) {
                 if (fullVector.Count() != GetLocalandExternalDOF(m_map))
-                    throw new ArgumentException("Length of targetVector not equal Length of original");
+                //    throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (subVector.Count() != BMLoc.LocalDOF + BMExt.LocalDOF)
                     throw new ArgumentException("accVector length is not equal to length of mask");
                 fullVector.AccV(1.0, subVector, BMLoc.m_LocalMask, default(int[]));
