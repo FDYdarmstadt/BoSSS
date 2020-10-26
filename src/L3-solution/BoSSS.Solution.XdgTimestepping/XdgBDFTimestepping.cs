@@ -1644,8 +1644,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // init linear solver
 
 
-                        //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
-                        //p.PlotInteractive();
+                        var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
+                        p.PlotInteractive();
 
                         using (new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);

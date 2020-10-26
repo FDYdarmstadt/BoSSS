@@ -1447,6 +1447,7 @@ namespace BoSSS.Solution {
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect |= TotalNoOfSchwarzBlocks < GetMPIsize;
 
+               
                 if (useDirect && iLevel == 0)
                     Console.WriteLine("WARNING: You are using the direct solver. Recommendations: \n\tRaise the Number of Multigridlevels\n\tLower the target blocksize");
 
@@ -1485,7 +1486,9 @@ namespace BoSSS.Solution {
                     };
 
                     if (iLevel > 0) {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 3;
+                    } else {
+                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 50;
                     }
 
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =

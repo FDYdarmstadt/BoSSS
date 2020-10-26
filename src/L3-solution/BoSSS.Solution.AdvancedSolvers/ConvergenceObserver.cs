@@ -52,11 +52,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             linearSolver.IterationCallback = co.IterationCallback;
             
             // use a random init for intial guess.
-            Random rnd = new Random();
-            double[] x0 = new double[L];
-            for(int l = 0; l < L; l++) {
-                x0[l] = rnd.NextDouble();
-            }
+            double[] x0 = GenericBlas.RandomVec(L, 0);
 
             // execute solver 
             linearSolver.Init(mgOperator);

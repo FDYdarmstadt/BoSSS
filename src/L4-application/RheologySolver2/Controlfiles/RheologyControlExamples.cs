@@ -399,10 +399,10 @@ namespace BoSSS.Application.Rheology {
                 (@"c:\Users\flori\default_bosss_db", "stormbreaker")     // Florian's new Laptop
             };
 
-            C.savetodb = false;
+            C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
-
+            C.SessionName = "with continuation";
 
             // stationary calculation
             // ======================

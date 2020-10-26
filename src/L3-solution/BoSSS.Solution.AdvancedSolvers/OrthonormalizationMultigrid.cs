@@ -139,6 +139,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate PreSmoother;
         public ISolverSmootherTemplate PostSmoother;
         public int m_omega = 1;
+        
         public int MaxKrylovDim = int.MaxValue;
 
         public bool SpectralAnalysis;
@@ -291,7 +292,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //double NormAfter = Mxx.MPI_L2Norm();
                 //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
 
-                double gamma = 1.0 / Mxx.L2NormPow2().MPISum().Sqrt();
+                double gamma = 1.0 / Mxx.MPI_L2Norm();
                 //double gamma = 1.0 / BLAS.dnrm2(L, Mxx, 1).Pow2().MPISum().Sqrt();
                 BLAS.dscal(L, gamma, Mxx, 1);
                 BLAS.dscal(L, gamma, X, 1);
@@ -302,6 +303,61 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MxxHistory.Add(Mxx);
             X = null;
         }
+
+        double __MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, bool diagnosis = false) {
+            using (new FuncTrace()) {
+                Debug.Assert(SolHistory.Count == MxxHistory.Count);
+                Debug.Assert(outX.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(Sol0.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(Res0.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(outRes.Length == m_MgOperator.Mapping.LocalLength);
+                
+                int KrylovDim = SolHistory.Count;
+                int L = outX.Length;
+
+                /*
+                double[] alpha = new double[KrylovDim];
+                for (int i = 0; i < KrylovDim; i++) {
+                    alpha[i] = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1);
+                }
+                alpha = alpha.MPISum();
+                for(int i = 0; i < KrylovDim; i++) {
+                    if(alpha[i].IsNaNorInf())
+                        throw new ArithmeticException("Numerical breakdown in residual minimization.");
+                }
+
+
+                Array.Copy(Sol0, outX, L);
+                Array.Copy(Res0, outRes, L);
+                for (int i = 0; i < KrylovDim; i++) {
+                    //outX.AccV(alpha[i], SolHistory[i]);
+                    //outRes.AccV(-alpha[i], MxxHistory[i]);
+                    BLAS.daxpy(L, alpha[i], SolHistory[i], 1, outX, 1);
+                    BLAS.daxpy(L, -alpha[i], MxxHistory[i], 1, outRes, 1);
+                }*/
+
+                int i = KrylovDim - 1;
+                double alpha_i = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1).MPISum();
+                BLAS.daxpy(L, alpha_i, SolHistory[i], 1, outX, 1);
+                BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1);
+
+
+
+
+                double ResNorm =  BLAS.dnrm2(L, outRes, 1).Pow2().MPISum().Sqrt();
+
+               
+
+                return ResNorm;
+
+                /* we cannot do the following 
+                // since the 'MxxHistory' vectors form an orthonormal system,
+                // the L2-norm is the L2-Norm of the 'alpha'-coordinates (Parceval's equality)
+                return alpha.L2Norm();            
+                */
+            }
+        }
+
 
         double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, bool diagnosis = false) {
             using (new FuncTrace()) {
@@ -314,12 +370,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int KrylovDim = SolHistory.Count;
                 int L = outX.Length;
 
+                
                 double[] alpha = new double[KrylovDim];
                 for (int i = 0; i < KrylovDim; i++) {
-                    //alpha[i] = GenericBlas.InnerProd(MxxHistory[i], Res0).MPISum();
                     alpha[i] = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1);
                 }
                 alpha = alpha.MPISum();
+                for(int i = 0; i < KrylovDim; i++) {
+                    if(alpha[i].IsNaNorInf())
+                        throw new ArithmeticException("Numerical breakdown in residual minimization.");
+                }
 
 
                 Array.Copy(Sol0, outX, L);
@@ -331,10 +391,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     BLAS.daxpy(L, -alpha[i], MxxHistory[i], 1, outRes, 1);
                 }
 
-                double ResNorm =  BLAS.dnrm2(L, outRes, 1).Pow2().MPISum().Sqrt();
 
-                //Console.WriteLine("OrthonormalizationMultigrid: minimizing ofer " + KrylovDim + " vectors");
 
+                double ResNorm = outRes.MPI_L2Norm();
+
+
+                Sol0.SetV(outX);
+                Res0.SetV(outRes);
+
+
+                if(KrylovDim > MaxKrylovDim) {
+                    int leastSignificantVec = alpha.Select(x => x.Abs()).IndexOfMin();
+                    MxxHistory.RemoveAt(leastSignificantVec);
+                    SolHistory.RemoveAt(leastSignificantVec);
+                }
+
+               
 
                 return ResNorm;
 
@@ -345,6 +417,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 */
             }
         }
+
+
+
 
         ISparseSolver PlottiesFullsolver = null;
 
@@ -562,6 +637,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(this.m_MgOperator.LevelIndex == 0 && iIter == 1 && SpectralAnalysis) {
                         Resample(0, X, this.m_MgOperator, "initial");
                     }
+                    if(iIter > 50)
+                        break;
+
+
+                    //// residual update to correct round-off errors here and then
+                    //if(iIter % 20 == 0)
+                    //    Residual(rl, X, B);
+
 
                     // pre-smoother
                     // ------------
@@ -636,7 +719,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             } else {
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 // coarse grid solver defined on the SAME MESH LEVEL:
-                                // performs (probabaly) its own restriction/prolongation
+                                // performs (probably) its own restriction/prolongation
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                                 // Berechnung der Grobgitterkorrektur
@@ -679,13 +762,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         } 
 #endif
                         // compute correction
-                        double[] PreCorr = new double[L];
-                        PostSmoother.Solve(PreCorr, rl); // Vorglättung
+                        double[] PostCorr = new double[L];
+                        PostSmoother.Solve(PostCorr, rl); // Vorglättung
                         if(Corr != null)
-                            Corr.SetV(PreCorr);
+                            Corr.SetV(PostCorr);
 
                         // orthonormalization and residual minimization
-                        AddSol(ref PreCorr);
+                        AddSol(ref PostCorr);
                         if(Xprev != null)
                             Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
@@ -719,6 +802,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
 
         /// <summary>
         /// the multigrid iterations for a linear problem (experimental version)
@@ -768,46 +852,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // Residual of initial solution guess
                 double[] Res = new double[L];
                 Residual(Res, X, B);
-
-
-                /*
-                if(this.m_MgOperator.LevelIndex == 0) {
-                    var op = m_MgOperator.CoarserLevel;
-
-                    double[] randCoarse = new double[Lc];
-                    Random rnd = new Random(0);
-                    for(int i = 0; i < Lc; i++)
-                        randCoarse[i] = rnd.NextDouble();
-
-                    double[] randFine = new double[L];
-                    op.Prolongate(1.0, randFine, 0.0, randCoarse);
-
-                    double[] randCoarse_PR = new double[Lc];
-                    op.Restrict(randFine, randCoarse_PR);
-
-                    double PR_factor = randCoarse_PR.MPI_InnerProd(randCoarse) / randCoarse.MPI_L2NormPow2();
-
-                    double[] PR_perEnty = new double[Lc];
-                    for(int i = 0; i < Lc; i++)
-                        PR_perEnty[i] = randCoarse_PR[i] / randCoarse[i];
-
-
-                    double[] randFine_RP = new double[L];
-                    op.Prolongate(1.0, randFine_RP, 0.0, randCoarse_PR);
-
-
-                    double RP_factor = randFine_RP.MPI_InnerProd(randFine) / randFine.MPI_L2NormPow2();
-
-
-                    double[] RP_perEnty = new double[L];
-                    for(int i = 0; i < L; i++)
-                        RP_perEnty[i] = randFine_RP[i] / randFine[i];
-
-
-
-                    Console.WriteLine("oida");
-                }
-                */
+                          
                                                
 
                 // solution loop
@@ -923,7 +968,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-
+        */
 
 
         /// <summary>

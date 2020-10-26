@@ -602,6 +602,19 @@ namespace PublicTestRunner {
                         var ll = UpdateFinishedJobs();
                         RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
                         Console.WriteLine("Remaining minutes until timeout: " + Math.Round(RestTime / 60.0));
+                        Console.Write("     Waiting for: ");
+                        int i = 0;
+                        foreach(var j in AllOpenJobs) {
+                            Console.Write(j.job.Name);
+                            Console.Write(" ");
+                            i++;
+                            if(i >= 8)
+                                break;
+                        }
+                        if(i < AllOpenJobs.Count)
+                            Console.WriteLine($"... (and {AllOpenJobs.Count - i} more.)");
+                        else
+                            Console.WriteLine();
                     }
                 }
 
