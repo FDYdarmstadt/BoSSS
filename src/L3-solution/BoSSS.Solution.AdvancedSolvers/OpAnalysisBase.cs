@@ -189,7 +189,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     //throw new Exception("The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!"); 
                     Console.WriteLine("======================================================");
                     Console.WriteLine("WARNING!!!!!!! The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!");
-                    Console.WriteLine("This means that the system doesnt have a solution!");
+                    Console.WriteLine("This means that the system does not have a solution!");
                 }
 
                 if (rnkAugmentedMtx == rnkMtx)
@@ -226,7 +226,6 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// returns the condition number of the full matrix using MUMPS;
         /// Note: 
         /// </summary>
-        
         public double CondNumMUMPS() {
             using(new FuncTrace()) {
                 int[] DepVars = this.VarGroup;
