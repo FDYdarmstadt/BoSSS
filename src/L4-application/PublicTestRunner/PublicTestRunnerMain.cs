@@ -219,10 +219,11 @@ namespace PublicTestRunner {
                 }
             }
 
-
-
             return R.ToArray();
         }
+
+        //static bool IsReleaseOnlyAssembly
+
 
         static (Assembly Asbly, int NoOfProcs)[] GetAllMpiAssemblies() {
             var R = new List<(Assembly Asbly, int NoOfProcs)>();
@@ -404,6 +405,125 @@ namespace PublicTestRunner {
             return false;
         }
 
+        static public int BuildYaml() {
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
+            if (MpiSize != 1) {
+                throw new NotSupportedException("yaml subprogram must be executed serially");
+            }
+
+            using(var tr = new FuncTrace()) {
+
+                // ===================================
+                // phase 1: submit jobs
+                // ===================================
+
+
+           
+                var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
+                {
+                    var assln = GetAllAssemblies();
+                    if(assln != null) {
+                        foreach(var a in assln) {
+                            if(FilterAssembly(a, null)) {
+                                var allTst4Assi = GetTestsInAssembly(a);
+                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                                }
+                            }
+                        }
+                    }
+                }
+                {
+                    var ParAssln = GetAllMpiAssemblies();
+                    if(ParAssln != null) {
+                        foreach(var TT in ParAssln) {
+                            if(FilterAssembly(TT.Asbly, null)) {
+
+                                var a = TT.Asbly;
+                                var allTst4Assi = GetTestsInAssembly(a);
+
+                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
+                int cnt = 0;
+                foreach(var t in allTests) {
+                    cnt++;
+                    Console.WriteLine($"  #{cnt}: {t.testname}");
+                    Console.WriteLine($"     {t.shortname}");
+                    Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
+                }
+
+                Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
+
+                string yamlName;
+                 
+#if DEBUG
+                yamlName = "debug-jobs.yml";
+#else
+                yamlName = "release-jobs.yml";
+#endif
+
+
+                using(var YAML = new StreamWriter(yamlName)) {
+
+                    YAML.WriteLine("################################################################################");
+                    YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
+                    YAML.WriteLine("# any modification might get over-written");
+                    YAML.WriteLine($"# created: {DateTime.Now}");
+                    YAML.WriteLine($"# user:    {System.Environment.UserName}");
+                    YAML.WriteLine($"# system:  {System.Environment.MachineName}");
+                    YAML.WriteLine("################################################################################");
+
+                    cnt = 0;
+                    var checkResFileName = new HashSet<string>();
+
+                    foreach(var t in allTests) {
+
+                        if(t.testname.Contains("TutorialTest")) {
+                            Console.WriteLine("skipping: " + t.testname);
+                            continue;
+                        }
+
+
+
+                        YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
+#if DEBUG
+                        YAML.WriteLine("   extends: .DebugTest");
+#else
+                        YAML.WriteLine("   extends: .ReleaseTest");
+#endif
+                        if(t.NoOfProcs == 1) 
+                            YAML.WriteLine("   stage: test");
+                        else
+                            YAML.WriteLine("   stage: test parallel");
+                        YAML.WriteLine("   script:");
+                        if(t.NoOfProcs == 1) 
+                            YAML.WriteLine($"     - ./InternalTestRunner.exe nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
+                        else
+                            YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./InternalTestRunner.exe nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
+                        if(t.NoOfProcs > 1) {
+                            YAML.WriteLine("   tags:");
+                            YAML.WriteLine($"    - {t.NoOfProcs}cores");
+                        }
+                        YAML.WriteLine();
+
+                    }
+
+                }
+                
+            }
+
+            return 0;
+        }
+
+
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
@@ -422,9 +542,6 @@ namespace PublicTestRunner {
                 // ===================================
                 // phase 1: submit jobs
                 // ===================================
-
-
-
 
                 InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
@@ -967,6 +1084,7 @@ namespace PublicTestRunner {
             Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
             Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
             Console.WriteLine("         help          : prints this message.");
+            Console.WriteLine("         yaml          : write 'debug.yml' or 'release.yml' file for Gitlab.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
 
@@ -1005,7 +1123,7 @@ namespace PublicTestRunner {
             ll.Add(new MyListener());
 
 
-            if(args.Length < 2) {
+            if(args.Length < 1) {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
@@ -1017,6 +1135,11 @@ namespace PublicTestRunner {
             int ret = -1;
             switch(args[0]) {
                 case "nunit3":
+                if(args.Length < 2) {
+                    Console.WriteLine("Insufficient number of arguments.");
+                    PrintMainUsage();
+                    return -7777;
+                }
                 ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
                 break;
 
@@ -1039,7 +1162,7 @@ namespace PublicTestRunner {
                 discoverRelease = runRelease;
 
                 int iQueue = 1;
-                string filter = args[1];
+                string filter = args.Length > 1 ? args[1] : "*";
                 if(args.Length == 3) {
                     Console.WriteLine("arg 2 is:" + args[2]);
                     if(args[2].StartsWith("queue#")) {
@@ -1061,6 +1184,15 @@ namespace PublicTestRunner {
                 }
 
                 ret = JobManagerRun(filter, iQueue);
+                break;
+
+                case "yaml":
+#if DEBUG
+                discoverRelease = false;
+#else
+                discoverRelease = true;
+#endif
+                ret = BuildYaml();
                 break;
 
                 case "help":

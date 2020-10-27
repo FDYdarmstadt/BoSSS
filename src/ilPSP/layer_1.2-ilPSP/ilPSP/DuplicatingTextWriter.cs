@@ -103,10 +103,10 @@ namespace ilPSP {
         }
 
         private void ExecuteOnWriter(Action<TextWriter> a) {
-            if (!surpressStream0) {
+            if(!surpressStream0) {
                 try {
                     a(Writer0);
-                } catch (ObjectDisposedException) {
+                } catch(ObjectDisposedException) {
 
                 }
             }
