@@ -76,12 +76,16 @@ namespace BoSSS.Application.XNSE_Solver {
             InitMPI();
             DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleTranspiratingChannelTest(1, 0.1, 0.1, ViscosityMode.TransposeTermMissing, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleTranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.TransposeTermMissing, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleTranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleBcTest_PressureOutletTest(1, 0.0d, true);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleMovingDropletTest(1, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8, ViscosityMode.FullySymmetric, true, false);
+
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p3(ViscosityMode.FullySymmetric);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
             throw new Exception("Remove Me.");
 
 

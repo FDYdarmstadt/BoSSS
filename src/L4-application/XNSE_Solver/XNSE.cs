@@ -32,11 +32,10 @@ namespace BoSSS.Application.XNSE_Solver
         }
 
         VectorField<XDGField> Gravity;
-
+        
         protected override IEnumerable<DGField> CreateAdditionalFields() {
             int D = this.GridData.SpatialDimension;
             Gravity = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.CurrentState.BasisS[d] as XDGBasis, VariableNames.Gravity_d(d))));
-
             return Gravity;
         }
 
@@ -46,9 +45,15 @@ namespace BoSSS.Application.XNSE_Solver
 
             //Build Equations
             SystemOfEquations equationSystem = new SystemOfEquations();
-            for(int d = 0; d < D; ++d) {
-                equationSystem.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                equationSystem.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
+            for (int d = 0; d < D; ++d) {
+                NavierStokes nseA = new NavierStokes("A", d, LsTrk, D, boundaryMap, config);
+                nseA.AddGravity(Control);
+                equationSystem.AddEquation(nseA);
+
+                NavierStokes nseB = new NavierStokes("B", d, LsTrk, D, boundaryMap, config);
+                nseB.AddGravity(Control);
+                equationSystem.AddEquation(nseB);
+                
                 equationSystem.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config));
                 equationSystem.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
@@ -68,7 +73,7 @@ namespace BoSSS.Application.XNSE_Solver
             XSpatialOperatorMk2 XOP = equationSystem.GetSpatialOperator(QuadOrderFunc);
 
             // final settings
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            //XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.Commit();
 
             // test the ordering

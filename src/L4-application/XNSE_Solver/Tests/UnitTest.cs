@@ -58,7 +58,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
             C.ImmediatePlotPeriod = 1;
-            OperatorWithSolverTest(Tst, C);
+            ApplicationWithSolverTest(Tst, C);
         }
 
         /// <summary>
@@ -181,7 +181,31 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg);
         }
 
+        [Test]
+        public static void SimpleBcTest_PressureOutletTest(
+            [Values(1)] int deg,
+            [Values(0)] double AgglomerationTreshold,
+            [Values(true, false)] bool performsolve
+            )
+        {
+            //XNSE_ConsistencyTestMain p = null;
+            //BoSSS.Solution.Application._Main(new string[0], true, "", delegate() {
+            //    p = new XNSE_ConsistencyTestMain();
+            //    p.Testcase = new BcTest_PressureOutlet();
+            //    p.FlowSolverDegree = deg;
+            //    p.m_dntParams.CellAgglomerationThreshold = AgglomerationTreshold;
+            //    p.SolverMode = performsolve;
+            //    p.m_dntParams.ViscosityMode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
+            //    return p;
+            //});
 
+            var Tst = new BcTest_PressureOutlet();
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.Standard);
+            C.SkipSolveAndEvaluateResidual = !performsolve;
+
+            ApplicationWithSolverTest(Tst, C);
+            //ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg);
+        }
 
         [Test]
         public static void MovingDropletTest(
@@ -215,6 +239,44 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
+            //if(AgglomerationTreshold > 0.01) {
+            //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
+            //}
+        }
+
+        [Test]
+        public static void SimpleMovingDropletTest(
+#if DEBUG
+            [Values(1)] int deg,
+            [Values(0.1)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.8)] double Radius,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+#else
+            [Values(2, 3)] int deg,
+           [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+           [Values(true)] bool performsolve,
+           [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
+           [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+           [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+           [Values(true)] bool bSteady,
+           [Values(false)] bool includeConvection
+#endif
+            )
+        {
+
+            if (deg == 3 && AgglomerationTreshold <= 0.01)
+                return;
+
+            var Tst = new MovingDropletTest(Radius, includeConvection, bSteady);
+
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm);
+            C.SkipSolveAndEvaluateResidual = !performsolve;
+
+            ApplicationWithSolverTest(Tst, C);
             //if(AgglomerationTreshold > 0.01) {
             //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
             //}
@@ -286,7 +348,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxSolverIterations = 100;
-            OperatorWithSolverTest(Tst, C);
+            ApplicationWithSolverTest(Tst, C);
         }
 
 
@@ -309,7 +371,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        private static void OperatorWithSolverTest(ITest Tst, XNSE_Control C) {
+        private static void ApplicationWithSolverTest(ITest Tst, XNSE_Control C) {
             using(var solver = new XNSE()) {
 
                 C.ImmediatePlotPeriod = 1;

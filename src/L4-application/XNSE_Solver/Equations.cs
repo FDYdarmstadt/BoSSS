@@ -1,9 +1,11 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP.Utils;
 using System;
@@ -12,6 +14,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.XNSE_Solver
 {
@@ -21,7 +24,24 @@ namespace BoSSS.Application.XNSE_Solver
 
         string codomainName;
 
-        double massScale;
+        int d;
+
+        int D;
+
+        double rho;
+
+        DelParameterFactory GravityFactory(string name, Func<double[], double> g, int degree)
+        {
+            (string, DGField)[] GravityFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+            {
+                string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
+                Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree );
+                DGField gravity = new SinglePhaseField(basis, name);
+                gravity.ProjectField(g);
+                return new (string, DGField)[] { (name, gravity) };
+            }
+            return GravityFactory;
+        }
 
         public NavierStokes(
             string spcName,
@@ -34,6 +54,8 @@ namespace BoSSS.Application.XNSE_Solver
             speciesName = spcName;
             codomainName = EquationNames.MomentumEquationComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat( BoSSS.Solution.NSECommon.VariableNames.Pressure));
+            this.d = d;
+            this.D = D;
 
             SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             PhysicalParameters physParams = config.getPhysParams;
@@ -48,7 +70,7 @@ namespace BoSSS.Application.XNSE_Solver
                 default: throw new ArgumentException("Unknown species.");
             }
             
-            massScale = rhoSpc;
+            rho = rhoSpc;
 
             // convective operator
             // ===================
@@ -56,8 +78,8 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
                 AddComponent(conv);
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d], Velocity0Factory(d,D), Velocity0Update(d,D));
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d], Velocity0MeanFactory(d,D, LsTrk), Velocity0MeanUpdate(d, D));
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d], Velocity0Factory, Velocity0Update);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d], Velocity0MeanFactory( LsTrk), Velocity0MeanUpdate);
             }
 
             // pressure gradient
@@ -156,31 +178,24 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
 
-            //Gravity
-            // ================
-            var gravity = new Solution.XNSECommon.Operator.MultiPhaseSource(BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d], spcName);
-            AddComponent(gravity);
+            
         }
 
         public override string SpeciesName => speciesName;
 
-        public override double MassScale => massScale;
+        public override double MassScale => rho;
 
         public override string CodomainName => codomainName;
 
-        DelParameterFactory Velocity0Factory(int d, int D)
+        (string ,DGField)[] Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
-            (string ,DGField)[] Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields)
-            {
-                string velocityname = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
-                DGField velocity = DomainVarFields[velocityname];
-                string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d];
-                return new (string, DGField)[] {( paramName, velocity)};
-            }
-            return Velocity0Factory;
+            string velocityname = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
+            DGField velocity = DomainVarFields[velocityname];
+            string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d];
+            return new (string, DGField)[] {( paramName, velocity)};
         }
-        
-        DelParameterFactory Velocity0MeanFactory(int d, int D, LevelSetTracker LsTrk)
+
+        DelParameterFactory Velocity0MeanFactory(LevelSetTracker LsTrk)
         {
             (string, DGField)[] Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
             {
@@ -192,30 +207,61 @@ namespace BoSSS.Application.XNSE_Solver
             return Velocity0MeanFactory;
         }
 
-        DelPartialParameterUpdate Velocity0Update(int d, int D)
+        void Velocity0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            void Velocity0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
-            {
-                Console.WriteLine("Update Velocity0");
-            }
-            return Velocity0Update;
+            Console.WriteLine("Update Velocity0");
         }
 
-        DelPartialParameterUpdate Velocity0MeanUpdate(int d, int D)
+        void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+            XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
+            DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
+
+            XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
+            DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
+
+            speciesParam.SetMeanValue(speciesVelocity);
+            Console.WriteLine("Update Velocity0Mean");
+            //Tecplot.PlotFields(new DGField[] { paramMeanVelocity, velocity }, "params-", 0, 3);
+        }
+
+        public void AddGravity(AppControl control)
+        {
+            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+            string gravityOfSpecies = gravity + "#" + speciesName;
+            Func<double[], double> initialGravity;
+            if (control.InitialValues_Evaluators.TryGetValue(gravityOfSpecies, out Func<double[], double> initialValue))
             {
-                XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
-                DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
-
-                XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
-                DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
-
-                speciesParam.SetMeanValue(speciesVelocity);
-                Console.WriteLine("Update Velocity0Mean");
-                //Tecplot.PlotFields(new DGField[] { paramMeanVelocity, velocity }, "params-", 0, 3);
+                initialGravity = initialValue;
             }
-            return Velocity0MeanUpdate;
+            else
+            {
+                initialGravity = X => 0.0;
+            }
+
+            int gravityDegree;
+            if (control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts))
+            {
+                gravityDegree = opts.Degree;
+            }
+            else
+            {
+                gravityDegree = 0;
+            }
+            AddGravity(initialGravity, gravityDegree);
+        }
+
+        public void AddGravity(Func<double[], double> g, int degree)
+        {
+            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+            string gravityOfSpecies = gravity + "#" + speciesName;
+            // gravity
+            // ================
+            var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+            AddComponent(gravityComponent);
+
+            Func<double[], double> scaledInitialGravity = X => -g(X) * rho;
+            AddParameter(gravityOfSpecies, GravityFactory(gravityOfSpecies, scaledInitialGravity, degree));
         }
     }
 
@@ -412,13 +458,13 @@ namespace BoSSS.Application.XNSE_Solver
             string phaseA,
             string phaseB,
             int d,
-            int dimension,
+            int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
             IXNSE_Configuration config)
         {
             codomainName = EquationNames.MomentumEquationComponent(d);
-            AddVariableNames( BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
+            AddVariableNames( BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -448,16 +494,17 @@ namespace BoSSS.Application.XNSE_Solver
                     }
                     else
                     {
-                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, dimension, sigma * 0.5, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
+                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, sigma * 0.5, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         AddSurfaceComponent(isoSurfT);
                     }
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
                 }
                 else if (dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected
                     || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint
                     || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean
                     || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Fourier)
                 {
-                    AddComponent(new CurvatureBasedSurfaceTension(d, dimension, LsTrk, sigma));
+                    AddComponent(new CurvatureBasedSurfaceTension(d, D, LsTrk, sigma));
                 }
                 else
                 {
@@ -483,8 +530,8 @@ namespace BoSSS.Application.XNSE_Solver
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven)
                     {
 
-                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, dimension, lamI_t * 0.5, penalty, boundaryMap.EdgeTag2Type, true);
-                        AddSurfaceComponent(new CurvatureBasedSurfaceTension(d, dimension, LsTrk, sigma));
+                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, D, lamI_t * 0.5, penalty, boundaryMap.EdgeTag2Type, true);
+                        AddSurfaceComponent(new CurvatureBasedSurfaceTension(d, D, LsTrk, sigma));
 
                     }
 
@@ -494,12 +541,12 @@ namespace BoSSS.Application.XNSE_Solver
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven)
                     {
 
-                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, dimension, muI * 0.5, penalty, true, dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit);
+                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, D, muI * 0.5, penalty, true, dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit);
                         AddSurfaceComponent(surfDeformRate);
 
                         if (dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit)
                         {
-                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, dimension, muI * 0.5, penalty, true);
+                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, D, muI * 0.5, penalty, true);
                             AddSurfaceComponent(surfDeformRateT);
                         }
 
@@ -511,7 +558,7 @@ namespace BoSSS.Application.XNSE_Solver
 
                 if (dntParams.UseLevelSetStabilization)
                 {
-                    AddComponent(new LevelSetStabilization(d, dimension, LsTrk));
+                    AddComponent(new LevelSetStabilization(d, D, LsTrk));
                 }
 
             }
@@ -521,7 +568,7 @@ namespace BoSSS.Application.XNSE_Solver
 
             if (config.isPressureGradient && physParams.useArtificialSurfaceForce)
             {
-                AddComponent(new SurfaceTension_ArfForceSrc(d, dimension, LsTrk));
+                AddComponent(new SurfaceTension_ArfForceSrc(d, D, LsTrk));
             }
         }
         public override string FirstSpeciesName => "A";
@@ -529,5 +576,26 @@ namespace BoSSS.Application.XNSE_Solver
         public override string SecondSpeciesName => "B";
 
         public override string CodomainName => codomainName;
+
+        DelParameterFactory NormalFactory(LevelSetTracker LsTrk)
+        {
+            (string, DGField)[] NormalFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+            {
+                //XDGBasis U0meanBasis = new XDGBasis(LsTrk, 0);
+                //string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d];
+                //XDGField U0mean = new XDGField(U0meanBasis, paramName);
+
+
+                //LevelSetGradient = new VectorField<SinglePhaseField>(D, Phi.Basis, SinglePhaseField.Factory);
+                //LevelSetGradient.Gradient(1.0, Phi);
+                //return new (string, DGField)[] { (paramName, U0mean) };
+            }
+            return NormalFactory;
+        }
+
+        void Velocity0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            Console.WriteLine("Update Velocity0");
+        }
     }
 }

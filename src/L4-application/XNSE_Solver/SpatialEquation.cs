@@ -111,6 +111,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
     class SystemOfEquations 
     {
+        protected LinkedList<SpatialEquation> spatialEquations;
+
         protected LinkedList<SurfaceEquation> interfaceEquations;
 
         protected LinkedList<BulkEquation> bulkEquations;
@@ -118,14 +120,22 @@ namespace BoSSS.Application.XNSE_Solver {
         public SystemOfEquations() {
             interfaceEquations = new LinkedList<SurfaceEquation>();
             bulkEquations = new LinkedList<BulkEquation>();
+            spatialEquations = new LinkedList<SpatialEquation>();
         }
 
         public void AddEquation(SurfaceEquation A) {
             interfaceEquations.AddLast(A);
+            spatialEquations.AddLast(A);
         }
 
         public void AddEquation(BulkEquation A) {
             bulkEquations.AddLast(A);
+            spatialEquations.AddLast(A);
+        }
+
+        public void AddEquation(SpatialEquation A)
+        {
+            spatialEquations.AddLast(A);
         }
 
         public virtual XSpatialOperatorMk2 GetSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
@@ -155,13 +165,10 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         void AddEquationComponents(XSpatialOperatorMk2 spatialOperator) {
-            foreach(SpatialEquation equation in interfaceEquations) {
-                foreach(IEquationComponent component in equation.Components) {
-                    spatialOperator.EquationComponents[equation.CodomainName].Add(component);
-                }
-            }
-            foreach(SpatialEquation equation in bulkEquations) {
-                foreach(IEquationComponent component in equation.Components) {
+            foreach (SpatialEquation equation in spatialEquations)
+            {
+                foreach (IEquationComponent component in equation.Components)
+                {
                     spatialOperator.EquationComponents[equation.CodomainName].Add(component);
                 }
             }
@@ -222,7 +229,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         string[] ExtractParametersFromEquations() {
             LinkedList<string> parameterNames = new LinkedList<string>();
-            foreach(SpatialEquation equation in interfaceEquations) 
+            foreach(SpatialEquation equation in spatialEquations) 
             {
                 if(equation.Parameters != null)
                 {
@@ -235,21 +242,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
             }
-            foreach(SpatialEquation equation in bulkEquations) 
-            {
-                if (equation.Parameters != null)
-                {
-                    foreach (Parameter parameter in equation.Parameters)
-                    {
-                        if (!parameterNames.Contains(parameter.Name))
-                        {
-                            parameterNames.AddLast(parameter.Name);
-                        }
-                    }
-                }
-            }
-            Console.WriteLine("Achtung ParameterHack!");
-            return VariableNames.Velocity0Vector(2).Cat(VariableNames.Velocity0MeanVector(2)).Cat(VariableNames.GravityVector(2));
+            return parameterNames.ToArray();
         }
 
         string[] ExtractSpeciesFromEquations() {
@@ -356,7 +349,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         void AddParameterDelegates(XSpatialOperatorMk2 spatialOperator)
         {
-            foreach (SpatialEquation equation in interfaceEquations)
+            foreach (SpatialEquation equation in spatialEquations)
             {
                 if (equation.Parameters != null)
                 {
@@ -373,24 +366,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
             }
-            foreach (SpatialEquation equation in bulkEquations)
-            {
-                if (equation.Parameters != null)
-                {
-                    foreach (Parameter parameter in equation.Parameters)
-                    {
-                        if (parameter.Factory != null)
-                        {
-                            spatialOperator.ParameterFactories.Add(parameter.Factory);
-                        }
-                        if (parameter.Update != null)
-                        {
-                            spatialOperator.ParameterUpdates.Add(parameter.Update);
-                        }
-                    }
-                }
-            }
-            
         }
     }
 }
