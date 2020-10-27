@@ -175,15 +175,19 @@ public static PlotRowSelector Solver_DG_Proj(int Degree){
            switch(SolverCode){
                case 41:
                    Nmn+="kcycle";
-                   Fmt.LineColor = LineColors.Blue;
+                   //Fmt.LineColor = LineColors.Blue;
+                   Fmt.PointType = PointTypes.Asterisk;
                    break;
                case 47:
                    Nmn+="gmres";
-                   Fmt.LineColor = LineColors.Yellow;
+                   //Fmt.LineColor = LineColors.Yellow;
+                   Fmt.PointType = PointTypes.UpperTriangle;
                    break;
                case 2:
                    Nmn+="pardiso";
-                   Fmt.LineColor = LineColors.Red;
+                   //Fmt.LineColor = LineColors.Red;
+                   Fmt.PointType = PointTypes.OpenCircle;
+                   Fmt.DashType  = DashTypes.Dotted;
                    break;
                default:
                    Nmn = null;
@@ -370,6 +374,8 @@ CL.WriteMinimalCompileableExample(
 Using gnuplot: B:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",16"Left reverse 
 
+==============
+**************
 ==============
 **************
 ==============

@@ -464,20 +464,12 @@ for(int iCol = 0; iCol < columns; iCol++) {
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCode.exp_Kcycle_schwarz: 
-               Nmn           = "Kcycle w. add.-schwarz"; 
-               Fmt.PointType = PointTypes.UpperTriangle;
-               break;
-           case LinearSolverCode.exp_gmres_levelpmg: 
-               Nmn           = "GMRES p-multigrid"; 
-               Fmt.PointType = PointTypes.Box;
-               break;
-           case LinearSolverCode.exp_softpcg_schwarz: 
-               Nmn           = "Add Swz"; 
+               Nmn           = "Kcycle w. add.-Schwarz"; 
                Fmt.PointType = PointTypes.LowerTriangle;
                break;
-           case LinearSolverCode.exp_softpcg_schwarz_directcoarse: 
-               Nmn           = "Add Swz w Coarse";
-               Fmt.PointType = PointTypes.UpperTriangle;
+           case LinearSolverCode.exp_gmres_levelpmg: 
+               Nmn           = "GMRES w. pTG"; 
+               Fmt.PointType = PointTypes.Box;
                break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
@@ -571,16 +563,18 @@ set key font ",12"inside top left Left reverse
 **************
 ==============
 **************
-System.ComponentModel.Win32Exception occurred: The system cannot find the file specified. Type 'LastError' for details.
-
 ==============
-Path.Combine(dirpath, "MainXdgPoissonScaling.tex")
+Path.Combine(dirpath, "MainXdgStokesScaling.tex")
 **************
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes\plots\MainXdgPoissonScaling.tex
+B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes\plots\MainXdgStokesScaling.tex
 ==============
 CL.WriteMinimalCompileableExample(
-   Path.Combine(dirpath, "MainXdgPoissonScaling.tex"),
-   "XdgPoissonScaling.tex");
+   Path.Combine(dirpath, "MainXdgStokesScaling.tex"),
+   "XdgStokesScaling.tex");
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

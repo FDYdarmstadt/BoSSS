@@ -347,17 +347,12 @@ for(int iCol = 0; iCol < columns; iCol++) {
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
-           case LinearSolverCode.classic_mumps: 
-               Nmn           = "Mumps"; 
-               Fmt.PointType = PointTypes.OpenUpperTriangle;
-               Fmt.DashType  = DashTypes.Dotted;
-               break;
            case LinearSolverCode.exp_gmres_levelpmg: 
-               Nmn           = "gmres lvlpmg"; 
-               Fmt.PointType = PointTypes.Asterisk;
+               Nmn           = "GMRES w. pTG"; 
+               Fmt.PointType = PointTypes.Box;
                break;
            case LinearSolverCode.exp_Kcycle_schwarz: 
-               Nmn           = "kcycle schwarz"; 
+               Nmn           = "Kcycle w. add.-Schwarz"; 
                Fmt.PointType = PointTypes.LowerTriangle;
                break;
            default:
@@ -481,6 +476,10 @@ LastError
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

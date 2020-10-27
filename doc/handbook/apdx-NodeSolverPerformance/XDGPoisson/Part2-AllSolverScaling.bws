@@ -358,12 +358,12 @@ for(int iCol = 0; iCol < columns; iCol++) {
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCode.exp_gmres_levelpmg: 
-               Nmn           = "GMRES level pmg"; 
-               Fmt.PointType = PointTypes.OpenUpperTriangle;
+               Nmn           = "GMRES w. pTG"; 
+               Fmt.PointType = PointTypes.Box;
                break;
            case LinearSolverCode.exp_Kcycle_schwarz: 
-               Nmn           = "Kcycle Schwarz"; 
-               Fmt.PointType = PointTypes.Asterisk;
+               Nmn           = "Kcycle w. add.-Schwarz"; 
+               Fmt.PointType = PointTypes.LowerTriangle;
                break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
@@ -507,6 +507,10 @@ System.ComponentModel.Win32Exception (0x80004005): The system cannot find the fi
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonScaling.tex"),
    "XdgPoissonScaling.tex");
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

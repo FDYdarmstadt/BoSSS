@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (MiKTeX 2.9.7440 64-bit) (preloaded format=pdflatex 2020.6.22)  26 OCT 2020 14:40
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (MiKTeX 2.9.7440 64-bit) (preloaded format=pdflatex 2020.6.22)  27 OCT 2020 14:35
 entering extended mode
 **./MainXdgPoissonScaling.tex
 (MainXdgPoissonScaling.tex
@@ -119,7 +119,7 @@ File: l3backend-pdfmode.def 2020-06-03 L3 backend support: PDF mode
 \l__kernel_color_stack_int=\count187
 \l__pdf_internal_box=\box47
 )
-No file MainXdgPoissonScaling.aux.
+(MainXdgPoissonScaling.aux)
 \openout1 = `MainXdgPoissonScaling.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
@@ -136,6 +136,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
+
 ("C:\Program Files\MiKTeX 2.9\tex/context/base/mkii\supp-pdf.mkii"
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count188
@@ -181,8 +182,8 @@ Overfull \hbox (52.47437pt too wide) in paragraph at lines 252--10
 [1{C:/Users/weber/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map} <./XdgPois
 sonScaling.pdf>] (MainXdgPoissonScaling.aux) ) 
 Here is how much of TeX's memory you used:
- 2278 strings out of 480763
- 29659 string characters out of 2904059
+ 2280 strings out of 480763
+ 29789 string characters out of 2904059
  267210 words of memory out of 3000000
  18312 multiletter control sequences out of 15000+200000
  534037 words of font info for 32 fonts, out of 3000000 for 9000
@@ -193,7 +194,7 @@ s/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/
 public/amsfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/am
 sfonts/cm/cmr7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/
 cmsy7.pfb>
-Output written on MainXdgPoissonScaling.pdf (1 page, 48321 bytes).
+Output written on MainXdgPoissonScaling.pdf (1 page, 47417 bytes).
 PDF statistics:
  25 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
