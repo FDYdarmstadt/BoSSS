@@ -37,7 +37,8 @@ namespace FSI_Solver {
         private Vector[][] ClosestPoints;
         private readonly double[][] WallCoordinates;
         private readonly bool[] IsPeriodicBoundary;
-        private readonly double MinDistance;
+        private readonly double DistanceThreshold;
+        private double MinimalDistance;
         private double[][] TemporaryVelocity;
         private Particle[] Particles;
         private int[][] CollisionCluster;
@@ -81,7 +82,7 @@ namespace FSI_Solver {
             TimestepSize = dt;
             GridLengthScale = gridLenghtscale;
             WallCoordinates = wallCoordinates;
-            MinDistance = minDistance;
+            DistanceThreshold = minDistance;
             this.IsPeriodicBoundary = IsPeriodicBoundary;
         }
 
@@ -119,8 +120,9 @@ namespace FSI_Solver {
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
             double distanceThreshold = GridLengthScale / 10;
-            if (MinDistance != 0)
-                distanceThreshold = MinDistance;
+            if (DistanceThreshold != 0)
+                distanceThreshold = DistanceThreshold;
+            MinimalDistance = distanceThreshold / 25;
             // Step 2
             // Loop over time until the particles hit.
             // =======================================================
@@ -194,6 +196,9 @@ namespace FSI_Solver {
                             }
                             if (DistanceVector[p0][p1].Abs() < globalMinimalDistance) {
                                 globalMinimalDistance = DistanceVector[p0][p1].Abs();
+                                if(DistanceVector[p0][p1].Abs() < MinimalDistance && temp_SaveTimeStep > 0) {
+                                    saveTimestep = 1e-15;
+                                }
                             }
                             if (temp_Overlapping) {
                                 double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.

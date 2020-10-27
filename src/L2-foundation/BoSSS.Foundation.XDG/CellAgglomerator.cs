@@ -428,7 +428,7 @@ namespace BoSSS.Foundation.XDG {
 
                         while (jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
                             if (CycleDetection[jTarget] == true) {
-                                throw new ArgumentException("Cycle in agglomeration graph.");
+                               throw new ArgumentException("Cycle in agglomeration graph." + GridDat.Cells.GetCenter(jTarget)[0] + ", " + GridDat.Cells.GetCenter(jTarget)[1]);
                             }
                             CycleDetection[jTarget] = true;
                             int nextPair = Cells2Aggpairs[jTarget];

@@ -634,9 +634,10 @@ namespace BoSSS.Application.FSI_Solver {
                         int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(globalParticleColor, currentColor);
                         double levelSetFunctionParticlesPerColor(double[] X, double t) {
                             double levelSetFunction = -double.MaxValue;
-                            //levelSetFunction = (X[0]).Pow2() + (X[1]).Pow2() - (((FSI_Control)Control).domainLengthX.Pow2() + ((FSI_Control)Control).domainLengthY.Pow2()) + 2 * MaxGridLength;
-                            //levelSetFunction = -(X[0] - 0.2).Pow2() - (X[1] - 0.555555555555556).Pow2() + ((MaxGridLength/2).Pow2());
-                            //levelSetFunction = -(X[0] - 0.311111111111111).Pow2() - (X[1] - 0.577777777777778).Pow2() + ((MaxGridLength/10).Pow2());
+                            //levelSetFunction = (X[0]).Pow2() + (X[1]).Pow2() - (((FSI_Control)Control).domainLengthX.Pow2() + ((FSI_Control)Control).domainLengthY.Pow2()) + 1.5 * MaxGridLength;
+                            //levelSetFunction = -(X[0] + 0.885714285714286).Pow2() - (X[1] - 0.514285714285714).Pow2() + ((MaxGridLength*4).Pow2());
+                            //levelSetFunction = -(X[0] + 0.622222222222222).Pow2() - (X[1] + 0.888888888888889).Pow2() + ((MaxGridLength * 8).Pow2());
+                            //double r = -Math.Max(Math.Abs(X[0] + 0.8) - 0.25, Math.Abs(X[1] - 0.5) - 0.25);
                             for (int p = 0; p < particlesOfCurrentColor.Length; p++) {
                                 Particle currentParticle = ParticleList[particlesOfCurrentColor[p]];
                                 if (levelSetFunction < currentParticle.LevelSetFunction(X))
@@ -649,9 +650,9 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
                 
-                double levelSetFunctionFluid(double[] X, double t) { return -1; }
+                //double levelSetFunctionFluid(double[] X, double t) { return -1; }
                 CellMask fluidCells = allParticleMask != null ? allParticleMask.Complement() : CellMask.GetFullMask(GridData);
-                SetLevelSet(levelSetFunctionFluid, fluidCells, phystime);
+                //SetLevelSet(levelSetFunctionFluid, fluidCells, phystime);
 
 
                 PerformLevelSetSmoothing(allParticleMask, fluidCells, SetFarField: true);
@@ -849,7 +850,7 @@ namespace BoSSS.Application.FSI_Solver {
             Vector particlePosition = currentParticle.Motion.GetPosition();
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
-            double additionalWallThreshold = 2*MaxGridLength;
+            double additionalWallThreshold = 0;// MaxGridLength;
             if (d2 == 0)
                 additionalWallThreshold *= -1;
             if (Math.Abs(distance) < particleMaxLength) {
@@ -1470,11 +1471,12 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                     }
                 }
-                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null);
-                if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetDesiredLevelBasedOnParticleScale(), out CellsToRefineList, out Coarsening);
-                else
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetDesiredLevelBasedOnGridScale(), out CellsToRefineList, out Coarsening);
+                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null, true);
+                AnyChangeInGrid = gridRefinementController.ComputeGridChange(test(), out CellsToRefineList, out Coarsening);
+                //if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
+                //    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetDesiredLevelBasedOnParticleScale(), out CellsToRefineList, out Coarsening);
+                //else
+                //    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetDesiredLevelBasedOnGridScale(), out CellsToRefineList, out Coarsening);
             }
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
@@ -1488,6 +1490,19 @@ namespace BoSSS.Application.FSI_Solver {
                 newGrid = null;
                 old2NewGrid = null;
             }
+        }
+
+        /// <summary>
+        /// Finds all cells to be refined with the perssonsensor.
+        /// </summary>
+        private int[] test() {
+            int refinementLevel = ((FSI_Control)Control).RefinementLevel;
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] localCellDesiredLevel = new int[noOfLocalCells];
+            for (int j = 0; j < noOfLocalCells; j++) {
+                localCellDesiredLevel[j] = 0;
+            }
+            return localCellDesiredLevel;
         }
 
         /// <summary>
