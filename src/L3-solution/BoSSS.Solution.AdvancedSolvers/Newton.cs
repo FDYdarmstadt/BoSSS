@@ -150,14 +150,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (UseHomotopy)
                 HomotopyNewton(SolutionVec, RHS, CurSol, CurRes);
             else
-                GlobalizedNewton(SolutionVec, RHS);
+                GlobalizedNewton(SolutionVec, RHS, CurSol, CurRes);
         }
 
 
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
+        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS, double[] CurSol, double[] CurRes) where S : IList<double> {
             using (var tr = new FuncTrace()) {
 
                 // intial residual evaluation
