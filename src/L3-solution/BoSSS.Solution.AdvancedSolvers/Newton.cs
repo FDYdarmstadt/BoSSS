@@ -146,29 +146,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (UseHomotopy)
                 HomotopyNewton(SolutionVec, RHS, CurSol, CurRes);
             else
-                GlobalizedNewton(SolutionVec, RHS, CurSol, CurRes);
+                GlobalizedNewton(SolutionVec, RHS);
         }
 
 
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS, double[] CurSol, double[] CurRes) where S : IList<double> {
+        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
             using (var tr = new FuncTrace()) {
 
                 // Initialization
                 /// =============
 
-                // double[] CurSol, // "current (approximate) solution", i.e.
-                //     CurRes; // residual associated with 'CurSol'
+                double[] CurSol, // "current (approximate) solution", i.e.
+                    CurRes; // residual associated with 'CurSol'
 
 
-                // using (new BlockTrace("Slv Init", tr)) {
-                //     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
-                // };
+                using (new BlockTrace("Slv Init", tr)) {
+                    base.Init(SolutionVec, RHS, out CurSol, out CurRes);
+                };
 
-                // this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
-                // EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
+                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
+                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
 
                 // intial residual evaluation
                 double norm_CurRes = CurRes.MPI_L2Norm();
