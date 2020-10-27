@@ -91,6 +91,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         Stopwatch[][] m_EdgeSourceGradV_Watches;
 
         /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        bool IsNonEmpty {
+            get {
+                return m_Edgeform_UxV.IsNonEmpty() || 
+                    m_Edgeform_GradUxV.IsNonEmpty() || 
+                    m_Edgeform_UxGradV.IsNonEmpty() || 
+                    m_Edgeform_GradUxGradV.IsNonEmpty() || 
+                    m_EdgeSourceV.IsNonEmpty() || 
+                    m_EdgeSourceGradV.IsNonEmpty() ;
+            }
+        }
+
+        /// <summary>
         /// Execution of quadrature
         /// </summary>
         /// <param name="domNrule"></param>
@@ -109,11 +123,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         public void Execute(ICompositeQuadRule<QuadRule> domNrule,
             UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
             M Matrix, V AffineVector, double time) {
-
             if (RowMap.BasisS.Count != GAMMA)
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if (ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
+            if(this.IsNonEmpty == false)
+                return;
 
             m_GridDat = RowMap.GridDat;
 

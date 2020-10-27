@@ -293,6 +293,16 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
     public static class EquationComponentArgMapping_Extensions {
 
         /// <summary>
+        /// true, if any equation component is present in <paramref name="ecm"/>
+        /// </summary>
+        public static bool IsNonEmpty<T>(this EquationComponentArgMapping<T>[] ecm) where T : IEquationComponent {
+            foreach(var v in ecm)
+                    if(v.m_AllComponentsOfMyType.Length > 0)
+                        return true;
+                return false;
+        }
+
+        /// <summary>
         /// Utility function to determine whether it is required to evaluate some DG field resp its gradient.
         /// </summary>
         public static void DetermineReqFields<T>(this EquationComponentArgMapping<T>[] ecm, bool[] ValueRequired,  Func<T, bool> det) where T : IEquationComponent {
