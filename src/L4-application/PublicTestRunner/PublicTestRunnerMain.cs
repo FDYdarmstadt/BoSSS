@@ -506,7 +506,7 @@ namespace PublicTestRunner {
                     YAML.WriteLine("    expire_in: 2 days");
                     YAML.WriteLine("  rules:");
                     YAML.WriteLine("    - changes:");
-                    YAML.WriteLine("    - public/src/**/*");
+                    YAML.WriteLine("      - public/src/**/*");
                     YAML.WriteLine("  needs:");
 #if DEBUG
                     YAML.WriteLine("    - build:Debug");
