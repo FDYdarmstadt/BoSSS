@@ -468,7 +468,7 @@ namespace PublicTestRunner {
                 using(var YAML = new StreamWriter(yamlName)) {
                     if (allTests.Count == 0)
                     {
-                        YAML.WriteLine("EmptyTest");
+                        YAML.WriteLine("EmptyTest:");
                         YAML.WriteLine("  stage: test");
                         YAML.WriteLine("  script:");
                         YAML.WriteLine("    - echo \"Empty\"");
