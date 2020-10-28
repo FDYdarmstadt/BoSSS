@@ -463,12 +463,7 @@ namespace PublicTestRunner {
 
                 string yamlName;
                  
-#if DEBUG
-                yamlName = "debug-jobs.yml";
-#else
-                yamlName = "release-jobs.yml";
-#endif
-
+                yamlName = "jobs.yml";
 
                 using(var YAML = new StreamWriter(yamlName)) {
 
@@ -488,30 +483,38 @@ namespace PublicTestRunner {
                     YAML.WriteLine();
 
                     //Set job class
+                    // ======================================================================
+                    //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, 
+                    //Gitlab automatically sets CI_PROJECT_PATH, CI_MERGE_REQUEST_REF_PATH
+
                     YAML.WriteLine(".Test:");
                     YAML.WriteLine("  before_script:");
 #if DEBUG
-                    YAML.WriteLine("    - cd internal/src/experimental/L4-application/InternalTestRunner/bin/Debug");
+                    //YAML.WriteLine("    - cd internal/src/experimental/L4-application/InternalTestRunner/bin/Debug");
+                    YAML.WriteLine("    - cd $RUNNER_PATH");
 #else
                     YAML.WriteLine("    - cd internal/src/experimental/L4-application/InternalTestRunner/bin/Release");
 #endif
-                    YAML.WriteLine("    - bash -c \"chmod +x InternalTestRunner.exe\"");
+                    //YAML.WriteLine("    - bash -c \"chmod +x InternalTestRunner.exe\"");
+                    YAML.WriteLine("    - bash -c \"chmod +x $RUNNER_EXE\"");
                     YAML.WriteLine("  artifacts:");
                     YAML.WriteLine("    reports:");
 #if DEBUG
-                    YAML.WriteLine("      junit: internal/src/experimental/L4-application/InternalTestRunner/bin/Debug/TestResult.*");
+                    //YAML.WriteLine("      junit: internal/src/experimental/L4-application/InternalTestRunner/bin/Debug/TestResult.*");
+                    YAML.WriteLine("      junit: $RUNNER_PATH/TestResult.*");
 #else
                     YAML.WriteLine("      junit: internal/src/experimental/L4-application/InternalTestRunner/bin/Release/TestResult.*");
 #endif
                     YAML.WriteLine("    expire_in: 2 days");
-                    YAML.WriteLine("  rules:");
-                    YAML.WriteLine("    - changes:");
-                    YAML.WriteLine("      - public/src/**/*");
-                    YAML.WriteLine("      - internal/src/**/*");
-                    YAML.WriteLine("  needs:");
+                    //YAML.WriteLine("  rules:");
+                    //YAML.WriteLine("    - changes:");
+                    //YAML.WriteLine("      - public/src/**/*");
+                    //YAML.WriteLine("      - internal/src/**/*");
+                    //YAML.WriteLine("  needs:");
                     YAML.WriteLine("    - project: $CI_PROJECT_PATH");
 #if DEBUG
-                    YAML.WriteLine("      job: build:Debug");
+                    //YAML.WriteLine("      job: build:Debug");
+                    YAML.WriteLine("      job: $BUILD_DEPENDENCY");
 #else
                     YAML.WriteLine("      job: build:Release");
 #endif
