@@ -507,6 +507,15 @@ namespace PublicTestRunner {
                     YAML.WriteLine("  rules:");
                     YAML.WriteLine("    - changes:");
                     YAML.WriteLine("      - public/src/**/*");
+                    YAML.WriteLine("  needs:");
+                    YAML.WriteLine("    - project: $CI_PROJECT_PATH");
+#if DEBUG
+                    YAML.WriteLine("      job: build:Debug");
+#else
+                    YAML.WriteLine("      job: build:Release");
+#endif
+                    YAML.WriteLine("      ref: $CI_COMMIT_BRANCH");
+                    YAML.WriteLine("      artifacts: true");
                     YAML.WriteLine();
 
                     cnt = 0;
