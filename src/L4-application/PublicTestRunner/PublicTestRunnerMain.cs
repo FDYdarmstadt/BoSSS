@@ -507,12 +507,6 @@ namespace PublicTestRunner {
                     YAML.WriteLine("  rules:");
                     YAML.WriteLine("    - changes:");
                     YAML.WriteLine("      - public/src/**/*");
-                    YAML.WriteLine("  needs:");
-#if DEBUG
-                    YAML.WriteLine("    - build:Debug");
-#else
-                    YAML.WriteLine("    - build:Release");
-#endif
                     YAML.WriteLine();
 
                     cnt = 0;
