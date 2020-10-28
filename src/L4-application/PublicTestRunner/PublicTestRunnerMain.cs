@@ -510,7 +510,7 @@ namespace PublicTestRunner {
                     //YAML.WriteLine("    - changes:");
                     //YAML.WriteLine("      - public/src/**/*");
                     //YAML.WriteLine("      - internal/src/**/*");
-                    //YAML.WriteLine("  needs:");
+                    YAML.WriteLine("  needs:");
                     YAML.WriteLine("    - project: $CI_PROJECT_PATH");
 #if DEBUG
                     //YAML.WriteLine("      job: build:Debug");
@@ -560,7 +560,6 @@ namespace PublicTestRunner {
 
             return 0;
         }
-
 
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
