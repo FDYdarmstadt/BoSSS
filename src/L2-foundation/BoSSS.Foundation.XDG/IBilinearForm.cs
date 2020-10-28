@@ -81,7 +81,6 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public interface ILevelSetForm : IInnerEdgeForm {
 
-
         /// <summary>
         /// index of the species-separating level set.
         /// </summary>
@@ -104,7 +103,9 @@ namespace BoSSS.Foundation.XDG {
         TermActivationFlags LevelSetTerms { get; }
     }
 
-
+    /// <summary>
+    /// provides access to the level set tracker
+    /// </summary>
     public interface ILevelSetFormSetup { 
         /// <summary>
         /// Called before Integration

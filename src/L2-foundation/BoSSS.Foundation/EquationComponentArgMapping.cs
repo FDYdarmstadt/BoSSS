@@ -38,7 +38,6 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// <summary>
         /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="CatParams">
         /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
         /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -50,6 +49,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// <param name="vectorizer">
         /// vectorizer option: translate some equation component to another one
         /// </param>
+        /// <param name="op"></param>
         static public EquationComponentArgMapping<T>[] GetArgMapping(ISpatialOperator op, bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) {
 //             public EquationComponentArgMapping<T>[] GetArgMapping<T>(                  bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
 
@@ -120,6 +120,15 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
             foreach (IEquationComponent eqComp in eqCompS) {
                 T optComp = (eqComp is T) ? (T)eqComp : default; //                    optimized component (user-optimized)
                 T vecComp = (vectorizer != null) ? (T)vectorizer(eqComp) : default; // default vectorization (non-optimized)
+
+                if(eqComp is IBoundaryEdgeForm && !(eqComp is IEdgeForm)) {
+                    throw new NotSupportedException($"{eqComp} implements only {typeof(IBoundaryEdgeForm)}, but not {typeof(IEdgeForm)}: this is not supported at the moment;");
+                }
+                if(eqComp is IInnerEdgeForm && !(eqComp is IEdgeForm)) {
+                    throw new NotSupportedException($"{eqComp} implements only {typeof(IBoundaryEdgeForm)}, but not {typeof(IEdgeForm)}: this is not supported at the moment;");
+                }
+
+
 
                 // check if component fits at all
                 if (optComp == null && vecComp == null)
