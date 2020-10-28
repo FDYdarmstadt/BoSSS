@@ -480,6 +480,29 @@ namespace PublicTestRunner {
                     YAML.WriteLine($"# system:  {System.Environment.MachineName}");
                     YAML.WriteLine("################################################################################");
 
+                    //Set Stages
+                    YAML.WriteLine();
+                    YAML.WriteLine("stages:");
+                    YAML.WriteLine("  - test");
+                    YAML.WriteLine("  - test parallel");
+                    YAML.WriteLine();
+
+                    //Set job class
+                    YAML.WriteLine(".DebugTest:");
+                    YAML.WriteLine("  before_script:");
+                    YAML.WriteLine("    - cd internal/src/experimental/L4-application/InternalTestRunner/bin/Debug");
+                    YAML.WriteLine("    - bash -c \"chmod +x InternalTestRunner.exe\"");
+                    YAML.WriteLine("  artifacts:");
+                    YAML.WriteLine("    reports:");
+                    YAML.WriteLine("      junit: internal/src/experimental/L4-application/InternalTestRunner/bin/Debug/TestResult.*");
+                    YAML.WriteLine("    expire_in: 2 days");
+                    YAML.WriteLine("  rules:");
+                    YAML.WriteLine("    - changes:");
+                    YAML.WriteLine("    - public/src/**/*");
+                    YAML.WriteLine("  needs:");
+                    YAML.WriteLine("    - build:Debug");
+
+
                     cnt = 0;
                     var checkResFileName = new HashSet<string>();
 
