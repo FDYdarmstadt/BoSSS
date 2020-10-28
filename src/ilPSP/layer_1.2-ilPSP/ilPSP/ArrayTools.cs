@@ -514,7 +514,7 @@ namespace ilPSP.Utils {
             GetSubVector(inp, ret, idxSrc, idxTarg);
             return ret;
         }
-        
+
 
         /// <summary>
         /// Extracts a sub-vector from <paramref name="inp"/>.
@@ -528,37 +528,36 @@ namespace ilPSP.Utils {
         /// <param name="idxTarg">
         /// Optional, can be null; if this is the case, it is assumed to be {0,1,2,3, ... }.
         /// </param>
-        public static void GetSubVector<I1, I2, O>(this IList<O> inp, IList<O> output, I1 idxSrc, I2 idxTarg = default(I2)) 
-            where I1: IList<int>
-            where I2: IList<int>
-//            where O: struct
+        public static void GetSubVector<I1, I2, O>(this IList<O> inp, IList<O> output, I1 idxSrc, I2 idxTarg = default(I2))
+            where I1 : IList<int>
+            where I2 : IList<int>
+        //            where O: struct
         {
-            if (idxSrc.Count > output.Count)
+            if(idxSrc.Count > output.Count)
                 throw new ArgumentException("Cannot copy more elements than length of output array.");
-                        
-            if (idxTarg != null) {
-                if (idxTarg.Count != idxSrc.Count)
+
+            if(idxTarg != null) {
+                if(idxTarg.Count != idxSrc.Count)
                     throw new ArgumentException("If idxTarg is provided, its lenth must match the length of idxSrc", "idxTarg");
-                
-                if (idxTarg.Count > output.Count)
+
+                if(idxTarg.Count > output.Count)
                     throw new ArgumentException();
             }
 
-            if (idxTarg == null) {
+            if(idxTarg == null) {
                 int L = output.Count;
-                for (int l = 0; l < L; l++) {
+                for(int l = 0; l < L; l++) {
                     int iTarg;
                     iTarg = l;
                     int iScr = idxSrc[l];
 
                     output[iTarg] = inp[iScr];
                 }
-            }
-            else {
+            } else {
                 int L = idxTarg.Count;
-                for (int l = 0; l < L; l++) {
+                for(int l = 0; l < L; l++) {
                     int iTarg;
-                        iTarg = idxTarg[l];
+                    iTarg = idxTarg[l];
 
                     int iScr = idxSrc[l];
 
