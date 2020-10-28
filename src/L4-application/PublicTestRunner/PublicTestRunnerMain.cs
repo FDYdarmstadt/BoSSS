@@ -473,9 +473,15 @@ namespace PublicTestRunner {
                     YAML.WriteLine($"# user:    {System.Environment.UserName}");
                     YAML.WriteLine($"# system:  {System.Environment.MachineName}");
                     YAML.WriteLine("################################################################################");
+                    YAML.WriteLine();
+
+                    //Set Workflow
+                    YAML.WriteLine("workflow:");
+                    YAML.WriteLine("  rules:");
+                    YAML.WriteLine("    - when: always");
+                    YAML.WriteLine();
 
                     //Set Stages
-                    YAML.WriteLine();
                     YAML.WriteLine("stages:");
                     YAML.WriteLine("  - test");
                     YAML.WriteLine("  - test parallel");
