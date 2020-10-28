@@ -513,6 +513,7 @@ namespace PublicTestRunner {
 #else
                     YAML.WriteLine("    - build:Release");
 #endif
+                    YAML.WriteLine();
 
                     cnt = 0;
                     var checkResFileName = new HashSet<string>();
