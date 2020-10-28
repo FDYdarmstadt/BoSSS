@@ -503,22 +503,14 @@ namespace PublicTestRunner {
 
                         YAML.WriteLine(".Test:");
                         YAML.WriteLine("  before_script:");
-                        //YAML.WriteLine("    - cd internal/src/experimental/L4-application/InternalTestRunner/bin/Debug");
                         YAML.WriteLine("    - cd $RUNNER_PATH");
-                        //YAML.WriteLine("    - bash -c \"chmod +x InternalTestRunner.exe\"");
                         YAML.WriteLine("    - bash -c \"chmod +x $RUNNER_EXE\"");
                         YAML.WriteLine("  artifacts:");
                         YAML.WriteLine("    reports:");
-                        //YAML.WriteLine("      junit: internal/src/experimental/L4-application/InternalTestRunner/bin/Debug/TestResult.*");
                         YAML.WriteLine("      junit: $RUNNER_PATH/TestResult.*");
                         YAML.WriteLine("    expire_in: 2 days");
-                        //YAML.WriteLine("  rules:");
-                        //YAML.WriteLine("    - changes:");
-                        //YAML.WriteLine("      - public/src/**/*");
-                        //YAML.WriteLine("      - internal/src/**/*");
                         YAML.WriteLine("  needs:");
                         YAML.WriteLine("    - project: $CI_PROJECT_PATH");
-                        //YAML.WriteLine("      job: build:Debug");
                         YAML.WriteLine("      job: $BUILD_DEPENDENCY");
                         YAML.WriteLine("      ref: $CI_MERGE_REQUEST_REF_PATH");
                         YAML.WriteLine("      artifacts: true");
@@ -546,9 +538,9 @@ namespace PublicTestRunner {
                                 YAML.WriteLine("   stage: test parallel");
                             YAML.WriteLine("   script:");
                             if (t.NoOfProcs == 1)
-                                YAML.WriteLine($"     - ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
+                                YAML.WriteLine($"     - $RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
                             else
-                                YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
+                                YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} $RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
                             if (t.NoOfProcs > 1)
                             {
                                 YAML.WriteLine("   tags:");
@@ -1122,7 +1114,7 @@ namespace PublicTestRunner {
             Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
             Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
             Console.WriteLine("         help          : prints this message.");
-            Console.WriteLine("         yaml          : write 'debug.yml' or 'release.yml' file for Gitlab.");
+            Console.WriteLine("         yaml          : write 'jobs.yml' file for Gitlab.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
 
