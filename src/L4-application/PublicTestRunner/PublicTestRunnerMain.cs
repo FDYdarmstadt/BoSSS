@@ -507,6 +507,7 @@ namespace PublicTestRunner {
                     YAML.WriteLine("  rules:");
                     YAML.WriteLine("    - changes:");
                     YAML.WriteLine("      - public/src/**/*");
+                    YAML.WriteLine("      - internal/src/**/*");
                     YAML.WriteLine("  needs:");
                     YAML.WriteLine("    - project: $CI_PROJECT_PATH");
 #if DEBUG
