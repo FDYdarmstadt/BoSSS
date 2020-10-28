@@ -466,6 +466,21 @@ namespace PublicTestRunner {
                 yamlName = "jobs.yml";
 
                 using(var YAML = new StreamWriter(yamlName)) {
+                    YAML.WriteLine("################################################################################");
+                    YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
+                    YAML.WriteLine("# any modification might get over-written");
+                    YAML.WriteLine($"# created: {DateTime.Now}");
+                    YAML.WriteLine($"# user:    {System.Environment.UserName}");
+                    YAML.WriteLine($"# system:  {System.Environment.MachineName}");
+                    YAML.WriteLine("################################################################################");
+
+                    //Set Stages
+                    YAML.WriteLine();
+                    YAML.WriteLine("stages:");
+                    YAML.WriteLine("  - test");
+                    YAML.WriteLine("  - test parallel");
+                    YAML.WriteLine();
+
                     if (allTests.Count == 0)
                     {
                         YAML.WriteLine("EmptyTest:");
@@ -475,21 +490,6 @@ namespace PublicTestRunner {
                     }
                     else
                     {
-                        YAML.WriteLine("################################################################################");
-                        YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
-                        YAML.WriteLine("# any modification might get over-written");
-                        YAML.WriteLine($"# created: {DateTime.Now}");
-                        YAML.WriteLine($"# user:    {System.Environment.UserName}");
-                        YAML.WriteLine($"# system:  {System.Environment.MachineName}");
-                        YAML.WriteLine("################################################################################");
-
-                        //Set Stages
-                        YAML.WriteLine();
-                        YAML.WriteLine("stages:");
-                        YAML.WriteLine("  - test");
-                        YAML.WriteLine("  - test parallel");
-                        YAML.WriteLine();
-
                         //Set job class
                         // ======================================================================
                         //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, 
