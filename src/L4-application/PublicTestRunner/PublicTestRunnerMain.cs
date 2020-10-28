@@ -515,7 +515,7 @@ namespace PublicTestRunner {
 #else
                     YAML.WriteLine("      job: build:Release");
 #endif
-                    YAML.WriteLine("      ref: $CI_COMMIT_BRANCH");
+                    YAML.WriteLine("      ref: $CI_MERGE_REQUEST_REF_PATH");
                     YAML.WriteLine("      artifacts: true");
                     YAML.WriteLine();
 
