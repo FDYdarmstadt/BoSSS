@@ -488,20 +488,31 @@ namespace PublicTestRunner {
                     YAML.WriteLine();
 
                     //Set job class
-                    YAML.WriteLine(".DebugTest:");
+                    YAML.WriteLine(".Test:");
                     YAML.WriteLine("  before_script:");
+#if DEBUG
                     YAML.WriteLine("    - cd internal/src/experimental/L4-application/InternalTestRunner/bin/Debug");
+#else
+                    YAML.WriteLine("    - cd internal/src/experimental/L4-application/InternalTestRunner/bin/Release");
+#endif
                     YAML.WriteLine("    - bash -c \"chmod +x InternalTestRunner.exe\"");
                     YAML.WriteLine("  artifacts:");
                     YAML.WriteLine("    reports:");
+#if DEBUG
                     YAML.WriteLine("      junit: internal/src/experimental/L4-application/InternalTestRunner/bin/Debug/TestResult.*");
+#else
+                    YAML.WriteLine("      junit: internal/src/experimental/L4-application/InternalTestRunner/bin/Release/TestResult.*");
+#endif
                     YAML.WriteLine("    expire_in: 2 days");
                     YAML.WriteLine("  rules:");
                     YAML.WriteLine("    - changes:");
                     YAML.WriteLine("    - public/src/**/*");
                     YAML.WriteLine("  needs:");
+#if DEBUG
                     YAML.WriteLine("    - build:Debug");
-
+#else
+                    YAML.WriteLine("    - build:Release");
+#endif
 
                     cnt = 0;
                     var checkResFileName = new HashSet<string>();
@@ -516,11 +527,8 @@ namespace PublicTestRunner {
 
 
                         YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
-#if DEBUG
-                        YAML.WriteLine("   extends: .DebugTest");
-#else
-                        YAML.WriteLine("   extends: .ReleaseTest");
-#endif
+                        YAML.WriteLine("   extends: .Test");
+
                         if(t.NoOfProcs == 1) 
                             YAML.WriteLine("   stage: test");
                         else
