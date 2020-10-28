@@ -90,6 +90,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         Stopwatch[][] m_EdgeSourceV_Watches;
         Stopwatch[][] m_EdgeSourceGradV_Watches;
 
+        
+
+
         /// <summary>
         /// Execution of quadrature
         /// </summary>

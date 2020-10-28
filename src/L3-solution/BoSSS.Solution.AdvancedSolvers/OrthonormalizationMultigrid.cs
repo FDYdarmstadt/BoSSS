@@ -127,6 +127,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     PreSmoother.Init(op);
                 if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
                     PostSmoother.Init(op);
+
+                Console.WriteLine("Testcode in OrthoMG !!!!!!!!!!!!!!!!!");
+                DebugSmoother.Init(op);
             }
         }
 
@@ -557,34 +560,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Res0 = new double[L];
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, rl, L);
-
-
-                /*
-                ISparseSolver Fullsolver = null;
-                string[] Names = new[] { "Solution", "LastCorrection", "ExactCorrection", "DeltaCorrection", "Residual", "NormalizedResidual" };
-                if (this.m_MgOperator.LevelIndex == 0 && viz != null) {
-                    double[] rlcc = rl.CloneAs();
-                    rlcc.Normalize();
-
-                    Fullsolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-                        CacheFactorization = true
-                    };
-                    Fullsolver.DefineMatrix(m_MgOperator.OperatorMatrix);
-
-                    double[] deltaCorr = new double[rlcc.Length];
-                    double[] optCorr = new double[rlcc.Length];
-                    double[] dummy = new double[rlcc.Length];
-
-                    this.viz.PlotVectors(new double[][] {
-                               _xl.ToArray(), //     current solution
-                                dummy, //            last precond result (correction)
-                                optCorr, //          optimal correction
-                                deltaCorr, //        delta of precond and optimal correction
-                                rl.ToArray(), //     current residual
-                                rlcc //              normed residual
-                            }, Names);
-                }
-                */
+                                
 
                 //PlottyMcPlot(rl, X, null, null, B);
                 double[] Xprev = null, Corr = null;
@@ -632,12 +608,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         {
                             var checkPreCor = new double[L];
-                            DebugSmoother.Solve(PreCorr, oldRl);
+                            DebugSmoother.Solve(checkPreCor, oldRl);
 
                             var diffCorr = PreCorr.CloneAs(); diffCorr.AccV(-1.0, checkPreCor);
+                            
                             this.viz.PlotVectors(new double[][] {
                                 PreCorr, checkPreCor, diffCorr
-                            }, new[] { "PMGon", "noPMG", "diff" });
+                            }, new[] { "preSmoother", "debugSmoother", "diff" });
                         }
 
 

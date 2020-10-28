@@ -1476,17 +1476,17 @@ namespace BoSSS.Solution {
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true,
-                        CoarseSolveOfCutcells = true,
+                        CoarseSolveOfCutcells = false,
                     };
 
-                    var smoother2 = new Schwarz() {
+                    var debugsmoother = new Schwarz() {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = smoother1.m_BlockingStrategy,
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = false,
-                        CoarseSolveOfCutcells = true,
+                        CoarseSolveOfCutcells = false,
                     };
 
 
@@ -1496,13 +1496,13 @@ namespace BoSSS.Solution {
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
-                        DebugSmoother = smoother2,
+                        DebugSmoother = debugsmoother,
                         PostSmoother = smoother1,
                         m_omega = 1,
                     };
 
                     if (iLevel > 0) {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 3;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
                          ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 50;
                     }
