@@ -36,6 +36,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         
         public LECEdgeQuadrature2(SpatialOperator op) {
             Operator = op;
+
             m_Edgeform_UxV = EquationComponentArgMapping<IEdgeForm_UxV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.UxV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.UxV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);

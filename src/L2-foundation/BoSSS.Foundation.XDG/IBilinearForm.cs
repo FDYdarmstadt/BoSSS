@@ -54,7 +54,6 @@ namespace BoSSS.Foundation.XDG {
     /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
     /// e.g. cell length scales
     /// </summary>
-    /// <seealso cref="XSpatialOperator.XEvaluatorBase.OperatorCoefficients"/>
     public interface ILevelSetEquationComponentCoefficient : IEquationComponent {
 
         /// <summary>
