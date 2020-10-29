@@ -121,11 +121,21 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                 T optComp = (eqComp is T) ? (T)eqComp : default; //                    optimized component (user-optimized)
                 T vecComp = (vectorizer != null) ? (T)vectorizer(eqComp) : default; // default vectorization (non-optimized)
 
-                if(eqComp is IBoundaryEdgeForm && !(eqComp is IEdgeForm)) {
-                    throw new NotSupportedException($"{eqComp} implements only {typeof(IBoundaryEdgeForm)}, but not {typeof(IEdgeForm)}: this is not supported at the moment;");
+                if(eqComp is IBoundaryEdgeForm) {
+
+                    if(eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
+                        // we are ok
+                    } else {
+                        throw new NotSupportedException($"{eqComp} implements only {typeof(IBoundaryEdgeForm)}, but neither {typeof(IEdgeForm)} nor ILevelSetForm: this is not supported at the moment;");
+                    }
+
                 }
-                if(eqComp is IInnerEdgeForm && !(eqComp is IEdgeForm)) {
-                    throw new NotSupportedException($"{eqComp} implements only {typeof(IBoundaryEdgeForm)}, but not {typeof(IEdgeForm)}: this is not supported at the moment;");
+                if(eqComp is IInnerEdgeForm) {
+                    if(eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
+                        // we are ok
+                    } else {
+                        throw new NotSupportedException($"{eqComp} implements only {typeof(IInnerEdgeForm)}, but neither {typeof(IEdgeForm)} nor ILevelSetForm: this is not supported at the moment;");
+                    }               
                 }
 
 
