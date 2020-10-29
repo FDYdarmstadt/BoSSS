@@ -308,6 +308,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                     A = B;
                 }
             }
+            if(found == false)
+            {
+                throw new Exception("Neighbor could not be determined from line direction!");
+            }
             A.Cell.IntersectionVertex = A.Start.ID;
             return new AfterCutEdgeEnumerator(A.Cell.Edges, A);
         }
@@ -327,7 +331,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             double crossAB = A1.CrossProduct2D(B1);
             double crossBC = B1.CrossProduct2D(C1);
             double crossAC = A1.CrossProduct2D(C1);
-            if (crossAC > 0)
+            if (crossAC >= 0)
             {
                 if (crossAB > 0 && crossBC > 0)
                 {

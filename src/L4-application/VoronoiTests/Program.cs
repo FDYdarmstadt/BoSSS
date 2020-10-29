@@ -5,7 +5,7 @@ namespace VoronoiTests
     class Program
     {
         public static void Main() {
-            TestBench selectedTest = availableTests["Grid Movement"];
+            TestBench selectedTest = availableTests["Grid Creation"];
             RunTest(selectedTest);
         }
 

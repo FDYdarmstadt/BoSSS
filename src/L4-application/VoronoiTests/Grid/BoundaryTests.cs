@@ -12,7 +12,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicPairSkewCheckerBoard();
+            AllPeriodicBoundaries();
         }
 
         [Test]
@@ -314,7 +314,7 @@ namespace VoronoiTests.Grid
             nodes.SetRow(4, new double[] { 0.9, 0.2 });
             nodes.SetRow(5, new double[] { 0.5, -0.6 });
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+            //VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
         }
 
         [Test]
@@ -371,7 +371,7 @@ namespace VoronoiTests.Grid
                 nodes[0, 1] = 1 - 1e-6;
                 try
                 {
-                    //VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+                    VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
                     //Plotter.Plot(grid);
                 }
                 catch (Exception e)
@@ -379,7 +379,7 @@ namespace VoronoiTests.Grid
                     Console.WriteLine(e);
                 }
             }
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+            //VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
         }
 
         MultidimensionalArray RandomNodesInSquare(double height, double width, int number, Random random = null)
