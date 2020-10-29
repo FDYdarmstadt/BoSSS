@@ -463,15 +463,9 @@ namespace PublicTestRunner {
 
                 string yamlName;
                  
-#if DEBUG
-                yamlName = "debug-jobs.yml";
-#else
-                yamlName = "release-jobs.yml";
-#endif
-
+                yamlName = "jobs.yml";
 
                 using(var YAML = new StreamWriter(yamlName)) {
-
                     YAML.WriteLine("################################################################################");
                     YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
                     YAML.WriteLine("# any modification might get over-written");
@@ -479,49 +473,86 @@ namespace PublicTestRunner {
                     YAML.WriteLine($"# user:    {System.Environment.UserName}");
                     YAML.WriteLine($"# system:  {System.Environment.MachineName}");
                     YAML.WriteLine("################################################################################");
+                    YAML.WriteLine();
 
-                    cnt = 0;
-                    var checkResFileName = new HashSet<string>();
+                    //Set Workflow
+                    YAML.WriteLine("workflow:");
+                    YAML.WriteLine("  rules:");
+                    YAML.WriteLine("    - when: always");
+                    YAML.WriteLine();
 
-                    foreach(var t in allTests) {
+                    //Set Stages
+                    YAML.WriteLine("stages:");
+                    YAML.WriteLine("  - test");
+                    YAML.WriteLine("  - test parallel");
+                    YAML.WriteLine();
 
-                        if(t.testname.Contains("TutorialTest")) {
-                            Console.WriteLine("skipping: " + t.testname);
-                            continue;
-                        }
+                    if (allTests.Count == 0)
+                    {
+                        YAML.WriteLine("EmptyTest:");
+                        YAML.WriteLine("  stage: test");
+                        YAML.WriteLine("  script:");
+                        YAML.WriteLine("    - echo \"Empty\"");
+                    }
+                    else
+                    {
+                        //Set job class
+                        // ======================================================================
+                        //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, 
+                        //Gitlab automatically sets CI_PROJECT_PATH, CI_MERGE_REQUEST_REF_PATH
 
-
-
-                        YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
-#if DEBUG
-                        YAML.WriteLine("   extends: .DebugTest");
-#else
-                        YAML.WriteLine("   extends: .ReleaseTest");
-#endif
-                        if(t.NoOfProcs == 1) 
-                            YAML.WriteLine("   stage: test");
-                        else
-                            YAML.WriteLine("   stage: test parallel");
-                        YAML.WriteLine("   script:");
-                        if(t.NoOfProcs == 1) 
-                            YAML.WriteLine($"     - ./InternalTestRunner.exe nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
-                        else
-                            YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./InternalTestRunner.exe nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
-                        if(t.NoOfProcs > 1) {
-                            YAML.WriteLine("   tags:");
-                            YAML.WriteLine($"    - {t.NoOfProcs}cores");
-                        }
+                        YAML.WriteLine(".Test:");
+                        YAML.WriteLine("  before_script:");
+                        YAML.WriteLine("    - cd $RUNNER_PATH");
+                        YAML.WriteLine("    - bash -c \"chmod +x $RUNNER_EXE\"");
+                        YAML.WriteLine("  artifacts:");
+                        YAML.WriteLine("    reports:");
+                        YAML.WriteLine("      junit: $RUNNER_PATH/TestResult.*");
+                        YAML.WriteLine("    expire_in: 2 days");
+                        YAML.WriteLine("  needs:");
+                        YAML.WriteLine("    - project: $CI_PROJECT_PATH");
+                        YAML.WriteLine("      job: $BUILD_DEPENDENCY");
+                        YAML.WriteLine("      ref: $CI_MERGE_REQUEST_REF_PATH");
+                        YAML.WriteLine("      artifacts: true");
                         YAML.WriteLine();
 
+                        cnt = 0;
+                        var checkResFileName = new HashSet<string>();
+                        foreach (var t in allTests)
+                        {
+
+                            if (t.testname.Contains("TutorialTest"))
+                            {
+                                Console.WriteLine("skipping: " + t.testname);
+                                continue;
+                            }
+
+
+
+                            YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
+                            YAML.WriteLine("   extends: .Test");
+
+                            if (t.NoOfProcs == 1)
+                                YAML.WriteLine("   stage: test");
+                            else
+                                YAML.WriteLine("   stage: test parallel");
+                            YAML.WriteLine("   script:");
+                            if (t.NoOfProcs == 1)
+                                YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml'");
+                            else
+                                YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
+                            if (t.NoOfProcs > 1)
+                            {
+                                YAML.WriteLine("   tags:");
+                                YAML.WriteLine($"    - {t.NoOfProcs}cores");
+                            }
+                            YAML.WriteLine();
+                        }
                     }
-
                 }
-                
             }
-
             return 0;
         }
-
 
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
@@ -1083,7 +1114,7 @@ namespace PublicTestRunner {
             Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
             Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
             Console.WriteLine("         help          : prints this message.");
-            Console.WriteLine("         yaml          : write 'debug.yml' or 'release.yml' file for Gitlab.");
+            Console.WriteLine("         yaml          : write 'jobs.yml' file for Gitlab.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
             Console.WriteLine("  a wildcard, i.e. use * for submitting all tests.");
 
