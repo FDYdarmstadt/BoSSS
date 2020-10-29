@@ -31,6 +31,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
+using Microsoft.SqlServer.Server;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -42,7 +43,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public class ConvergenceObserver {
 
         /// <summary>
-        /// Performs a mode decay analysis (<see cref="Waterfall(bool, int)"/>) on this solver.
+        /// Performs a mode decay analysis (<see cref="Waterfall(bool, bool, int)"/>) on this solver.
         /// </summary>
         public static Plot2Ddata WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
             int L = mgOperator.BaseGridProblemMapping.LocalLength;
@@ -60,7 +61,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var termBkup = pc?.TerminationCriterion;
             if(pc != null) {
                 pc.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                        return (R_l2/R0_l2 > 1e-8) && (iter < 500);
+                        return (R_l2/R0_l2 > 1e-8) && (iter < 1500);
                     };
             }
             
@@ -87,7 +88,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Console.WriteLine("Error    reduction per iteration:   " + errReduction);
             
             
-            var p = co.Waterfall(true, 100);
+            var p = co.Waterfall(true, true, 100);
             return p;
         }
 
@@ -217,58 +218,71 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Visualization of data from <see cref="WriteTrendToTable"/> in gnuplot
         /// </summary>
-        public Plot2Ddata Waterfall(bool ErrorOrResidual, int NoOfIter = int.MaxValue) {
+        public Plot2Ddata Waterfall(bool IncludeError, bool IncludeResidual, int NoOfIter = int.MaxValue) {
 
             var Ret = new Plot2Ddata();
-            Ret.Title = (ErrorOrResidual ? "\"Error Waterfall\"" : "\"Residual Waterfall\"");
+            Ret.Title = "Waterfall";
 
 
             //string[] Titels;
             //MultidimensionalArray ConvTrendData;
             //WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out var Titels, out ConvTrendData);
-            var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
+            //var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
 
-            int DegMax = AllData.Keys.Max(tt => tt.deg);
-            int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
-            int MaxIter = AllData.First().Value.Count - 1;
+            int i = 0;
+            foreach(var AllData in new[] { this.ResNormTrend, this.ErrNormTrend }) {
+                i++;
+               
 
-            var WaterfallData = new List<double[]>();
-            var Row = new List<double>();
-            var xCoords = new List<double>();
-            for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
-                Row.Clear();
-                for(int iLv = MglMax; iLv >= 0; iLv--) {
-                    for(int p = 0; p <= DegMax; p++) {
-                        double Acc = 0;
 
-                        foreach(var kv in AllData) {
-                            if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
-                                Acc += kv.Value[iIter].Pow2();
-                        }
+                int DegMax = AllData.Keys.Max(tt => tt.deg);
+                int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
+                int MaxIter = AllData.First().Value.Count - 1;
 
-                        Acc = Acc.Sqrt();
-                        Row.Add(Acc);
+                var WaterfallData = new List<double[]>();
+                var Row = new List<double>();
+                var xCoords = new List<double>();
+                for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                    Row.Clear();
+                    for(int iLv = MglMax; iLv >= 0; iLv--) {
+                        for(int p = 0; p <= DegMax; p++) {
+                            double Acc = 0;
 
-                        if(iIter == 0) {
-                            double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
-                            xCoords.Add(xCoord);
+                            foreach(var kv in AllData) {
+                                if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
+                                    Acc += kv.Value[iIter].Pow2();
+                            }
+
+                            Acc = Acc.Sqrt();
+                            Row.Add(Acc);
+
+                            if(iIter == 0) {
+                                double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
+                                xCoords.Add(xCoord);
+                            }
                         }
                     }
+
+                    WaterfallData.Add(Row.ToArray());
                 }
 
-                WaterfallData.Add(Row.ToArray());
-            }
+                Ret.LogY = true;
+                Ret.ShowLegend = false;
 
-            Ret.LogY = true;
-            Ret.ShowLegend = false;
+                for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                    var PlotRow = WaterfallData[iIter];
 
-            for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
-                var PlotRow = WaterfallData[iIter];
-                
-                var g = new Plot2Ddata.XYvalues("iter"  + iIter, xCoords, PlotRow);
-                
-                Ret.AddDataGroup(g);
-                    
+                    var g = new Plot2Ddata.XYvalues("iter" + iIter, xCoords, PlotRow);
+                    if(i == 1) {
+                        g.Format.PointType = PointTypes.OpenBox;
+                        g.Format.LineColor = LineColors.Red;
+                    } else {
+                        g.Format.PointType = PointTypes.Circle;
+                        g.Format.LineColor = LineColors.Black;
+                    }
+                    Ret.AddDataGroup(g);
+
+                }
             }
             return Ret;
         }

@@ -645,7 +645,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(HiMask.GetNoOfMaskedCells == lowMask.GetNoOfMaskedCells);
                         Debug.Assert(HiMask.GetNoOfMaskedCells == fullMask.GetNoOfMaskedCells);
 
-                        Console.WriteLine("Testcode in Schwarz.");
+                        //Console.WriteLine("Testcode in Schwarz.");
                         Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length || CoarseSolveOfCutcells);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         BMhiBlocks[iPart] = HiMask;
@@ -654,8 +654,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //get subblocks from masking
                         MultidimensionalArray[] hiBlocks = HiMask.GetDiagonalBlocks(op.OperatorMatrix, false, false); //gets diagonal-blocks only
                         MultidimensionalArray[] fullBlocks = fullMask.GetDiagonalBlocks(op.OperatorMatrix, false, false); //gets diagonal-blocks only
-                        /*
                         loBlock = lowMask.GetSubBlockMatrix(op.OperatorMatrix);
+                        /*
                         {
                             Console.WriteLine("More Testcode in Schwarz. !!!!!!!!!!!!!!!!!!");
                             MultidimensionalArray[] fullBlocks = fullMask.GetDiagonalBlocks(op.OperatorMatrix, false, false);
@@ -1142,11 +1142,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         int Np = DiagBlock.NoOfRows;
 
 
-                                        var biHi = BMhiBlocks[iPart].GetSubVecOfCell(RHSfull, j); // the input: current state of 'Resdummy'
+                                        var biHi = BMfullBlocks[iPart].GetSubVecOfCell(RHSfull, j); // the input: current state of 'Resdummy'
                                         var xiHi = new double[Np];
                                         DiagBlock.GEMV(underrelax, biHi, 0.0, xiHi);
 
-                                        BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xfull); // the output: write to 'xiHi'
+                                        BMfullBlocks[iPart].AccSubVecOfCell(xiHi, j, Xfull); // the output: write to 'xiHi'
                                     }
 
                                     var ret = BMfullBlocks[iPart].GetSubVec(Xfull);
@@ -1186,7 +1186,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     MTXi.SpMV(1.0, xC, 0.0, Zii);
 
                                     for(int k = 0; k < OrthoSys.Count; k++) {
-                                        double a = Zii.InnerProd(OrthoSys[k].Z) / Zii.L2NormPow2();
+                                        double a = Zii.InnerProd(OrthoSys[k].Z);
                                         Zii.AccV(-a, OrthoSys[k].Z);
                                         xC.AccV(-a, OrthoSys[k].Q);
                                     }
@@ -1196,26 +1196,77 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     xC.ScaleV(b);
                                     OrthoSys.Add((Zii, xC));
 
+                                    double oldResiNorm = rj.L2Norm();
+
                                     double alpha_ii = Zii.InnerProd(r0);
                                     xi.AccV(alpha_ii, xC);
                                     rj.AccV(-alpha_ii, Zii);
+
+                                    var rjCheck = r0.CloneAs();
+                                    MTXi.SpMV(-1.0, xi, 1.0, rjCheck);
+                                    double dist = rjCheck.L2Dist(rj);
+
+                                    var OrthoCheck = MultidimensionalArray.Create(OrthoSys.Count, OrthoSys.Count);
+                                    for(int k = 0; k < OrthoSys.Count; k++) {
+                                        for(int w = 0; w < OrthoSys.Count; w++) {
+                                            OrthoCheck[k, w] = OrthoSys[k].Z.InnerProd(OrthoSys[w].Z);
+                                        }
+                                    }
+                                    OrthoCheck.AccEye(-1.0);
+                                    var orthoErr = OrthoCheck.InfNorm();
+
+                                    double newResiNorm = rj.L2Norm();
+                                    Debug.Assert(dist <= Math.Max(rj.L2Norm(), rjCheck.L2Norm()) * 1e-10);
+                                    Debug.Assert(newResiNorm < oldResiNorm * 1.0001, "residual should shrink");
+                                    Debug.Assert(orthoErr < 1.0e-7);
                                 }
 
-                                var xhi = SolvePMGHi(1.0, rj);
+                                /*
+                                var xhi = SolvePMGBlock(1.0, rj);
                                 AddOrtho(xhi);
                                 var xlo = SolvePMGlo(rj);
                                 AddOrtho(xlo);
-                                var xhi2 = SolvePMGHi(1.0, rj);
+                                var xhi2 = SolvePMGBlock(1.0, rj);
                                 AddOrtho(xhi2);
+                                */
 
-                                var rjCheck = r0.CloneAs();
-                                MTXi.SpMV(-1.0, xi, 1.0, rjCheck);
-                                double dist = rjCheck.L2Dist(rj);
+                                var rTemp = r0.CloneAs();
+                                var C1 = SolvePMGBlock(1.0, rTemp);
+                                var x1 = C1.CloneAs();
+
+                                MTXi.SpMV(-1.0, C1, 1.0, rTemp);
+                                var C2 = SolvePMGlo(rTemp);
+
+                                MTXi.SpMV(-1.0, C2, 1.0, rTemp);
+                                var C3 = SolvePMGBlock(1.0, rTemp);
+
+                                MTXi.SpMV(-1.0, C3, 1.0, rTemp);
+                                var C4 = SolvePMGlo(rTemp);
+
+                                MTXi.SpMV(-1.0, C4, 1.0, rTemp);
+                                var C5 = SolvePMGBlock(1.0, rTemp);
+
+                                MTXi.SpMV(-1.0, C5, 1.0, rTemp);
+                                var C6 = SolvePMGBlock(1.0, rTemp);
+
+                                MTXi.SpMV(-1.0, C6, 1.0, rTemp);
+                                var C7 = SolvePMGBlock(1.0, rTemp);
+
+                                AddOrtho(C1);
+                                AddOrtho(C2);
+                                AddOrtho(C3);
+                                AddOrtho(C4);
+                                AddOrtho(C5);
+                                AddOrtho(C6);
+                                AddOrtho(C7);
 
 
+
+                                /*
                                 double[] xcfinal = new double[xi.Length];
                                 MTXi.Solve_Direct(xcfinal, rj);
                                 xi.AccV(1.0, xcfinal);
+                                */
 
                                 /*
                                 // This is a workaround, because Masking of a subblock is not implemented yet
