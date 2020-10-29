@@ -70,7 +70,7 @@ namespace VoronoiTests.Grid
             MultidimensionalArray nodes = Checkerize(xTics, yTics);
 
             VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
-            Plotter.Plot(grid);
+            //Plotter.Plot(grid);
 
         }
 
