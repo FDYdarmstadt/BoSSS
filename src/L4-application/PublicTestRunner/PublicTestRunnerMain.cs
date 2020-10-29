@@ -512,7 +512,7 @@ namespace PublicTestRunner {
                         YAML.WriteLine("  needs:");
                         YAML.WriteLine("    - project: $CI_PROJECT_PATH");
                         YAML.WriteLine("      job: $BUILD_DEPENDENCY");
-                        YAML.WriteLine("      ref: ARTIFACT_REF_PATH");
+                        YAML.WriteLine("      ref: $ARTIFACT_REF_PATH");
                         YAML.WriteLine("      artifacts: true");
                         YAML.WriteLine();
 
