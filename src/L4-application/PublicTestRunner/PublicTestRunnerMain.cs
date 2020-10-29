@@ -498,7 +498,7 @@ namespace PublicTestRunner {
                     {
                         //Set job class
                         // ======================================================================
-                        //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, 
+                        //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, ARTIFACT_REF_PATH
                         //Gitlab automatically sets CI_PROJECT_PATH, CI_MERGE_REQUEST_REF_PATH
 
                         YAML.WriteLine(".Test:");
@@ -512,7 +512,7 @@ namespace PublicTestRunner {
                         YAML.WriteLine("  needs:");
                         YAML.WriteLine("    - project: $CI_PROJECT_PATH");
                         YAML.WriteLine("      job: $BUILD_DEPENDENCY");
-                        YAML.WriteLine("      ref: $CI_MERGE_REQUEST_REF_PATH");
+                        YAML.WriteLine("      ref: ARTIFACT_REF_PATH");
                         YAML.WriteLine("      artifacts: true");
                         YAML.WriteLine();
 
