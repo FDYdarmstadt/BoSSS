@@ -24,7 +24,9 @@ using MPI.Wrappers.Utils;
 
 namespace ilPSP.LinSolvers.MUMPS {
     
-
+    /// <summary>
+    /// Wrapper for the Wrapper
+    /// </summary>
     unsafe class MUMPS_csharp {
 
         static Dictionary<Parallelism, UnsafeMUMPS> mumpses = new Dictionary<Parallelism, UnsafeMUMPS>();
@@ -443,16 +445,10 @@ namespace ilPSP.LinSolvers.MUMPS {
         }
     }
 
-    unsafe class UnsafeMUMPS : DynLibLoader {
-        // workaround for .NET bug:
-        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
-        static PlatformID[] Helper() {
-            PlatformID[] p = new PlatformID[3];
-            p[0] = PlatformID.Win32NT;
-            p[1] = PlatformID.Unix;
-            p[2] = PlatformID.Unix;
-            return p;
-        }
+    /// <summary>
+    /// Native library wrapper for MUMPS library (v 5.0.2)
+    /// </summary>
+    public unsafe class UnsafeMUMPS : DynLibLoader {
 
         /// <summary>
         /// Read from Environment which type of parallel library should be used.
@@ -503,8 +499,15 @@ namespace ilPSP.LinSolvers.MUMPS {
         _DMUMPS_F77_ dmumps_f77_;
 #pragma warning restore 649
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe delegate int* _MUMPS_GET_MAPPING();
 
+
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe _MUMPS_GET_MAPPING MUMPS_GET_MAPPING {
             get { return mumps_get_mapping; }
         }
@@ -515,18 +518,33 @@ namespace ilPSP.LinSolvers.MUMPS {
             get { return mumps_get_pivnul_list; }
         }
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe delegate int* _MUMPS_GET_SYM_PERM();
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe _MUMPS_GET_SYM_PERM MUMPS_GET_SYM_PERM {
             get { return mumps_get_sym_perm; }
         }
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe delegate int* _MUMPS_GET_UNS_PERM();
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe _MUMPS_GET_UNS_PERM MUMPS_GET_UNS_PERM {
             get { return mumps_get_uns_perm; }
         }
 
+        /// <summary>
+        /// signature of MUMPS main routine
+        /// </summary>
         public unsafe delegate void _DMUMPS_F77_(int* job,
            int* sym,
            int* par,
@@ -611,6 +629,9 @@ namespace ilPSP.LinSolvers.MUMPS {
            int* ooc_prefixlen,
            int* write_problemlen);
 
+        /// <summary>
+        /// MUMPS main routine
+        /// </summary>
         public unsafe _DMUMPS_F77_ DMUMPS_F77_ {
             get { return dmumps_f77_; }
         }
