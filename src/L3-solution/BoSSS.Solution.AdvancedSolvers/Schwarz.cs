@@ -171,9 +171,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public class METISBlockingStrategy : BlockingStrategy {
 
             /// <summary>
-            /// Number of parts/additive Schwarz blocks on current MPI process.
+            /// Number of parts/additive Schwarz blocks on current MPI process (can be different on other processors)
             /// </summary>
-            public int NoOfPartsPerProcess = 4;
+            public int NoOfPartsOnCurrentProcess = 4;
 
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
 
@@ -219,7 +219,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int[] part = new int[JComp];
                 {
-                    if (NoOfPartsPerProcess > 1) {
+                    if (NoOfPartsOnCurrentProcess > 1) {
                         int ncon = 1;
                         int edgecut = 0;
                         int[] options = new int[METIS.METIS_NOPTIONS]; 
@@ -240,7 +240,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 null,
                                 null,
                                 null,
-                                ref NoOfPartsPerProcess,
+                                ref NoOfPartsOnCurrentProcess,
                                 null,
                                 null,
                                 options,
@@ -252,7 +252,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 {
-                    List<List<int>> _Blocks = NoOfPartsPerProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsPerProcess))).ToList();
+                    List<List<int>> _Blocks = NoOfPartsOnCurrentProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsOnCurrentProcess))).ToList();
                     for (int j = 0; j < JComp; j++) {
                         _Blocks[part[j]].Add(j);
                     }
@@ -264,8 +264,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    if(_Blocks.Count < NoOfPartsPerProcess)
-                        Console.WriteLine("METIS WARNING: requested " + NoOfPartsPerProcess + " blocks, but got " + _Blocks.Count);
+                    if(_Blocks.Count < NoOfPartsOnCurrentProcess)
+                        Console.WriteLine("METIS WARNING: requested " + NoOfPartsOnCurrentProcess + " blocks, but got " + _Blocks.Count);
 
                     cache = _Blocks.ToArray();
                     Console.WriteLine("MetisBlocking Testcode active !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -280,7 +280,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// %
             /// </summary>
             internal override int GetNoOfBlocks(MultigridOperator op) {
-                return NoOfPartsPerProcess;
+                return NoOfPartsOnCurrentProcess;
             }
         }
 
@@ -492,16 +492,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // extend blocks according to desired overlap
                 // ==========================================
                 {
-                    /*
-                    // hack for visualization of blocks, pt. 1/2
-                    double[] blockIndex = new double[ag.iLogicalCells.NoOfLocalUpdatedCells];
-                    for (int idx_bi = 0; idx_bi < _Blocks.Count(); idx_bi++) {
-                        var bi = _Blocks.ElementAt(idx_bi);
-                        foreach (int j in bi) {
-                            blockIndex[j] = idx_bi;
-                        };
-                    }
-                    //*/
 
                     BitArray marker = new BitArray(JComp + JGhost);
 
@@ -549,39 +539,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
 
-
-                    /*
-                    // hack for visualization of blocks, pt. 2/2
-                    double[][] ExtendedBlocks = new double[BlockCells.Length][];
-                    string[] Names = new string[BlockCells.Length];
-                    for(int iBlock = 0; iBlock < ExtendedBlocks.Length; iBlock++) {
-                        ExtendedBlocks[iBlock] = new double[blockIndex.Length];
-                        foreach (int j in BlockCells[iBlock]) {
-                            ExtendedBlocks[iBlock][j] = 1.0;
-                            
-                        }
-                        Names[iBlock] = "block" + iBlock;
-                    }
-
-                    if (op.LevelIndex == 0) {
-
-                        var gdata = op.BaseGridProblemMapping.GridDat;
-                        
-
-                        double[][] datas = ArrayTools.Cat<double[]>(blockIndex, ExtendedBlocks);
-                        string[] names = ArrayTools.Cat<string>("indices", Names);
-                        DGField[] vizData = new DGField[datas.Length];
-
-                        for(int i = 0; i < vizData.Length; i++) {
-                            vizData[i] = new SinglePhaseField(new Basis(gdata, 0), names[i]);
-
-                            for(int j = 0; j < datas[i].Length; j++)
-                                vizData[i].SetMeanValue(j, datas[i][j]);
-                        }
-
-                        Tecplot.Tecplot.PlotFields(vizData, "blox", 0.0, 0);
-                    }
-                    //*/
                 }
 
                 BlockMsrMatrix ExtRows = null;
@@ -611,17 +568,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     var fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
 
                     BMfullBlocks[iPart] = fullMask;
-                    /*
-                    MsrMatrix HiDiag = new MsrMatrix(fullBlock.RowPartitioning, fullBlock.ColPartition);
-                    MsrMatrix HiDiagInv = new MsrMatrix(fullBlock.RowPartitioning, fullBlock.ColPartition);
-                    MsrMatrix FullDiag = new MsrMatrix(fullBlock.RowPartitioning, fullBlock.ColPartition);
-                    MsrMatrix FullDiagInv = new MsrMatrix(fullBlock.RowPartitioning, fullBlock.ColPartition);
-                    MsrMatrix LowBlockFull = new MsrMatrix(fullBlock.RowPartitioning, fullBlock.ColPartition);
-                    LowBlockFull.Acc(1.0, fullBlock);
-                    double[] HighMask = new double[LowBlockFull.NoOfRows];
-                    double[] LowMask = new double[LowBlockFull.NoOfRows];
-                    */
-
                     if(UsePMGinBlocks && AnyHighOrderTerms) {
                         //generate selector instructions
                         var lowSel = new SubBlockSelector(op.Mapping);
@@ -655,46 +601,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         MultidimensionalArray[] hiBlocks = HiMask.GetDiagonalBlocks(op.OperatorMatrix, false, false); //gets diagonal-blocks only
                         MultidimensionalArray[] fullBlocks = fullMask.GetDiagonalBlocks(op.OperatorMatrix, false, false); //gets diagonal-blocks only
                         loBlock = lowMask.GetSubBlockMatrix(op.OperatorMatrix);
-                        /*
-                        {
-                            Console.WriteLine("More Testcode in Schwarz. !!!!!!!!!!!!!!!!!!");
-                            MultidimensionalArray[] fullBlocks = fullMask.GetDiagonalBlocks(op.OperatorMatrix, false, false);
-                            int offset = 0;
-                            for(int jj = 0; jj < fullBlocks.Length; jj++) {
-                                var FB = fullBlocks[jj];
-                                int Nfull = FB.NoOfRows;
-
-                                FullDiag.AccBlock(offset, offset, 1.0, FB);
-                                FullDiagInv.AccBlock(offset, offset, 1.0, FB.InvertTo());
-
-                                var HB = hiBlocks[jj];
-                                HiDiag.AccBlock(offset + Nfull - HB.NoOfRows, offset + Nfull - HB.NoOfRows, 1.0, HB);
-                                HiDiagInv.AccBlock(offset + Nfull - HB.NoOfRows, offset + Nfull - HB.NoOfRows, 1.0, HB.InvertTo());
-
-                                for(int k = 0; k < Nfull; k++) {
-                                    int kk = k + offset;
-                                    if(HiDiag.GetNoOfNonZerosPerRow(kk) == 0) {
-                                        HighMask[kk] = 1.0;
-
-                                        LowBlockFull.ClearRow(kk);
-                                        for(int ii = 0; ii < LowBlockFull.NoOfRows; ii++) {
-                                            LowBlockFull[kk, ii] = 0; // clear row 'kk'
-                                            LowBlockFull[ii, kk] = 0; // clear col 'kk'
-                                        }
-
-                                    } else {
-                                        HighMask[kk] = 1.0;
-                                    }
-                                }
-
-
-                                offset += Nfull;
-                            }
-
-                            Debug.Assert(offset == LowBlockFull.NoOfRows);
-                        }
-                        */
-
+                        
                         //get inverse of high-order blocks
                         if(hiBlocks != null) {
                             foreach(var block in hiBlocks) {
@@ -737,11 +644,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Parallelism = Parallelism.SEQ
                     };
                     
-                    /*
-                    blockSolvers[iPart] = new MUMPSSolver() {
-                        Parallelism = Parallelism.SEQ
-                    };
-                    */
                     if (UsePMGinBlocks && AnyHighOrderTerms) {
                         blockSolvers[iPart].DefineMatrix(loBlock);
                     } else {
@@ -749,18 +651,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     BlockMatrices[iPart] = fullBlock;
-
-                    /*
-                    Console.WriteLine("Testcode in Schwarz.");
-                    fullBlock.SaveToTextFileSparse($"FullBlock{iPart}.txt");
-                    LowBlockFull.SaveToTextFileSparse($"LowBlock{iPart}.txt");
-                    FullDiagInv.SaveToTextFileSparse($"FulldiagInv{iPart}.txt");
-                    FullDiag.SaveToTextFileSparse($"FullDiag{iPart}.txt");
-                    HiDiagInv.SaveToTextFileSparse($"DiDiagInv{iPart}.txt");
-                    HiDiag.SaveToTextFileSparse($"HiDiag{iPart}.txt");
-                    HighMask.SaveToTextFile($"HighMask{iPart}.txt");
-                    LowMask.SaveToTextFile($"LowMask{iPart}.txt");
-                    */
                 }
 
                 // Watchdog bomb!
@@ -884,10 +774,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultidimensionalArray[][] PmgBlock_FullSolvers;
 
 
+        /// <summary>
+        /// masks for the Schwarz blocks, high order modes, only initialized if PMG is used, <see cref="UsePMGinBlocks"/>
+        /// - index: Schwarz block
+        /// </summary>
         BlockMask[] BMhiBlocks;
 
+
+        /// <summary>
+        /// masks for the Schwarz blocks, low order modes, only initialized if PMG is used, <see cref="UsePMGinBlocks"/>
+        /// - index: Schwarz block
+        /// </summary>
         BlockMask[] BMloBlocks;
 
+        /// <summary>
+        /// masks for the Schwarz blocks
+        /// - index: Schwarz block
+        /// </summary>
         BlockMask[] BMfullBlocks;
 
         private int m_Overlap = 1;
@@ -940,12 +843,201 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         int NoIter = 0;
 
-        //private double[] Xdummy, Resdummy;
+        private double[] Xdummy, Resdummy;
 
         /// <summary>
         /// ~
         /// </summary>
         public void Solve<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> //
+        {
+            using (var tr = new FuncTrace()) {
+                int NoParts = this.BMfullBlocks.Length;
+
+                // --------
+                // Reminder: we solve for a correction, the basic idea is:
+                //
+                // X0 is current solution, state of 'X' at input time
+                //    Residual = B - M*X0;
+                // now solve (approximately)
+                //    M*Xc = Residual,
+                // if we would solve exactly, i.e.
+                //    Xc = M^{-1}*Residual
+                // then X=(X0+Xc) is an exact solution of 
+                //    M*X = B
+                // --------
+
+                double[] Res = new double[B.Count];
+                MPIexchange<double[]> ResExchange;
+                MPIexchangeInverse<U> XExchange;
+                // Reminder: even though no overlap considered, these Vectors have to be there ...
+                ResExchange = new MPIexchange<double[]>(this.m_MgOp.Mapping, Res);
+                XExchange = new MPIexchangeInverse<U>(this.m_MgOp.Mapping, X);
+
+                int LocLength = m_MgOp.Mapping.LocalLength;
+
+                for (int iIter = 0; iIter < FixedNoOfIterations; iIter++) {
+                    this.NoIter++;
+
+                    Res.SetV(B);
+                    //Console.WriteLine("norm on swz entry: " + X.L2Norm());
+                    this.MtxFull.SpMV(-1.0, X, 1.0, Res);
+
+                    IterationCallback?.Invoke(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
+
+                    using (new BlockTrace("coarse_solve_level" + this.m_MgOp.LevelIndex, tr)) {
+                        if (CoarseSolver != null) {
+                            var XC = X.ToArray().CloneAs();
+                            double[] bc = new double[m_MgOp.CoarserLevel.Mapping.LocalLength];// = Res.CloneAs();
+                            m_MgOp.CoarserLevel.Restrict(Res.CloneAs(), bc);
+                            double[] xc = new double[bc.Length];
+                            CoarseSolver.Solve(xc, bc);
+                            //SingleFilter(xc);
+                            m_MgOp.CoarserLevel.Prolongate(1, XC, 1, xc);
+                            X.AccV(1.0, XC);
+
+                            if (CoarseSolverIsMultiplicative) {
+                                Res.SetV(B);
+                                this.MtxFull.SpMV(-1.0, X, 1.0, Res);
+                            }
+                        }
+                    }
+
+                    if (Overlap > 0) {
+                        ResExchange.TransceiveStartImReturn();
+                        ResExchange.TransceiveFinish(0.0);
+                    }
+
+
+                    using (new BlockTrace("block_solve_level" + this.m_MgOp.LevelIndex, tr)) {
+
+                        for (int iPart = 0; iPart < NoParts; iPart++) {
+
+                            var bi=BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
+                            double[] xi = new double[bi.Length];
+                            if (UsePMGinBlocks && AnyHighOrderTerms) {
+                                // +++++++++++++++++++++++++++++++++
+                                // P-multigrid in each Schwarz block
+                                // +++++++++++++++++++++++++++++++++
+
+                                // This is a workaround, because Masking of a subblock is not implemented yet
+                                // Therefore always projection from parts onto MGO map
+
+                                // hack the hack
+
+                                int ExtLen = Overlap > 0 ? BlockMask.GetLocalAndExternalDOF(m_MgOp.Mapping) : m_MgOp.Mapping.LocalLength;
+
+                                if (Xdummy == null) {
+                                    Xdummy = new double[ExtLen];
+                                } else {
+                                    Xdummy.ClearEntries();
+                                }
+                                if (Resdummy == null) {
+                                    Resdummy = new double[ExtLen];
+                                } else {
+                                    Resdummy.ClearEntries();
+                                }
+                                Debug.Assert(Resdummy.Length == ResExchange.Vector_Ext.Length + Res.Length, "not same length");
+                                BMfullBlocks[iPart].AccSubVec(bi, Resdummy);
+
+                                // solve low-order system
+                                SolveLoSystem(iPart);
+
+                                // re-evaluate residual
+                                ReEvaluateRes(iPart, bi);
+                                // hi order smoother
+                                SolveHiSystem(iPart);
+
+                                // re-evaluate residual
+                                ReEvaluateRes(iPart, bi);
+                                // hi order smoother
+                                SolveLoSystem(iPart);
+
+                                xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
+
+                            } else {
+                                // ++++++++++++++++++++++++++++++
+                                // use block solver for all modes
+                                // ++++++++++++++++++++++++++++++
+
+                                blockSolvers[iPart].Solve(xi, bi);
+                                //SingleFilter(xi);
+                            }
+
+                            //xi.SaveToTextFileDebug(String.Format("x{0}",iPart));
+
+                            // accumulate block solution 'xi' to global solution 'X'
+                            BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext,X);
+                        }
+                    }
+
+
+                    if (Overlap > 0 && EnableOverlapScaling) {
+                        // block solutions stored on *external* indices will be accumulated on other processors.
+                        XExchange.TransceiveStartImReturn();
+                        XExchange.TransceiveFinish(1.0);
+
+                        if (iIter < FixedNoOfIterations - 1)
+                            XExchange.Vector_Ext.ClearEntries();
+
+                        var SolScale = this.SolutionScaling;
+                        for (int l = 0; l < LocLength; l++) {
+                            X[l] *= SolScale[l];
+                        }
+                    }
+
+                } // end loop Schwarz iterations
+
+            } // end FuncTrace
+        }
+
+        private void ReEvaluateRes(int iPart, double[] res) {
+            var ri = res.CloneAs();
+            Resdummy.ClearEntries();
+            var xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
+            this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, ri);
+            BMfullBlocks[iPart].AccSubVec(ri, Resdummy);
+        }
+
+        private void SolveHiSystem(int iPart ) {
+            var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
+            int NoCells = HiModeSolvers.Length;
+
+            double[] xiHi = null;
+            double[] biHi = null;
+
+            for (int j = 0; j < NoCells; j++) {
+                var HiModeSolver = HiModeSolvers[j];
+                int Np = HiModeSolver.NoOfRows;
+                if (xiHi == null || xiHi.Length != Np)
+                    xiHi = new double[Np];
+                if (biHi == null || biHi.Length != Np)
+                    biHi = new double[Np];
+                biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
+                HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
+                BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xdummy);
+            }
+        }
+
+        private void SolveLoSystem(int iPart) {
+            var rLo = BMloBlocks[iPart].GetSubVec(Resdummy);
+            double[] xiLo = new double[rLo.Length];
+            try {
+                blockSolvers[iPart].Solve(xiLo, rLo);
+            } catch (ArithmeticException ae) {
+                Console.Error.WriteLine(ae.Message);
+                throw ae;
+            }
+            BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
+        }
+
+
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public void Solve__pmgExperiments<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
         {
@@ -1011,48 +1103,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         ResExchange.TransceiveFinish(0.0);
                     }
 
-
                     using (new BlockTrace("block_solve_level" + this.m_MgOp.LevelIndex, tr)) {
-
-                        
-
                         for (int iPart = 0; iPart < NoParts; iPart++) {
-
-
-                            /*
-                            void SolvePMGHi(double underrelax, double[] Xdummy, double[] RHS) {
-                                MultidimensionalArray[] HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
-                                int NoCells = HiModeSolvers.Length;
-
-                                double[] xiHi = null;
-                                double[] biHi = null;
-
-                                for(int j = 0; j < NoCells; j++) {
-                                    var HiModeSolver = HiModeSolvers[j];
-                                    int Np = HiModeSolver.NoOfRows;
-
-
-                                    if(xiHi == null || xiHi.Length != Np)
-                                        xiHi = new double[Np];
-                                    //if(biHi == null || biHi.Length != Np)
-                                    //    biHi = new double[Np];
-
-                                    biHi = BMhiBlocks[iPart].GetSubVecOfCell(RHS, j); // the input: current state of 'Resdummy'
-
-                                    HiModeSolver.GEMV(underrelax, biHi, 0.0, xiHi);
-
-                                    BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xdummy); // the output: write to 'xiHi'
-                                }
-                            }
-
-                            void SolvePMGlo<TT>(double[] Xdummy, MPIexchange<TT> RHS) where TT: IList<double> {
-                                var biLo = BMloBlocks[iPart].GetSubVec(RHS.Vector_Ext, RHS.Vector);
-                                double[] xiLo = new double[biLo.Length];
-                                blockSolvers[iPart].Solve(xiLo, biLo);
-                                BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
-                            }
-                            */
-                            
+                           
                             
                             double[] xi; // approximate solution in this block
                             if(UsePMGinBlocks && AnyHighOrderTerms) {
@@ -1060,10 +1113,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // P-multigrid in each Schwarz block
                                 // +++++++++++++++++++++++++++++++++
                                 int ExtLen = Overlap > 0 ? BlockMask.GetLocalAndExternalDOF(m_MgOp.Mapping) : m_MgOp.Mapping.LocalLength;
-                                double[] r0 = BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, ResExchange.Vector);
-                                int Li = r0.Length;
+                                double[] Res0 = BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, ResExchange.Vector);
+                                double res0norm = Res0.L2Norm();
+                                int Li = Res0.Length;
 #if DEBUG
-                                {
+                                if(iIter == 0) {
                                     double[] Reference = new double[X.Count];
                                     double[] AllOne = new double[Li]; AllOne.SetAll(1.0);
                                     BMfullBlocks[iPart].AccSubVec(AllOne, Reference);
@@ -1097,11 +1151,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                             Debug.Assert((Check[l] == 2.0) != (Check[l] == 0.2));
                                         }
                                     }
-
-
                                 }
 #endif
 
+                                
                                 double[] SolvePMGHi(double underrelax, double[] RHS) {
                                     MultidimensionalArray[] HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
                                     int NoCells = HiModeSolvers.Length;
@@ -1154,7 +1207,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     return ret;
                                 }
 
-
                                 double[] SolvePMGlo(double[] RHS) {
                                     double[] RHSfull = new double[ExtLen];
                                     BMfullBlocks[iPart].AccSubVec(RHS, RHSfull);
@@ -1172,14 +1224,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     return ret;
                                 }
 
-                                double[] rj = r0.CloneAs();
+                                double[] rj = Res0.CloneAs();
                                 var OrthoSys = new List<(double[] Z, double[] Q)>();
 
                                 var MTXi = this.BlockMatrices[iPart];
-
                                 xi = new double[Li];
 
-                                void AddOrtho(double[] xC) {
+                                double AddOrtho(double[] xC) {
                                     Debug.Assert(xC.Length == Li);
 
                                     double[] Zii = new double[Li];
@@ -1195,14 +1246,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     Zii.ScaleV(b);
                                     xC.ScaleV(b);
                                     OrthoSys.Add((Zii, xC));
-
+#if DEBUG
                                     double oldResiNorm = rj.L2Norm();
-
-                                    double alpha_ii = Zii.InnerProd(r0);
+#endif
+                                    double alpha_ii = Zii.InnerProd(Res0);
                                     xi.AccV(alpha_ii, xC);
                                     rj.AccV(-alpha_ii, Zii);
+                                    double newResiNorm = rj.L2Norm();
 
-                                    var rjCheck = r0.CloneAs();
+#if DEBUG
+                                    var rjCheck = Res0.CloneAs();
                                     MTXi.SpMV(-1.0, xi, 1.0, rjCheck);
                                     double dist = rjCheck.L2Dist(rj);
 
@@ -1215,98 +1268,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     OrthoCheck.AccEye(-1.0);
                                     var orthoErr = OrthoCheck.InfNorm();
 
-                                    double newResiNorm = rj.L2Norm();
                                     Debug.Assert(dist <= Math.Max(rj.L2Norm(), rjCheck.L2Norm()) * 1e-10);
                                     Debug.Assert(newResiNorm < oldResiNorm * 1.0001, "residual should shrink");
                                     Debug.Assert(orthoErr < 1.0e-7);
+#endif
+                                    return newResiNorm;
                                 }
 
-                                /*
-                                var xhi = SolvePMGBlock(1.0, rj);
-                                AddOrtho(xhi);
-                                var xlo = SolvePMGlo(rj);
-                                AddOrtho(xlo);
-                                var xhi2 = SolvePMGBlock(1.0, rj);
-                                AddOrtho(xhi2);
-                                */
+                                int subIter = 0;
+                                double lastResi = double.MaxValue;
+                                while((subIter < 100 && lastResi >= 0.0005 * res0norm) || subIter <= 0) {
+                                    var rTemp = rj.CloneAs();
 
-                                var rTemp = r0.CloneAs();
-                                var C1 = SolvePMGBlock(1.0, rTemp);
-                                var x1 = C1.CloneAs();
+                                    var C1 = SolvePMGBlock(1.0, rTemp);
+                                   
+                                    MTXi.SpMV(-1.0, C1, 1.0, rTemp);
+                                    var C2 = SolvePMGlo(rTemp);
 
-                                MTXi.SpMV(-1.0, C1, 1.0, rTemp);
-                                var C2 = SolvePMGlo(rTemp);
+                                    MTXi.SpMV(-1.0, C2, 1.0, rTemp);
+                                    var C3 = SolvePMGBlock(1.0, rTemp);
 
-                                MTXi.SpMV(-1.0, C2, 1.0, rTemp);
-                                var C3 = SolvePMGBlock(1.0, rTemp);
-
-                                MTXi.SpMV(-1.0, C3, 1.0, rTemp);
-                                var C4 = SolvePMGlo(rTemp);
-
-                                MTXi.SpMV(-1.0, C4, 1.0, rTemp);
-                                var C5 = SolvePMGBlock(1.0, rTemp);
-
-                                MTXi.SpMV(-1.0, C5, 1.0, rTemp);
-                                var C6 = SolvePMGBlock(1.0, rTemp);
-
-                                MTXi.SpMV(-1.0, C6, 1.0, rTemp);
-                                var C7 = SolvePMGBlock(1.0, rTemp);
-
-                                AddOrtho(C1);
-                                AddOrtho(C2);
-                                AddOrtho(C3);
-                                AddOrtho(C4);
-                                AddOrtho(C5);
-                                AddOrtho(C6);
-                                AddOrtho(C7);
+                                    MTXi.SpMV(-1.0, C3, 1.0, rTemp);
+                                    var C4 = SolvePMGBlock(1.0, rTemp);
+                                    MTXi.SpMV(-1.0, C4, 1.0, rTemp);
+                                    var C5 = SolvePMGBlock(1.0, rTemp);
 
 
-
-                                /*
-                                double[] xcfinal = new double[xi.Length];
-                                MTXi.Solve_Direct(xcfinal, rj);
-                                xi.AccV(1.0, xcfinal);
-                                */
-
-                                /*
-                                // This is a workaround, because Masking of a subblock is not implemented yet
-                                // Therefore always projection from parts onto MGO map
-
-                                // hack the hack
-
+                                    lastResi = AddOrtho(C1);
+                                    lastResi = AddOrtho(C2);
+                                    lastResi = AddOrtho(C3);
+                                    lastResi = AddOrtho(C4);
+                                    lastResi = AddOrtho(C5);
+                                    subIter++;
+                                }
                                 
-                                double[] Xdummy = null;
-                                if(Xdummy == null) {
-                                    Xdummy = new double[ExtLen];
-                                } else {
-                                    Xdummy.ClearEntries();
+                                if(iPart == 0) {
+                                    Console.WriteLine($"Block {0}: {subIter} iterations");
                                 }
-                                double[] Resdummy = null;
-                                if(Resdummy == null) {
-                                    Resdummy = new double[ExtLen];
-                                } else {
-                                    Resdummy.ClearEntries();
-                                }
-                                                              
 
-                                // solve low-order system
-                                Xdummy.ClearEntries();
-                                SolvePMGlo(Xdummy, ResExchange); 
 
-                                // re-evaluate the residual (within the Schwarz-Block)
-                                double[] bi = BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, ResExchange.Vector);
-                                xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
-                                this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
-                                BMfullBlocks[iPart].AccSubVec(bi, Resdummy);
-
-                                // solve the high-order system
-                                SolvePMGHi(1.0, Xdummy, Resdummy);
-                                
-                                // extract solution for the block
-                                xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
-                                Xdummy.ClearEntries();
-                                Resdummy.ClearEntries();
-                                */
                             } else {
                                 // ++++++++++++++++++++++++++++++
                                 // use block solver for all modes
@@ -1340,8 +1340,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } // end loop Schwarz iterations
 
             } // end FuncTrace
-
-            
         }
 
         /// <summary>
@@ -1402,7 +1400,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Schwarz Clone = new Schwarz();
             if (this.m_BlockingStrategy is METISBlockingStrategy) {
                 Clone.m_BlockingStrategy = new METISBlockingStrategy() {
-                    NoOfPartsPerProcess = ((METISBlockingStrategy)this.m_BlockingStrategy).NoOfPartsPerProcess
+                    NoOfPartsOnCurrentProcess = ((METISBlockingStrategy)this.m_BlockingStrategy).NoOfPartsOnCurrentProcess
                 };
             } else if (this.m_BlockingStrategy is SimpleBlocking) {
                 Clone.m_BlockingStrategy = new SimpleBlocking() {

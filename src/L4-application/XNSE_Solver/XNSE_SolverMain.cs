@@ -936,7 +936,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                         new Schwarz() {
                                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                                NoOfPartsPerProcess = this.CurrentSolution.Count / 10000,
+                                                NoOfPartsOnCurrentProcess = this.CurrentSolution.Count / 10000,
                                             },
                                             Overlap = 1,
                                             CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS }
