@@ -13,17 +13,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver {
-
-    struct Parameter
-    {
-        public string Name;
-
-        public DelParameterFactory Factory;
-
-        public DelPartialParameterUpdate Update;
-    }
-
+namespace BoSSS.Application.XNSE_Solver 
+{
     abstract class SpatialEquation {
 
         public SpatialEquation() 
@@ -37,7 +28,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public string[] VariableNames { get; private set; }
 
-        public Parameter[] Parameters { get; private set; }
+        public string[] Parameters { get; private set; }
 
         public void AddVariableNames(params string[] names)
         {
@@ -47,25 +38,31 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             else
             {
-                VariableNames = VariableNames.Cat(names);
+                foreach(string name in names)
+                {
+                    if (!VariableNames.Contains(name))
+                    {
+                        VariableNames = VariableNames.Cat(name);
+                    }
+                }
             }
         }
         
-        public void AddParameter(string name, DelParameterFactory factory = null, DelPartialParameterUpdate update = null)
+        public void AddParameter(params string[] names)
         {
-            Parameter parameter = new Parameter
-            {
-                Name = name,
-                Factory = factory,
-                Update = update
-            };
             if (Parameters == null)
             {
-                Parameters = new Parameter[] { parameter };
+                Parameters = names;
             }
             else
             {
-                Parameters = Parameters.Cat(parameter);
+                foreach (string name in names)
+                {
+                    if (!Parameters.Contains(name))
+                    {
+                        Parameters = Parameters.Cat(name);
+                    }
+                }
             }
         }
 
@@ -111,92 +108,36 @@ namespace BoSSS.Application.XNSE_Solver {
 
     class SystemOfEquations 
     {
-        protected LinkedList<SpatialEquation> spatialEquations;
+        public LinkedList<SpatialEquation> SpatialEquations;
 
-        protected LinkedList<SurfaceEquation> interfaceEquations;
+        public LinkedList<SurfaceEquation> InterfaceEquations;
 
-        protected LinkedList<BulkEquation> bulkEquations;
+        public LinkedList<BulkEquation> BulkEquations;
 
         public SystemOfEquations() {
-            interfaceEquations = new LinkedList<SurfaceEquation>();
-            bulkEquations = new LinkedList<BulkEquation>();
-            spatialEquations = new LinkedList<SpatialEquation>();
+            InterfaceEquations = new LinkedList<SurfaceEquation>();
+            BulkEquations = new LinkedList<BulkEquation>();
+            SpatialEquations = new LinkedList<SpatialEquation>();
         }
 
         public void AddEquation(SurfaceEquation A) {
-            interfaceEquations.AddLast(A);
-            spatialEquations.AddLast(A);
+            InterfaceEquations.AddLast(A);
+            SpatialEquations.AddLast(A);
         }
 
         public void AddEquation(BulkEquation A) {
-            bulkEquations.AddLast(A);
-            spatialEquations.AddLast(A);
+            BulkEquations.AddLast(A);
+            SpatialEquations.AddLast(A);
         }
 
         public void AddEquation(SpatialEquation A)
         {
-            spatialEquations.AddLast(A);
+            SpatialEquations.AddLast(A);
         }
 
-        public virtual XSpatialOperatorMk2 GetSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
-            var spatialOperator = CreateSpatialOperator(QuadOrderFunc);
-            AddEquationComponents(spatialOperator);
-            AddSurfaceEquationComponents(spatialOperator);
-            AddGhostEquationComponents(spatialOperator);
-            AddTemporalOperator(spatialOperator);
-            AddParameterDelegates(spatialOperator);
-
-            return spatialOperator;
-        }
-
-        XSpatialOperatorMk2 CreateSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
-            string[] domainVars = ExtractDomainVarsFromEquations();
-            string[] codomainVars = ExtractCoDomainVarsFromEquations();
-            string[] parameters = ExtractParametersFromEquations();
-            string[] species = ExtractSpeciesFromEquations();
-
-            var spatialOperator = new XSpatialOperatorMk2(
-                domainVars,
-                parameters,
-                codomainVars,
-                QuadOrderFunc,
-                species);
-            return spatialOperator;
-        }
-
-        void AddEquationComponents(XSpatialOperatorMk2 spatialOperator) {
-            foreach (SpatialEquation equation in spatialEquations)
-            {
-                foreach (IEquationComponent component in equation.Components)
-                {
-                    spatialOperator.EquationComponents[equation.CodomainName].Add(component);
-                }
-            }
-        }
-
-        void AddSurfaceEquationComponents(XSpatialOperatorMk2 spatialOperator) {
-            foreach(SurfaceEquation equation in interfaceEquations) {
-                if(equation.SurfaceComponents != null) {
-                    foreach(IEquationComponent component in equation.SurfaceComponents) {
-                        spatialOperator.SurfaceElementOperator.EquationComponents[equation.CodomainName].Add(component);
-                    }
-                }
-            }
-        }
-
-        void AddGhostEquationComponents(XSpatialOperatorMk2 spatialOperator) {
-            foreach(BulkEquation equation in bulkEquations) {
-                if(equation.GhostComponents != null) {
-                    foreach(IEquationComponent component in equation.GhostComponents) {
-                        spatialOperator.GhostEdgesOperator.EquationComponents[equation.CodomainName].Add(component);
-                    }
-                }
-            }
-        }
-
-        string[] ExtractDomainVarsFromEquations() {
+        public string[] DomainVars() {
             LinkedList<string> domainVars = new LinkedList<string>();
-            foreach(SpatialEquation equation in bulkEquations) {
+            foreach(SpatialEquation equation in BulkEquations) {
                 if(domainVars.Count == 0) 
                 {
                     domainVars.AddRange(equation.VariableNames);
@@ -216,9 +157,9 @@ namespace BoSSS.Application.XNSE_Solver {
             return domainVars.ToArray();
         }
 
-        string[] ExtractCoDomainVarsFromEquations() {
+        public string[] CoDomainVars() {
             LinkedList<string> coDomainVars = new LinkedList<string>();
-            foreach(BulkEquation equation in bulkEquations) {
+            foreach(BulkEquation equation in BulkEquations) {
                 string coDomainVar = equation.CodomainName;
                 if(!coDomainVars.Contains(coDomainVar)) {
                     coDomainVars.AddLast(coDomainVar);
@@ -227,17 +168,17 @@ namespace BoSSS.Application.XNSE_Solver {
             return coDomainVars.ToArray();
         }
 
-        string[] ExtractParametersFromEquations() {
+        public string[] Parameters() {
             LinkedList<string> parameterNames = new LinkedList<string>();
-            foreach(SpatialEquation equation in spatialEquations) 
+            foreach(SpatialEquation equation in SpatialEquations) 
             {
                 if(equation.Parameters != null)
                 {
-                    foreach (Parameter parameter in equation.Parameters)
+                    foreach (string parameter in equation.Parameters)
                     {
-                        if (!parameterNames.Contains(parameter.Name))
+                        if (!parameterNames.Contains(parameter))
                         {
-                            parameterNames.AddLast(parameter.Name);
+                            parameterNames.AddLast(parameter);
                         }
                     }
                 }
@@ -245,9 +186,9 @@ namespace BoSSS.Application.XNSE_Solver {
             return parameterNames.ToArray();
         }
 
-        string[] ExtractSpeciesFromEquations() {
+        public string[] Species() {
             LinkedList<string> species = new LinkedList<string>();
-            foreach(BulkEquation equation in bulkEquations) {
+            foreach(BulkEquation equation in BulkEquations) {
                 string componentSpecies = equation.SpeciesName;
                 if(componentSpecies != null && !species.Contains(componentSpecies)) {
                     species.AddLast(componentSpecies);
@@ -256,16 +197,10 @@ namespace BoSSS.Application.XNSE_Solver {
             return species.ToArray();
         }
 
-        void AddTemporalOperator(XSpatialOperatorMk2 spatialOperator) 
+        public (string, double[])[] MassDiagonal() 
         {
-            (string, double[])[] diagonal = GetMassDiagonal(spatialOperator);
-            spatialOperator.TemporalOperator = new ConstantXTemporalOperator(spatialOperator, diagonal);
-        }
-
-        (string, double[])[] GetMassDiagonal(XSpatialOperatorMk2 spatialOperator) 
-        {
-            StringArrayDictionary<StringArrayDictionary<double>> diag = new StringArrayDictionary<StringArrayDictionary<double>>(spatialOperator.Species);
-            foreach(BulkEquation equation in bulkEquations) 
+            StringArrayDictionary<StringArrayDictionary<double>> diag = new StringArrayDictionary<StringArrayDictionary<double>>(Species());
+            foreach(BulkEquation equation in BulkEquations) 
             {
                 if(diag.TryGetValue(equation.SpeciesName, out StringArrayDictionary<double> scales)) 
                 {
@@ -273,7 +208,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 } 
                 else 
                 {
-                    scales = new StringArrayDictionary<double>(spatialOperator.CodomainVar);
+                    scales = new StringArrayDictionary<double>(CoDomainVars());
                     scales.Add(equation.CodomainName, equation.MassScale);
                     diag.Add(equation.SpeciesName, scales);
                 }
@@ -344,27 +279,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 value = default(T);
                 return false;
-            }
-        }
-
-        void AddParameterDelegates(XSpatialOperatorMk2 spatialOperator)
-        {
-            foreach (SpatialEquation equation in spatialEquations)
-            {
-                if (equation.Parameters != null)
-                {
-                    foreach (Parameter parameter in equation.Parameters)
-                    {
-                        if(parameter.Factory != null)
-                        {
-                            spatialOperator.ParameterFactories.Add(parameter.Factory);
-                        }
-                        if(parameter.Update != null)
-                        {
-                            spatialOperator.ParameterUpdates.Add(parameter.Update);
-                        }
-                    }
-                }
             }
         }
     }

@@ -79,6 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Equations.cs" />
+    <Compile Include="OperatorFactory.cs" />
+    <Compile Include="ParameterList.cs" />
+    <Compile Include="Parameters.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="Fluids.cs" />
     <Compile Include="SpatialEquation.cs" />

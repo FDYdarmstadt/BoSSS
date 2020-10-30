@@ -31,12 +31,12 @@ namespace BoSSS.Application.XNSE_Solver
             return myLsTrk;
         }
 
-        VectorField<XDGField> Gravity;
+        VectorField<XDGField> gravity;
         
         protected override IEnumerable<DGField> CreateAdditionalFields() {
             int D = this.GridData.SpatialDimension;
-            Gravity = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.CurrentState.BasisS[d] as XDGBasis, VariableNames.Gravity_d(d))));
-            return Gravity;
+            gravity = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.CurrentState.BasisS[d] as XDGBasis, VariableNames.Gravity_d(d))));
+            return gravity;
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
@@ -44,35 +44,34 @@ namespace BoSSS.Application.XNSE_Solver
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
             //Build Equations
-            SystemOfEquations equationSystem = new SystemOfEquations();
+            OperatorFactory opFactory = new OperatorFactory();
             for (int d = 0; d < D; ++d) {
-                NavierStokes nseA = new NavierStokes("A", d, LsTrk, D, boundaryMap, config);
-                nseA.AddGravity(Control);
-                equationSystem.AddEquation(nseA);
-
-                NavierStokes nseB = new NavierStokes("B", d, LsTrk, D, boundaryMap, config);
-                nseB.AddGravity(Control);
-                equationSystem.AddEquation(nseB);
-                
-                equationSystem.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config));
-                equationSystem.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+                opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
+                opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
+                opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
+                opFactory.AddParameter(Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B));
+                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config));
+                opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
-            equationSystem.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
-            equationSystem.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-            equationSystem.AddEquation(new InterfaceContinuity(config, D, LsTrk));
+            opFactory.AddParameter(new Velocity0(D));
+            opFactory.AddParameter(new Velocity0Mean(D, LsTrk));
+            opFactory.AddParameter(new Normals(D, LsTrk));
+            //opFactory.AddParameter(new Curvature());
 
-            int QuadOrderFunc(int[] DomvarDegs, int[] ParamDegs, int[] CodvarDegs) {
-                int degU = DomvarDegs[0];
-                int QuadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-                if(this.Control.solveKineticEnergyEquation)
-                    QuadOrder *= 2;
-                return QuadOrder;
-            }
+            opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
+            opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
+            opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
+
+            
+            //QuadOrder
+            int degU = Control.FieldOptions["Velocity*"].Degree;
+            int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            if(this.Control.solveKineticEnergyEquation)
+                quadOrder *= 2;
 
             //Get Spatial Operator
-            XSpatialOperatorMk2 XOP = equationSystem.GetSpatialOperator(QuadOrderFunc);
-
-            // final settings
+            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
+            //final settings
             //XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.Commit();
 
