@@ -36,6 +36,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         
         public LECEdgeQuadrature2(SpatialOperator op) {
             Operator = op;
+
             m_Edgeform_UxV = EquationComponentArgMapping<IEdgeForm_UxV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.UxV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.UxV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
@@ -94,6 +95,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
         /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        bool IsNonEmpty {
+            get {
+                return m_Edgeform_UxV.IsNonEmpty() || 
+                    m_Edgeform_GradUxV.IsNonEmpty() || 
+                    m_Edgeform_UxGradV.IsNonEmpty() || 
+                    m_Edgeform_GradUxGradV.IsNonEmpty() || 
+                    m_EdgeSourceV.IsNonEmpty() || 
+                    m_EdgeSourceGradV.IsNonEmpty() ;
+            }
+        }
+
+        /// <summary>
         /// Execution of quadrature
         /// </summary>
         /// <param name="domNrule"></param>
@@ -112,11 +127,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         public void Execute(ICompositeQuadRule<QuadRule> domNrule,
             UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
             M Matrix, V AffineVector, double time) {
-
             if (RowMap.BasisS.Count != GAMMA)
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if (ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
+            if(this.IsNonEmpty == false)
+                return;
 
             m_GridDat = RowMap.GridDat;
 

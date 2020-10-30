@@ -163,6 +163,16 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         protected EquationComponentArgMapping<INonlinearFluxEx>[] m_NonlinFluxesEx;
         
         /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        protected virtual bool IsNonEmpty {
+            get {
+                return m_NonlinFluxes.IsNonEmpty() ||
+                    m_NonlinFluxesEx.IsNonEmpty();
+            }
+        }
+
+        /// <summary>
         /// array index: equation index
         /// </summary>
         protected Stopwatch[][] m_NonlinFluxesWatches;
@@ -262,6 +272,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// executes the quadrature
         /// </summary>
         public void Execute() {
+            if(this.IsNonEmpty == false)
+                return;
             m_Quad.Execute();
         }
 
