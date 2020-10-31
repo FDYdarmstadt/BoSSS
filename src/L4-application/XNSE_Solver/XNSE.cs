@@ -57,11 +57,9 @@ namespace BoSSS.Application.XNSE_Solver
             opFactory.AddParameter(new Velocity0Mean(D, LsTrk));
             opFactory.AddParameter(new Normals(D, LsTrk));
             //opFactory.AddParameter(new Curvature());
-
             opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
             opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
             opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
-
             
             //QuadOrder
             int degU = Control.FieldOptions["Velocity*"].Degree;

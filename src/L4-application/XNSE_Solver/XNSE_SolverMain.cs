@@ -80,6 +80,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleTranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleBcTest_PressureOutletTest(1, 0.0d, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleMovingDropletTest(1, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8, ViscosityMode.FullySymmetric, true, false);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimplePolynomialTestForConvectionTest(3, 0, false);
 
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);

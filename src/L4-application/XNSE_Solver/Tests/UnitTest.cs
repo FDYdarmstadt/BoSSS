@@ -370,6 +370,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             GenericTest(Tst, C);
         }
 
+        /// <summary>
+        /// <see cref="Tests.PolynomialTestForConvection"/>
+        /// </summary>
+        [Test]
+        public static void SimplePolynomialTestForConvectionTest(
+            [Values(3)] int deg,
+            [Values(0)] double AgglomerationTreshold,
+            [Values(false)] bool SolverMode_performsolve
+            )
+        {
+
+            ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
+
+            var Tst = new PolynomialTestForConvection();
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
+            ApplicationWithSolverTest(Tst, C);
+        }
 
         private static void ApplicationWithSolverTest(ITest Tst, XNSE_Control C) {
             using(var solver = new XNSE()) {
