@@ -209,7 +209,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             }
 
             //New Edges
-            MeshCell<T> newCell = new MeshCell<T>();
+            MeshCell<T> newCell = new MeshCell<T> { Node = new T() };
+            newCell.Node.Position = cell.Node.Position;
             mesh.AddCell(newCell);
             MeshMethods.CreateBoundaryEdge(
                verticesOfNewRidgeBoundary,
@@ -299,7 +300,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             while (!found && outgoingEdges.MoveNext())
             {
                 B = outgoingEdges.Current;
-                if (IsBetween(A, line, B))
+                if (IsPositiveRotation(A, line, B))
                 {
                     found = true;
                 }
@@ -322,7 +323,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
         }
 
         //Check if in positive rotation a, c, b order
-        static bool IsBetween(Edge<T> a, BoundaryLine b, Edge<T> c)
+        static bool IsPositiveRotation(Edge<T> a, BoundaryLine b, Edge<T> c)
         {
             Vector A1 = a.End.Position - a.Start.Position;
             Vector B1 = b.End.Position - b.Start.Position;
@@ -330,21 +331,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 
             double crossAB = A1.CrossProduct2D(B1);
             double crossBC = B1.CrossProduct2D(C1);
-            double crossAC = A1.CrossProduct2D(C1);
-            if (crossAC >= 0)
+            if (crossAB > 0 && crossBC > 0)
             {
-                if (crossAB > 0 && crossBC > 0)
-                {
-                    return true;
-                }
-                return false;
+                return true;
             }
             else
             {
-                if (crossAB < 0 && crossBC < 0)
-                {
-                    return true;
-                }
                 return false;
             }
         }

@@ -12,7 +12,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            AllPeriodicBoundaries();
+            PeriodicPairSkewCheckerBoard();
         }
 
         [Test]
