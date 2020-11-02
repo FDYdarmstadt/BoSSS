@@ -652,7 +652,7 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.MixtureFraction:
                                 // opt1:
                                 //inp2.Parameters_OUT = inp.Parameters_IN;
-                                Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
+                                Uout[m_SpatialDimension] =  Uin[m_SpatialDimension]; // m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
                                 break;
                             case PhysicsMode.LowMach: {
                                     Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
