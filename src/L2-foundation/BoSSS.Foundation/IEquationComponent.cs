@@ -44,6 +44,9 @@ namespace BoSSS.Foundation {
         IList<string> ParameterOrdering { get; }
     }
 
+    /// <summary>
+    /// Interface for equation components that require parameters which are based on the current state 
+    /// </summary>
     public interface IParameterHandling : IEquationComponent {
 
         /// <summary>
@@ -89,7 +92,6 @@ namespace BoSSS.Foundation {
     /// <summary>
     /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
     /// e.g. cell length scales;
-    /// <seealso cref="IEvaluator.OperatorCoefficients"/> 
     /// </summary>
     public interface IEquationComponentCoefficient : IEquationComponent {
 
@@ -97,7 +99,6 @@ namespace BoSSS.Foundation {
         /// Passes various coefficients to the equation component.
         /// </summary>
         /// <param name="cs">
-        /// Set by the user through <see cref="IEvaluator.OperatorCoefficients"/>;
         /// </param>
         /// <param name="DomainDGdeg">
         /// DG polynomial order of trial/domain variables/arguments; ordering corresponds with <see cref="IEquationComponent.ArgumentOrdering"/>;

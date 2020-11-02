@@ -330,12 +330,18 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public double[] AcceptableL2Error {
             get {
                 return new double[] { 5.0e-2, 5.0e-2, 5.0e-1 };
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public double[] AcceptableResidual {
             get {
                 var Resi = new double[] { 5e-8, 5e-8, 5e-8 };
@@ -345,6 +351,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /// <summary>
+        /// 2
+        /// </summary>
         public int SpatialDimension {
             get {
                 return 2;

@@ -179,13 +179,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     solver = new PARDISOSolver() {
                         CacheFactorization = true,
                         UseDoublePrecision = true,
-                        SolverVersion = this.SolverVersion
+                        Parallelism = this.SolverVersion
                     };
                     break;
 
                 case _whichSolver.MUMPS:
                     solver = new MUMPSSolver() {
-                        SolverVersion=this.SolverVersion
+                        Parallelism=this.SolverVersion
                     };
                     break;
 
