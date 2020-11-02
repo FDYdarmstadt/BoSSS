@@ -218,6 +218,7 @@ namespace BoSSS.Application.TutorialTests {
             bool iStartedThisShit = OneTimeSetUp();
 
             BoSSSpad.Job.UndocumentedSuperHack = true;
+            BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:
