@@ -327,9 +327,16 @@ namespace BoSSS.Application.BoSSSpad {
                     eval = new SafeEvaluator(() => Startup(runcommands));
 #if !DEBUG
                 } catch (Exception e) {
-                    Console.WriteLine(
-                        "DBE initialization failed with message '{0}'. Type 'LastError' for details.",
-                        e.Message);
+                    if(!WriteFullExceptionInfo) {
+                        Console.Error.WriteLine(
+                            "DBE initialization failed with message '{0}'. Type 'LastError' for details.",
+                            e.Message);
+                    } else {
+                        Console.Error.WriteLine(
+                            "DBE initialization failed with message '{0}'. Type 'LastError' for details.",
+                            e.Message);
+                        Console.Error.WriteLine(e.StackTrace);                         
+                    }
                     InteractiveShell.LastError = e;
                     eval = new SafeEvaluator(() => Startup(runcommands));
                 }
@@ -408,6 +415,11 @@ namespace BoSSS.Application.BoSSSpad {
 #endif
             return result;
         }
+
+        /// <summary>
+        /// Full error log to the Console
+        /// </summary>
+        public static bool WriteFullExceptionInfo = false;
 
         private static CommandLineReader GetCommandLineReader() {
             string historyPath = Utils.GetBoSSSUserSettingsPath();
