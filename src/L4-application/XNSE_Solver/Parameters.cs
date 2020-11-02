@@ -3,6 +3,8 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
+using BoSSS.Solution.XNSECommon;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -200,45 +202,114 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
     
-    /*
     class Curvature : IParameter
     {
-        
-        public Curvature()
+        int D;
+
+        LevelSetTracker LsTrk;
+
+        int degree;
+
+        int m_HMForder;
+
+        bool solveKineticEnergyEquation;
+
+        bool isEvaporation;
+
+        DoNotTouchParameters AdvancedDiscretizationOptions;
+
+        public Curvature(LevelSetTracker LsTrkr, int degree, int m_HMForder, bool isEvaporation, bool solveKineticEnergyEquation, DoNotTouchParameters AdvancedDiscretizationOptions)
         {
-            CurvatureAlgorithms.CurvatureDriver(
-                this.Control.AdvancedDiscretizationOptions.SST_isotropicMode,
-                this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
-                this.Curvature, out filtLevSetGradient, this.LsTrk,
-                this.m_HMForder,
-                this.DGLevSet.Current);
+            this.LsTrk = LsTrkr;
+            this.degree = degree;
+            this.m_HMForder = m_HMForder;
+            this.isEvaporation = isEvaporation;
+            this.solveKineticEnergyEquation = solveKineticEnergyEquation;
+            this.AdvancedDiscretizationOptions = AdvancedDiscretizationOptions;
         }
 
-        public static Curvature CreateFrom(AppControl control)
+        public static Curvature CreateFrom(XNSE_Control control, XNSFE_OperatorConfiguration xopConfig, LevelSetTracker LsTrkr, int m_HMForder)
         {
+            string curvature = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            int degree;
+            if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts))
+            {
+                degree = opts.Degree;
+            }
+            else
+            {
+                degree = 0;
+            }
+            bool solveKineticEnergyEquation = control.solveKineticEnergyEquation;
 
+            bool isEvaporation = xopConfig.isEvaporation;
+
+            DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
+            return new Curvature(LsTrkr, degree, m_HMForder, isEvaporation, solveKineticEnergyEquation, AdvancedDiscretizationOptions);
         }
 
         public IList<string> Names => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
 
         public DelParameterFactory Factory => CurvatureFactory;
 
-        public DelPartialParameterUpdate Update => throw new NotImplementedException();
+        public DelPartialParameterUpdate Update => UpdateVelocity;
 
         (string, DGField)[] CurvatureFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
-            LevelSet Phi = (LevelSet)(LsTrk.LevelSets[0]);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, Phi.Basis, SinglePhaseField.Factory);
-            Normals.Gradient(1.0, Phi);
+            string name = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
+            SinglePhaseField curvature = new SinglePhaseField(basis, name);
 
-            (string, DGField)[] normals = new (string, DGField)[D];
-            for (int d = 0; d < D; ++d)
+            return new (string, DGField)[]
             {
-                normals[d] = (BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d], Normals[d]);
+                (name, curvature)
+            };
+        }
+
+        void UpdateVelocity(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            VectorField<SinglePhaseField> filtLevSetGradient;
+            ParameterVarFields.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.Curvature, out DGField curvature);
+            SinglePhaseField Curvature = (SinglePhaseField)curvature;
+            SinglePhaseField DGLevSet = (LevelSet)LsTrk.LevelSets[0];
+
+            switch (AdvancedDiscretizationOptions.SST_isotropicMode)
+            {
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
+                    {
+                        CurvatureAlgorithms.LaplaceBeltramiDriver(
+                            AdvancedDiscretizationOptions.SST_isotropicMode,
+                            AdvancedDiscretizationOptions.FilterConfiguration,
+                            out filtLevSetGradient, this.LsTrk,
+                            DGLevSet);
+                        if ((solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmptyOnRank) || isEvaporation)
+                        {
+                            VectorField<SinglePhaseField> filtLevSetGradient_dummy;
+                            CurvatureAlgorithms.CurvatureDriver(
+                                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                                CurvatureAlgorithms.FilterConfiguration.Default,
+                                Curvature, out filtLevSetGradient_dummy, this.LsTrk,
+                                this.m_HMForder,
+                                DGLevSet);
+                        }
+                        break;
+                    }
+                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
+                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
+                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
+                    CurvatureAlgorithms.CurvatureDriver(
+                        AdvancedDiscretizationOptions.SST_isotropicMode,
+                        AdvancedDiscretizationOptions.FilterConfiguration,
+                        Curvature, out filtLevSetGradient, this.LsTrk,
+                        this.m_HMForder,
+                        DGLevSet);
+                    //CurvatureAlgorithms.MakeItConservative(LsTrk, this.Curvature, this.Control.PhysicalParameters.Sigma, this.SurfaceForce, filtLevSetGradient, MomentFittingVariant, this.m_HMForder);
+                    break;
+                default: throw new NotImplementedException("Unknown SurfaceTensionMode");
             }
-            return normals;
         }
 
     }
-    */
 }

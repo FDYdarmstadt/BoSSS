@@ -30,6 +30,34 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class UnitTest {
 
+        /// <summary>
+        /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
+        /// </summary>
+        [Test]
+        public static void SimpleTestCapillaryWave()
+        {
+            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
+            using (var solver = new XNSE())
+            {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        /// <summary>
+        /// See <see cref="PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test"/>.
+        /// </summary>
+        [Test]
+        public static void SimpleTestRayleighTaylorInstability()
+        {
+
+            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test();
+            using (var solver = new XNSE())
+            {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
 
 #if !DEBUG
         /// <summary>
@@ -56,6 +84,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.RunSolverMode();
             }
         }
+
+        
 
         /*
         [Test]

@@ -83,7 +83,6 @@
     <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
-    <Compile Include="Fluids.cs" />
     <Compile Include="SpatialEquation.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ContactLine.cs" />

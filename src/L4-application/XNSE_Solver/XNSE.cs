@@ -15,6 +15,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System.Diagnostics;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.XNSE_Solver
 {
@@ -40,7 +41,27 @@ namespace BoSSS.Application.XNSE_Solver
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-            IXNSE_Configuration config = new XNSFE_OperatorConfiguration(this.Control);
+
+            //QuadOrder
+            int degU = default;
+            if (Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts field))
+            {
+                degU = field.Degree;
+            }
+            else if (Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts field1))
+            {
+                degU = field1.Degree;
+            }
+            else
+            {
+                throw new Exception("Velocity not found!");
+            }
+            int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            if (this.Control.solveKineticEnergyEquation)
+                quadOrder *= 2;
+
+
+            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
             //Build Equations
@@ -56,16 +77,12 @@ namespace BoSSS.Application.XNSE_Solver
             opFactory.AddParameter(new Velocity0(D));
             opFactory.AddParameter(new Velocity0Mean(D, LsTrk));
             opFactory.AddParameter(new Normals(D, LsTrk));
-            //opFactory.AddParameter(new Curvature());
+            opFactory.AddParameter(Curvature.CreateFrom(Control, config, LsTrk, quadOrder));
+            
             opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
             opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
             opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
-            
-            //QuadOrder
-            int degU = Control.FieldOptions["Velocity*"].Degree;
-            int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if(this.Control.solveKineticEnergyEquation)
-                quadOrder *= 2;
+
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
