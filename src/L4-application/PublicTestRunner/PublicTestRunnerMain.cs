@@ -421,9 +421,6 @@ namespace PublicTestRunner {
                 // phase 1: submit jobs
                 // ===================================
 
-
-
-
                 InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
@@ -482,8 +479,7 @@ namespace PublicTestRunner {
                 Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
                 DateTime start = DateTime.Now;
-
-
+                
                 cnt = 0;
                 var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
                 using (new BlockTrace("DEPLOYMENT", tr)) {
