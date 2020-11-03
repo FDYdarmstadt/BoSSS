@@ -28,7 +28,7 @@ Project name is set to 'ConfinedCylinder_ConvergenceStudy'.
 //var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0");
 var myDb = CreateTempDatabase();
 **************
-Creating database 'C:\Users\flori\AppData\Local\Temp\650463752'.
+Creating database 'C:\Users\flori\AppData\Local\Temp\1638215225'.
 
 ==============
 ExecutionQueues;
@@ -45,7 +45,7 @@ var myBatch = ExecutionQueues[0];
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 26408.
+Started mini batch processor on local machine, process id is 8168.
 started.
 True
 ==============
@@ -109,7 +109,6 @@ myDb.SaveGrid(ref bosssGrid);
 grids[k] = bosssGrid;           
  }
 **************
-
 Grid Edge Tags changed.
 
 Grid Edge Tags changed.
@@ -145,7 +144,7 @@ static class InitialValues {
     static double h                    = 4;
     public static double beta          = 0.59;
     static double Reynolds             = 1;
-    static double Weissenberg          = 0.2; //aim Weissenberg number!
+    //static double Weissenberg          = 0.2; //aim Weissenberg number!
     
     public static double VelocityXfunction(double[] X) {
         return u0 * (1  - (X[1] *  X[1])/h);
@@ -159,7 +158,13 @@ static class InitialValues {
         return u0 * 0.5 * Reynolds * (35 - X[0]);
     }
     
-    public static double StressXXfunction(double[] X) {
+    public static double StressXXfunction_wi02(double[] X) {
+        const double Weissenberg = 0.2;
+        return 2 * Weissenberg * (1 - beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
+    }
+    
+    public static double StressXXfunction_wi00(double[] X) {
+        const double Weissenberg = 0.0;
         return 2 * Weissenberg * (1 - beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
     }
     
@@ -178,6 +183,9 @@ static class InitialValues {
 ==============
 List<RheologyControl> Controls = new List<RheologyControl>();
 **************
+(1,7): error CS0246: The type or namespace name `RheologyControl' could not be found. Are you missing `BoSSS.Application.Rheology' using directive?
+No. of errors|warnings: 1|0.
+
 ==============
 pOrder;
 **************
@@ -214,7 +222,7 @@ foreach(GridCommons grd in grids) {
     //SolverChooser
     C.NonLinearSolver.MaxSolverIterations  = 100;
     C.NonLinearSolver.MinSolverIterations  = 3;
-    C.NonLinearSolver.ConvergenceCriterion = 1E-8;
+    C.NonLinearSolver.ConvergenceCriterion = 1E-6;
     //C.LinearSolver.MaxSolverIterations     = 100;
     //C.LinearSolver.MinSolverIterations     = 3;          
     //C.LinearSolver.ConvergenceCriterion    = 1E-6;
@@ -239,8 +247,8 @@ foreach(GridCommons grd in grids) {
     C.beta                 = InitialValues.beta;
     C.Reynolds             = Reynolds;
     C.Weissenberg          = Weissenberg; //aim Weissenberg number!
-    C.RaiseWeissenberg     = RaiseWeissenberg;
-    C.WeissenbergIncrement = WeissenbergIncrement;
+    C.RaiseWeissenberg     = false;
+    C.WeissenbergIncrement = 0.0;
 
     //Penalties
     C.ViscousPenaltyScaling = 1;
@@ -272,7 +280,12 @@ foreach(GridCommons grd in grids) {
 
     C.AddBoundaryValue("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityXfunction));
     C.AddBoundaryValue("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.VelocityYfunction));
-    C.AddBoundaryValue("Velocity_inlet", "StressXX", GetFormulaObject(InitialValues.StressXXfunction));
+    if(Weissenberg == 0.0)
+        C.AddBoundaryValue("Velocity_inlet", "StressXX", GetFormulaObject(InitialValues.StressXXfunction_wi00));
+    else if(Weissenberg == 0.2)
+        C.AddBoundaryValue("Velocity_inlet", "StressXX", GetFormulaObject(InitialValues.StressXXfunction_wi02));
+    else
+        throw new NotImplementedException("Missing Weissenberg = " + Weissenberg);
     C.AddBoundaryValue("Velocity_inlet", "StressXY", GetFormulaObject(InitialValues.StressXYfunction));
     C.AddBoundaryValue("Velocity_inlet", "StressYY", GetFormulaObject(InitialValues.StressYYfunction)); 
             
@@ -431,6 +444,10 @@ WorkflowMgm.AllJobs
 **************
 System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
