@@ -303,7 +303,7 @@ namespace BoSSS.Solution {
                             ApproxJac = Newton.ApproxInvJacobianOptions.MatrixFreeGMRES,
                             Precond = precondonly,
                             ConvCrit = nc.ConvergenceCriterion,
-                            printLambda = nc.printLambda,
+                            printLambda = false,
                             Globalization = nc.Globalization,
                         };
                         linsolver = precondonly; // put out the solver, which is actually used!
@@ -315,7 +315,7 @@ namespace BoSSS.Solution {
                             //maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            printLambda = nc.printLambda,
+                            printLambda = false,
                             Globalization = nc.Globalization,
                             ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                             Precond = linsolver,

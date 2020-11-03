@@ -83,25 +83,26 @@ namespace BoSSS.Solution.Control {
         /// Sets the algorithm to use for nonlinear solving, e.g. Newton or Picard.
         /// </summary>
         [DataMember]
-        public NonLinearSolverCode SolverCode = NonLinearSolverCode.Picard;
+        public NonLinearSolverCode SolverCode = NonLinearSolverCode.Newton;
 
         /// <summary>
-        /// Number of iterations, where jacobi is not updated. Also known as constant newton method. Default 1, means regular newton.
+        /// Number of iterations, where Jacobi matrix is not updated. Also known as constant newton method. Default 1, means regular newton.
         /// </summary>
         [DataMember]
         public int constantNewtonIterations = 1;
 
-
+        /*
         /// <summary>
         /// Prints the step reduction factor of the newton backtracking method
         /// </summary>
         public bool printLambda = false;
+        */
 
         /// <summary>
         /// How to restrict the step size of Newton steps
         /// </summary>
         [DataMember]
-        public GlobalizationOption Globalization = GlobalizationOption.LineSearch;
+        public GlobalizationOption Globalization = GlobalizationOption.Dogleg;
 
         /// <summary>
         /// Clones the NonLinearConfig
@@ -115,7 +116,7 @@ namespace BoSSS.Solution.Control {
                 MinSolverIterations = this.MinSolverIterations,
                 SolverCode = this.SolverCode,
                 UnderRelax = this.UnderRelax,
-                printLambda = this.printLambda,
+                Globalization = this.Globalization,
                 verbose = this.verbose
         };
             return clone;
@@ -136,7 +137,6 @@ namespace BoSSS.Solution.Control {
                 this.MinSolverIterations == compareto.MinSolverIterations &&
                 this.SolverCode == compareto.SolverCode &&
                 this.UnderRelax == compareto.UnderRelax &&
-                this.printLambda == compareto.printLambda &&
                 this.Globalization == compareto.Globalization &&
                 this.verbose == compareto.verbose;
         }
