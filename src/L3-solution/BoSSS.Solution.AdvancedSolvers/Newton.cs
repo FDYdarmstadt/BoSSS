@@ -138,6 +138,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Main solver routine
         /// </summary>
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+            //this.UseHomotopy = this.AbstractOperator.HomotopyUpdate.Count > 0;
+            
             if(UseHomotopy)
                 HomotopyNewton(SolutionVec, RHS);
             else 
@@ -169,6 +171,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double norm_CurRes = CurRes.MPI_L2Norm();
                 OnIterationCallback(0, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
                 double fnorminit = norm_CurRes;
+                List<double> normHistory = new List<double>();
+                normHistory.Add(norm_CurRes);
+
+                double LastAverageNormReduction(int N = 3) {
+                    if(N < 1)
+                        throw new ArgumentException();
+
+                    int i0 = Math.Max(normHistory.Count - N, 0);
+                    if(normHistory.Count - i0 < N)
+                        return double.MaxValue;
+
+                    double Avg = 0;
+                    double Count = 0;
+                    for(int i = i0; i < normHistory.Count - 1; i++) {
+                        double ResNormReductionFactor = normHistory[i] / Math.Max(normHistory[i + 1], double.MinValue);
+                        Count = Count + 1;
+                        Avg = Avg + ResNormReductionFactor;
+                    }
+                    return Avg / Count;
+                }
 
 
                 // Main Loop
@@ -177,14 +199,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int itc = 0;
                 double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
                 using(new BlockTrace("Slv Iter", tr)) {
-                    while((norm_CurRes > ConvCrit * fnorminit + ConvCrit
-                        && itc < MaxIter)
-                        || itc < MinIter) {
+                    //while((norm_CurRes > ConvCrit * fnorminit + ConvCrit
+                    //    && itc < MaxIter)
+                    //    || itc < MinIter) {
+                    while(true) {     
+                        if(itc >= MinIter) {
+                            // only terminate if we reached the mimimum number of iterations
+
+                            if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
+                                // reached convergence criterion
+                                
+                                double ALNR = LastAverageNormReduction();
+                                //Console.Write($"Want to terminate {ALNR}, {norm_CurRes} ...");
+
+                                // continue until the solver stalls
+                                if(ALNR <= 1.5) {
+                                    //Console.WriteLine("no sufficient further progress");
+                                    break;
+                                } else {
+                                    //Console.WriteLine("but continue as long as we make progress");
+                                }
+                            }
+
+                            if(itc >= MaxIter) {
+                                // run out of iterations
+                                break;
+                            }
+                        } else {
+                            //Console.WriteLine("not terminating now");
+                        }
                         
-                                                
+
                         itc++;
                         NewtonStep(SolutionVec, itc, CurSol, CurRes, 1.0, ref norm_CurRes, ref TrustRegionDelta);
-
+                        normHistory.Add(norm_CurRes);
                     }
                 }
             }

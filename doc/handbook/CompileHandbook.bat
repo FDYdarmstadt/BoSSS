@@ -5,3 +5,4 @@ pdflatex BoSSShandbook.tex
 biber BoSSShandbook.tex
 pdflatex BoSSShandbook.tex
 pdflatex BoSSShandbook.tex
+pdflatex BoSSShandbook.tex

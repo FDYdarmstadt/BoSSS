@@ -132,6 +132,19 @@ namespace MPI.Wrappers.Utils {
             return false;
         }
 
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="tt">
+        /// <see cref="DynLibLoader(string[], string[][][], GetNameMangling[], PlatformID[], int[])"/>
+        /// </param>
+        protected DynLibLoader((string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) tt) :
+            this(tt._LibNames, tt.PrequesiteLibraries, tt.NameMangling, tt.OsFilter, tt.PointerSizeFilter) {
+
+        }
+
+
         /// <summary>
         /// ctor
         /// </summary>

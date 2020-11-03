@@ -28,6 +28,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation;
 using ilPSP.Utils;
+using BoSSS.Solution.GridImport;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -427,6 +428,17 @@ namespace BoSSS.Application.BoSSSpad {
                 return Path.GetDirectoryName(f);
             }
         }
+
+        /// <summary>
+        /// <see cref="GridImporter.Import(string)"/>
+        /// </summary>
+        public static GridCommons ImportGrid(string fileName) {
+            GridCommons r = GridImporter.Import(fileName);
+
+            return r;
+        }
+
+
 
         /// <summary>
         /// Simple plotting interface

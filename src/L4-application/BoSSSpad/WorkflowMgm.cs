@@ -29,6 +29,7 @@ using System.Reflection;
 using System.Threading;
 using ilPSP;
 using BoSSS.Solution.Control;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -314,6 +315,18 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_Grids;
             }
         }
+
+        /*
+        public GridCommons ImportGrid(string filename, bool UseCache = true) {
+            using(var md5 = System.Security.Cryptography.MD5.Create()) {
+                using(var stream = File.OpenRead(filename)) {
+                    var Hasch = md5.ComputeHash(stream);
+                }
+            }
+
+            GridCommons r = GridImporter.Import(fileName);
+        }
+        */
 
         /// <summary>
         /// The keys and queries <see cref="ISessionInfo.KeysAndQueries"/> of all sessions in the 
