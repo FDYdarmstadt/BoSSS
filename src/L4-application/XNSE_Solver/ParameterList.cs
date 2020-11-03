@@ -8,47 +8,27 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver
 {
-    interface IParameter
+    abstract class Parameter
     {
-        IList<string> Names { get; }
+        public abstract IList<string> Names { get;}
 
-        DelParameterFactory Factory { get; }
+        public DelParameterFactory Factory;
 
-        DelPartialParameterUpdate Update { get; }
+        public DelPartialParameterUpdate Update;
     }
 
     class ParameterList
     {
-        List<IParameter> parameters;
+        List<Parameter> parameters;
 
-        public ParameterList()
+        public ParameterList(int capacity = 10)
         {
-            parameters = new List<IParameter>(10);
+            parameters = new List<Parameter>(capacity);
         }
 
-        public void AddParameter(IParameter parameter)
+        public void AddParameter(Parameter parameter)
         {
             parameters.Add(parameter);
-        }
-
-        public void AddParameter(DelParameterFactory factory, DelPartialParameterUpdate update, IList<string> names)
-        {
-            Parameter parameter = new Parameter
-            {
-                Names = names,
-                Factory = factory,
-                Update = update
-            };
-            AddParameter(parameter);
-        }
-
-        class Parameter :IParameter
-        {
-            public IList<string> Names { get; set; }
-
-            public DelParameterFactory Factory { get; set; }
-
-            public DelPartialParameterUpdate Update { get; set; }
         }
 
         public ICollection<DelParameterFactory> Factories(IList<string> names)
@@ -64,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver
                 //Find currentName
                 for(int i = 0; i < parameters.Count; ++i)
                 {
-                    IParameter parameter = parameters[i];
+                    Parameter parameter = parameters[i];
                     if (parameter.Names.Contains(name))
                     {
                         if(parameter.Factory != null)
@@ -80,9 +60,6 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
             return parameterFactories;
-            //AddTo Array
-
-            
         }
 
         public ICollection<DelPartialParameterUpdate> ParameterUpdates(IList<string> names)
@@ -98,7 +75,7 @@ namespace BoSSS.Application.XNSE_Solver
                 //Find currentName
                 for (int i = 0; i < parameters.Count; ++i)
                 {
-                    IParameter parameter = parameters[i];
+                    Parameter parameter = parameters[i];
                     if (parameter.Names.Contains(name))
                     {
                         if(parameter.Update != null)

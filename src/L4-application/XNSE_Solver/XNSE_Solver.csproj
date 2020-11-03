@@ -79,6 +79,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Equations.cs" />
+    <Compile Include="LevelSetEvolver.cs" />
+    <Compile Include="LevelSetUpdater.cs" />
     <Compile Include="OperatorFactory.cs" />
     <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />

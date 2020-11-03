@@ -13,20 +13,17 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver
 {
-    class Velocity0 : IParameter
+    class Velocity0 : Parameter
     {
         int D; 
 
         public Velocity0(int D)
         {
             this.D = D;
+            Factory = Velocity0Factory;
         }
 
-        public IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
-
-        public DelParameterFactory Factory => Velocity0Factory;
-
-        public DelPartialParameterUpdate Update => Velocity0Update;
+        public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
 
         (string, DGField)[] Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -40,14 +37,9 @@ namespace BoSSS.Application.XNSE_Solver
             }
             return velocity0;
         }
-
-        void Velocity0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
-            Console.WriteLine("Update Velocity0");
-        }
     }
 
-    class Velocity0Mean : IParameter
+    class Velocity0Mean : Parameter
     {
         int D;
 
@@ -57,13 +49,11 @@ namespace BoSSS.Application.XNSE_Solver
         {
             this.D = D;
             this.LsTrk = LsTrk;
+            Factory = Velocity0MeanFactory;
+            Update = Velocity0MeanUpdate;
         }
 
-        public IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
-
-        public DelParameterFactory Factory => Velocity0MeanFactory;
-
-        public DelPartialParameterUpdate Update => Velocity0MeanUpdate;
+        public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
 
         (string, DGField)[] Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -93,12 +83,10 @@ namespace BoSSS.Application.XNSE_Solver
                     speciesParam.SetMeanValue(speciesVelocity);
                 }
             }
-            Console.WriteLine("Update Velocity0Mean");
-            //Tecplot.PlotFields(new DGField[] { paramMeanVelocity, velocity }, "params-", 0, 3);
         }
     }
 
-    class Gravity : IParameter
+    class Gravity : Parameter
     {
         int degree;
 
@@ -109,6 +97,7 @@ namespace BoSSS.Application.XNSE_Solver
         public Gravity(string species, int d, int D, Func<double[], double> initial, double rho, int degree)
         {
             this.degree = degree;
+            Factory = GravityFactory;
 
             names = new string[1];
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
@@ -142,11 +131,7 @@ namespace BoSSS.Application.XNSE_Solver
             return new Gravity(species, d, D, initialGravity, rho, gravityDegree);
         }
 
-        public IList<string> Names => names;
-
-        public DelParameterFactory Factory => GravityFactory;
-
-        public DelPartialParameterUpdate Update => null;
+        public override IList<string> Names => names;
 
         (string, DGField)[] GravityFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -157,7 +142,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class Normals : IParameter
+    class Normals : Parameter
     {
         LevelSetTracker LsTrk;
 
@@ -167,13 +152,13 @@ namespace BoSSS.Application.XNSE_Solver
         {
             this.LsTrk = LsTrk;
             this.D = D;
+            Factory = NormalFactory;
+            Update = NormalUpdate;
         }
 
-        public IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
+        public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
 
-        public DelParameterFactory Factory => NormalFactory;
-
-        public DelPartialParameterUpdate Update => NormalUpdate;
+        
 
         (string, DGField)[] NormalFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -202,7 +187,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
     
-    class Curvature : IParameter
+    class Curvature : Parameter
     {
         int D;
 
@@ -226,6 +211,8 @@ namespace BoSSS.Application.XNSE_Solver
             this.isEvaporation = isEvaporation;
             this.solveKineticEnergyEquation = solveKineticEnergyEquation;
             this.AdvancedDiscretizationOptions = AdvancedDiscretizationOptions;
+
+            Factory = CurvatureFactory;
         }
 
         public static Curvature CreateFrom(XNSE_Control control, XNSFE_OperatorConfiguration xopConfig, LevelSetTracker LsTrkr, int m_HMForder)
@@ -248,11 +235,7 @@ namespace BoSSS.Application.XNSE_Solver
             return new Curvature(LsTrkr, degree, m_HMForder, isEvaporation, solveKineticEnergyEquation, AdvancedDiscretizationOptions);
         }
 
-        public IList<string> Names => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
-
-        public DelParameterFactory Factory => CurvatureFactory;
-
-        public DelPartialParameterUpdate Update => UpdateVelocity;
+        public override IList<string> Names => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
 
         (string, DGField)[] CurvatureFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -265,51 +248,5 @@ namespace BoSSS.Application.XNSE_Solver
                 (name, curvature)
             };
         }
-
-        void UpdateVelocity(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
-            VectorField<SinglePhaseField> filtLevSetGradient;
-            ParameterVarFields.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.Curvature, out DGField curvature);
-            SinglePhaseField Curvature = (SinglePhaseField)curvature;
-            SinglePhaseField DGLevSet = (LevelSet)LsTrk.LevelSets[0];
-
-            switch (AdvancedDiscretizationOptions.SST_isotropicMode)
-            {
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
-                    {
-                        CurvatureAlgorithms.LaplaceBeltramiDriver(
-                            AdvancedDiscretizationOptions.SST_isotropicMode,
-                            AdvancedDiscretizationOptions.FilterConfiguration,
-                            out filtLevSetGradient, this.LsTrk,
-                            DGLevSet);
-                        if ((solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmptyOnRank) || isEvaporation)
-                        {
-                            VectorField<SinglePhaseField> filtLevSetGradient_dummy;
-                            CurvatureAlgorithms.CurvatureDriver(
-                                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                                CurvatureAlgorithms.FilterConfiguration.Default,
-                                Curvature, out filtLevSetGradient_dummy, this.LsTrk,
-                                this.m_HMForder,
-                                DGLevSet);
-                        }
-                        break;
-                    }
-                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
-                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
-                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    CurvatureAlgorithms.CurvatureDriver(
-                        AdvancedDiscretizationOptions.SST_isotropicMode,
-                        AdvancedDiscretizationOptions.FilterConfiguration,
-                        Curvature, out filtLevSetGradient, this.LsTrk,
-                        this.m_HMForder,
-                        DGLevSet);
-                    //CurvatureAlgorithms.MakeItConservative(LsTrk, this.Curvature, this.Control.PhysicalParameters.Sigma, this.SurfaceForce, filtLevSetGradient, MomentFittingVariant, this.m_HMForder);
-                    break;
-                default: throw new NotImplementedException("Unknown SurfaceTensionMode");
-            }
-        }
-
     }
 }

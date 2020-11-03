@@ -36,14 +36,9 @@ namespace BoSSS.Application.XNSE_Solver
             eqSystem.AddEquation(equation);
         }
 
-        public void AddParameter(IParameter parameter)
+        public void AddParameter(Parameter parameter)
         {
             parameters.AddParameter(parameter);
-        }
-
-        public void AddParameter(DelParameterFactory factory, DelPartialParameterUpdate update, IList<string> names)
-        {
-            parameters.AddParameter(factory, update, names);
         }
 
         public XSpatialOperatorMk2 GetSpatialOperator(int quadOrder)

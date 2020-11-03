@@ -16,6 +16,9 @@ using ilPSP.Utils;
 using System.Diagnostics;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Control;
+using System.Runtime.CompilerServices;
+using NUnit.Framework.Constraints;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver
 {
@@ -23,25 +26,12 @@ namespace BoSSS.Application.XNSE_Solver
     {
         LevelSet levelSet;
 
+        LevelSetUpdater lsUpdater;
+
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
 
-        protected override LevelSetTracker InstantiateTracker() {
-            levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
-            levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-            LevelSetTracker myLsTrk = new LevelSetTracker((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
-            return myLsTrk;
-        }
-
-        VectorField<XDGField> gravity;
-        
-        protected override IEnumerable<DGField> CreateAdditionalFields() {
-            int D = this.GridData.SpatialDimension;
-            gravity = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.CurrentState.BasisS[d] as XDGBasis, VariableNames.Gravity_d(d))));
-            return gravity;
-        }
-
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-
+        int QuadOrder()
+        {
             //QuadOrder
             int degU = default;
             if (Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts field))
@@ -59,8 +49,54 @@ namespace BoSSS.Application.XNSE_Solver
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if (this.Control.solveKineticEnergyEquation)
                 quadOrder *= 2;
+            return quadOrder;
+        }
 
+        protected override LevelSetTracker InstantiateTracker() {
+            levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
+            levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+            lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+            switch (Control.Option_LevelSetEvolution)
+            {
+                case LevelSetEvolution.Fourier:
+                    lsUpdater.AddEvolver("Phi", new FourierEvolver(Control, QuadOrder()));
+                    break;
+                case LevelSetEvolution.FastMarching:
+                    lsUpdater.AddEvolver("Phi", new FastMarcher(Control, QuadOrder()));
+                    break;
+            }
+            return lsUpdater.Tracker;
+        }
 
+        VectorField<XDGField> gravity;
+        
+        public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental)
+        {
+            var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
+            for (int iVar = 0; iVar < domainFields.Length; iVar++)
+            {
+                DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
+            }
+
+            var parameterFields = Timestepping.Parameters;
+            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
+            for (int iVar = 0; iVar < parameterFields.Count(); iVar++)
+            {
+                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
+            }
+            double residual = lsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
+            return residual;
+        }
+
+        protected override IEnumerable<DGField> CreateAdditionalFields() {
+            int D = this.GridData.SpatialDimension;
+            gravity = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.CurrentState.BasisS[d] as XDGBasis, VariableNames.Gravity_d(d))));
+            return gravity;
+        }
+
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+
+            int quadOrder = QuadOrder();
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 

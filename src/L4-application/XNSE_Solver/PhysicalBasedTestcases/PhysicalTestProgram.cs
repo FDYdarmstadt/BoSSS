@@ -30,6 +30,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class UnitTest {
 
+#if !DEBUG
         /// <summary>
         /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
         /// </summary>
@@ -37,6 +38,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void SimpleTestCapillaryWave()
         {
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
             using (var solver = new XNSE())
             {
                 solver.Init(C);
@@ -52,6 +55,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
 
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test();
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
             using (var solver = new XNSE())
             {
                 solver.Init(C);
@@ -59,13 +64,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
-#if !DEBUG
+
         /// <summary>
         /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
         /// </summary>
         [Test]
         public static void TestCapillaryWave() {
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
             using (var solver = new XNSE_SolverMain()) {
                 solver.Init(C);
                 solver.RunSolverMode();
