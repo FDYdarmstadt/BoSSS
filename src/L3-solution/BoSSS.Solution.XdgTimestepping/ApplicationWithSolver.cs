@@ -120,8 +120,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// intended for the initialization of additional DG fields, which are not either solution or residuals;
         /// An example would be e.g. parameters such as Gravity which are set through the control file.
         /// </summary>
-        protected virtual IEnumerable<DGField> CreateAdditionalFields() {
-            return null;
+        protected virtual void CreateAdditionalFields() {
+            
         }
 
 

@@ -67,8 +67,6 @@ namespace BoSSS.Application.XNSE_Solver
             }
             return lsUpdater.Tracker;
         }
-
-        VectorField<XDGField> gravity;
         
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental)
         {
@@ -88,10 +86,7 @@ namespace BoSSS.Application.XNSE_Solver
             return residual;
         }
 
-        protected override IEnumerable<DGField> CreateAdditionalFields() {
-            int D = this.GridData.SpatialDimension;
-            gravity = new VectorField<XDGField>(D.ForLoop(d => new XDGField(this.CurrentState.BasisS[d] as XDGBasis, VariableNames.Gravity_d(d))));
-            return gravity;
+        protected override void CreateAdditionalFields() {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
