@@ -318,11 +318,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-            foreach(var existing_dbi in InteractiveShell.databases) {
-                if(existing_dbi.PathMatch(dbDir)) {
+            return OpenOrCreateDatabase_Impl(dbDir, true);
+        }
+
+        /// <summary>
+        /// Opens an existing database at a specific path
+        /// </summary>
+        static public IDatabaseInfo OpenDatabase(string dbDir) {
+            return OpenOrCreateDatabase_Impl(dbDir, false);
+        }
+
+        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+            foreach (var existing_dbi in InteractiveShell.databases) {
+                if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
                 }
             }
+        
             
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
@@ -330,8 +342,12 @@ namespace BoSSS.Application.BoSSSpad {
                 }
                 Console.WriteLine("Opening existing database '" + dbDir + "'.");
             } else {
-                DatabaseUtils.CreateDatabase(dbDir);
-                Console.WriteLine("Creating database '" + dbDir + "'.");
+                if (allowCreation) {
+                    DatabaseUtils.CreateDatabase(dbDir);
+                    Console.WriteLine("Creating database '" + dbDir + "'.");
+                } else {
+                    throw new ArgumentException("Database Directory '" + dbDir + "' does not exist.");
+                }
             }
 
             var dbi = DatabaseInfo.Open(dbDir);
@@ -653,7 +669,7 @@ namespace BoSSS.Application.BoSSSpad {
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
-
+               
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
 
@@ -662,6 +678,9 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
+            foreach (var q in bpc.AllQueues)
+                _ = q.AllowedDatabases;
+
         }
 
 

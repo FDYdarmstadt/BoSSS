@@ -35,7 +35,6 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     abstract public class BatchProcessorClient {
 
-
         /// <summary>
         /// Base directory where the executables should be deployed,
         /// accessible from the local machine (e.g. a mounted path if the batch processor deploys on another computer system)
@@ -95,7 +94,12 @@ namespace BoSSS.Application.BoSSSpad {
                         for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
                             if(m_AllowedDatabases[i] == null) {
                                 try {
-                                    m_AllowedDatabases[i] = DatabaseInfo.Open(AllowedDatabasesPaths[i]);
+                                    var db = InteractiveShell.OpenDatabase(AllowedDatabasesPaths[i]);
+                                    m_AllowedDatabases[i] = db;
+                                    //if(!InteractiveShell.databases.Any(idb => object.ReferenceEquals(idb, db))) {
+                                    //    InteractiveShell.databases.Add(db);
+                                    //    Console.WriteLine($"Note: adding database {db} specified for batch queue {this}");
+                                    //}
                                 } catch(Exception e) {
                                     Console.Error.WriteLine($"Unable to open 'allowed database' for {this.ToString()} at path {AllowedDatabasesPaths[i]}. Check configuration file 'BatchProcessorConfig.json'. ({e.GetType().Name} : {e.Message})");
                                     Console.Error.WriteLine($"{this.ToString()} will continue to work, but database synchronization on job submission might not work correctly.");

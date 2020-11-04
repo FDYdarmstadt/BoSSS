@@ -30,6 +30,7 @@ using System.Threading;
 using ilPSP;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -45,7 +46,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Not intended for user interaction.
         /// </summary>
         internal WorkflowMgm() {
-            SetNameBasedSessionJobControllCorrelation();
+            SetEqualityBasedSessionJobControlCorrelation();
         }
 
         string m_CurrentProject;
@@ -85,7 +86,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Correlation of session, job and control object is done by name
         /// </summary>
-        public void SetNameBasedSessionJobControllCorrelation() {
+        public void SetNameBasedSessionJobControlCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
                 try {
                     // compare project name
@@ -149,7 +150,7 @@ namespace BoSSS.Application.BoSSSpad {
         // <summary>
         /// Correlation of session, job and control object is done <see cref="AppControl.Equals(object)"/>
         /// </summary>
-        public void SetEqualityBasedSessionJobControllCorrelation() {
+        public void SetEqualityBasedSessionJobControlCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
                 var c_job = job.GetControl();
                 try {
@@ -212,6 +213,26 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
         }
 
+        IDatabaseInfo m_DefaultDatabase;
+
+        /// <summary>
+        /// primary database to store objects use in this project.
+        /// </summary>
+        public IDatabaseInfo DefaultDatabase {
+            get {
+                return m_DefaultDatabase;
+            }
+            set {
+                if (CurrentProject.IsEmptyOrWhite()) {
+                    throw new NotSupportedException("Workflow management not initialized yet - call Init(...)!");
+                }
+
+                m_DefaultDatabase = value;
+            }
+        }
+
+
+
         DateTime m_Sessions_CacheTime;
         ISessionInfo[] m_Sessions;
 
@@ -233,8 +254,8 @@ namespace BoSSS.Application.BoSSSpad {
                     return new ISessionInfo[0];
                 }
 
-                if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
-
+                //if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
+                { 
                     List<ISessionInfo> ret = new List<ISessionInfo>();
 
                     if (InteractiveShell.databases != null) {
@@ -316,17 +337,38 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        /*
-        public GridCommons ImportGrid(string filename, bool UseCache = true) {
-            using(var md5 = System.Security.Cryptography.MD5.Create()) {
-                using(var stream = File.OpenRead(filename)) {
-                    var Hasch = md5.ComputeHash(stream);
-                }
+        /// <summary>
+        /// <see cref="IDatabaseInfoExtensions.SaveGrid{TG}(IDatabaseInfo, ref TG, bool)"/>
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="force">
+        /// - false (default): Only store the grid, if no equivalent grid is in the database
+        /// - true: store always
+        /// </param>
+        /// <param name="EdgeTagFunc">
+        /// <see cref="IGrid_Extensions.DefineEdgeTags(IGrid, Func{double[], string})"/>
+        /// </param>
+        /// <returns></returns>
+        public GridCommons ImportGrid(string filename, bool force = false, Func<double[],string> EdgeTagFunc = null) {
+            //using(var md5 = System.Security.Cryptography.MD5.Create()) {
+            //    using(var stream = File.OpenRead(filename)) {
+            //        var Hasch = md5.ComputeHash(stream);
+            //    }
+            //}
+            if(this.DefaultDatabase == null) {
+                throw new NotImplementedException("Default database for project not set yet.");
             }
 
-            GridCommons r = GridImporter.Import(fileName);
+            GridCommons r = Solution.GridImport.GridImporter.Import(filename);
+
+            if(EdgeTagFunc != null)
+                r.DefineEdgeTags(EdgeTagFunc);
+
+            this.DefaultDatabase.SaveGrid(ref r, force);
+
+            return r;
         }
-        */
+        
 
         /// <summary>
         /// The keys and queries <see cref="ISessionInfo.KeysAndQueries"/> of all sessions in the 
