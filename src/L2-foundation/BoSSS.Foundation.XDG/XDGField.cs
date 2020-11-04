@@ -1173,7 +1173,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// todo
+        /// executes <see cref="DGField.ProjectAbs(double, CellMask, DGField[])"/>, for each species.
         /// </summary>
         public override void ProjectAbs(double alpha, CellMask em, params DGField[] vec) {
 

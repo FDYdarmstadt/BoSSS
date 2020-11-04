@@ -64,7 +64,8 @@ namespace BoSSS.Solution.Control {
 
         /// <summary>
         /// Kind of timestepping to use
-        /// </summary>
+        /// </summary> 
+        [DataMember]
         public TimeSteppingScheme TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
 
         [JsonIgnore]

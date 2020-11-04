@@ -5,13 +5,14 @@ restart
   _______________________
 
 Databases loaded:
-List of 6 instances of IDatabaseInfo {
+List of 7 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
-  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 459; Grid Count = 10965; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 154; Grid Count = 150; Path = D:\local\local_XNSE_StudyDB }
-  5: { Session Count = 69; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+  1: { Session Count = 93; Grid Count = 945; Path = D:\local\local_Testcase_databases\Testcase_HeatedWall }
+  2: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  3: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  4: { Session Count = 752; Grid Count = 20962; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  5: { Session Count = 173; Grid Count = 341; Path = D:\local\local_XNSE_StudyDB }
+  6: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -53,6 +54,7 @@ Project name is set to 'TwoPhaseCouetteFlow'.
 //WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 **************
 ==============
+//WorkflowMgm.Sessions.Pick(7).Timesteps.Last().Export().WithSupersampling(2).Do()
 **************
 ==============
 **************
@@ -62,7 +64,7 @@ Project name is set to 'TwoPhaseCouetteFlow'.
 // ========================
 **************
 ==============
-bool symmetric = false;
+bool symmetric = true;
 **************
 ==============
 // ===========================
@@ -70,7 +72,7 @@ bool symmetric = false;
 // ===========================
 **************
 ==============
-var GridSeq = new IGridInfo[3];
+var GridSeq = new IGridInfo[1];
 int[] kelemSeq = new int[]{ 10, 12, 16 };
 **************
 ==============
@@ -134,11 +136,18 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 **************
 Grid Edge Tags changed.
 An equivalent grid (0e774656-e38d-42ca-9687-8461f5b3e94a) is already present in the database -- the grid will not be saved.
-Grid Edge Tags changed.
-An equivalent grid (266f6aca-c8c2-4f37-b836-e01b9b42783a) is already present in the database -- the grid will not be saved.
-Grid Edge Tags changed.
-An equivalent grid (39242653-659c-41c9-801b-c2eafd1f1db8) is already present in the database -- the grid will not be saved.
 
+==============
+bool restart         = true;
+var restartStudySess = WorkflowMgm.Sessions.Pick(9);
+restartStudySess
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k4_mesh0_AMR1cL*	06/04/2020 09:50:30	8cdb0ffb...
 ==============
 **************
 ==============
@@ -150,7 +159,7 @@ An equivalent grid (39242653-659c-41c9-801b-c2eafd1f1db8) is already present in 
 using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 **************
 ==============
-int[] degS = new int[] { 4, 3, 2 };
+int[] degS = new int[] { 4 } ; //, 3, 2 };
 bool comparableDOFstudy = true;
 **************
 ==============
@@ -164,19 +173,26 @@ for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
 for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
 
 if(comparableDOFstudy && iDeg == iGrd) {    
-    var C = TwoPhaseCouetteFlow.CouetteGNBC_forWorksheet(symmetric);
+    var C = TwoPhaseCouetteFlow.CouetteGNBC_forWorksheet(symmetric, restart);
     
     int pDeg = degS[iDeg];   
     var grd  = GridSeq[iGrd];
 
     C.SetDGdegree(pDeg);
     
-    C.SetGrid(grd);
+    if(restart) {
+        C.ReInitOnRestart = true;
+        C.DbPath          = myDb.Path;
+        C.GridGuid        = restartStudySess.Timesteps.Last().GridID;
+        C.RestartInfo     = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restartStudySess.ID, null);
+    } else {
+        C.SetGrid(grd);
+    }
     //C.AddBoundaryValue("pressure_outlet");
 
     C.dtMin         = dt;
     C.dtMax         = dt;
-    C.NoOfTimesteps = (int)(200.0/dt);
+    C.NoOfTimesteps = (int)(160.0/dt);
     
     C.saveperiod = 10;
     C.LogPeriod  = 5;
@@ -189,7 +205,7 @@ if(comparableDOFstudy && iDeg == iGrd) {
     C.BaseRefinementLevel      = 0;
     C.RefinementLevel          = 1;
     
-    C.SessionName = "CouetteGNBC_compDOFstudy_asymmetric_k" + pDeg + "_mesh" + iGrd + "_AMR1cL";
+    C.SessionName = "CouetteGNBC_compDOFstudy_k" + pDeg + "_mesh" + iGrd + "_AMR1cL_restart2";
     
     //controls[iDeg,iGrd] = C;
     controls.Add(C);
@@ -199,18 +215,14 @@ if(comparableDOFstudy && iDeg == iGrd) {
 }
 }
 **************
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-
 ==============
 //Info(controls[0,0]);
 **************
 ==============
 //var j00 = controls[0,0].GetJob();
-controls.ElementAt(1).SessionName
+controls.ElementAt(0).SessionName
 **************
-CouetteGNBC_compDOFstudy_asymmetric_k3_mesh1_AMR1cL
+CouetteGNBC_compDOFstudy_k4_mesh0_AMR1cL_restart2
 ==============
 //j00.Activate(myBatch);
 **************
@@ -230,27 +242,11 @@ foreach(var cntrl in controls) {
     job.Activate(myBatch);
 }
 **************
-Submitting Session: CouetteGNBC_compDOFstudy_asymmetric_k4_mesh0_AMR1cL
-Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Submitting Session: CouetteGNBC_compDOFstudy_k4_mesh0_AMR1cL_restart2
 Job not submitted yet, or no result session is known - starting submission.
+
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseCouetteFlow-XNSE_Solver2020Jun04_160830
-copied 32 files.
-   written file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Session: CouetteGNBC_compDOFstudy_asymmetric_k3_mesh1_AMR1cL
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseCouetteFlow-XNSE_Solver2020Jun04_160839
-copied 32 files.
-   written file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-Submitting Session: CouetteGNBC_compDOFstudy_asymmetric_k2_mesh2_AMR1cL
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseCouetteFlow-XNSE_Solver2020Jun04_160845
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseCouetteFlow-XNSE_Solver2020Oct08_095046
 copied 32 files.
    written file: control.obj
    copied 'amd64' runtime.
@@ -273,6 +269,20 @@ InProgress
 
 ==============
 //WorkflowMgm.Sessions.DeleteAll()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

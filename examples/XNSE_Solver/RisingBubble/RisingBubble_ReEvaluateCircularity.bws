@@ -9,9 +9,9 @@ List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
-  5: { Session Count = 25; Grid Count = 37; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+  3: { Session Count = 743; Grid Count = 19525; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -32,12 +32,10 @@ WorkflowMgm.Init("RisingBubble")
 Project name is set to 'RisingBubble'.
 
 ==============
-WorkflowMgm.Sessions;
+//WorkflowMgm.Sessions;
 **************
-Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
-
 ==============
-string studyName = "ExtVel";
+string studyName = "tc1_k2_mesh40";
 List<ISessionInfo> evalSess = new List<ISessionInfo>();
 List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
 foreach(var sess in WorkflowMgm.Sessions) {
@@ -50,9 +48,14 @@ foreach(var sess in WorkflowMgm.Sessions) {
 }
 evalSess
 **************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
 List of 2 instances of ISessionInfo {
-  0: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_isoVisc1e-1	05/13/2020 10:55:50	a1473653...
-  1: RisingBubble	RisingBubble_methodStudy_k2_ExtVelLB_nofullReinit	05/12/2020 09:29:40	d5b0db0c...
+  0: RisingBubble	RisingBubble_tc1_k2_mesh40_volumeCorrection	09/02/2020 13:51:29	54ff7981...
+  1: RisingBubble	RisingBubble_tc1_k2_mesh40_rerun	09/02/2020 13:53:37	c42f1f5c...
 }
 ==============
 **************
@@ -62,7 +65,7 @@ List of 2 instances of ISessionInfo {
 // ======================
 **************
 ==============
-var sess = evalSess.Pick(0);
+var sess = evalSess.Pick(1);
 **************
 ==============
 int timesteps = sess.Timesteps.Count;
@@ -70,6 +73,11 @@ int timesteps = sess.Timesteps.Count;
 ==============
 double[] time = new double[timesteps];
 double[] circ = new double[timesteps];
+**************
+==============
+bool volCorrection = true;
+double conservArea = 0.0;
+double[] circCor = new double[timesteps];
 **************
 ==============
 for(int ts = 0; ts < timesteps; ts++) {
@@ -116,6 +124,50 @@ for(int ts = 0; ts < timesteps; ts++) {
     
     circ[ts] = Math.Sqrt(4*Math.PI*area)/perimtr_b;
     
+    
+    // check volume conservation
+    if (volCorrection) {
+        if (ts == 0) {
+            conservArea = area;    // set conserved area         
+        }
+        double cmc = (conservArea - area) / perimtr_b;
+        //Console.WriteLine("cmc value = {0}", cmc);
+        LevSet.AccConstant(-cmc);
+        LsTrk.UpdateTracker();
+        
+        SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+        
+        // area of bubble
+        area = 0.0;
+        vqs  = SchemeHelper.GetVolumeQuadScheme(spcId);
+        CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+            vqs.Compile(LsTrk.GridDat, order),
+            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                 EvalResult.SetAll(1.0);
+            },
+            delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                for (int i = 0; i < Length; i++)
+                    area += ResultsOfIntegration[i, 0];
+            }
+        ).Execute();
+    
+        // perimeter of bubble
+        perimtr_b = 0.0;
+        cqs       = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+        CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+            cqs.Compile(LsTrk.GridDat, order),
+            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                EvalResult.SetAll(1.0);
+            },
+            delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                for (int i = 0; i < Length; i++)
+                    perimtr_b += ResultsOfIntegration[i, 0];
+            }
+        ).Execute();
+        
+        circCor[ts] = Math.Sqrt(4*Math.PI*area)/perimtr_b;
+    }
+    
 }
 **************
 ==============
@@ -129,17 +181,30 @@ pltForm.LineColor  = LineColors.Black;
 pltForm.Style      = Styles.Lines;
 **************
 ==============
+**************
+==============
+PlotFormat pltCorForm = new PlotFormat();
+pltCorForm.LineColor  = LineColors.Red;
+pltCorForm.Style      = Styles.Lines;
+**************
+==============
 plt.PlotXY(time, circ, format:pltForm);
+plt.PlotXY(time, circCor, format:pltCorForm);
 plt.PlotNow();
 **************
 System.Drawing.Bitmap
 ==============
+circ.Min()
+**************
+0.902865964772154
+==============
+circCor.Min()
+**************
+0.902699413261519
+==============
 **************
 ==============
-WorkflowMgm.Sessions.Pick(40).Export().WithSupersampling(2).Do()
 **************
-Starting export process... Data will be written to the following directory:
-C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\RisingBubble__RisingBubble_ConvStudy_k2_mesh12__4510aed9-cf30-46c0-bf45-9a104103929e
 ==============
 **************
 ==============

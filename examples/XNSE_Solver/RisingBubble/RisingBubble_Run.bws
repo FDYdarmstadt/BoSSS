@@ -9,8 +9,8 @@ List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 733; Grid Count = 15556; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
-  4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
+  3: { Session Count = 749; Grid Count = 20812; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 173; Grid Count = 341; Path = D:\local\local_XNSE_StudyDB }
   5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
 
@@ -68,7 +68,7 @@ Project name is set to 'RisingBubble'.
 // ========================
 **************
 ==============
-int setup = 0;
+int setup = 1;
 **************
 ==============
 // ===========================
@@ -231,7 +231,7 @@ int logP_fixed = 1;
 ==============
 **************
 ==============
-string restartStudyName = "_tc2_ConvStudy_k2";
+string restartStudyName = "_tc2_k2_mesh20_newAMR4";
 List<ISessionInfo> restartStudySess = new List<ISessionInfo>();
 foreach(var sess in WorkflowMgm.Sessions) {
     if(sess.Name.Contains(restartStudyName)) {
@@ -245,25 +245,23 @@ Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpe
 Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
 Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
 Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
-List of 5 instances of ISessionInfo {
-  0: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart4*	06/03/2020 22:12:02	22177ad6...
-  1: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart3*	06/01/2020 16:00:14	42b883f6...
-  2: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart2*	05/31/2020 20:10:24	97a64a0d...
-  3: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2_restart*	04/17/2020 14:43:50	7a7385d1...
-  4: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2*	03/23/2020 22:05:28	931391e0...
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+List of 2 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_tc2_k2_mesh20_newAMR4_restart*	09/23/2020 15:21:14	b1fba22a...
+  1: RisingBubble	RisingBubble_tc2_k2_mesh20_newAMR4*	08/31/2020 18:18:48	474a04c2...
 }
 ==============
-//restartStudySess.Pick(2).OpenSessionDirectory()
+//restartStudySess.Pick(0).Timesteps.Last();//.OpenSessionDirectory()
 **************
 ==============
-bool restart = false;
+bool restart = true;
 Guid[] restartID = new Guid[1];
-restartID[0] = restartStudySess.ElementAt(4).ID;
+restartID[0] = restartStudySess.ElementAt(1).ID;
 //restartID[1] = databases.Pick(3).Sessions.Pick(407);
 restartID
 **************
 List of 1 instances of Guid {
-  0: 931391e0-8138-456e-ac33-c3edda9a4fef
+  0: 474a04c2-6939-4d74-85ea-ad11a5acc6b0
 }
 ==============
 bool withAMR = true;
@@ -286,14 +284,14 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     var grd  = GridSeq[iGrd];
 
     C.SetDGdegree2(pDeg);
-    //C.FieldOptions.Add("GravityY", new FieldOpts() {
-    //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-    //});
+    C.FieldOptions.Add("GravityY", new FieldOpts() {
+        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+    });
     
     if(restart) {
-        C.ReInitOnRestart = true;
+        C.ReInitOnRestart = false;
         C.DbPath          = myDb.Path;
-        C.GridGuid        = restartStudySess.ElementAt(0).Timesteps.Last().GridID;
+        C.GridGuid        = restartStudySess.ElementAt(1).Timesteps.Last().GridID;
         C.RestartInfo     = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restartID[iGrd], null);
     } else {
         C.SetGrid(grd);
@@ -308,12 +306,16 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     C.SetLevelSetMethod(0, FLSCSeq[iGrd]);
     if(setup == 1 || withAMR) {
         C.AdaptiveMeshRefinement = true;
-        C.RefineStrategy         = XNSE_Control.RefinementStrategy.VelocityGradient;
-        C.BaseRefinementLevel    = 1;
-        C.AMR_startUpSweeps      = 1;
-        C.RefinementLevel        = 2;
+        C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
+        C.BaseRefinementLevel    = 4;
+        //C.AMR_startUpSweeps      = 5;
+        //C.RefinementLevel        = 2;
     }
     
+    //C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
+    //C.adaptiveReInit           = true;
+    //C.ReInitControl.FastMarchingPrecond = true;
+    //C.EnforceLevelSetConservation = true;
     //C.ReInitPeriod = 50;
         
     double dt       = (dt_min) ? dt_fixed : dts[iDeg, iGrd];
@@ -323,10 +325,11 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     
     int logP     = (dt_min) ? logP_fixed : logPs[iDeg, iGrd];
     C.LogPeriod  = logP;
-    C.saveperiod = 1*logP;   
+    C.saveperiod = 10*logP;   
     
     //C.SessionName = "RisingBubble_tc2_ConvStudy2_k" + pDeg + "_mesh" + iGrd;
-    C.SessionName = "RisingBubble_tc1_k2_mesh0_AMR1_GradRefined";
+    C.SessionName = "RisingBubble_tc2_k2_mesh20_newAMR4_restart2";
+    //C.SessionName = "RisingBubble_tc1_k2_mesh40_noPenalty_AR_int01";
     //C.SessionName = "RisingBubble_ConvStudy_k" + pDeg + "_mesh02_rerunWithReInit50";
     //C.SessionName = "RisingBubble_"+C.methodTagLS+"3_k" + pDeg + "_mesh" + iGrd;
     
@@ -336,8 +339,6 @@ for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
 }
 }
 **************
-Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
-
 ==============
 controls.Count()
 **************
@@ -347,7 +348,7 @@ controls.Count()
 //controls[0,0].SessionName
 controls.ElementAt(0).SessionName
 **************
-RisingBubble_tc1_k2_mesh0_AMR1_GradRefined
+RisingBubble_tc2_k2_mesh20_newAMR4_restart2
 ==============
 **************
 ==============
@@ -373,10 +374,11 @@ foreach(var cntrl in controls) {
     job.Activate(myBatch);
 }
 **************
-Submitting Session: RisingBubble_tc1_k2_mesh0_AMR1_GradRefined
-Job not submitted yet, or no result session is known - starting submission.
+Submitting Session: RisingBubble_tc2_k2_mesh20_newAMR4_restart2
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Aug18_115152
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Sep30_173929
 copied 32 files.
    written file: control.obj
    copied 'amd64' runtime.
@@ -406,8 +408,8 @@ LastError
 ==============
 //databases.Pick(3).Sessions.Pick(0).Delete()
 **************
-Session: RisingBubble   RisingBubble_tc2_ConvStudy_k2_mesh2_restart3*   06/01/2020 15:44:48 332e95c5...
-Do you really want to delete this session? [y/n]: Session 332e95c5-0d2e-428e-ae4e-fba65b1273be deleted.
+Session: RisingBubble   RisingBubble_tc2_k2_mesh20_newAMR4_restart2*    09/30/2020 17:29:36 e1d730e3...
+Do you really want to delete this session? [y/n]: Session e1d730e3-1fde-4d19-95e4-a3fa0ae9b633 deleted.
 
 ==============
 //databases.Pick(3).Sessions
@@ -421,6 +423,48 @@ Do you really want to delete this session? [y/n]: Session 332e95c5-0d2e-428e-ae4
 **************
 ==============
 //databases.Pick(3).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

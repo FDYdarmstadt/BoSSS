@@ -318,7 +318,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-        public static XNSE_Control CouetteGNBC_forWorksheet(bool symmetric) {
+        public static XNSE_Control CouetteGNBC_forWorksheet(bool symmetric, bool restart) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -415,7 +415,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //double epsInit = 0.01;
             //Func<double[], double> PhiFunc = (X => (Math.Abs(X[0] - 2 * L) - L) + (X[1] - (H / 2.0)) * (epsInit / (H / 2.0)));
-            C.AddInitialValue("Phi", "X => (Math.Abs(X[0] - 2 * 27.2) - 27.2) + (X[1] - (6.8)) * (0.01 / 6.8)", false);
+            if(!restart)
+                C.AddInitialValue("Phi", "X => (Math.Abs(X[0] - 2 * 27.2) - 27.2) + (X[1] - (6.8)) * (0.01 / 6.8)", false);
 
             #endregion
 

@@ -368,7 +368,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             int D = 2;
 
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
 
 
             // basic database options
@@ -451,7 +451,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         C.PhysicalParameters.betaS_B = 0.05;
 
                         C.PhysicalParameters.betaL = 0;
-                        C.PhysicalParameters.theta_e = Math.PI / 3.0;
+                        C.PhysicalParameters.theta_e = 1.0 * Math.PI / 3.0;
                         break;
                     }
                 case 2: {
@@ -469,7 +469,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         C.PhysicalParameters.betaS_B = 0.5;
 
                         C.PhysicalParameters.betaL = 0;
-                        C.PhysicalParameters.theta_e = Math.PI / 3.0;
+                        C.PhysicalParameters.theta_e = 2.0 * Math.PI / 3.0;
                         break;
                     }
                 case 3: {
@@ -515,7 +515,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         xSize = 0.25;
                         ySize = 0.25;
                         //kelem = 4;      // mesh level 0
-                        kelem = 16;
+                        kelem = 8;
                         break;
                     }
                 case 3: {
@@ -536,12 +536,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                     grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
-                    grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
-                    grd.EdgeTagNames.Add(3, "navierslip_linear_left");
-                    grd.EdgeTagNames.Add(4, "navierslip_linear_right");
-                    //grd.EdgeTagNames.Add(2, "wall_upper");
-                    //grd.EdgeTagNames.Add(3, "wall_left");
-                    //grd.EdgeTagNames.Add(4, "wall_right");
+                    //grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+                    //grd.EdgeTagNames.Add(3, "navierslip_linear_left");
+                    //grd.EdgeTagNames.Add(4, "navierslip_linear_right");
+                    grd.EdgeTagNames.Add(2, "wall_upper");
+                    grd.EdgeTagNames.Add(3, "wall_left");
+                    grd.EdgeTagNames.Add(4, "wall_right");
 
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
@@ -605,7 +605,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             double R = (tc == 3) ? 0.125 : 0.1;
-            double Theta_0 = Math.PI / 2.0;
+            double Theta_0 = Math.PI / 3.0;
             double s = 2 * R * Math.Sin(Theta_0);
             double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
 
@@ -636,13 +636,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region BC
 
             C.AddBoundaryValue("navierslip_linear_lower");
-            C.AddBoundaryValue("navierslip_linear_upper");
-            C.AddBoundaryValue("navierslip_linear_left");
-            C.AddBoundaryValue("navierslip_linear_right");
-            //C.AddBoundaryCondition("wall_upper");
-            //C.AddBoundaryCondition("wall_left");
-            //C.AddBoundaryCondition("wall_right");
-            if(D == 3) {
+            //C.AddBoundaryValue("navierslip_linear_upper");
+            //C.AddBoundaryValue("navierslip_linear_left");
+            //C.AddBoundaryValue("navierslip_linear_right");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
+            if (D == 3) {
                 C.AddBoundaryValue("navierslip_linear_front");
                 C.AddBoundaryValue("navierslip_linear_back");
             }
@@ -680,7 +680,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
+            C.RefineNavierSlipBoundary = true;
+            C.BaseRefinementLevel = 2;
+            C.RefinementLevel = 2;
+            //C.AMR_startUpSweeps = 2;
+
+            C.adaptiveReInit = true;
 
             #endregion
 
@@ -689,7 +694,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
@@ -706,7 +711,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     }
                 case 2: {
                         //dt = 2e-4;
-                        dt = 1e-3;
+                        dt = 1e-4;
                         C.Endtime = 1000;
                         C.NoOfTimesteps = 4000;
                         C.saveperiod = 1;
@@ -950,7 +955,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.RefineNavierSlipBoundary = true;
             C.BaseRefinementLevel = 1;
             C.RefinementLevel = 1;
-            C.ReInitPeriod = 100;
+            //C.ReInitPeriod = 100;
 
             C.ReInitOnRestart = true;
 

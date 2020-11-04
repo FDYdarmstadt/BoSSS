@@ -345,7 +345,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // Solution-Stack
             // --------------
-            if(m_CurrentPhystime != fsiOldPhystime) { // only true in case of fsi_splitting fully coupled
+            //if(m_CurrentPhystime != fsiOldPhystime) { // only true in case of fsi_splitting fully coupled
                 // entry 0 should remain the same object all the time
                 var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
                 for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
@@ -354,7 +354,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_Stack_u[1] = Cvtmp;
                 m_Stack_u[1].Clear();
                 m_Stack_u[1].Acc(1.0, m_Stack_u[0]);
-            }
+            //}
 
             // mass-matrix stack
             // -----------------

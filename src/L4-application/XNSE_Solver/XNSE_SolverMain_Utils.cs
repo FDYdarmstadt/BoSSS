@@ -767,22 +767,22 @@ namespace BoSSS.Application.XNSE_Solver {
                 SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
-                                // contact point
-                                NodeSet Enode_l = QR.Nodes;
+                    // contact point
+                    NodeSet Enode_l = QR.Nodes;
                     int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
                     NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf);
                     NodeSet Vnode_g = Vnode_l.CloneAs();
                     int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
                     LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
-                                //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
+                    //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
 
-                                int D = Grid.SpatialDimension;
+                    int D = Grid.SpatialDimension;
                     for (int d = 0; d < D; d++) {
                         EvalResult[0, 0, d] = Vnode_g[0, d];
                     }
 
-                                // contact line velocity
-                                MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
+                    // contact line velocity
+                    MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
                     MultidimensionalArray U_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
                     for (int d = 0; d < D; d++) {
                         (meanVelocity[d] as SinglePhaseField).EvaluateEdge(i0, length, QR.Nodes, U_IN.ExtractSubArrayShallow(-1, -1, d), U_OUT.ExtractSubArrayShallow(-1, -1, d));
@@ -792,8 +792,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
                     }
 
-                                // contact angle
-                                MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
+                    // contact angle
+                    MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
                     MultidimensionalArray normal_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
                     for (int d = 0; d < D; d++) {
                         Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
@@ -804,9 +804,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     double theta = (theta_surf - theta_edge) * (180 / Math.PI);
 
                     EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
-                                //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2]);
+                    //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2]);
 
-                            },
+                },
                 delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
                     int D = Grid.SpatialDimension;
                     for (int i = 0; i < length; i++) {

@@ -9,7 +9,7 @@ List of 6 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
   2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
-  3: { Session Count = 733; Grid Count = 13280; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  3: { Session Count = 741; Grid Count = 18805; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
   4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
   5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
 }
@@ -38,11 +38,11 @@ Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could 
 //sess
 **************
 ==============
-//string studyName = "ConvStudyHysing";
+//string studyName = "Hysing";
 //string studyName = "setupStudy3_k2_mesh0";
 //string studyName = "setup3_";
-//string studyName = "Hysing2_mesh";
-string studyName = "AirWater";
+string studyName = "Hysing2_mesh";
+//string studyName = "AirWater";
 List<ISessionInfo> studySess = new List<ISessionInfo>();
 List<ISessionInfo> studySessNT = new List<ISessionInfo>();
 foreach(var sess in WorkflowMgm.Sessions) {
@@ -55,16 +55,15 @@ foreach(var sess in WorkflowMgm.Sessions) {
 }
 studySessNT
 **************
-List of 6 instances of ISessionInfo {
-  0: OscillatingDroplet	OD_AirWater_Stokes*	06/24/2020 20:00:11	1837d6d4...
-  1: OscillatingDroplet	OD_AirWater_LFF09*	06/24/2020 19:56:08	95d1964d...
-  2: OscillatingDroplet	OD_AirWater_ReInit100*	06/24/2020 19:53:15	3c4d99c5...
-  3: OscillatingDroplet	OD_AirWater_ReInit1000*	06/15/2020 22:20:36	f6c2b7dc...
-  4: OscillatingDroplet	OD_AirWater10_ReInit100*	05/22/2020 21:42:19	6b0c82b5...
-  5: OscillatingDroplet	OD_AirWater10_halfdt*	05/22/2020 21:41:59	c84c394f...
+List of 5 instances of ISessionInfo {
+  0: OscillatingDroplet	OD_meshStudy_Hysing2_mesh80_AMR1*	06/03/2020 16:59:05	7772257f...
+  1: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40_AMR4*	06/03/2020 16:59:02	401505af...
+  2: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40_AMR3*	06/03/2020 16:58:58	217e6bca...
+  3: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40_AMR2*	06/03/2020 16:58:56	8ed693d0...
+  4: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40*	05/18/2020 20:58:09	0fe0374d...
 }
 ==============
-//studySess.Pick(0).KeysAndQueries
+//studySess.Pick(6).OpenSessionDirectory(); //KeysAndQueries
 **************
 ==============
 //var destination = databases.Pick(3);
@@ -73,27 +72,21 @@ List of 6 instances of ISessionInfo {
 ==============
 //studySess.AddRange(studySessNT.Take(2));
 //studySess.Add(studySessNT.Pick(1));
-//studySess.RemoveRange(0,3);
-//studySess.RemoveAt(3);
+//studySess.RemoveRange(5,5);
+//studySess.RemoveAt(1);
 studySess
 **************
-List of 9 instances of ISessionInfo {
-  0: OscillatingDroplet	OD_AirWater_LFF09	06/24/2020 19:58:46	79922c79...
-  1: OscillatingDroplet	OD_AirWater_ReInit100	06/24/2020 19:59:03	01f0020f...
-  2: OscillatingDroplet	OD_AirWater_halfdt	06/17/2020 23:13:48	9daae965...
-  3: OscillatingDroplet	OD_AirWater_ReInit1000	06/15/2020 22:20:21	2d14ee6a...
-  4: OscillatingDroplet	OD_AirWater_ReInit1000	06/15/2020 22:19:59	b057ceaf...
-  5: OscillatingDroplet	OD_AirWater_ReInit1000	06/12/2020 19:44:44	b0f6b079...
-  6: OscillatingDroplet	OD_AirWater_ReInit1000	06/10/2020 20:58:58	59d04913...
-  7: OscillatingDroplet	OD_AirWater_noReInit	06/06/2020 22:44:19	c16b59d8...
-  8: OscillatingDroplet	OD_AirWater10_noReInit	06/03/2020 16:59:09	f8e832b7...
+List of 5 instances of ISessionInfo {
+  0: OscillatingDroplet OD_meshStudy_Hysing2_mesh80_rerun   06/08/2020 09:56:33 f29869b3...
+  1: OscillatingDroplet OD_meshStudy_Hysing2_mesh60_rerun   06/08/2020 09:56:47 4cd1809e...
+  2: OscillatingDroplet OD_meshStudy_Hysing2_mesh20_rerun   06/08/2020 09:57:11 7c6fe495...
+  3: OscillatingDroplet OD_meshStudy_Hysing2_mesh10_rerun   06/08/2020 09:57:27 1b80d7a7...
+  4: OscillatingDroplet OD_meshStudy_Hysing2_mesh40 06/06/2020 22:43:45 7c07123e...
 }
 ==============
 //studySess.CheckForEnergyLogging();
-studySess.Pick(8).Export().WithSupersampling(2).Do()
+//studySess.Pick(8).Export().WithSupersampling(2).Do()
 **************
-Starting export process... Data will be written to the following directory:
-C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\OscillatingDroplet__OD_AirWater10_noReInit__f8e832b7-67e0-4bd2-9cc2-c2abb58a25a8
 ==============
 **************
 ==============
@@ -349,6 +342,10 @@ double velocL2 = (uL2.Pow2()+vL2.Pow2()).Sqrt();
 velocL2
 **************
 1.34453390343868E-07
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

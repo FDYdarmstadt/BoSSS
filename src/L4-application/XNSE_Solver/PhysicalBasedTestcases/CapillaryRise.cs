@@ -392,7 +392,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
                         //C.ClearVelocitiesOnRestart = true;
-                        C.ReInitPeriod = 400;
+                        //C.ReInitPeriod = 400;
 
                         break;
                     }

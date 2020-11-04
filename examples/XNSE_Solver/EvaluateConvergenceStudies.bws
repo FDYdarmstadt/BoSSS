@@ -1,6 +1,5 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
@@ -264,6 +263,8 @@ List of 3 instances of Double {
 Session: StaticDroplet  StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy_k3_mesh5*    06/23/2020 19:38:59 07583775...
 Do you really want to delete this session? [y/n]: Session 07583775-1fd7-4cd5-903a-74556c4b6422 deleted.
 
+==============
+**************
 ==============
 **************
 ==============

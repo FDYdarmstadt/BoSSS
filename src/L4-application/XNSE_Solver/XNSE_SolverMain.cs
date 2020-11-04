@@ -309,11 +309,11 @@ namespace BoSSS.Application.XNSE_Solver {
                         Debug.Assert(object.ReferenceEquals(m_CurrentSolution.Mapping.Fields[d], this.CurrentVel[d]));
                     }
                 }
-
+         
                 return m_CurrentSolution;
             }
         }
-
+        
         CoordinateVector m_CurrentSolution;
 
         /// <summary>
@@ -388,11 +388,11 @@ namespace BoSSS.Application.XNSE_Solver {
                             VarIndex = new int[] { d }
                         };
                     }
-                // configuration for pressure
-                configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                    mode = this.Control.PressureBlockPrecondMode, // MultigridOperator.Mode.IdMass,
-                        VarIndex = new int[] { D }
+                    // configuration for pressure
+                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        mode = this.Control.PressureBlockPrecondMode, // MultigridOperator.Mode.IdMass,
+                            VarIndex = new int[] { D }
                     };                
 
                     if (this.Control.solveCoupledHeatEquation) {
@@ -583,17 +583,17 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
 
-                if (this.Control.useFiltLevSetGradientForEvolution) {
-                    this.DGLevSetGradient.Clear();
-                    if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) {
-                        this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
-                    } else {
-                        this.DGLevSetGradient.AccLaidBack(1.0, filtLevSetGradient);
-                    }
-                } else {
-                    this.DGLevSetGradient.Clear();
-                    this.DGLevSetGradient.Gradient(1.0, this.DGLevSet.Current); 
-                }
+                //if (this.Control.useFiltLevSetGradientForEvolution) {
+                //    this.DGLevSetGradient.Clear();
+                //    if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) {
+                //        this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
+                //    } else {
+                //        this.DGLevSetGradient.AccLaidBack(1.0, filtLevSetGradient);
+                //    }
+                //} else {
+                //    this.DGLevSetGradient.Clear();
+                //    this.DGLevSetGradient.Gradient(1.0, this.DGLevSet.Current); 
+                //}
 
                 // =================================================
                 // Construct evaporative mass flux (extension field) 
@@ -1047,11 +1047,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 hack_TimestepIndex = TimestepInt;
                 hack_Phystime = phystime;
 
-  
+
                 //Preprocessing(TimestepInt, phystime, dt, TimestepNo);
 
 
-                if(Control.SkipSolveAndEvaluateResidual) {
+                if (Control.SkipSolveAndEvaluateResidual) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
                     // setup: project exact solution -- for consistency tests
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1206,7 +1206,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         lockUpdate = true;
 
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                        
+ 
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
                     }
@@ -1388,7 +1388,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // ================
                 // Good bye
                 // ================
-                if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
+                if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
 
                     if (this.Control.fullReInit) {
                         // 1. elliptic ReInit on cut-cells
@@ -1481,7 +1481,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override void ResetInitial() {
             base.SetInitial();
+
             this.InitLevelSet();
+
 
             if (this.Control.solveCoupledHeatEquation) {
                 if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
@@ -1492,9 +1494,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure));
             }
 
-            m_BDF_Timestepper.DelayedTimestepperInit(0.0, 0, this.Control.GetFixedTimestep(),
-                // delegate for the initialization of previous timesteps from an analytic solution
-                BDFDelayedInitSetIntial);
+            //m_BDF_Timestepper.DelayedTimestepperInit(0.0, 0, this.Control.GetFixedTimestep(),
+            //    // delegate for the initialization of previous timesteps from an analytic solution
+            //    BDFDelayedInitSetIntial);
 
             //if (this.Control.solveCoupledHeatEquation) {
             //    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
@@ -1515,14 +1517,10 @@ namespace BoSSS.Application.XNSE_Solver {
             // LogFile initialization
             // =============================================  
 
-            if (this.Control.TestMode == true)
-            {
+            if (this.Control.TestMode == true) {
                 LogQueryValue(PhysTime);
-            }
-            else
-            {
-                if (this.Control.LogValues != XNSE_Control.LoggingValues.None && this.CurrentSessionInfo.ID != Guid.Empty && base.MPIRank == 0)
-                {
+            } else {
+                if (this.Control.LogValues != XNSE_Control.LoggingValues.None && this.CurrentSessionInfo.ID != Guid.Empty && base.MPIRank == 0) {
                     InitLogFile(this.CurrentSessionInfo.ID);
                     WriteLogLine(TimestepNo, PhysTime);
                 }
@@ -1544,36 +1542,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //}
 
             if (this.Control.ReInitOnRestart) {
-
-                this.Control.ReInitControl.Potential = ReInitPotential.BastingSingleWell;
-                //this.Control.ReInitControl.Upwinding = true;
-                ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
-                ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
-
-                CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
-                if (this.Control.AdaptiveMeshRefinement) {
-                    var cDat = ((GridData)this.GridData).Cells;
-                    int nC = cDat.Count;
-                    BitArray constI = new BitArray(nC);
-                    foreach (Chunk cnk in ActiveField) {
-                        for (int i = cnk.i0; i < cnk.Len; i++) {
-                            if (((GridData)this.GridData).Cells.GetCell(i).RefinementLevel == this.Control.BaseRefinementLevel)
-                                constI[i] = true;
-                        }
-                    }
-                    ActiveField = new CellMask(this.GridData, constI);
-                }
-
-                FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
-                CellMask Accepted = LsTrk.Regions.GetCutCellMask();
-                //CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
-                CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
+                performReInit();
             }
 
 
-            // hack for restarting rising bubble
+            //// hack for restarting rising bubble
             //Console.WriteLine("Warning! set gravity for rising bubble restart");
             //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("A").AccConstant(-9.81e-1);
             //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("B").AccConstant(-9.81e-1);
@@ -1666,8 +1639,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
-
         }
 
 
@@ -1756,21 +1727,24 @@ namespace BoSSS.Application.XNSE_Solver {
         //    return DesiredLevel_j;
 
         //}
-
+        bool flag = true;
 
         int LevelIndicator(int j, int CurrentLevel) {
 
 
             CellMask ccm = this.LsTrk.Regions.GetCutCellMask();
             CellMask near = this.LsTrk.Regions.GetNearFieldMask(1);
-            CellMask nearBnd = near.AllNeighbourCells();
-            CellMask buffer = nearBnd.AllNeighbourCells().Union(nearBnd).Except(near);
+            CellMask nearHistory = this.LsTrk.Regions.GetNearFieldMask(1);
+            for (int i = 0; i < this.LsTrk.PopulatedHistoryLength; i++) {
+                nearHistory = nearHistory.Union(this.LsTrk.RegionsHistory[-i].GetNearFieldMask(1));
+            }
+            CellMask nearNbr = near.AllNeighbourCells();
+            nearNbr = nearNbr.AllNeighbourCells().Except(nearHistory);
 
             int DesiredLevel_j = CurrentLevel;
 
             if (near.Contains(j)) {
                 if (CurrentLevel < this.Control.BaseRefinementLevel) {
-                    Console.WriteLine("DesiredLevel +1 in cell {0}", j);
                     DesiredLevel_j++;
                 } else {
                     // additional refinement
@@ -1782,7 +1756,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 double gradThrshld = 1e3;
                                 if ((maxGrad / grdSz) > gradThrshld && CurrentLevel < this.Control.RefinementLevel) {
                                     DesiredLevel_j++;
-                                } else if ((maxGrad / grdSz) > (gradThrshld / 10.0) && CurrentLevel < this.Control.RefinementLevel) {
+                                } else if ((maxGrad / grdSz) > (gradThrshld / 10.0) && CurrentLevel > this.Control.BaseRefinementLevel) {
                                     DesiredLevel_j--;
                                 }
                                 break;
@@ -1797,7 +1771,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 double curv_thrshld = max_AbsCurv; // mean_curv;
                                 if (curv_thrshld > curv_max && CurrentLevel < this.Control.RefinementLevel) {
                                     DesiredLevel_j++;
-                                } else if (curv_thrshld < (curv_max / 2.0) && CurrentLevel == this.Control.RefinementLevel) {
+                                } else if (curv_thrshld < (curv_max / 2.0) && CurrentLevel > this.Control.BaseRefinementLevel) {
                                     DesiredLevel_j--;
                                 }
                                 break;
@@ -1830,17 +1804,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (CurrentLevel < this.Control.RefinementLevel)
                     DesiredLevel_j++;
 
-                //} else if (buffer.Contains(j) || NSbuffer.Contains(j)) {
-                //    if (CurrentLevel < this.Control.BaseRefinementLevel - 1)
-                //        DesiredLevel_j++;
+            } else if (nearNbr.Contains(j)) {
+                if (CurrentLevel < this.Control.BaseRefinementLevel - 1)
+                    DesiredLevel_j++;
 
-            } else {
-                if (CurrentLevel > 0) {
-                    Console.WriteLine("DesiredLevel -1 in cell {0}", j);
+            } else if (!nearHistory.Contains(j)) {
+                if (CurrentLevel > 0) 
                     DesiredLevel_j--;
-                }
-            }
 
+            } 
+  
             //if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.PhaseARefined) {
             //    if (neg.Contains(j) && CurrentLevel < this.Control.RefinementLevel)
             //        DesiredLevel_j = CurrentLevel + 1;
@@ -1851,7 +1824,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //    if (GradVelNorm.GetMeanValue(j) > 1000 && CurrentLevel < this.Control.RefinementLevel)
             //        DesiredLevel_j = CurrentLevel + 1;
             //}
-
 
             return DesiredLevel_j;
 
@@ -1975,14 +1947,20 @@ namespace BoSSS.Application.XNSE_Solver {
                     //    BlockedCells = currNear;
                     //}
 
+
                     // compute curvature for levelindicator 
                     if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.CurvatureRefined) {
+                        CurvatureAlgorithms.FilterConfiguration curvFilter = CurvatureAlgorithms.FilterConfiguration.Default;
+                        curvFilter.LevelSetSource = CurvatureAlgorithms.LevelSetSource.fromDG;
+                        curvFilter.PatchRecoveryDomWidth = 1;
                         CurvatureAlgorithms.CurvatureDriver(
-                            SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                            CurvatureAlgorithms.FilterConfiguration.NoFilter,
+                            SurfaceStressTensor_IsotropicMode.Curvature_Projected, curvFilter,
                             this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
                             this.m_HMForder, this.DGLevSet.Current);
+
+                        Tecplot.PlotFields(new DGField[] { this.Curvature }, "curvatureForAMR" + hack_TimestepIndex, hack_Phystime, 2);
                     }
+
 
                     // compute gradient norm for levelindicator 
                     if (this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.VelocityGradient) {
@@ -2037,16 +2015,24 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, BlockedCells);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null, BlockedCells);
                     bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-                int NoOfCellsToRefine = 0;
-                int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
-                    int[] glb = (new int[] {
 
-                    CellsToRefineList.Count,
-                    Coarsening.Sum(L => L.Length),
-                }).MPISum();
+                    //SinglePhaseField ok2CoarsenField = new SinglePhaseField(new Basis(this.GridData, 0));
+                    //for (int j = 0; j < oK2Coarsen.Length; j++) {
+                    //    if (oK2Coarsen[j])
+                    //        ok2CoarsenField.SetMeanValue(j, 1);
+                    //}
+                    //Tecplot.PlotFields(new DGField[] { ok2CoarsenField }, "oK2Coarsen" + hack_TimestepIndex, hack_Phystime, 2);
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if (AnyChange) {
+                        int[] glb = (new int[] {
+
+                        CellsToRefineList.Count,
+                        Coarsening.Sum(L => L.Length),
+                    }).MPISum();
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }

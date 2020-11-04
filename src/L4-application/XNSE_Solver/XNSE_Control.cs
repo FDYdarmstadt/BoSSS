@@ -280,13 +280,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// desired minimum refinement level at interface
         /// </summary>
         [DataMember]
-        public int BaseRefinementLevel = 1;
+        public int BaseRefinementLevel = 0;
 
         /// <summary>
         /// maximum refinement level including additional refinement (contact line, curvature, etc.)
         /// </summary>
         [DataMember]
-        public int RefinementLevel = 1;
+        public int RefinementLevel = 0;
 
 
         /// <summary>
@@ -307,7 +307,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         [DataMember]
-        public int ReInitPeriod = 0;
+        public bool adaptiveReInit = false;
 
         [DataMember]
         public bool InitSignedDistance = true;
@@ -438,8 +438,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public double LSunderrelax = 1.0;
 
-        [DataMember]
-        public bool useFiltLevSetGradientForEvolution = false;
+        //[DataMember]
+        //public bool useFiltLevSetGradientForEvolution = false;
 
         /// <summary>
         /// See <see cref="LevelSetEvolution"/>.
@@ -507,6 +507,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
+        [DataMember]
         public bool EnforceLevelSetConservation = false;
 
 
@@ -632,6 +633,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Control Options for ReInit
         /// </summary>
+        [DataMember]
         public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
 
         /// <summary>
