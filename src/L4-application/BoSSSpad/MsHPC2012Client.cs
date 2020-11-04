@@ -119,7 +119,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Job status.
         /// </summary>
-        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override (BoSSSpad.JobStatus,int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) { 
+        //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (var tr = new FuncTrace()) {
                 int id = int.Parse(idToken);
 
@@ -169,9 +170,9 @@ namespace BoSSS.Application.BoSSSpad {
                 */
 
 
+                int ExitCode = int.MinValue;
                 using (new BlockTrace("TASK_FILTERING", tr)) {
                     ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
-                    ExitCode = int.MinValue;
                     foreach (ISchedulerTask t in tasks) {
                         DeployDir = t.WorkDirectory;
                         ExitCode = t.ExitCode;
@@ -185,27 +186,19 @@ namespace BoSSS.Application.BoSSSpad {
                         case JobState.Validating:
                         case JobState.ExternalValidation:
                         case JobState.Queued:
-                            isRunning = false;
-                            isTerminated = false;
-                            break;
+                            return (JobStatus.PendingInExecutionQueue, null);
 
                         case JobState.Running:
                         case JobState.Finishing:
-                            isRunning = true;
-                            isTerminated = false;
-                            break;
+                            return (JobStatus.PendingInExecutionQueue, null);
 
                         case JobState.Finished:
-                            isRunning = false;
-                            isTerminated = true;
-                            break;
+                            return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
 
                         case JobState.Failed:
                         case JobState.Canceled:
                         case JobState.Canceling:
-                            isRunning = false;
-                            isTerminated = true;
-                            break;
+                            return (JobStatus.FailedOrCanceled, ExitCode);
 
                         default:
                             throw new NotImplementedException("Unknown job state: " + JD.State);
@@ -218,15 +211,15 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Path to standard error file.
         /// </summary>
-        public override string GetStderrFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+        public override string GetStderrFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
         /// <summary>
         /// Path to standard output file.
         /// </summary>
-        public override string GetStdoutFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
+        public override string GetStdoutFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
             
         }
@@ -234,7 +227,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
-        public override (string id, object optJobObj) Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             using (new FuncTrace()) {
                 string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
 
@@ -256,7 +249,7 @@ namespace BoSSS.Application.BoSSSpad {
                 task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
                 
-                task.WorkDirectory = myJob.DeploymentDirectory;
+                task.WorkDirectory = DeploymentDirectory;
 
                 using (var str = new StringWriter()) {
                     str.Write("mpiexec ");
@@ -274,8 +267,8 @@ namespace BoSSS.Application.BoSSSpad {
                     task.SetEnvironmentVariable(name, valu);
                 }
 
-                task.StdOutFilePath = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
-                task.StdErrFilePath = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+                task.StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
+                task.StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
 
                 if (ComputeNodes != null) {
                     foreach (string node in ComputeNodes)

@@ -244,7 +244,7 @@ NUnit.Framework.Assert.IsTrue(J2.Status == JobStatus.FinishedSuccessful);
  }
 \BoSSSexe
 \BoSSScmd{
-var j2Sess = J2.GetAllSessions().Last();
+var j2Sess = J2.LatestSession;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -332,11 +332,11 @@ NUnit.Framework.Assert.IsTrue(J3.Status == JobStatus.FinishedSuccessful);
  }
 \BoSSSexe
 \BoSSScmd{
-var firstTimeStep = J3.GetAllSessions().Last().Timesteps.First();
+var firstTimeStep = J3.LatestSession.Timesteps.First();
  }
 \BoSSSexe
 \BoSSScmd{
-DGField RhsOnTriangles = firstTimeStep.GetField("rhs"); // case-inssensitive!\newline 
+DGField RhsOnTriangles = firstTimeStep.GetField("rhs"); // case-insensitive!\newline 
 DGField RhsOriginal    = lastTimeStep.GetField("T");
  }
 \BoSSSexe

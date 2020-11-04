@@ -104,8 +104,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             double particleDensity = 1;
             C.gravity = new Vector(0, 0);
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, false, true);
@@ -229,8 +229,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.gravity = new Vector( 0, -9.81 );
 
             // Particle Properties
-            //C.PhysicalParameters.mu_B = 0.1;
-            //C.particleMass = 1;
             double particleDensity1 = 4.0;
             InitializeMotion motion1 = new InitializeMotion(C.gravity, particleDensity1, C.pureDryCollisions, true);
             double particleDensity2 = 1.0;

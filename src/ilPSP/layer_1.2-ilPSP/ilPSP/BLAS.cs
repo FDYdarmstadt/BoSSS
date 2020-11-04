@@ -321,6 +321,19 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// Random vector with <paramref name="n"/> entries.
+        /// </summary>
+        public static double[] RandomVec(int n, int seed = 0) {
+            Random rnd = new Random(seed);
+            double[] x0 = new double[n];
+            for(int l = 0; l < n; l++) {
+                x0[l] = rnd.NextDouble();
+            }
+            return x0;
+        }
+
+
+        /// <summary>
         /// Creates logarithmically distributed nodes between two points.
         /// </summary>
         /// <param name="min">minimum</param>

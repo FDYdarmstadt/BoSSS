@@ -88,8 +88,12 @@ var c = new IBM\_Control();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Polynomial degress
-int k              = 2;\newline 
+/// First, the DG polynomial degree is set:
+/// (degree 2 for velocity and 1 for pressure).
+c.SetDGdegree(2);
+ }
+\BoSSSexe
+\BoSSScmd{
 /// Domain and Grid variables
 double xMin        = -2; \newline 
 double xMax        = 20;\newline 
@@ -108,18 +112,12 @@ c.saveperiod = 1;
 \BoSSSexe
 \BoSSScmd{
 /// Setting some variables for database saving. Here it is also possible to define tags which can be helpful for finding a particular simulation in the \BoSSS{} database
-string sessionName   = "dt = 1E20\_" + numberOfCellsX + "x" + numberOfCellsY + "\_k" + k;\newline 
+string sessionName   = "dt = 1E20\_" + numberOfCellsX + "x" + numberOfCellsY + "\_k2";\newline 
 c.SessionName        = sessionName;\newline 
-c.ProjectDescription = sessionName;\newline 
+c.ProjectDescription = "Incompressible Solver Examples";\newline 
 c.Tags.Add("numberOfCellsX\_" + numberOfCellsX);\newline 
 c.Tags.Add("numberOfCellsY\_" + numberOfCellsY);\newline 
-c.Tags.Add("k"+k);
- }
-\BoSSSexe
-\BoSSScmd{
-/// Here, the DG polynomial degree is set.
-/// (degree \code{k} for velocity, \code{k-1} for pressure).
-c.SetDGdegree(2);
+c.Tags.Add("k2");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -131,30 +129,23 @@ GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, CellType.Square\_Linea
  }
 \BoSSSexe
 \BoSSScmd{
-/// Specify boundary names
-grid.EdgeTagNames.Add(1, "wall"); \newline 
-grid.EdgeTagNames.Add(2, "Velocity\_Inlet"); \newline 
-grid.EdgeTagNames.Add(3, "Pressure\_Outlet");
- }
-\BoSSSexe
-\BoSSScmd{
 /// Set the geometric location of boundary conditions by edge tags;
 /// Edges that get assigned "0" are "inner edges".
 grid.DefineEdgeTags(delegate (double[] X) \{\newline 
 \btab if (Math.Abs(X[1] - (-2)) <= 1.0e-8)\newline 
-\btab \btab return (byte)1; // wall at y = -2\newline 
+\btab \btab return "wall"; // wall at y = -2\newline 
 \btab if (Math.Abs(X[1] - (+2.1 )) <= 1.0e-8)\newline 
-\btab \btab return (byte)1; // wall at y = +2\newline 
+\btab \btab return "wall"; // wall at y = +2\newline 
 \btab if (Math.Abs(X[0] - (-2)) <= 1.0e-8)\newline 
-\btab \btab return (byte)2; // velocity inlet at x = -2\newline 
+\btab \btab return "Velocity\_Inlet"; // velocity inlet at x = -2\newline 
 \btab if (Math.Abs(X[0] - (+20.0)) <= 1.0e-8)\newline 
-\btab \btab return (byte)3; // pressure outlet at x = +20\newline 
+\btab \btab return "Pressure\_Outlet"; // pressure outlet at x = +20\newline 
 \btab throw new ArgumentException("unexpected domain boundary"); \newline 
 \});
  }
 \BoSSSexe
 \BoSSScmd{
-/// Return grid info and save
+/// Save the grid in the database so that the simulation can use it
 grid;\newline 
 myDb.SaveGrid(ref grid);\newline 
 c.SetGrid(grid);
@@ -163,10 +154,8 @@ c.SetGrid(grid);
 \BoSSScmd{
 /// Specification of boundary conditions with a parabolic velocity profile for the inlet
 c.BoundaryValues.Clear();\newline 
-c.AddBoundaryValue("wall");\newline 
 c.AddBoundaryValue("Velocity\_Inlet", "VelocityX", \newline 
-\btab   (X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1)))); \newline 
-c.AddBoundaryValue("Pressure\_Outlet");
+\btab   (X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1)))); 
  }
 \BoSSSexe
 \BoSSScmd{
@@ -185,23 +174,12 @@ c.PhysicalParameters.IncludeConvection = true;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Initial Values are set to 0
+/// Initial Values are set to 0; Note that the following lines are only for 
+/// demonstration -- if no initial value is specified, 0 is set automatically.
 c.InitialValues.Clear();\newline 
 c.InitialValues.Add("VelocityX",new Formula("X => 0.0", false));\newline 
 c.InitialValues.Add("VelocityY",new Formula("X => 0.0", false));\newline 
 c.InitialValues.Add("Pressure",new Formula("X => 0.0", false));
- }
-\BoSSSexe
-\BoSSScmd{
-/// Phi is a level set variable which is not used in this simulation.
-/// Therefore it has to be set to -1.
-c.InitialValues.Add("Phi", new Formula("X => -1.0", false));
- }
-\BoSSSexe
-\BoSSScmd{
-/// Properties for the Picard Iterations
-c.NonLinearSolver.MaxSolverIterations = 50;\newline 
-c.NonLinearSolver.MinSolverIterations = 1;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -226,6 +204,10 @@ c.NoOfTimesteps      = 1;
 /// executing the \code{Run} method on the control objece \code{c}.
 /// An inline run wil block \BoSSSpad until the solver exits.
 c.Run();
+ }
+\BoSSSexe
+\BoSSScmd{
+LastError
  }
 \BoSSSexe
 \BoSSScmd{

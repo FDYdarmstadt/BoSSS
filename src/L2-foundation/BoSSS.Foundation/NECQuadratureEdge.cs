@@ -295,6 +295,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         EquationComponentArgMapping<INonlinEdgeForm_V>[] m_EdgeForm_V;
 
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        override protected bool IsNonEmpty {
+            get {
+                return 
+                    base.IsNonEmpty ||
+                    m_EdgeForm_GradV.IsNonEmpty() || 
+                    m_EdgeForm_V.IsNonEmpty();
+            }
+        }
+
 
         /// <summary>
         /// Stores the result of the quadrature.

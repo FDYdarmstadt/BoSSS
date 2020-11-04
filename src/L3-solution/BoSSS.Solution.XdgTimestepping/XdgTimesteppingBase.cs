@@ -145,11 +145,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
         /// </summary>
         FSI_LieSplittingFullyCoupled = 5,
-
-        /// <summary>
-        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
-        /// </summary>
-        FSI_Coupled_Iterative = 6,
     }
 
     public enum SpatialOperatorType {
@@ -471,6 +466,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 int NF = this.CurrentStateMapping.Fields.Count;
                 m_ResLogger.IterationCounter = iterIndex;
 
+                double totResi = 0.0;
                 if (m_TransformedResi) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // transform current solution and residual back to the DG domain
@@ -497,6 +493,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                        totResi += L2Res.Pow2();
                     }
                 } else {
 
@@ -513,10 +510,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                             L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
+                        totResi += L2Res.Pow2();
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
                 }
+                totResi = totResi.Sqrt();
+                m_ResLogger.CustomValue(totResi, "Total");
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");

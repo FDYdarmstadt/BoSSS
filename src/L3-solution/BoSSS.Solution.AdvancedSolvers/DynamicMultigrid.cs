@@ -113,7 +113,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             FixedNoOfIterations = 1,
                             CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                NoOfPartsPerProcess = NoOfBlocks
+                                NoOfPartsOnCurrentProcess = NoOfBlocks
                             },
                             Overlap = 1
                         };

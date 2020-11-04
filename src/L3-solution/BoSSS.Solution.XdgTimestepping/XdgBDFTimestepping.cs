@@ -274,7 +274,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 restartInfo[i - 1] = new List<DGField>();
 
                 if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
 
                     DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
                     restartInfo[i - 1].Add(phiField);
@@ -311,7 +311,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
-                case LevelSetHandling.FSI_Coupled_Iterative:
                     // noop.
                     break;
 
@@ -1068,7 +1067,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 bool updateAgglom = false;
                 if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0)
                     || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_IterationCounter == 0)
-                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration) || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
+                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration)) {
 
                     m_CoupledIterations++;
                     if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
@@ -1234,7 +1233,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // right-hand-side, resp. affine vector
                 double[] RHS = new double[CurrentAffine.Length];
                 if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // MovingMesh:
                     // (1/dt)*(M1*u1 - M0*u0) + theta1*(Op1*u1 + b1) + theta0*(Op0*u0 + b0);
@@ -1633,16 +1632,21 @@ namespace BoSSS.Solution.XdgTimestepping {
                     RHS.ScaleV(-1);
 
                     // update the multigrid operator
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
                         System, MaMa,
                         this.Config_MultigridOperator, 
                         dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
 
-                    //ConvergenceObserver.WaterfallAnalysis(linearSolver, mgOperator, MaMa);
 
 
                     using (var tr = new FuncTrace()) {
                         // init linear solver
+
+
+                        //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
+                        //p.PlotInteractive();
+
                         using (new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
                         }
@@ -1833,6 +1837,76 @@ namespace BoSSS.Solution.XdgTimestepping {
             // try to solve the saddle-point system.
             mgOperator.UseSolver(linearSolver, new double[L], RHS);
 
+
+            // return
+            return CO;
+        }
+
+        public ConvergenceObserver GetFAMatrices(string OutputDir) {
+            // build the saddle-point matrix
+            //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
+            BlockMsrMatrix System, MaMa;
+            double[] RHSsmall, RHSbig, RHS;
+            double[] usmall, ubig;
+            double[] changeOfu;
+            int Lsmall, Lbig;
+            
+
+            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
+            RHS.ScaleV(-1);
+
+            // update the multigrid operator
+            MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                System, MaMa,
+                this.Config_MultigridOperator,
+                opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
+
+            // Get Reference Solver
+            Lbig = mgOperator.Mapping.ProblemMapping.LocalLength;
+            Lsmall = mgOperator.Mapping.LocalLength;
+            RHSbig = RHS.CloneAs();
+            RHSsmall = new double[Lsmall];
+            usmall = new double[Lsmall];
+            ubig = new double[Lbig];
+
+            var ReferenceSolver = new DirectSolver() {
+                WhichSolver = DirectSolver._whichSolver.PARDISO,
+                SolverVersion = Parallelism.SEQ,
+            };
+
+            //var EqSys = mgOperator.OperatorMatrix.ToMsrMatrix();
+            //for (int iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
+            //    if (EqSys.GetNoOfNonZerosPerRow(iRow) <= 0)
+            //        EqSys[iRow, iRow] = 1.0;
+            //}
+            ReferenceSolver.Init(mgOperator);
+            mgOperator.TransformRhsInto(RHSbig, RHSsmall,true);
+
+            ReferenceSolver.Solve(usmall, RHSsmall);
+            mgOperator.TransformSolFrom( ubig, usmall);
+
+            // Get the configured solvers
+            ISolverSmootherTemplate linearSolver;
+            NonlinearSolver NonlinearSolver;
+            GetSolver(out NonlinearSolver, out linearSolver);
+
+            // set-up the convergence observer
+            m_CurrentAgglomeration.ClearAgglomerated(ubig, this.m_Stack_u[0].Mapping);
+            var CO = new ConvergenceObserver(mgOperator, MaMa, ubig);
+            CO.TecplotOut = OutputDir;
+            changeOfu = new double[Lsmall];
+            ((OrthonormalizationMultigrid)linearSolver).ExtractSamples = delegate (int iter, double[] u, string name){
+                Debug.Assert(u.Length== usmall.Length);
+                changeOfu.SetV(u);
+                changeOfu.AccV(-1.0, usmall);
+                CO.Resample(iter, changeOfu, name);
+            };
+            
+            // init linear solver
+            linearSolver.Init(mgOperator);
+
+            // try to solve the saddle-point system.
+            mgOperator.UseSolver(linearSolver, new double[Lbig], RHS);
 
             // return
             return CO;

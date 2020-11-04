@@ -230,7 +230,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
       
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.TranspiratingChannelTest"/>
+        /// <see cref="TranspiratingChannelTest"/>
         /// </summary>
         [Test]
         public static void TranspiratingChannelTest(

@@ -83,7 +83,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double getDensityFromZ(double Z) {
             double res;
           //  Z = repairMixtureFractionValue(Z);
-            if (Q > 0) {
+            if (Q > 0) { // The reactive case is being calculated 
                 if (!rhoOne) {
                     //Debug.Assert(Z - 1.0 < 1e-4 && Z > -1e-4);
                     double T, Y0, Y1, Y2, Y3, Y4;
