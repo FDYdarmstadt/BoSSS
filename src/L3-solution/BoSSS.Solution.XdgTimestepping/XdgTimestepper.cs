@@ -629,7 +629,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// driver for solver calls
         /// </summary>
-        public void Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        public bool Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
+            bool success = false;
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
 
@@ -640,12 +645,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
+                success = m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
             } else {
                 if (SkipSolveAndEvaluateResidual == true)
                     throw new NotSupportedException("SkipSolveAndEvaluateResidual == true is not supported for Runge-Kutta");
 
-                m_RK_Timestepper.Solve(phystime, dt);
+                success = m_RK_Timestepper.Solve(phystime, dt);
             }
 
             double[] AvailTimesAfter;
@@ -654,7 +659,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt*1e-7, "Error in Level-Set tracker time");
             }
 
-            JacobiParameterVars = null; 
+            JacobiParameterVars = null;
+            return success;
         }
 
         /// <summary>

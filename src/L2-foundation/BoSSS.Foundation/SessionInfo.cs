@@ -22,6 +22,8 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using BoSSS.Platform;
 using ilPSP;
+using ilPSP.Utils;
+using Newtonsoft.Json;
 
 namespace BoSSS.Foundation.IO {
 
@@ -160,6 +162,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// A collection of tags for this session.
         /// </summary>
+        [JsonIgnore]
         public IEnumerable<string> Tags {
             get {
                 return m_Tags;
@@ -172,6 +175,26 @@ namespace BoSSS.Foundation.IO {
                 }
             }
         }
+
+
+        /// <summary>
+        /// Adds a string to <see cref="Tags"/>, if not already contained
+        /// </summary>
+        /// <param name="tag"></param>
+        /// <returns>
+        /// - true: tag was freshly added
+        /// - false: <paramref name="tag"/> is already contained in <see cref="Tags"/>
+        /// </returns>
+        public bool AddTag(string tag) {
+            if(m_Tags != null) {
+                if(m_Tags.Contains(tag))
+                    return false;
+            }
+
+            tag.AddToArray(ref m_Tags);
+            return true;
+        }
+
 
         [DataMember]
         private string[] m_Tags;
@@ -297,20 +320,30 @@ namespace BoSSS.Foundation.IO {
 
 
         /// <summary>
-        /// Tag to mark crashed 
-        /// and
-        /// currently running sessions in the database.
+        /// Tag to mark crashed **and** currently running sessions in the database.
         /// It (should be) automatically added to each session at startup
         /// and removed if the application terminates correctly, i.e. without exceptions or such stuff, you know.
         /// </summary>
         public const string NOT_TERMINATED_TAG = "NotTerminated";
 
         /// <summary>
+        /// Tag to mark sessions in which 
+        /// </summary>
+        public const string SOLVER_ERROR = "SolverError";
+
+
+        /// <summary>
         /// If true, the session was successful terminated; if not it is either running, or the simulation may has crashed.
         /// </summary>
         public bool SuccessfulTermination {
             get {
-                return !(this.Tags.Contains(NOT_TERMINATED_TAG));
+                if(this.Tags.Contains(NOT_TERMINATED_TAG))
+                    return false;
+
+                //if(this.Tags.Contains(SOLVER_ERROR))
+                //    return false;
+
+                return true;
             }
         }
 

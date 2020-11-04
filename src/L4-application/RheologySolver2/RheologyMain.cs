@@ -585,6 +585,8 @@ namespace BoSSS.Application.Rheology {
                 var overallstart = DateTime.Now;
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
 
+                bool SolverSuccess = true;
+
                 if (Control.RaiseWeissenberg == true) {
                     
 
@@ -738,35 +740,8 @@ namespace BoSSS.Application.Rheology {
                         // Using only timestepper, NO ADDITIONAL LOOP
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                        m_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
-
-                        // simple implicit Euler solve for debugging and excluding the bdf timestepper
-                        //____________________________________________________________________________________
-                        //Console.WriteLine("CAREFUL! Simple implicit Euler unsteady solve for Debugging!");
-                        //var map = this.CurrentSolution.Mapping;
-                        //var Mtx = new BlockMsrMatrix(map, map);
-                        //double[] b = new double[map.LocalLength];
-                        //this.DelComputeOperatorMatrix(Mtx, b, map, map.Fields.ToArray(), null, phystime + dt);
-
-                        //double[] RHS = new double[map.LocalLength];
-                        //RHS.AccV(-1, b);
-                        //int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                        //int Np = this.Velocity.Current[0].Basis.Length;
-                        //double oodt = 1.0 / dt;
-                        //for (int j = 0; j < J; j++) { // loop over cells
-                        //    for (int iVar = 0; iVar < 2; iVar++) { // loop over VelX, VelY
-                        //        for (int n = 0; n < Np; n++) {
-                        //            int iLoc = map.LocalUniqueCoordinateIndex(iVar, j, n);
-                        //            RHS[iLoc] += oodt * this.CurrentSolution[iLoc];
-
-                        //            int iGlob = map.GlobalUniqueCoordinateIndex(iVar, j, n);
-                        //            Mtx[iGlob, iGlob] += oodt;
-                        //        }
-                        //    }
-                        //}
-
-                        //Mtx.Solve_Direct(this.CurrentSolution, RHS);
-                        //____________________________________________________________________________________________
+                        SolverSuccess = m_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+                                                
 
                         if (Control.Bodyforces == true) {
                             if (Log != null) {
@@ -786,9 +761,9 @@ namespace BoSSS.Application.Rheology {
 
                 Console.WriteLine("Duration of this timestep: " + overallduration);
 
-                if (Control.ComputeL2Error == true) {
-                    this.ComputeL2Error();
-                }
+                if(!SolverSuccess)
+                    base.CurrentSessionInfo.AddTag(SessionInfo.SOLVER_ERROR);
+
 
                 this.ResLogger.NextTimestep(false);
 
