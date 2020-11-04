@@ -35,7 +35,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
         /// </summary>
         [Test]
-        public static void SimpleTestCapillaryWave()
+        public static void ASTestCapillaryWave()
         {
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
             C.ImmediatePlotPeriod = 1;
@@ -51,7 +51,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// See <see cref="PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test"/>.
         /// </summary>
         [Test]
-        public static void SimpleTestRayleighTaylorInstability()
+        public static void ASTestRayleighTaylorInstability()
         {
 
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test();

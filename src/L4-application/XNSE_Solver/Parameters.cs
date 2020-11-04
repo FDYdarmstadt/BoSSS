@@ -124,6 +124,10 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 gravityDegree = opts.Degree;
             }
+            else if(control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts))
+            {
+                gravityDegree = velOpts.Degree;
+            }
             else
             {
                 gravityDegree = 0;
