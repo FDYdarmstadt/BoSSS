@@ -83,7 +83,10 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
-
+        /// <summary>
+        /// Directory in which the solver was executed
+        /// </summary>
+        [DataMember]
         public string WorkingDirectory;
 
 
