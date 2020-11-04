@@ -341,15 +341,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// <see cref="IDatabaseInfoExtensions.SaveGrid{TG}(IDatabaseInfo, ref TG, bool)"/>
         /// </summary>
         /// <param name="filename"></param>
-        /// <param name="force">
-        /// - false (default): Only store the grid, if no equivalent grid is in the database
-        /// - true: store always
-        /// </param>
         /// <param name="EdgeTagFunc">
         /// <see cref="IGrid_Extensions.DefineEdgeTags(IGrid, Func{double[], string})"/>
         /// </param>
         /// <returns></returns>
-        public GridCommons ImportGrid(string filename, bool force = false, Func<double[],string> EdgeTagFunc = null) {
+        public GridCommons ImportGrid(string filename, Func<double[],string> EdgeTagFunc = null) {
             //using(var md5 = System.Security.Cryptography.MD5.Create()) {
             //    using(var stream = File.OpenRead(filename)) {
             //        var Hasch = md5.ComputeHash(stream);
@@ -364,7 +360,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(EdgeTagFunc != null)
                 r.DefineEdgeTags(EdgeTagFunc);
 
-            this.DefaultDatabase.SaveGrid(ref r, force);
+            this.DefaultDatabase.SaveGrid(ref r, force:false);
 
             return r;
         }
