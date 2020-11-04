@@ -169,7 +169,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="RHS">
         /// If not equal null, must be passed to <see cref="RHSRaw"/>.
         /// </param>
-        abstract public void SolverDriver<S>(CoordinateVector X, S RHS)
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        abstract public bool SolverDriver<S>(CoordinateVector X, S RHS)
            where S : IList<double>;
 
         
@@ -203,9 +207,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="alpha"></param>
         /// <param name="CurrentState">
         /// Current state of DG fields
-        /// </param>
-        /// <param name="beta">
-        /// Pre-scaling of <paramref name="Output"/>.
         /// </param>
         /// <param name="Output"></param>
         /// <param name="HomotopyValue">

@@ -37,7 +37,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class FixpointIterator : NonlinearSolver {
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public FixpointIterator(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq,
             MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig)
             : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
@@ -85,7 +87,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //double StressSolver_ConvergenceCriterion = 1e-5;
 
 
-        override public void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+        override public bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
             using (var tr = new FuncTrace()) {
 
                 // initial guess and its residual
@@ -126,7 +128,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ==========
                 //int NoOfMainIterations = 0;
                 using (new BlockTrace("Slv Iter", tr)) {
-                    while ((!(ResidualNorm < ConvCrit && CoupledIteration_Converged()) && NoOfIterations < MaxIter && NoOfCoupledIteration < MaxCoupledIter) || (NoOfIterations < MinIter)) {
+                    bool success = false;
+                    while (true) {
+                        if(NoOfIterations >= MinIter) {
+                            if(ResidualNorm < ConvCrit && CoupledIteration_Converged()) {
+                                success = true;
+                                break;
+                            }
+
+                            if(!(NoOfIterations < MaxIter && NoOfCoupledIteration < MaxCoupledIter)) {
+                                break;
+                            }
+                        }
+
                         NoOfIterations = Iteration_Count(NoOfIterations, ref NoOfCoupledIteration);
                         //Console.WriteLine("NoOfIterations = {0}", NoOfIterations);
 
@@ -210,6 +224,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
                     }
+
+                    return success;
                 }
             }
 

@@ -350,7 +350,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Performs one timestep, on the DG fields in <see cref="XdgTimesteppingBase.CurrentStateMapping"/>.
         /// </summary>
-        public void Solve(double phystime, double dt) {
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        public bool Solve(double phystime, double dt) {
 
             Debug.Assert(m_RKscheme.c.Length == m_RKscheme.a.GetLength(0));
             Debug.Assert(m_RKscheme.b.Length == m_RKscheme.a.GetLength(1));
@@ -436,8 +440,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // loop over Runge-Kutta stages...
             double[][] k = new double[m_RKscheme.Stages][];
+            bool success = true;
             for (int s = 0; s < m_RKscheme.Stages; s++) {
-                RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
+                success = success && RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
             }
@@ -472,10 +477,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
             }
+
+            return success;
         }
 
 
-        private void RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0,
+        private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0,
             double ActualLevSetRelTime) {
 
             // detect whether the stage s is explicit or not: (implicit schemes can have some explicit stages too)
@@ -496,18 +503,19 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // +++++++++++++++++++++
 
                 RKstageExplicit(PhysTime, dt, k, s, Mass, u0, ActualLevSetRelTime, RK_as, RelTime);
+                return true;
             } else {
                 // +++++++++++++++++++++
                 // Implicit stage branch
                 // +++++++++++++++++++++
 
-                RKstageImplicit(PhysTime, dt, k, s, Mass, u0, ActualLevSetRelTime, RK_as, RelTime);
+                return RKstageImplicit(PhysTime, dt, k, s, Mass, u0, ActualLevSetRelTime, RK_as, RelTime);
             }
 
 
         }
 
-        private void RKstageImplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
+        private bool RKstageImplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s < m_RKscheme.Stages);
             Debug.Assert(m_RKscheme.c[s] > 0);
             Debug.Assert(RK_as[s] != 0);
@@ -540,13 +548,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             ISolverSmootherTemplate linearSolver;
             GetSolver(out nonlinSolver, out linearSolver);
 
-
+            bool success;
             if (RequiresNonlinearSolver) {
 
                 // Nonlinear Solver (Navier-Stokes)
                 // --------------------------------
 
-                nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
+                success = nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
             } else {
                 // Linear Solver (Stokes)
@@ -570,6 +578,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // try to solve the saddle-point system.
                 mgOperator.UseSolver(linearSolver, m_CurrentState, RHS);
+                success = linearSolver.Converged;
 
                 // 'revert' agglomeration
                 m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
@@ -579,6 +588,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // reset
             // ================
             m_ImplStParams = null;
+            return success;
         }
 
         ImplicitStage_AssiParams m_ImplStParams = null;

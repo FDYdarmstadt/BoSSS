@@ -1431,9 +1431,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="ComputeOnlyResidual">
         /// If true, no solution is performed; only the residual of the actual solution is computed.
         /// </param>
-        public void Solve(double phystime, double dt, bool ComputeOnlyResidual = false) {
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        public bool Solve(double phystime, double dt, bool ComputeOnlyResidual = false) {
             if(!initialized)
                 SingleInit();
+
                         
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
@@ -1444,6 +1449,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             m_CurrentDt_Timestep = dt;
 
+            bool success = true;
             for (int i = 1; i <= incrementTimesteps; i++) {
                 // push levelsets for every incremental timestep
                 if (i > 1)
@@ -1452,10 +1458,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // solve timestep with incremental timestep size
                 double incTimestepSize = dt / (double)incrementTimesteps;
 
-                Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
+                success = success && Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
 
                 phystime += incTimestepSize;
             }
+
+            return success;
         }
 
         private void AdaptToNewTimestep(double newTimestep, double oldTimestep) {
@@ -1517,7 +1525,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="increment">
         /// Sub-timestep index (used during BDF startup).
         /// </param>
-        void Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        bool Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
             //if (m_CurrentDt > 0 && Math.Abs(dt / m_CurrentDt - 1.0) > 1.0e-14)
@@ -1587,6 +1599,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ==============================================
             // solve main system
             // ==============================================
+            bool success;
 
             int oldLsTrkPushCount = m_LsTrk.PushCount;
 
@@ -1614,7 +1627,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // --------------------------------
 
                     // use solver
-                    nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
+                    success = nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
                     // 'revert' agglomeration
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
@@ -1655,6 +1668,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         using (new BlockTrace("Slv Iter", tr)) {
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                         }
+
+                        success = linearSolver.Converged;
                     }
 
                     // 'revert' agglomeration
@@ -1676,7 +1691,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 base.Residuals.SetV(Affine, -1.0);
                 //System.SpMV(-1.0, m_Stack_u[0], +1.0, base.Residuals);
 
-
+                success = true;
 #if DEBUG
                 {
 
@@ -1770,6 +1785,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_Stack_OpMatrix[ie] = null;
             m_Stack_OpAffine[ie] = null;
             //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
+
+            return success;
         }
 
 

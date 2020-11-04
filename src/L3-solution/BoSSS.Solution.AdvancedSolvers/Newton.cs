@@ -137,29 +137,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+        public override bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
             //this.UseHomotopy = this.AbstractOperator.HomotopyUpdate.Count > 0;
-            
             if(UseHomotopy)
-                HomotopyNewton(SolutionVec, RHS);
+                return HomotopyNewton(SolutionVec, RHS);
             else 
-                GlobalizedNewton(SolutionVec, RHS);
+                return GlobalizedNewton(SolutionVec, RHS);
         }
 
 
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
+        public bool GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
             using(var tr = new FuncTrace()) {
+
+                bool success = false;
 
                 // Initialization
                 /// =============
 
                 double[] CurSol, // "current (approximate) solution", i.e.
                     CurRes; // residual associated with 'CurSol'
-                
-                                
+
+
                 using(new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
@@ -174,23 +175,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 List<double> normHistory = new List<double>();
                 normHistory.Add(norm_CurRes);
 
-                double LastAverageNormReduction(int N = 3) {
-                    if(N < 1)
-                        throw new ArgumentException();
 
-                    int i0 = Math.Max(normHistory.Count - N, 0);
-                    if(normHistory.Count - i0 < N)
-                        return double.MaxValue;
-
-                    double Avg = 0;
-                    double Count = 0;
-                    for(int i = i0; i < normHistory.Count - 1; i++) {
-                        double ResNormReductionFactor = normHistory[i] / Math.Max(normHistory[i + 1], double.MinValue);
-                        Count = Count + 1;
-                        Avg = Avg + ResNormReductionFactor;
-                    }
-                    return Avg / Count;
-                }
 
 
                 // Main Loop
@@ -202,57 +187,85 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //while((norm_CurRes > ConvCrit * fnorminit + ConvCrit
                     //    && itc < MaxIter)
                     //    || itc < MinIter) {
-                    while(true) {     
-                        if(itc >= MinIter) {
-                            // only terminate if we reached the mimimum number of iterations
-
-                            if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
-                                // reached convergence criterion
-                                
-                                double ALNR = LastAverageNormReduction();
-                                //Console.Write($"Want to terminate {ALNR}, {norm_CurRes} ...");
-
-                                // continue until the solver stalls
-                                if(ALNR <= 1.5) {
-                                    //Console.WriteLine("no sufficient further progress");
-                                    break;
-                                } else {
-                                    //Console.WriteLine("but continue as long as we make progress");
-                                }
-                            }
-
-                            if(itc >= MaxIter) {
-                                // run out of iterations
-                                break;
-                            }
-                        } else {
-                            //Console.WriteLine("not terminating now");
-                        }
-                        
+                    while(true) {
+                        if(CheckTermination(ref success, norm_CurRes, fnorminit, normHistory, itc))
+                            break;
 
                         itc++;
                         NewtonStep(SolutionVec, itc, CurSol, CurRes, 1.0, ref norm_CurRes, ref TrustRegionDelta);
                         normHistory.Add(norm_CurRes);
                     }
                 }
+
+
+                return success;
+
             }
         }
+
+        bool CheckTermination(ref bool success, double norm_CurRes, double fnorminit, List<double> normHistory, int itc) {
+            bool terminateLoop = false;
+
+            double LastAverageNormReduction(int N = 3) {
+                if(N < 1)
+                    throw new ArgumentException();
+
+                int i0 = Math.Max(normHistory.Count - N, 0);
+                if(normHistory.Count - i0 < N)
+                    return double.MaxValue;
+
+                double Avg = 0;
+                double Count = 0;
+                for(int i = i0; i < normHistory.Count - 1; i++) {
+                    double ResNormReductionFactor = normHistory[i] / Math.Max(normHistory[i + 1], double.MinValue);
+                    Count = Count + 1;
+                    Avg = Avg + ResNormReductionFactor;
+                }
+                return Avg / Count;
+            }
+
+
+            if(itc >= MinIter) {
+                // only terminate if we reached the mimimum number of iterations
+
+                if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
+                    // reached convergence criterion
+
+                    double ALNR = LastAverageNormReduction();
+                    //Console.Write($"Want to terminate {ALNR}, {norm_CurRes} ...");
+
+                    // continue until the solver stalls
+                    if(ALNR <= 1.5) {
+                        //Console.WriteLine("no sufficient further progress");
+                        success = true;
+                        terminateLoop = true;
+                    } else {
+                        //Console.WriteLine("but continue as long as we make progress");
+                    }
+                }
+
+                if(itc >= MaxIter) {
+                    // run out of iterations
+                    terminateLoop = true;
+                }
+            } else {
+                //Console.WriteLine("not terminating now");
+            }
+
+            return terminateLoop;
+        }
+        
      
         /// <summary>
         /// Main solver routine with homotopy;
         /// </summary>
-        public void HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
-
-            //SolverDriver_original(SolutionVec, RHS);
-            //return;
+        public bool HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
 
             using(var tr = new FuncTrace()) {
-
-
                 // Initialization
                 // =============
 
-                
+                bool success = false;
 
                 double[] CurSol, // "current (approximate) solution", i.e.
                     CurRes; // residual associated with 'CurSol'
@@ -273,7 +286,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double norm_CurRes = CurRes.MPI_L2Norm();
                 OnIterationCallback(0, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
                 double fnorminit = norm_CurRes;
-
+                List<double> normHistory = new List<double>();
+                normHistory.Add(norm_CurRes);
 
                 // Homotopy Solution extrapolation
                 // ===============================
@@ -358,12 +372,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 
-                    while(!ResidualCrit() || IterCounter < MinIter || HomotopyParameter < 1.0) {
-                        if(IterCounter > MaxIter) {
-                            Console.WriteLine($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
-                            break;
-                        }
+                    //while(!ResidualCrit() || IterCounter < MinIter || HomotopyParameter < 1.0) {
+                    while(true) {
+                        //if(IterCounter > MaxIter) {
+                        //    Console.WriteLine($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
+                        //    break;
+                        //}
 
+
+                        if(HomotopyParameter >= 1.0) {
+                            if(CheckTermination(ref success, norm_CurRes, fnorminit, normHistory, IterCounter))
+                                break;
+                        } else {
+                            if(IterCounter >= MinIter) {
+                                if(IterCounter >= MaxIter) {
+                                    Console.WriteLine($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
+                                    break;
+                                }
+                            }
+                        }
 
                         // test 
 
@@ -465,11 +492,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         IterCounter++;
                         HomoStepCounter++;
                         NewtonStep(SolutionVec, IterCounter, CurSol, CurRes, HomotopyParameter, ref norm_CurRes, ref TrustRegionDelta);
-
+                        normHistory.Add(norm_CurRes);
                     }
                 }
 
 
+
+                return success;
             }
         }
 
