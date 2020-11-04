@@ -79,7 +79,7 @@ namespace BoSSS.Application.XNSE_Solver
             double underRelax,
             bool incremental) 
         {
-            UpdateInterfaces(interfaces, Tracker);
+            SetInterfaces(interfaces, Tracker);
             double residual = 0;
             for(int i = 0; i < interfaces.Length;  ++i)
             {
@@ -114,7 +114,7 @@ namespace BoSSS.Application.XNSE_Solver
             return residual;
         }
 
-        static void UpdateInterfaces(DualLevelSet[] interfaces, LevelSetTracker tracker)
+        static void SetInterfaces(DualLevelSet[] interfaces, LevelSetTracker tracker)
         {
             for (int i = 0; i < interfaces.Length; ++i)
             {
@@ -136,10 +136,9 @@ namespace BoSSS.Application.XNSE_Solver
             double underRelax,
             bool incremental)
         {
-            LevelSet dglsBkUp = default;
+            LevelSet dglsBkUp = null;
             if (underRelax < 1.0)
             {
-                
                 dglsBkUp = phaseInterface.DGLevelSet.CloneAs();
             }
             
@@ -159,6 +158,7 @@ namespace BoSSS.Application.XNSE_Solver
                 dgLs.Scale(underRelax);
                 dgLs.Acc((1.0 - underRelax), dglsBkUp);
             }
+            //Make Continuous
             CellMask Near1 = Tracker.Regions.GetNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
             CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
             enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);

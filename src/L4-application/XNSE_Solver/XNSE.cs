@@ -33,7 +33,7 @@ namespace BoSSS.Application.XNSE_Solver
         int QuadOrder()
         {
             //QuadOrder
-            int degU = default;
+            int degU;
             if (Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts field))
             {
                 degU = field.Degree;
