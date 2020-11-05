@@ -380,6 +380,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 LastN = -1;
                                 for (int N = AcceptedHomoSolutions.Count; N > 0; N--) {
+                                    SolutionExtrapolation(tryHomotopyValue, N);
                                     EvaluateOperator(1, SolutionVec.Fields, CurRes, tryHomotopyValue);
                                     double norm_TryValue = CurRes.MPI_L2Norm();
 
