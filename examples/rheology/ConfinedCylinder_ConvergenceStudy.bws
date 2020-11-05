@@ -14,22 +14,13 @@ List of 2 instances of IDatabaseInfo {
  Console ready for input. Type 'help' for help.
 
 ==============
-LastError
-**************
-==============
 using BoSSS.Application.Rheology;
 **************
 ==============
+WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_04nov20");
 **************
-==============
-WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_03nov20_b");
-**************
-Project name is set to 'ConfinedCylinder_ConvergenceStudy_03nov20_b'.
+Project name is set to 'ConfinedCylinder_ConvergenceStudy_04nov20'.
 
-==============
-//var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0");
-//var myDb = CreateTempDatabase();
-**************
 ==============
 ExecutionQueues;
 **************
@@ -46,16 +37,6 @@ var myDb = myBatch.AllowedDatabases.First();
 **************
 ==============
 WorkflowMgm.DefaultDatabase = myDb;
-**************
-==============
-//myDb.Sessions;
-**************
-==============
-//WorkflowMgm.Sessions;
-**************
-==============
-**************
-==============
 **************
 ==============
 // ======================
@@ -251,6 +232,7 @@ foreach(var grd in grids) {
     C.NonLinearSolver.SolverCode           = NonLinearSolverCode.Newton;
     //C.LinearSolver.SolverCode              = LinearSolverCode.exp_OrthoS_pMG;//classic_pardiso;//_mumps;
     //C.useJacobianForOperatorMatrix         = false;
+    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
     //Timestepping
     C.TimesteppingMode   = AppControl._TimesteppingMode.Steady;
@@ -800,6 +782,10 @@ m3p4wi0.GetJob();
 D:\Users\kummer\Documents\BoSSS-kummer\public\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe (Location of the symbol related to previous error)
 No. of errors|warnings: 1|0.
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
