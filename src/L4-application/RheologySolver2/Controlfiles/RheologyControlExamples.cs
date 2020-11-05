@@ -440,6 +440,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-5;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady; //Transient;//   Steady;
