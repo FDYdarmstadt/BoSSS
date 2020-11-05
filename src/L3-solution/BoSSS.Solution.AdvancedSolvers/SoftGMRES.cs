@@ -275,11 +275,23 @@ namespace BoSSS.Solution.AdvancedSolvers
                         s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
                         s[i - 1] = temp;
                         error = Math.Abs(s[i + 1 - 1]) / bnrm2;
-
                         error2 = Math.Abs(s[i + 1 - 1]);
 
-                        //if (error <= m_Tolerance) {
-                        if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) { 
+                        // For Residual tracking, do not delete
+                        /*
+                        y = new double[i];
+                        H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { i - 1, i - 1 }).Solve(y, s.GetSubVector(0, i));
+                        double[] Xtmp = X.CloneAs();
+                        for (int ii = 0; ii < i; ii++) {
+                            Xtmp.AccV(y[ii], V[ii]);
+                        }
+                        double[] ztmp = z.CloneAs();
+                        ztmp.SetV(B);
+                        Matrix.SpMV(-1.0, Xtmp, 1.0, ztmp);
+                        IterationCallback?.Invoke(iter, Xtmp.CloneAs(), ztmp.CloneAs(), this.m_mgop);
+                        */
+
+                        if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) {
                             // update approximation and exit
                             //y = H(1:i,1:i) \ s(1:i);    
                             y = new double[i];

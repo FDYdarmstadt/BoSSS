@@ -61,6 +61,21 @@ namespace BoSSS.Foundation {
 
     }
 
+    /// <summary>
+    /// User-defined validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds, 
+    /// e.g. to avoid un-physical 'solutions' (e.g. negative density).
+    /// ('safeguard' for the solver)
+    /// </summary>
+    /// <param name="OldSolution">
+    /// - on input, the old solution (approximation) 
+    /// </param>
+    /// <param name="NewSolution">
+    /// - on input: new solution (approximation) proposed by the solver
+    /// - on exit: optionally, solution (approximation) modified by the user
+    /// </param>
+    public delegate void SolverSafeguard(DGField[] OldSolution, DGField[] NewSolution);
+
+
 
     /// <summary>
     /// Common interface for spatial operators in the DG and the XDG context
@@ -73,22 +88,32 @@ namespace BoSSS.Foundation {
         /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
         /// </summary>
         IList<string> CodomainVar { get; }
-        
-        
+
+
         /// <summary>
         /// names of (DG-) variables that represent the domain of this  differential operator;
         /// These names/strings should not be confused with field identification strings
         /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
         /// </summary>
         IList<string> DomainVar { get; }
-        
-        
+
+        /// <summary>
+        /// Notifies the solver that the mean value for a specific value is floating.
+        /// An example is e.g. the pressure in the incompressible Navier-Stokes equation with all-walls boundary condition.
+        /// - key: the name of some domain variable
+        /// - value: false, if the mean value of the solution  is defined, true if the mean value  of the solution is floating (i.e. for some solution u, u + constant is also a solution).
+        /// </summary>
+        IDictionary<string, bool> FreeMeanValue {
+            get;
+        }
+
+
         /// <summary>
         /// for each variable in <see cref="CodomainVar"/>, a
         /// collection of equation components that define the operator.
         /// </summary>
         IEquationComponents EquationComponents { get; }
-        
+
         /// <summary>
         /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
         /// or not.
@@ -97,9 +122,23 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// If set, used to update parameters before evaluation.
+        /// Keep in mind: Here, multiple handlers can be added so it is not necessary to 
+        /// put the update of all parameter fields for the operator into one big piece of spaghetti code.
+        /// Hence, it can be split among different handlers.
         /// </summary>
-        IParameterUpdate ParameterUpdate { get; set; }
-                
+        /// <remarks>
+        /// Alternatively, equation components which implement <see cref="IParameterHandling"/> can be used (<see cref="IParameterHandling.MyParameterUpdate"/>).
+        /// </remarks>
+        ICollection<DelPartialParameterUpdate> ParameterUpdates { get; }
+
+        /// <summary>
+        /// Can be used to implement the allocation of DG fields to store parameter values.
+        /// </summary>
+        /// <remarks>
+        /// Alternatively, equation components which implement <see cref="IParameterHandling"/> can be used (<see cref="IParameterHandling.MyParameterAlloc"/>).
+        /// </remarks>
+        ICollection<DelParameterFactory> ParameterFactories { get; }
+
         /// <summary>
         /// names of (DG-) variables which act as parameters; 
         /// Their role is pretty similar to those of the domain variables, and for nonlinear
@@ -116,8 +155,8 @@ namespace BoSSS.Foundation {
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
         void Commit();
-        
-        
+
+
         /// <summary>
         /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
         /// </summary>
@@ -125,7 +164,7 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
-       
+
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
@@ -134,13 +173,14 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
+        /// (<see cref="GetJacobiOperator"/>, <see cref="GetMatrixBuilder"/>, <see cref="GetFDJacobianBuilder"/>),
         /// </summary>
         LinearizationHint LinearizationHint {
             get;
             set;
         }
-        
-        
+
+
         /// <summary>
         /// Constructs a new evaluator object for the explicit evaluation of this spatial operator.
         /// </summary>
@@ -163,20 +203,72 @@ namespace BoSSS.Foundation {
         /// are assumed to be 0.0;
         /// If the differential operator contains no parameters, this argument can be null;
         /// </param>
-        /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
-        /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
         IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
 
         /// <summary>
         /// Computes the Jacobian matrix of the operator by finite differences.
         /// </summary>
         IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
-         
+
         /// <summary>
         /// Evaluation of the operator matrix
         /// (only for linear operators or ad-hoc linearizations)
         /// </summary>
         IEvaluatorLinear GetMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
-        
+
+
+        /// <summary>
+        /// Specification of the temporal operator, i.e. the mass matrix.
+        /// Null defers to a steady-state system.
+        /// Setting is only available before calling <see cref="Commit"/>.
+        /// </summary>
+        ITemporalOperator TemporalOperator {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        /// Adaptation of user-defined values when a nonlinear solver moves along a homotopy path.
+        /// </summary>
+        ICollection<Action<double>> HomotopyUpdate {
+            get;
+        }
+
+        /// <summary>
+        /// Setting (to a different value) fires all <see cref="HomotopyUpdate"/> events
+        /// </summary>
+        double CurrentHomotopyValue {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 'safeguard' for  solvers to avoid unphysical solutions (mostly relevant for implicit, nonlinear systems)
+        /// </summary>
+        SolverSafeguard SolverSafeguard {
+            get;
+            set;
+        }
+       
     }
+
+    /// <summary>
+    /// <see cref="ISpatialOperator.TemporalOperator"/>
+    /// </summary>
+    public interface ITemporalOperator {
+
+        /// <summary>
+        /// finalizes the assembly of the operator;
+        /// Can be called only once in the lifetime of this object.
+        /// After calling this method, no adding/removing of equation components is possible.
+        /// </summary>
+        void Commit();
+
+        /// <summary>
+        /// Evaluation of the temporal operator matrix (aka. mass matrix).
+        /// </summary>
+        IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
+    }
+
 }

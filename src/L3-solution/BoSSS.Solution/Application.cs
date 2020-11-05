@@ -717,7 +717,7 @@ namespace BoSSS.Solution {
                 // load control file, parse args
                 if (opt.ProjectName != null)
                     ctrlV2.ProjectName = opt.ProjectName;
-                if (opt.SessionName != null)
+                if (opt.SessionName != null && ctrlV2.SessionName.IsEmptyOrWhite())
                     ctrlV2.SessionName = opt.SessionName;
 
                 if (opt.ImmediatePlotPeriod != null) {
@@ -1326,14 +1326,14 @@ namespace BoSSS.Solution {
 
                 // set master git commit
                 //CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
-                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)Assembly
-                  .GetAssembly(typeof(BoSSS.Solution.Application))
-                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0])
+                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)
+                  (Assembly.GetAssembly(typeof(BoSSS.Solution.Application))
+                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0]))
                   .InformationalVersion;
 
                 // set deploy directory path
                 string path = typeof(BoSSS.Solution.Application).Assembly.Location;
-                string outpath = path.Substring(0, path.Length - "BoSSS.Solution.dll".Length - 1); // skip "\BoSSS.Solution.dll" at end of path
+                string outpath = Path.GetDirectoryName(path); // skip "\BoSSS.Solution.dll" at end of path
 
                 CurrentSessionInfo.DeployPath = outpath;
 
@@ -1796,7 +1796,7 @@ namespace BoSSS.Solution {
                 // pass 2: XDG fields (after tracker update)
                 // =========================================
                 if (Pass2_Evaluators.Count > 0) {
-                    LsTrk.UpdateTracker();
+                    LsTrk.UpdateTracker(0.0);
                     LsTrk.PushStacks();
 
                     foreach (var val in Pass2_Evaluators) {
@@ -2153,7 +2153,6 @@ namespace BoSSS.Solution {
 
                     //int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
 
-
                     int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
 
 
@@ -2238,6 +2237,7 @@ namespace BoSSS.Solution {
                     // release old DG fields
                     this.m_RegisteredFields.Clear();
                     this.m_IOFields.Clear();
+                    this.LsTrk = null;
 
                     // re-create fields
                     if (this.Control != null) {
@@ -2347,6 +2347,7 @@ namespace BoSSS.Solution {
                             if (this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
                             }
+                            LsTrk = null;
                             oldGridData = null;
 
                             if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
@@ -2400,21 +2401,22 @@ namespace BoSSS.Solution {
                         //    }
                         //}
 
-                        //set dg co�rdinates
+                        //set dg coordinates
                         foreach (var f in m_RegisteredFields) {
                             if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            if (f.Identification == "Phi")
+                            if(f.Identification == "Phi")
+                                //throw new ApplicationException("ask Smuda why he did this");
                                 continue;
                             //f.Clear();
 
                             remshDat.RestoreDGField(f);
                         }
 
-                        // re-create solvers, blablabla
+                        // re-create solvers, etc.
                         CreateEquationsAndSolvers(remshDat);
                     }
                 } //end of adapt mesh branch

@@ -87,8 +87,8 @@ namespace BoSSS.Foundation {
                     //solver.MatrixType = ilPSP.LinSolvers.monkey.MatrixType.Auto;
                     //solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.CPU;
                     //solver.Tolerance = 1.0e-12;
-                    //var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                    var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                    //var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                     m_OpSolver = solver;
                 }
 
@@ -692,8 +692,9 @@ namespace BoSSS.Foundation {
                     case 2: {
                             // condtions at vertices
                             foreach (int vert in VertAtEdge) {
-                                numVCond += NegotiateNumVCond(vert, CondAtVert, ProcsAtInterprocVert[local2Interproc[vert]]);
-                                CondAtVert[vert, 0] += 1;
+                                int lvert = GlobalVert2Local[vert];// = vert, vorher IndexOutOfRange exeption
+                                numVCond += NegotiateNumVCond(lvert, CondAtVert, ProcsAtInterprocVert[local2Interproc[lvert]]);
+                                CondAtVert[lvert, 0] += 1;
                             }
                             break;
                         }
@@ -777,7 +778,7 @@ namespace BoSSS.Foundation {
             MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
 
             int count = 0;
-            nodeCount = 0;
+            nodeCount = A.RowPartitioning.i0; // start at global index
             foreach (int j in AcceptedEdges) {
 
                 int cell1 = m_grd.Edges.CellIndices[j, 0];
@@ -790,7 +791,7 @@ namespace BoSSS.Foundation {
                 var results = m_Basis.EdgeEval(qNodes, j, 1);
 
                 for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                    // Cell1
+                    // Cell1       
                     for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
                         A[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
                     }

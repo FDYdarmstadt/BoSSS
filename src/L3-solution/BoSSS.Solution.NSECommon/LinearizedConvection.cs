@@ -579,7 +579,7 @@ namespace BoSSS.Solution.NSECommon {
             : this(SpatDim, _bcmap, _component) {
 
             m_UseBoundaryVelocityParameter = UseBoundaryVelocityParameter;
-            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
+            //m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
             if(m_UseBoundaryVelocityParameter)
                 m_ParameterOrdering = ArrayTools.Cat(m_ParameterOrdering, VariableNames.BoundaryVelocityVector(SpatDim));
             m_ArgumentOrdering = VariableNames.VelocityVector(SpatDim); // VelocityX,VelocityY,(VelocityZ) as variables. 
@@ -617,7 +617,7 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.MixtureFraction:
                     scalarFunction = m_bcmap.bndFunction[VariableNames.MixtureFraction];
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
-                    m_ParameterOrdering = new string[] { VariableNames.Rho };
+                    m_ParameterOrdering = new string[] { /*VariableNames.Rho*/ };
                     break;
                 case PhysicsMode.LowMach:
                     scalarFunction = m_bcmap.bndFunction[VariableNames.Temperature];

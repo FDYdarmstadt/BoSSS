@@ -43,7 +43,7 @@ namespace AdvancedSolverTests.SolverChooser
                 SF.Clear();
                 lconfig.SolverCode = code;
                 if(code==LinearSolverCode.selfmade)
-                    SF.Selfmade_linsolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.PARDISO };
+                    SF.Selfmade_linsolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
                 Assert.DoesNotThrow(lindlg, "", null);
                 Assert.IsNotNull(LinSolver);
             }
@@ -79,7 +79,7 @@ namespace AdvancedSolverTests.SolverChooser
             //Act and Assert
             foreach (var lincode in LinTestcandidates) {
                 lconfig.SolverCode = lincode;
-                TestDelegate nldlg = () => SF.GenerateNonLin(out NLsolver, out LinSolver, null, agggridbasisis, changeofbasisis, null, seq);
+                TestDelegate nldlg = () => SF.GenerateNonLin(out NLsolver, out LinSolver, null, agggridbasisis, changeofbasisis, seq);
                 SF.Clear();
                 foreach (NonLinearSolverCode nlcode in nonlincodes) {
                     nlconfig.SolverCode = nlcode;

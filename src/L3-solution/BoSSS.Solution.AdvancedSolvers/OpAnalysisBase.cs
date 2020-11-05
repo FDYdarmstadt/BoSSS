@@ -27,8 +27,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Constructor for DG solvers
         /// </summary>
-        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig) 
-            : this(null, Mtx, RHS, Mapping, null, null, OpConfig) //
+        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, ISpatialOperator abstractOperator) 
+            : this(null, Mtx, RHS, Mapping, null, null, OpConfig, abstractOperator) //
         {
 
         }
@@ -37,7 +37,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Constructor for XDG solvers
         /// </summary>
-        public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig) {
+        public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, ISpatialOperator abstractOperator) {
 
 
             int RHSlen = Mapping.TotalLength;
@@ -61,7 +61,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             m_MultigridOp = new MultigridOperator(XAggB, Mapping,
                 m_OpMtx,
                 _mass,
-                OpConfig);
+                OpConfig,
+                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
         }
 
 
@@ -188,7 +189,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     //throw new Exception("The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!"); 
                     Console.WriteLine("======================================================");
                     Console.WriteLine("WARNING!!!!!!! The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!");
-                    Console.WriteLine("This means that the system doesnt have a solution!");
+                    Console.WriteLine("This means that the system does not have a solution!");
                 }
 
                 if (rnkAugmentedMtx == rnkMtx)
@@ -225,7 +226,6 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// returns the condition number of the full matrix using MUMPS;
         /// Note: 
         /// </summary>
-        
         public double CondNumMUMPS() {
             using(new FuncTrace()) {
                 int[] DepVars = this.VarGroup;

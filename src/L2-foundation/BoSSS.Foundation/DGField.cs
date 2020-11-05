@@ -253,7 +253,7 @@ namespace BoSSS.Foundation {
             ProjectField(1.0, func, default(CellQuadratureScheme));
         }
 
-        
+
 
         /// <summary>
         /// Accumulates the DG projection (with respect to <see cref="Basis"/>)
@@ -1015,6 +1015,28 @@ namespace BoSSS.Foundation {
             for (int j = 0; j < J; j++)
                 for (int n = 0; n < N; n++)
                     this.Coordinates[j, n] = other.Coordinates[j, n];
+        }
+
+        /// <summary>
+        /// set this field to be the (weighted) average with the field
+        /// <paramref name="other"/>; The basis of the <paramref name="other"/>
+        /// <paramref name="alpha"/>; Optional: The weighting factor. 0.5 (default) for average, 1 for copy of other <paramref name="alpha"/>
+        /// field must be contained in the basis of this field (see
+        /// <see cref="Basis"/>);
+        /// </summary>
+        /// <param name="other"></param>
+        virtual public void AverageWith(DGField other, double alpha = 0.5) {
+            if (!other.Basis.Equals(this.Basis)) {
+                throw new ApplicationException(
+                    "unable to copy because the DG polynomial basis of other field is different.");
+            }
+
+            Debug.Assert(0.0 <= alpha && alpha <= 1.0, "Weighting factor has to be between 0 and 1.");
+            int J = this.Coordinates.NoOfRows;
+            int N = this.Coordinates.NoOfCols;
+            for (int j = 0; j < J; j++)
+                for (int n = 0; n < N; n++)
+                    this.Coordinates[j, n] = (1 - alpha) * this.Coordinates[j, n] + alpha * other.Coordinates[j, n];
         }
 
         /// <summary>

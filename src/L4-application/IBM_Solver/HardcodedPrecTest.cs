@@ -582,7 +582,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 5,
-                                NoOfPartsPerProcess = ASparts,
+                                NoOfPartsOnCurrentProcess = ASparts,
                             },
                             CoarseSolver = new ClassicMultigrid()
                             {
@@ -590,9 +590,9 @@ namespace BoSSS.Application.IBM_Solver {
                                 {
                                     CoarserLevelSolver = new ClassicMultigrid()
                                     {
-                                        CoarserLevelSolver = new SparseSolver()
+                                        CoarserLevelSolver = new DirectSolver()
                                         {
-                                            WhichSolver = SparseSolver._whichSolver.MUMPS
+                                            WhichSolver = DirectSolver._whichSolver.MUMPS
                                         },
                                     },
                                 },

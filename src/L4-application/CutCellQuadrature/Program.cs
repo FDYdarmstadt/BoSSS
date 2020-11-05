@@ -481,7 +481,7 @@ namespace CutCellQuadrature {
 
         private double SetUpConfiguration() {
             testCase.UpdateLevelSet(levelSet);
-            levelSetTracker.UpdateTracker(__NearRegionWith: 0, incremental: false, __LevSetAllowedMovement: 2);
+            levelSetTracker.UpdateTracker(0.0, __NearRegionWith: 0, incremental: false, __LevSetAllowedMovement: 2);
 
             XDGField.Clear();
             XDGField.GetSpeciesShadowField("A").ProjectField(

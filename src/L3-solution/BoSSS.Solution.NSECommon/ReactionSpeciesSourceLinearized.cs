@@ -208,7 +208,8 @@ namespace BoSSS.Solution.NSECommon {
             return this.Source(cpv.Xglobal, cpv.Parameters, U) * V;
         }
 
-        protected double Source(double[] x, double[] parameters, double[] U) {     
+        protected double Source(double[] x, double[] parameters, double[] U) {
+
 
             double Temperature = U[0];
             double YF = U[1];
@@ -225,11 +226,23 @@ namespace BoSSS.Solution.NSECommon {
 
             double ReactionRate = m_Da * Math.Exp( -Ta / Temperature) * (rho * YF / MM_F) * (rho * YO / MM_O);
 
-            Debug.Assert(!double.IsNaN(ReactionRate));
-            Debug.Assert(!double.IsInfinity(ReactionRate));
- 
 
- 
+
+            if ( double.IsInfinity(ReactionRate)) {
+                Console.WriteLine("Infinite found");
+                Console.WriteLine("Temperature:", Temperature);
+                Console.WriteLine("rho:", rho);
+                Console.WriteLine("ExponentialTerm:", Math.Exp(-Ta / Temperature));
+
+            }
+
+            if (double.IsNaN(ReactionRate) ) {
+                Console.WriteLine("Nan found");
+                Console.WriteLine("Temperature:", Temperature);
+                Console.WriteLine("rho:", rho);
+                Console.WriteLine("ExponentialTerm:", Math.Exp(-Ta / Temperature));
+            }
+
 
             return -MolarMasses[SpeciesIndex] *  StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
         }

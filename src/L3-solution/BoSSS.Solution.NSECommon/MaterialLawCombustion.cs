@@ -108,6 +108,7 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     rho = ThermodynamicPressureValue / (phi[0] * MassFractionsOverMolarFractions);
+                 //   rho = rho > 0.05 ? rho : 0.05;
                     Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                     Debug.Assert((rho > 0.0));
                 } else {
@@ -125,7 +126,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        public double Prandtl { get; }
+        //public double Prandtl { get { base.Prandtl; } }
 
         /// <summary>
         /// Calculates heat capacity of air for a given temperature and composition.
@@ -176,7 +177,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates local mixture fraction
         /// </summary>     
         /// <returns></returns>
-        public double getMixtureFraction(double YF, double YO ) {
+        virtual public double getMixtureFraction(double YF, double YO ) {
             double Z = (s * YF - YO + YO0) / (s * YF0 + YO0);
             return Z;
         }
@@ -185,7 +186,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates the global equivalence ratio 
         /// </summary>     
         /// <returns></returns>
-        public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
+        virtual public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
             Debug.Assert(!(Yf0 < 0));
             Debug.Assert(!(Yox0 < 0));
             double phi = s * Yf0 / Yox0;
@@ -198,12 +199,12 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates the global equivalence ratio 
         /// </summary>     
         /// <returns></returns>
-        public double getLocalEquivalenceRatio(double Yf, double Yox) {
-            Debug.Assert(!(Yf < 0));
-            Debug.Assert(!(Yox < 0));
+        virtual public double getLocalEquivalenceRatio(double Yf, double Yox) {
+            Debug.Assert(!(Yf < -1e3));
+            Debug.Assert(!(Yox < -1e3));
             double Z = getMixtureFraction(Yf, Yox);
             double phi = s * (YF0 / YO0) * (Z / (1.0 - Z));
-            Debug.Assert(phi >= 0);
+            //Debug.Assert( phi >= -1e-1);
             if (phi.IsNaNorInf()) {
                 phi = double.MaxValue;
             }
@@ -279,6 +280,12 @@ namespace BoSSS.Solution.NSECommon {
 
             return AvgMw;
         }
+
+
+
+
+
+
 
     }
 }

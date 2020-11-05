@@ -37,6 +37,7 @@ namespace BoSSS.Foundation.Grid {
         private readonly int GlobalNumberOfCells;
         private readonly CellMask CutCells;
         private readonly BitArray CellsNotOK2Coarsen;
+        private readonly BitArray PeriodicBoundaryCells;
 
         /// <summary>
         /// Constructor for the grid refinement controller, defines input cells
@@ -50,7 +51,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="cellsNotOK2Coarsen">
         /// Cells which are not allowed to be coarsend. It is not necessary to include cut cells here, as they are handled by the cutCells CellMask.
         /// </param>
-        public GridRefinementController(GridData currentGrid, CellMask cutCells, CellMask cellsNotOK2Coarsen = null) {
+        public GridRefinementController(GridData currentGrid, CellMask cutCells, CellMask cellsNotOK2Coarsen = null, BitArray PeriodicBoundaryCells = null) {
             CurrentGrid = currentGrid;
             CellPartitioning = CurrentGrid.CellPartitioning;
             LocalNumberOfCells = CurrentGrid.Cells.NoOfLocalUpdatedCells;
@@ -62,6 +63,13 @@ namespace BoSSS.Foundation.Grid {
             if (cellsNotOK2Coarsen == null)
                 cellsNotOK2Coarsen = CellMask.GetEmptyMask(CurrentGrid);
             CellsNotOK2Coarsen = cellsNotOK2Coarsen.Union(CutCells).GetBitMask();
+            if (PeriodicBoundaryCells != null) {
+                this.PeriodicBoundaryCells = PeriodicBoundaryCells.CloneAs();
+                for (int i = 0; i < CellsNotOK2Coarsen.Length; i++) {
+                    if (PeriodicBoundaryCells[i])
+                        CellsNotOK2Coarsen[i] = true;
+                }
+            }
         }
 
         /// <summary>
@@ -121,6 +129,22 @@ namespace BoSSS.Foundation.Grid {
         public bool ComputeGridChange(List<Tuple<int, BitArray>> CellsMaxRefineLevel, out List<int> cellsToRefine, out List<int[]> cellsToCoarsen) {
             int[][] globalCellNeigbourship = GetGlobalCellNeigbourship();
             BitArray cutCellsWithNeighbours = GetGlobalCutCellNeighbours(globalCellNeigbourship);
+            if (PeriodicBoundaryCells != null) {
+                int[] i0 = CellPartitioning.GetI0s();
+
+                BitArray[] exchangeCutCells = PeriodicBoundaryCells.MPIGatherO(0);
+                exchangeCutCells = exchangeCutCells.MPIBroadcast(0);
+                BitArray globalPeriodicCells = new BitArray(GlobalNumberOfCells);
+                for (int m = 0; m < exchangeCutCells.Length; m++) {
+                    for (int j = 0; j < exchangeCutCells[m].Length; j++) {
+                        globalPeriodicCells[j + i0[m]] = exchangeCutCells[m][j];
+                    }
+                }
+                for (int i = 0; i < cutCellsWithNeighbours.Length; i++) {
+                    if (globalPeriodicCells[i])
+                        cutCellsWithNeighbours[i] = true;
+                }
+            }
             int[] CellsWithMaxRefineLevel = GetAllCellsWithMaxRefineLevel(cutCellsWithNeighbours, CellsMaxRefineLevel);
             int[] levelIndicator = GetGlobalLevelIndicator(CellsWithMaxRefineLevel, globalCellNeigbourship);
             cellsToRefine = GetCellsToRefine(levelIndicator);
@@ -138,7 +162,7 @@ namespace BoSSS.Foundation.Grid {
             }
             return (anyChangeInGrid);
         }
-
+        
         /// <summary>
         /// Returns the cutcells + neighbours on a global level.
         /// </summary>
@@ -215,8 +239,13 @@ namespace BoSSS.Foundation.Grid {
             long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
             int[][] localCellNeighbourship = new int[LocalNumberOfCells][];
             for (int j = 0; j < localCellNeighbourship.Length; j++) {
-                CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] CellNeighbours, out _);
-                localCellNeighbourship[j] = CellNeighbours;
+                //CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] CellNeighbours, out _);
+                Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(j);
+                localCellNeighbourship[j] = new int[cellNeighbours.Length];
+                for (int i = 0; i < cellNeighbours.Length; i++) {
+                    localCellNeighbourship[j][i] = cellNeighbours[i].Item1;
+                }
+                //localCellNeighbourship[j] = CellNeighbours;
                 for (int i = 0; i < localCellNeighbourship[j].Length; i++) {
                     if (localCellNeighbourship[j][i] < LocalNumberOfCells)
                         localCellNeighbourship[j][i] = localCellNeighbourship[j][i] + GlobalIndexOfFirstLocalCell;
@@ -261,6 +290,25 @@ namespace BoSSS.Foundation.Grid {
                     levelIndicator[globalIndex] = globalCurrentLevel[globalIndex] - 1;
             }
 
+            //for (int j = 0; j < LocalNumberOfCells; j++) {
+            //    var cellFaceTags = CurrentGrid.Cells.GetCell(j).CellFaceTags;
+            //    if (cellFaceTags.IsNullOrEmpty())
+            //        continue;
+            //    for (int c = 0; c < cellFaceTags.Length; c++) {
+            //        if (cellFaceTags[c].EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
+            //            for (int i = 0; i < globalNeighbourship[j + CellPartitioning.i0].Length; i++) {
+            //                if(CurrentGrid.Cells.GetCell(globalNeighbourship[j + CellPartitioning.i0][i]).GlobalID == cellFaceTags[c].NeighCell_GlobalID) {
+            //                    if (levelIndicator[globalNeighbourship[j + CellPartitioning.i0][i]] > levelIndicator[j + CellPartitioning.i0]) {
+            //                        levelIndicator[j + CellPartitioning.i0] = levelIndicator[globalNeighbourship[j + CellPartitioning.i0][i]];
+            //                    }
+            //                    else
+            //                        levelIndicator[globalNeighbourship[j + CellPartitioning.i0][i]] = levelIndicator[j + CellPartitioning.i0];
+            //                }
+                                
+            //            }
+            //        }
+            //    }
+            //}
             for (int j = 0; j < GlobalNumberOfCells; j++) {
                 levelIndicator[j] = levelIndicator[j].MPIMax();
             }
@@ -317,6 +365,16 @@ namespace BoSSS.Foundation.Grid {
                     levelIndicator[jNeigh] = LevelIndNeighbour;
                     GetLevelIndicatiorRecursive(jNeigh, LevelIndNeighbour - 1, globalNeighbourship, levelIndicator);
                 }
+                //int[] periodicNeighbours = GetNeighbourOverPeriodicBoundary(j);
+                //if (periodicNeighbours.IsNullOrEmpty())
+                //    continue;
+                //for (int i = 0; i < periodicNeighbours.Length; i++) {
+                //    if (levelIndicator[jNeigh] > levelIndicator[periodicNeighbours[i]]) {
+                //        levelIndicator[periodicNeighbours[i]] = levelIndicator[jNeigh];
+                //    }
+                //    else
+                //        levelIndicator[jNeigh] = levelIndicator[periodicNeighbours[i]];
+                //}
             }
         }
         

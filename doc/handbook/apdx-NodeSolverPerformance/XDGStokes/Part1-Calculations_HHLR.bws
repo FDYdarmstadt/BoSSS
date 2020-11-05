@@ -5,46 +5,49 @@ restart
   _______________________
 
 Databases loaded:
-List of 2 instances of IDatabaseInfo {
+List of 1 instances of IDatabaseInfo {
   0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
-  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
+ExecutionQueues;
+**************
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
+  1: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
+  2: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: project01217
+}
+==============
+var ExQueque = ExecutionQueues[2];
 **************
 ==============
+var myBatch = (SlurmClient)ExQueque;
+ExQueque.AllowedDatabases;
 **************
+List of 0 instances of IDatabaseInfo {
+}
 ==============
-string WFlowName = "Xdg_Stokes_Saye2";
+string WFlowName = "Xdg_Stokes_test";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_Saye2'.
+Project name is set to 'Xdg_Stokes_test'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
-string DBpathLinux = @"/work/scratch/jw52xeqa/DB_SFB_Stokes";
-var tempDB         = OpenOrCreateDatabase(String.Concat("W:",DBpathLinux));
-//var tempDB       = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB_Stokes");
-//string DBpathHPC = tempDB.Path;
+string dirname = "DB_XdgStokes";
+string linpath = @"/work/scratch/jw52xeqa/"+dirname;
+string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
-Opening existing database 'W:/work/scratch/jw52xeqa/DB_SFB_Stokes'.
+==============
+var tempDB = OpenOrCreateDatabase(winpath);
+**************
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes'.
 
 ==============
 **************
-==============
-//var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
-var myBatch = new SlurmClient(@"X:\Deployerie","lcluster5.hrz.tu-darmstadt.de","jw52xeqa");
-//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\weber\dply","hpccluster",ComputeNodes : new[] {"hpccluster"});
-**************
-
-Please enter your password...
-*************
-Connecting to lcluster5.hrz.tu-darmstadt.de...
-
-
 ==============
 //MiniBatchProcessor.Server.StartIfNotRunning();
 **************
@@ -84,18 +87,17 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 8 instances of IGridInfo {
-  0: { Guid = 8d0dd161-a215-4804-a0a3-5df6c0c7e1c9; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = a3795cfa-ab58-426e-8ebc-2b4d24b38db8; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
-  2: { Guid = 822526da-c513-484e-bc6e-6fc5b0a50d47; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
-  3: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
-  4: { Guid = 39d94f37-9e91-4999-99c6-880ca69023ea; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
-  5: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-  6: { Guid = 11764fd0-8383-436a-bda4-c040b1b59385; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-  7: { Guid = 750cf569-94f1-42c3-96d2-c1e73d42744d; Name = Xdg_Stokes_test_J8; Cell Count = 8; Dim = 3 }
+List of 7 instances of IGridInfo {
+  0: { Guid = f9d71ca4-7f86-4763-ae70-fc9482a30b89; Name = Xdg_Stokes_run0_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = 2321b630-ff43-4371-bd8d-5411b68feee9; Name = Xdg_Stokes_run0_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = 393f2585-baf9-409e-971e-a78c3b29fe96; Name = Xdg_Stokes_run0_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = 724522a4-75b8-406e-908f-c9c6d01d061c; Name = Xdg_Stokes_run0_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = 422cea49-5113-4252-ab7c-aaddc92557fc; Name = Xdg_Stokes_run0_J512; Cell Count = 512; Dim = 3 }
+  5: { Guid = 2435e7cf-5d50-4998-9281-9424d629ada9; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
+  6: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 4,8,16,24,32,48,64 };
+int[] Resolutions_3D = new int[] { 16 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -156,25 +158,13 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = 11764fd0-8383-436a-bda4-c040b1b59385; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-Found Grid: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-Found Grid: { Guid = 39d94f37-9e91-4999-99c6-880ca69023ea; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
-Found Grid: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
-Found Grid: { Guid = 822526da-c513-484e-bc6e-6fc5b0a50d47; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
-Found Grid: { Guid = a3795cfa-ab58-426e-8ebc-2b4d24b38db8; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
-Found Grid: { Guid = 8d0dd161-a215-4804-a0a3-5df6c0c7e1c9; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
+Found Grid: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 7 instances of IGridInfo {
-  0: { Guid = 11764fd0-8383-436a-bda4-c040b1b59385; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-  1: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-  2: { Guid = 39d94f37-9e91-4999-99c6-880ca69023ea; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
-  3: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
-  4: { Guid = 822526da-c513-484e-bc6e-6fc5b0a50d47; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
-  5: { Guid = a3795cfa-ab58-426e-8ebc-2b4d24b38db8; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
-  6: { Guid = 8d0dd161-a215-4804-a0a3-5df6c0c7e1c9; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
 }
 ==============
 **************
@@ -198,14 +188,6 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping ;
 **************
-(1,2): warning CS0105: The using directive for `BoSSS.Application.XNSE_Solver' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Solution.LevelSetTools' appeared previously in this namespace
-(3,1): warning CS0105: The using directive for `BoSSS.Solution.AdvancedSolvers' appeared previously in this namespace
-(4,1): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-(5,1): warning CS0105: The using directive for `BoSSS.Solution.Timestepping' appeared previously in this namespace
-(6,1): warning CS0105: The using directive for `BoSSS.Solution.XdgTimestepping' appeared previously in this namespace
-No. of errors|warnings: 0|6.
-
 ==============
 Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int p, IGridInfo grid, int DOF){
     
@@ -218,8 +200,11 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     Console.WriteLine("setting up: " + caseName);
     
     XNSE_Control C       = new XNSE_Control();
-    C.DbPath             = DBpathLinux;
-    C.savetodb           = C.DbPath != null;
+    C.AlternateDbPaths = new[]{
+        new ValueTuple<string,string>(linpath, ""),
+        new ValueTuple<string,string>(winpath, "pcmit32")
+    };
+    C.savetodb           = true;
     C.ProjectName        = WFlowName;
     C.ProjectDescription = "static droplet";
     C.SessionName        = caseName;
@@ -282,14 +267,15 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     // Solver Stuff
     // ============
     
-    C.VelocityBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
-    C.PressureBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
+    //C.VelocityBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
+    //C.PressureBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
+    C.UseSchurBlockPrec                = false;
     C.LinearSolver.NoOfMultigridLevels = 5;
     C.LinearSolver.MaxSolverIterations = 5000;
     
-    C.LinearSolver.TargetBlockSize = Math.Min(J*DOF/2,1000); //Make at least two blocks with Schwarz plz...
+    C.LinearSolver.TargetBlockSize = Math.Min(J*DOF/2,10000); //Make at least two blocks with Schwarz plz...
 
-    C.LinearSolver.ConvergenceCriterion = 1e-6;
+    C.LinearSolver.ConvergenceCriterion = 1e-8;
     C.LevelSet_ConvergenceCriterion     = 1e-6;
     C.LinearSolver.SolverCode           = solver;
     C.LinearSolver.verbose              = true;
@@ -303,7 +289,7 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     // Timestepping
     // ============
 
-    C.Timestepper_Scheme           = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+    C.TimeSteppingScheme           = TimeSteppingScheme.ImplicitEuler;
     C.Timestepper_BDFinit          = TimeStepperInit.SingleInit;
     C.Timestepper_LevelSetHandling = LevelSetHandling.None;
     C.Option_LevelSetEvolution     = LevelSetEvolution.None;
@@ -324,7 +310,7 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
 // - - - - - - - - - - - - -
 **************
 ==============
-int[] PolyDegS = new int[] {2, 3 ,5};
+int[] PolyDegS = new int[] {2};
 //int[] PolyDegS = new int[] {2};
 **************
 ==============
@@ -348,18 +334,12 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 7 instances of IGridInfo {
-  0: { Guid = 11764fd0-8383-436a-bda4-c040b1b59385; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-  1: { Guid = 8b882f9f-2e54-452f-875c-7a93158f6627; Name = Xdg_Stokes_test_J512; Cell Count = 512; Dim = 3 }
-  2: { Guid = 39d94f37-9e91-4999-99c6-880ca69023ea; Name = Xdg_Stokes_test_J4096; Cell Count = 4096; Dim = 3 }
-  3: { Guid = fd0b7b31-f16a-450d-8eea-e55ca5d36878; Name = Xdg_Stokes_test_J13824; Cell Count = 13824; Dim = 3 }
-  4: { Guid = 822526da-c513-484e-bc6e-6fc5b0a50d47; Name = Xdg_Stokes_test_J32768; Cell Count = 32768; Dim = 3 }
-  5: { Guid = a3795cfa-ab58-426e-8ebc-2b4d24b38db8; Name = Xdg_Stokes_test_J110592; Cell Count = 110592; Dim = 3 }
-  6: { Guid = 8d0dd161-a215-4804-a0a3-5df6c0c7e1c9; Name = Xdg_Stokes_test_J262144; Cell Count = 262144; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
-int MaxDof = 1000000;
+int MaxDof = 2000000;
 **************
 ==============
 using BoSSS.Solution.XNSECommon;
@@ -391,28 +371,8 @@ foreach(IGridInfo grd in t_grids) {
 }
 }
 **************
-setting up: J64_p2_classic_pardiso
-setting up: J512_p2_classic_pardiso
 setting up: J4096_p2_classic_pardiso
-setting up: J13824_p2_classic_pardiso
-setting up: J64_p3_classic_pardiso
-setting up: J512_p3_classic_pardiso
-setting up: J4096_p3_classic_pardiso
-setting up: J13824_p3_classic_pardiso
-setting up: J64_p5_classic_pardiso
-setting up: J512_p5_classic_pardiso
-setting up: J4096_p5_classic_pardiso
-setting up: J64_p2_exp_Kcycle_schwarz
-setting up: J512_p2_exp_Kcycle_schwarz
 setting up: J4096_p2_exp_Kcycle_schwarz
-setting up: J13824_p2_exp_Kcycle_schwarz
-setting up: J64_p3_exp_Kcycle_schwarz
-setting up: J512_p3_exp_Kcycle_schwarz
-setting up: J4096_p3_exp_Kcycle_schwarz
-setting up: J13824_p3_exp_Kcycle_schwarz
-setting up: J64_p5_exp_Kcycle_schwarz
-setting up: J512_p5_exp_Kcycle_schwarz
-setting up: J4096_p5_exp_Kcycle_schwarz
 
 ==============
 **************
@@ -452,521 +412,41 @@ foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
     var aJob = new Job(ctrl.SessionName, typeof(XNSE_SolverMain));
     aJob.SetControlObject(ctrl);
+    ((SlurmClient)ExQueque).SlurmAccount = "project01217";  // Jens 
     aJob.NumberOfMPIProcs         = 1;
-    aJob.ExecutionTime            = "04:00:00";
-    aJob.HHLR_project             = "project01217";
-    aJob.MemPerCPU                = "5000";
-    aJob.UseComputeNodesExclusive = false;
+    aJob.ExecutionTime            = "12:00:00";
+    aJob.MemPerCPU                = "50000";
+    aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
-    //ctrl.RunBatch(myBatch);
 }
 **************
- Submitting: J64_p2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-36-26
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-36-26/batch.sh to Unix format ...
-
-Submitted batch job 14173467
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J512_p2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-36-35
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-36-35/batch.sh to Unix format ...
-
-Submitted batch job 14173472
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
  Submitting: J4096_p2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
+
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-36-40
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
+Deployment directory: X:\Deployerie\Xdg_Stokes_test-XNSE_Solver2020Oct12_144042
+copied 32 files.
+   written file: control.obj
 deployment finished.
 
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-36-40/batch.sh to Unix format ...
-
-Submitted batch job 14173475
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J13824_p2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-36-45
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-36-45/batch.sh to Unix format ...
-
-Submitted batch job 14173478
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J64_p3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-36-50
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-36-50/batch.sh to Unix format ...
-
-Submitted batch job 14173482
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J512_p3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-36-54
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-36-54/batch.sh to Unix format ...
-
-Submitted batch job 14173485
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J4096_p3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-36-59
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-36-59/batch.sh to Unix format ...
-
-Submitted batch job 14173487
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J13824_p3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-04
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-04/batch.sh to Unix format ...
-
-Submitted batch job 14173491
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J64_p5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-08
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-08/batch.sh to Unix format ...
-
-Submitted batch job 14173494
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J512_p5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-13
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-13/batch.sh to Unix format ...
-
-Submitted batch job 14173496
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J4096_p5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-17
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-17/batch.sh to Unix format ...
-
-Submitted batch job 14173499
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J64_p2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-22
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-22/batch.sh to Unix format ...
-
-Submitted batch job 14173502
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J512_p2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-27
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-27/batch.sh to Unix format ...
-
-Submitted batch job 14173505
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J4096_p2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-31
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-31/batch.sh to Unix format ...
-
-Submitted batch job 14173507
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J13824_p2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-36
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-36/batch.sh to Unix format ...
-
-Submitted batch job 14173510
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J64_p3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-40
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-40/batch.sh to Unix format ...
-
-Submitted batch job 14173513
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J512_p3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-44
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-44/batch.sh to Unix format ...
-
-Submitted batch job 14173516
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J4096_p3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-49
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-49/batch.sh to Unix format ...
-
-Submitted batch job 14173519
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J13824_p3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-54
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-54/batch.sh to Unix format ...
-
-Submitted batch job 14173523
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J64_p5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-37-58
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-37-58/batch.sh to Unix format ...
-
-Submitted batch job 14173526
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J512_p5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-38-03
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-38-03/batch.sh to Unix format ...
-
-Submitted batch job 14173529
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: J4096_p5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XNSE_Solver2020Feb20_15-38-08
-Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XNSE_Solver2020Feb20_15-38-08/batch.sh to Unix format ...
-
-Submitted batch job 14173533
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
+Renci.SshNet.Common.SshConnectionException occurred: Failed to negotiate key exchange algorithm.. Type 'LastError' for details.
 
 ==============
 **************
 ==============
 LastError
 **************
-System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation. ---> Renci.SshNet.Common.SshConnectionException: Client not connected.
-   at Renci.SshNet.Session.SendMessage(Message message)
-   at Renci.SshNet.Channels.ChannelSession.Open()
-   at Renci.SshNet.SshCommand.BeginExecute(AsyncCallback callback, Object state)
-   at BoSSS.Application.BoSSSpad.SlurmClient.EvaluateStatus(Job myJob, Int32& SubmitCount, Boolean& isRunning, Boolean& wasSuccessful, Boolean& isFailed, String& DeployDir) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 74
-   at BoSSS.Application.BoSSSpad.Job.GetStatus(Int32& SubmitCount, String& DD) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\Job.cs:line 534
-   at <InteractiveExpressionClass>.<Host>m__0(KeyValuePair`2 s)
-   at System.Linq.Enumerable.WhereEnumerableIterator`1.MoveNext()
-   at System.Linq.Enumerable.Count[TSource](IEnumerable`1 source)
-   at BoSSS.Foundation.IO.IEnumerableExtensions.Summary[T](IEnumerable`1 entities) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\IEnumerableExtensions.cs:line 48
-   --- End of inner exception stack trace ---
-   at System.RuntimeMethodHandle.InvokeMethod(Object target, Object[] arguments, Signature sig, Boolean constructor)
-   at System.Reflection.RuntimeMethodInfo.UnsafeInvokeInternal(Object obj, Object[] parameters, Object[] arguments)
-   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
-   at System.Reflection.MethodBase.Invoke(Object obj, Object[] parameters)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 382
+Renci.SshNet.Common.SshConnectionException: Server HMAC algorithm not found
+   at Renci.SshNet.Session.WaitOnHandle(WaitHandle waitHandle, TimeSpan timeout)
+   at Renci.SshNet.Session.Connect()
+   at Renci.SshNet.BaseClient.CreateAndConnectSession()
+   at Renci.SshNet.BaseClient.Connect()
+   at BoSSS.Application.BoSSSpad.SlurmClient.get_SSHConnection() in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 137
+   at BoSSS.Application.BoSSSpad.SlurmClient.Submit(Job myJob) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 365
+   at BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 1027
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
 ==============
 WorkflowMgm.AllJobs;
 **************
@@ -1332,6 +812,38 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

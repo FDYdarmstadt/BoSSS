@@ -27,7 +27,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     /// <summary>
     /// Encapsulation of Options for FourierLevSet
     /// </summary>
-    public class FourierLevSetControl {
+    public class FourierLevSetControl : ILevSetControl {
 
         /// <summary>
         /// planar (x,y) or cylindric (r, phi) representation of the Fourier coeff

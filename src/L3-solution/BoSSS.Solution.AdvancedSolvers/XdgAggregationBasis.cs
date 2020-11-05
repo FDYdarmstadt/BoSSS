@@ -332,7 +332,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Number of species per composite cell; 
+        /// Number of species present (i.e. with non-zero measure) per composite cell; 
         ///  - index: composite cell index;
         /// </summary>
         int[] NoOfSpecies;
@@ -528,7 +528,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[] agCl = agCls[jAgg];
                 int K = agCl.Length;
 
-                MultidimensionalArray FulCoords = (K * N == Buffer.GetLength(0)) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
+                MultidimensionalArray FulCoords = (K * N == Buffer.Length) ? Buffer : Buffer.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, N - 1 });
 
                 int i0Agg = jAgg * Nmax, i0Full;
 
@@ -605,12 +605,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+        /// <summary>
+        /// Number of DOFs in all present species (i.e. species has a non-zero measure).
+        /// </summary>
         public override int GetLength(int jCell, int p) {
             return this.NoOfSpecies[jCell] * base.GetLength(jCell, p);
         }
 
 
         public override int GetMaximalLength(int p) {
+            if (XDGBasis.Tracker.TotalNoOfSpecies == 0)
+                throw new Exception("0 SPecies");
             return this.XDGBasis.Tracker.TotalNoOfSpecies * base.GetMaximalLength(p);
         }
 

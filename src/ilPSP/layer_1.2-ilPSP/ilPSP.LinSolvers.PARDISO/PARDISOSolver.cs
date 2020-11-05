@@ -42,13 +42,45 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor
         /// </summary>
         public PARDISOSolver() {
-            SingletonPARDISO.SetParallelism(this.SolverVersion.ToString());
+            
         }
 
-        public Parallelism SolverVersion = Parallelism.SEQ;
+        Parallelism m_Parallelism = Parallelism.OMP;
 
+        /// <summary>
+        /// Level of parallelism, which should be used for this solver instance 
+        /// </summary>
+        public Parallelism Parallelism {
+            get {
+                return m_Parallelism;
+            }
+            set {
+                if(m_wrapper != null) {
+                    throw new NotSupportedException("Cannot be changed after init.");
+                }
+
+                m_Parallelism = value;
+            }
+        }
+
+
+        /// <summary>
+        /// total time, over entire application instance lifetime, spent in 
+        /// symbolic factorization (PARDISO phase 11)
+        /// </summary>
         public static Stopwatch Phase_11 = new Stopwatch();
+        
+        
+        /// <summary>
+        /// total time, over entire application instance lifetime, spent in 
+        /// numerical factorization (PARDISO phase 22)
+        /// </summary>
         public static Stopwatch Phase_22 = new Stopwatch();
+        
+        /// <summary>
+        /// total time, over entire application instance lifetime, spent in 
+        /// back substitution and iterative refinement (PARDISO phase 33)
+        /// </summary>
         public static Stopwatch Phase_33 = new Stopwatch();
 
 
@@ -69,7 +101,8 @@ namespace ilPSP.LinSolvers.PARDISO {
                     }
                     if (this.Version == PARDISO.Version.v5)
                         System.Environment.SetEnvironmentVariable("PARDISOLICMESSAGE", "1");
-                    m_wrapper = new MetaWrapper(this.Version);
+                    
+                    m_wrapper = new MetaWrapper(this.Version, this.Parallelism);
                 }
                 return m_wrapper;
             }
@@ -151,6 +184,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                 return m_Version;
             }
             set {
+                if(m_wrapper != null) {
+                    throw new NotSupportedException("Cannot be changed after init.");
+                }
+
                 m_Version = value;
             }
         }

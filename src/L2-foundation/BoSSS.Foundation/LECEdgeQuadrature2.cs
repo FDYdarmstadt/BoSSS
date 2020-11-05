@@ -36,6 +36,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         
         public LECEdgeQuadrature2(SpatialOperator op) {
             Operator = op;
+
             m_Edgeform_UxV = EquationComponentArgMapping<IEdgeForm_UxV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.UxV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.UxV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
@@ -90,6 +91,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         Stopwatch[][] m_EdgeSourceV_Watches;
         Stopwatch[][] m_EdgeSourceGradV_Watches;
 
+        
+
+
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        bool IsNonEmpty {
+            get {
+                return m_Edgeform_UxV.IsNonEmpty() || 
+                    m_Edgeform_GradUxV.IsNonEmpty() || 
+                    m_Edgeform_UxGradV.IsNonEmpty() || 
+                    m_Edgeform_GradUxGradV.IsNonEmpty() || 
+                    m_EdgeSourceV.IsNonEmpty() || 
+                    m_EdgeSourceGradV.IsNonEmpty() ;
+            }
+        }
+
         /// <summary>
         /// Execution of quadrature
         /// </summary>
@@ -109,11 +127,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         public void Execute(ICompositeQuadRule<QuadRule> domNrule,
             UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
             M Matrix, V AffineVector, double time) {
-
             if (RowMap.BasisS.Count != GAMMA)
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if (ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
+            if(this.IsNonEmpty == false)
+                return;
 
             m_GridDat = RowMap.GridDat;
 
@@ -1364,11 +1383,17 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
+        /// <summary>
+        /// scaling factor for accumulation
+        /// </summary>
+        internal double m_alpha = 1.0;
+
         protected void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
             var Edge2Cell = this.m_GridDat.iGeomEdges.LogicalCellIndices;
             int M = m_RowMap.NoOfCoordinatesPerCell;
             int N = m_ColMap.NoOfCoordinatesPerCell;
             int Jup = this.m_GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            double a = m_alpha;
 
             bool bLinearRequired = LinearRequired;
             bool bAffineRequired = AffineRequired;
@@ -1405,7 +1430,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             //        //m_Matrix[m0 + m, n0 + n] += BlockRes[m, n];
                             //    }
                             //}
-                            m_Matrix.AccBlock(m0, n0, 1.0, BlockRes);
+                            m_Matrix.AccBlock(m0, n0, a, BlockRes);
                         }
                     }
 
@@ -1419,7 +1444,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             new int[] { i - 1, cr - 1, 0 - 1, M - 1, offset - 1 });
 
                         for (int m = 0; m < M; m++)
-                            m_AffineVector[m0 + m] += BlockRes[m];
+                            m_AffineVector[m0 + m] += BlockRes[m]*a;
                     }
                 }
             }

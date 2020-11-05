@@ -52,10 +52,10 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="time"></param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
         
-    /// <summary>
-    /// Callback-Template for the mass matrix update.
-    /// </summary>
-    public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
+    ///// <summary>
+    ///// Callback-Template for the mass matrix update.
+    ///// </summary>
+    //public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
  
     /// <summary>
     /// Callback-template for level-set updates.
@@ -74,7 +74,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     /// <returns>
     /// Some kind of level-set-residual in order to check convergence in a fully coupled simulation
-    /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>)
+    /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>, <see cref="XdgTimesteppingBase.Config_LevelSetConvergenceCriterion"/>)
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
 
@@ -146,11 +146,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
         /// </summary>
         FSI_LieSplittingFullyCoupled = 5,
-
-        /// <summary>
-        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
-        /// </summary>
-        FSI_Coupled_Iterative = 6,
     }
 
     public enum SpatialOperatorType {
@@ -172,6 +167,9 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     abstract public class XdgTimesteppingBase {
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected XdgTimesteppingBase(
             Control.NonLinearSolverConfig nonlinconfig,
             Control.LinearSolverConfig linearconfig) {
@@ -186,21 +184,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 && this.Config_LevelSetHandling != LevelSetHandling.None)
                 throw new ArgumentOutOfRangeException("illegal configuration");
 
-            if (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity && this.Config_MassScale != null) {
-                // may occur e.g. if one runs the FSI solver as a pure single-phase solver,
-                // i.e. if the Level-Set is outside the domain.
-
-                foreach (var kv in this.Config_MassScale) {
-                    SpeciesId spId = kv.Key;
-                    double[] scaleVec = kv.Value.ToArray();
-                    //for (int i = 0; i < scaleVec.Length; i++) {
-                    //    if (scaleVec[i] != 1.0)
-                    //        throw new ArithmeticException(string.Format("XDG time-stepping: illegal mass scale, mass matrix option {0} is set, but scaling factor for species {1}, variable no. {2} ({3}) is set to {4} (expecting 1.0).",
-                    //            MassMatrixShapeandDependence.IsIdentity, this.m_LsTrk.GetSpeciesName(kv.Key), i, this.CurrentStateMapping.Fields[i].Identification, scaleVec[i]));
-                    //}
-                }
-
-            }
+            
         }
 
 
@@ -224,22 +208,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public double IterUnderrelax = 1.0;
 
-
+        /// <summary>
+        /// convergence criteion for iterations over the level-set, c.f. return value of <see cref="DelUpdateLevelset"/>
+        /// </summary>
         public double Config_LevelSetConvergenceCriterion = 1.0e-6;
-            
-
-        /// <summary>
-        /// Session path for writing in database
-        /// </summary>
-        public string SessionPath = "";
-
-        /// <summary>
-        /// Scaling of the mass matrix, for each species and each variable.
-        /// </summary>
-        public IDictionary<SpeciesId, IEnumerable<double>> Config_MassScale {
-            get;
-            protected set;
-        }
 
         /// <summary>
         /// Species to compute, must be a subset of <see cref="LevelSetTracker.SpeciesIdS"/>
@@ -257,8 +229,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-
-
         /// <summary>
         /// Whether the operator is linear, nonlinear.
         /// </summary>
@@ -275,28 +245,35 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
+
         /// <summary>
-        /// Optional callback routine to update the mass matrix in the case of  <see cref="Config_MassMatrixShapeandDependence"/> == <see cref="MassMatrixShapeandDependence.IsTimeAndSolutionDependent"/>.
+        /// For the computation of the mass matrix
         /// </summary>
-        public DelComputeMassMatrix ComputeMassMatrix {
-            get;
-            protected set;
+        public ITemporalOperator TemporalOperator {
+            get {
+                return AbstractOperator.TemporalOperator;
+            }
         }
 
-        protected void ComputeMassMatrixImpl(BlockMsrMatrix MassMatrix, double time) {
-            if (!MassMatrix._RowPartitioning.EqualsPartition(CurrentStateMapping))
-                throw new ArgumentException("Internal error.");
-            if (!MassMatrix._ColPartitioning.EqualsPartition(CurrentStateMapping))
-                throw new ArgumentException("Internal error.");
 
-            if (ComputeMassMatrix == null) {
-                // ++++++++++++++
-                // default branch
-                // ++++++++++++++
-                MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder).MassMatrixFactory;
-                MassFact.AccMassMatrix(MassMatrix, CurrentStateMapping, _alpha: Config_MassScale);
-            } else {
-                ComputeMassMatrix(MassMatrix, CurrentStateMapping, CurrentStateMapping.Fields.ToArray(), time);
+        protected void ComputeMassMatrixImpl(BlockMsrMatrix MassMatrix, double time) {
+            using(new FuncTrace()) {
+                if(!MassMatrix._RowPartitioning.EqualsPartition(CurrentStateMapping))
+                    throw new ArgumentException("Internal error.");
+                if(!MassMatrix._ColPartitioning.EqualsPartition(CurrentStateMapping))
+                    throw new ArgumentException("Internal error.");
+
+                if(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
+                    MassMatrix.AccEyeSp(1.0);
+                } else {
+                    if(TemporalOperator is ConstantXTemporalOperator cxt) {
+                        cxt.SetTrackerHack(this.m_LsTrk);
+                    }
+
+                    var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
+                    builder.time = time;
+                    builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
+                }
             }
         }
 
@@ -356,14 +333,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected AggregationGridBasis[][] MultigridBasis;
 
         /// <summary>
-        /// Last solver residuals.
+        /// Latest solver residuals.
         /// </summary>
         public CoordinateVector Residuals {
             get;
             protected set;
         }
-
-        
 
         /// <summary>
         /// Initialization of the solver/preconditioner.
@@ -429,8 +404,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns either a solver for the Navier-Stokes or the Stokes system.
         /// E.g. for testing purposes, one might also use a nonlinear solver on a Stokes system.
         /// </summary>
-        /// <param name="nonlinSolver"></param>
-        /// <param name="linearSolver"></param>
         protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             nonlinSolver = null;
             linearSolver = null;
@@ -438,7 +411,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
                 m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
 
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, MultigridSequence);
             
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
@@ -452,7 +425,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; 
+                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi;
                 }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
@@ -464,12 +437,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        //void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-        //    double resiNorm = currentRes.MPI_L2Norm();
-        //    Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
-        //}
-
-
+        
         /// <summary>
         /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
         /// </summary>
@@ -499,12 +467,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 int NF = this.CurrentStateMapping.Fields.Count;
                 m_ResLogger.IterationCounter = iterIndex;
 
+                double totResi = 0.0;
                 if (m_TransformedResi) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // transform current solution and residual back to the DG domain
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    //var X = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
                     var R = this.Residuals;
                     R.Clear();
 
@@ -513,9 +481,20 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //this.m_Agglomerator.Extrapolate(X, X.Mapping);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
 
+                    /*
+                    CoordinateVector Solution = new CoordinateVector(this.Residuals.Fields.Select(delegate (DGField f) {
+                        DGField r = f.CloneAs();
+                        r.Identification = "Sol_" + r.Identification;
+                        return r;
+                    }));
+                    Mgop.TransformSolFrom(Solution, currentSol);
+                    Tecplot.Tecplot.PlotFields(Solution.Fields.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
+                    */
+                    
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                        totResi += L2Res.Pow2();
                     }
                 } else {
 
@@ -532,10 +511,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                             L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
+                        totResi += L2Res.Pow2();
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
                 }
+                totResi = totResi.Sqrt();
+                m_ResLogger.CustomValue(totResi, "Total");
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");
@@ -590,6 +572,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// Les spatial operateur 
+        /// </summary>
+        public virtual ISpatialOperator AbstractOperator {
+            get;
+            protected set;
+        }
+
+        /// <summary>
         /// Coordinate mapping of the current solution.
         /// </summary>
         abstract public CoordinateMapping CurrentStateMapping {
@@ -597,7 +587,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Callback-routine  to update the linear resp. linearized system, 
+        /// 
+        /// </summary>
+        public DGField[] CurrentParameters {
+            get;
+            protected set;
+        }
+
+        /// <summary>
+        /// Callback-routine (<see cref="OperatorEvalOrLin"/>) to update the linear resp. linearized system, 
         /// see <see cref="OperatorEvalOrLin"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
         /// </summary>
         /// <param name="argCurSt">Input, current state of solution.</param>
@@ -611,7 +609,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: assemble matrix and affine vector
         /// - false: evaluate operator (<paramref name="System"/> will be null)
         /// </param>
-        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
+        /// <param name="abstractOperator">
+        ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
+        /// </param>
+        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
 
         /// <summary>
         /// Unscaled, agglomerated mass matrix used by the preconditioner.
@@ -622,7 +623,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
         public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumV = false) {
-            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true);
+            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             
             if(VarGroups == null) {
@@ -632,7 +633,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             var Ret = new Dictionary<string, double>();
             foreach(int[] varGroup in VarGroups) {
-                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
                 

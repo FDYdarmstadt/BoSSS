@@ -478,17 +478,50 @@ The .NET framework is shipped with two JIT compilers that compile the CIL to mac
 
 
 \subsection{Linux}
-The \BoSSS{} group does not maintain packages of the native libraries listed in section \ref{sec:installation_libraries} for Linux because high-performance computers typically provide specifically optimized versions of these libraries that should be used in order to obtain optimal performance. In the following, we thus focus on the installation of \BoSSS{} itself. 
-
+The \BoSSS{} group maintains basic packages of the native libraries listed in section \ref{sec:installation_libraries} for Linux.
+These are compiled against recent versions of the Open MPI and the Intel MKL library
+and should provide compatibility and decent performance on a variety of systems.
+However, compatibility this can not guaranteed for any Linux distribution -- binary platform independence in Linux not possible in general; since we use Ubuntu, all Debian derivatives might most likely work.
+Note further, high-performance computers typically provide specifically optimized versions of BLAS and LAPACK, so for the ultimate performance on a certain system,
+you'll need to build your own version of the \BoSSS{} native libraries.
 \begin{itemize}
-	\item Obtain Mono\footnote{\url{www.mono-project.com}} (version 3.0 or higher), either by installing a pre-built package\footnote{\url{www.mono-project.com/download/}} or by compiling\footnote{\url{www.mono-project.com/docs/compiling-mono/linux/}} it from a tarball\footnote{\url{https://download.mono-project.com/sources/mono/}}
-	\item Obtain/install/load OpenMPI (tested with version 1.6.5 and higher)
-	\item Obtain/install/load BLAS and LAPACK (tested with AMD Core Math Library 5.3.1)
-        \item Dowload native libraries from \url{https://1drv.ms/u/s!ApHj99AUWCA9gfwY71lDOnGahY2ySQ?e=IZIFTs} and unpack into the folder \code{\$BoSSS\_INSTALL} (you may have to set
-          this environment variable)
-        \item Test your basic installation (cf. section \ref{sec:installation_testing})
-	\item Obtain/install/load additional libraries if required by the particular \BoSSS{} application
-	\item TODO how to obtain \BoSSS{} for Linux
+\item 
+Obtain Mono\footnote{\url{www.mono-project.com}} (version 6.0 or higher), 
+either by installing a pre-built package\footnote{\url{www.mono-project.com/download/}} or 
+by compiling\footnote{\url{www.mono-project.com/docs/compiling-mono/linux/}} it from a tarball\footnote{\url{https://download.mono-project.com/sources/mono/}}
+\item 
+Obtain/install/load OpenMPI (tested with version 1.6.5 and higher)
+
+\item Obtain/install/load native libraries {\tt libBoSSSnative\_seq.so}, {\tt libBoSSSnative\_omp.so} and {\tt libBoSSSnative\_mpi.so}
+\begin{itemize}
+ \item 
+ Pre-compiled versions of these shared libraries for Linux can be found in the Windows installation, in the directory {\tt \$BOSSS\_INSTALL/bin/native/linux/amd64-openmpi}.
+ (There should also be a {\tt zip}-File that you can unpack on any system.)
+
+ \item 
+  If these pre-build libraries are not compatible with your system 
+  (we do our best, but binary compatibility across distributions is quite difficult on Linux), you'll need to compile them yourself, 
+  the source code can be found at {\url{https://github.com/FDYdarmstadt/BoSSS-native}} resp. {\tt git@github.com:FDYdarmstadt/BoSSS-native.git}.
+
+ \item
+ In either way, the three files mentioned above should be placed in some directory 
+ where you have read/write access; This can be within your Home-directory, e.g. at 
+ {\tt /home/JohnDoe/BosssInstall/bin/native/linux/amd64-openmpi} or 
+ in a global directory directory, e.g. {\tt /opt/bosss\_install/bin/native/linux/amd64-openmpi}.
+ File access rights should be set to {\t rwx}, i.e. allow for execution.
+
+ \item
+ Setup an environment variable {\tt \$BOSSS\_INSTALL}, which points (in the examples above) to 
+ {\tt /home/JohnDoe/BosssInstall} resp. {\tt /opt/bosss\_install}.
+
+ \BoSSS{} then searches for the native libraries in {\tt \$BOSSS\_INSTALL/bin/native/linux/amd64-openmpi}.
+\end{itemize}
+
+\item
+Test your basic installation (cf. section \ref{sec:installation_testing})
+
+\item
+Obtain/install/load additional libraries if required by the particular \BoSSS{} application
 \end{itemize}
 
 
@@ -649,6 +682,13 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \label{sec:BoundaryAndInitialData}
 % ################################################################################
 \import{./BoundaryAndInitialData/}{BoundaryAndInitialData.tex}
+%
+
+% ################################################################################
+\chapter{Further options for Initial Values}
+\label{sec:InitialData}
+% ################################################################################
+\import{./InitialValues/}{InitialValues.tex}
 
 % ################################################################################
 \chapter{Workflow management and meta job scheduler}
@@ -681,27 +721,27 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Grid instantiation, $L^2$-projection and convergence}
 \label{GridInstantiation}
 % ################################################################################
-\import{./tutorial2/}{uebung2tutorial.tex}
+\import{./ue2Basics/}{ue2Basics.tex}
 
 % ################################################################################
 \chapter{Defining a Spatial Operator and using explicit time integration}
 \label{SpatialOperator}
 % ################################################################################
-\import{./tutorial4/}{tutorial4.tex}
+\import{./SpatialOperatorNexpTimeInt/}{SpatialOperatorNexpTimeInt.tex}
 
 
 % ################################################################################
 \chapter{Numerical flux and convergence study}
 \label{NumFlux}
 % ################################################################################
-\import{./tutorial5/}{uebung5tutorial.tex}
+\import{./ue5NumFluxConv/}{ue5NumFluxConv.tex}
 
 
 % ################################################################################
 \chapter{Scalar convection and stability of explicit timesteppers}
 \label{ScalarAdvection}
 % ################################################################################
-\import{./tutorial6/}{tutorial6.tex}
+\import{./ue6ScalarConvStability/}{ue6ScalarConvStability.tex}
 
 %\chapter{Exporting data}
 %\chapter{Working with masks and subgrids}

@@ -253,6 +253,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.JumpGradJump2;
 
+            //C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
@@ -267,12 +269,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =============================
 
 
-            int numSp = 640;
-            C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
-                FourierEvolve = Fourier_Evolution.MaterialPoints,
-                Timestepper = FourierLevelSet_Timestepper.ExplicitEuler,
-                InterpolationType = Interpolationtype.CubicSplineInterpolation,
-            };
+            //int numSp = 640;
+            //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
+            //    FourierEvolve = Fourier_Evolution.MaterialPoints,
+            //    Timestepper = FourierLevelSet_Timestepper.ExplicitEuler,
+            //    InterpolationType = Interpolationtype.CubicSplineInterpolation,
+            //};
 
 
             // Timestepping
@@ -360,7 +362,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="xkelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control CW_Popinet(int p = 2, int xkelem = 32, string _DbPath = null) {
+        public static XNSE_Control CW_Popinet(int p = 2, int xkelem = 16, string _DbPath = null) {
 
             //int p = 2;
             //int xkelem = 32;
@@ -372,7 +374,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region db
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CWp3_spatialConv";
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
+            _DbPath = @"D:\rieckmann\BoSSS_DB";
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
@@ -511,8 +514,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // Initial Values
             // ==============
             #region init
-
-            C.InitialValues_Evaluators.Add("Phi", (X => X[1] - PeriodicFunc(X[0])));
+            double cahn = (1.0 / 4.164) * L/(double)xkelem * 8.0 / 4.0;
+            C.InitialValues_Evaluators.Add("Phi", (X => Math.Tanh((X[1] - PeriodicFunc(X[0]))/(Math.Sqrt(2) * cahn))));
 
             C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
             C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
@@ -527,10 +530,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // additional parameters
             // =====================
 
-            double[] param = new double[3];
-            param[0] = lambda;  // wavelength
-            param[1] = A0;      // initial disturbance
-            param[2] = 0.0;      // y-gravity
+            double[] param = new double[4];
+            param[0] = 1.0;
+            param[1] = lambda;  // wavelength
+            param[2] = A0;      // initial disturbance
+            param[3] = 0.0;      // y-gravity
             C.AdditionalParameters = param;
 
             // misc. solver options
@@ -551,9 +555,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
 
+            C.AdaptiveMeshRefinement = false;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.RefinementLevel = 1;
+
+            C.SuperSampling = 2;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.Curvature_Projected;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
@@ -565,13 +575,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =============================
 
 
-            int numSp = 640;
-            C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
-                FourierEvolve = Fourier_Evolution.MaterialPoints,
-                Timestepper = FourierLevelSet_Timestepper.ExplicitEuler,
-                InterpolationType = Interpolationtype.CubicSplineInterpolation,
-            };
+            //int numSp = 640;
+            //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
+            //    FourierEvolve = Fourier_Evolution.MaterialPoints,
+            //    Timestepper = FourierLevelSet_Timestepper.ExplicitEuler,
+            //    InterpolationType = Interpolationtype.CubicSplineInterpolation,
+            //};
 
+            C.FourierLevSetControl = null;
 
             // Timestepping
             // ============
@@ -582,7 +593,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             double rho = rho_l;         // Testcase1
             double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma));             // !!!
@@ -594,6 +605,134 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = (int)Math.Ceiling(t_end / dt);                                     // !!!
 
             C.saveperiod = 1;
+
+            #endregion
+
+
+            return C;
+
+        }
+
+        /// <summary>
+        /// Some Settings for the CW Test to read from Worksheet
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control CW_ForWorksheet()
+        {
+            XNSE_Control C = new XNSE_Control();
+
+            // basic database options
+            // ======================
+            #region db
+
+            //C.DbPath = set by workflowMgm during job creation
+            C.savetodb = true;
+            C.ContinueOnIoError = false;
+
+            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+
+            #endregion
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            // need to be set by user via setDGdegree() in worksheet
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics  
+
+            // need to be set during job creation 
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid genration
+            // ==============
+            #region grid
+
+            // need to be set by user via setGrid() in worksheet
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            // need to be set during job creation 
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            // need to be set during job creation 
+
+            #endregion
+
+
+            // additional parameters (evaluation)
+            // ==================================
+
+            // need to be set during job creation 
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            #endregion
+
+
+            // Level-Set options (AMR)
+            // =======================
+            #region levset
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+
+            //C.dtMax = dt; // need to be set according to grid and DG degree
+            //C.dtMin = dt;
+            C.Endtime = 1000;
+            //C.NoOfTimesteps = 0; 
+
+            C.saveperiod = 1;
+            C.LogPeriod = 1;
 
             #endregion
 

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -337,7 +338,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Converts 'LaTeX-escaped C#' charaters to real C#
+        /// Converts 'LaTeX-escaped C#' characters to real C#
         /// </summary>
         public static string Tex2Bws(string CompleteCommand)
         {
@@ -358,7 +359,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                     else {
 
-                        // a bunch of replacements to embedd C# into LaTeX:
+                        // a bunch of replacements to embed C# into LaTeX:
                         Command = Command.Replace("\\rule {0.5cm}{0.0cm}", "   ");
                         Command = Command.Replace("\\btab", "   ");
                         Command = Command.Replace("\\newline ", "");
@@ -368,6 +369,8 @@ namespace BoSSS.Application.BoSSSpad {
                         Command = Command.Replace("\\{", "{");
                         Command = Command.Replace("\\}", "}");
                         Command = Command.Replace("\\textbackslash ", "\\");
+                        Command = Command.Replace(@"\&\& ", "&&");
+                        Command = Command.Replace(@"\& ", "&");
                     }
 
                     if (k < CommandLines.Length - 1)
@@ -431,6 +434,8 @@ namespace BoSSS.Application.BoSSSpad {
                         //ln = ln.Replace("\n", "\\newline ");
                         ln = ln.Replace("_", "\\_");
                         ln = ln.Replace("%", "\\%");
+                        ln = ln.Replace("&&", @"\&\& ");
+                        ln = ln.Replace("&", @"\& ");
 
                         // per-line operations
                         // ===================
@@ -568,9 +573,9 @@ namespace BoSSS.Application.BoSSSpad {
                 // write result / out-file
                 // ------------------------------------
 
-                if (Entry.Result is GnuplotExtensions.CairolatexContainer) {
+                if (Entry.Result is CairolatexContainer) {
                     // graphical output
-                    var CairoHack = (GnuplotExtensions.CairolatexContainer)Entry.Result;
+                    var CairoHack = (CairolatexContainer)Entry.Result;
                     //File.WriteAllText(Path.Combine(OutDir, "out" + iEntry + ".tex"), CairoHack.LatexCode);
                     File.WriteAllText(Path.Combine(OutDir, "empty" + iEntry + ".txt"), "");
                     //File.WriteAllBytes(Path.Combine(OutDir, CairoHack.GraphicsFilename), CairoHack.GraphicsData);

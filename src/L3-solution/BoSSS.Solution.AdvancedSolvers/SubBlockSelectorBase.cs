@@ -58,10 +58,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //internal get
         protected MultigridMapping m_map;
 
-        //internal set
+        /// <summary>
+        /// Selector for cells.
+        /// - 1st argument: cell index
+        /// - return value: respective DOFs should be included (true) or excluded (false)
+        /// </summary>
         protected Func<int, bool> m_CellFilter = null;
+
+        /// <summary>
+        /// Selector for cells and variables.
+        /// - 1st argument: cell index
+        /// - 2nd argument: variable index
+        /// - return value: respective DOFs should be included (true) or excluded (false)
+        /// </summary>
         protected Func<int, int, bool> m_VariableFilter = null;
+
+        /// <summary>
+        /// Selector for cells and variables and species.
+        /// - 1st argument: cell index
+        /// - 2nd argument: variable index
+        /// - 3rd argument: species index
+        /// - return value: respective DOFs should be included (true) or excluded (false)
+        /// </summary>
         protected Func<int, int, int, bool> m_SpeciesFilter = null;
+
+        /// <summary>
+        /// Selector for cells and variables and species.
+        /// - 1st argument: cell index
+        /// - 2nd argument: variable index
+        /// - 3rd argument: species index
+        /// - 4th argument: DG polynomial degree
+        /// - return value: respective DOFs should be included (true) or excluded (false)
+        /// </summary>
         protected Func<int, int, int, int, bool> m_ModeFilter = null;
 
         #region CellSelector
@@ -325,10 +353,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <returns></returns>
         public SubBlockSelectorBase ModeSelector() {
-            this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int iMode) {
+            this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
 #if DEBUG
                 int maxDG = m_DGdegree[iVar];
-                Debug.Assert(iMode <= maxDG);
+                Debug.Assert(pDeg <= maxDG);
 #endif
                 return true;
             };
@@ -599,8 +627,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        // the subseqent members are different
-        // dependant on mask type: local or external
+        // the subsequent members are different
+        // dependent on mask type: local or external
 
         protected abstract int m_NoOfCells {
             get;
@@ -681,7 +709,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Pre generate offsets and lengths for the DG blocks.
         /// Used in <see cref="GenerateAllMasks"/>.
         /// </summary>
-        /// <returns>Ni0 for a default Variable upto the maximal occuring DGdegree</returns>
+        /// <returns>Ni0 for a default Variable up to the maximal occurring DGdegree</returns>
         private Ni0[] Ni0Gen() {
             int maxDG = m_DGdegree.Max();
             var ModeOffsetNLengt = new List<Ni0>();
@@ -755,8 +783,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // loop over cells...
             for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
                 int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be concidered, you know ...
-                emptysel &= !m_sbs.CellFilter(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
-                if (!m_sbs.CellFilter(jLoc))
+                emptysel &= !CellInstruction(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
+                if (!CellInstruction(jLoc))
                     continue;
                 var tmpVar = new List<extNi0[][]>();
 
@@ -926,7 +954,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// gets subblock offset relative to the parent cellblock
+        /// gets sub-block offset relative to the parent cell-block
         /// </summary>
         /// <param name="iCell"></param>
         /// <param name="iVar"></param>

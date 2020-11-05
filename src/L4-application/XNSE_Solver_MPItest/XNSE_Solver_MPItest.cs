@@ -72,7 +72,31 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         static void Main(string[] args) {
-            SetUp();
+            /*
+            BoSSS.Solution.Application.InitMPI();
+
+            int[] idxS;
+            int root = 3;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int myRank);
+            if(myRank == root) {
+                idxS = new[] { 4, 3, 2, 1 };
+            } else {
+                idxS = null;
+            }
+
+            idxS = idxS.MPIBroadcast(root);
+            Assert.AreEqual(idxS[0], 4);
+            Assert.AreEqual(idxS[1], 3);
+            Assert.AreEqual(idxS[2], 2);
+            Assert.AreEqual(idxS[3], 1);
+
+            Console.WriteLine("check ok.");
+
+            BoSSS.Solution.Application.FinalizeMPI();
+            return;
+            */
+
+            BoSSS.Solution.Application.InitMPI();
             //Debugger.Launch();
             ParallelRisingDroplet();
             /*

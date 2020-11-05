@@ -413,22 +413,22 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// gradient in x-direction of velocity component in x-direction
         /// </summary>
-        public static string VelocityX_GradientX = "VelocityX_GradientX";
+        public const string VelocityX_GradientX = "VelocityX_GradientX";
 
         /// <summary>
         /// gradient in y-direction of velocity component in x-direction
         /// </summary>
-        public static string VelocityX_GradientY = "VelocityX_GradientY";
+        public const string VelocityX_GradientY = "VelocityX_GradientY";
 
         /// <summary>
         /// gradient in x-direction of velocity component in y-direction
         /// </summary>
-        public static string VelocityY_GradientX = "VelocityY_GradientX";
+        public const string VelocityY_GradientX = "VelocityY_GradientX";
 
         /// <summary>
         /// gradient in y-direction of velocity component in y-direction
         /// </summary>
-        public static string VelocityY_GradientY = "VelocityY_GradientY";
+        public const string VelocityY_GradientY = "VelocityY_GradientY";
 
 
         ///// <summary>
@@ -740,17 +740,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// x - component of the Level-Set gradient
         /// </summary>
-        public static string LevelSetGradient0 = "LevelSetGradient[0]";
+        public const string LevelSetGradient0 = "LevelSetGradient[0]";
 
         /// <summary>
         /// y - component of the Level-Set gradient
         /// </summary>
-        public static string LevelSetGradient1 = "LevelSetGradient[1]";
+        public const string LevelSetGradient1 = "LevelSetGradient[1]";
 
         /// <summary>
         /// z - component of the Level-Set gradient
         /// </summary>
-        public static string LevelSetGradient2 = "LevelSetGradient[2]";
+        public const string LevelSetGradient2 = "LevelSetGradient[2]";
 
         /// <summary>
         /// variable name for the Gradient of a Level-Set

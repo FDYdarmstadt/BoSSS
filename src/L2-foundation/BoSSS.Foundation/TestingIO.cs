@@ -316,6 +316,17 @@ namespace BoSSS.Foundation {
             }
             return R;
         }
+
+        /// <summary>
+        /// Relative Errors for all known columns
+        /// </summary>
+        public IDictionary<string, double> AllAbsErr() {
+            var R = new Dictionary<string, double>();
+            foreach(string col in this.ColumnNames) {
+                R.Add(col, AbsError(col));
+            }
+            return R;
+        }
         
         /*
         /// <summary>
@@ -421,10 +432,21 @@ namespace BoSSS.Foundation {
         /// </summary>
         public void AddVector(string ColName, IEnumerable<double> data) {
             int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            if(J != data.Count())
-                throw new ArgumentException("wrong length of input vector");
+            int L = data.Count();
+            int K = L / J;
 
-            m_CurrentData.Add(ColName, data.ToArray());
+            
+            if(J*K != L || K < 1)
+                throw new ArgumentException("wrong length of input vector");
+            if(L == 1) {
+                m_CurrentData.Add(ColName, data.ToArray());
+            } else {
+                var M = MultidimensionalArray.CreateWrapper(data.ToArray(), J, K);
+                for(int k = 0; k < K; k++) {
+                    m_CurrentData.Add(ColName + "-k" + k, M.GetColumn(k));
+                }
+
+            }
         }
 
 

@@ -113,15 +113,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             FixedNoOfIterations = 1,
                             CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                NoOfPartsPerProcess = NoOfBlocks
+                                NoOfPartsOnCurrentProcess = NoOfBlocks
                             },
                             Overlap = 1
                         };
                     }
 
                     // coarsest level
-                    PrecondS[PrecondS.Length - 1] = new SparseSolver() {
-                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                    PrecondS[PrecondS.Length - 1] = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
 

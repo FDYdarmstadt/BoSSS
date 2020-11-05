@@ -92,9 +92,14 @@ namespace ilPSP.Tracing {
             private set;
         }
 
+        static private long GetMPITicks() {
+            return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
+        }
+
         internal static void Push_MethodCallRecord(string _name) {
             Debug.Assert(InstrumentationSwitch == true);
             
+
             //if (Tracer.Current != null) {
             MethodCallRecord mcr;
             if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
@@ -103,6 +108,7 @@ namespace ilPSP.Tracing {
             }
             Tracer.Current = mcr;
             mcr.CallCount++;
+            mcr.m_TicksSpentinBlocking = -GetMPITicks();
             //} else {
             //    Debug.Assert(Tracer.Root == null);
             //    var mcr = new MethodCallRecord(Tracer.Current, _name);
@@ -116,6 +122,8 @@ namespace ilPSP.Tracing {
 
             Debug.Assert(!object.ReferenceEquals(Current, _Root), "root frame cannot be popped");
             Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
+            Tracer.Current.m_TicksSpentinBlocking += GetMPITicks();
+            Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking);
             Tracer.Current = Tracer.Current.ParrentCall;
         }
 

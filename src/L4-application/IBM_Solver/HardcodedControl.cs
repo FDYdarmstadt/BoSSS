@@ -50,6 +50,10 @@ namespace BoSSS.Application.IBM_Solver {
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
             C.SessionName = "GasGebn";
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.NoOfMultigridLevels = 2;
+            C.LinearSolver.TargetBlockSize = 1000;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
@@ -137,6 +141,78 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
+        /*
+        public static IBM_Control ConfinedCylinder() {
+
+            var C = new IBM_Control();
+            C.DbPath = null;
+            // GUID's to confined cylinder grids (full)
+            List<string> grids = new List<string>();
+            grids.Add("bbb695f0-94e9-4e2d-812e-6cf50798b490");
+            grids.Add("ebe0db94-949e-4948-85f2-ecf45ee421ef");
+            grids.Add("3a4bf165-6464-4450-b7e2-b7d9d2436556");
+            grids.Add("d1f5d426-d72f-4e50-b816-f9e4a8150383");
+
+
+
+            // DG Fields
+            int k = 2;
+            C.SetDGdegree(k);
+
+            // set grid
+            var grd = grids[2];
+            Guid gridGuid;
+            if(Guid.TryParse(grd, out gridGuid)) {
+                C.GridGuid = gridGuid;
+            } else {
+                throw new ArgumentException();
+            }
+
+            // Physical Parameters
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0 / 0.1; // 1 / Reynoldsnumber  Re << 1 (Stokesflow)
+
+            // Boundary Values
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula("X => 1.5 * (1 - 0.25 * X[1] * X[1])"));
+            C.AddBoundaryValue("Wall_top");
+            C.AddBoundaryValue("Pressure_outlet");
+            C.AddBoundaryValue("Wall_bottom");
+            C.AddBoundaryValue("Wall_cylinder");
+
+            // Initial Values
+            C.InitialValues.Add("VelocityX", new Formula("X => 0.0"));
+            C.InitialValues.Add("VelocityY", new Formula("X => 0.0"));
+            C.InitialValues.Add("Pressure", new Formula("X => 0.0"));
+            C.InitialValues.Add("Phi", new Formula("X => -1.0"));
+
+            // Linear Solver Settings
+            C.LinearSolver.MaxKrylovDim = 5000;
+            C.LinearSolver.MaxSolverIterations = 500;
+            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.SolverMode = LinearSolverMode.Solve;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
+
+            //NonlinearSolver
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.MaxSolverIterations = 200;
+
+            // Timestepping
+            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+            // Miscellaneous Solver Settings
+            C.savetodb = false;
+            C.ProjectName = "MG-Stokes";
+            C.SessionName = "MG-Stokes-p=" + k + "-h=" + grids.IndexOf(grd);
+
+            return C;
+        }
+        */
+
+        /*
         public static IBM_Control nonIBMCylinderFlow(string _DbPath = null, int k = 2, bool xPeriodic = false, double VelXBase = 0.0) {
             IBM_Control C = new IBM_Control();
 
@@ -154,26 +230,7 @@ namespace BoSSS.Application.IBM_Solver {
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // grid and boundary conditions
             // ============================
@@ -265,8 +322,10 @@ namespace BoSSS.Application.IBM_Solver {
 
             return C;
         }
-
+        */
         public static IBM_Control[] IBMCylinderFlow(string _DbPath = null, int k = 2, bool xPeriodic = false, double VelXBase = 0.0) {
+            //BoSSS.Application.IBM_Solver.HardcodedControl.IBMCylinderFlow()[0]
+            
             List<IBM_Control> R = new List<IBM_Control>();
 
             foreach (int i in new int[] { k }) {
@@ -335,32 +394,22 @@ namespace BoSSS.Application.IBM_Solver {
                     var _yNodes3 = Grid1D.TanhSpacing(1, 2.1, Convert.ToInt32(7 * MeshFactor), 1.1, true); //7
                     var yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3);
 
-
-
                     //double[] xNodes = GenericBlas.Linspace(0 * BaseSize, 22 * BaseSize, 25);
                     //double[] yNodes = GenericBlas.Linspace(0 * BaseSize, 4.1 * BaseSize, 25);
                     var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: xPeriodic);
-                    grd.EdgeTagNames.Add(1, "Velocity_Inlet_upper");
-                    grd.EdgeTagNames.Add(2, "Velocity_Inlet_lower");
-                    if (!xPeriodic) {
-                        grd.EdgeTagNames.Add(3, "Velocity_Inlet_left");
-                        grd.EdgeTagNames.Add(4, "Pressure_Outlet_right");
-                    }
 
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
                         if (Math.Abs(X[1] - (-2 * BaseSize)) <= 1.0e-8)
-                            et = 1;
+                            return "Velocity_Inlet_upper";
                         if (Math.Abs(X[1] - (+2.1 * BaseSize)) <= 1.0e-8)
-                            et = 2;
+                            return "Velocity_Inlet_lower";
                         if (!xPeriodic && Math.Abs(X[0] - (-2 * BaseSize)) <= 1.0e-8)
-                            et = 3;
+                            return "Velocity_Inlet_left";
                         if (!xPeriodic && Math.Abs(X[0] - (+20.0 * BaseSize)) <= 1.0e-8)
-                            et = 4;
+                            return "Pressure_Outlet_right";
 
-
-                        Debug.Assert(et != 0);
-                        return et;
+                        throw new ArgumentException("Unexpected point onm boundary");
                     });
 
                     Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
@@ -368,58 +417,7 @@ namespace BoSSS.Application.IBM_Solver {
                     return grd;
                 };
 
-                //C.GridFunc = delegate {
-
-                //    // Box1
-                //    var box1_p1 = new double[2] { -2, -2 };
-                //    var box1_p2 = new double[2] { 20, 2.1 };
-                //    var box1 = new GridBox(box1_p1, box1_p2, 46, 20); //k1: 70,25 ; k2: 46,20 ; k3: 35,15
-
-                //    // Box2
-                //    var box2_p1 = new double[2] { -2, -2 };
-                //    var box2_p2 = new double[2] { 3, 2.1 };
-                //    var box2 = new GridBox(box2_p1, box2_p2, 26, 40); //k1: 40,50 ; k2: 26,40; k3: 20, 30
-
-                //    // Box3
-                //    var box3_p1 = new double[2] { -2, -1 };
-                //    var box3_p2 = new double[2] { 1, 1 };
-                //    var box3 = new GridBox(box3_p1, box3_p2, 32, 38); //k1: 48,58  ; k2: 32,38; k3: 24, 30
-
-                //    // Box4
-                //    var box4_p1 = new double[2] { -0.7, -0.72 };
-                //    var box4_p2 = new double[2] { 0.7, 0.7 };
-                //    var box4 = new GridBox(box4_p1, box4_p2, 30, 56); //k1: 44,84  ; k2: 30,56; k3: 22, 42
-
-                //    var grd = Grid2D.HangingNodes2D(box1, box2, box3,box4);
-
-                //    grd.EdgeTagNames.Add(1, "Velocity_Inlet_upper");
-                //    grd.EdgeTagNames.Add(2, "Velocity_Inlet_lower");
-                //    if (!xPeriodic) {
-                //        grd.EdgeTagNames.Add(3, "Velocity_Inlet_left");
-                //        grd.EdgeTagNames.Add(4, "Pressure_Outlet_right");
-                //    }
-
-                //    grd.DefineEdgeTags(delegate (double[] X) {
-                //        byte et = 0;
-                //        if (Math.Abs(X[1] - (-2 * BaseSize)) <= 1.0e-8)
-                //            et = 1;
-                //        if (Math.Abs(X[1] - (+2.1 * BaseSize)) <= 1.0e-8)
-                //            et = 2;
-                //        if (!xPeriodic && Math.Abs(X[0] - (-2 * BaseSize)) <= 1.0e-8)
-                //            et = 3;
-                //        if (!xPeriodic && Math.Abs(X[0] - (+20.0 * BaseSize)) <= 1.0e-8)
-                //            et = 4;
-
-
-                //        Debug.Assert(et != 0);
-                //        return et;
-                //    });
-
-                //    Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
-
-                //    return grd;
-                //};
-
+               
                 C.AddBoundaryValue("Velocity_Inlet_upper", "VelocityX", X => 0);
                 C.AddBoundaryValue("Velocity_Inlet_lower", "VelocityX", X => 0); //-(4 * 1.5 * X[1] * (4.1 - X[1]) / (4.1 * 4.1))
                 if (!xPeriodic) {
@@ -436,43 +434,10 @@ namespace BoSSS.Application.IBM_Solver {
                 C.PhysicalParameters.rho_A = 1;
                 C.PhysicalParameters.mu_A = 1.0 / 20;
 
-                //C.InitialValues.Add("Phi", X => phi(X, 0));
-
-                //C.InitialValues.Add("Phi", X => ((X[0] / (radius * BaseSize)) - mPx) * (X[0] / (radius * BaseSize)) - mPx) + ((X[1]) / (radius * BaseSize)) - 2.)Pow2() - radius.Pow2()));  // quadratic form
-                //    );
-                C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + radius.Pow2());
-                //C.InitialValues_Evaluators.Add("Phi", X => -1);
-
+                C.InitialValues_Evaluators.Add("Phi", X => -Math.Sqrt(X[0].Pow2() + X[1].Pow2()) + radius.Pow2());
+                
                 C.InitialValues_Evaluators.Add("VelocityX", X => 4 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1));
-                //C.InitialValues.Add("VelocityX", delegate (double[] X)
-                //{
-                //    double x = X[0];
-                //    double y = X[1];
-
-                //    double R = Math.Sqrt((x + 1).Pow2() + y.Pow2());
-
-                //    double xVel = 0;
-
-                //    if (R < 0.75)
-                //    {
-                //        xVel = 1;
-                //    }
-                //    return xVel;
-                //});
-
-                //C.InitialValues.Add("VelocityY", delegate (double[] X) {
-                //    double x = X[0];
-                //    double y = X[1];
-
-                //    double R = Math.Sqrt((x + 1).Pow2() + (y).Pow2());
-
-                //    double yVel = 0;
-
-                //    if (R < 0.75) {
-                //        yVel = 1;
-                //    }
-                //    return yVel;
-                //});
+                
 
                 // For restart
                 //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("8f5cfed9-31c7-4be8-aa56-e92e5348e08b"), 95);
@@ -490,25 +455,20 @@ namespace BoSSS.Application.IBM_Solver {
 
                 C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
                 C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-                C.LevelSetSmoothing = false;
-                //C.option_solver = "direct";
-                C.LinearSolver.MaxKrylovDim = 1000;
-                C.LinearSolver.MaxSolverIterations = 50;
-                C.NonLinearSolver.MaxSolverIterations = 50;
-                C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-                C.LinearSolver.NoOfMultigridLevels = 1;
+                
+                //C.LinearSolver.MaxKrylovDim = 1000;
+                //C.LinearSolver.MaxSolverIterations = 50;
+                //C.NonLinearSolver.MaxSolverIterations = 50;
+                //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+                //C.LinearSolver.NoOfMultigridLevels = 1;
                 C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-                C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Schur;
+                //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Schur;
 
                 // Timestepping
                 // ============
 
                 C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-                double dt = 1E20;
-                C.dtMax = dt;
-                C.dtMin = dt;
-                C.Endtime = 70;
-                C.NoOfTimesteps = 1;
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
                 // haben fertig...
                 // ===============
@@ -611,7 +571,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        static public IBM_Control PeriodicHill(int k = 2, double HillHeight = 28) {
+        static public IBM_Control PeriodicHill(int k = 4, double HillHeight = 28) {
             IBM_Control C = new IBM_Control();
 
             if (HillHeight != 28) {
@@ -622,7 +582,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.savetodb = false;
-            C.DbPath = @"P:\BoSSS_DBs\ChannelFlow";
+            C.DbPath = null;// @"P:\BoSSS_DBs\ChannelFlow";
             C.ProjectName = "ChannelFlow";
 
             C.PhysicalParameters.IncludeConvection = true;
@@ -646,34 +606,15 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // Create Grid
             // Note: The domain is coordinates are dimensionless
             C.GridFunc = delegate {
 
 
-                var _rNodes = GenericBlas.Linspace(0, 1, 41);
-                var _sNodes = GenericBlas.Linspace(0, 1, 16);
+                var _rNodes = GenericBlas.Linspace(0, 1, 17);
+                var _sNodes = GenericBlas.Linspace(0, 1, 9);
 
                 var grd = Grid2D.CurvedSquareGridChannel(_rNodes, _sNodes, CellType.Square_9, true, (r, s) => HillTopology(r, s, HillHeight));
 
@@ -802,7 +743,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 1000;
 
             // Timestepping
             // ============
@@ -812,7 +755,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 70;
-            C.NoOfTimesteps = 100000;
+            C.NoOfTimesteps = 1000;//100000;
 
             return C;
         }

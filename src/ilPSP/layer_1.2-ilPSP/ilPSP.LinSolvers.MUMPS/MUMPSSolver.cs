@@ -82,17 +82,32 @@ namespace ilPSP.LinSolvers.MUMPS {
         /// <param name="MPI"></param>
         public MUMPSSolver(bool verbose = false) {
             this.verbose = verbose;
-            //if (MPI == true) {
-            //    this.m_MPI_Comm = csMPI.Raw._COMM.WORLD;
-            //} else {
-            //    this.m_MPI_Comm = csMPI.Raw._COMM.SELF;
-            //}
-            SingletonMumps.SetParallelism(this.SolverVersion.ToString());
         }
 
-        public Parallelism SolverVersion = Parallelism.SEQ;
+        Parallelism m_Parallelism = Parallelism.OMP;
+
+        /// <summary>
+        /// Level of parallelism, which should be used for this solver instance 
+        /// </summary>
+        public Parallelism Parallelism {
+            get {
+                return m_Parallelism;
+            }
+            set {
+                if(this.MUMPS_csharp != null) {
+                    throw new NotSupportedException("Cannot be changed after init.");
+                }
+
+                m_Parallelism = value;
+            }
+        }
+
+        MUMPS_csharp MUMPS_csharp;
 
         public void DefineMatrix(IMutableMatrixEx M) {
+            if(m_MumpsMatrix != null)
+                throw new NotSupportedException("solver can only be initialized once");
+            this.MUMPS_csharp = new MUMPS_csharp(Parallelism);
             m_MumpsMatrix = new Matrix(M);
             m_OrgMatrix = M;
             this.m_MPI_Comm = m_OrgMatrix.MPI_Comm;
@@ -399,7 +414,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                 } else {
                     unsafe
                     {
-                        fixed (double* px = &__x[0])
+                        fixed (double* px = __x)
                         {
                             MPI_Status _st;
                             csMPI.Raw.Recv((IntPtr)px, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, this.m_MPI_Comm, out _st);
@@ -454,7 +469,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                     // send my part to P0
                     unsafe
                     {
-                        fixed (double* pb = &__b[0])
+                        fixed (double* pb = __b)
                         {
                             csMPI.Raw.Send((IntPtr)pb, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, this.m_MPI_Comm);
                         }

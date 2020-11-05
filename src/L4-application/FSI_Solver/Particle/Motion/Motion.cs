@@ -81,16 +81,6 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private double CollisionTimestep = 0;
         [DataMember]
-        private Vector NormalAndTangetialVelocityPreCollision = new Vector(SpatialDim);
-        [DataMember]
-        private readonly List<Vector> m_CollisionTranslationalVelocity = new List<Vector>();
-        [DataMember]
-        private readonly List<double> m_CollisionRotationalVelocity = new List<double>();
-        [DataMember]
-        private readonly List<Vector> m_CollisionNormalVector = new List<Vector>();
-        [DataMember]
-        private readonly List<Vector> m_CollisionTangentialVector = new List<Vector>();
-        [DataMember]
         public readonly double Density;
         [DataMember]
         public double ParticleArea;
@@ -467,6 +457,9 @@ namespace BoSSS.Application.FSI_Solver {
             if (CollisionTimestep < 0)
                 CollisionTimestep = 0;
             SavePositionAndAngleOfPreviousTimestep();
+            if(CollisionTimestep> dt) {
+                throw new Exception("Collision timestep: " + CollisionTimestep);
+            }
             Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
             Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
             CollisionTimestep = 0;
@@ -506,12 +499,13 @@ namespace BoSSS.Application.FSI_Solver {
         internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             double[] tempForces = new double[SpatialDim];
             for (int d = 0; d < SpatialDim; d++) {
-                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-10)
+                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-12)
                     tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
                 
             }
+            //tempForces[1] = 0;
             HydrodynamicForces[0] = new Vector(tempForces);
-            if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-10)
+            if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
                 HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
             Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
@@ -582,11 +576,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
-            if (dt < 0)
-                Console.WriteLine("old Pos 0 " + Position[0][0]);
             Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 6;
-            if (dt < 0)
-                Console.WriteLine("new Pos 0 " + position[0]);
             Aux.TestArithmeticException(position, "particle position");
             return position;
         }

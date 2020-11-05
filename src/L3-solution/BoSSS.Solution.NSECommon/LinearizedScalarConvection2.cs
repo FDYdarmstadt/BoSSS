@@ -459,7 +459,7 @@ namespace BoSSS.Solution.NSECommon {
         double LaxFriedrichsSchemeSwitch = 0.0;
 
         string[] m_ArgumentOrdering;
-        string[] m_ParameterOrdering;
+        //string[] m_ParameterOrdering;
 
         MaterialLaw EoS;
 
@@ -496,11 +496,9 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.Multiphase:
                     //this.Argument = VariableNames.LevelSet;
                     m_ArgumentOrdering = new string[] { VariableNames.LevelSet };
-                    m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
-                    break;
+                     break;
                 case PhysicsMode.LowMach:
-                    m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim),
-                        VariableNames.Temperature0, VariableNames.Temperature0Mean);
+
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
 
                     if(EoS == null)
@@ -509,9 +507,7 @@ namespace BoSSS.Solution.NSECommon {
                         this.EoS = EoS;
                     break;
                 case PhysicsMode.MixtureFraction:
-                    //m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim),
-                    //    VariableNames.Rho);
-                    m_ParameterOrdering = new string[] { VariableNames.Rho };
+ ;
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), MixtureFraction as variables. 
 
                     if (EoS == null)
@@ -563,7 +559,7 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException("PhysicsMode not implemented");
             }
-            Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
+            //Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
 
             r += rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);
             r += rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
@@ -656,7 +652,7 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.MixtureFraction:
                                 // opt1:
                                 //inp2.Parameters_OUT = inp.Parameters_IN;
-                                Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
+                                Uout[m_SpatialDimension] =  Uin[m_SpatialDimension]; // m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
                                 break;
                             case PhysicsMode.LowMach: {
                                     Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
@@ -890,7 +886,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return m_ParameterOrdering;
+                return null;
             }
         }
 

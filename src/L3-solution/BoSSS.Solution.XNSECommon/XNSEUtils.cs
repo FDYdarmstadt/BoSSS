@@ -35,6 +35,9 @@ namespace BoSSS.Solution.XNSECommon {
 
     public static class XNSEUtils {
 
+        /*
+         * pressure ref pt is now controlled directly in the Multigrid Operator; FK, 11sep20
+
         /// <summary>
         /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
         /// in order to fix the pressure at some reference point
@@ -203,7 +206,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
-
+        */
 
         #region velocity jump (mass balance at interface)
 

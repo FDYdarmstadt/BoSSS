@@ -94,6 +94,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         EquationComponentArgMapping<IVolumeForm_UxV>[] m_VolumeForm_UxV;
 
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        bool IsNonEmpty {
+            get {
+                return m_VolumeForm_UxV.IsNonEmpty() || 
+                    m_VolumeForm_GradUxV.IsNonEmpty() || 
+                    m_VolumeForm_UxGradV.IsNonEmpty() || 
+                    m_VolumeForm_GradUxGradV.IsNonEmpty() || 
+                    m_VolumeSource_V.IsNonEmpty() || 
+                    m_VolumeSource_GradV.IsNonEmpty() ;
+            }
+        }
+
 
         Stopwatch[][] m_VolumeForm_UxV_Watches;
         Stopwatch[][] m_VolumeForm_GradUxV_Watches;
@@ -122,6 +136,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if(ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
+            if(this.IsNonEmpty == false)
+                return;
 
             m_GridDat = RowMap.GridDat;
 
@@ -991,8 +1007,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             int offset = bLinearRequired ? N : 0;
             int NoUpdate = m_GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             int[] geom2log = m_GridDat.iGeomCells.GeomCell2LogicalCell;
+            double a = m_alpha;
 
-            for(int i = 0; i < Length; i++) {
+            for (int i = 0; i < Length; i++) {
                 int jCell;
                 if(geom2log != null)
                     jCell = geom2log[i + i0];
@@ -1010,7 +1027,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     //        //m_Matrix[m0 + m, n0 + n] += BlockRes[m, n];
                     //    }
                     //}
-                    m_Matrix.AccBlock(m0, n0, 1.0, BlockRes);
+                    m_Matrix.AccBlock(m0, n0, a, BlockRes);
                 }
                 
                 if(bAffineRequired) {
@@ -1020,11 +1037,15 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     int m0 = (int)this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell, 0);
 
                     for(int m = 0; m < M; m++)
-                        m_Vector[m0 + m] += BlockRes[m];
+                        m_Vector[m0 + m] += BlockRes[m]* a;
                 }
                  
             }
         }
 
+        /// <summary>
+        /// scaling factor for accumulation
+        /// </summary>
+        internal double m_alpha = 1.0; 
     }
 }

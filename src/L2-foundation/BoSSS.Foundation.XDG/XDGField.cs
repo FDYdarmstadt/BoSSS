@@ -794,17 +794,41 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// 
+        /// Not accurate for cut-cells.
         /// </summary>
-        /// <param name="j"></param>
-        /// <returns></returns>
         public override double GetMeanValue(int j) {
             if (j < 0 || j > this.GridDat.iLogicalCells.Count)
                 throw new ArgumentException("cell index out of range.", "j");
 
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
 
-            //var tracker = m_CCBasis.Tracker;
+            //jhjkhjhk
+
+
+            var tracker = m_CCBasis.Tracker;
+            int NoOfSpc = tracker.Regions.GetNoOfSpecies(j);
+            if(NoOfSpc <= 1) {
+                return base.GetMeanValue(j);
+            } else {
+                double acc = 0.0;
+                double denom = 0.0;
+
+                for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
+                    SpeciesId sid = tracker.Regions.GetSpeciesIdFromIndex(j, iSpc);
+                    if(tracker.Regions.IsSpeciesPresentInCell(sid, j)) {
+                        acc += GetSpeciesShadowField(sid).GetMeanValue(j);
+                        denom += 1.0;
+                    }
+                }
+
+                if(denom > 0)
+                    return acc / denom;
+                else
+                    return 0.0;
+            }
+
+
+
             //SubGrid subgrd = tracker.GetCutCellSubGrid();
             //int j_subgrd = subgrd.LocalCellIndex2SubgridIndex[j];
 
@@ -876,6 +900,16 @@ namespace BoSSS.Foundation.XDG {
 
                     this.GetSpeciesShadowField(spc).ProjectField(alpha, func, _scheme);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Add a constant to this field
+        /// </summary>
+        public override void AccConstant(double a, CellMask cm) {
+            foreach(var spc in this.Basis.Tracker.SpeciesIdS) {
+                var sf = this.GetSpeciesShadowField(spc);
+                sf.AccConstant(a, cm);
             }
         }
 

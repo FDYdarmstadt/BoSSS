@@ -81,6 +81,11 @@ namespace BoSSS.Application.XNSE_Solver {
         ExtensionVelocity,
 
         /// <summary>
+        /// Phasefield level set by Cahn Hilliard equation
+        /// </summary>
+        Phasefield,
+
+        /// <summary>
         /// Level Set is moved by advected particles.
         /// This Evloution features three subtypes <see cref="BoSSS.Application.SemiLagrangianLevelSetTestSuite.LagrangianMode"/>
         /// </summary>
