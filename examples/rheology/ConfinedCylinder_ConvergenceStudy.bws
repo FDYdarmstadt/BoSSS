@@ -8,7 +8,7 @@ Opening existing database '\\dc1\scratch\kummer\bosss_db'.
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
   0: { Session Count = 1; Grid Count = 1; Path = P:\bosss_db2 }
-  1: { Session Count = 65; Grid Count = 5; Path = \\dc1\scratch\kummer\bosss_db }
+  1: { Session Count = 64; Grid Count = 5; Path = \\dc1\scratch\kummer\bosss_db }
 }
 
  Console ready for input. Type 'help' for help.
@@ -371,8 +371,7 @@ Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	Confin
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half	11/04/2020 17:51:20	5018a1ab..." -- job is marked as successful, no further action.
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half	11/04/2020 17:51:26	20b2e09a..." -- job is marked as successful, no further action.
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half	11/04/2020 17:51:36	33c2bf51..." -- job is marked as successful, no further action.
-Note: Job has reached its maximum number of attempts to run (1) -- job is marked as fail, no further action.
-Hint: you might either remove old deployments or increase the 'RetryCount'.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half	11/05/2020 07:47:51	085bb6e5..." -- job is marked as successful, no further action.
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half	11/04/2020 17:51:58	cdd3d452..." -- job is marked as successful, no further action.
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half	11/04/2020 17:52:04	98f1df8d..." -- job is marked as successful, no further action.
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half	11/04/2020 17:52:13	14cc7ec4..." -- job is marked as successful, no further action.
@@ -382,19 +381,26 @@ Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	Confin
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.2_half	11/04/2020 17:53:01	f94e1915..." -- job is marked as successful, no further action.
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.2_half	11/04/2020 17:53:10	0e62ff55..." -- job is marked as successful, no further action.
 Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.2_half	11/04/2020 17:53:18	d79c2c2a..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half	11/04/2020 17:53:30	e9dd4cf7..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half	11/04/2020 17:53:42	648c003e..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half	11/04/2020 17:53:50	be2943f1..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half	11/04/2020 17:54:07	fa39b635..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half	11/04/2020 17:54:16	04e21995..." -- job is marked as successful, no further action.
-Note: Job has reached its maximum number of attempts to run (1) -- job is marked as fail, no further action.
-Hint: you might either remove old deployments or increase the 'RetryCount'.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half	11/04/2020 17:54:38	865d51f2..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half	11/04/2020 17:54:50	6b24b0d8..." -- job is marked as successful, no further action.
-Note: Job has reached its maximum number of attempts to run (1) -- job is marked as fail, no further action.
-Hint: you might either remove old deployments or increase the 'RetryCount'.
-Note: Job has reached its maximum number of attempts to run (1) -- job is marked as fail, no further action.
-Hint: you might either remove old deployments or increase the 'RetryCount'.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half	11/05/2020 07:48:00	a7a5b89d..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half	11/05/2020 07:48:08	cdaec6a9..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half	11/05/2020 07:48:13	7ad1070e..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half	11/05/2020 07:48:23	89d5012e..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half	11/05/2020 07:48:31	16879f45..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half	11/05/2020 07:48:40	aa68fbd2..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half	11/05/2020 07:48:50	a39061f2..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half	11/05/2020 07:49:07	2cdc6fe9..." -- job is marked as successful, no further action.
+Deploying job ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half ... 
+Submitting job with the following database info: 
+Primary: \\dc1\scratch\kummer\bosss_db
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kummer\cluster\ConfinedCylinder_ConvergenceStudy_04nov20-RheologySolver2020Nov06_131557
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half	11/05/2020 07:49:21	5ea47c3b..." -- job is marked as successful, no further action.
 
 ==============
 LastError
@@ -415,7 +421,7 @@ List of 32 instances of KeyValuePair{String,Job} {
   9: [ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   10: [ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   11: [ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
-  12: [ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  12: [ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   13: [ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   14: [ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   15: [ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
@@ -430,26 +436,22 @@ List of 32 instances of KeyValuePair{String,Job} {
   24: [ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   25: [ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   26: [ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
-  27: [ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  27: [ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   28: [ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   29: [ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
-  30: [ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
-  31: [ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  30: [ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  31: [ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
 }
 ==============
-var suspects = WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(job => job.Status != JobStatus.FinishedSuccessful).ToArray();
+var suspects = WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(job => job.Status == JobStatus.FailedOrCanceled).ToArray();
 **************
 ==============
 suspects;
 **************
-List of 4 instances of Job {
-  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  1: ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  2: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  3: ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+List of 0 instances of Job {
 }
 ==============
-//suspects[1].Stdout;
+//suspects[0].DeleteOldDeploymentsAndSessions();
 **************
 ==============
 **************
@@ -459,18 +461,8 @@ var suspects = WorkflowMgm.AllJobs.Select(kv => kv.Value)
                   || job.LatestSession.Tags.Contains(SessionInfo.SOLVER_ERROR)).ToArray();
 suspects;
 **************
-List of 11 instances of Job {
-  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  1: ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  2: ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  3: ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  4: ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  5: ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  6: ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  7: ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  8: ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  9: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
-  10: ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+List of 1 instances of Job {
+  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
 }
 ==============
 **************
@@ -479,27 +471,31 @@ List of 11 instances of Job {
 //    j.DeleteOldDeploymentsAndSessions(); 
 //}
 **************
-Session ef708732-187c-4564-9438-af2dc01c02f7 deleted.
-Session e9dd4cf7-8bf4-4e4e-8d1f-ba1965ef396b deleted.
-Session 648c003e-c4ca-448a-9db4-67ac19d95674 deleted.
-Session be2943f1-235f-4038-a88b-c3e857f7485c deleted.
-Session fa39b635-61eb-42a7-bf94-51c55e3bfb50 deleted.
-Session 04e21995-1c9a-4d50-893a-b92a083530c2 deleted.
-Session c78e744c-d67a-4ad8-95ff-b90b4082642b deleted.
-Session 865d51f2-1104-45ab-b7ee-9247f6f0b94b deleted.
-Session 6b24b0d8-d65c-4343-a4b9-fecdcf65f49b deleted.
-Session 24d45b1d-189a-43d6-9c67-e766d3eef226 deleted.
-Session 8463f428-4c0c-47a7-8208-628b6fb83822 deleted.
-
 ==============
 **************
 ==============
+var active = WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(job => job.Status == JobStatus.InProgress).ToArray();
 **************
 ==============
+active
+**************
+List of 1 instances of Job {
+  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+}
+==============
+//active[1].LatestDeployment.DeploymentDirectory;
 **************
 ==============
+//active[1].Stdout;
 **************
 ==============
+//var j = WorkflowMgm.AllJobs.Where(kv => kv.Key.ToLower().Contains("p4_meshno3_wi0_")).Single().Value;
+**************
+==============
+//j;
+**************
+==============
+//j.Stderr;
 **************
 ==============
 **************
