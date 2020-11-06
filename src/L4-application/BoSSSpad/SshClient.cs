@@ -66,8 +66,8 @@ namespace BoSSS.Application.BoSSSpad
             }
             std = String.Join("\n", stdout);
             err = String.Join("\n", stderr);
-            Console.WriteLine(std);
-            Console.WriteLine(err);
+            //Console.WriteLine(std);
+            //Console.WriteLine(err);
         }
 
         private bool TestConnection() {

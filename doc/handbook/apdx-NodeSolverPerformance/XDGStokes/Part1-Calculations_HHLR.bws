@@ -93,7 +93,7 @@ List of 3 instances of IGridInfo {
   2: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 32 };
+int[] Resolutions_3D = new int[] { 8,16,32 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -154,13 +154,17 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
+Found Grid: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+Found Grid: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
 Found Grid: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+List of 3 instances of IGridInfo {
+  0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
 }
 ==============
 **************
@@ -184,6 +188,14 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping ;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Application.XNSE_Solver' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Solution.LevelSetTools' appeared previously in this namespace
+(3,1): warning CS0105: The using directive for `BoSSS.Solution.AdvancedSolvers' appeared previously in this namespace
+(4,1): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
+(5,1): warning CS0105: The using directive for `BoSSS.Solution.Timestepping' appeared previously in this namespace
+(6,1): warning CS0105: The using directive for `BoSSS.Solution.XdgTimestepping' appeared previously in this namespace
+No. of errors|warnings: 0|6.
+
 ==============
 Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int p, IGridInfo grid, int DOF){
     
@@ -315,7 +327,7 @@ int[] PolyDegS = new int[] {2 ,3, 5};
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    //LinearSolverCode.classic_pardiso,
+    LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
     //LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
@@ -333,8 +345,10 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+List of 3 instances of IGridInfo {
+  0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
@@ -345,7 +359,8 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
 (1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-No. of errors|warnings: 0|1.
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
+No. of errors|warnings: 0|2.
 
 ==============
 List<XNSE_Control> controls = new List<XNSE_Control>();
@@ -370,13 +385,25 @@ foreach(IGridInfo grd in t_grids) {
 }
 }
 **************
+setting up: J512_p2_classic_pardiso
+setting up: J4096_p2_classic_pardiso
+setting up: J32768_p2_classic_pardiso
+setting up: J512_p3_classic_pardiso
+setting up: J4096_p3_classic_pardiso
+setting up: J32768_p3_classic_pardiso
+setting up: J512_p5_classic_pardiso
+setting up: J4096_p5_classic_pardiso
+setting up: J512_p2_exp_Kcycle_schwarz
+setting up: J4096_p2_exp_Kcycle_schwarz
 setting up: J32768_p2_exp_Kcycle_schwarz
+setting up: J512_p3_exp_Kcycle_schwarz
+setting up: J4096_p3_exp_Kcycle_schwarz
 setting up: J32768_p3_exp_Kcycle_schwarz
+setting up: J512_p5_exp_Kcycle_schwarz
+setting up: J4096_p5_exp_Kcycle_schwarz
 
 ==============
 **************
-List of 0 instances of KeyValuePair{String,Job} {
-}
 ==============
 **************
 ==============
@@ -827,6 +854,8 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
 **************
 ==============
 **************
