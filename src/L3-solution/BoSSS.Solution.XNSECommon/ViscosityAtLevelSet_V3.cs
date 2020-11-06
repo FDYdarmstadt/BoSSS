@@ -93,6 +93,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             if (hCutCellMin <= 1.0e-10 * hCellMin)
                 // very small cell -- clippling
                 hCutCellMin = hCellMin;
+            double scaledPenalty = (penalty / hCutCellMin);
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
+
 
             Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(uB.Length == this.ArgumentOrdering.Count);
@@ -117,7 +121,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             if(!staticInt) {
                 Ret -= (wA * muA * Grad_uA_xN[component] + wB * muB * Grad_uB_xN[component]) * (vA - vB);                           // consistency term
                 Ret -= (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
-                Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
+                Ret += scaledPenalty * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
                 // Transpose Term
                 for(int i = 0; i < D; i++) {
                     Ret -= (wA * muA * Grad_uA[i, component] + wB * muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
@@ -152,7 +156,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
                 Ret += (wB * muB * Grad_uB_xN[component]) * (vB);                           // consistency term
                 Ret += (wB * muB * Grad_vB_xN) * (uB[component]);     // symmetry term
-                Ret += (penalty / hCutCellMin) * (0 - uB[component]) * (0 - vB) * muB; // penalty term
+                Ret += scaledPenalty * (0 - uB[component]) * (0 - vB) * muB; // penalty term
                 // Transpose Term
                 for(int d = 0; d < D; d++) {
                     Ret -= (wA * muA * Grad_uA[d, component]) * (vA) * N[d];  // consistency term
@@ -200,48 +204,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
         
-
-        //public static Stopwatch Optimized = new Stopwatch();
-        //public static Stopwatch Classic = new Stopwatch();
-
-
-
-       // public override void EdgeForm(LevSetIntParams inp, MultidimensionalArray Koeff_UxV, MultidimensionalArray Koeff_NablaUxV, MultidimensionalArray Koeff_UxNablaV, MultidimensionalArray Koeff_NablaUxNablaV) {
-            //Optimized.Start();
-            //this.EdgeForm_Perf(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-            //base.EdgeForm(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-            //Optimized.Stop();
-            
-            /*
-            {
-                var chk_Koeff_UxV = Koeff_UxV.CloneAs();
-                var chk_Koeff_NablaUxV = Koeff_NablaUxV.CloneAs();
-                var chk_Koeff_UxNablaV = Koeff_UxNablaV.CloneAs();
-                var chk_Koeff_NablaUxNablaV = Koeff_NablaUxNablaV.CloneAs();
-                chk_Koeff_UxV.Clear();
-                chk_Koeff_UxNablaV.Clear();
-                chk_Koeff_NablaUxV.Clear();
-                chk_Koeff_NablaUxNablaV.Clear();
-
-                Classic.Start();
-                base.EdgeForm(inp, chk_Koeff_UxV, chk_Koeff_NablaUxV, chk_Koeff_UxNablaV, chk_Koeff_NablaUxNablaV);
-                Classic.Stop();
-
-                chk_Koeff_NablaUxNablaV.Acc(-1.0, Koeff_NablaUxNablaV);
-                chk_Koeff_UxNablaV.Acc(-1.0, Koeff_UxNablaV);
-                chk_Koeff_NablaUxV.Acc(-1.0, Koeff_NablaUxV);
-                chk_Koeff_UxV.Acc(-1.0, Koeff_UxV);
-
-                if (chk_Koeff_NablaUxNablaV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-                if (chk_Koeff_UxNablaV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-                if (chk_Koeff_NablaUxV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-                if (chk_Koeff_UxV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-            } // */
-        //}
 
 
 

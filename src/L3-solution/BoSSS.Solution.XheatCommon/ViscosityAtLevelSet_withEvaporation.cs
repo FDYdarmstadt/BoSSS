@@ -75,9 +75,11 @@ namespace BoSSS.Solution.XheatCommon {
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
+                // very small cell -- clipping
                 hCutCellMin = hCellMin;
-
+            double scaledPenalty = (penalty / hCutCellMin);
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
 
             double M = ComputeEvaporationMass(inp.Parameters_IN, inp.Parameters_OUT, N, inp.jCellIn);
             if (M == 0.0)
@@ -90,7 +92,7 @@ namespace BoSSS.Solution.XheatCommon {
             double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
             //Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
             Ret += 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[component];     // symmetry term
-            Ret -= (penalty / hCutCellMin) * M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[component] * (vA - vB) * muMax; // penalty term
+            Ret -= scaledPenalty * M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[component] * (vA - vB) * muMax; // penalty term
                                                                                                                // Transpose Term
             for (int i = 0; i < m_D; i++) {
                 //Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term

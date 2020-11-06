@@ -721,6 +721,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime);
 
+            m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+            m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+
 
             // assemble system
             // ---------------
@@ -917,7 +920,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             //BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
             base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
-
+            m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAff, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
             k.SetV(OpAff);
             //OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
         }

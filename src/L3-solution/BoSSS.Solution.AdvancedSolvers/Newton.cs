@@ -544,15 +544,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(solver is IProgrammableTermination pt) {
                     // iterative solver with programmable termination is used - so use it
 
-                    //double f0_L2 = CurRes.MPI_L2Norm();
-                    //double thresh = f0_L2 * 1e-5;
                     double thresh = norm_CurRes * 1e-5;
                     Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                     pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
                         return (R_l2 > thresh) && (iter < 100);
                     };
-
-
                 }
 
                 solver.Solve(step, CurRes);

@@ -1214,6 +1214,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
+                if(Linearization) {
+                    m_LsTrk.CheckMatrixZeroInEmptyCutCells(m_Stack_OpMatrix[0], CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+                    m_LsTrk.CheckVectorZeroInEmptyCutCells(m_Stack_OpAffine[0], CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+                } else {
+                    m_LsTrk.CheckVectorZeroInEmptyCutCells(m_Stack_OpAffine[0], CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+                }
+
 
                 // assemble system
                 // ---------------
@@ -1321,32 +1328,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Affine.AccV(1.0 / dt, new CoordinateVector(CurrentStateMapping));
                     }
                 }
-
-                /*
-#if DEBUG
-                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
-                    // compare "private" and "official" mass matrix stack
-                    // (private may be removed soon)
-
-                    for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
-                        var MM = m_Stack_MassMatrix[i];
-                        if (MM == null)
-                            continue;
-                        if (i >= m_LsTrk.PopulatedHistoryLength)
-                            continue;
-                        var MMcomp = new BlockMsrMatrix(CurrentStateMapping);
-                        m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1 - i)
-                            .MassMatrixFactory
-                            .AccMassMatrix(MMcomp, CurrentStateMapping, _alpha: Config_MassScale);
-                        var sollNull = MMcomp.CloneAs();
-                        sollNull.Acc(-1.0, MM);
-                        double normMMcomp = sollNull.InfNorm();
-                        Debug.Assert(normMMcomp == 0.0);
-                    }
-                }
-
-#endif
-*/
 
                 // perform agglomeration
                 // ---------------------

@@ -422,17 +422,15 @@ namespace BoSSS.Application.Rheology {
             */
             // linear solver config 
             // ====================
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
 
-            /*
             C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.TargetBlockSize = 10000;//100000;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
             C.LinearSolver.NoOfMultigridLevels = 4;
-            */
-
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+           
 
             // nonlinear solver config
             // =======================
@@ -441,9 +439,6 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-5;
 
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady; //Transient;//   Steady;
-            C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
 
             // more solver options
             // ===================
