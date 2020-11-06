@@ -236,7 +236,7 @@ static class AddCols {
     // ugly hack, works only for V-cycle
     static public object NoIter(ISessionInfo SI){
         var mcr = SI.GetProfiling()[0];
-        var ndS = mcr.FindChildren("BoSSS.Solution.AdvancedSolvers.SparseSolver.Solve");
+        var ndS = mcr.FindChildren("BoSSS.Solution.AdvancedSolvers.DirectSolver.Solve");
         var nd  = ndS.ElementAt(0);
         return nd.CallCount;
     }

@@ -1174,8 +1174,11 @@ namespace BoSSS.Application.BoSSSpad {
                 // ================
 
                 var stat = GetStatus(true);
-                if(stat != JobStatus.Unknown)
+                if(stat != JobStatus.Unknown) {
+                    Console.WriteLine("No submission, because job status is: "+stat.ToString());
                     return;
+                }
+                    
 
                 /*
                 // ================

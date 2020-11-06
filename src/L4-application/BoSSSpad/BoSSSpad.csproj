@@ -94,8 +94,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Renci.SshNet">
-      <HintPath>..\..\..\libs\Renci.SshNet-2016.1.0-beta1\Renci.SshNet.dll</HintPath>
+    <Reference Include="Renci.SshNet, Version=2016.1.0.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\Renci.SshNet-2020.0.0-beta1\Renci.SshNet.dll</HintPath>
+    </Reference>
+    <Reference Include="SshNet.Security.Cryptography">
+      <HintPath>..\..\..\libs\Renci.SshNet-2020.0.0-beta1\SshNet.Security.Cryptography.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -114,6 +118,7 @@
     <Compile Include="AppControlExtensions.cs" />
     <Compile Include="BatchProcessorConfig.cs" />
     <Compile Include="BoSSSpadGnuplotExtensions.cs" />
+    <Compile Include="SshClient.cs" />
     <Compile Include="ResolvableAssembly.cs" />
     <Compile Include="autonomuousPlotter.cs" />
     <Compile Include="BoSSSpadMain.cs" />
@@ -323,6 +328,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

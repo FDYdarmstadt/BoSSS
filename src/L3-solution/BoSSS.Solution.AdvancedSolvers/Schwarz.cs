@@ -843,6 +843,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //    }
         //}
 
+        public bool OnlyLowOrderSolve;
+
         private double[] Xdummy, Resdummy;
 
         /// <summary>
@@ -949,10 +951,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // hi order smoother
                                 SolveHiSystem(iPart);
 
-                                // re-evaluate residual
-                                ReEvaluateRes(iPart, bi);
-                                // hi order smoother
-                                SolveLoSystem(iPart);
+                                //// re-evaluate residual
+                                //ReEvaluateRes(iPart, bi);
+                                //// hi order smoother
+                                //SolveLoSystem(iPart);
 
                                 xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
 
@@ -978,7 +980,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         XExchange.TransceiveStartImReturn();
                         XExchange.TransceiveFinish(1.0);
 
-                        if (iIter < FixedNoOfIterations - 1)
+                        if (iIter < FixedNoOfIterations - 1 && XExchange.Vector_Ext.Length>0)
                             XExchange.Vector_Ext.ClearEntries();
 
                         var SolScale = this.SolutionScaling;

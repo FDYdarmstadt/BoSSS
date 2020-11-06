@@ -113,6 +113,10 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_Kcycle_schwarz_4Rheology = 52,
 
+        /// <summary>
+        /// 
+        /// </summary>
+        exp_another_Kcycle = 53,
 
 
         selfmade = 999,

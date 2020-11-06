@@ -29,22 +29,22 @@ ExQueque.AllowedDatabases;
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-string WFlowName = "Xdg_Stokes_Schwarz-Schur_scaling_Sayex1";
+string WFlowName = "Xdg_Stokes_Schwarz_1TS";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_Schwarz-Schur_scaling_Sayex1'.
+Project name is set to 'Xdg_Stokes_Schwarz_1TS'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
-string dirname = "DB_XdgStokes_Schurprec";
+string dirname = "DB_XdgStokes_trans";
 string linpath = @"/work/scratch/jw52xeqa/"+dirname;
 string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes_Schurprec'.
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes_trans'.
 
 ==============
 **************
@@ -88,9 +88,9 @@ static class Utils {
 tempDB.Grids;
 **************
 List of 3 instances of IGridInfo {
-  0: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
-  1: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
-  2: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
+  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 int[] Resolutions_3D = new int[] { 8,16,32 };
@@ -154,17 +154,17 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
-Found Grid: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
-Found Grid: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+Found Grid: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
 
 ==============
 grids;
 **************
 List of 3 instances of IGridInfo {
-  0: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
-  1: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
-  2: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
+  0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
 }
 ==============
 **************
@@ -194,10 +194,12 @@ Func<LinearSolverCode, int, IGridInfo, int, int,int,XNSE_Control> GenerateCObj =
     // ProjectName
     // ============
     
-    int J          = grid.NumberOfCells;
-    int SBlocksize = (int)(J*DOF/(NoSblocks-1));
-    
-    string caseName = string.Format("J{0}_p{1}_{2}_Sblocks{3}_pLow{4}", J, p, solver,NoSblocks,pLow);
+    int J           = grid.NumberOfCells;
+    int SBlocksize  = (int)(J*DOF/(NoSblocks-1));
+    string caseName = string.Format("J{0}_p{1}_{2}", J, p, solver);
+
+    if(solver==LinearSolverCode.exp_Kcycle_schwarz) caseName += string.Format("_Sblocks{0}_pLow{1}", NoSblocks,pLow);
+
     Console.WriteLine("setting up: " + caseName);
     
     XNSE_Control C       = new XNSE_Control();
@@ -296,7 +298,8 @@ Func<LinearSolverCode, int, IGridInfo, int, int,int,XNSE_Control> GenerateCObj =
     C.Timestepper_BDFinit          = TimeStepperInit.SingleInit;
     C.Timestepper_LevelSetHandling = LevelSetHandling.None;
     C.Option_LevelSetEvolution     = LevelSetEvolution.None;
-    C.TimesteppingMode             = AppControl._TimesteppingMode.Steady;
+    C.TimesteppingMode             = AppControl._TimesteppingMode.Transient;
+    C.dtFixed                      = 1E-4;
             
     return C;
     }
@@ -318,12 +321,12 @@ int[] PolyDegS = new int[] {2};
 **************
 ==============
 //int[] NoSblocks = new int[]{8};
-int[] NoSblocks = new int[]{2,4};
+int[] NoSblocks = new int[]{4};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso,
+    //LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
     //LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
@@ -342,9 +345,9 @@ IGridInfo[] t_grids = grids;
 t_grids;
 **************
 List of 3 instances of IGridInfo {
-  0: { Guid = 6f4359e3-41c5-4e74-8bff-21db30e571f2; Name = Xdg_Stokes_Schwarz-Schur_scaling_J512; Cell Count = 512; Dim = 3 }
-  1: { Guid = a25896ad-10d8-47ca-a4f6-479b8bd6dc78; Name = Xdg_Stokes_Schwarz-Schur_scaling_J4096; Cell Count = 4096; Dim = 3 }
-  2: { Guid = bc53e245-dc80-4a91-b8d5-c4e15db13f0e; Name = Xdg_Stokes_Schwarz-Schur_scaling_J32768; Cell Count = 32768; Dim = 3 }
+  0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
@@ -355,7 +358,8 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
 (1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-No. of errors|warnings: 0|1.
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
+No. of errors|warnings: 0|2.
 
 ==============
 List<XNSE_Control> controls = new List<XNSE_Control>();
@@ -366,7 +370,7 @@ foreach(LinearSolverCode solver_name in solver_nameS) {
 foreach(int k in PolyDegS) {
 foreach(IGridInfo grd in t_grids) {
 foreach(int nSB in NoSblocks){
-for(int pLow=0;pLow<=k;pLow++){
+for(int pLow=1;pLow<=k;pLow++){
 
     int Np_V = Utils.Np(k);
     int Np_p = Utils.Np(k-1);
@@ -384,17 +388,11 @@ for(int pLow=0;pLow<=k;pLow++){
 }
 }
 **************
-setting up: J512_p2_classic_pardiso_Sblocks2_pLow2
-setting up: J512_p2_classic_pardiso_Sblocks4_pLow2
-setting up: J4096_p2_classic_pardiso_Sblocks2_pLow2
-setting up: J4096_p2_classic_pardiso_Sblocks4_pLow2
-setting up: J32768_p2_classic_pardiso_Sblocks2_pLow2
-setting up: J32768_p2_classic_pardiso_Sblocks4_pLow2
-setting up: J512_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+setting up: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
 setting up: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
 setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-setting up: J32768_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+setting up: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
 setting up: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
 
 ==============
@@ -443,114 +441,60 @@ foreach(var ctrl in controls) {
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J512_p2_classic_pardiso_Sblocks2_pLow2
+ Submitting: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140513
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235506
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16074379
- Submitting: J512_p2_classic_pardiso_Sblocks4_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140517
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16074380
- Submitting: J4096_p2_classic_pardiso_Sblocks2_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140520
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16074381
- Submitting: J4096_p2_classic_pardiso_Sblocks4_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140524
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16074382
- Submitting: J32768_p2_classic_pardiso_Sblocks2_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140527
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16074383
- Submitting: J32768_p2_classic_pardiso_Sblocks4_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140530
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16074384
- Submitting: J512_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140533
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16074385
+16154698
  Submitting: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140536
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235510
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16074386
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+16154699
+ Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140539
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235513
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16074387
+16154700
  Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140542
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235516
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16074388
- Submitting: J32768_p2_exp_Kcycle_schwarz_Sblocks2_pLow2
+16154701
+ Submitting: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140545
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235519
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16074389
+16154702
  Submitting: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-Schur_scaling_Sayex1-XNSE_Solver2020Oct23_140548
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235522
 copied 32 files.
    written file: control.obj
 deployment finished.
 
-16074390
+16154703
 
 ==============
 **************
@@ -933,6 +877,16 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

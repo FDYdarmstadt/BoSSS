@@ -1638,8 +1638,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.Config_MultigridOperator, 
                         dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
 
-
-
                     using (var tr = new FuncTrace()) {
                         // init linear solver
 
@@ -1912,6 +1910,60 @@ namespace BoSSS.Solution.XdgTimestepping {
             return CO;
         }
 
+        public void ExecuteWaterfallAnalysis(string path) {
+            BlockMsrMatrix System, MaMa;
+            double[] RHS;
+            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
+            RHS.ScaleV(-1);
+
+            // update the multigrid operator
+            MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                System, MaMa,
+                this.Config_MultigridOperator,
+                opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
+            XdgSolverFactory.GetLinearConfig.MaxSolverIterations = 300;
+            ISolverSmootherTemplate linearSolver;
+            NonlinearSolver NonlinearSolver;
+            GetSolver(out NonlinearSolver, out linearSolver);
+            var plot = ConvergenceObserver.WaterfallAnalysis((ISolverWithCallback)linearSolver, mgOperator, MaMa);
+            plot.PlotInteractive();
+        }
+
+        public void ExecuteRandom(out int Iter) {
+            // Get the configured solvers
+            XdgSolverFactory.GetLinearConfig.MaxSolverIterations = int.MaxValue;
+            ISolverSmootherTemplate linearSolver;
+            NonlinearSolver NonlinearSolver;
+            GetSolver(out NonlinearSolver, out linearSolver);
+
+            BlockMsrMatrix System, MaMa;
+            double[] RHS;
+            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
+            RHS.ScaleV(-1);
+
+            // update the multigrid operator
+            MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                System, MaMa,
+                this.Config_MultigridOperator,
+                opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
+
+            int L = RHS.Length;
+            var x0 = new double[L];
+
+            // use a random init for intial guess.
+            Random rnd = new Random();
+            RHS = new double[L];
+            for (int l = 0; l < L; l++) {
+                RHS[l] = rnd.NextDouble();
+            }
+
+            // init linear solver
+            linearSolver.Init(mgOperator);
+
+            // try to solve the saddle-point system.
+            mgOperator.UseSolver(linearSolver, x0, RHS);
+            Iter = linearSolver.ThisLevelIterations;
+        }
 
         public event Action<int, double[], double[], MultigridOperator> CustomIterationCallback;
 

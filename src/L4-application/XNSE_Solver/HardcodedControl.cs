@@ -3837,7 +3837,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem =16, string _DbPath = null, int D = 3) {
+        public static XNSE_Control StokesSphere(int p = 4, int kelem =16, string _DbPath = null, int D = 2) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -4004,7 +4004,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.ComputeEnergyProperties = false;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.000001;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
@@ -4015,7 +4015,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             C.UseSchurBlockPrec = true;
 
-            C.LinearSolver.NoOfMultigridLevels = 2;
+            C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.TargetBlockSize = 1000;
             C.LinearSolver.MaxKrylovDim = 1000;
@@ -4049,6 +4049,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            //C.dtFixed = 1E-4;
 
 
             #endregion

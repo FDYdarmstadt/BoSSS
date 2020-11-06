@@ -245,9 +245,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
                 var PlotRow = WaterfallData[iIter];
-                var XAxis = PlotRow.Length.ForLoop(i => i + 1.0);
+                //var XAxis = PlotRow.Length.ForLoop(i => i + 1.0);
 
-                var g = new Plot2Ddata.XYvalues("iter"  + iIter, XAxis, PlotRow);
+                var g = new Plot2Ddata.XYvalues("iter"  + iIter, xCoords.ToArray(), PlotRow);
                 
                 Ret.AddDataGroup(g);
                     

@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//#define TEST
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -1242,10 +1244,18 @@ namespace BoSSS.Application.XNSE_Solver {
                 Postprocessing(TimestepInt, phystime, dt, TimestepNo);
 #endif
 #if TEST
-                // Reference Solver for spectral-Analysis ...
-                m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
+
+                //m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
                 //WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
-                OperatorAnalysis();
+                //m_BDF_Timestepper.ExecuteWaterfallAnalysis(Directory.GetCurrentDirectory()+@"\waterfall");
+                //int Iter=-1;
+                //m_BDF_Timestepper.ExecuteRandom(out Iter);
+                //base.QueryHandler.ValueQuery("NoIter", Iter, false);
+                var dict = OperatorAnalysis();
+                foreach (KeyValuePair<string, double> kv in dict) {
+                    Console.WriteLine(kv.Key + " : " + kv.Value);
+                    base.QueryHandler.ValueQuery("OpAnalysis:"+kv.Key, kv.Value, false);
+                }
 #endif
                 // ================
                 // Good bye
@@ -1902,6 +1912,5 @@ namespace BoSSS.Application.XNSE_Solver {
         public override IDictionary<string, double> OperatorAnalysis() {
             return this.m_BDF_Timestepper.OperatorAnalysis();
         }
-
     }
 }
