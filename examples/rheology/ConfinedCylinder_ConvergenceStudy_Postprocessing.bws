@@ -4,87 +4,19 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
+Opening existing database '\\dc1\scratch\kummer\bosss_db'.
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
-  0: { Session Count = 40; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\Channel_ConvergenceStudy_Wi=0.0 }
-  1: { Session Count = 61; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0 }
-  2: { Session Count = 45; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.5 }
-  3: { Session Count = 59; Grid Count = 11; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag }
-  4: { Session Count = 45; Grid Count = 6; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady }
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = P:\bosss_db2 }
+  1: { Session Count = 65; Grid Count = 5; Path = \\dc1\scratch\kummer\bosss_db }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
-databases.Pick(1).Sessions
+WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_04nov20");
 **************
-List of 61 instances of ISessionInfo {
-  0: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half_levelPMG_2	10/09/2019 11:41:50	8199d2cf...
-  1: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half_levelPMG_2	10/09/2019 11:41:20	f88ec6d5...
-  2: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half_levelPMG_2	10/09/2019 11:40:51	8a198ce1...
-  3: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half_levelPMG_2	10/09/2019 11:40:10	64d662ab...
-  4: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half_levelPMG	10/09/2019 11:33:54	3b73acfc...
-  5: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half_levelPMG	10/09/2019 11:33:14	68503dc7...
-  6: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.0_half	10/08/2019 15:32:39	982f97be...
-  7: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half	10/08/2019 15:28:28	61d9e8e7...
-  8: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half	10/08/2019 15:27:18	ebad71a6...
-  9: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half	10/08/2019 15:26:39	782fa67c...
-  10: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half	10/08/2019 15:20:18	73a6df90...
-  11: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half	10/08/2019 15:18:48	561d782c...
-  12: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half	10/08/2019 15:18:08	1409fe33...
-  13: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half	10/08/2019 15:17:38	6f34183d...
-  14: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/08/2019 15:15:28	e52053ab...
-  15: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/08/2019 15:14:38	7db059c1...
-  16: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/08/2019 15:13:58	65b4c8f2...
-  17: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/08/2019 15:13:28	dca6eb66...
-  18: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/08/2019 15:12:18	a8010bc1...
-  19: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/08/2019 15:11:38	6b1cc2d2...
-  20: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/08/2019 15:11:08	5117b7cc...
-  21: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/08/2019 15:10:19	57f21990...
-  22: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half*	10/08/2019 14:42:12	10eadcee...
-  23: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half	10/08/2019 14:41:31	c04ad404...
-  24: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half	10/08/2019 14:40:52	3ac0cef7...
-  25: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half*	10/08/2019 11:57:58	5007c38d...
-  26: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half	10/08/2019 11:56:38	88ab91ca...
-  27: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half	10/08/2019 11:55:58	bd6528ac...
-  28: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half	10/08/2019 11:55:25	7fe53084...
-  29: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/08/2019 11:52:14	4850a747...
-  30: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/08/2019 11:51:13	0b61893d...
-  31: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/08/2019 11:50:42	32f08a51...
-  32: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/08/2019 11:50:24	4baaf0ce...
-  33: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/08/2019 11:48:47	e7390e13...
-  34: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/08/2019 11:48:10	32183fd0...
-  35: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/08/2019 11:47:47	d5200770...
-  36: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/08/2019 11:47:29	58d7acad...
-  37: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/07/2019 16:27:16	7313cbc6...
-  38: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/07/2019 16:26:26	f2875652...
-  39: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/07/2019 16:25:56	2979e42b...
-  40: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/07/2019 16:25:26	1d22e1ae...
-  41: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/07/2019 16:24:16	2da9103c...
-  42: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/07/2019 16:23:36	57e19fd8...
-  43: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/07/2019 16:23:05	7a184db8...
-  44: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/07/2019 16:22:29	a18999ed...
-  45: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.0_half	10/01/2019 14:05:16	c473726f...
-  46: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half	10/01/2019 13:56:21	1b604bf4...
-  47: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half	10/01/2019 13:58:59	e11d6e11...
-  48: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half	10/01/2019 13:57:34	b591172c...
-  49: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half	10/01/2019 13:57:01	71866c9c...
-  50: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half	10/01/2019 13:54:59	33f66b88...
-  51: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/01/2019 13:52:54	c04b3d92...
-  52: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half	10/01/2019 13:54:14	b4921067...
-  53: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half	10/01/2019 13:53:48	99662822...
-  54: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/01/2019 13:52:44	6c93fb08...
-  55: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/01/2019 13:51:22	3b898027...
-  56: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/01/2019 13:52:12	61f600fd...
-  57: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/01/2019 13:51:51	cb96a06c...
-  58: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/01/2019 13:51:14	efecdf9a...
-  59: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/01/2019 13:49:37	f3ba6cd6...
-  60: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/01/2019 13:49:30	ab4cb68b...
-}
-==============
-WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_Wi=0.0_6");
-**************
-Project name is set to 'ConfinedCylinder_ConvergenceStudy_Wi=0.0_6'.
+Project name is set to 'ConfinedCylinder_ConvergenceStudy_04nov20'.
 
 ==============
 //####################//
@@ -100,7 +32,9 @@ foreach (int p in pOrder){ // loop over polynomial degrees
     // extract sessions with DG degree pDeg
     var pDegSessions = WorkflowMgm.Sessions.Where(
     // function which is true on all sessions we are interested in:
-    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:VelocityX"]) == p).ToArray();
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:VelocityX"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
 
     // now , create a plot from the selected sessions :
     // (we could also do other things )
@@ -139,20 +73,20 @@ foreach (var p in ExpPlotS_velX.Skip (1)) { // loop over other ( skip 0-th entry
 ExpPlot_velX.Regression();
 **************
 List of 4 instances of KeyValuePair{String,Double} {
-  0: [$k = 1$, -1.99376455174553]
-  1: [$k = 2$, -2.09995742702845]
-  2: [$k = 3$, -1.6753516354969]
-  3: [$k = 4$, -1.65073018526717]
+  0: [$k = 1$, -2.24919348876738]
+  1: [$k = 2$, -2.51120992879201]
+  2: [$k = 3$, -3.5536666808446]
+  3: [$k = 4$, -4.69321141853912]
 }
 ==============
 var velX = ExpPlot_velX.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
-velX.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\velX_Convergence.tex");
+//velX.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\velX_Convergence.tex");
 ExpPlot_velX.PlotNow();
 
 **************
-Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",16"Left reverse 
-Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",16"Left reverse 
 System.Drawing.Bitmap
 ==============
@@ -168,7 +102,9 @@ foreach (int p in pOrder){ // loop over polynomial degrees
     // extract sessions with DG degree pDeg
     var pDegSessions = WorkflowMgm.Sessions.Where(
     // function which is true on all sessions we are interested in:
-    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:VelocityY"]) == p).ToArray();
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:VelocityY"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
 
     // now , create a plot from the selected sessions :
     // (we could also do other things )
@@ -209,7 +145,7 @@ List of 2 instances of KeyValuePair{String,Double} {
 }
 ==============
 var velY = ExpPlot_velY.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
-velY.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\velY_Convergence.tex");
+//velY.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\velY_Convergence.tex");
 ExpPlot_velY.PlotNow();
 //ExpPlot_vely.SavePgfplotsFile();
 **************
@@ -232,7 +168,9 @@ foreach (int p in pOrder2){ // loop over polynomial degrees
     // extract sessions with DG degree pDeg
     var pDegSessions = WorkflowMgm.Sessions.Where(
     // function which is true on all sessions we are interested in:
-    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:Pressure"]) == p).ToArray();
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:Pressure"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
 
     // now , create a plot from the selected sessions :
     // (we could also do other things )
@@ -275,7 +213,7 @@ List of 4 instances of KeyValuePair{String,Double} {
 }
 ==============
 var pres = ExpPlot_pres.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
-pres.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\pres_Convergence.tex");
+//pres.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\pres_Convergence.tex");
 ExpPlot_pres.PlotNow();
 **************
 Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
@@ -296,7 +234,9 @@ foreach (int p in pOrder){ // loop over polynomial degrees
     // extract sessions with DG degree pDeg
     var pDegSessions = WorkflowMgm.Sessions.Where(
     // function which is true on all sessions we are interested in:
-    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressXX"]) == p).ToArray();
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressXX"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
 
     // now , create a plot from the selected sessions :
     // (we could also do other things )
@@ -342,7 +282,7 @@ List of 4 instances of KeyValuePair{String,Double} {
 }
 ==============
 var strXX = ExpPlot_strXX.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
-strXX.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\strXX_Convergence.tex");
+//strXX.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\strXX_Convergence.tex");
 ExpPlot_strXX.PlotNow();
 **************
 Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
@@ -363,7 +303,9 @@ foreach (int p in pOrder){ // loop over polynomial degrees
     // extract sessions with DG degree pDeg
     var pDegSessions = WorkflowMgm.Sessions.Where(
     // function which is true on all sessions we are interested in:
-    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressXY"]) == p).ToArray();
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressXY"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
 
     // now , create a plot from the selected sessions :
     // (we could also do other things )
@@ -414,7 +356,7 @@ List of 4 instances of KeyValuePair{String,Double} {
 }
 ==============
 var strXY = ExpPlot_strXY.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
-strXY.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\strXY_Convergence.tex");
+//strXY.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\strXY_Convergence.tex");
 ExpPlot_strXY.PlotNow();
 **************
 Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
@@ -486,6 +428,8 @@ set key font ",16"Left reverse
 Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",16"Left reverse 
 System.Drawing.Bitmap
+==============
+**************
 ==============
 **************
 ==============

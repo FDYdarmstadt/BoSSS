@@ -8,28 +8,19 @@ Opening existing database '\\dc1\scratch\kummer\bosss_db'.
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
   0: { Session Count = 1; Grid Count = 1; Path = P:\bosss_db2 }
-  1: { Session Count = 33; Grid Count = 5; Path = \\dc1\scratch\kummer\bosss_db }
+  1: { Session Count = 64; Grid Count = 5; Path = \\dc1\scratch\kummer\bosss_db }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
-LastError
-**************
-==============
 using BoSSS.Application.Rheology;
 **************
 ==============
+WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_04nov20");
 **************
-==============
-WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_03nov20_b");
-**************
-Project name is set to 'ConfinedCylinder_ConvergenceStudy_03nov20_b'.
+Project name is set to 'ConfinedCylinder_ConvergenceStudy_04nov20'.
 
-==============
-//var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0");
-//var myDb = CreateTempDatabase();
-**************
 ==============
 ExecutionQueues;
 **************
@@ -46,16 +37,6 @@ var myDb = myBatch.AllowedDatabases.First();
 **************
 ==============
 WorkflowMgm.DefaultDatabase = myDb;
-**************
-==============
-//myDb.Sessions;
-**************
-==============
-//WorkflowMgm.Sessions;
-**************
-==============
-**************
-==============
 **************
 ==============
 // ======================
@@ -251,6 +232,7 @@ foreach(var grd in grids) {
     C.NonLinearSolver.SolverCode           = NonLinearSolverCode.Newton;
     //C.LinearSolver.SolverCode              = LinearSolverCode.exp_OrthoS_pMG;//classic_pardiso;//_mumps;
     //C.useJacobianForOperatorMatrix         = false;
+    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
     //Timestepping
     C.TimesteppingMode   = AppControl._TimesteppingMode.Steady;
@@ -377,39 +359,48 @@ foreach(var ctrl in Controls) {
     oneJob.Activate(myBatch);
 }
 **************
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0_half	11/03/2020 12:21:35	9f9e7a4e..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0_half	11/03/2020 12:21:42	8d5d81a2..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0_half	11/03/2020 12:21:51	88f47c6e..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0_half	11/03/2020 12:22:01	e42ba48d..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0_half	11/03/2020 12:22:16	29bf2da0..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0_half	11/03/2020 12:22:28	6249a6ca..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0_half	11/03/2020 12:22:36	6fa06736..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0_half	11/03/2020 12:22:42	c738c669..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0_half	11/03/2020 12:22:51	920c40fb..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half	11/03/2020 12:23:04	c12cfba5..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half	11/03/2020 12:23:13	e1a4fee3..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half	11/03/2020 12:23:29	93d7e5d8..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half	11/03/2020 12:23:35	72543be3..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half	11/03/2020 12:23:44	7640511e..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half	11/03/2020 12:24:03	a66ae890..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half	11/03/2020 12:24:13	89334469..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.2_half	11/03/2020 12:24:28	f29b63cd..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.2_half	11/03/2020 12:24:40	979df7ca..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.2_half	11/03/2020 12:24:50	fda43c86..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.2_half	11/03/2020 12:24:59	e550cb5d..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.2_half	11/03/2020 12:25:07	1c11f1d5..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.2_half	11/03/2020 12:25:18	99a98b50..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half	11/03/2020 12:25:29	a5367dc1..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half	11/03/2020 12:25:36	cd8246aa..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half	11/03/2020 12:25:43	fad61122..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half	11/03/2020 12:25:53	24cff3e6..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half	11/03/2020 12:26:02	a33a48e7..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half	11/03/2020 12:26:09	e6d7d6be..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half	11/03/2020 12:26:18	8dadf9b2..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half	11/03/2020 12:26:33	d75dc27b..." -- job is marked as successful, no further action.
-Info: Found successful session "ConfinedCylinder_ConvergenceStudy_03nov20_b	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half	11/03/2020 12:26:47	4c42f610..." -- job is marked as successful, no further action.
-Note: Job has reached its maximum number of attempts to run (1) -- job is marked as fail, no further action.
-Hint: you might either remove old deployments or increase the 'RetryCount'.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0_half	11/04/2020 17:49:50	da5dfb61..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0_half	11/04/2020 17:49:57	a7c37982..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0_half	11/04/2020 17:50:08	3373e2ba..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0_half	11/04/2020 17:50:13	d06263f0..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0_half	11/04/2020 17:50:29	8c760621..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0_half	11/04/2020 17:50:37	4b621d78..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0_half	11/04/2020 17:50:48	88732c1d..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0_half	11/04/2020 17:50:54	3b903acb..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0_half	11/04/2020 17:51:01	4806a76b..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half	11/04/2020 17:51:20	5018a1ab..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half	11/04/2020 17:51:26	20b2e09a..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half	11/04/2020 17:51:36	33c2bf51..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half	11/05/2020 07:47:51	085bb6e5..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half	11/04/2020 17:51:58	cdd3d452..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half	11/04/2020 17:52:04	98f1df8d..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half	11/04/2020 17:52:13	14cc7ec4..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.2_half	11/04/2020 17:52:26	f3d0ace4..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.2_half	11/04/2020 17:52:39	ddaf35b6..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.2_half	11/04/2020 17:52:51	a67fe565..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.2_half	11/04/2020 17:53:01	f94e1915..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.2_half	11/04/2020 17:53:10	0e62ff55..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.2_half	11/04/2020 17:53:18	d79c2c2a..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half	11/05/2020 07:48:00	a7a5b89d..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half	11/05/2020 07:48:08	cdaec6a9..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half	11/05/2020 07:48:13	7ad1070e..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half	11/05/2020 07:48:23	89d5012e..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half	11/05/2020 07:48:31	16879f45..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half	11/05/2020 07:48:40	aa68fbd2..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half	11/05/2020 07:48:50	a39061f2..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half	11/05/2020 07:49:07	2cdc6fe9..." -- job is marked as successful, no further action.
+Deploying job ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half ... 
+Submitting job with the following database info: 
+Primary: \\dc1\scratch\kummer\bosss_db
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kummer\cluster\ConfinedCylinder_ConvergenceStudy_04nov20-RheologySolver2020Nov06_131557
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half	11/05/2020 07:49:21	5ea47c3b..." -- job is marked as successful, no further action.
 
 ==============
 LastError
@@ -448,369 +439,148 @@ List of 32 instances of KeyValuePair{String,Job} {
   27: [ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   28: [ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
   29: [ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
-  30: [ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
-  31: [ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half: FailedOrCanceled (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  30: [ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  31: [ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
 }
 ==============
-var j0 = WorkflowMgm.AllJobs.ElementAt(30).Value;
+var suspects = WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(job => job.Status == JobStatus.FailedOrCanceled).ToArray();
 **************
 ==============
-j0;
+suspects;
 **************
-ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+List of 0 instances of Job {
+}
 ==============
-j0.Stderr;
+//suspects[0].DeleteOldDeploymentsAndSessions();
 **************
 ==============
-j0.Stdout;
 **************
-Session ID: 4c42f610-8e70-4265-a7c0-6116084974a8, DB path: '\\dc1\scratch\kummer\bosss_db'.
+==============
+var suspects = WorkflowMgm.AllJobs.Select(kv => kv.Value)
+    .Where(job => job.LatestSession.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)
+                  || job.LatestSession.Tags.Contains(SessionInfo.SOLVER_ERROR)).ToArray();
+suspects;
+**************
+List of 1 instances of Job {
+  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+}
+==============
+**************
+==============
+//foreach(Job j in suspects) {
+//    j.DeleteOldDeploymentsAndSessions(); 
+//}
+**************
+==============
+**************
+==============
+var active = WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(job => job.Status == JobStatus.InProgress).ToArray();
+**************
+==============
+active
+**************
+List of 1 instances of Job {
+  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+}
+==============
+active[0].LatestDeployment.DeploymentDirectory;
+**************
+\\dc1\userspace\kummer\cluster\ConfinedCylinder_ConvergenceStudy_04nov20-RheologySolver2020Nov06_131557
+==============
+active[0].Stdout;
+**************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 1 MPI process (single core)
+Node: hpccluster2.fdy.maschinenbau.tu-darmstadt.de (rank 0)
+arg #0 override from environment variable 'BOSSS_ARG_0': --control
+arg #1 override from environment variable 'BOSSS_ARG_1': control.obj
+arg #2 override from environment variable 'BOSSS_ARG_2': --prjnmn
+arg #3 override from environment variable 'BOSSS_ARG_3': ConfinedCylinder_ConvergenceStudy_04nov20
+arg #4 override from environment variable 'BOSSS_ARG_4': --sesnmn
+arg #5 override from environment variable 'BOSSS_ARG_5': ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half
+Exception IOException during logging of key/value [DGdegree:ResidualStressYY,4].
+Exception IOException during logging of key/value [DGdegree:PhiDG,1].
+Exception IOException during logging of key/value [DGdegree:Phi,1].
+Exception IOException during logging of key/value [Bndtype:Velocity_inlet,auto:Velocity_inlet].
+Exception IOException during logging of key/value [NoOfMultigridLevels,1].
+Exception IOException during logging of key/value [TimesteppingMode,Steady].
+Exception IOException during logging of key/value [GeneratedFromCode,False].
+Exception IOException during logging of key/value [ControlFileText_Index,0].
+Exception IOException during logging of key/value [InitialValues_EvaluatorsVec[0].Key,VelocityX].
+Session ID: 73535c84-261d-479a-93c1-41781b24c708, DB path: '\\dc1\scratch\kummer\bosss_db'.
 configuring Weissenberg number: 2e-01
 setting Weissenberg Number to 0.2
 Total number of cells:    4252
 Total number of DOFs:     361420
 Instationary solve, timestep #1.0, dt = 1.79769313486232E+304 ...
+setting Weissenberg Number to 0
 #Line,#Time,#Iter	 L2Norm momX	 L2Norm momY	 L2Norm div	 L2Norm constitutiveXX	 L2Norm constitutiveXY	 L2Norm constitutiveYY	 L2Norm Total
-1,1,1	 1.760576E+005	 1.004441E-007	 4.654791E+001	 2.386295E+001	 1.038133E+001	 0.000000E+000	 1.760576E+005
-       -------- using Newton step (delta = 16848054.4067944)
-       -------- using Newton step (delta = 16848054.4067944)
-       -------- between Cauchy point and Newton step (delta = 8424027.2033972)
-       -------- between Cauchy point and Newton step (delta = 4212013.6016986)
-       -------- between Cauchy point and Newton step (delta = 2106006.8008493)
-       -------- between Cauchy point and Newton step (delta = 1053003.40042465)
-       -------- between Cauchy point and Newton step (delta = 526501.700212325)
-       -------- between Cauchy point and Newton step (delta = 263250.850106163)
-       -------- between Cauchy point and Newton step (delta = 131625.425053081)
-       -------- between Cauchy point and Newton step (delta = 65812.7125265406)
-       -------- between Cauchy point and Newton step (delta = 32906.3562632703)
-       -------- between Cauchy point and Newton step (delta = 16453.1781316352)
-       -------- between Cauchy point and Newton step (delta = 8226.58906581758)
-       -------- between Cauchy point and Newton step (delta = 4113.29453290879)
-       -------- between Cauchy point and Newton step (delta = 2056.64726645439)
-       -------- between Cauchy point and Newton step (delta = 1028.3236332272)
-       -------- between Cauchy point and Newton step (delta = 514.161816613599)
-       -------- between Cauchy point and Newton step (delta = 257.080908306799)
-       -------- between Cauchy point and Newton step (delta = 128.5404541534)
-       -------- between Cauchy point and Newton step (delta = 64.2702270766998)
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-2,1,2	 1.760563E+005	 6.381016E-001	 4.654749E+001	 2.385907E+001	 1.036806E+001	 8.918151E-002	 1.760563E+005
-       -------- between Cauchy point and Newton step (delta = 64.2702270766998)
-3,1,3	 1.760543E+005	 1.061749E+000	 4.654676E+001	 2.385834E+001	 1.034386E+001	 9.141514E-002	 1.760543E+005
-       -------- between Cauchy point and Newton step (delta = 257.080908306799)
-       -------- between Cauchy point and Newton step (delta = 257.080908306799)
-       -------- between Cauchy point and Newton step (delta = 128.5404541534)
-       -------- between Cauchy point and Newton step (delta = 64.2702270766998)
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-4,1,4	 1.760534E+005	 1.259962E+000	 4.654643E+001	 2.386478E+001	 1.033745E+001	 1.089263E-001	 1.760534E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-5,1,5	 1.760518E+005	 1.680581E+000	 4.654582E+001	 2.385605E+001	 1.032299E+001	 1.108991E-001	 1.760518E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-6,1,6	 1.760509E+005	 1.908495E+000	 4.654550E+001	 2.386589E+001	 1.031862E+001	 1.650431E-001	 1.760509E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-7,1,7	 1.760493E+005	 2.301624E+000	 4.654488E+001	 2.385812E+001	 1.030744E+001	 1.656784E-001	 1.760493E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-8,1,8	 1.760485E+005	 2.499278E+000	 4.654455E+001	 2.385447E+001	 1.030218E+001	 1.656148E-001	 1.760485E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-9,1,9	 1.760469E+005	 2.846339E+000	 4.654392E+001	 2.385293E+001	 1.029355E+001	 1.747560E-001	 1.760469E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-10,1,10	 1.760461E+005	 2.999549E+000	 4.654362E+001	 2.385214E+001	 1.028960E+001	 1.800134E-001	 1.760461E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-11,1,11	 1.760445E+005	 3.310570E+000	 4.654297E+001	 2.385529E+001	 1.028247E+001	 1.877275E-001	 1.760445E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-12,1,12	 1.760437E+005	 3.439937E+000	 4.654266E+001	 2.386176E+001	 1.027992E+001	 2.073846E-001	 1.760437E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-13,1,13	 1.760420E+005	 3.738266E+000	 4.654198E+001	 2.386649E+001	 1.027458E+001	 2.268310E-001	 1.760420E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-14,1,14	 1.760413E+005	 3.843285E+000	 4.654170E+001	 2.386894E+001	 1.027171E+001	 2.356762E-001	 1.760413E+005
-       -------- between Cauchy point and Newton step (delta = 64.2702270766998)
-       -------- between Cauchy point and Newton step (delta = 64.2702270766998)
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-15,1,15	 1.760397E+005	 4.103079E+000	 4.654107E+001	 2.387398E+001	 1.026800E+001	 2.647396E-001	 1.760397E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-16,1,16	 1.760390E+005	 4.219776E+000	 4.654078E+001	 2.387132E+001	 1.026534E+001	 2.659102E-001	 1.760390E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-17,1,17	 1.760375E+005	 4.446518E+000	 4.654016E+001	 2.386626E+001	 1.026119E+001	 2.684425E-001	 1.760375E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-18,1,18	 1.760367E+005	 4.557983E+000	 4.653985E+001	 2.386927E+001	 1.025933E+001	 2.820353E-001	 1.760367E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-19,1,19	 1.760352E+005	 4.770209E+000	 4.653923E+001	 2.386541E+001	 1.025591E+001	 2.878848E-001	 1.760352E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-20,1,20	 1.760344E+005	 4.872921E+000	 4.653893E+001	 2.387087E+001	 1.025507E+001	 3.209379E-001	 1.760344E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-21,1,21	 1.760329E+005	 5.077161E+000	 4.653830E+001	 2.386512E+001	 1.025185E+001	 3.214361E-001	 1.760329E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-22,1,22	 1.760321E+005	 5.177768E+000	 4.653799E+001	 2.386268E+001	 1.024974E+001	 3.222726E-001	 1.760321E+005
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-23,1,23	 1.760306E+005	 5.375957E+000	 4.653736E+001	 2.385995E+001	 1.024707E+001	 3.255160E-001	 1.760306E+005
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-24,1,24	 1.760298E+005	 5.477355E+000	 4.653704E+001	 2.386419E+001	 1.024522E+001	 3.278314E-001	 1.760298E+005
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-25,1,25	 1.760282E+005	 5.676719E+000	 4.653640E+001	 2.386123E+001	 1.024437E+001	 3.347466E-001	 1.760282E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-26,1,26	 1.760274E+005	 5.791721E+000	 4.653605E+001	 2.385829E+001	 1.024239E+001	 3.350713E-001	 1.760274E+005
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-27,1,27	 1.760258E+005	 5.991707E+000	 4.653541E+001	 2.385261E+001	 1.024056E+001	 3.366727E-001	 1.760258E+005
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-28,1,28	 1.760249E+005	 6.110672E+000	 4.653504E+001	 2.385290E+001	 1.024032E+001	 3.446217E-001	 1.760249E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-29,1,29	 1.760234E+005	 6.305275E+000	 4.653440E+001	 2.384974E+001	 1.023868E+001	 3.496597E-001	 1.760234E+005
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-30,1,30	 1.760225E+005	 6.421314E+000	 4.653402E+001	 2.385005E+001	 1.023740E+001	 3.572150E-001	 1.760225E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-31,1,31	 1.760209E+005	 6.607403E+000	 4.653338E+001	 2.384581E+001	 1.023586E+001	 3.598793E-001	 1.760209E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-32,1,32	 1.760200E+005	 6.720171E+000	 4.653300E+001	 2.384749E+001	 1.023476E+001	 3.703971E-001	 1.760200E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-33,1,33	 1.760184E+005	 6.900265E+000	 4.653236E+001	 2.384375E+001	 1.023344E+001	 3.734300E-001	 1.760184E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-34,1,34	 1.760175E+005	 7.015161E+000	 4.653197E+001	 2.384751E+001	 1.023255E+001	 3.860340E-001	 1.760175E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-35,1,35	 1.760160E+005	 7.186817E+000	 4.653134E+001	 2.384470E+001	 1.023144E+001	 3.897636E-001	 1.760160E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-36,1,36	 1.760150E+005	 7.305238E+000	 4.653094E+001	 2.384726E+001	 1.023049E+001	 3.984828E-001	 1.760150E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-37,1,37	 1.760133E+005	 7.491969E+000	 4.653025E+001	 2.384311E+001	 1.022968E+001	 4.014760E-001	 1.760133E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-38,1,38	 1.760123E+005	 7.610781E+000	 4.652983E+001	 2.384317E+001	 1.022827E+001	 3.988558E-001	 1.760123E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-39,1,39	 1.760106E+005	 7.812202E+000	 4.652910E+001	 2.383876E+001	 1.022788E+001	 4.019423E-001	 1.760106E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-40,1,40	 1.760095E+005	 7.930490E+000	 4.652867E+001	 2.384044E+001	 1.022639E+001	 4.076800E-001	 1.760095E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-41,1,41	 1.760077E+005	 8.134072E+000	 4.652792E+001	 2.383555E+001	 1.022623E+001	 4.100279E-001	 1.760077E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-42,1,42	 1.760066E+005	 8.253296E+000	 4.652748E+001	 2.383851E+001	 1.022498E+001	 4.189818E-001	 1.760067E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-43,1,43	 1.760048E+005	 8.459157E+000	 4.652673E+001	 2.383312E+001	 1.022501E+001	 4.217396E-001	 1.760049E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-44,1,44	 1.760038E+005	 8.576496E+000	 4.652628E+001	 2.383813E+001	 1.022397E+001	 4.351001E-001	 1.760038E+005
-       -------- between Cauchy point and Newton step (delta = 0.251055574518359)
-45,1,45	 1.760020E+005	 8.780484E+000	 4.652552E+001	 2.383255E+001	 1.022416E+001	 4.359336E-001	 1.760020E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-46,1,46	 1.760009E+005	 8.896528E+000	 4.652508E+001	 2.383099E+001	 1.022235E+001	 4.388720E-001	 1.760009E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-47,1,47	 1.759991E+005	 9.093416E+000	 4.652434E+001	 2.382742E+001	 1.022329E+001	 4.438881E-001	 1.759991E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-48,1,48	 1.759980E+005	 9.207726E+000	 4.652389E+001	 2.382468E+001	 1.022124E+001	 4.442212E-001	 1.759980E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-49,1,49	 1.759963E+005	 9.388303E+000	 4.652319E+001	 2.382034E+001	 1.022180E+001	 4.486279E-001	 1.759964E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-50,1,50	 1.759953E+005	 9.499832E+000	 4.652276E+001	 2.381941E+001	 1.022051E+001	 4.526047E-001	 1.759953E+005
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-51,1,51	 1.759937E+005	 9.665234E+000	 4.652210E+001	 2.381441E+001	 1.021993E+001	 4.540038E-001	 1.759937E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-52,1,52	 1.759928E+005	 9.774700E+000	 4.652169E+001	 2.381483E+001	 1.022018E+001	 4.643617E-001	 1.759928E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-53,1,53	 1.759912E+005	 9.933615E+000	 4.652105E+001	 2.381367E+001	 1.022150E+001	 4.859554E-001	 1.759912E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-54,1,54	 1.759903E+005	 1.003365E+001	 4.652069E+001	 2.381151E+001	 1.022096E+001	 4.880502E-001	 1.759903E+005
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-55,1,55	 1.759902E+005	 1.005039E+001	 4.652062E+001	 2.381140E+001	 1.022093E+001	 4.937878E-001	 1.759902E+005
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-56,1,56	 1.759878E+005	 1.030875E+001	 4.651962E+001	 2.380924E+001	 1.022101E+001	 5.116068E-001	 1.759878E+005
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-57,1,57	 1.759872E+005	 1.037158E+001	 4.651938E+001	 2.380905E+001	 1.022067E+001	 5.106511E-001	 1.759872E+005
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 32.1351135383499)
-       -------- between Cauchy point and Newton step (delta = 16.067556769175)
-       -------- between Cauchy point and Newton step (delta = 8.03377838458748)
-58,1,58	 1.759844E+005	 1.065987E+001	 4.651823E+001	 2.381004E+001	 1.022188E+001	 5.357333E-001	 1.759844E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-59,1,59	 1.759839E+005	 1.071374E+001	 4.651802E+001	 2.381492E+001	 1.022276E+001	 5.437170E-001	 1.759840E+005
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 4.01688919229374)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-60,1,60	 1.759813E+005	 1.098369E+001	 4.651694E+001	 2.380995E+001	 1.022241E+001	 5.446621E-001	 1.759814E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-61,1,61	 1.759809E+005	 1.103388E+001	 4.651675E+001	 2.381650E+001	 1.022349E+001	 5.502965E-001	 1.759809E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-62,1,62	 1.759785E+005	 1.129221E+001	 4.651574E+001	 2.381466E+001	 1.022348E+001	 5.759990E-001	 1.759785E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-63,1,63	 1.759780E+005	 1.133924E+001	 4.651556E+001	 2.381669E+001	 1.022373E+001	 5.750263E-001	 1.759780E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-64,1,64	 1.759756E+005	 1.159636E+001	 4.651453E+001	 2.381541E+001	 1.022383E+001	 5.753786E-001	 1.759756E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-65,1,65	 1.759752E+005	 1.163951E+001	 4.651437E+001	 2.381782E+001	 1.022407E+001	 5.739746E-001	 1.759752E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-66,1,66	 1.759726E+005	 1.190639E+001	 4.651331E+001	 2.381691E+001	 1.022422E+001	 5.749769E-001	 1.759727E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-67,1,67	 1.759723E+005	 1.194648E+001	 4.651316E+001	 2.381991E+001	 1.022455E+001	 5.738750E-001	 1.759723E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-68,1,68	 1.759696E+005	 1.222504E+001	 4.651206E+001	 2.381937E+001	 1.022479E+001	 5.757811E-001	 1.759696E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-69,1,69	 1.759693E+005	 1.226146E+001	 4.651192E+001	 2.382274E+001	 1.022511E+001	 5.751405E-001	 1.759693E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-70,1,70	 1.759665E+005	 1.255562E+001	 4.651076E+001	 2.382213E+001	 1.022540E+001	 5.774358E-001	 1.759665E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-71,1,71	 1.759662E+005	 1.258898E+001	 4.651064E+001	 2.382637E+001	 1.022583E+001	 5.769634E-001	 1.759662E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-72,1,72	 1.759633E+005	 1.290024E+001	 4.650941E+001	 2.382620E+001	 1.022624E+001	 5.799097E-001	 1.759633E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-73,1,73	 1.759630E+005	 1.292971E+001	 4.650930E+001	 2.383107E+001	 1.022667E+001	 5.794782E-001	 1.759630E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-74,1,74	 1.759623E+005	 1.300383E+001	 4.650901E+001	 2.383766E+001	 1.022752E+001	 5.908610E-001	 1.759623E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-75,1,75	 1.759613E+005	 1.311899E+001	 4.650856E+001	 2.383672E+001	 1.022758E+001	 5.853209E-001	 1.759613E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-76,1,76	 1.759610E+005	 1.314805E+001	 4.650844E+001	 2.383593E+001	 1.022750E+001	 5.845301E-001	 1.759610E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-77,1,77	 1.759599E+005	 1.326178E+001	 4.650800E+001	 2.383492E+001	 1.022753E+001	 5.821749E-001	 1.759599E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-78,1,78	 1.759596E+005	 1.328973E+001	 4.650788E+001	 2.383435E+001	 1.022748E+001	 5.815820E-001	 1.759596E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-79,1,79	 1.759587E+005	 1.339165E+001	 4.650748E+001	 2.383369E+001	 1.022757E+001	 5.799311E-001	 1.759587E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-80,1,80	 1.759584E+005	 1.341874E+001	 4.650737E+001	 2.383299E+001	 1.022751E+001	 5.794933E-001	 1.759584E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-81,1,81	 1.759575E+005	 1.351853E+001	 4.650698E+001	 2.383217E+001	 1.022759E+001	 5.785483E-001	 1.759575E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-82,1,82	 1.759572E+005	 1.354433E+001	 4.650688E+001	 2.383151E+001	 1.022753E+001	 5.779622E-001	 1.759572E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-83,1,83	 1.759563E+005	 1.364050E+001	 4.650650E+001	 2.383062E+001	 1.022757E+001	 5.769301E-001	 1.759563E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-84,1,84	 1.759561E+005	 1.366500E+001	 4.650640E+001	 2.383014E+001	 1.022754E+001	 5.768564E-001	 1.759561E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-85,1,85	 1.759552E+005	 1.376004E+001	 4.650603E+001	 2.382938E+001	 1.022763E+001	 5.762980E-001	 1.759552E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-86,1,86	 1.759550E+005	 1.378333E+001	 4.650593E+001	 2.382884E+001	 1.022759E+001	 5.758693E-001	 1.759550E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-87,1,87	 1.759541E+005	 1.387493E+001	 4.650558E+001	 2.382825E+001	 1.022768E+001	 5.751768E-001	 1.759541E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-88,1,88	 1.759539E+005	 1.389893E+001	 4.650547E+001	 2.382759E+001	 1.022763E+001	 5.708713E-001	 1.759539E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-89,1,89	 1.759534E+005	 1.394756E+001	 4.650529E+001	 2.382764E+001	 1.022772E+001	 5.708325E-001	 1.759534E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-90,1,90	 1.759531E+005	 1.397582E+001	 4.650517E+001	 2.382702E+001	 1.022768E+001	 5.706319E-001	 1.759531E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-91,1,91	 1.759527E+005	 1.402310E+001	 4.650499E+001	 2.382702E+001	 1.022775E+001	 5.685509E-001	 1.759527E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-92,1,92	 1.759524E+005	 1.404946E+001	 4.650488E+001	 2.382645E+001	 1.022773E+001	 5.687259E-001	 1.759525E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-93,1,93	 1.759520E+005	 1.409684E+001	 4.650470E+001	 2.382652E+001	 1.022783E+001	 5.688158E-001	 1.759520E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-94,1,94	 1.759518E+005	 1.412260E+001	 4.650459E+001	 2.382594E+001	 1.022780E+001	 5.686729E-001	 1.759518E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-95,1,95	 1.759513E+005	 1.416832E+001	 4.650441E+001	 2.382595E+001	 1.022789E+001	 5.673921E-001	 1.759513E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-96,1,96	 1.759511E+005	 1.419319E+001	 4.650431E+001	 2.382538E+001	 1.022786E+001	 5.673299E-001	 1.759511E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-97,1,97	 1.759507E+005	 1.423765E+001	 4.650414E+001	 2.382536E+001	 1.022794E+001	 5.671027E-001	 1.759507E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-98,1,98	 1.759504E+005	 1.426199E+001	 4.650404E+001	 2.382479E+001	 1.022792E+001	 5.670571E-001	 1.759504E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-99,1,99	 1.759500E+005	 1.430450E+001	 4.650388E+001	 2.382473E+001	 1.022799E+001	 5.668923E-001	 1.759500E+005
-       -------- between Cauchy point and Newton step (delta = 0.502111149036717)
-100,1,100	 1.759498E+005	 1.432749E+001	 4.650378E+001	 2.382425E+001	 1.022798E+001	 5.664374E-001	 1.759498E+005
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 2.00844459614687)
-       -------- between Cauchy point and Newton step (delta = 1.00422229807343)
-101,1,101	 1.759494E+005	 1.436873E+001	 4.650362E+001	 2.382427E+001	 1.022807E+001	 5.661950E-001	 1.759494E+005
-Duration of this timestep: 10:44:33.5855331
-Removing tag: NotTerminated
+1,1,1	 1.760576E+005	 1.004441E-007	 4.654791E+001	 2.389713E+001	 1.038133E+001	 0.000000E+000	 1.760576E+005
+       -------- using Newton step (delta = 16890986.2561419)
+       -------- using Newton step (delta = 16890986.2561419)
+       -------- between Cauchy point and Newton step (delta = 8445493.12807094)
+       -------- between Cauchy point and Newton step (delta = 4222746.56403547)
+       -------- between Cauchy point and Newton step (delta = 2111373.28201774)
+       -------- between Cauchy point and Newton step (delta = 1055686.64100887)
+       -------- between Cauchy point and Newton step (delta = 527843.320504434)
+       -------- between Cauchy point and Newton step (delta = 263921.660252217)
+       -------- between Cauchy point and Newton step (delta = 131960.830126108)
+       -------- between Cauchy point and Newton step (delta = 65980.4150630542)
+       -------- between Cauchy point and Newton step (delta = 32990.2075315271)
+       -------- between Cauchy point and Newton step (delta = 16495.1037657636)
+       -------- between Cauchy point and Newton step (delta = 8247.55188288178)
+       -------- between Cauchy point and Newton step (delta = 4123.77594144089)
+       -------- between Cauchy point and Newton step (delta = 2061.88797072044)
+       -------- between Cauchy point and Newton step (delta = 1030.94398536022)
+       -------- between Cauchy point and Newton step (delta = 515.471992680111)
+       -------- between Cauchy point and Newton step (delta = 257.735996340056)
+       -------- between Cauchy point and Newton step (delta = 128.867998170028)
+       -------- between Cauchy point and Newton step (delta = 64.4339990850139)
+       -------- between Cauchy point and Newton step (delta = 32.2169995425069)
+       -------- between Cauchy point and Newton step (delta = 16.1084997712535)
+       -------- between Cauchy point and Newton step (delta = 8.05424988562674)
+       -------- between Cauchy point and Newton step (delta = 4.02712494281337)
+       -------- between Cauchy point and Newton step (delta = 2.01356247140668)
+       -------- between Cauchy point and Newton step (delta = 1.00678123570334)
+       -------- between Cauchy point and Newton step (delta = 0.503390617851671)
+       -------- between Cauchy point and Newton step (delta = 0.251695308925836)
+       -------- between Cauchy point and Newton step (delta = 0.125847654462918)
+       -------- between Cauchy point and Newton step (delta = 0.0629238272314589)
+       -------- between Cauchy point and Newton step (delta = 0.0314619136157294)
+       -------- between Cauchy point and Newton step (delta = 0.0157309568078647)
+       -------- between Cauchy point and Newton step (delta = 0.00786547840393236)
+       -------- between Cauchy point and Newton step (delta = 0.00393273920196618)
+       -------- between Cauchy point and Newton step (delta = 0.00196636960098309)
+       -------- using Cauchy point (delta = 0.000983184800491545)
+       -------- using Cauchy point (delta = 0.000491592400245773)
+       -------- using Cauchy point (delta = 0.000245796200122886)
+2,1,2	 1.760575E+005	 8.862399E-002	 4.654787E+001	 2.389711E+001	 1.038133E+001	 2.143296E-004	 1.760575E+005
+       -------- using Cauchy point (delta = 3.07245250153608E-05)
+3,1,3	 1.760574E+005	 8.972701E-002	 4.654785E+001	 2.389711E+001	 1.038134E+001	 2.145402E-004	 1.760574E+005
+       -------- using Cauchy point (delta = 0.000122898100061443)
+4,1,4	 1.760573E+005	 9.737122E-002	 4.654777E+001	 2.389709E+001	 1.038135E+001	 2.158497E-004	 1.760573E+005
+       -------- using Cauchy point (delta = 0.000491592400245773)
+5,1,5	 1.760566E+005	 1.596722E-001	 4.654747E+001	 2.389702E+001	 1.038140E+001	 2.282111E-004	 1.760566E+005
 
 ==============
-j0.AllDeployments;
-**************
-List of 1 instances of Deployment {
-  0: Job 28012, FinishedSuccessful 'ConfinedCylinder_ConvergenceStudy_03nov20_b-RheologySolver2020Nov03_122127' @ MS HPC client DC2, @\\dc1\userspace\kummer\cluster
-}
-==============
-j0.AllDeployments[0];
-**************
-Job 28012, FinishedSuccessful 'ConfinedCylinder_ConvergenceStudy_03nov20_b-RheologySolver2020Nov03_122127' @ MS HPC client DC2, @\\dc1\userspace\kummer\cluster
-==============
-var m3p4wi0 = WorkflowMgm.Sessions[4];
+//var j = WorkflowMgm.AllJobs.Where(kv => kv.Key.ToLower().Contains("p4_meshno3_wi0_")).Single().Value;
 **************
 ==============
-m3p4wi0.GetJob();
-**************
-(1,10): error CS1929: Type `BoSSS.Foundation.IO.ISessionInfo' does not contain a member `GetJob' and the best extension method overload `BoSSS.Application.BoSSSpad.AppControlExtensions.GetJob(this BoSSS.Solution.Control.AppControl)' requires an instance of type `BoSSS.Solution.Control.AppControl'
-D:\Users\kummer\Documents\BoSSS-kummer\public\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe (Location of the symbol related to previous error)
-No. of errors|warnings: 1|0.
-
-==============
+//j;
 **************
 ==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+//j.Stderr;
 **************
 ==============
 **************

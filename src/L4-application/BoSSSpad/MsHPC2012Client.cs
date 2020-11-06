@@ -190,7 +190,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                         case JobState.Running:
                         case JobState.Finishing:
-                            return (JobStatus.PendingInExecutionQueue, null);
+                            return (JobStatus.InProgress, null);
 
                         case JobState.Finished:
                             return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
