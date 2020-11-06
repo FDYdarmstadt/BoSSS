@@ -540,7 +540,7 @@ namespace BoSSS.Solution {
                             CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 //NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                                NoOfPartsPerProcess = 4
+                                NoOfPartsOnCurrentProcess = 4
                             },
                             Overlap = 1, // overlap seems to help; more overlap seems to help more
                             EnableOverlapScaling = true,
@@ -1599,7 +1599,7 @@ namespace BoSSS.Solution {
                 // therefore only global criterions have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
-                useDirect |= TotalNoOfSchwarzBlocks < GetMPIsize;
+                useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
 
                 if (useDirect && iLevel == 0)
                     Console.WriteLine("WARNING: You are using the direct solver. Recommendations: \n\tRaise the Number of Multigridlevels\n\tLower the target blocksize");
@@ -1623,7 +1623,7 @@ namespace BoSSS.Solution {
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             //NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                            NoOfPartsPerProcess = 2
+                            NoOfPartsOnCurrentProcess = 2
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
