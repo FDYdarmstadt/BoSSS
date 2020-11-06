@@ -232,7 +232,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-
+        /// <summary>
+        /// <see cref="TranspiratingChannelTest"/>
+        /// </summary>
         [Test]
         public static void TranspiratingChannelTest(
             [Values(2)] int deg,

@@ -448,7 +448,7 @@ namespace BoSSS.Solution {
 
                     precond[0] = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = NoOfBlocks,
+                            NoOfPartsOnCurrentProcess = NoOfBlocks,
                         },
                         CoarseSolver = new DirectSolver() {
                             WhichSolver = DirectSolver._whichSolver.MUMPS,
@@ -464,7 +464,7 @@ namespace BoSSS.Solution {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
-                            NoOfPartsPerProcess = NoOfBlocks
+                            NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
                         Overlap = 1
                     };
@@ -477,7 +477,7 @@ namespace BoSSS.Solution {
                             WhichSolver = DirectSolver._whichSolver.MUMPS
                         },
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = NoOfBlocks
+                            NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
                         Overlap = 1,
                     };
@@ -491,7 +491,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
                     precond[0] = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = NoOfBlocks
+                            NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
                         CoarseSolver = null,
                         Overlap = 1,
@@ -623,7 +623,7 @@ namespace BoSSS.Solution {
                         FixedNoOfIterations = m_lc.MaxSolverIterations,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = 4,
+                            NoOfPartsOnCurrentProcess = NoOfBlocks,
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
@@ -797,22 +797,21 @@ namespace BoSSS.Solution {
             int MGDepth = MGBasis.Length;
             int[] LocalDOF = new int[MGDepth];
 
-            for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
+            for(int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
                 LocalDOF[iLevel] = 0;
                 int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
-                for (int iCell = 0; iCell < NoOfCells; iCell++) {
-                    for (int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
+                for(int iCell = 0; iCell < NoOfCells; iCell++) {
+                    for(int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
                         int pmax = getDGs(iLevel, iVar)[0];
                         try {
                             LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
-                        }
-                        catch (Exception e) {
-                            Console.WriteLine("WARNING: internal error occured during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
+                        } catch(Exception) {
+                            Console.WriteLine("WARNING: internal error occurred during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
                             return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-        }
-    }
-}
+                        }
+                    }
+                }
             }
 
             return LocalDOF;
@@ -871,7 +870,8 @@ namespace BoSSS.Solution {
             return maxlevel;
         }
 
-        private int GetMPIsize {
+
+        private int MPIsize {
             get {
                 int MPIsize;
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MPIsize);
@@ -879,7 +879,7 @@ namespace BoSSS.Solution {
             }
         }
 
-        private int GetMPIrank {
+        private int MPIrank {
             get {
                 int MPIrank;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MPIrank);
@@ -1027,7 +1027,7 @@ namespace BoSSS.Solution {
                         if (dofsGlo > 10000) {
 
                             if (lc.NoOfMultigridLevels < 2)
-                                throw new ApplicationException("At least 2 Multigridlevels are required");
+                                throw new ApplicationException("At least 2 Multigrid levels are required");
 
                             tempsolve = new SoftGMRES() {
                                 MaxKrylovDim = lc.MaxKrylovDim,
@@ -1297,7 +1297,7 @@ namespace BoSSS.Solution {
                             FixedNoOfIterations = 1,
                             CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                NoOfPartsPerProcess = NoOfBlocks
+                                NoOfPartsOnCurrentProcess = NoOfBlocks
                             },
                             Overlap = 0 // overlap does **NOT** seem to help
                         };
@@ -1439,8 +1439,10 @@ namespace BoSSS.Solution {
                 MaxMGLevel = iLevel;
                 double SizeFraction = (double)_LocalDOF[iLevel] / (double)SchwarzblockSize(iLevel);
                 int SysSize = _LocalDOF[iLevel].MPISum();
-                if (SizeFraction < 1 && iLevel == 0)
-                    Console.WriteLine("WARNING: Schwarzblock size ({0}) exceeds local system size ({1}); \n resetting local number of Schwarzblocks to 1.", SchwarzblockSize, _LocalDOF[iLevel]);
+                if(SizeFraction < 1 && iLevel == 0) {
+                    Console.WriteLine($"WARNING: Schwarz-Block size ({SchwarzblockSize}) exceeds local system size ({_LocalDOF[iLevel]});");
+                    Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
+                }
                 int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Ceiling(SizeFraction));
                 int TotalNoOfSchwarzBlocks = LocalNoOfSchwarzBlocks.MPISum();
                 //SetQuery("LocalSblocks at Lvl" + iLevel, LocalNoOfSchwarzBlocks, true);
@@ -1449,15 +1451,16 @@ namespace BoSSS.Solution {
 
                 bool useDirect = false;
                 // It has to be ensured, that directKickin takes place on all ranks at same level
-                // therefore only global criterions have to be used here !!!
+                // therefore only global criterion have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
-                useDirect |= TotalNoOfSchwarzBlocks < GetMPIsize;
+                useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
+                useDirect = useDirect.MPIOr();
 
-                if (useDirect && iLevel == 0)
-                    Console.WriteLine("WARNING: You are using the direct solver. Recommendations: \n\tRaise the Number of Multigridlevels\n\tLower the target blocksize");
+                //if (useDirect && iLevel == 0)
+                //    Console.WriteLine("WARNING: You are using the direct solver. Recommendations: \n\tRaise the Number of Multigridlevels\n\tLower the target blocksize");
 
-                if (useDirect)
+                if(useDirect)
                     Console.WriteLine("KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
                 else
                     Console.WriteLine("KcycleMultiSchwarz: lv {0}, no of blocks {1} : ", iLevel, TotalNoOfSchwarzBlocks);
@@ -1474,7 +1477,7 @@ namespace BoSSS.Solution {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
+                            NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
@@ -1696,7 +1699,7 @@ namespace BoSSS.Solution {
 
             Console.WriteLine("experimental MG configuration for rheology");
 
-            int MPIsize = GetMPIsize;
+            int MPIsize = this.MPIsize;
 
             for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
                 MaxMGLevel = iLevel;
@@ -1733,7 +1736,7 @@ namespace BoSSS.Solution {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsPerProcess = NoOfBlocks
+                            NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
                         //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                         //    Depth = 1
