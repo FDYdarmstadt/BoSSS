@@ -483,11 +483,96 @@ List of 1 instances of Job {
   0: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
 }
 ==============
-//active[1].LatestDeployment.DeploymentDirectory;
+active[0].LatestDeployment.DeploymentDirectory;
 **************
+\\dc1\userspace\kummer\cluster\ConfinedCylinder_ConvergenceStudy_04nov20-RheologySolver2020Nov06_131557
 ==============
-//active[1].Stdout;
+active[0].Stdout;
 **************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 1 MPI process (single core)
+Node: hpccluster2.fdy.maschinenbau.tu-darmstadt.de (rank 0)
+arg #0 override from environment variable 'BOSSS_ARG_0': --control
+arg #1 override from environment variable 'BOSSS_ARG_1': control.obj
+arg #2 override from environment variable 'BOSSS_ARG_2': --prjnmn
+arg #3 override from environment variable 'BOSSS_ARG_3': ConfinedCylinder_ConvergenceStudy_04nov20
+arg #4 override from environment variable 'BOSSS_ARG_4': --sesnmn
+arg #5 override from environment variable 'BOSSS_ARG_5': ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half
+Exception IOException during logging of key/value [DGdegree:ResidualStressYY,4].
+Exception IOException during logging of key/value [DGdegree:PhiDG,1].
+Exception IOException during logging of key/value [DGdegree:Phi,1].
+Exception IOException during logging of key/value [Bndtype:Velocity_inlet,auto:Velocity_inlet].
+Exception IOException during logging of key/value [NoOfMultigridLevels,1].
+Exception IOException during logging of key/value [TimesteppingMode,Steady].
+Exception IOException during logging of key/value [GeneratedFromCode,False].
+Exception IOException during logging of key/value [ControlFileText_Index,0].
+Exception IOException during logging of key/value [InitialValues_EvaluatorsVec[0].Key,VelocityX].
+Session ID: 73535c84-261d-479a-93c1-41781b24c708, DB path: '\\dc1\scratch\kummer\bosss_db'.
+configuring Weissenberg number: 2e-01
+setting Weissenberg Number to 0.2
+Total number of cells:    4252
+Total number of DOFs:     361420
+Instationary solve, timestep #1.0, dt = 1.79769313486232E+304 ...
+setting Weissenberg Number to 0
+#Line,#Time,#Iter	 L2Norm momX	 L2Norm momY	 L2Norm div	 L2Norm constitutiveXX	 L2Norm constitutiveXY	 L2Norm constitutiveYY	 L2Norm Total
+1,1,1	 1.760576E+005	 1.004441E-007	 4.654791E+001	 2.389713E+001	 1.038133E+001	 0.000000E+000	 1.760576E+005
+       -------- using Newton step (delta = 16890986.2561419)
+       -------- using Newton step (delta = 16890986.2561419)
+       -------- between Cauchy point and Newton step (delta = 8445493.12807094)
+       -------- between Cauchy point and Newton step (delta = 4222746.56403547)
+       -------- between Cauchy point and Newton step (delta = 2111373.28201774)
+       -------- between Cauchy point and Newton step (delta = 1055686.64100887)
+       -------- between Cauchy point and Newton step (delta = 527843.320504434)
+       -------- between Cauchy point and Newton step (delta = 263921.660252217)
+       -------- between Cauchy point and Newton step (delta = 131960.830126108)
+       -------- between Cauchy point and Newton step (delta = 65980.4150630542)
+       -------- between Cauchy point and Newton step (delta = 32990.2075315271)
+       -------- between Cauchy point and Newton step (delta = 16495.1037657636)
+       -------- between Cauchy point and Newton step (delta = 8247.55188288178)
+       -------- between Cauchy point and Newton step (delta = 4123.77594144089)
+       -------- between Cauchy point and Newton step (delta = 2061.88797072044)
+       -------- between Cauchy point and Newton step (delta = 1030.94398536022)
+       -------- between Cauchy point and Newton step (delta = 515.471992680111)
+       -------- between Cauchy point and Newton step (delta = 257.735996340056)
+       -------- between Cauchy point and Newton step (delta = 128.867998170028)
+       -------- between Cauchy point and Newton step (delta = 64.4339990850139)
+       -------- between Cauchy point and Newton step (delta = 32.2169995425069)
+       -------- between Cauchy point and Newton step (delta = 16.1084997712535)
+       -------- between Cauchy point and Newton step (delta = 8.05424988562674)
+       -------- between Cauchy point and Newton step (delta = 4.02712494281337)
+       -------- between Cauchy point and Newton step (delta = 2.01356247140668)
+       -------- between Cauchy point and Newton step (delta = 1.00678123570334)
+       -------- between Cauchy point and Newton step (delta = 0.503390617851671)
+       -------- between Cauchy point and Newton step (delta = 0.251695308925836)
+       -------- between Cauchy point and Newton step (delta = 0.125847654462918)
+       -------- between Cauchy point and Newton step (delta = 0.0629238272314589)
+       -------- between Cauchy point and Newton step (delta = 0.0314619136157294)
+       -------- between Cauchy point and Newton step (delta = 0.0157309568078647)
+       -------- between Cauchy point and Newton step (delta = 0.00786547840393236)
+       -------- between Cauchy point and Newton step (delta = 0.00393273920196618)
+       -------- between Cauchy point and Newton step (delta = 0.00196636960098309)
+       -------- using Cauchy point (delta = 0.000983184800491545)
+       -------- using Cauchy point (delta = 0.000491592400245773)
+       -------- using Cauchy point (delta = 0.000245796200122886)
+2,1,2	 1.760575E+005	 8.862399E-002	 4.654787E+001	 2.389711E+001	 1.038133E+001	 2.143296E-004	 1.760575E+005
+       -------- using Cauchy point (delta = 3.07245250153608E-05)
+3,1,3	 1.760574E+005	 8.972701E-002	 4.654785E+001	 2.389711E+001	 1.038134E+001	 2.145402E-004	 1.760574E+005
+       -------- using Cauchy point (delta = 0.000122898100061443)
+4,1,4	 1.760573E+005	 9.737122E-002	 4.654777E+001	 2.389709E+001	 1.038135E+001	 2.158497E-004	 1.760573E+005
+       -------- using Cauchy point (delta = 0.000491592400245773)
+5,1,5	 1.760566E+005	 1.596722E-001	 4.654747E+001	 2.389702E+001	 1.038140E+001	 2.282111E-004	 1.760566E+005
+
 ==============
 //var j = WorkflowMgm.AllJobs.Where(kv => kv.Key.ToLower().Contains("p4_meshno3_wi0_")).Single().Value;
 **************
