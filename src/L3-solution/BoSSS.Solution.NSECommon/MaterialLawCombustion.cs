@@ -75,9 +75,10 @@ namespace BoSSS.Solution.NSECommon {
             this.CC = CC;
             this.s = (CC.nu_O2 * CC.MW_O2) / (CC.nu_CH4 * CC.MW_CH4);
 
+            this.thermoProperties = new ThermodynamicalProperties();
         }
 
-
+       public ThermodynamicalProperties thermoProperties;
         /// <summary>
         /// Dimensionless ideal gas law for multicomponent flow - returns density as function of
         /// thermodynamic pressure (i.e. p0), temperature, mass fractions and molar masses.
