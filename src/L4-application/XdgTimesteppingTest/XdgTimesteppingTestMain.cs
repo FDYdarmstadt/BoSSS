@@ -53,6 +53,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         static void Main(string[] args) {
             //InitMPI();
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
             //for(int i = 0; i < 6; i++) {
             //    //[Values(0, 1, 2, 3, 0, 1)] int PolyOrder,
             //    //[Values(0.08, 0.08, 0.08, 0.08, 0.08, 0.08)] double TimestepSize,

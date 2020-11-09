@@ -133,6 +133,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public bool UseHomotopy {
             get {
+                if(this.AbstractOperator == null)
+                    return false;
+
                 return this.AbstractOperator.HomotopyUpdate.Count > 0;
             }
         }
@@ -142,11 +145,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Main solver routine
         /// </summary>
         public override bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
-            //this.UseHomotopy = this.AbstractOperator.HomotopyUpdate.Count > 0;
-            if(UseHomotopy)
+
+            var gnSuccess = GlobalizedNewton(SolutionVec, RHS); // note: we have to run the default branch first, before we can query 'UseHomotopy' 
+            if(gnSuccess == false && UseHomotopy == true) {
                 return HomotopyNewton(SolutionVec, RHS);
-            else 
-                return GlobalizedNewton(SolutionVec, RHS);
+            } else {
+                return gnSuccess;
+            }
         }
 
 
@@ -171,6 +176,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
                 EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
+                if(UseHomotopy) { // after the first operator eval, we can access the 'base.AbstractOperator'
+                    // don't run this branch - use the Homotopy branch
+                    return false;
+                }
 
                 // intial residual evaluation
                 double norm_CurRes = CurRes.MPI_L2Norm();
@@ -821,12 +830,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             void PointOnDogleg(double _TrustRegionDelta) {
                 if(l2_stepIN <= _TrustRegionDelta) {
                     // use Newton Step
-                    Console.WriteLine($"       -------- using Newton step (delta = {_TrustRegionDelta})");
+                    //Console.WriteLine($"       -------- using Newton step (delta = {_TrustRegionDelta})");
                     step.SetV(stepIN);
                 } else {
                     if(l2_stepCP < _TrustRegionDelta) {
                         // interpolate between Cauchy-point and Newton-step
-                        Console.WriteLine($"       -------- between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
+                        Console.WriteLine($"Info: Newton solver - between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
                         Debug.Assert(l2_stepCP * 0.99999 <= _TrustRegionDelta); // Cauchy Point is INSIDE   trust region
                         Debug.Assert(l2_stepIN * 1.00001 >= _TrustRegionDelta); // Newton Step  is OUTSIDE  trust region
                         Debug.Assert(l2_stepCP <= l2_stepIN * 1.00001); // consequently, the Newton Step must be larger than the Cauchy point
@@ -847,7 +856,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "interpolation step went wrong");
                     } else {
                         // use reduced Cauchy point
-                        Console.WriteLine($"       -------- using Cauchy point (delta = {_TrustRegionDelta})");
+                        Console.WriteLine($"Info: Newton solver - using Cauchy point (delta = {_TrustRegionDelta})");
                         Debug.Assert(l2_stepCP * 1.00001 >= _TrustRegionDelta); // Cauchy Point is outside trust region
                         step.SetV(stepCP, alpha: (_TrustRegionDelta / l2_stepCP));
                         Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "scaling step went wrong");
