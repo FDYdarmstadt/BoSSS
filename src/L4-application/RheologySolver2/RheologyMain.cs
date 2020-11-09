@@ -280,6 +280,7 @@ namespace BoSSS.Application.Rheology {
         protected override void CreateFields() {
             base.CreateFields();
 
+            /*
             if (Control.UsePerssonSensor == true) {
                 perssonsensor = new PerssonSensor(StressXX);
                 this.IOFields.Add(perssonsensor.GetField());
@@ -289,6 +290,7 @@ namespace BoSSS.Application.Rheology {
                 this.IOFields.Add(artificalViscosity);
 
             }
+            */
         }
 
 
@@ -338,7 +340,8 @@ namespace BoSSS.Application.Rheology {
                     if (this.Control.useFDJacobianForOperatorMatrix == true) {
                         Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
                     } else {
-                        Params = this.Control.UseArtificialDiffusion ? new string[] { "artificialViscosity" } : null;
+                        //Params = this.Control.UseArtificialDiffusion ? new string[] { "artificialViscosity" } : null;
+                        Params = null;
                     }
 
                     string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
@@ -462,12 +465,14 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Viscosity(1, BcMap, this.Control.beta, this.Control.Penalty1));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Viscosity(2, BcMap, this.Control.beta, this.Control.Penalty1));
 
+                        /*
                         // artificial diffusion part
                         if (this.Control.UseArtificialDiffusion == true) {
                             XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Diffusion(this.StressXX.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXX));
                             XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                             XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                         }
+                        */
                     } else {
                         Console.WriteLine("!!!Warning!!!: Constitutive Equation deactivated.");
                     }
@@ -505,6 +510,7 @@ namespace BoSSS.Application.Rheology {
 
                     // artificial viscosity
                     // ====================
+                    /*
                     if(Control.UseArtificialDiffusion) {
 
                         XOP.ParameterUpdates.Add(ArtificialViscosityUpdate);
@@ -514,19 +520,22 @@ namespace BoSSS.Application.Rheology {
                         });
 
                     }
+                    */
 
                     // Solver-Controlled Homotopy
                     // ==========================
 
                     this.currentWeissenberg = Control.Weissenberg;
-                    XOP.HomotopyUpdate.Add(delegate (double HomotopyScalar) {
-                        if(HomotopyScalar < 0.0)
-                            throw new ArgumentOutOfRangeException();
-                        if(HomotopyScalar > 1.0)
-                            throw new ArgumentOutOfRangeException();
+                    if(Control.RaiseWeissenberg) {
+                        XOP.HomotopyUpdate.Add(delegate (double HomotopyScalar) {
+                            if(HomotopyScalar < 0.0)
+                                throw new ArgumentOutOfRangeException();
+                            if(HomotopyScalar > 1.0)
+                                throw new ArgumentOutOfRangeException();
 
-                        this.currentWeissenberg = HomotopyScalar * Control.Weissenberg;
-                    });
+                            this.currentWeissenberg = HomotopyScalar * Control.Weissenberg;
+                        });
+                    }
 
 
                     // Build spatial operator
@@ -585,6 +594,7 @@ namespace BoSSS.Application.Rheology {
                 var overallstart = DateTime.Now;
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
 
+                /*
                 bool SolverSuccess = true;
 
                 if (Control.RaiseWeissenberg == true) {
@@ -755,6 +765,22 @@ namespace BoSSS.Application.Rheology {
                         }
                     }
                 }
+                */
+
+                bool SolverSuccess = m_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+
+                if(Control.Bodyforces == true) {
+                    if(Log != null) {
+                        WriteLogLine(TimestepNo.MajorNumber, phystime);
+                    } else {
+                        double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, m_Timestepper.LsTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                        Console.WriteLine();
+                        Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                        Console.WriteLine();
+                    }
+                }
+
 
                 var overallstop = DateTime.Now;
                 var overallduration = overallstop - overallstart;
@@ -813,6 +839,7 @@ namespace BoSSS.Application.Rheology {
                 VelocityYGradient.GradientByFlux(1.0, U0[1]);
             }
             */
+            /*
             if (this.Control.UseArtificialDiffusion == true) {
 
                 //SinglePhaseField __ArtificialViscosity = ParameterVar.Skip(5 * D + 1).Take(1).Select(f => f as SinglePhaseField).ToArray()[0];
@@ -822,6 +849,7 @@ namespace BoSSS.Application.Rheology {
 
                 ArtificialViscosity.ProjectArtificalViscosityToDGField(__ArtificialViscosity, perssonsensor, this.Control.SensorLimit, artificialMaxViscosity);
             }
+            */
         }
 
         /// <summary>
@@ -832,12 +860,14 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         internal void CheckJacobian() {
             // Parameters
-            DGField[] Params;
+            DGField[] Params = null;
+            /*
             if (this.Control.UseArtificialDiffusion) {
                 Params = new[] { artificalViscosity };
             } else {
                 Params = null;
             }
+            */
 
             // initialize linearization point with random numbers
             var CurrentState = this.CurrentSolution.Fields.Select(f => f.CloneAs()).ToArray();
@@ -1162,7 +1192,7 @@ namespace BoSSS.Application.Rheology {
         /// refinement indicator
         /// </summary>
         int LevelIndicator(int j, int CurrentLevel) {
-
+            /*
             if (this.Control.UsePerssonSensor) {
 
                 double maxVal = this.perssonsensor.GetValue(j);
@@ -1211,7 +1241,8 @@ namespace BoSSS.Application.Rheology {
 
                 return DesiredLevel_j;
             }
-
+            */
+            return 0;
         }
 
         /// <summary>

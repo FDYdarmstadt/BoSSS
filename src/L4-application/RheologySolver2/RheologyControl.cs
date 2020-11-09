@@ -144,17 +144,19 @@ namespace BoSSS.Application.Rheology {
         public double ConvCritStress = 1E-10;
 
         /// <summary>
-        /// Raise Weissenberg Number?
+        /// Switches Homotopy solver on/off:
+        /// <see cref="Newton.UseHomotopy"/>, <see cref="BoSSS.Foundation.ISpatialOperator.HomotopyUpdate"/>
         /// </summary>
         [DataMember]
         public bool RaiseWeissenberg = false;
 
+        /*
         /// <summary>
         /// which increment?
         /// </summary>
         [DataMember]
         public double WeissenbergIncrement = 0.1;
-
+        
         /// <summary>
         /// Use Persson Sensor to detect high energy modes of singularities
         /// </summary>
@@ -172,7 +174,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         [DataMember]
         public bool UseArtificialDiffusion = false;
-
+        */
         /// <summary>
         /// Use finite differences Jacobian for Linearization
         /// </summary>
@@ -502,11 +504,11 @@ namespace BoSSS.Application.Rheology {
             if(this.Stokes != oCtrl.Stokes)
                 return false;
 
-            if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
-                return false;
+            //if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
+            //    return false;
 
-            if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
-                return false;
+            //if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
+            //    return false;
  
             if(this.alpha != oCtrl.alpha)
                 return false;

@@ -87,12 +87,12 @@ namespace BoSSS.Application.Rheology {
             C.SetInitialPressure = true;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = false;
-            C.UsePerssonSensor = true;
-            C.SensorLimit = 1e-4;
+            //C.UsePerssonSensor = true;
+            //C.SensorLimit = 1e-4;
             C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 4;
             //C.AMR_startUpSweeps = 1;
-            C.UseArtificialDiffusion = false;
+            //C.UseArtificialDiffusion = false;
 
             //Physical Params
             C.Stokes = false;
@@ -447,19 +447,19 @@ namespace BoSSS.Application.Rheology {
             C.ObjectiveParam = 1.0;
             C.useFDJacobianForOperatorMatrix = false;
 
-            C.UsePerssonSensor = false;
-            C.SensorLimit = 1e-4;
+            //C.UsePerssonSensor = false;
+            //C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = false;
+            //C.UseArtificialDiffusion = false;
 
             C.Bodyforces = true;
 
             // Homotopy:
             C.RaiseWeissenberg = false;
-            C.WeissenbergIncrement = 0.1;
+            //C.WeissenbergIncrement = 0.1;
 
             //Debugging and Solver Analysis
             C.SkipSolveAndEvaluateResidual = false;
