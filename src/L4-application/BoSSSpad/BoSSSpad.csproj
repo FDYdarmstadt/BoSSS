@@ -94,10 +94,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="Renci.SshNet, Version=2016.1.0.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Renci.SshNet-2020.0.0-beta1\Renci.SshNet.dll</HintPath>
-    </Reference>
     <Reference Include="SshNet.Security.Cryptography">
       <HintPath>..\..\..\libs\Renci.SshNet-2020.0.0-beta1\SshNet.Security.Cryptography.dll</HintPath>
     </Reference>
