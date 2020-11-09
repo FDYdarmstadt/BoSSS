@@ -559,7 +559,7 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException("PhysicsMode not implemented");
             }
-            Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
+            //Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
 
             r += rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);
             r += rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
@@ -652,7 +652,7 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.MixtureFraction:
                                 // opt1:
                                 //inp2.Parameters_OUT = inp.Parameters_IN;
-                                Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
+                                Uout[m_SpatialDimension] =  Uin[m_SpatialDimension]; // m_bcmap.bndFunction[VariableNames.MixtureFraction][inp.EdgeTag](inp.X, inp.time);
                                 break;
                             case PhysicsMode.LowMach: {
                                     Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);

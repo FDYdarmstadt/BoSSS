@@ -617,7 +617,7 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.MixtureFraction:
                     scalarFunction = m_bcmap.bndFunction[VariableNames.MixtureFraction];
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
-                    m_ParameterOrdering = new string[] { VariableNames.Rho };
+                    m_ParameterOrdering = new string[] { /*VariableNames.Rho*/ };
                     break;
                 case PhysicsMode.LowMach:
                     scalarFunction = m_bcmap.bndFunction[VariableNames.Temperature];
