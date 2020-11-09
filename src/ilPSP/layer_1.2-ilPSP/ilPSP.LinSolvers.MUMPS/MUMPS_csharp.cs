@@ -23,26 +23,20 @@ using System.Threading.Tasks;
 using MPI.Wrappers.Utils;
 
 namespace ilPSP.LinSolvers.MUMPS {
+    
     /// <summary>
-    /// Singleton pattern to control the Instantiation of the Mumps wrapper.
+    /// Wrapper for the Wrapper
     /// </summary>
-    public static class SingletonMumps {
-        static private string parallelism = "SEQ";
+    unsafe class MUMPS_csharp {
 
-        public static void SetParallelism(string si) {
-            parallelism = si;
-        }
+        static Dictionary<Parallelism, UnsafeMUMPS> mumpses = new Dictionary<Parallelism, UnsafeMUMPS>();
 
-        public static UnsafeMUMPS Instance {
-            get {
-                return new UnsafeMUMPS(parallelism);
+        public MUMPS_csharp(Parallelism par) {
+            if(!mumpses.ContainsKey(par)) {
+                mumpses.Add(par, new UnsafeMUMPS(par));
             }
+            m_MUMPS = mumpses[par];
         }
-    }
-
-    public unsafe class MUMPS_csharp {
-
-        static UnsafeMUMPS m_MUMPS = SingletonMumps.Instance;
 
         public unsafe struct DMUMPS_STRUC_CS {
 
@@ -144,7 +138,9 @@ namespace ilPSP.LinSolvers.MUMPS {
             }
         }
 
-        public static void mumps_cs(ref DMUMPS_STRUC_CS mumps_par) {
+        UnsafeMUMPS m_MUMPS;
+
+        internal void mumps_cs(ref DMUMPS_STRUC_CS mumps_par) {
             unsafe {
                 fixed (double* rhs = mumps_par.rhs, sol_loc = mumps_par.sol_loc, redrhs = mumps_par.redrhs, a = mumps_par.a, rhs_sparse = mumps_par.rhs_sparse, a_loc = mumps_par.a_loc, a_elt = mumps_par.a_elt,
                     colsca = mumps_par.colsca, rowsca = mumps_par.rowsca, schur = mumps_par.schur, wk_user = mumps_par.wk_user, cntl = mumps_par.cntl, dkeep = mumps_par.dkeep, rinfo = mumps_par.rinfo, rinfog = mumps_par.rinfog) {
@@ -449,55 +445,50 @@ namespace ilPSP.LinSolvers.MUMPS {
         }
     }
 
+    /// <summary>
+    /// Native library wrapper for MUMPS library (v 5.0.2)
+    /// </summary>
     public unsafe class UnsafeMUMPS : DynLibLoader {
-        // workaround for .NET bug:
-        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
-        static PlatformID[] Helper() {
-            PlatformID[] p = new PlatformID[3];
-            p[0] = PlatformID.Win32NT;
-            p[1] = PlatformID.Unix;
-            p[2] = PlatformID.Unix;
-            return p;
-        }
 
         /// <summary>
         /// Read from Environment which type of parallel library should be used.
         /// Returns a list of libraries in specific order to search for.
         /// </summary>
-        static string[] SelectLibrary(string si) {
-            string[] liborder;
-            switch (si) {
-                case "MPI":
-                case "OMP,MPI":
-                case "MPI,OMP":
-                case "MPI,SEQ":
-                case "OMP,MPI,SEQ":
-                case "MPI,OMP,SEQ":
-                case "MPI,SEQ,OMP":
-                    liborder = new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so", "libBoSSSnative_seq.so" };
-                    break;
+        static (string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) SelectLibrary(Parallelism par) {
+            switch(par) {
+                case Parallelism.MPI:
+                return (new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so" },
+                        new string[2][][],
+                        new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                        new[] { PlatformID.Win32NT, PlatformID.Unix },
+                        new int[] { -1, -1 });
 
-                default:
-                    liborder = new string[] { "dmumps-mpi.dll", "libBoSSSnative_seq.so", "libBoSSSnative_mpi.so" };
-                    break;
+                case Parallelism.OMP:
+                if (System.Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    Console.Error.WriteLine("Warning: OpenMP-parallel MUMPS requested, but on Windows, only a sequential version is available.");
+                return (new string[] { "dmumps-seq.dll", "libBoSSSnative_omp.so" },
+                        new string[2][][],
+                        new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                        new[] {PlatformID.Win32NT, PlatformID.Unix },
+                        new int[] { -1, -1 });
+
+
+                case Parallelism.SEQ:
+                return (new string[] { "dmumps-seq.dll", "libBoSSSnative_seq.so" },
+                        new string[2][][],
+                        new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                        new[] { PlatformID.Win32NT, PlatformID.Unix },
+                        new int[] { -1, -1 });
+
+                default: throw new NotSupportedException($"Unknown level of parallelism for MUMPS: " + par);
             }
-            return liborder;
 
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public UnsafeMUMPS(string si = "SEQ") :
-            base(
-                SelectLibrary(si),
-                new string[3][][],
-                new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
-                Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
-                new int[] { -1, -1, -1 }) {
-#if DEBUG
-            Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si);
-#endif
+        public UnsafeMUMPS(Parallelism par) : base(SelectLibrary(par)) {
         }
 
 #pragma warning disable 649
@@ -508,8 +499,15 @@ namespace ilPSP.LinSolvers.MUMPS {
         _DMUMPS_F77_ dmumps_f77_;
 #pragma warning restore 649
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe delegate int* _MUMPS_GET_MAPPING();
 
+
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe _MUMPS_GET_MAPPING MUMPS_GET_MAPPING {
             get { return mumps_get_mapping; }
         }
@@ -520,18 +518,33 @@ namespace ilPSP.LinSolvers.MUMPS {
             get { return mumps_get_pivnul_list; }
         }
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe delegate int* _MUMPS_GET_SYM_PERM();
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe _MUMPS_GET_SYM_PERM MUMPS_GET_SYM_PERM {
             get { return mumps_get_sym_perm; }
         }
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe delegate int* _MUMPS_GET_UNS_PERM();
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe _MUMPS_GET_UNS_PERM MUMPS_GET_UNS_PERM {
             get { return mumps_get_uns_perm; }
         }
 
+        /// <summary>
+        /// signature of MUMPS main routine
+        /// </summary>
         public unsafe delegate void _DMUMPS_F77_(int* job,
            int* sym,
            int* par,
@@ -616,6 +629,9 @@ namespace ilPSP.LinSolvers.MUMPS {
            int* ooc_prefixlen,
            int* write_problemlen);
 
+        /// <summary>
+        /// MUMPS main routine
+        /// </summary>
         public unsafe _DMUMPS_F77_ DMUMPS_F77_ {
             get { return dmumps_f77_; }
         }

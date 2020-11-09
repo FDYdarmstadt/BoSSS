@@ -32,7 +32,7 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
 
             // if we enter Main, it seems we are executing the tutorial tests locally...
-            // so delete any local tex files since we want to run the scripts from dolc/handbook
+            // so delete any local tex files since we want to run the scripts from doc/handbook
             var localTexFiles = (new DirectoryInfo(Directory.GetCurrentDirectory())).GetFiles("*.tex");
             foreach (var f in localTexFiles) {
                 f.Delete();
@@ -40,47 +40,57 @@ namespace BoSSS.Application.TutorialTests {
 
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
-
-                    
-            //var losScriptos = GetListOfScripts();
-            //int r = 0;
-            //AllUpTest.RunWorksheet(losScriptos[int.Parse(args[0])]);
-            //foreach(var s in losScriptos) {
-            //    AllUpTest.RunWorksheet(s);
-            //    break;
-            //}
-
+            
             // start the minibatchprocessor which is used internally
             bool iStartedThisShit = AllUpTest.OneTimeSetUp();
+                    
+            
+            var losScriptos = GetListOfScripts();
+            int r = 0;
+            int i = 1;
+            foreach(var s in losScriptos) {
+                AllUpTest.RunWorksheet(s);
+                //Console.WriteLine($"{i} : {s}");
+                i++;
+            }
 
             
-            var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
-            
-            int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
-                //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData" 
-            });
-            
-            //int r = 0;
-            //AllUpTest.Run__BoundaryAndInitialData();
-            //AllUpTest.Run__channel();
-            //AllUpTest.Run__convStudy();
-            //AllUpTest.Run__CsharpAndBoSSSpad();
-            //AllUpTest.Run__GridGeneration();
-            //AllUpTest.Run__IsentropicVortex();
-            //AllUpTest.Run__MetaJobManager();
-            //AllUpTest.Run__Poisson();
-            //AllUpTest.Run__sip();
-            //AllUpTest.Run__StokesEq();
-            //AllUpTest.Run__tutorial4();
-            //AllUpTest.Run__tutorial6();
-            //AllUpTest.Run__tutorialMatlab();
-            //AllUpTest.Run__uebung2tutorial();
-            //AllUpTest.Run__uebung5tutorial();
 
+            
+            //var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
+            
+            //int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
+            //    //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData" 
+            //});
+            
+/*
+            int r = 0;
+            AllUpTest.Run__BoundaryAndInitialData();
+            AllUpTest.Run__InitialValues();
+            AllUpTest.Run__channel();
+            AllUpTest.Run__GridGeneration();
+            AllUpTest.Run__IsentropicVortex();
+            AllUpTest.Run__MetaJobManager();
+            AllUpTest.Run__tutorialMatlab();
+            AllUpTest.Run__ue2Basics();
+#if !DEBUG
+            AllUpTest.Run__CsharpAndBoSSSpad();
+            AllUpTest.Run__convStudy();
+            AllUpTest.Run__Poisson();
+            AllUpTest.Run__sip();
+            AllUpTest.Run__StokesEq();
+            AllUpTest.Run__SpatialOperatorNexpTimeInt();
+            AllUpTest.Run__ue6ScalarConvStability();
+            AllUpTest.Run__ue5NumFluxConv();
+#endif
+*/
             AllUpTest.OneTimeTearDown(iStartedThisShit);
             csMPI.Raw.mpiFinalize();
             return r;
         }
+
+
+
 
         static string[] GetListOfScripts() {
             var r = new List<string>();

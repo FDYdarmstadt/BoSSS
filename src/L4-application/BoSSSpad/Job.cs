@@ -633,7 +633,7 @@ namespace BoSSS.Application.BoSSSpad {
                         
                     if(s.Item1 == JobStatus.FailedOrCanceled) {
                         StatusCache = s.Item1;
-                        if(s.ExitCode == null || s.ExitCode != 0)
+                        if(s.ExitCode == null || s.ExitCode == 0)
                             throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
 
                     }

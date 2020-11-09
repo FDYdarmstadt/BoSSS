@@ -193,7 +193,7 @@ namespace BoSSS.Application.BoSSSpad {
                             return (JobStatus.PendingInExecutionQueue, null);
 
                         case JobState.Finished:
-                            return (JobStatus.PendingInExecutionQueue, ExitCode);
+                            return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
 
                         case JobState.Failed:
                         case JobState.Canceled:

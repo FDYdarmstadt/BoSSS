@@ -167,7 +167,7 @@ namespace BoSSS.Application.BoSSSpad {
         */
 
         /// <summary>
-        /// See <see cref="BatchProcessorClient.Submit(Job)"/>. 
+        /// See <see cref="BatchProcessorClient.Submit"/>. 
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             string FullName = GetFullJobName(myJob);
