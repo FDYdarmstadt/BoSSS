@@ -225,37 +225,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // only evaluation ==> OpMatrix must be null
                 throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
             this.AbstractOperator = abstractOp;
-
-#if DEBUG
-            // Comparison of linearization and evaluation:
-            // -------------------------------------------
-            //
-            // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
-            //     f(u) ≈ M(u0)*u + b(u0),
-            // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
-            // The relation between the BoSSS-representation and the Taylor series is
-            //     M(u0) = ∂f(u0),
-            //     b(u0) = f(u0) - ∂f(u0)*u0.
-            // Therefore, we check that
-            //     M(u0)*u0 + b(u0) = f(u0).
-            //
             
+            EvaluationCounter++;
+#if DEBUG
+            if(EvaluationCounter % 10 == 1) { // do the following, expensive check only for every 10-th evaluation.
+                // Comparison of linearization and evaluation:
+                // -------------------------------------------
+                //
+                // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
+                //     f(u) ≈ M(u0)*u + b(u0),
+                // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
+                // The relation between the BoSSS-representation and the Taylor series is
+                //     M(u0) = ∂f(u0),
+                //     b(u0) = f(u0) - ∂f(u0)*u0.
+                // Therefore, we check that
+                //     M(u0)*u0 + b(u0) = f(u0).
+                //
 
-            this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
-            var Check = OpAffine.CloneAs();
-            LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
 
-            var err = Check.CloneAs();
-            err.AccV(-1.0, OpEvalRaw);
-            double l2_err = err.MPI_L2Norm();
-            double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
-            if(l2_err > comp) {
-                throw new ArithmeticException();
+                this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
+                var Check = OpAffine.CloneAs();
+                LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
+
+                var err = Check.CloneAs();
+                err.AccV(-1.0, OpEvalRaw);
+                double l2_err = err.MPI_L2Norm();
+                double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+                if(l2_err > comp) {
+                    throw new ArithmeticException("Mismatch between operator linearization and evaluation.");
+                }
             }
-
 #endif
             CurrentLin.TransformRhsInto(OpEvalRaw, Output, false);
         }
+
+        int EvaluationCounter = 0;
 
         protected void SetHomotopyValue(double HomotopyValue) {
             if(HomotopyValue < 0)

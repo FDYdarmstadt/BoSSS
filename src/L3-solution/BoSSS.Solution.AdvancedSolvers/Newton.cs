@@ -219,24 +219,50 @@ namespace BoSSS.Solution.AdvancedSolvers {
         bool CheckTermination(ref bool success, double norm_CurRes, double fnorminit, List<double> normHistory, int itc) {
             bool terminateLoop = false;
 
-            double LastAverageNormReduction(int N = 3) {
+            double LastAverageNormReduction() {
+                const int N = 3; // look at latest 3 residuals
                 if(N < 1)
                     throw new ArgumentException();
 
-                int i0 = Math.Max(normHistory.Count - N, 0);
-                if(normHistory.Count - i0 < N)
-                    return double.MaxValue;
+                if(normHistory.Count - N < 0)
+                    return 1e100; // ignore if we have not at least 'N'  residuals so far.
+
+                int i0 = normHistory.Count - N;
+
+                // take the (minimum) skyline to be immune against residual oscillations...
+                double[] NormHistorySkyline = new double[normHistory.Count];
+                NormHistorySkyline[0] = normHistory[0];
+                for(int i = 1; i < N; i++) {
+                    NormHistorySkyline[i] = Math.Min(NormHistorySkyline[i - 1], normHistory[i]);
+                }
+
 
                 double Avg = 0;
                 double Count = 0;
-                for(int i = i0; i < normHistory.Count - 1; i++) {
-                    double ResNormReductionFactor = normHistory[i] / Math.Max(normHistory[i + 1], double.Epsilon);
+                for(int i = i0; i < normHistory.Count -1; i++) { // look at the last 'N' residual norms...
+                    double ResNormReductionFactor = NormHistorySkyline[i] / Math.Max(NormHistorySkyline[i+1], double.Epsilon);
+                    if(ResNormReductionFactor < 1)
+                        ResNormReductionFactor = 1; // should never happen anyway due to skylining...
                     Count = Count + 1;
                     Avg = Avg + ResNormReductionFactor;
                 }
                 return Avg / Count;
             }
 
+            /*
+            bool OscillatingResidual() {
+                const int SeqLen = 4;
+
+
+                int nextExpect = 0;
+                for(int i = normHistory.Count - 1; i >= SeqLen; i--) {
+                    double RedFactor1 = normHistory[i-1] / Math.Max(normHistory[i], double.Epsilon);
+                    if(RedFactor1 > 0) {
+                        nextExpect = 
+                    }
+                }
+            }
+            */
 
             if(itc >= MinIter) {
                 // only terminate if we reached the minimum number of iterations
