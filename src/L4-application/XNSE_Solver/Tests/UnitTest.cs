@@ -71,7 +71,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
            
         }
 
-#if !DEBUG
 
         /// <summary>
         /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
@@ -82,6 +81,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ) {
             ScalingViscosityJumpTest(2, vmode);
         }
+#if !DEBUG
 
         /// <summary>
         /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
@@ -92,15 +92,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ) {
             ScalingViscosityJumpTest(3, vmode);
         }
+#endif
 
         /// <summary>
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
-        public static void ScalingViscosityJumpTest(
-
-            [Values(2, 3)] int deg,
-            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
-            ) {
+        public static void ScalingViscosityJumpTest(int deg, ViscosityMode vmode) {
 
             double AgglomerationTreshold = 0.1;
 
@@ -113,7 +110,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingViscosityJumpTest-p" + deg);
         }
-#endif
 
 
 #if !DEBUG        

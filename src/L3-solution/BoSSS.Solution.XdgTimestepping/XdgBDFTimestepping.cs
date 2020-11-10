@@ -1119,22 +1119,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                             Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
                         }
 
-                        //TS++;
-
-                        //if(TS == 3)
-                        //    Console.WriteLine("break");
-
                         m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                             __AgglomerationTreshold: base.Config_AgglomerationThreshold,
                             AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
                             ExceptionOnFailedAgglomeration: true,
                             oldTs__AgglomerationTreshold: oldAggTrsh);
-
-
-                        //m_CurrentAgglomeration.PlotAgglomerationPairs("agglom-" + TS );
-                        //Console.WriteLine("internal ts" + TS);
-                        //Console.WriteLine("  no of agg, A {0} ", m_CurrentAgglomeration.GetAgglomerator(m_LsTrk.GetSpeciesId("A")).TotalNumberOfAgglomerations);
-                        //Console.WriteLine("  no of agg, B {0} ", m_CurrentAgglomeration.GetAgglomerator(m_LsTrk.GetSpeciesId("B")).TotalNumberOfAgglomerations);
                     }
 
 

@@ -1,7 +1,9 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,9 +59,26 @@ namespace BoSSS.Solution.XdgTimestepping {
                                     int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n) + RowMapping.i0;
                                     int NoOfNonZeros = OpMatrix.GetNoOfNonZerosPerRow(iRow);
                                     if(NoOfNonZeros > 0) {
-                                        throw new ArithmeticException("Found non-zero row in matrix corresponding to an empty cut-cell.");
-                                    } else {
+                                        if(CCvol[j] != 0.0) {
+                                            // could be a cut-cell with negative quadrature weight sum (could happen with HMF)
+                                            // so be a little forgiving
 
+                                            int[] colIdx = null;
+                                            double[] entries = null;
+                                            OpMatrix.GetRow(iRow, ref colIdx, ref entries);
+                                            double err = entries.Max();
+                                            
+                                            if(err > Math.Sqrt(Math.Sqrt(BLAS.MachineEps + CCvol[j].Abs()))) { 
+                                                throw new ArithmeticException($"Found non-zero row in matrix corresponding to an empty cut-cell.");
+                                            }
+
+
+                
+                                        } else {
+                                            throw new ArithmeticException("Found non-zero row in matrix corresponding to an empty cut-cell.");
+                                        }
+                                    } else {
+                                        // everything is ok.
                                     }
                                 }
                             }
