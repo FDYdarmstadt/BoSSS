@@ -777,7 +777,9 @@ namespace BoSSS.Solution {
         }
 
         private int[] GetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
+            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
 
+            /*
             //This workaround takes into account, the wierd structure of the ChangeOfBasis-thing
             //prohibits out of bounds exception
             Func<int, int, int[]> getDGs = delegate (int iLevel, int iVar) {
@@ -808,6 +810,7 @@ namespace BoSSS.Solution {
             }
 
             return LocalDOF;
+            */
         }
 
         private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {

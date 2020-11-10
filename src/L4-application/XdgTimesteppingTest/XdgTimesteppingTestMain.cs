@@ -51,27 +51,18 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            InitMPI();
+            //InitMPI();
             //DeleteOldPlotFiles();
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(1, 0.08d, "rk", 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(1, 0.08d, "rk", 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t02(TimeSteppingScheme.RK_CrankNic, 8, 0.0d);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(1, 0.08d, "bdf", 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02(TimeSteppingScheme.RK_ImplicitEuler, 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
             //for(int i = 0; i < 6; i++) {
-            //    //[Values(0, 1, 2, 3, 0, 1)] int PolyOrder,
-            //    //[Values(0.08, 0.08, 0.08, 0.08, 0.08, 0.08)] double TimestepSize,
-            //    //[Values("bdf", "bdf", "bdf", "bdf", "rk", "rk")] string Timestepper,
-            //    //[Values(8, 8, 8, 8, 8, 8)] int NoOfTs
             //    int[] PolyOrderS = new[] { 0, 1, 2, 3, 0, 1 };
             //    string[] TimeSteppers = new[] { "bdf", "bdf", "bdf", "bdf", "rk", "rk"};
             //    BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(PolyOrderS[i], 0.08d, TimeSteppers[i], 8);
             //}
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t023(TimeSteppingScheme.RK_IMEX3, 8, 0.0d);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023(TimeSteppingScheme.RK_IMEX3, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
             //FinalizeMPI();
-            //throw new ApplicationException("fuck you");
+            //throw new ApplicationException("deactivate me");
             //return;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {

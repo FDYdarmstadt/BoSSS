@@ -1248,8 +1248,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     RHS.AccV(-Tsc.theta1, CurrentAffine); //                                     -theta1*b1
                     if (Tsc.theta0 != 0.0) {
-                        if(Linearization == false)
-                            throw new NotImplementedException();
+                        //if(Linearization == false)
+                        //    throw new NotImplementedException();
                         m_Stack_OpMatrix[1].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); // -theta0*Op0*u0
                         RHS.AccV(-Tsc.theta0, m_Stack_OpAffine[1]); //                    -theta0*b0 
                     }
