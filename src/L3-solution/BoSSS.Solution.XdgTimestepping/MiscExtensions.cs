@@ -124,7 +124,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                                     int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n) + RowMapping.i0;
 
                                     if(Vector[iRow] != 0) {
-                                        throw new ArithmeticException("Found non-zero entry in vector corresponding to an empty cut-cell.");
+                                        if(CCvol[j] != 0.0) {
+                                            // could be a cut-cell with negative quadrature weight sum (could happen with HMF)
+                                            // so be a little forgiving
+
+                                            if(Vector[iRow].Abs() > Math.Sqrt(Math.Sqrt(BLAS.MachineEps + CCvol[j].Abs()))) { 
+                                                throw new ArithmeticException($"Found non-zero row in matrix corresponding to an empty cut-cell.");
+                                            }
+
+                                        } else {
+                                            throw new ArithmeticException("Found non-zero entry in vector corresponding to an empty cut-cell.");
+                                        }
                                     } else {
 
                                     }
