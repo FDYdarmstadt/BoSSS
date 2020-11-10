@@ -491,6 +491,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
+                            foreach(var kv in AgglomeratedCellLengthScales) {
+                                mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                            }
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
                             return;
                         }
@@ -499,6 +502,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
+                            if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) {
+                                foreach(var kv in AgglomeratedCellLengthScales) {
+                                    evn.CellLengthScales[kv.Key] = kv.Value;
+                                }
+                            }
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
                             return;
                         }
@@ -514,6 +522,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
+                            foreach(var kv in AgglomeratedCellLengthScales) {
+                                mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                            }
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
                             return;
                         }
@@ -525,9 +536,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     this.XdgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
 
-                    var eval = XdgOperator.GetEvaluatorEx(__CurrentState, this.Parameters, Mapping);
+                    var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping);
                     eval.time = time;
                     eval.MPITtransceive = true;
+                    foreach(var kv in AgglomeratedCellLengthScales) {
+                        eval.CellLengthScales[kv.Key] = kv.Value;
+                    }
                     eval.Evaluate(1.0, 0.0, OpAffine);
                 }
 

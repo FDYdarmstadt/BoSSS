@@ -230,7 +230,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double Avg = 0;
                 double Count = 0;
                 for(int i = i0; i < normHistory.Count - 1; i++) {
-                    double ResNormReductionFactor = normHistory[i] / Math.Max(normHistory[i + 1], double.MinValue);
+                    double ResNormReductionFactor = normHistory[i] / Math.Max(normHistory[i + 1], double.Epsilon);
                     Count = Count + 1;
                     Avg = Avg + ResNormReductionFactor;
                 }
@@ -239,7 +239,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             if(itc >= MinIter) {
-                // only terminate if we reached the mimimum number of iterations
+                // only terminate if we reached the minimum number of iterations
 
                 if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
                     // reached convergence criterion
@@ -799,7 +799,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.CurrentLin.OperatorMatrix.SpMV(1.0, dk, 0.0, Mdk);
                 double[] a = (new[] { CurRes.InnerProd(Mdk), Mdk.L2NormPow2() }).MPISum();
 
-                double lambda = -a[0] / a[1];
+                double lambda = -a[0] / Math.Max(double.Epsilon*100, a[1]);
 
                 stepCP = dk;
                 stepCP.ScaleV(lambda);

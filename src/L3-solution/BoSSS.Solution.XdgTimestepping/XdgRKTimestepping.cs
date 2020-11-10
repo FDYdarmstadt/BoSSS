@@ -157,6 +157,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         CoordinateVector m_CurrentState;
 
+        /// <summary>
+        /// Coordinate mapping for most recent solution approximation
+        /// </summary>
         public override CoordinateMapping CurrentStateMapping {
             get {
                 return m_CurrentState.Mapping;
@@ -615,13 +618,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
 
             abstractOp = base.AbstractOperator;
-            if (Linearization == false)
-                throw new NotImplementedException("todo");
-
+           
             int Ndof = m_CurrentState.Count;
 
             // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
-            // -----------------------------------------------------------
+            // ----------------------------------------------------------------
             DGField[] locCurSt = CurrentStateMapping.Fields.ToArray();
             if (locCurSt.Length != argCurSt.Length) {
                 throw new ApplicationException();
@@ -716,13 +717,19 @@ namespace BoSSS.Solution.XdgTimestepping {
             // - the operator matrix depends on these values
             this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
-            var OpMatrix = new BlockMsrMatrix(CurrentStateMapping);
-            var OpAffine = new double[Ndof];
-
+            BlockMsrMatrix OpMatrix = Linearization ? new BlockMsrMatrix(CurrentStateMapping) : null; 
+            double[] OpAffine = new double[Ndof];
             this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime);
 
-            m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-            m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+            if(Linearization) {
+                m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+                m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+            } else {
+                m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+            }
+
+            //if (Linearization == false)
+            //    throw new NotImplementedException("todo");
 
 
             // assemble system
@@ -769,12 +776,25 @@ namespace BoSSS.Solution.XdgTimestepping {
             Affine.AccV(m_ImplStParams.m_RK_as[m_ImplStParams.m_s], OpAffine);
 
             // left-hand-side
-            System = OpMatrix.CloneAs();
-            System.Scale(m_ImplStParams.m_RK_as[m_ImplStParams.m_s]);
-            if (MamaLHS != null) {
-                System.Acc(1.0 / dt, MamaLHS);
+            if(Linearization) {
+                System = OpMatrix.CloneAs();
+                System.Scale(m_ImplStParams.m_RK_as[m_ImplStParams.m_s]);
+                if(MamaLHS != null) {
+                    System.Acc(1.0 / dt, MamaLHS);
+                } else {
+                    System.AccEyeSp(1.0 / dt);
+                }
             } else {
-                System.AccEyeSp(1.0 / dt);
+                System = null;
+
+                for(int iVar = 0; iVar < argCurSt.Length; iVar++)
+                Debug.Assert(object.ReferenceEquals(CurrentStateMapping.Fields[iVar], m_CurrentState.Fields[iVar])); // ensure that we use the actual current state
+
+                if(MamaLHS != null) {
+                    MamaLHS.SpMV(1 / dt, m_CurrentState, 1.0, Affine);
+                } else {
+                    Affine.AccV(1 / dt, m_CurrentState);
+                }
             }
 
             // perform agglomeration
@@ -915,6 +935,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// Evaluation of only the spatial operator 
+        /// </summary>
         protected virtual void UpdateChangeRate(double PhysTime, double[] k) {
 
             //BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);

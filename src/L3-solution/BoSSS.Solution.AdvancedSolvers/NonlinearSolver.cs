@@ -26,6 +26,7 @@ using BoSSS.Platform.Utils;
 using ilPSP;
 using ilPSP.Utils;
 using System.Diagnostics;
+using System.CodeDom;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -219,13 +220,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
             SetHomotopyValue(HomotopyValue);
 
             // the real call:
-            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out double[] OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var Dummy);
-            if(OpMtxRaw != null)
+            this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var abstractOp);
+            if(DummyMtx != null)
                 // only evaluation ==> OpMatrix must be null
                 throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
-            this.AbstractOperator = Dummy;
+            this.AbstractOperator = abstractOp;
 
-            CurrentLin.TransformRhsInto(OpAffineRaw, Output, false);
+#if DEBUG
+            // Comparison of linearization and evaluation:
+            // -------------------------------------------
+            //
+            // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
+            //     f(u) ≈ M(u0)*u + b(u0),
+            // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
+            // The relation between the BoSSS-representation and the Taylor series is
+            //     M(u0) = ∂f(u0),
+            //     b(u0) = f(u0) - ∂f(u0)*u0.
+            // Therefore, we check that
+            //     M(u0)*u0 + b(u0) = f(u0).
+            //
+            
+
+            this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
+            var Check = OpAffine.CloneAs();
+            LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
+
+            var err = Check.CloneAs();
+            err.AccV(-1.0, OpEvalRaw);
+            double l2_err = err.MPI_L2Norm();
+            double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+            if(l2_err > comp) {
+                throw new ArithmeticException();
+            }
+
+#endif
+            CurrentLin.TransformRhsInto(OpEvalRaw, Output, false);
         }
 
         protected void SetHomotopyValue(double HomotopyValue) {
