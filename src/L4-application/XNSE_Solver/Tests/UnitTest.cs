@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
            
         }
 
-
+#if !DEBUG
         /// <summary>
         /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
         /// </summary>
@@ -81,7 +81,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ) {
             ScalingViscosityJumpTest(2, vmode);
         }
-#if !DEBUG
 
         /// <summary>
         /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
