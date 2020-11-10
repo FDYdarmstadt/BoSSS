@@ -419,7 +419,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 //} else {
                 //    ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
                 //}
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
+                if (PosFF.Count() > 0)
+                    ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
 
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
 

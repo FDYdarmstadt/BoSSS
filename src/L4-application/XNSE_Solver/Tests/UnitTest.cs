@@ -279,6 +279,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var Tst = new ChannelTest(angle);
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            if (angle > 0.0) // intermediate solution (smuda 10.11.)
+                C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             GenericTest(Tst, C);
             if(deg < 3)

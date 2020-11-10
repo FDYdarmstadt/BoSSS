@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 20, int AMRlvl = 0) {
+        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 16, int AMRlvl = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -193,9 +193,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if(D == 3) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(-xSize / 2.0, xSize / 2.0, kelem + 0);
-                    double[] Ynodes = GenericBlas.Linspace(-ySize / 2.0, ySize / 2.0, kelem + 0);
-                    double[] Znodes = GenericBlas.Linspace(-zSize / 2.0, zSize / 2.0, kelem + 0);
+                    double[] Xnodes = GenericBlas.Linspace(-xSize / 2.0, xSize / 2.0, kelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(-ySize / 2.0, ySize / 2.0, kelem + 1);
+                    double[] Znodes = GenericBlas.Linspace(-zSize / 2.0, zSize / 2.0, kelem + 1);
                     var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
                     grd.EdgeTagNames.Add(1, "wall_lower");
@@ -240,8 +240,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
 
             if(D == 3) {
-                PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2() + (X[2] - 0.0).Pow2()) - r.Pow2());
-                C.InitSignedDistance = true;
+                double a = 1.25;
+                double b = 1.25;
+                double c = 0.64;
+                PhiFunc = (X => (((X[0] - 0.0).Pow2() / a.Pow2()) + ((X[1] - 0.0).Pow2() / b.Pow2() ) + ((X[2] - 0.0).Pow2() / c.Pow2())).Sqrt() - r);
             }       
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -336,12 +338,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.BaseRefinementLevel = 1;
             C.RefinementLevel = 1;
+            //C.AMR_startUpSweeps = 2;
 
             //C.InitSignedDistance = false;
             C.adaptiveReInit = false;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.SolverCode = LinearSolverCode.automatic;
+            //C.LinearSolver.SolverCode = LinearSolverCode.automatic;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.LinearSolver.NoOfMultigridLevels = 2;
@@ -436,11 +440,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 1.0; //0.01;
+            double dt = 0.1; //0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 12500; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 1; // 12500; // (int)(125.0 / dt);
             C.saveperiod = 10;
             C.LogPeriod = 10;
 
@@ -455,7 +459,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet(int p = 1, int kelem = 21, int method = 0, double mu_scl = 1.0, bool onlyB = false, double tScale = 1.0) {
+        public static XNSE_Control OscillatingDroplet(int p = 2, int kelem = 21, int method = 0, double mu_scl = 1.0, bool onlyB = false, double tScale = 1.0) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -735,7 +739,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdaptiveMeshRefinement = true;
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 1;
+            //C.BaseRefinementLevel = 2;
+            //C.AMR_startUpSweeps = 2;
             //C.SessionName = C.SessionName + "_AMR1";
 
             int numSp = 1440;
