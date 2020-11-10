@@ -77,22 +77,16 @@ namespace BoSSS.Application.XNSE_Solver {
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
 
-            ////Tests.UnitTest.OneTimeSetUp();
             //InitMPI();
             //DeleteOldPlotFiles();
 
-            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
-            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
-            ////Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
-            //Tests.UnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric);
-            ////Tests.UnitTest.OneTimeTearDown();
+            ////Tests.UnitTest.ChannelTest(4, 0.0d, ViscosityMode.Standard, 1.0471975511966d);
+            //Tests.UnitTest.MovingDropletTest(3, 0.3d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.85984d, ViscosityMode.FullySymmetric, true, false);
+            ////Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false);
+            ////Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
+            ////Tests.UnitTest.ScalingStaticDropletTest(3, ViscosityMode.Standard);
+            ////Tests.UnitTest.TranspiratingChannelTest(2, 0.1d, 0.0d, ViscosityMode.Standard, false);
             //return;
-
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(3, 0.1d, true);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p3(ViscosityMode.FullySymmetric);
-            //throw new Exception("fuck you ");
-
 
 
             _Main(args, false, delegate () {

@@ -141,7 +141,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new StaticDropletTest();
             var LaLa = new List<XNSE_Control>();
-            foreach (var Res in new[] { 1, 2, 4, 8, 12 }) { 
+            foreach (var Res in new[] { 2, 4, 8 }) { 
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res, 
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine);
                 //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
@@ -157,11 +157,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 //C.VelocityBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib;
                 //C.PressureBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.Eye;
-                C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
-                C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
-                C.PhysicalParameters.betaS_A = 5.0;
-                C.PhysicalParameters.betaS_B = 5.0;
-                C.PhysicalParameters.theta_e = 2.0 * Math.PI / 3.0;
+                //C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+                //C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
+                //C.PhysicalParameters.betaS_A = 5.0;
+                //C.PhysicalParameters.betaS_B = 5.0;
+                //C.PhysicalParameters.theta_e = 2.0 * Math.PI / 3.0;
 
                 LaLa.Add(C);
             }

@@ -43,14 +43,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 10, int AMRlvl = 0) {
+        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 20, int AMRlvl = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
-            int D = 2;
+            int D = 3;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
-            bool steadyInterface = false;
+            bool steadyInterface = true;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -109,10 +109,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = Math.Max(2, p),
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
-                Degree = 2*p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+            //    Degree = 2*p,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
 
             #endregion
 
@@ -146,7 +146,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //double sigma = 72.75e-3;                // kg / sec^2 
             //C.PhysicalParameters.Sigma = sigma;
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -157,7 +157,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region grid
 
             double Lscl = 1.0;
-            double xSize = Lscl* 1.0;
+            double xSize = Lscl * 1.0;
             double ySize = Lscl * 1.0;
             double zSize = Lscl * 1.0;
 
@@ -193,9 +193,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if(D == 3) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
-                    double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 1);
-                    double[] Znodes = GenericBlas.Linspace(0, zSize, kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(-xSize / 2.0, xSize / 2.0, kelem + 0);
+                    double[] Ynodes = GenericBlas.Linspace(-ySize / 2.0, ySize / 2.0, kelem + 0);
+                    double[] Znodes = GenericBlas.Linspace(-zSize / 2.0, zSize / 2.0, kelem + 0);
                     var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
                     grd.EdgeTagNames.Add(1, "wall_lower");
@@ -207,17 +207,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
-                        if(Math.Abs(X[2]) <= 1.0e-8)
+                        if (Math.Abs(X[1] + ySize / 2.0) <= 1.0e-8)
                             et = 1;
-                        if(Math.Abs(X[2] - zSize) <= 1.0e-8)
+                        if (Math.Abs(X[1] - ySize / 2.0) <= 1.0e-8)
                             et = 2;
-                        if(Math.Abs(X[0]) <= 1.0e-8)
+                        if (Math.Abs(X[0] + xSize / 2.0) <= 1.0e-8)
                             et = 3;
-                        if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        if (Math.Abs(X[0] - xSize / 2.0) <= 1.0e-8)
                             et = 4;
-                        if(Math.Abs(X[1]) <= 1.0e-8)
+                        if (Math.Abs(X[2] + zSize / 2.0) <= 1.0e-8)
                             et = 5;
-                        if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        if (Math.Abs(X[2] - zSize / 2.0) <= 1.0e-8)
                             et = 6;
 
                         return et;
@@ -240,8 +240,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
 
             if(D == 3) {
-                PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2() + (X[2] - 0.5).Pow2()) - r.Pow2());
-            }
+                PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2() + (X[2] - 0.0).Pow2()) - r.Pow2());
+                C.InitSignedDistance = true;
+            }       
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
@@ -331,18 +332,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //    C.BaseRefinementLevel = AMRlvl;
             //}
-            C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            C.AdaptiveMeshRefinement = false;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.BaseRefinementLevel = 1;
-            C.RefinementLevel = 2;
+            C.RefinementLevel = 1;
 
-            C.InitSignedDistance = false;
-            C.adaptiveReInit = true;
+            //C.InitSignedDistance = false;
+            C.adaptiveReInit = false;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.automatic;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 2;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 80;

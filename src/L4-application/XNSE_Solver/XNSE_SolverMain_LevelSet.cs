@@ -386,13 +386,15 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                         break;
                 }
-                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 1 }), 3);
+
                 #endregion
-               
+
+                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 1 }), 3);
+
                 // =========================================
                 // Enforcing the continuity of the level-set
                 // =========================================
-       
+
                 ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,

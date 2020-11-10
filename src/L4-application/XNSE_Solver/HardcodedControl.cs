@@ -3973,9 +3973,9 @@ namespace BoSSS.Application.XNSE_Solver {
             double r = 0.5;
             double nonsp = 0.5;
 
-            if(D == 2)
+            if (D == 2)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() - 1.0", false));
-            else if(D == 3)
+            else if (D == 3)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2() - 1.0", false));
             else
                 throw new ArgumentOutOfRangeException();
@@ -4049,7 +4049,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
+            //C.dtMin = 1e-4;
+            //C.dtMax = 1e-4;
 
             #endregion
 

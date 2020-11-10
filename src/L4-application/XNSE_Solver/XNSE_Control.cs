@@ -321,7 +321,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool adaptiveReInit = false;
 
         [DataMember]
-        public bool InitSignedDistance = true;
+        public bool InitSignedDistance = false;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -519,7 +519,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// See <see cref="ContinuityProjection"/>
         /// </summary>
         [DataMember]
-        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.None;
+        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
         /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field

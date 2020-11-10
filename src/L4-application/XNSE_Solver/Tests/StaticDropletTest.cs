@@ -67,16 +67,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             if (Resolution < 1)
                 throw new ArgumentException();
 
-            //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 9 * Resolution + 1),
-                                                 //GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 9 * Resolution + 1));
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 16 * Resolution + 1),
-                                                GenericBlas.Linspace(0.0, 3.0 / 2.0, 8 * Resolution + 1));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 9 * Resolution + 1),
+                                                 GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 9 * Resolution + 1));
+            //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3.0 / 2.0, 3.0 / 2.0, 16 * Resolution + 1),
+            //                                    GenericBlas.Linspace(0.0, 3.0 / 2.0, 8 * Resolution + 1));
             //var grd = Grid2D.UnstructuredTriangleGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 5));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3), GenericBlas.Linspace(-2, 2, 3));
 
-            //grd.EdgeTagNames.Add(1, "wall");
+            grd.EdgeTagNames.Add(1, "wall");
             //grd.EdgeTagNames.Add(1, "freeslip");
-            grd.EdgeTagNames.Add(1, "navierslip_linear");
+            //grd.EdgeTagNames.Add(1, "navierslip_linear");
             //grd.EdgeTagNames.Add(1, "pressure_outlet");
             grd.DefineEdgeTags(delegate (double[] _X) {
                 return 1;
@@ -88,9 +88,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
-            //config.Add("wall", new AppControl.BoundaryValueCollection());
+            config.Add("wall", new AppControl.BoundaryValueCollection());
             //config.Add("freeslip", new AppControl.BoundaryValueCollection());
-            config.Add("navierslip_linear", new AppControl.BoundaryValueCollection());
+            //config.Add("navierslip_linear", new AppControl.BoundaryValueCollection());
             //config.Add("pressure_outlet", new AppControl.BoundaryValueCollection());
 
             //config["Velocity_Inlet"].Evaluators.Add(
