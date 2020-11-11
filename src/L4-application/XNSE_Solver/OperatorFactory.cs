@@ -59,6 +59,7 @@ namespace BoSSS.Application.XNSE_Solver
             AddGhostEquationComponents(XOP);
             AddTemporalOperator(XOP);
             AddParameterDelegates(XOP);
+            AddCoefficients(XOP);
             return XOP;
         }
 
@@ -135,6 +136,31 @@ namespace BoSSS.Application.XNSE_Solver
                     }
                 }
             }
+        }
+
+        void AddCoefficients(XSpatialOperatorMk2 spatialOperator)
+        {
+            spatialOperator.OperatorCoefficientsProvider = Coefficients;
+        }
+
+        CoefficientSet Coefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time)
+        {
+            var r = new CoefficientSet()
+            {
+                GrdDat = lstrk.GridDat
+            };
+            var g = lstrk.GridDat;
+            if (g is Foundation.Grid.Classic.GridData cgdat)
+            {
+                r.CellLengthScales = cgdat.Cells.CellLengthScale;
+                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
+
+            }
+            else
+            {
+                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
+            }
+            return r;
         }
     }
 }

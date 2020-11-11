@@ -117,7 +117,6 @@ namespace BoSSS.Application.XNSE_Solver
                 opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
                 opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
             }
-            
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
