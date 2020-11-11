@@ -42,13 +42,18 @@ namespace BoSSS.Application.BoSSSpad {
         InProgress = 2,
 
         /// <summary>
-        /// Job has finished, something has gone wrong.
+        /// Job has terminated and something has gone wrong, or has been canceled
         /// </summary>
-        Failed = 3,
+        FailedOrCanceled = 3,
 
         /// <summary>
         /// Job has finished without any error message (this does not necessarily mean everything is fine ;)
         /// </summary>
-        FinishedSuccessful = 4
+        FinishedSuccessful = 4,
+
+        /// <summary>
+        /// Unable to determine status
+        /// </summary>
+        Unknown = -11111
     }
 }

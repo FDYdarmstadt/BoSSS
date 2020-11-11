@@ -332,7 +332,7 @@ namespace BoSSS.Solution.Gnuplot {
         public bool LegendHorizontal = false;
 
         /// <summary>
-        /// Position of legend, in graph coordinates (e.g. for a log-range, with values from 10 to 1000, this may be 10000 to print the legend rigth from the plot).
+        /// Position of legend, in graph coordinates (e.g. for a log-range, with values from 10 to 1000, this may be 10000 to print the legend right from the plot).
         /// </summary>
         [DataMember]
         public double[] LegendPosition = null;

@@ -657,7 +657,7 @@ namespace BoSSS.Application.FSI_Solver {
                 //SetLevelSet(levelSetFunctionFluid, fluidCells, phystime);
 
 
-                PerformLevelSetSmoothing(allParticleMask, fluidCells, SetFarField: true);
+                PerformLevelSetSmoothing(allParticleMask);
             }
 
             try {

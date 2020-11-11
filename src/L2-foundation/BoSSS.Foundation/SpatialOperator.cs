@@ -1573,8 +1573,7 @@ namespace BoSSS.Foundation {
                     // volume integration
                     // ------------------
                     SpatialOperator _Owner = (SpatialOperator)this.Owner;
-                    if(volRule.Any()
-                        && _Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
+                    if(volRule.Any()) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
@@ -1591,8 +1590,7 @@ namespace BoSSS.Foundation {
 
                     // edge integration
                     // ----------------
-                    if(!(edgeRule.IsNullOrEmpty())
-                         && _Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeForm_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeForm_UxV), typeof(IEdgeSource_V))) {
+                    if(!edgeRule.IsNullOrEmpty()) {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;

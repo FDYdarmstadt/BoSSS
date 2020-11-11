@@ -437,7 +437,11 @@ foreach(double sf in SFs) \{\newline
 \BoSSScmdSilent{
 /// tests BoSSScmdSilent
 foreach(var r in Results) \{\newline 
-\btab if(r.Item1 >= 1 && r.Item1 <= 20) \{\newline 
+<<<<<<< HEAD
+\btab if(r.Item1 >= 1 \&\& r.Item1 <= 20) \{\newline 
+=======
+\btab if(r.Item1 >= 1 \&\&  r.Item1 <= 20) \{\newline 
+>>>>>>> experimentalGitlab/master
 \btab \btab Assert.LessOrEqual(r.Item2, 1e7); // cond No.\newline 
 \btab \btab Assert.LessOrEqual(r.Item3, 6000); // iter\newline 
 \btab \btab Assert.LessOrEqual(r.Item4, 1e-4); // L2 err\newline 
