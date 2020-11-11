@@ -122,7 +122,7 @@ namespace FSI_Solver {
             double distanceThreshold = GridLengthScale / 10;
             if (DistanceThreshold != 0)
                 distanceThreshold = DistanceThreshold;
-            MinimalDistance = distanceThreshold / 25;
+            MinimalDistance = distanceThreshold / 10;
             // Step 2
             // Loop over time until the particles hit.
             // =======================================================
@@ -196,8 +196,8 @@ namespace FSI_Solver {
                             }
                             if (DistanceVector[p0][p1].Abs() < globalMinimalDistance) {
                                 globalMinimalDistance = DistanceVector[p0][p1].Abs();
-                                if(DistanceVector[p0][p1].Abs() < MinimalDistance && temp_SaveTimeStep > 0) {
-                                    saveTimestep = 1e-15;
+                                if (DistanceVector[p0][p1].Abs() < MinimalDistance && temp_SaveTimeStep > 0) {
+                                    saveTimestep = 1e-10;
                                 }
                             }
                             if (temp_Overlapping) {
@@ -266,12 +266,12 @@ namespace FSI_Solver {
 
         private int[][] ClusterCollisionsContainingSameParticles() {
             List<int[]> globalParticleCluster = new List<int[]>();
-            bool[] partOfCollisionCluster = new bool[Particles.Length];
+            bool[] partOfCollisionCluster = new bool[Particles.Length + 4];
             for (int p0 = 0; p0 < Particles.Length; p0++) {
-                if (!partOfCollisionCluster[p0]) {
+                if (!partOfCollisionCluster[p0] && ParticleCollidedWith[p0].Count() > 0) {
                     List<int> currentParticleCluster = new List<int> { p0 };
                     partOfCollisionCluster[p0] = true;
-                    for (int p1 = 1; p1 < ParticleCollidedWith[p0].Count(); p1++) {
+                    for (int p1 = 0; p1 < ParticleCollidedWith[p0].Count(); p1++) {
                         currentParticleCluster.Add(ParticleCollidedWith[p0][p1]);
                         partOfCollisionCluster[ParticleCollidedWith[p0][p1]] = true;
                         FindCollisionClusterRecursive(ParticleCollidedWith, ParticleCollidedWith[p0][p1], currentParticleCluster, partOfCollisionCluster);
@@ -315,7 +315,7 @@ namespace FSI_Solver {
             if (DistanceVector[particle][potentialCollisionPartner].Abs() <= distanceThreshold && AccumulatedCollisionTimestep < TimestepSize && AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner] > 0) {
                 int insertAtIndex = currentParticleCollidedWith.Count();
                 for (int i = 1; i < currentParticleCollidedWith.Count(); i++) {
-                    if (DistanceVector[particle][currentParticleCollidedWith[i]].Abs() > DistanceVector[particle][potentialCollisionPartner].Abs())
+                    if (AccumulatedLocalSaveTimestep[particle][currentParticleCollidedWith[i]] > AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner])
                         insertAtIndex = i;
                 }
                 currentParticleCollidedWith.Insert(insertAtIndex, potentialCollisionPartner);
@@ -456,7 +456,7 @@ namespace FSI_Solver {
             closestPoints[0] = new Vector(spatialDim);
             closestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
-            int maxNoOfIterations = 50;
+            int maxNoOfIterations = 500;
 
             // Step 2
             // Start the iteration

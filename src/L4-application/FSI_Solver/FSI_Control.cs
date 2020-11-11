@@ -90,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return;
             AdaptiveMeshRefinement = true;
             RefinementLevel = amrLevel;
-            AMR_startUpSweeps = 0;// amrLevel;
+            AMR_startUpSweeps = amrLevel;
             Console.WriteLine("No of start up sweeps " + AMR_startUpSweeps);
             ConstantRefinement = constantRefinement;
         }

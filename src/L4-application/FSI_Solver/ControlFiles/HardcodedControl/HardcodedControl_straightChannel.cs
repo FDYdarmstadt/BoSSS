@@ -32,9 +32,9 @@ namespace BoSSS.Application.FSI_Solver {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "3debf19b-821a-4a76-8b06-e1b945b4393e";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
-            C.IsRestart = true;
+            //string ID = "3debf19b-821a-4a76-8b06-e1b945b4393e";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            //C.IsRestart = true;
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
@@ -46,12 +46,11 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 2.5, lengthY: 0.5, cellsPerUnitLength: 25, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(3);
-            C.minDistanceThreshold = 0.005;
 
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.hydrodynamicsConvergenceCriterion = 1e-1;
@@ -61,7 +60,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 500;
+            double particleDensity = 1;
+            C.minDistanceThreshold = 0.005;
 
             // Particle Properties
             // =============================   

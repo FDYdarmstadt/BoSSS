@@ -1014,7 +1014,7 @@ namespace BoSSS.Foundation.XDG {
                     // pass 2: determine agglomeration targets
                     // ---------------------------------------
 
-                    var failCells = new List<int>();
+                    List<int> failCells = new List<int>();
                     foreach (int jCell in AgglomCellsList) {
                         var Cell2Edge_jCell = Cell2Edge[jCell];
 
@@ -1099,8 +1099,10 @@ namespace BoSSS.Foundation.XDG {
 
                         if (jCellNeigh_max < 0) {
                             Vector cellCenter = new Vector(grdDat.iGeomCells.GetCenter(jCell));
-                            throw new Exception("Fail: " + cellCenter);
+                            //throw new Exception("Fail: " + cellCenter);
+                            
                             failCells.Add(jCell);
+
                         } else {
                             _AccEdgesMask[jEdge_max] = true;
 
@@ -1141,12 +1143,13 @@ namespace BoSSS.Foundation.XDG {
                         DGField FailedViz = new SinglePhaseField(b, "FailedCells");
                         foreach (int j in failCells) {
                             FailedViz.SetMeanValue(j, 1);
+                           
                         }
-
                         if (Katastrophenplot != null)
                             Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
+                        ExceptionOnFailedAgglomeration = false;
                         if (ExceptionOnFailedAgglomeration)
                             throw new Exception(message);
                         else
