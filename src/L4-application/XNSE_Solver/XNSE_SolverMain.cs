@@ -559,9 +559,11 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime, int LsTrkHistoryIndex) {
             using (var tr = new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
+                if(LsTrkHistoryIndex != 1)
+                    throw new NotSupportedException("No supported for anything but the current tracker time level.");
 
                 // ============================
                 // treatment of surface tension

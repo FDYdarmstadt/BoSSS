@@ -719,7 +719,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             BlockMsrMatrix OpMatrix = Linearization ? new BlockMsrMatrix(CurrentStateMapping) : null; 
             double[] OpAffine = new double[Ndof];
-            this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime);
+            this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, 1);
 
             if(Linearization) {
                 m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
@@ -942,7 +942,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             //BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
-            base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
+            base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime, 1);
             m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAff, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
             k.SetV(OpAff);
             //OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);

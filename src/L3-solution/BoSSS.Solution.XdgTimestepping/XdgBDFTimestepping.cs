@@ -1217,7 +1217,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
                 Debug.Assert(OpAffine.L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
-                this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
+                this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);
 
                 if(Linearization) {
                     m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
@@ -1265,7 +1265,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     RHS.AccV(-Tsc.theta1, CurrentAffine); //                                     -theta1*b1
                     if (Tsc.theta0 != 0.0) {
                         double[] evalBuffer = new double[RHS.Length];
-                        this.ComputeOperatorMatrix(null, evalBuffer, m_Stack_u[1].Mapping, m_Stack_u[1].Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime);
+                        this.ComputeOperatorMatrix(null, evalBuffer, m_Stack_u[1].Mapping, m_Stack_u[1].Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime, 0);
                         RHS.AccV(-Tsc.theta0, evalBuffer); // RHS -= -theta0*Op0(u0)
                     }
 
@@ -1303,13 +1303,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                         /*
                         if(Linearization == false)
                             throw new NotImplementedException();
-                        m_Stack_OpMatrix[0].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); //  -theta0*Op1*u0
+                        m_Stack_OpMatrix[0].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); //  
                         RHS.AccV(-Tsc.theta0, m_Stack_OpAffine[0]); //                     -theta0*b1 
                         */
 
                         double[] evalBuffer = new double[RHS.Length];
-                        this.ComputeOperatorMatrix(null, evalBuffer, m_Stack_u[1].Mapping, m_Stack_u[1].Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime);
-                        RHS.AccV(-Tsc.theta0, evalBuffer);
+                        this.ComputeOperatorMatrix(null, evalBuffer, m_Stack_u[1].Mapping, m_Stack_u[1].Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime, 1);
+                        RHS.AccV(-Tsc.theta0, evalBuffer); // RHS -= -theta0*Op(u0) at current level-set
                     }
 
                 } else {

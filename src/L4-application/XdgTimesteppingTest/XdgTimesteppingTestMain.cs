@@ -51,7 +51,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            //InitMPI();
+            InitMPI();
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t02(TimeSteppingScheme.RK1, 8, 0.0d);
             //DeleteOldPlotFiles();
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023(TimeSteppingScheme.BDF2, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
