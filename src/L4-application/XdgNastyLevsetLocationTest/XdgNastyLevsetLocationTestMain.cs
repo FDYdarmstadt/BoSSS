@@ -50,17 +50,11 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            BoSSS.Solution.Application._Main(args, true, delegate() {
-                var p = new XdgNastyLevsetLocationTest();
-                return p;
-            });
+            InitMPI();
+            AllUpTest.ParalleTest_2D(XQuadFactoryHelper.MomentFittingVariants.Saye);
         }
 
-        //internal ITest test = new Parallel(GetTestRange(),GetTestRange());
-        //internal ITest test = new Parallel(GetTestRange(), new double[] { 0.0 });
-        //internal ITest test = new Parallel(0.0, 1.0e-12);
-        //internal ITest test = new Parallel(1.0e-12, 0.0);
-
+        
 
         internal ITest test = new Schraeg(GetTestRange(), GetTestRange());
         //internal ITest test = new Schraeg( intercept: 5e-13);
