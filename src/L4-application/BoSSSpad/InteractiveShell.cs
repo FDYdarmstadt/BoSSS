@@ -240,7 +240,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// All the databases; the workflow-management (see <see cref="WorkflowMgm"/>) must have access to those.
         /// </summary>
-        public static IList<IDatabaseInfo> databases;
+        public static IList<IDatabaseInfo> databases = new IDatabaseInfo[0];
 
         /// <summary>
         /// Sessions in all Databases

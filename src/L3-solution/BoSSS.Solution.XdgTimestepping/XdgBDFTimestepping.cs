@@ -167,11 +167,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
+            /*
             // operator matrix - stack
             // -----------------------
 
             m_Stack_OpMatrix = new BlockMsrMatrix[m_TSCchain[0].theta0 != 0.0 ? 2 : 1]; // only required for Crank.Nic. and Expl. Euler,
             m_Stack_OpAffine = new double[m_Stack_OpMatrix.Length][]; //      in this case 'theta0' is unequal 0.0.
+            */
 
             // m_Stack_u
             // ---------
@@ -239,12 +241,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         //
         BlockMsrMatrix[] m_Stack_MassMatrix;
 
+        /*
         //
         // stack of operator matrices and affine vectors (matrices _without_ agglomeration)
         // (since we also do Crank-Nicolson, we may need one previous operator matrix)
         //
         BlockMsrMatrix[] m_Stack_OpMatrix;
         double[][] m_Stack_OpAffine;
+        */
 
         //
         // stack of solution vectors
@@ -324,6 +328,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotImplementedException();
             }
 
+            /*
             // operator stack
             // --------------
 
@@ -341,6 +346,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_Stack_OpMatrix[0] = null;
             if (m_Stack_OpAffine[0] != null)
                 m_Stack_OpAffine[0].ClearEntries();
+            */
 
             // Solution-Stack
             // --------------
@@ -605,6 +611,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //    this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
                 Debug.Assert(m_CurrentAgglomeration == null);
 
+                /*
                 if (m_Stack_OpMatrix[0] == null) {
                     m_Stack_OpMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                 }
@@ -615,6 +622,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_Stack_OpMatrix[0].InfNorm() == 0);
                 Debug.Assert(m_Stack_OpAffine[0].L2Norm() == 0);
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
+                */
             }
         }
 
@@ -686,6 +694,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     m_PrivateBalancingInfo.m_Agglomeration_oldTrsh = m_CurrentAgglomeration.AgglomerationThreshold_Oldtimesteps;
                 }
 
+                /*
                 // backup operator
                 Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
                 m_PrivateBalancingInfo.m_Stack_Operator = new bool[m_Stack_OpMatrix.Length];
@@ -697,6 +706,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 m_Stack_OpMatrix = null;
                 m_Stack_OpAffine = null;
+                */
 
                 // Delete agglomeration
                 m_CurrentAgglomeration = null;
@@ -712,7 +722,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             public int NoOfFields;
             public bool[] m_Stack_u;
             public bool[] m_Stack_MassMatrix;
-            public bool[] m_Stack_Operator;
+            //public bool[] m_Stack_Operator;
             public bool m_Agglomeration;
             public double[] m_Agglomeration_oldTrsh;
         }
@@ -792,6 +802,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 }
 
+                /*
                 // restore operator matrix
                 m_Stack_OpMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_Operator.Length];
                 m_Stack_OpAffine = new double[m_PrivateBalancingInfo.m_Stack_Operator.Length][];
@@ -814,6 +825,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     this.ComputeOperatorMatrix(m_Stack_OpMatrix[i], m_Stack_OpAffine[i],
                         m_Stack_u[i].Mapping, m_Stack_u[i].Mapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
                 }
+                */
 
                 // finished
                 m_PrivateBalancingInfo = null;
@@ -1185,29 +1197,33 @@ namespace BoSSS.Solution.XdgTimestepping {
                 this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
                 // clear operator matrix (clearing and re-alloc are pretty equal, i.e. 'BlockMsrMatrix.Clear()' just releases all internal memory)
+                BlockMsrMatrix OpMatrix;
                 if(Linearization)
-                    m_Stack_OpMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
+                    OpMatrix = new BlockMsrMatrix(CurrentStateMapping);
                 else
-                    m_Stack_OpMatrix[0] = null;
+                    OpMatrix = null;
 
                 // clear affine part
+                double[] OpAffine = new double[CurrentStateMapping.LocalLength];
+                /*
                 if (m_Stack_OpAffine[0] == null) {
                     m_Stack_OpAffine[0] = new double[CurrentStateMapping.LocalLength];
                 } else {
                     m_Stack_OpAffine[0].ClearEntries();
                 }
+                */
 
                 // assemble matrix & affine part
-                Debug.Assert(m_Stack_OpMatrix[0] == null || m_Stack_OpMatrix[0].InfNorm() == 0);
-                Debug.Assert(m_Stack_OpAffine[0].L2Norm() == 0);
+                Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
+                Debug.Assert(OpAffine.L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
-                this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
+                this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
                 if(Linearization) {
-                    m_LsTrk.CheckMatrixZeroInEmptyCutCells(m_Stack_OpMatrix[0], CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-                    m_LsTrk.CheckVectorZeroInEmptyCutCells(m_Stack_OpAffine[0], CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+                    m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+                    m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
                 } else {
-                    m_LsTrk.CheckVectorZeroInEmptyCutCells(m_Stack_OpAffine[0], CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
+                    m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
                 }
 
 
@@ -1216,8 +1232,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 double dt = m_CurrentDt;
 
-                double[] CurrentAffine = m_Stack_OpAffine[0];
-                BlockMsrMatrix CurrentOpMatrix = m_Stack_OpMatrix[0];
+                double[] CurrentAffine = OpAffine;
+                BlockMsrMatrix CurrentOpMatrix = OpMatrix;
                 BlockMsrMatrix CurrentMassMatrix = m_Stack_MassMatrix[0];
 
                 // choose BDF scheme 
@@ -1248,15 +1264,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     RHS.AccV(-Tsc.theta1, CurrentAffine); //                                     -theta1*b1
                     if (Tsc.theta0 != 0.0) {
-                        //if(Linearization == false)
-                        //    throw new NotImplementedException();
-                        //m_Stack_OpMatrix[1].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); // -theta0*Op0*u0
-                        //RHS.AccV(-Tsc.theta0, m_Stack_OpAffine[1]); //                    -theta0*b0 
-                    
                         double[] evalBuffer = new double[RHS.Length];
                         this.ComputeOperatorMatrix(null, evalBuffer, m_Stack_u[1].Mapping, m_Stack_u[1].Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime);
-                        RHS.AccV(-Tsc.theta0, evalBuffer);
-                    
+                        RHS.AccV(-Tsc.theta0, evalBuffer); // RHS -= -theta0*Op0(u0)
                     }
 
                 } else if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
@@ -1758,7 +1768,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_CurrentAgglomeration == null);
             }
 
-
+            /*
             // ====================
             // release end-of-stack
             // ====================
@@ -1768,6 +1778,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_Stack_OpMatrix[ie] = null;
             m_Stack_OpAffine[ie] = null;
             //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
+            */
 
             return success;
         }
@@ -1990,7 +2001,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
             //    throw new ApplicationException("Mismatch between species lists.");
 
-
+            /*
             // re-sort mass matrices 
             // and operator matrix (Exp. Euler or Crank-Nicolson)
             {
@@ -2010,13 +2021,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     m_Stack_MassMatrix[i] = Mtx2Update[i + 1];
                 }
             }
-
+            
 
             // re-sort RHS  (Exp. Euler or Crank-Nicolson)
             if (m_Stack_OpMatrix.Length > 1) {
                 TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, m_Stack_OpAffine[1], CurrentStateMapping);
             }
-
+            */
 
         }
     }

@@ -1230,7 +1230,9 @@ namespace PublicTestRunner {
                 break;
 
                 default:
-                throw new NotSupportedException("unknown subprogram.");
+                PrintMainUsage();
+                ret = -1000;
+                break;
             }
 
             csMPI.Raw.mpiFinalize();
