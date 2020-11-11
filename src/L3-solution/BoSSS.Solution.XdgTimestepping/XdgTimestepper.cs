@@ -460,6 +460,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         DGField[] JacobiParameterVars = null;
 
+        
 
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time) {
             // compute operator
@@ -534,10 +535,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // only operator evaluation
                     // ++++++++++++++++++++++++
 
+                    double t1 = LsTrk.RegionsHistory.Current.Time;
+                    double t0 = LsTrk.RegionsHistory[0].Time;
+                    int HistoryIndex = int.MinValue;
+                    if(Math.Abs(time - t1) < 1.0e-8)
+                        HistoryIndex = 1;
+                    else if(Math.Abs(time - t0) < 1.0e-8) {
+                        //Console.WriteLine("using old time");
+                        HistoryIndex = 0;
+                    } else
+                        throw new ArgumentException("unknown time");
+
                     this.XdgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
 
-                    var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping);
+                    var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, HistoryIndex);
                     eval.time = time;
+
                     eval.MPITtransceive = true;
                     foreach(var kv in AgglomeratedCellLengthScales) {
                         eval.CellLengthScales[kv.Key] = kv.Value;

@@ -51,15 +51,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(1, 0.08d, "rk", 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t02(TimeSteppingScheme.RK_CrankNic, 8, 0.0d);
-            //for(int i = 0; i < 6; i++) {
-            //    int[] PolyOrderS = new[] { 0, 1, 2, 3, 0, 1 };
-            //    string[] TimeSteppers = new[] { "bdf", "bdf", "bdf", "bdf", "rk", "rk"};
-            //    BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(PolyOrderS[i], 0.08d, TimeSteppers[i], 8);
-            //}
+            InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
             //FinalizeMPI();
             //throw new ApplicationException("deactivate me");
