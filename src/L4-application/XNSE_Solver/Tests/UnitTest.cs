@@ -133,7 +133,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void ScalingStaticDropletTest(
 
-            [Values(2, 3, 4)] int deg,
+            [Values(2, 3)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
             ) {
 
@@ -148,20 +148,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
                 C.InitSignedDistance = false;
-                //C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-                //C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-                //C.Timestepper_BDFinit = Solution.Timestepping.TimeStepperInit.SingleInit;
-                //C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-                //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-                //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-
-                //C.VelocityBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-                //C.PressureBlockPrecondMode = Solution.AdvancedSolvers.MultigridOperator.Mode.Eye;
-                //C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
-                //C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
-                //C.PhysicalParameters.betaS_A = 5.0;
-                //C.PhysicalParameters.betaS_B = 5.0;
-                //C.PhysicalParameters.theta_e = 2.0 * Math.PI / 3.0;
 
                 LaLa.Add(C);
             }
@@ -283,7 +269,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             GenericTest(Tst, C);
-            if(deg < 3)
+            if (deg == 2)
+                ScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg);
+            if (deg == 3)
                 ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
 
         }

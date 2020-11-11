@@ -80,12 +80,12 @@ namespace BoSSS.Application.XNSE_Solver {
             //InitMPI();
             //DeleteOldPlotFiles();
 
-            //Tests.UnitTest.ChannelTest(4, 0.0d, ViscosityMode.Standard, 1.0471975511966d);
+            ////Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d); // 1.0471975511966d);
             ////Tests.UnitTest.MovingDropletTest(3, 0.3d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.85984d, ViscosityMode.FullySymmetric, true, false);
             ////Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false);
             ////Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
             ////Tests.UnitTest.TestRayleighTaylorInstability();
-            ////Tests.UnitTest.ScalingStaticDropletTest(3, ViscosityMode.Standard);
+            //Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
             ////Tests.UnitTest.TranspiratingChannelTest(2, 0.1d, 0.0d, ViscosityMode.Standard, false);
             //return;
 

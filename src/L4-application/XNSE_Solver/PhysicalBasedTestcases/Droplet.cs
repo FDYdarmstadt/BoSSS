@@ -344,12 +344,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.adaptiveReInit = false;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            //C.LinearSolver.SolverCode = LinearSolverCode.automatic;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.automatic;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.LinearSolver.NoOfMultigridLevels = 2;
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50; 
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 80;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -428,7 +428,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //    C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //}
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
 
