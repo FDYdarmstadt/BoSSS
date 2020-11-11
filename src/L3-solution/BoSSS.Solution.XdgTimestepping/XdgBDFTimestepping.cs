@@ -2001,6 +2001,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
             //    throw new ApplicationException("Mismatch between species lists.");
 
+
+            // re-sort mass matrices 
+            {
+                var Mtx2Update = m_Stack_MassMatrix.Skip(1).ToArray(); // shallow copy!
+                TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
+                for (int i = 1; i < m_Stack_MassMatrix.Length; i++) {
+                    m_Stack_MassMatrix[i] = Mtx2Update[i - 1];
+                }
+            }
+
+
             /*
             // re-sort mass matrices 
             // and operator matrix (Exp. Euler or Crank-Nicolson)
