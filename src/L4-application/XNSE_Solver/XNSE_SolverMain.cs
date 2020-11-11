@@ -73,10 +73,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(
+                1, 0.0d,
+                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+                SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, true);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest_p2(ViscosityMode.Standard);
-            //throw new Exception("rmove me");
+            throw new Exception("remove me");
 
 
             _Main(args, false, delegate () {
@@ -474,6 +478,11 @@ namespace BoSSS.Application.XNSE_Solver {
             if (Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
                 if (Control.Timestepper_LevelSetHandling != LevelSetHandling.None)
                     throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._TimesteppingMode.Steady, LevelSetHandling.None));
+            }
+
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
             }
 
             int degU = this.CurrentVel[0].Basis.Degree;
