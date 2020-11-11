@@ -229,6 +229,33 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+            MultidimensionalArray m_CellLengthScales;
+
+            public MultidimensionalArray CellLengthScale{
+                get{
+                    if (m_CellLengthScales == null){
+                        m_CellLengthScales = CreateCellLengthScales();
+                    }
+                    return m_CellLengthScales;
+                }
+            }
+
+            MultidimensionalArray CreateCellLengthScales(){
+                MultidimensionalArray scales = MultidimensionalArray.Create(Count);
+                for (int iLogicalCells = 0; iLogicalCells < Count; ++iLogicalCells)
+                {
+                    double edgeArea = 0;
+                    int[] logicalEdges = Cells2Edges[iLogicalCells];
+                    foreach(int jLogical in logicalEdges)
+                    {
+                        edgeArea += m_Owner.iLogicalEdges.GetEdgeArea(Math.Abs(jLogical) -1);
+                    }
+                    double volume = GetCellVolume(iLogicalCells);
+                    scales[iLogicalCells] = volume / edgeArea;
+                }
+                return scales;
+            }
+
             public void GetCellBoundingBox(int j, BoundingBox bb) {
                 BoundingBox bbTemp = new BoundingBox(bb.D);
                 bb.Clear();

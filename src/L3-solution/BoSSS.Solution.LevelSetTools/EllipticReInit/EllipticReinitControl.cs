@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Runtime.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,13 +27,14 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// <summary>
     /// Implement this in a Control Class, when using the Elliptic ReInit
     /// </summary>
+    [DataContract]
     [Serializable]
-    public class EllipticReInitAlgoControl  {
+    public class EllipticReInitAlgoControl {
 
         /// <summary>
         /// L2-Criteria for Change Rate
         /// </summary>
-        public double ConvergenceCriterion = 1e-4;
+        public double ConvergenceCriterion = 1e-6;
         /// <summary>
         /// Maximal Number of Iterations
         /// </summary>
@@ -52,12 +54,14 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// Use a fast marching solver to generate an initial solution
         /// </summary>
+        [DataMember]
         public bool FastMarchingPrecond = false;
 
         /// <summary>
         /// Underrelaxation-Factor for the fix-point iteration
         /// </summary>
-        public double underrelaxation=1;
+        [DataMember]
+        public double underrelaxation = 1;
 
         /// <summary>
         /// Upwind Based Flux Formulation

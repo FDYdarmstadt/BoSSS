@@ -499,14 +499,14 @@ namespace BoSSS.Foundation {
         /// Set mean value to mean value of field
         /// </summary>
         /// <param name="field"></param>
-        public void SetMeanValue(DGField field, CellMask mask = null)
+        public void SetMeanValueTo(DGField field, CellMask mask = null)
         {
-            if (field.GridDat.GridID != this.GridDat.GridID)
+            if(field.GridDat.GridID != this.GridDat.GridID)
             {
                 throw new Exception("Requires equal grids.");
             }
-
-            if (mask != null && mask.GridData.GridID != this.GridDat.GridID)
+            
+            if(mask != null && mask.GridData.GridID != this.GridDat.GridID)
             {
                 throw new Exception("Mask must belong to grid.");
             }
@@ -515,9 +515,9 @@ namespace BoSSS.Foundation {
                 mask = CellMask.GetFullMask(field.GridDat);
             }
 
-            foreach (Chunk chunk in mask)
+            foreach(Chunk chunk in mask)
             {
-                for (int iCell = 0; iCell < chunk.Len; ++iCell)
+                for(int iCell = 0; iCell < chunk.Len; ++iCell)
                 {
                     double mean = field.GetMeanValue(iCell);
                     this.SetMeanValue(iCell, mean);

@@ -31,6 +31,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             bool keepOnRunning = true;
             Edge<T> activeEdge = default(Edge<T>);
             IntersectionCase intersectionCase = IntersectionCase.NotIntersecting;
+            bool linesLeft = true;
             while (keepOnRunning)
             {
                 keepOnRunning = false;
@@ -62,6 +63,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                         if (!boundary.MoveNext())
                         {
                             keepOnRunning = false;
+                            linesLeft = false;
                         }
                         break;
                     case IntersectionCase.EndOfEdge:
@@ -77,6 +79,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                         if (!boundary.MoveNext())
                         {
                             keepOnRunning = false;
+                            linesLeft = false;
                         }
                         break;
                     case IntersectionCase.StartOfLine:
@@ -84,8 +87,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                         throw new InvalidOperationException();
                 }
             }
-            MeshIntersecter<T>.AfterCutEdgeEnumerator cellEnumerator = meshIntersecter.GetNeighborFromLineDirection(outerEdge, state.ActiveLine);
-            cellEnumerator.Cell.IntersectionVertex = outerEdge.End.ID;
+            MeshIntersecter<T>.AfterCutEdgeEnumerator cellEnumerator;
+            if (linesLeft)
+            {
+                cellEnumerator = meshIntersecter.GetNeighborFromLineDirection(outerEdge, state.ActiveLine);
+                cellEnumerator.Cell.IntersectionVertex = outerEdge.End.ID;
+            }
+            else
+            {
+                cellEnumerator = null;
+            }
             return (cellEnumerator, intersectionCase);
         }
     }

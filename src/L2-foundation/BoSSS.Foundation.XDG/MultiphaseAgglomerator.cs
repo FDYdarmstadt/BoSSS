@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.XDG {
                 oldCcm = null;
             }
 
-            if ((oldCcm == null) != (oldTs__AgglomerationTreshold == null)) {
+            if ((oldCcm == null) != (oldTs__AgglomerationTreshold == null)) { 
                 throw new ArgumentException();
             }
 
@@ -790,8 +790,8 @@ namespace BoSSS.Foundation.XDG {
                 if (edgeArea.GetLength(0) != NoOfEdges)
                     throw new ArgumentException();
 
-                double EmptyEdgeTreshold = 1.0e-10; // edges with a measure blow or equal to this threshold are
-                // considered to be 'empty', therefore they should not be used for agglomeration;
+                double EmptyEdgeTreshold = 1.0e-10; // edges with a measure below or equal to this threshold are
+                //                                     considered to be 'empty', therefore they should not be used for agglomeration;
                 //                                     there is, as always, an exception: if all inner edges which belong to a
                 //                                     cell that should be agglomerated, the criterion mentioned above must be ignored.
 
@@ -839,7 +839,7 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                     }
-
+                    
                     int NoTimeLev = oldTs__AgglomerationTreshold != null ? oldTs__AgglomerationTreshold.Length : 0;
                     if (NoTimeLev > 0) {
                         // for the previous timestep
@@ -857,7 +857,7 @@ namespace BoSSS.Foundation.XDG {
                         int NoOfLevSets = Tracker.LevelSets.Count;
 
                         for (int iTimeLev = 0; iTimeLev < NoTimeLev; iTimeLev++) {
-                            CellMask suspectsForAgg = Tracker.RegionsHistory[-iTimeLev].GetSpeciesMask(spId);
+                            CellMask suspectsForAgg = Tracker.RegionsHistory[-iTimeLev].GetCutCellMask().Intersect(Tracker.RegionsHistory[-iTimeLev].GetSpeciesMask(spId));
                             foreach (int jCell in suspectsForAgg.ItemEnum) {
 
 
@@ -867,7 +867,7 @@ namespace BoSSS.Foundation.XDG {
                                 spcVol = Math.Max(spcVol, 0.0);
                                 double frac = spcVol / totVol;
                                 frac = Math.Min(1.0, Math.Max(0.0, frac));
-
+                          
                                 if (frac < alpha) {
                                     // cell 'jCell' should be agglomerated to some other cell
                                     if (!AgglomCellsBitmask[jCell]) {
@@ -878,7 +878,7 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                     }
-
+                    
                     if (AgglomerateNewborn) {
 
                         for (int j = 0; j < Jup; j++) {
@@ -1017,7 +1017,6 @@ namespace BoSSS.Foundation.XDG {
                     var failCells = new List<int>();
                     foreach (int jCell in AgglomCellsList) {
                         var Cell2Edge_jCell = Cell2Edge[jCell];
-
 
                         // cell 'jCell' should be agglomerated to some other cell
                         Debug.Assert(AgglomCellsBitmask[jCell] == true);

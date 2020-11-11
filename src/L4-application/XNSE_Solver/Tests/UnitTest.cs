@@ -38,11 +38,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class UnitTest {
 
+
+        /// <summary>
+        /// MPI finalize.
+        /// </summary>
+        [OneTimeTearDown]
+        static public void OneTimeTearDown() {
+            csMPI.Raw.mpiFinalize();
+        }
+
         /// <summary>
         /// MPI init.
         /// </summary>
         [OneTimeSetUp]
         static public void OneTimeSetUp() {
+
+            BoSSS.Solution.Application.InitMPI(new string[0]);
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 
@@ -111,6 +122,36 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingViscosityJumpTest-p" + deg);
+        }
+#endif
+
+#if !DEBUG
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest(
+
+            [Values(2, 3)] int deg,
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+
+            double AgglomerationTreshold = 0.1;
+
+            var Tst = new StaticDropletTest();
+            var LaLa = new List<XNSE_Control>();
+            foreach (var Res in new[] { 2, 4, 8 }) { 
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res, 
+                    SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine);
+                //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+                //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+
+                C.InitSignedDistance = false;
+
+                LaLa.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingStaticDropletTest-p" + deg);
         }
 #endif
 
@@ -221,9 +262,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var Tst = new ChannelTest(angle);
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            if (angle > 0.0) // intermediate solution (smuda 10.11.)
+                C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             GenericTest(Tst, C);
-            if(deg < 3)
+            if (deg == 2)
+                ScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg);
+            if (deg == 3)
                 ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
 
         }
@@ -350,7 +395,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // DG degree
             // =========
 
-            C.SetFieldOptions(FlowSolverDegree, tst.LevelsetPolynomialDegree);
+            //C.SetFieldOptions(FlowSolverDegree, tst.LevelsetPolynomialDegree);
+            C.SetDGdegree(FlowSolverDegree);
 
             // grid
             // ====

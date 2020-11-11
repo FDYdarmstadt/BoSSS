@@ -1,0 +1,252 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 7 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 93; Grid Count = 945; Path = D:\local\local_Testcase_databases\Testcase_HeatedWall }
+  2: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  3: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  4: { Session Count = 750; Grid Count = 20960; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  5: { Session Count = 173; Grid Count = 341; Path = D:\local\local_XNSE_StudyDB }
+  6: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
+using BoSSS.Application.XNSE_Solver;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Foundation' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+WorkflowMgm.Init("XNSE/BubbleGrowth");
+**************
+Project name is set to 'XNSE/BubbleGrowth'.
+
+==============
+WorkflowMgm.Sessions
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+List of 9 instances of ISessionInfo {
+  0: XNSE/BubbleGrowth	empty-session-name*	03/10/2020 18:56:37	640e7184...
+  1: XNSE/BubbleGrowth	empty-session-name*	03/10/2020 18:48:23	21b3e86d...
+  2: XNSE/BubbleGrowth	empty-session-name*	03/10/2020 17:33:33	346d2526...
+  3: XNSE/BubbleGrowth	empty-session-name*	03/10/2020 15:14:19	ea726d1e...
+  4: XNSE/BubbleGrowth	empty-session-name*	03/09/2020 19:47:03	16ea6c9f...
+  5: XNSE/BubbleGrowth	empty-session-name*	03/09/2020 19:46:10	119b7282...
+  6: XNSE/BubbleGrowth	empty-session-name*	03/09/2020 22:05:37	f465f7d5...
+  7: XNSE/BubbleGrowth	empty-session-name*	03/09/2020 20:02:46	310b482b...
+  8: XNSE/BubbleGrowth	empty-session-name*	08/30/2019 09:42:33	826a1388...
+}
+==============
+//WorkflowMgm.Sessions.Pick(2).Export().WithSupersampling(2).Do()
+**************
+==============
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+evalSess.Add(WorkflowMgm.Sessions.Pick(0));
+**************
+==============
+evalSess
+**************
+List of 1 instances of ISessionInfo {
+  0: XNSE/BubbleGrowth	empty-session-name*	03/10/2020 18:56:37	640e7184...
+}
+==============
+// ================================
+// Temperature and velocity profile
+// ================================
+double Tsat = 373;
+**************
+==============
+evalSess.Pick(0).Timesteps.Count;
+**************
+2369
+==============
+int tsI         = 2000;
+double phystime = evalSess.Pick(0).Timesteps.Pick(tsI).PhysicalTime;
+phystime
+**************
+0.200000000000059
+==============
+DGField Temperature = evalSess.Pick(0).Timesteps.Pick(tsI).Fields.ElementAt(7);
+Temperature
+**************
+Temperature
+==============
+DGField VelocityX = evalSess.Pick(0).Timesteps.Pick(tsI).Fields.ElementAt(4);
+VelocityX
+**************
+VelocityX
+==============
+DGField VelocityY = evalSess.Pick(0).Timesteps.Pick(tsI).Fields.ElementAt(5);
+VelocityY
+**************
+VelocityY
+==============
+int N = 1000;
+double[] rValues = new double[N-1];
+double[] Tvalues = new double[N-1];
+//double[] TvalRef = new double[N-1];
+double[] Vvalues = new double[N-1];
+//double[] VvalRef = new double[N-1];
+for(int n = 1; n < N; n++) {
+    double[] probe = new double[] { (6e-3/(double)N)*n, 0.0}; //(6e-3/(double)N)*n };
+    rValues[n-1] = ((6e-3/(double)N)*n); //*Math.Sqrt(2);
+    try {
+        Tvalues[n-1] = Temperature.ProbeAt(probe);  
+        if(Tvalues[n-1] < Tsat)
+            Tvalues[n-1] = Tsat;
+        Vvalues[n-1] = Math.Sqrt((VelocityX.ProbeAt(probe)).Pow2() + (VelocityY.ProbeAt(probe)).Pow2());    
+    } catch {
+        Tvalues[n-1] = Tsat;
+        Vvalues[n-1] = 0.0;
+    }
+    /*
+    double zi = Lv0 + 2.0*lambdaV*Math.Sqrt(alphaV*(t0+phystime));
+    if(yValues[n-1] < zi) {
+        TvalRef[n-1] = Tsat + deltaT * (SpecialFunctions.Erf(lambdaV) - SpecialFunctions.Erf(lambdaV + Math.Sqrt(1.0 / alphaV) 
+        * ((yValues[n-1]-zi) / (2.0 * Math.Sqrt(t0+phystime))))) / (1.0 + SpecialFunctions.Erf(lambdaV));
+        VvalRef[n-1] = 0.0;
+    } else {
+        TvalRef[n-1] = Tsat; 
+        VvalRef[n-1] = Math.Sqrt(alphaV)*(lambdaV/Math.Sqrt(t0+phystime))*(1-(rhoV/rhoL));   
+    }
+    */
+}
+**************
+==============
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+PlotFormat pltForm = new PlotFormat();
+pltForm.LineColor  = LineColors.Black;
+pltForm.Style      = Styles.Lines;
+**************
+==============
+plt.PlotXY(rValues, Tvalues, format:pltForm);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+plt.PlotXY(rValues, Vvalues, format:pltForm);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+dat.AddDataGroup(xyVal);
+string name = "1DHeatUnsteady_TemperatureProfile_time0.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+dat   = new Plot2Ddata();
+xyVal = new Plot2Ddata.XYvalues(null, yValues, TvalRef);
+dat.AddDataGroup(xyVal);
+name = "1DHeatUnsteady_refTemperatureProfile_time0.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+plt.PlotXY(yValues, VvalRef, format:pltFormRef);
+plt.PlotXY(yValues, Vvalues, format:pltForm);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Vvalues);
+dat.AddDataGroup(xyVal);
+string name = "1DHeatSteady_VelocityProfile_time0.txt";
+//dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+dat   = new Plot2Ddata();
+xyVal = new Plot2Ddata.XYvalues(null, yValues, VvalRef);
+dat.AddDataGroup(xyVal);
+name = "1DHeatSteady_refVelocityProfile_time0.txt";
+//dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
