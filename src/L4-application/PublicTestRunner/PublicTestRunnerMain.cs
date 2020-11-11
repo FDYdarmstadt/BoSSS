@@ -538,9 +538,9 @@ namespace PublicTestRunner {
                                 YAML.WriteLine("   stage: test parallel");
                             YAML.WriteLine("   script:");
                             if (t.NoOfProcs == 1)
-                                YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml'");
+                                YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml'");
                             else
-                                YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
+                                YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml");
                             if (t.NoOfProcs > 1)
                             {
                                 YAML.WriteLine("   tags:");

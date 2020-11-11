@@ -12,6 +12,7 @@ namespace BoSSS.Application.LoadBalancingTest {
     [TestFixture]
     static public class AllUpTest {
 
+        /*
         /// <summary>
         /// MPI init
         /// </summary>

@@ -121,7 +121,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             for(int iEq = 0; iEq < NoOfEq; iEq++) {
                                 int N = RowMapping.GetNumberOfModes(LsTrk, iEq, j, SpcId);
                                 for(int n = 0; n < N; n++) {
-                                    int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n) + RowMapping.i0;
+                                    int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n);
 
                                     if(Vector[iRow] != 0) {
                                         if(CCvol[j] != 0.0) {
