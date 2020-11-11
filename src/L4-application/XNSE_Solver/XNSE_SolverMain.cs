@@ -73,16 +73,20 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASTranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.TransposeTermMissing, true);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASTranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASBcTest_PressureOutletTest(1, 0.0d, true);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASMovingDropletTest(1, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8, ViscosityMode.FullySymmetric, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(3, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.71711, ViscosityMode.FullySymmetric, true, false);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASMovingDropletTest(3, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.71711, ViscosityMode.FullySymmetric, true, false);
+            
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestCapillaryWave();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASPolynomialTestForConvectionTest(3, 0, false);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0, ViscosityMode.Standard, 0.0);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASChannelTest(2, 0, ViscosityMode.Standard, 0.0);
 
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestRayleighTaylorInstability();

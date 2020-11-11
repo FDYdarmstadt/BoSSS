@@ -5,6 +5,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -162,8 +163,6 @@ namespace BoSSS.Application.XNSE_Solver
 
         public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
 
-        
-
         (string, DGField)[] NormalFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
             LevelSet Phi = (LevelSet)(LsTrk.LevelSets[0]);
@@ -187,6 +186,7 @@ namespace BoSSS.Application.XNSE_Solver
                 Normals[i] = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[i]];
             }
             VectorField<DGField> normalVector = new VectorField<DGField>(Normals);
+            Normals.Clear();
             normalVector.Gradient(1.0, Phi);
         }
     }

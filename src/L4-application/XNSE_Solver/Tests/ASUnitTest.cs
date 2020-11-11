@@ -251,7 +251,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.Init(C);
                 solver.RunSolverMode();
 
-                //solver.OperatorAnalysis();
+                solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
                 ErrorEvaluator evaluator = new ErrorEvaluator(solver);

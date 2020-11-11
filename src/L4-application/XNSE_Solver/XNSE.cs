@@ -52,7 +52,8 @@ namespace BoSSS.Application.XNSE_Solver
             return quadOrder;
         }
 
-        protected override LevelSetTracker InstantiateTracker() {
+        protected override LevelSetTracker InstantiateTracker() 
+        {
             levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
             lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
@@ -62,8 +63,11 @@ namespace BoSSS.Application.XNSE_Solver
                     lsUpdater.AddEvolver("Phi", new FourierEvolver(Control, QuadOrder()));
                     break;
                 case LevelSetEvolution.FastMarching:
+                case LevelSetEvolution.None:
                     lsUpdater.AddEvolver("Phi", new FastMarcher(Control, QuadOrder()));
                     break;
+                default:
+                    throw new NotImplementedException();
             }
             return lsUpdater.Tracker;
         }
@@ -84,9 +88,6 @@ namespace BoSSS.Application.XNSE_Solver
             }
             double residual = lsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
             return residual;
-        }
-
-        protected override void CreateAdditionalFields() {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
@@ -110,9 +111,13 @@ namespace BoSSS.Application.XNSE_Solver
             opFactory.AddParameter(new Normals(D, LsTrk));
             opFactory.AddParameter(Curvature.CreateFrom(Control, config, LsTrk, quadOrder));
             
-            opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
-            opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-            opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
+            if (config.isContinuity)
+            {
+                opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
+                opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
+                opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
+            }
+            
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
@@ -136,8 +141,18 @@ namespace BoSSS.Application.XNSE_Solver
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt)
         {
+            var parameterFields = Timestepping.Parameters;
+            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
+            for (int iVar = 0; iVar < parameterFields.Count(); iVar++)
+            {
+                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
+            }
+            //if (TimestepNo == 1)
+            //    lsUpdater.Initialize(ParameterVarsDict, phystime);
+
             //Update Calls
             dt = GetFixedTimestep();
+            dt = Math.Min(dt, 1e100);
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             return dt;
         }

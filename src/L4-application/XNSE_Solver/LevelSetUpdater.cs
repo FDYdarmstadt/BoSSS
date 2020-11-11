@@ -33,9 +33,9 @@ namespace BoSSS.Application.XNSE_Solver
 
         public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
         
-        Dictionary<string, ILevelSetEvolver> evolvers;
+        Dictionary<string, ILevelSetHandler> lsHandlers;
 
-        DualLevelSet[] interfaces;
+        DualLevelSet[] currentInterfaces;
 
         ContinuityProjection[] enforcers;
 
@@ -44,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver
             LevelSet levelSet = ContinuityProjection.CreateField(
                     dgLevelSet, BackgroundGrid, ContinuityProjectionOption.SpecFEM);
             levelSet.AccLaidBack(1.0, dgLevelSet);
-            interfaces = new DualLevelSet[]
+            currentInterfaces = new DualLevelSet[]
             {
                 new DualLevelSet
                 {
@@ -63,12 +63,12 @@ namespace BoSSS.Application.XNSE_Solver
                 enforcer
             };
             Tracker = new LevelSetTracker(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levelSet);
-            evolvers = new Dictionary<string, ILevelSetEvolver>(4);
+            lsHandlers = new Dictionary<string, ILevelSetHandler>(4);
         }
 
-        public void AddEvolver(string name, ILevelSetEvolver evolver)
+        public void AddEvolver(string name, ILevelSetHandler evolver)
         {
-            evolvers.Add(name, evolver);
+            lsHandlers.Add(name, evolver);
         }
 
         public double UpdateLevelSets(
@@ -79,20 +79,20 @@ namespace BoSSS.Application.XNSE_Solver
             double underRelax,
             bool incremental) 
         {
-            SetInterfaces(interfaces, Tracker);
+            SetCurrentInterfaces(currentInterfaces, Tracker);
             double residual = 0;
-            for(int i = 0; i < interfaces.Length;  ++i)
+            for(int i = 0; i < currentInterfaces.Length;  ++i)
             {
-                var singleInterface = interfaces[i];
+                var singleInterface = currentInterfaces[i];
                 var enforcer = enforcers[i];
-                if (evolvers.TryGetValue(singleInterface.CGLevelSet.Identification, out ILevelSetEvolver evolver))
+                if (lsHandlers.TryGetValue(singleInterface.CGLevelSet.Identification, out ILevelSetHandler handler))
                 {
                     LevelSet ls = singleInterface.CGLevelSet;
                     LevelSet lsBkUp = ls.CloneAs();
 
                     //Move LevelSet and update Params
-                    UpdateLevelSet(
-                        evolver,
+                    MoveLevelSet(
+                        handler,
                         enforcer,
                         singleInterface,
                         DomainVarFields,
@@ -102,6 +102,12 @@ namespace BoSSS.Application.XNSE_Solver
                         underRelax,
                         incremental);
 
+                    handler.UpdateParameters(
+                        singleInterface,
+                        Tracker,
+                        time,
+                        ParameterVarFields);
+
                     //Calculate Residual
                     CellMask oldCC = Tracker.Regions.GetCutCellMask4LevSet(singleInterface.LevelSetIndex);
                     var newCC = Tracker.Regions.GetCutCellMask();
@@ -109,12 +115,16 @@ namespace BoSSS.Application.XNSE_Solver
                     double levSetResidual = lsBkUp.L2Norm(newCC.Union(oldCC));
                     residual += levSetResidual;
                 }
+                else
+                {
+                    throw new Exception($"LevelSet #{i} does not have a registered handler");
+                }
             }
             Tracker.UpdateTracker(time + dt, incremental: true);
             return residual;
         }
 
-        static void SetInterfaces(DualLevelSet[] interfaces, LevelSetTracker tracker)
+        static void SetCurrentInterfaces(DualLevelSet[] interfaces, LevelSetTracker tracker)
         {
             for (int i = 0; i < interfaces.Length; ++i)
             {
@@ -125,8 +135,8 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
-        void UpdateLevelSet(
-            ILevelSetEvolver evolver,
+        void MoveLevelSet(
+            ILevelSetHandler lsHandler,
             ContinuityProjection enforcer,
             DualLevelSet phaseInterface,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
@@ -141,8 +151,8 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 dglsBkUp = phaseInterface.DGLevelSet.CloneAs();
             }
-            
-            evolver.UpdatePhaseInterface(
+
+            lsHandler.MovePhaseInterface(
                 phaseInterface,
                 Tracker,
                 time, 
@@ -162,6 +172,28 @@ namespace BoSSS.Application.XNSE_Solver
             CellMask Near1 = Tracker.Regions.GetNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
             CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
             enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+        }
+
+        public void Initialize(
+            IReadOnlyDictionary<string, DGField> ParameterVarFields,
+            double time)
+        {
+            for (int i = 0; i < currentInterfaces.Length; ++i)
+            {
+                var singleInterface = currentInterfaces[i];
+                if (lsHandlers.TryGetValue(singleInterface.CGLevelSet.Identification, out ILevelSetHandler handler))
+                {
+                    handler.UpdateParameters(
+                        singleInterface,
+                        Tracker,
+                        time,
+                        ParameterVarFields);
+                }
+                else
+                {
+                    throw new Exception($"LevelSet #{i} does not have a registered handler");
+                }
+            }
         }
     }
 }
