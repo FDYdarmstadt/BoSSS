@@ -817,14 +817,12 @@ namespace BoSSS.Solution {
             int NoOfLevels = MultigridBasis.Count();
             int[] DOFperCell = new int[NoOfLevels];
             int[] LocalDOF = new int[NoOfLevels];
-            int counter = 0;
+
             
 
             for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
-                counter = iLevel;
-                if (iLevel > NoOfLevels - 1)
-                    counter = NoOfLevels - 1;
-                foreach (var cob in MGChangeOfBasis[counter]) {
+                var MGChangeOfBasis_iLevel = MGChangeOfBasis[Math.Min(iLevel, MGChangeOfBasis.Length - 1)];
+                foreach (var cob in MGChangeOfBasis_iLevel) {
                     for (int iVar = 0; iVar < cob.VarIndex.Length; iVar++) {
                         int d = ((AggregationGridBasis)MultigridBasis.First()[iVar]).AggGrid.ParentGrid.SpatialDimension;
                         int p = cob.DegreeS[iVar];
