@@ -169,14 +169,9 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
 
                     if (test.VolumeTestSupported) {
-                        /*
-                        var VolA = CellQuadrature(volSchemeA.Compile(this.GridDat, this.QUAD_ORDER));
-                        var VolAref = CellVolumeRef(cutCells, "A");
-                        var volAErr = VolA.CloneAs();
-                        volAErr.Acc(-1.0, VolAref);
-                        double volAL2err = volAErr.L2Norm();
-                        Console.WriteLine("Volume error for species A: " + volAL2err);
-                        */
+                        // +++++++++++++++++++++
+                        // compare cell volume
+                        // +++++++++++++++++++++
 
                         var VolB = CellQuadrature(volSchemeB.Compile(this.GridData, this.QUAD_ORDER));
                         var VolBref = CellVolumeRef(cutCells, "B");
@@ -190,6 +185,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
 
                     if (test.BoundaryPlusLevelsetTestSupported) {
+
                         var LevelSetArea = CellQuadrature(surfScheme.Compile(this.GridData, this.QUAD_ORDER));
                         var BoundaryB = EdgeQuadrature2CellBoundary(edgeSchemeB.Compile(this.GridData, this.QUAD_ORDER));
                         var RefAreaB = CellBoundaryPlusLevelsetAreaRef(cutCells, "B");
@@ -201,8 +197,32 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                         Console.WriteLine("levelset + cell-boundary error for species B: " + areaBL2err);
                     }
 
-                    //break;
-                }
+                    {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++
+                        // check Gauss theorem for 1st order polynomials
+                        // ++++++++++++++++++++++++++++++++++++++++++++++
+
+                        var VolB = CellQuadrature(volSchemeB.Compile(this.GridData, this.QUAD_ORDER));
+                        var VolBbnd = CellVolumeFromGauss(edgeSchemeB.Compile(this.GridData, this.QUAD_ORDER), surfScheme.Compile(this.GridData, this.QUAD_ORDER), -1);
+
+                        int D = this.GridData.SpatialDimension;
+                        for(int d = 0; d < D; d++) {
+                            var Err = VolB.CloneAs();
+                            Err.Acc(-1.0, VolBbnd.ExtractSubArrayShallow(-1, d));
+                            double gaussErrTot = Err.L2Norm();
+
+                            if (gaussErrTot >= 1.0e-5)
+                                throw new ApplicationException(string.Format("Significant Gauﬂ integral error for species B: {0}", gaussErrTot));
+                        }
+
+                    }
+
+
+
+                    //PlotCurrentState(phystime, new TimestepNumber(TimestepNo, testcnt), 3);
+
+
+                } // end of location loop
             } catch (Exception e) {
                 Console.WriteLine(e.GetType().Name + ": " + e.Message);
                 Console.WriteLine(e.StackTrace);
@@ -210,6 +230,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
             }
 
 
+           
 
             base.TerminationKey = true;
             return 0.0;
@@ -263,6 +284,9 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         }
 
 
+        /// <summary>
+        /// Computes the volume of the cut cells/surface of the level-set according to <paramref name="surfRule"/>
+        /// </summary>
         private MultidimensionalArray CellQuadrature(ICompositeQuadRule<QuadRule> surfRule) {
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
@@ -303,6 +327,63 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
             return ret;
         }
 
+        /// <summary>
+        /// Computes cut-cell-volume as \f$ \oint_{K_{j,\frakS}} (x,0) \cdot \vec{n} dS \f$
+        /// </summary>
+        private MultidimensionalArray CellVolumeFromGauss(ICompositeQuadRule<QuadRule> edgeRule, ICompositeQuadRule<QuadRule> surfRule, double speciesSign) {
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int D = this.GridData.SpatialDimension;
+            var ret = MultidimensionalArray.Create(J, D);
+            var E2C = this.GridData.iLogicalEdges.CellIndices;
+
+
+            // contribution from edges
+            BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
+                new int[] { D }, this.GridData,
+                edgeRule,
+                delegate(int i0, int Length, QuadRule Qr, MultidimensionalArray EvalResult) { // Evaluate
+                    var Normals = this.GridData.iGeomEdges.NormalsCache.GetNormals_Edge(Qr.Nodes, i0, Length);
+                    var Nodes = this.GridData.GlobalNodes.GetValue_EdgeSV(Qr.Nodes, i0, Length);
+
+                    EvalResult.Clear();
+                    EvalResult.Multiply(1.0, Nodes, Normals, 0.0, "ikd", "ikd", "ikd");
+                },
+                delegate(int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
+                    for (int i = 0; i < Length; i++) {
+                        int iEdge = i0 + i;
+                        int jCell0 = E2C[iEdge, 0];
+                        int jCell1 = E2C[iEdge, 1];
+
+                        for(int d = 0; d < D; d++) {
+                            ret[jCell0, d] += ResultsOfIntegration[i, d]; // IN-cell counts positive
+                            if(jCell1 >= 0)
+                                ret[jCell1, d] -= ResultsOfIntegration[i, d]; // OUT-cell counts negative
+                        }
+                    }
+                }).Execute();
+
+            // contribution from level-set
+            BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
+                new int[] { D }, this.GridData,
+                surfRule,
+                delegate(int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
+                    var Normals = this.LsTrk.DataHistories[0].Current.GetLevelSetNormals(QR.Nodes, i0, Length);
+                    var Nodes = this.GridData.GlobalNodes.GetValue_Cell(QR.Nodes, i0, Length);
+
+                    EvalResult.Clear();
+                    EvalResult.Multiply(1.0, Nodes, Normals, 0.0, "ikd", "ikd", "ikd");
+                },
+                delegate(int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
+                    var A = ret.ExtractSubArrayShallow(new int[] { i0, 0}, new int[] { i0 + Length - 1, D - 1 });
+                    A.Acc(speciesSign, ResultsOfIntegration);
+                }).Execute();
+
+            // return
+            return ret;
+        }
+
+
+
         private MultidimensionalArray EdgeQuadrature2CellBoundary(ICompositeQuadRule<QuadRule> surfRule) {
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
@@ -325,6 +406,8 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                             ret[jCell1] += ResultsOfIntegration[i, 0];
                     }
                 }).Execute();
+
+
 
             return ret;
         }
