@@ -1132,6 +1132,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.MaxSolverIterations = 20;
@@ -3837,7 +3838,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem =64, string _DbPath = null, int D = 2) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem = 64, string _DbPath = null, int D = 2) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -3972,9 +3973,9 @@ namespace BoSSS.Application.XNSE_Solver {
             double r = 0.5;
             double nonsp = 0.5;
 
-            if(D == 2)
+            if (D == 2)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() - 1.0", false));
-            else if(D == 3)
+            else if (D == 3)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2() - 1.0", false));
             else
                 throw new ArgumentOutOfRangeException();
@@ -4048,7 +4049,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
+            //C.dtMin = 1e-4;
+            //C.dtMax = 1e-4;
 
             #endregion
 

@@ -381,7 +381,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
+            C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
             C.AdvancedDiscretizationOptions.UseWeightedAverages = false;
             C.InterAverage = XRheology_Control.InterfaceAveraging.viscosity;

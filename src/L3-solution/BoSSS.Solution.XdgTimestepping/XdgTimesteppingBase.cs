@@ -29,6 +29,7 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 
+
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
@@ -466,6 +467,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 int NF = this.CurrentStateMapping.Fields.Count;
                 m_ResLogger.IterationCounter = iterIndex;
 
+                double totResi = 0.0;
                 if (m_TransformedResi) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // transform current solution and residual back to the DG domain
@@ -492,6 +494,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                        totResi += L2Res.Pow2();
                     }
                 } else {
 
@@ -508,10 +511,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                             L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
+                        totResi += L2Res.Pow2();
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
                 }
+                totResi = totResi.Sqrt();
+                m_ResLogger.CustomValue(totResi, "Total");
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");
@@ -616,7 +622,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumV = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             
@@ -636,6 +642,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Ret.Add(kv.Key, kv.Value);
                     }
                 }
+
+                if (plotStencilCondNumV) {
+                    var fullStencil = ana.StencilCondNumbersV();
+                    ana.VarGroup = new int[] { 0, 1 };
+                    var sipStencil = ana.StencilCondNumbersV();
+                    Tecplot.Tecplot.PlotFields(new DGField[] { fullStencil, sipStencil, (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCond", 0.0, 1);
+                    //ana.VarGroup = new int[] { 2 };
+                    //Tecplot.Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV(), (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCn_varGroup2", 0.0, 1);
+                }
+
             }
 
             return Ret;

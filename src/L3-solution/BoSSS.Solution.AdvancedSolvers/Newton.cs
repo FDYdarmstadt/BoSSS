@@ -131,13 +131,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Switch the use of the Homotopy-Path (<see cref="ISpatialOperator.HomotopyUpdate"/>) on/off
         /// </summary>
-        public bool UseHomotopy = false;
+        public bool UseHomotopy = true;
 
 
         /// <summary>
         /// Main solver routine
         /// </summary>
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+
+            // Initialization
+            /// =============
+
             double[] CurSol, // "current (approximate) solution", i.e.
                 CurRes; // residual associated with 'CurSol'
             base.Init(SolutionVec, RHS, out CurSol, out CurRes);
@@ -155,20 +159,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS, double[] CurSol, double[] CurRes) where S : IList<double> {
             using (var tr = new FuncTrace()) {
-
-                // Initialization
-                /// =============
-
-                // double[] CurSol, // "current (approximate) solution", i.e.
-                //     CurRes; // residual associated with 'CurSol'
-
-
-                // using (new BlockTrace("Slv Init", tr)) {
-                //     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
-                // };
-
-                // this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
-                // EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
 
                 // intial residual evaluation
                 double norm_CurRes = CurRes.MPI_L2Norm();

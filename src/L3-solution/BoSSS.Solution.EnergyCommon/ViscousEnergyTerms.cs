@@ -226,7 +226,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector()); //, VariableNames.Pressure);
+                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector()); 
             }
         }
 
@@ -247,29 +247,27 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        protected override void Flux(ref CommonParamsVol inp, Double[] U, Double[] output) {
+        protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
 
             double[] Vel = inp.Parameters.GetSubVector(0, m_D);
             double[,] GradVel = VelocityGradient(inp.Parameters.GetSubVector(m_D, m_D), inp.Parameters.GetSubVector(2 * m_D, m_D));
-            //double Press = inp.Parameters[3 * m_D];
 
             for (int d = 0; d < m_D; d++) {
-                output[d] = 0; // -Press * Vel[d];        // pressure term
+                output[d] = 0; 
                 for (int dd = 0; dd < m_D; dd++) {
                     output[d] -= mu * GradVel[d, dd] * Vel[dd];      // velocity grad
                     if(transposedTerm)
                         output[d] -= mu * GradVel[dd, d] * Vel[dd];      // velocity grad transposed term
                 }
             }
-            //output.ScaleV(-1.0);
+
         }
 
 
-        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, Double[] Uin) {
+        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
 
             double[] Vel_IN = inp.Parameters_IN.GetSubVector(0, m_D);
             double[,] GradVel_IN = VelocityGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
-            //double Press_IN = inp.Parameters_IN[3 * m_D];
 
             double acc = 0;
 
@@ -277,18 +275,10 @@ namespace BoSSS.Solution.EnergyCommon {
 
             switch (edgType) {
                 case IncompressibleBcType.Wall: {
-                        //for (int d = 0; d < m_D; d++) {
-                        //    //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
-                        //    for (int dd = 0; dd < m_D; dd++) {
-                        //        acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
-                        //        //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
-                        //    }
-                        //}
                         break;
                     }
                 case IncompressibleBcType.Velocity_Inlet: {
                         for (int d = 0; d < m_D; d++) {
-                            //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for (int dd = 0; dd < m_D; dd++) {
                                 double VelD = VelFunction[inp.EdgeTag, dd](inp.X, inp.time);
                                 acc += mu * (GradVel_IN[d, dd] * VelD) * inp.Normal[d];
@@ -302,7 +292,6 @@ namespace BoSSS.Solution.EnergyCommon {
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.Pressure_Dirichlet: {
                         for (int d = 0; d < m_D; d++) {
-                            //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for (int dd = 0; dd < m_D; dd++) {
                                 acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normal[d];
                                 if (transposedTerm) {
@@ -321,19 +310,16 @@ namespace BoSSS.Solution.EnergyCommon {
 
         }
 
-        protected override double InnerEdgeFlux(ref CommonParams inp, Double[] Uin, Double[] Uout) {
+        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
 
             double[] Vel_IN = inp.Parameters_IN.GetSubVector(0, m_D);
             double[] Vel_OUT = inp.Parameters_OUT.GetSubVector(0, m_D);
             double[,] GradVel_IN = VelocityGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
             double[,] GradVel_OUT = VelocityGradient(inp.Parameters_OUT.GetSubVector(m_D, m_D), inp.Parameters_OUT.GetSubVector(2 * m_D, m_D));
-            //double Press_IN = inp.Parameters_IN[3 * m_D];
-            //double Press_OUT = inp.Parameters_OUT[3 * m_D];
 
             double acc = 0;
 
             for (int d = 0; d < m_D; d++) {
-                //acc -= 0.5 * (Press_IN * Vel_IN[d] + Press_OUT * Vel_OUT[d]) * inp.Normale[d];
                 for (int dd = 0; dd < m_D; dd++) {
                     acc += 0.5 * mu * (GradVel_IN[d, dd] * Vel_IN[dd] + GradVel_OUT[d, dd] * Vel_OUT[dd]) * inp.Normal[d];
                     if (transposedTerm) {
@@ -346,19 +332,19 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        override public TermActivationFlags VolTerms {
+        public override TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.GradV;
             }
         }
 
-        override public TermActivationFlags BoundaryEdgeTerms {
+        public override TermActivationFlags BoundaryEdgeTerms {
             get {
                 return TermActivationFlags.V;
             }
         }
 
-        override public TermActivationFlags InnerEdgeTerms {
+        public override TermActivationFlags InnerEdgeTerms {
             get {
                 return TermActivationFlags.V;
             }
@@ -620,9 +606,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), 
+                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), 
                     VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), 
-                    VariableNames.Pressure0);
+                    VariableNames.Pressure);
             }
         }
 

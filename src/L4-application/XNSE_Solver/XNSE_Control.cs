@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public XNSE_Control() {
             base.LinearSolver.NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
             base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
@@ -86,11 +86,13 @@ namespace BoSSS.Application.XNSE_Solver {
             SetFieldOptions(p, Math.Max(2, p));
         }
 
-
         /// <summary>
         /// 
         /// </summary>
         public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+            if(VelDegree < 1)
+                throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
+            
             FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -116,13 +118,126 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
             });
-            FieldOptions.Add(VariableNames.Temperature, new FieldOpts() {
-                Degree = VelDegree,
+        }
+
+
+        public void SetDGdegree2(int p) {
+            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
 
-       
+
+        public void SetFieldOptions2(int VelDegree, int LevSetDegree) {
+            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
+                Degree = VelDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
+                Degree = VelDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
+                Degree = VelDegree - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = LevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = LevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+        }
+
+
+        [DataMember]
+        public string methodTagLS;
+
+        public void SetLevelSetMethod(int method, FourierLevSetControl _FourierControl = null) {
+
+            LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            switch (method) {
+                case 0: {
+                        goto default;
+                    }
+                case 1: {
+                        // fast marching with Curvature and default filtering 
+                        methodTagLS = "FastMarchCurv";
+                        Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+                        FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                        break;
+                    }
+                case 2: {
+                        // Extension Velocity with Laplace Beltrami without filtering
+                        methodTagLS = "ExtVelLB";
+                        Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+                        EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                        //AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+                        EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+                        //fullReInit = true;
+                        break;
+                    }
+                case 3: {
+                        // Extension Velocity with Curvature and default filtering 
+                        methodTagLS = "ExtVelCurv";
+                        Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+                        EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                        EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+                        fullReInit = true;
+                        break;
+                    }
+                case 4: {
+                        methodTagLS = "Fourier";
+                        FourierLevSetControl = _FourierControl;
+                        Option_LevelSetEvolution = LevelSetEvolution.Fourier;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+                        FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.RungeKutta1901;
+                        break;
+                    }
+                default: {
+                        // (standard) fast marching with Laplace Beltrami without filtering
+                        methodTagLS = "FastMarchLB";
+                        Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+                        FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+                        break;
+                    }
+            }
+        }
+
+        /// <summary>
+        /// switches off all plotCurrentState calls
+        /// </summary>
+        [DataMember]
+        public bool switchOffPlotting = false;
+
 
         /// <summary>
         /// Width of the narrow band.
@@ -141,6 +256,11 @@ namespace BoSSS.Application.XNSE_Solver {
             constantInterface,
 
             /// <summary>
+            /// additional refinement on cells in pashe A
+            /// </summary>
+            PhaseARefined,
+
+            /// <summary>
             /// additional refinement on cells with high curvature
             /// </summary>
             CurvatureRefined,
@@ -148,7 +268,17 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// additional refinement at contact line
             /// </summary>
-            ContactLineRefined
+            ContactLineRefined,
+
+            /// <summary>
+            /// additional refinement at navier slip boundary
+            /// </summary>
+            NavierSlipRefined,
+
+            /// <summary>
+            /// additional refinement on near band cells for high velocity gradients
+            /// </summary>
+            VelocityGradient
         }
 
         /// <summary>
@@ -161,13 +291,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// desired minimum refinement level at interface
         /// </summary>
         [DataMember]
-        public int BaseRefinementLevel = 1;
+        public int BaseRefinementLevel = 0;
 
         /// <summary>
         /// maximum refinement level including additional refinement (contact line, curvature, etc.)
         /// </summary>
         [DataMember]
-        public int RefinementLevel = 1;
+        public int RefinementLevel = 0;
 
 
         /// <summary>
@@ -177,8 +307,21 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool RefineNavierSlipBoundary = false;
 
 
+        /// <summary>
+        /// option for clearing the velocities for restart
+        /// </summary>
         [DataMember]
-        public int ReInitPeriod = 0;
+        public bool ClearVelocitiesOnRestart = false;
+
+        [DataMember]
+        public bool ReInitOnRestart = false;
+
+
+        [DataMember]
+        public bool adaptiveReInit = false;
+
+        [DataMember]
+        public bool InitSignedDistance = false;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -234,6 +377,12 @@ namespace BoSSS.Application.XNSE_Solver {
             Wavelike,
 
             /// <summary>
+            /// for droplet simulations
+            /// semi-major/minor aixs, circularity, area
+            /// </summary>
+            Dropletlike,
+
+            /// <summary>
             /// for the benchmark quantities of the Rising Bubble testcase
             /// </summary>
             RisingBubble,
@@ -256,7 +405,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// Evaporative mass flux and speed of displacement (circle interface)
             /// </summary>
-            EvaporationC
+            EvaporationC,
+
+            /// <summary>
+            /// Channel flow type testcases
+            /// </summary>
+            ChannelFlow
         }
 
         /// <summary>
@@ -295,12 +449,26 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public double LSunderrelax = 1.0;
 
+        //[DataMember]
+        //public bool useFiltLevSetGradientForEvolution = false;
 
         /// <summary>
         /// See <see cref="LevelSetEvolution"/>.
         /// </summary>
         [DataMember]
         public LevelSetEvolution Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+        ///// <summary>
+        ///// switch for additional penalization terms for fast marching
+        ///// </summary>
+        //[DataMember]
+        //public bool FastMarchingPenalization = false;
+
+        /// <summary>
+        /// options for additional penalization terms for fast marching
+        /// </summary>
+        [DataMember]
+        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
 
         /// <summary>
         /// Options for the initialization of the Fourier Level-set
@@ -320,6 +488,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double[] AdditionalParameters;
 
+        /// <summary>
+        /// amplitude values for wave-like interfaces
+        /// </summary>
+        [DataMember]
+        public double[] prescribedLSwaveData;
+
 
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
@@ -327,25 +501,44 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double LevelSet_ConvergenceCriterion = 1.0e-6;
 
-      
+
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        ///// </summary>
+        [DataMember]
+        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+
+        /// <summary>
+        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
+        /// </summary>
+        [DataMember]
+        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
+
 
         /// <summary>
         /// See <see cref="ContinuityProjection"/>
         /// </summary>
         [DataMember]
-        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
+        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
         /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
+        [DataMember]
         public bool EnforceLevelSetConservation = false;
 
 
         /// <summary>
-        /// if true, kinetic energy equation will be solved 
+        /// if true, kinetic energy equation will be solved as postprocessing
         /// </summary>
         [DataMember]
         public bool solveKineticEnergyEquation = false;
+
+        /// <summary>
+        /// if false, the kinetic energy timestepping is one order higher than the flow solver
+        /// </summary>
+        [DataMember]
+        public bool equalTimesteppingForKineticEnergy = true;
 
         /// <summary>
         /// discretization option for the visocus source terms of the kinetic energy equation
@@ -395,9 +588,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool RegisterUtilitiesToIOFields = false;
         
         /// <summary>
-        /// average method for interface values
+        /// average method for constructing the interface velocity
         /// </summary>
-        public enum InterfaceAveraging {
+        public enum InterfaceVelocityAveraging {
 
             /// <summary>
             /// arithmetic mean
@@ -412,14 +605,24 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// viscosity weighted average
             /// </summary>
-            viscosity
+            viscosity,
+
+            /// <summary>
+            /// only take velocity from phase A
+            /// </summary>
+            phaseA,
+
+            /// <summary>
+            /// only take velocity from phase B
+            /// </summary>
+            phaseB
 
         }
 
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>
         /// </summary>
-        public InterfaceAveraging InterAverage = InterfaceAveraging.density;
+        public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
 
 
@@ -447,6 +650,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Control Options for ReInit
         /// </summary>
+        [DataMember]
         public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
 
         /// <summary>
@@ -454,7 +658,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
 
-
+        /// <summary>
+        /// three-step reinitialization with preconditioning fast-marching
+        /// </summary>
+        [DataMember]
+        public bool fullReInit = true;
 
         /// <summary>
         /// switch for the computation of the coupled heat solver
@@ -485,8 +693,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Block-Precondition for the Temperature-block
         /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+        //[DataMember]
+        //public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
 
         /// <summary>

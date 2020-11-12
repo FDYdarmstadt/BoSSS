@@ -62,7 +62,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string,int[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string,int[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<double[], bool> SelectionFunc = null) {  
             using (var tr = new FuncTrace()) {
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
                     throw new ArgumentException("empty list of field names.");
@@ -77,6 +77,20 @@ namespace BoSSS.Solution.Statistic {
                     fields.Add(timestep.Fields);
                     i++;
                     //Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
+                }
+
+
+                // clear cut-out cells 
+                if (SelectionFunc != null) {
+                    foreach (var fenum in fields) {
+                        foreach (var f in fenum) {
+                            GridData grd = (GridData)f.GridDat;
+                            //SelectionFunc = X => (X[1] < (3.0/9.0) && ( ((X[0] > 3.0 * (1.5 / 9.0)) && (X[0] < 6.0 * (1.5 / 9.0))) || ((X[0] < -3.0 * (1.5 / 9.0)) && (X[0] > -6.0 * (1.5 / 9.0)))));
+                            CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
+                            Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
+                            f.Clear(cutout);
+                        }
+                    }
                 }
 
 

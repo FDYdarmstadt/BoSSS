@@ -717,6 +717,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        static public string MassFluxExtension = "MassFluxExtension";
 
         /// <summary>
         /// variable name for the Gradient of the Temperature (linearization point)

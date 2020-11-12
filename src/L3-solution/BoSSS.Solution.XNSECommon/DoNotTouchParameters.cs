@@ -296,11 +296,31 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public SurfaceSressTensor SurfStressTensor = SurfaceSressTensor.Isotropic;
 
+        public enum SurfaceTensionForceStabilization {
+
+            None,
+
+            surfaceDeformationRateLocal,
+
+            GradUxGradV,
+
+            surfaceDivergence,
+
+            EdgeDissipation,
+
+        }
+
         /// <summary>
         /// 
         /// </summary>
         [DataMember]
-        public bool UseLevelSetStabilization = false;
+        public SurfaceTensionForceStabilization STFstabilization = SurfaceTensionForceStabilization.None;
+
+        /// <summary>
+        /// set the the maximum surface tension coefficient value according to given time step restriction
+        /// </summary>
+        [DataMember]
+        public bool SetSurfaceTensionMaxValue = false;
 
 
         /// <summary>
@@ -308,6 +328,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool UseWeightedAverages = false;
+
+        /// <summary>
+        /// switch for free surface flows, thus slip is allowed at the interface
+        /// </summary>
+        [DataMember]
+        public bool freeSurfaceFlow = false;
 
 
         /// <summary>
@@ -326,14 +352,14 @@ namespace BoSSS.Solution.XNSECommon {
         /// Expert options regarding the evaluation of the curvature.
         /// </summary>
         [DataMember]
-        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = new CurvatureAlgorithms.FilterConfiguration();
+        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
 
         /// <summary>
         /// See <see cref="NavierSlip_Localization"/>
         /// </summary>
         [DataMember]
-        public NavierSlip_Localization GNBC_Localization = NavierSlip_Localization.Nearband;
+        public NavierSlip_Localization GNBC_Localization = NavierSlip_Localization.Bulk;
 
         /// <summary>
         /// See <see cref="NavierSlip_SlipLength"/>
@@ -404,8 +430,9 @@ namespace BoSSS.Solution.XNSECommon {
                 PenaltySafety = this.PenaltySafety,
                 SurfStressTensor = this.SurfStressTensor,
                 SST_isotropicMode = this.SST_isotropicMode,
-                UseLevelSetStabilization = this.UseLevelSetStabilization,
+                STFstabilization = this.STFstabilization,
                 UseWeightedAverages = this.UseWeightedAverages,
+                freeSurfaceFlow = this.freeSurfaceFlow,
                 ViscosityMode = this.ViscosityMode,
                 //ViscosityImplementation = this.ViscosityImplementation,
                 UseGhostPenalties = this.UseGhostPenalties,

@@ -20,27 +20,7 @@ using System.Linq;
 using System.Text;
 
 namespace ilPSP.LinSolvers.PARDISO {
-
-    /// <summary>
-    /// Singleton pattern to control the instantiation of the PARDISO wrapper
-    /// </summary>
-    public static class SingletonPARDISO
-    {
-        static private string parallelism = "SEQ";
-
-        public static void SetParallelism(string si)
-        {
-            parallelism = si;
-        }
-
-        public static Wrapper_MKL Instance
-        {
-            get
-            {
-                return new Wrapper_MKL(parallelism);
-            }
-        }
-    }
+       
 
     /// <summary>
     /// Another wrapper layer that encapsulates 
@@ -50,21 +30,61 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <summary>
         /// ctor.
         /// </summary>
-        public MetaWrapper(Version __V) {
-            Init(__V);
+        public MetaWrapper(Version __V, Parallelism par) {
+            Init(__V, par);
         }
 
-        private void Init(Version __V) {
-            switch (__V) {
-                case Version.MKL: if (mkl == null) mkl = SingletonPARDISO.Instance; break;
-                case Version.v5: if (v5 == null) v5 = new Wrapper_v5(); break;
+        private void Init(Version __V, Parallelism par) {
+            if(__V == Version.MKL) {
+                switch(par) {
+                    case Parallelism.SEQ: mkl = Get_singleton_mkl_ser(); break;
+                    case Parallelism.OMP: mkl = Get_singleton_mkl_omp(); break;
+                    default: throw new NotSupportedException($"Unsupported level of parallelism {par} for MKL PARDISO solver.");
+                }
+
+
+            } else if(__V == Version.v5) {
+                 switch(par) {
+                    case Parallelism.OMP: v5 = Get_singleton_v5(); break;
+                    default: throw new NotSupportedException($"Unsupported level of parallelism {par} for v5 PARDISO solver.");
+                }
+
+            } else {
+                throw new NotSupportedException($"Unknown PARDISO version: {__V}");
             }
         }
 
 
-        static Wrapper_MKL mkl;
+        static Wrapper_MKL singleton_mkl_omp;
 
-        static Wrapper_v5 v5;
+        static Wrapper_MKL Get_singleton_mkl_omp() {
+            if(singleton_mkl_omp == null) {
+                singleton_mkl_omp = new Wrapper_MKL(Parallelism.OMP);
+            }
+            return singleton_mkl_omp;
+        }
+
+        static Wrapper_MKL singleton_mkl_ser;
+
+        static Wrapper_MKL Get_singleton_mkl_ser() {
+            if(singleton_mkl_ser == null) {
+                singleton_mkl_ser = new Wrapper_MKL(Parallelism.SEQ);
+            }
+            return singleton_mkl_ser;
+        }
+
+        static Wrapper_v5 singleton_v5;
+
+        static Wrapper_v5 Get_singleton_v5() {
+            if(singleton_v5 == null) {
+                singleton_v5 = new Wrapper_v5();
+            }
+            return singleton_v5;
+        }
+
+
+        Wrapper_MKL mkl; // in case of MKL, the wrapper
+        Wrapper_v5 v5;
 
 
         /// <summary>
@@ -111,7 +131,7 @@ namespace ilPSP.LinSolvers.PARDISO {
             } else {
                 errStr = "unknown error, unknown PARDISO version.";
             }
-            throw new ArithmeticException("PARDISO error occured: " + errStr);
+            throw new ArithmeticException("PARDISO error occurred: " + errStr);
         }
     }
 }
