@@ -65,40 +65,33 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// Read from Environment which type of parallel library should be used.
         /// Returns a list of libraries in specific order to search for.
         /// </summary>
-        static string[] SelectLibrary(string si) {
+        static string[] SelectLibrary(Parallelism par) {
             string[] liborder;
-            switch (si) {
-                case "OMP":
-                case "OMP,MPI":
-                case "MPI,OMP":
-                case "OMP,SEQ":
-                case "OMP,MPI,SEQ":
-                case "OMP,SEQ,MPI":
-                case "MPI,OMP,SEQ":
-                    liborder = new string[] { "PARDISO.dll", "libBoSSSnative_omp.so", "libBoSSSnative_seq.so" };
-                    break;
+            switch(par) {
+                case Parallelism.OMP:
+                liborder = new string[] { "PARDISO.dll", "libBoSSSnative_omp.so", "libBoSSSnative_seq.so" };
+                break;
+
+                case Parallelism.SEQ:
+                liborder = new string[] { "PARDISO.dll", "libBoSSSnative_seq.so", "libBoSSSnative_omp.so" };
+                break;
 
                 default:
-                    liborder = new string[] { "PARDISO.dll", "libBoSSSnative_seq.so", "libBoSSSnative_omp.so" };
-                    break;
+                throw new NotSupportedException($"Unsupported level of parallelism {par} for v5 PARDISO solver.");
             }
             return liborder;
-
         }
 
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Wrapper_MKL(string si = "SEQ") : base(
-            SelectLibrary(si),
+        public Wrapper_MKL(Parallelism par) : base(
+            SelectLibrary(par),
             new string[3][][],
             new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
             new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
             new int[] { -1, -1, -1 }) {
-#if DEBUG
-            Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si);
-#endif
         }
 
         /// <summary>

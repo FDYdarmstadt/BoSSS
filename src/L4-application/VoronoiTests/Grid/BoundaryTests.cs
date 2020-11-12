@@ -70,7 +70,7 @@ namespace VoronoiTests.Grid
             MultidimensionalArray nodes = Checkerize(xTics, yTics);
 
             VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
-            Plotter.Plot(grid);
+            //Plotter.Plot(grid);
 
         }
 
@@ -270,20 +270,13 @@ namespace VoronoiTests.Grid
 
             Random random = new Random(10);
             MultidimensionalArray nodes = default(MultidimensionalArray);
-            for (int i = 0; i < 10; i += 1)
+            for (int i = 0; i < 100; i += 1)
             {
                 Console.WriteLine($"Roll number{i}");
                 nodes = RandomNodesInSquare(4.09, 4.0, 300, random);
                 nodes[0, 0] = -1 + 1e-5;
                 nodes[0, 1] = 1 - 1e-5;
-                try
-                {
-                    VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
             }
             //VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
             //Plotter.Plot(grid);
@@ -363,23 +356,17 @@ namespace VoronoiTests.Grid
             };
             Random random = new Random(1);
             MultidimensionalArray nodes = default(MultidimensionalArray);
-            for (int i = 0; i < 48; ++i)
+            for (int i = 0; i < 100; ++i)
             {
                 Console.WriteLine($"Roll number {i}");
                 nodes = RandomNodesInSquare(1.0, 1.0, 300, random);
                 nodes[0, 0] = -1 + 1e-6;
                 nodes[0, 1] = 1 - 1e-6;
-                try
-                {
-                    //VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
-                    //Plotter.Plot(grid);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+                //Plotter.Plot(grid);
+
             }
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+            //VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
         }
 
         MultidimensionalArray RandomNodesInSquare(double height, double width, int number, Random random = null)

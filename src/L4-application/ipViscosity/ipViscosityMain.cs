@@ -91,14 +91,15 @@ namespace BoSSS.Application.ipViscosity {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            
-            BoSSS.Solution.Application._Main(args, true, delegate() {
-                ipViscosityMain p = new ipViscosityMain(); 
+
+            BoSSS.Solution.Application._Main(args, true, delegate () {
+                ipViscosityMain p = new ipViscosityMain();
                 return p;
             });
-            
+
             //BoSSS.Solution.Application.InitMPI(new string[0]);
-            //_Test.ConsistencyTest(Terms.T1, ViscosityImplementation.H, 1);
+            ////_Test.ConsistencyTest(Terms.T2, 1);
+            //_Test.solverTest(Terms.T1 | Terms.T2 | Terms.T3, 2, 4);
             //csMPI.Raw.mpiFinalize();
         }
 

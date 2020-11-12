@@ -192,8 +192,8 @@ namespace BoSSS.Application.Rheology {
                 else
                     odVal = double.NegativeInfinity;
                                     
-                //if(odVal != value)
-                //    Console.WriteLine("setting Weissenberg Number to " + value);
+                if(odVal != value)
+                    Console.WriteLine("setting Weissenberg Number to " + value);
                 XOP.UserDefinedValues["Weissenbergnumber"] = value;
             }
         }

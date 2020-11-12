@@ -284,14 +284,17 @@ namespace BoSSS.Solution.NSECommon {
             m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             cj = cs.CellLengthScales;
-
-            if(cs.UserDefinedValues.Keys.Contains("SlipLengths"))
-                Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
-            // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
-            // Useful in case that the Reynolds number changes during a simulation...
-            if(cs.UserDefinedValues.Keys.Contains("Reynolds"))
-                m_reynolds = (double)cs.UserDefinedValues["Reynolds"];
+            if(cs.UserDefinedValues != null)
+            {
+                if (cs.UserDefinedValues.Keys.Contains("SlipLengths"))
+                    Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
+                // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
+                // Useful in case that the Reynolds number changes during a simulation...
+                if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
+                    m_reynolds = (double)cs.UserDefinedValues["Reynolds"];
+            }
         }
+
 
         /// <summary>
         /// penalty adapted for spatial dimension and DG-degree
@@ -1088,21 +1091,20 @@ namespace BoSSS.Solution.NSECommon {
 
 
                 }
-                    //case IncompressibleBcType.NavierSlip_localized: {
+                //case IncompressibleBcType.InnerValues: {
 
-                    //        double ls = Lslip[inp.jCellIn];
-                    //        if(ls > 0.0) {
-                    //            m_beta = muA / ls;
-                    //            goto case IncompressibleBcType.NavierSlip_Linear;
-                    //        } else {
-                    //            goto case IncompressibleBcType.Velocity_Inlet;
-                    //        }
-                    //    }
-                case IncompressibleBcType.Pressure_Dirichlet:
+                //        for (int i = 0; i < inp.D; i++) {
+                //            Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                //        }
+                //        Acc *= base.m_alpha;
+
+                //        break;
+                //    }
+                case IncompressibleBcType.Pressure_Dirichlet: 
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
-                    if(base.g_Neu_Override == null) {
+                    if (base.g_Neu_Override == null) {
                         // Inner values of velocity gradient are taken, i.e.
                         // no boundary condition for the velocity (resp. velocity gradient) is imposed.
                         for(int i = 0; i < inp.D; i++) {

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -54,7 +55,13 @@ namespace BoSSS.Application.BoSSSpad {
         private IList<int> columnIndices;
         private int stride;
         private string[] variables;
+
+        /// <summary>
+        /// Session from which this residuals come from
+        /// </summary>
         public ISessionInfo session;
+        
+        
         private string CurrentLine = null;
 
         /// <summary>
@@ -291,22 +298,39 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Plots the residuals into a graphic window. The Plot runs in a new Thread.
+        /// Plots the residuals known so far; if the session is currently running, it won't be updated
         /// </summary>
-        public void Plot() {
-            //Create a Plotter and start it in a new Thread.
+        public Plot2Ddata Plot() {
+            var ret = new Plot2Ddata();
+            string sn = this.session.Name != null ? this.session.Name : "no session name";
+            string pn = this.session.ProjectName != null ? this.session.ProjectName : "no project name";
+            ret.Title = $"Residuals: {sn} // {pn}";
 
-            //try {
-            //    ReadResiduals();
-            //} catch (Exception e) {
-            //    Console.WriteLine(e);
-            //    return;
-            //}
 
-            Func<Form> Plotter = () => new ResidualForm(this);
-            Thread threadPlotter = new Thread(() => AutonomuousPlotter.DisplayWindow(Plotter));
-            threadPlotter.Start();
+            var colors = Enum.GetValues(typeof(LineColors));
+            var symbols = Enum.GetValues(typeof(PointTypes));
+
+            int k = 0;
+            foreach(string varName in this.variables) {
+                double[] resiVals = Values[varName].ToArray();
+                double[] xAxis = resiVals.Length.ForLoop(i => (double)i);
+                
+                var g = new Plot2Ddata.XYvalues(varName, xAxis, resiVals);
+                g.Format.LineColor = (LineColors)(colors.GetValue(k % colors.Length));
+                g.Format.PointType = (PointTypes)(symbols.GetValue(k % colors.Length));
+                g.Format.Style = Styles.LinesPoints;
+                ret.AddDataGroup(g);
+                k++;
+            }
+
+            ret.LogY = true;
+
+            return ret;
         }
+
+       
+
+
 
         /// <summary>
         /// Live plotting of residuals during simulation. The LivePlotting tool runs in a new Thread.

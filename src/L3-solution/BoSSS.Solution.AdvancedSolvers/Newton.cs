@@ -131,7 +131,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Switch the use of the Homotopy-Path (<see cref="ISpatialOperator.HomotopyUpdate"/>) on/off
         /// </summary>
-        public bool UseHomotopy = false;
+        public bool UseHomotopy = true;
 
 
         /// <summary>

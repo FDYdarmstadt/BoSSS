@@ -1750,7 +1750,7 @@ namespace BoSSS.Solution {
                     }
                 }
 
-
+ 
                 // pass 1: single phase fields
                 // ===========================
 
@@ -2019,9 +2019,8 @@ namespace BoSSS.Solution {
                 }
                 {
 
-                    if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
+                    if (this.Control != null && this.Control.AdaptiveMeshRefinement && this.Control.RestartInfo == null) {
                         ResetInitial();
-
                     }
 
                     bool RunLoop(int i) {
@@ -2079,6 +2078,7 @@ namespace BoSSS.Solution {
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
 
+
                     // Evaluate queries and write log file (either to session directory
                     // or current directory)
                     m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
@@ -2119,6 +2119,7 @@ namespace BoSSS.Solution {
                     }
 
                     CorrectlyTerminated = true;
+
                 }
             }
         }

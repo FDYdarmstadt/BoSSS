@@ -1,0 +1,438 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 77; Grid Count = 769; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 179; Grid Count = 3395; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 1 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+}
+==============
+ExecutionQueues[0].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+**************
+==============
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("TwoPhaseTaylorCouette");   // set project name
+**************
+Project name is set to 'TwoPhaseTaylorCouette'.
+
+==============
+//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+bool kummer = true;
+**************
+==============
+// Testcase setup
+// ==============
+double Ui    = 2;
+double Ua    = 1;
+double rhoA  = 0.1;
+double rhoB  = 1.3;
+double muA   = 0.01;
+double muB   = 0.2;
+double sigma = 0.9;
+
+double Ri = Math.Sqrt(2) / 2, Ra = 2, Rm = (Ri + Ra) / 2;
+
+//const double _C1A = 1.119266055, _C1B = 1.328440367, _C2A = .2201834863, _C2B = 0.1100917431e-1, _C3A = .9221025166, _C3B = 0;
+
+double _C1A = (Ra.Pow2() * Ri * Ui * muA - Ra.Pow2() * Ri * Ui * muB + Ra * Rm.Pow2() * Ua * muB - Ri * Rm.Pow2() * Ui * muA) / (Ra.Pow2() * Ri.Pow2() * muA - Ra.Pow2() * Ri.Pow2() * muB + Ra.Pow2() * Rm.Pow2() * muB - Ri.Pow2() * Rm.Pow2() * muA),
+    _C1B = (Ra * Ri.Pow2() * Ua * muA - Ra * Ri.Pow2() * Ua * muB + Ra * Rm.Pow2() * Ua * muB - Ri * Rm.Pow2() * Ui * muA) / (Ra.Pow2() * Ri.Pow2() * muA - Ra.Pow2() * Ri.Pow2() * muB + Ra.Pow2() * Rm.Pow2() * muB - Ri.Pow2() * Rm.Pow2() * muA),
+    _C2A = Ri * Ra * Rm.Pow2() * muB * (Ra * Ui - Ri * Ua) / (Ra.Pow2() * Ri.Pow2() * muA - Ra.Pow2() * Ri.Pow2() * muB + Ra.Pow2() * Rm.Pow2() * muB - Ri.Pow2() * Rm.Pow2() * muA),
+    _C2B = Ra * Ri * Rm.Pow2() * muA * (Ra * Ui - Ri * Ua) / (Ra.Pow2() * Ri.Pow2() * muA - Ra.Pow2() * Ri.Pow2() * muB + Ra.Pow2() * Rm.Pow2() * muB - Ri.Pow2() * Rm.Pow2() * muA),
+    _C3A = (1.0 / 2.0) * (-Ra.Pow(4) * Ri.Pow2() * Rm.Pow(3) * Ui.Pow2() * muA.Pow2() * rhoA - Ra.Pow(4) * Ri.Pow2() * Rm.Pow(3) * Ui.Pow2() * muA.Pow2() * rhoB + Ra.Pow2() * Ri.Pow(4) * Rm.Pow(3) * Ua.Pow2() * muB.Pow2() * rhoA + Ra.Pow2() * Ri.Pow(4) * Rm.Pow(3) * Ua.Pow2() * muB.Pow2() * rhoB - 2 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ua.Pow2() * muB.Pow2() * rhoB + 2 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ui.Pow2() * muA.Pow2() * rhoA + 4 * Ra.Pow(4) * Ri.Pow2() * Rm.Pow2() * muA * muB * sigma + 4 * Ra.Pow2() * Ri.Pow(4) * Rm.Pow2() * muA * muB * sigma - 4 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(4) * muA * muB * sigma - Ra.Pow2() * Rm.Pow(7) * Ua.Pow2() * muB.Pow2() * rhoA + Ra.Pow2() * Rm.Pow(7) * Ua.Pow2() * muB.Pow2() * rhoB - Ri.Pow2() * Rm.Pow(7) * Ui.Pow2() * muA.Pow2() * rhoA + Ri.Pow2() * Rm.Pow(7) * Ui.Pow2() * muA.Pow2() * rhoB - 4 * Ra.Pow(4) * Ri.Pow(4) * muA * muB * sigma - 4 * Ra.Pow(4) * Ri.Pow2() * Rm.Pow2() * muB.Pow2() * sigma - 4 * Ra.Pow2() * Ri.Pow(4) * Rm.Pow2() * muA.Pow2() * sigma + 2 * Ra.Pow(4) * Ri.Pow(4) * muA.Pow2() * sigma + 2 * Ra.Pow(4) * Ri.Pow(4) * muB.Pow2() * sigma + 2 * Ra.Pow(4) * Rm.Pow(4) * muB.Pow2() * sigma + 2 * Ri.Pow(4) * Rm.Pow(4) * muA.Pow2() * sigma + 4 * Ra.Pow(3) * Ri.Pow(3) * Rm.Pow(3) * Ua * Ui * muA.Pow2() * rhoB * Math.Log(Rm) - 4 * Ra.Pow(3) * Ri.Pow(3) * Rm.Pow(3) * Ua * Ui * muB.Pow2() * rhoA * Math.Log(Rm) - 4 * Ra.Pow(3) * Ri * Rm.Pow(5) * Ua * Ui * muB.Pow2() * rhoA * Math.Log(Rm) + 4 * Ra.Pow2() * Ri.Pow(4) * Rm.Pow(3) * Ua.Pow2() * muA * muB * rhoB * Math.Log(Rm) - 4 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ua.Pow2() * muA * muB * rhoB * Math.Log(Rm) + 4 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ui.Pow2() * muA * muB * rhoA * Math.Log(Rm) + 4 * Ra * Ri.Pow(3) * Rm.Pow(5) * Ua * Ui * muA.Pow2() * rhoB * Math.Log(Rm) - 2 * Ra.Pow(3) * Ri * Rm.Pow(5) * Ua * Ui * muA * muB * rhoA + 2 * Ra * Ri.Pow(3) * Rm.Pow(5) * Ua * Ui * muA * muB * rhoB + 2 * Ra * Ri * Rm.Pow(7) * Ua * Ui * muA * muB * rhoA - 2 * Ra * Ri * Rm.Pow(7) * Ua * Ui * muA * muB * rhoB - 4 * Ra.Pow(4) * Ri.Pow2() * Rm.Pow(3) * Ui.Pow2() * muA * muB * rhoA * Math.Log(Rm) + 4 * Ra.Pow(3) * Ri.Pow(3) * Rm.Pow(3) * Ua * Ui * muA * muB * rhoA * Math.Log(Rm) - 4 * Ra.Pow(3) * Ri.Pow(3) * Rm.Pow(3) * Ua * Ui * muA * muB * rhoB * Math.Log(Rm) + 4 * Ra.Pow(3) * Ri * Rm.Pow(5) * Ua * Ui * muA * muB * rhoB * Math.Log(Rm) - 4 * Ra * Ri.Pow(3) * Rm.Pow(5) * Ua * Ui * muA * muB * rhoA * Math.Log(Rm) + 4 * Ra.Pow(4) * Ri.Pow2() * Rm.Pow(3) * Ui.Pow2() * muB.Pow2() * rhoA * Math.Log(Rm) - 4 * Ra.Pow2() * Ri.Pow(4) * Rm.Pow(3) * Ua.Pow2() * muA.Pow2() * rhoB * Math.Log(Rm) + 4 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ua.Pow2() * muB.Pow2() * rhoA * Math.Log(Rm) - 4 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ui.Pow2() * muA.Pow2() * rhoB * Math.Log(Rm) + 2 * Ra.Pow(4) * Ri.Pow2() * Rm.Pow(3) * Ui.Pow2() * muA * muB * rhoA + 2 * Ra.Pow(3) * Ri.Pow(3) * Rm.Pow(3) * Ua * Ui * muA.Pow2() * rhoB - 2 * Ra.Pow(3) * Ri.Pow(3) * Rm.Pow(3) * Ua * Ui * muB.Pow2() * rhoA + 2 * Ra.Pow(3) * Ri * Rm.Pow(5) * Ua * Ui * muB.Pow2() * rhoA - 2 * Ra.Pow2() * Ri.Pow(4) * Rm.Pow(3) * Ua.Pow2() * muA * muB * rhoB + 2 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ua.Pow2() * muA * muB * rhoB - 2 * Ra.Pow2() * Ri.Pow2() * Rm.Pow(5) * Ui.Pow2() * muA * muB * rhoA - 2 * Ra * Ri.Pow(3) * Rm.Pow(5) * Ua * Ui * muA.Pow2() * rhoB) / (Rm * (Ra.Pow2() * Ri.Pow2() * muA - Ra.Pow2() * Ri.Pow2() * muB + Ra.Pow2() * Rm.Pow2() * muB - Ri.Pow2() * Rm.Pow2() * muA).Pow2()),
+    _C3B = 0;
+
+string C1A_str = _C1A.ToString(), C1B_str = _C1B.ToString(), C2A_str = _C2A.ToString(), C2B_str = _C2B.ToString(), C3A_str = _C3A.ToString(), C3B_str = _C3B.ToString();
+
+//Func<double, double> vA = r => _C1A * r + _C2A / r;
+//Func<double, double> vB = r => _C1B * r + _C2B / r;
+//Func<double, double> psiA = r => 0.5 * rhoA * _C1A.Pow2() * r.Pow2() - 0.5 * rhoA * _C2A.Pow2() / (r.Pow2()) + 2 * rhoA * _C1A * _C2A * Math.Log(r) + _C3A;
+//Func<double, double> psiB = r => 0.5 * rhoB * _C1B.Pow2() * r.Pow2() - 0.5 * rhoB * _C2B.Pow2() / (r.Pow2()) + 2 * rhoB * _C1B * _C2B * Math.Log(r) + _C3B;
+
+//Func<double[], double, double> UA1 = (X, t) => (-X[1] / X.L2Norm()) * vA(X.L2Norm());
+//Func<double[], double, double> UA2 = (X, t) => (+X[0] / X.L2Norm()) * vA(X.L2Norm());
+//Func<double[], double, double> UB1 = (X, t) => (-X[1] / X.L2Norm()) * vB(X.L2Norm());
+//Func<double[], double, double> UB2 = (X, t) => (+X[0] / X.L2Norm()) * vB(X.L2Norm());
+
+//Func<double[], double, double> PsiA = (X, t) => psiA(X.L2Norm());
+//Func<double[], double, double> PsiB = (X, t) => psiB(X.L2Norm());
+
+string UA1_str = "(X) => (-X[1] / X.L2Norm()) * ("+C1A_str+" * X.L2Norm() + "+C2A_str+" / X.L2Norm())"; 
+string UA2_str = "(X) => (X[0] / X.L2Norm()) * ("+C1A_str+" * X.L2Norm() + "+C2A_str+" / X.L2Norm())"; 
+string UB1_str = "(X) => (-X[1] / X.L2Norm()) * ("+C1B_str+" * X.L2Norm() + "+C2B_str+" / X.L2Norm())"; 
+string UB2_str = "(X) => (X[0] / X.L2Norm()) * ("+C1B_str+" * X.L2Norm() + "+C2B_str+" / X.L2Norm())"; 
+
+string pA1_str = "(X) => 0.5 * "+rhoA.ToString()+" * "+C1A_str+".Pow2() * X.L2Norm().Pow2() - 0.5 * "+rhoA.ToString()+" * "+C2A_str+".Pow2() / (X.L2Norm().Pow2()) + 2 * "+rhoA.ToString()+" * "+C1A_str+" * "+C2A_str+" * Math.Log(X.L2Norm()) + "+C3A_str; 
+string pB1_str = "(X) => 0.5 * "+rhoB.ToString()+" * "+C1B_str+".Pow2() * X.L2Norm().Pow2() - 0.5 * "+rhoB.ToString()+" * "+C2B_str+".Pow2() / (X.L2Norm().Pow2()) + 2 * "+rhoB.ToString()+" * "+C1B_str+" * "+C2B_str+" * Math.Log(X.L2Norm()) + "+C3B_str;
+**************
+==============
+// exact solution
+// ==============
+**************
+==============
+rhoA
+**************
+0.1
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[6];
+int[] kelemSeq = new int[]{8, 16, 32, 64, 128, 256, 512};
+**************
+==============
+using BoSSS.Platform.Utils.Geom;
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+
+  
+    double[] Xnodes = GenericBlas.Linspace(-2, 2, kelem + 1);
+    double[] Ynodes = GenericBlas.Linspace(-2, 2, kelem + 1);
+    var cutOut = new BoundingBox(new double[] { -0.5, -0.5 }, new double[] { +0.5, +0.5 });
+    grd        = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, CutOuts: cutOut);
+
+
+    grd.EdgeTagNames.Add(1, "velocity_inlet_inner");
+    grd.EdgeTagNames.Add(2, "velocity_inlet_outer");
+
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+        if (Math.Abs(X[0] - (-0.5)) <= 1.0e-8 || Math.Abs(X[0] - (+0.5)) <= 1.0e-8
+        || Math.Abs(X[1] - (-0.5)) <= 1.0e-8 || Math.Abs(X[1] - (+0.5)) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[0] - (-2)) <= 1.0e-8 || Math.Abs(X[0] - (+2)) <= 1.0e-8
+        || Math.Abs(X[1] - (-2)) <= 1.0e-8 || Math.Abs(X[1] - (+2)) <= 1.0e-8)
+            et = 2;
+        if (et == 0)
+            throw new ApplicationException("error in DefineEdgeTags");
+        return et;
+    });
+
+    grd.Name = "TwoPhaseTaylorCoutte_meshStudy";
+        
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+
+
+Grid Edge Tags changed.
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+
+Grid Edge Tags changed.
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+
+Grid Edge Tags changed.
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+
+Grid Edge Tags changed.
+
+
+Grid Edge Tags changed.
+
+
+Grid Edge Tags changed.
+
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+==============
+int[] degS = new int[] { 2 };
+**************
+==============
+int iDeg0 = 0;
+int iGrd0 = 0;
+**************
+==============
+XNSE_Control[,] controls = new XNSE_Control[degS.Length - iDeg0, GridSeq.Length - iGrd0];
+**************
+==============
+for(int iDeg = iDeg0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
+    
+    var C                   = new XNSE_Control();
+
+    C.TimesteppingMode             = AppControl._TimesteppingMode.Steady;
+    C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
+    C.Option_LevelSetEvolution     = BoSSS.Application.XNSE_Solver.LevelSetEvolution.None;
+    
+    C.CutCellQuadratureType   = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+
+    //C.SetDGdegree(pDeg);
+    C.SetFieldOptions(pDeg,2);
+    
+    C.SetGrid(grd);
+
+    C.AddBoundaryValue("velocity_inlet_inner", "VelocityX#A", UA1_str, false);
+    C.AddBoundaryValue("velocity_inlet_inner", "VelocityY#A", UA2_str, false);
+    //C.AddBoundaryValue(innerWallTag, "VelocityX#B", (X, t) => double.NaN);
+    //C.AddBoundaryValue(innerWallTag, "VelocityY#B", (X, t) => double.NaN);
+
+    //C.AddBoundaryValue(outerWallTag, "VelocityX#A", (X, t) => double.NaN);
+    //C.AddBoundaryValue(outerWallTag, "VelocityY#A", (X, t) => double.NaN);
+    C.AddBoundaryValue("velocity_inlet_outer", "VelocityX#B", UB1_str, false);
+    C.AddBoundaryValue("velocity_inlet_outer", "VelocityY#B", UB2_str, false);
+    
+    
+    string Rm_str = Rm.ToString();
+    C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1]).Pow2()) - "+Rm_str+".Pow2()", false);
+    
+    
+    C.PhysicalParameters.rho_A             = rhoA;
+    C.PhysicalParameters.rho_B             = rhoB;
+    C.PhysicalParameters.mu_A              = muA;
+    C.PhysicalParameters.mu_B              = muB;
+    C.PhysicalParameters.Sigma             = sigma;
+    C.PhysicalParameters.IncludeConvection = true;
+    C.PhysicalParameters.Material          = true;
+   
+    
+    C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+
+    
+    C.SessionName = "TwoPhaseTaylorCouette_ConvStudy_k" + pDeg + "_mesh" + iGrd;   
+    
+    controls[iDeg - iDeg0,iGrd - iGrd0] = C;
+    C.CreateJob(); // job will be permanently linked to control object
+
+}
+}
+**************
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+
+==============
+//Info(controls[0,0]);
+controls[0,0].SessionName
+**************
+TwoPhaseTaylorCouette_ConvStudy_k2_mesh0
+==============
+**************
+==============
+//var j00 = controls[0,0].GetJob();
+**************
+==============
+//j00.Activate(myBatch);
+**************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+using System.Threading;
+**************
+==============
+bool sequential = false;
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
+    var job              = cntrl.GetJob();
+    //job.NumberOfMPIProcs = 4;
+    job.Activate(myBatch);
+    if(sequential) {
+        while(job.Status == JobStatus.Failed || job.Status == JobStatus.FinishedSuccessful) {
+            Thread.Sleep(30000);
+        }
+    }
+}
+**************
+Submitting Sessions: TwoPhaseTaylorCouette_ConvStudy_k2_mesh0
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseTaylorCouette-XNSE_Solver2020Apr06_154252
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: TwoPhaseTaylorCouette_ConvStudy_k2_mesh1
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseTaylorCouette-XNSE_Solver2020Apr06_154255
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: TwoPhaseTaylorCouette_ConvStudy_k2_mesh2
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseTaylorCouette-XNSE_Solver2020Apr06_154258
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: TwoPhaseTaylorCouette_ConvStudy_k2_mesh3
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseTaylorCouette-XNSE_Solver2020Apr06_154301
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: TwoPhaseTaylorCouette_ConvStudy_k2_mesh4
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseTaylorCouette-XNSE_Solver2020Apr06_154304
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: TwoPhaseTaylorCouette_ConvStudy_k2_mesh5
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseTaylorCouette-XNSE_Solver2020Apr06_154307
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+LastError
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Take(4)
+**************
+==============
+//databases.Pick(3).Sessions.Take(4).DeleteAll()
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
