@@ -27,7 +27,6 @@ using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
-
     /// <summary>
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
     /// </summary>
