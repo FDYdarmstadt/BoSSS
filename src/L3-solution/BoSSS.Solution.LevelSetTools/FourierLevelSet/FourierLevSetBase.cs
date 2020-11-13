@@ -288,6 +288,11 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         public MultidimensionalArray current_interfaceP = new MultidimensionalArray(2);
 
         /// <summary>
+        /// which interface points are allocated on this processor
+        /// </summary>
+        protected bool[] intPtsOnProc;
+
+        /// <summary>
         /// real-valued sample points
         /// </summary>
         protected Complex[] invDFT_coeff;
@@ -372,7 +377,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// </summary>
         /// <param name="velocity"></param>
         /// <returns></returns>
-        public abstract double[] ComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop);
+        public abstract double[] ComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop, CellMask nearband);
 
 
         /// <summary>
@@ -525,6 +530,36 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
         }
 
+
+        protected void AllocateInterfacePointsToProcessor(GridData grdDat, out int numOnProc,  CellMask cc) {
+
+            intPtsOnProc = new bool[current_interfaceP.Lengths[0]];
+
+            numOnProc = 0;
+            for (int iP = 0; iP < numFp; iP++) { 
+                double[] iPt = new double[] { current_interfaceP[iP, 0], current_interfaceP[iP, 1] };
+
+                grdDat.LocatePoint(iPt, out long GlobID, out long GlobInd, out bool IsInside, out bool OnProc, cc);
+                if (OnProc) {
+                    intPtsOnProc[iP] = true;
+                    numOnProc++;
+                }
+
+            }
+
+        }
+
+        protected void ReallocateInterfacePointsToProcessors() {
+
+            // 
+
+        }
+
+        protected void UpdateInterfacePointsOverProcessors() {
+
+            //
+
+        }
 
 
         /// <summary>
@@ -769,14 +804,14 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
                 // project Fourier levelSet to DGfield on near field
                 VolMask = Near;
             }
-
+ 
             LevelSet.Clear(VolMask);
             // scalar function is already vectorized for parallel execution
             // nodes in global coordinates
             LevelSet.ProjectField(1.0,
                 PhiEvaluation(mode),
                 new Foundation.Quadrature.CellQuadratureScheme(true, VolMask));
-
+    
             // check the projection error
             projErr_phiDG = LevelSet.L2Error(
                 PhiEvaluation(mode),

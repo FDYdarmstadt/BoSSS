@@ -1,0 +1,317 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 73; Grid Count = 766; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 43; Grid Count = 3342; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 1 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+}
+==============
+ExecutionQueues[0].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+**************
+==============
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("CouetteFlow");   // set project name
+**************
+Project name is set to 'CouetteFlow'.
+
+==============
+//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[3];
+int[] kelemSeq = new int[]{ 4, 8, 16, 32 };
+**************
+==============
+bool periodic = true;
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+    
+    double[] Xnodes = GenericBlas.Linspace(-1.0, 1.0, kelem + 1);
+    double[] Ynodes = GenericBlas.Linspace(-1.0, 1.0, kelem + 1);
+    grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodic);
+
+    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+    //grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+    grd.EdgeTagNames.Add(2, "freeslip_upper");
+    if(!periodic)
+        grd.EdgeTagNames.Add(3, "pressure_outlet");
+
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+        if (Math.Abs(X[1] + 1.0) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[1] - 1.0) <= 1.0e-8)
+            et = 2;
+        if(!periodic){
+            if (Math.Abs(X[0] + 1.0) <= 1.0e-8)
+                et = 3;
+            if (Math.Abs(X[0] - 1.0) <= 1.0e-8)
+                et = 3;
+        }
+        return et;
+    });
+
+    grd.Name = "Couette_meshStudy"+iGrid;
+    
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+Grid Edge Tags changed.
+Grid Edge Tags changed.
+Grid Edge Tags changed.
+
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+==============
+int[] degS = new int[] { 2 };
+**************
+==============
+double beta = 10.0; // slip length = 0.1
+**************
+==============
+int iGrd0 = 0;
+**************
+==============
+XNSE_Control[,] controls = new XNSE_Control[degS.Length, GridSeq.Length - iGrd0];
+**************
+==============
+for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
+    
+    var C = new XNSE_Control();
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+
+    C.SetDGdegree(pDeg);
+    
+    C.SetGrid(grd);
+    C.AddBoundaryValue("navierslip_linear_lower"); //, "VelocityX#A", "X => -1.0", false);
+    //C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#A", "X => 1.0", false);
+    C.AddBoundaryValue("freeslip_upper");
+    if(!periodic)
+        C.AddBoundaryValue("pressure_outlet");
+    
+    C.AddInitialValue("Phi", "X => -1.0", false);
+    C.AddInitialValue("GravityX#A", "X => 1.0", false);
+
+    C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+  
+    C.PhysicalParameters                   = BoSSS.Solution.XNSECommon.PhysicalParameters.AllOne;
+    C.PhysicalParameters.betaS_A           = beta;
+    C.PhysicalParameters.IncludeConvection = true;
+    
+    C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
+    C.Option_LevelSetEvolution     = BoSSS.Application.XNSE_Solver.LevelSetEvolution.None;
+    
+    C.SessionName = "CouetteFlow_test3"; //"CouetteFlow_ConvStudy_beta"+beta+"_k" + pDeg + "_mesh" + iGrd;
+    
+    controls[iDeg,iGrd - iGrd0] = C;
+    C.CreateJob(); // job will be permanently linked to control object
+}
+}
+**************
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+System.ArgumentException occurred: Job with name 'CouetteFlow_test3' is already defined in the workflow management.. Type 'LastError' for details.
+
+==============
+LastError
+**************
+System.ArgumentException: Job with name 'CouetteFlow_test3' is already defined in the workflow management.
+   at BoSSS.Application.BoSSSpad.Job..ctor(String name, Type solver) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\Job.cs:line 64
+   at BoSSS.Application.BoSSSpad.AppControlExtensions.CreateJob(AppControl ctrl) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 98
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 352
+==============
+//Info(controls[0,0]);
+controls[0,0].SessionName
+**************
+CouetteFlow_test3
+==============
+//var j00 = controls[0,0].GetJob();
+**************
+==============
+//j00.Activate(myBatch);
+**************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
+    var job              = cntrl.GetJob();
+    //job.NumberOfMPIProcs = 4;
+    job.Activate(myBatch);
+}
+**************
+Submitting Sessions: CouetteFlow_test3
+Loading session cb067bc2-4304-471e-9406-a427736405ed failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\cb067bc2-4304-471e-9406-a427736405ed\Session.info'.'
+Loading session f5875fea-ef93-457f-a350-4e0f25851584 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\f5875fea-ef93-457f-a350-4e0f25851584\Session.info'.'
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CouetteFlow-XNSE_Solver2020Apr01_195005
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Sessions: CouetteFlow_test3
+No Job assigned for given control object yet.
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+**************
+==============
+//WorkflowMgm.Sessions.DeleteAll()
+**************
+==============
+**************
+==============
+//WorkflowMgm.Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+//WorkflowMgm.Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

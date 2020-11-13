@@ -5,7 +5,7 @@ namespace VoronoiTests
     class Program
     {
         public static void Main() {
-            TestBench selectedTest = availableTests["Grid Movement"];
+            TestBench selectedTest = availableTests["Boundary Tests"];
             RunTest(selectedTest);
         }
 
@@ -25,7 +25,7 @@ namespace VoronoiTests
             {"Grid Creation", new Grid.GridCreationTests()},
             {"Solver IpPoisson", new Solver.IpPoissonTests()},
             {"Grid Movement", new Grid.MovementTests()},
-            {"Boundary Conditions", new Grid.BoundaryTests()},
+            {"Boundary Tests", new Grid.BoundaryTests()},
             {"Mapping", new Grid.NodeMappingTests()},
         };
     }

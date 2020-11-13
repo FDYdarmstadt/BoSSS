@@ -89,9 +89,5 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         NavierSlip_Linear = 8
 
-
-        //NavierSlip_localized = 9
-
-
     }
 }

@@ -26,6 +26,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation;
 using System.Collections;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
@@ -37,24 +38,24 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         LevelSetTracker m_LsTrk;
 
         public ViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, 
-            bool _staticInt = false, bool _weighted = false) {
+            bool _freeSurface = false, bool _weighted = false) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
-            this.penalty = _penalty;
+            this.m_penalty_base = _penalty;
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
-            this.staticInt = _staticInt;
+            this.freeSurface = _freeSurface;
             this.weighted = _weighted;
         }
 
         double muA;
         double muB;
-        double penalty;
+
         int component;
         int m_D;
 
-        bool staticInt;
+        bool freeSurface;
         bool weighted;
 
 
@@ -65,7 +66,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
+            //double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -86,16 +87,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
             double Ret = 0.0;
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
+            //double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            //double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
-            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
-            if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
-                hCutCellMin = hCellMin;
-            double scaledPenalty = (penalty / hCutCellMin);
-            if(scaledPenalty.IsNaNorInf())
-                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
+            //double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
+            //if (hCutCellMin <= 1.0e-10 * hCellMin)
+            //    // very small cell -- clippling
+            //    hCutCellMin = hCellMin;
+            double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
 
 
             Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
@@ -107,110 +106,107 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double wA;
             double wB;
             double wPenalty;
-            if(!weighted) {
+            if (!weighted) {
                 wA = 0.5;
                 wB = 0.5;
                 wPenalty = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            } else { 
+            } else {
                 wA = muB / (muA + muB);
                 wB = muA / (muA + muB);
-                wPenalty = muA*muB / (muA + muB);
-            } 
+                wPenalty = muA * muB / (muA + muB);
+            }
 
-            //double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            if(!staticInt) {
+
+            if (!freeSurface) {
                 Ret -= (wA * muA * Grad_uA_xN[component] + wB * muB * Grad_uB_xN[component]) * (vA - vB);                           // consistency term
                 Ret -= (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
-                Ret += scaledPenalty * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
+                //Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
+                Ret += (uA[component] - uB[component]) * (vA - vB) * pnlty * wPenalty; // penalty term
                 // Transpose Term
-                for(int i = 0; i < D; i++) {
+                for (int i = 0; i < D; i++) {
                     Ret -= (wA * muA * Grad_uA[i, component] + wB * muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
                     Ret -= (wA * muA * Grad_vA[i] + wB * muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
                 }
 
             } else {
-                ////free slip
-                //for(int d = 0; d < D; d++) {
-                //    Ret -= N[d] * (wA * muA * Grad_uA_xN[d]) * (vA) * N[component];                           // consistency term
-                //    Ret -= N[component] * (wA * muA * Grad_vA_xN) * (uA[d]) * N[d];     // symmetry term
-                //    Ret += (penalty / hCutCellMin) * (uA[d] - 0) * N[d] * (vA) * N[component] * muA; // penalty term
-
-                //    Ret += N[d] * (wB * muB * Grad_uB_xN[d]) * (vB) * N[component];                           // consistency term
-                //    Ret += N[component] * (wB * muB * Grad_vB_xN) * (uB[d]) * N[d];     // symmetry term
-                //    Ret += (penalty / hCutCellMin) * (0 - uB[d]) * N[d] * (0 - vB) * N[component] * muB; // penalty term
-                //}
-                //// Transpose Term
-                //for(int dN = 0; dN < D; dN++) {
-                //    for(int dD = 0; dD < D; dD++) {
-                //        Ret -= N[dN] * (wA * muA * Grad_uA[dD, dN]) * N[dD] * (vA) * N[component];  // consistency term
-                //        Ret -= N[dN] * (wA * muA * Grad_vA[dN]) * N[component] * (uA[dD]) * N[dD];  // symmetry term
-                //        Ret += N[dN] * (wB * muB * Grad_uB[dD, dN]) * N[dD] * (vB) * N[component];  // consistency term
-                //        Ret += N[dN] * (wB * muB * Grad_vB[dN]) * N[component] * (uB[dD]) * N[dD];  // symmetry term
-                //    }
-                //}
-
-                //wall
-                Ret -= (wA * muA * Grad_uA_xN[component]) * (vA);                           // consistency term
-                Ret -= (wA * muA * Grad_vA_xN) * (uA[component]);     // symmetry term
-                Ret += (penalty / hCutCellMin) * (uA[component] - 0) * (vA) * muA; // penalty term
-
-                Ret += (wB * muB * Grad_uB_xN[component]) * (vB);                           // consistency term
-                Ret += (wB * muB * Grad_vB_xN) * (uB[component]);     // symmetry term
-                Ret += scaledPenalty * (0 - uB[component]) * (0 - vB) * muB; // penalty term
+                //free slip
+                for (int d = 0; d < D; d++) {
+                    Ret -= N[d] * (wA * muA * Grad_uA_xN[d] + wB * muB * Grad_uB_xN[d]) * (vA - vB) * N[component];                           // consistency term
+                    Ret -= N[component] * (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[d] - uB[d]) * N[d];     // symmetry term
+                    //Ret += (penalty / hCutCellMin) * (uA[d] - uB[d]) * N[d] * (vA - vB) * N[component] * wPenalty; // penalty term
+                    Ret += (uA[d] - uB[d]) * N[d] * (vA - vB) * N[component] * pnlty * wPenalty; // penalty term
+                }
                 // Transpose Term
-                for(int d = 0; d < D; d++) {
-                    Ret -= (wA * muA * Grad_uA[d, component]) * (vA) * N[d];  // consistency term
-                    Ret -= (wA * muA * Grad_vA[d]) * (uA[d]) * N[component];  // symmetry term
-                    Ret += (wB * muB * Grad_uB[d, component]) * (vB) * N[d];  // consistency term
-                    Ret += (wB * muB * Grad_vB[d]) * (uB[d]) * N[component];  // symmetry term
+                for (int dN = 0; dN < D; dN++) {
+                    for (int dD = 0; dD < D; dD++) {
+                        Ret -= N[dN] * (wA * muA * Grad_uA[dD, dN] + wB * muB * Grad_uB[dD, dN]) * N[dD] * (vA - vB) * N[component];  // consistency term
+                        Ret -= N[dN] * (wA * muA * Grad_vA[dN] + wB * muB * Grad_vB[dN]) * N[component] * (uA[dD] - uB[dD]) * N[dD];  // symmetry term
+                    }
                 }
             }
-                        
-
-
-            //break;^^
-            //    }
-            //    // SWIP-form nach DiPietro/Ern:
-            //    case ViscosityImplementation.SWIP:{
-            //        Ret -= ( muB * muA * Grad_uA_xN + muA* muB* Grad_uB_xN) / (muA+muB) * (vA - vB);
-            //        Ret -= (muB * muA * Grad_vA_xN + muA* muB* Grad_vB_xN)  / (muA + muB) * (uA[component] - uB[component]);
-            //        Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) *(2.0*muA*muB/(muA + muB));
-            //        // Transpose-Term
-            //        for (int i = 0; i < D; i++) {
-            //            Ret -= (muB * muA * Grad_uA[i, component] + muA * muB * Grad_uB[i, component]) / (muA + muB) * (vA - vB) * N[i];  // consistency term
-            //            Ret -= (muB * muA * Grad_vA[i] + muA * muB * Grad_vB[i]) / (muA + muB) * (uA[i] - uB[i]) * N[component];  // symmetry term
-            //        }
-            //        break;
-            //    }
-            //    default: { throw new ArgumentException(); }
-            //}
-            /*
-            {
-                double Acc = 0.0;
-                for (int i = 0; i < D; i++) {
-                    Acc += 0.5 * (muA*Grad_uA[i, i] + muB*Grad_uB[i, i]) * (vA - vB) * N[component];  // consistency term
-                    Acc += 0.5 * (muA*Grad_vA[component] + muB*Grad_vB[component]) * (uA[i] - uB[i]) * N[i];  // symmetry term
-                }
-                
-                //double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-                //Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax; // penalty term
-
-                Ret += Acc*(2.0/3.0);
-
-            } // */
-
-
             return Ret;
         }
 
-        
 
+
+        /// <summary>
+        /// base multiplier for the penalty computation
+        /// </summary>
+        protected double m_penalty_base;
+
+        /// <summary>
+        /// penalty adapted for spatial dimension and DG-degree
+        /// </summary>
+        double m_penalty;
+
+        /// <summary>
+        /// computation of penalty parameter according to:
+        /// An explicit expression for the penalty parameter of the
+        /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
+        /// look at formula (7) in cited paper
+        /// </summary>
+        protected double Penalty(int jCellIn, int jCellOut) {
+
+            double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
+            double penaltySizeFactor_B = 1.0 / PosLengthScaleS[jCellOut];
+
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+
+            double scaledPenalty = penaltySizeFactor * m_penalty * m_penalty_base;
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
+            return scaledPenalty;
+
+        }
 
 
         MultidimensionalArray PosLengthScaleS;
         MultidimensionalArray NegLengthScaleS;
 
-        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+        /// <summary>
+        /// Update of penalty length scales.
+        /// </summary>
+        /// <param name="csA"></param>
+        /// <param name="csB"></param>
+        /// <param name="DomainDGdeg"></param>
+        /// <param name="TestDGdeg"></param>
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {       
+
+            double _D = m_D;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
+
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
         }

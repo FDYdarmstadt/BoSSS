@@ -1,0 +1,358 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 731; Grid Count = 13257; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation.XDG;
+**************
+==============
+WorkflowMgm.Init("StaticDroplet");
+//WorkflowMgm.Init("RisingBubbleStatic");
+//WorkflowMgm.Init("TwoPhaseTaylorCouette");
+**************
+Project name is set to 'StaticDroplet'.
+
+==============
+//WorkflowMgm.Sessions;
+**************
+==============
+//string studyName = "StaticDroplet_newConvStudyKummer_dropIndef_k";
+string studyName = "StaticDroplet_newConvStudySt";
+//string studyName = "StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2";
+string[] FieldsToCompare = new string[] {"VelocityX", "VelocityY", "Pressure"};
+int numFields = FieldsToCompare.Length;
+**************
+==============
+List<ISessionInfo> studySess = new List<ISessionInfo>();
+List<ISessionInfo> studySessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            studySess.Add(sess);  
+        else 
+            studySessNT.Add(sess);
+    }        
+}
+studySessNT
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 1 instances of ISessionInfo {
+  0: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k4_mesh5*	06/24/2020 13:17:30	7b4e1bba...
+}
+==============
+studySess.Pick(1).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\StaticDroplet__StaticDroplet_newConvStudySt_dropIndef_k4_mesh4__df23ec17-942a-4d0f-a786-44fd587e1fe3
+==============
+//studySess.RemoveRange(0,6);
+studySess
+**************
+List of 17 instances of ISessionInfo {
+  0: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k3_mesh5	06/24/2020 13:16:23	468bfc8c...
+  1: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k4_mesh4	06/24/2020 13:17:18	df23ec17...
+  2: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k2_mesh5	06/24/2020 13:15:16	970fa9f0...
+  3: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k3_mesh4	06/24/2020 13:16:11	3c00ae6b...
+  4: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k4_mesh3	06/24/2020 13:17:07	7fcea02b...
+  5: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k4_mesh2	06/24/2020 13:16:56	95c23c97...
+  6: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k3_mesh3	06/24/2020 13:16:00	3ef96387...
+  7: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k2_mesh4	06/24/2020 13:15:05	0b7593cd...
+  8: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k4_mesh1	06/24/2020 13:16:45	e4a32b15...
+  9: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k4_mesh0	06/24/2020 13:16:34	7a9834b4...
+  10: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k3_mesh2	06/24/2020 13:15:48	c3c5f1ef...
+  11: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k3_mesh1	06/24/2020 13:15:38	fdb8c504...
+  12: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k3_mesh0	06/24/2020 13:15:26	3688f3d7...
+  13: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k2_mesh3	06/24/2020 13:14:57	fea06557...
+  14: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k2_mesh2	06/24/2020 13:14:48	60840acf...
+  15: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k2_mesh1	06/24/2020 13:14:40	d30ad3e6...
+  16: StaticDroplet	StaticDroplet_newConvStudySt_dropIndef_k2_mesh0	06/24/2020 13:14:31	f7d7cf7c...
+}
+==============
+var ConvPlts = new List<Plot2Ddata>[numFields];
+for(int i = 0; i < numFields; i++) {
+    ConvPlts[i] = new List<Plot2Ddata>();
+}
+int[] pOrder = new int[] { 2, 3, 4 };
+**************
+==============
+foreach(int p in pOrder) {
+    var pDegSess = studySess.Where(s => Convert.ToInt32(s.KeysAndQueries["DGdegree:Velocity*"]) == p).ToArray();
+    
+    ITimestepInfo[] timesteps = pDegSess.Select(s => s.Timesteps.Newest()).ToArray();
+      
+    double[] GridRes;
+    Dictionary<string, int[]> __DOFs;
+    Dictionary<string, double[]> L2Errors;
+    Guid[] timestepIds;
+    
+    //Func<double[], bool> selectFunc = X => false;
+    DGFieldComparison.ComputeErrors(FieldsToCompare, timesteps, out GridRes, out __DOFs, out L2Errors, out timestepIds);
+    
+    int fI = 0;
+    foreach(var fName in FieldsToCompare) {
+        Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
+        dataGroups.Add("$k = "+p+"$", new double[2][] { GridRes, L2Errors[fName] });
+        ConvPlts[fI].Add(new Plot2Ddata(dataGroups.ToArray()).WithLogX().WithLogY());
+        fI++;
+    }
+}
+**************
+==============
+LastError
+**************
+==============
+for(int i = 0; i < numFields; i++) {
+for(int j = 0; j < pOrder.Length; j++) {
+    ConvPlts[i].ElementAt(j).dataGroups[0].Format.PointSize = 0.8;    
+    ConvPlts[i].ElementAt(j).dataGroups[0].Format.DashType = DashTypes.Dotted;
+    ConvPlts[i].ElementAt(j).dataGroups[0].Format.LineWidth = 2;
+}
+}
+**************
+==============
+**************
+==============
+Plot2Ddata[] fConvDat = new Plot2Ddata[numFields];
+for(int i = 0; i < numFields; i++) {
+    fConvDat[i] = ConvPlts[i].ElementAt(0);
+    foreach(var plt in ConvPlts[i].Skip(1)) {
+        fConvDat[i] = fConvDat[i].Merge(plt);
+    }
+}
+**************
+==============
+FieldsToCompare
+**************
+List of 3 instances of String {
+  0: VelocityX
+  1: VelocityY
+  2: Pressure
+}
+==============
+int FldId = 2;
+**************
+==============
+fConvDat[FldId].Regression();
+**************
+List of 3 instances of KeyValuePair{String,Double} {
+  0: [$k = 2$, 0.900619607631547]
+  1: [$k = 3$, 0.810271395841414]
+  2: [$k = 4$, 0.836610807459362]
+}
+==============
+//var fcDat = fConvDat[FldId].ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+//fcDat.SaveTo(@"D:\BoSSS-experimental\public\examples\XNSE_Solver\ConvergencePlots\StaticDroplet_ConvStudy4Kummer.tex");
+fConvDat[FldId].PlotNow();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+List<double[]>[] slopesFld = new List<double[]>[FieldsToCompare.Length];
+for(int fld = 0; fld < FieldsToCompare.Length; fld++) {
+    
+List<double[]> slopes = new List<double[]>();
+foreach (var p2d in ConvPlts[fld]) {
+    double[] abs = p2d.dataGroups[0].Abscissas;
+    double[] val = p2d.dataGroups[0].Values;
+    int numdp = p2d.dataGroups[0].Abscissas.Length;
+    double[] slp = new double[numdp-1];
+    for (int i = 0; i < numdp-1; i++) {
+        double dV = val[i].Log() - val[i+1].Log();
+        double dA = abs[i].Log() - abs[i+1].Log();
+        slp[i] = dV / dA;
+    }
+    slopes.Add(slp);
+}
+slopesFld[fld] = slopes;
+}
+**************
+==============
+slopesFld[FldId][2]
+**************
+List of 3 instances of Double {
+  0: 2.74536914328514
+  1: 2.8669732382533
+  2: 3.42776875506416
+}
+==============
+**************
+==============
+// ============
+// export study
+// ============ 
+**************
+==============
+for(int fld = 0; fld < FieldsToCompare.Length; fld++) {
+for(int deg = 0; deg < pOrder.Length; deg++) {
+    Plot2Ddata dat = new Plot2Ddata();
+    //Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+    dat.AddDataGroup(fConvDat[fld].dataGroups[deg]);
+    string name = "DoW_convStudy2_beta5_90_k"+pOrder[deg]+"_"+FieldsToCompare[fld]+".txt";
+    dat.SaveToTextFile(name); 
+}    
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+for(int fld = 0; fld < FieldsToCompare.Length; fld++) {
+for(int deg = 0; deg < pOrder.Length; deg++) {
+    var slp     = slopesFld[fld][deg];
+    double[] regSlp = new double[slp.Length + 1];
+    regSlp[0] = fConvDat[fld].Regression().ElementAt(deg).Value;
+    for(int i = 0; i < slp.Length; i++) {
+        regSlp[i+1] = slp[i];
+    }
+    string name = "SD_convStudy_k"+pOrder[deg]+"_"+FieldsToCompare[fld]+"_slopes.txt";
+    regSlp.SaveToTextFile(name); 
+}    
+}
+**************
+==============
+**************
+==============
+fConvDat[FldId].Regression();
+**************
+List of 3 instances of KeyValuePair{String,Double} {
+  0: [$k = 2$, 3.40510617911264]
+  1: [$k = 3$, 3.82380112225587]
+  2: [$k = 4$, 4.27109841232742]
+}
+==============
+slopesFld[FldId][2]
+**************
+List of 3 instances of Double {
+  0: 3.98347181080703
+  1: 4.01924566131975
+  2: 4.89452868185803
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Pick(12).Delete()
+**************
+Session: StaticDroplet  StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy_k3_mesh5*    06/23/2020 19:38:59 07583775...
+Do you really want to delete this session? [y/n]: Session 07583775-1fd7-4cd5-903a-74556c4b6422 deleted.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

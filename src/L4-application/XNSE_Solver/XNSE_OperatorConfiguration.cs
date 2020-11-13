@@ -269,11 +269,11 @@ namespace BoSSS.Application.XNSE_Solver {
             MatInt = !Evaporation;
 
             int nBlocks = 2;
-            if (solveEnergy) {
-                CodBlocks = new bool[3];
-                DomBlocks = new bool[3];
-                nBlocks = 3;
-            }
+            //if (solveEnergy) {
+            //    CodBlocks = new bool[3];
+            //    DomBlocks = new bool[3];
+            //    nBlocks = 3;
+            //}
 
             if (solveHeat) {
                 this.conductMode = control.conductMode;

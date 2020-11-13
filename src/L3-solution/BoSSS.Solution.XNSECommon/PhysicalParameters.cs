@@ -70,6 +70,12 @@ namespace BoSSS.Solution.XNSECommon {
         public double Sigma;
 
         /// <summary>
+        /// pressure at the interface for free surface flows 
+        /// </summary>
+        [DataMember]
+        public double pFree = 0.0;
+
+        /// <summary>
         /// surface shear viscosity
         /// </summary>
         [DataMember]
@@ -199,6 +205,7 @@ namespace BoSSS.Solution.XNSECommon {
             cl.Weissenberg_a = this.Weissenberg_a;
             cl.Weissenberg_b = this.Weissenberg_b;
             cl.Sigma = this.Sigma;
+            cl.pFree = this.pFree;
             cl.mu_I = this.mu_I;
             cl.lambda_I = this.lambda_I;
             cl.betaS_A = this.betaS_A;

@@ -328,29 +328,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotImplementedException();
             }
 
-            /*
-            // operator stack
-            // --------------
-
-            Debug.Assert(m_Stack_OpMatrix.Length <= 2);
-            Debug.Assert(m_Stack_OpAffine.Length == m_Stack_OpMatrix.Length);
-            if (m_Stack_OpMatrix.Length == 2) {
-                var Mtmp = m_Stack_OpMatrix[0];
-                var Atmp = m_Stack_OpAffine[0];
-                m_Stack_OpMatrix[0] = m_Stack_OpMatrix[1];
-                m_Stack_OpAffine[0] = m_Stack_OpAffine[1];
-                m_Stack_OpMatrix[1] = Mtmp;
-                m_Stack_OpAffine[1] = Atmp;
-            }
-            if (m_Stack_OpMatrix[0] != null)
-                m_Stack_OpMatrix[0] = null;
-            if (m_Stack_OpAffine[0] != null)
-                m_Stack_OpAffine[0].ClearEntries();
-            */
 
             // Solution-Stack
             // --------------
-            if(m_CurrentPhystime != fsiOldPhystime) { // only true in case of fsi_splitting fully coupled
+            if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled) { // only true in case of fsi_splitting fully coupled
                 // entry 0 should remain the same object all the time
                 var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
                 for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
