@@ -261,25 +261,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         
         void GetQuadRuleSet_Internal(int IntOrder) {
             using (new FuncTrace()) {
-
-                //int IntOrder = OrderToInternalOrder(ReqOrder);
-                
                 stpwGetQuadRuleSet.Start();
 
                 if ((IntOrder <= 2) || (IntOrder % 2 == 0))
                     throw new ArgumentOutOfRangeException();
-                
 
-//                if (this.m_VolumeRules.ContainsKey(ReqOrder))
-//                    throw new ApplicationException("illegal call"); // rule should be in cache, request for re-computation indicates that something is funky
                 if (this.m_VolumeRules.ContainsKey(IntOrder - 1))
                     throw new ApplicationException("illegal call"); // rule should be in cache, request for re-computation indicates that something is funky
-//                if (this.m_SurfaceRules.ContainsKey(ReqOrder))
-//                    throw new ApplicationException("illegal call"); // rule should be in cache, request for re-computation indicates that something is funky
                 if (this.m_SurfaceRules.ContainsKey(IntOrder))
                     throw new ApplicationException("illegal call"); // rule should be in cache, request for re-computation indicates that something is funky
-
-
 
                 // check arguments, init
                 // =====================
@@ -301,6 +291,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 NoOfEqPerSy = TestBasis.Length * this.LevelSetData.GridDat.Grid.SpatialDimension;
                 NoOfEqTotal = this.UseAlsoStokes ? NoOfEqPerSy * 2 : NoOfEqPerSy;
                 
+
                 // define Nodes
                 // ============
                 NodeSet NodeSet = null;
@@ -380,161 +371,287 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     SurfaceRule = new ChunkRulePair<QuadRule>[_mask.NoOfItemsLocally];
                     var grddat = this.LevelSetData.GridDat;
                     int D = grddat.SpatialDimension;
+                    var CoIncFaces =  this.LevelSetData.Region.m_LevSetCoincidingFaces;
+                    
+                    
+                    int IsSpecialCell(int j) {
+                        if(CoIncFaces == null)
+                            return -1;
+                        if(CoIncFaces[j] == null)
+                            return -1;
 
-                    // loop over cells in subgrid...
-                    int jSub = 0;
+                        foreach(var t in CoIncFaces[j]) {
+                            if(t.iLevSet == this.LevelSetIndex)
+                                return t.iFace; // jetzt geht der Spass los!
+                        }
+                        return -1;
+                    }
+
+
+                    // loop over cells in mask...
+                    // (remark: do not use subgrid, because this causes MPI locking)
+                    int jSub = 0; // subgrid cell counter
                     foreach (int jCell in _mask.ItemEnum) { // loop over cells in the mask
+                        int SpecialFace = IsSpecialCell(jCell);
 
+                        if(SpecialFace < 0) {
+                            // +++++++++++++
+                            // standard case
+                            // +++++++++++++
 
-                        // setup System
-                        // ============
+                            // setup System
+                            // ============
 
-                        NodeSet VolNodes = NodeSet;
-                        NodeSet surfNodes;
-                        if (this.SurfaceNodesOnZeroLevset)
-                            surfNodes = ProjectOntoLevset(jCell, VolNodes);
-                        else
-                            surfNodes = VolNodes;
+                            NodeSet VolNodes = NodeSet;
+                            NodeSet surfNodes;
+                            if(this.SurfaceNodesOnZeroLevset)
+                                surfNodes = ProjectOntoLevset(jCell, VolNodes);
+                            else
+                                surfNodes = VolNodes;
 
-                        MultidimensionalArray metrics;
-                        var Mtx_Gauss = GaußAnsatzMatrix(TestBasis, VolNodes, surfNodes, jCell, out metrics);
-                        Debug.Assert(Mtx_Gauss.Dimension == 2);
-                        Debug.Assert(Mtx_Gauss.GetLength(0) == NoOfEqPerSy);
-                        Debug.Assert(Mtx_Gauss.GetLength(1) == NoOfNodes * 2);
+                            MultidimensionalArray metrics;
+                            var Mtx_Gauss = GaußAnsatzMatrix(TestBasis, VolNodes, surfNodes, jCell, out metrics);
+                            Debug.Assert(Mtx_Gauss.Dimension == 2);
+                            Debug.Assert(Mtx_Gauss.GetLength(0) == NoOfEqPerSy);
+                            Debug.Assert(Mtx_Gauss.GetLength(1) == NoOfNodes * 2);
 #if DEBUG
-                        Mtx_Gauss.CheckForNanOrInf();
+                            Mtx_Gauss.CheckForNanOrInf();
 #endif
 
 
-                        MultidimensionalArray Mtx_Stokes = null;
-                        if (this.UseAlsoStokes) {
-                            Mtx_Stokes = this.StokesAnsatzMatrix_RefBasis(TestBasis, surfNodes, jCell);
-                            //Mtx_Stokes = this.StokesAnsatzMatrix_PhysBasis(TestBasis, surfNodes, jCell);
-                            Debug.Assert(Mtx_Stokes.Dimension == 2);
-                            Debug.Assert(Mtx_Stokes.GetLength(0) == NoOfEqPerSy);
-                            Debug.Assert(Mtx_Stokes.GetLength(1) == NoOfNodes);
+                            MultidimensionalArray Mtx_Stokes = null;
+                            if(this.UseAlsoStokes) {
+                                Mtx_Stokes = this.StokesAnsatzMatrix_RefBasis(TestBasis, surfNodes, jCell);
+                                //Mtx_Stokes = this.StokesAnsatzMatrix_PhysBasis(TestBasis, surfNodes, jCell);
+                                Debug.Assert(Mtx_Stokes.Dimension == 2);
+                                Debug.Assert(Mtx_Stokes.GetLength(0) == NoOfEqPerSy);
+                                Debug.Assert(Mtx_Stokes.GetLength(1) == NoOfNodes);
 
-                            /*
-                            // Nur für PhysBasis
-                            for (int i = 0; i < NoOfEqPerSy; i++) {
-                                for (int j = 0; j < NoOfNodes; j++) {
-                                    Mtx_Stokes[i, j] /= metrics[0, j];
+                                /*
+                                // Nur für PhysBasis
+                                for (int i = 0; i < NoOfEqPerSy; i++) {
+                                    for (int j = 0; j < NoOfNodes; j++) {
+                                        Mtx_Stokes[i, j] /= metrics[0, j];
+                                    }
+                                }
+                                */
+#if DEBUG
+                                Mtx_Stokes.CheckForNanOrInf();
+#endif
+                            }
+
+                            stpwGetQuadRuleSet_SolveRHS.Start();
+
+                            // convert to FORTRAN order
+                            MultidimensionalArray _Mtx = MultidimensionalArray.Create(NoOfEqTotal, NoOfNodes * 2);
+                            _Mtx.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NoOfEqPerSy - 1, NoOfNodes * 2 - 1 }).Set(Mtx_Gauss);
+                            if(this.UseAlsoStokes) {
+                                _Mtx.ExtractSubArrayShallow(new int[] { NoOfEqPerSy, NoOfNodes }, new int[] { 2 * NoOfEqPerSy - 1, 2 * NoOfNodes - 1 }).Set(Mtx_Stokes);
+
+                            }
+
+                            // convert to FORTRAN order
+                            Debug.Assert(NoOfNodes * 2 >= NoOfEqTotal);
+                            MultidimensionalArray RHSandSolution = MultidimensionalArray.Create(NoOfNodes * 2, 1); // this is also output, so it must be larger!
+                            {
+                                int I = NoOfEqPerSy, J = _mask.NoOfItemsLocally;
+                                for(int i = 0; i < I; i++) {
+                                    RHSandSolution[i, 0] = RHS_Gauss[i, jSub];
+                                }
+                                if(this.UseAlsoStokes) {
+                                    for(int i = 0; i < I; i++) {
+                                        RHSandSolution[i + NoOfEqPerSy, 0] = RHS_Stokes[i, jSub];
+                                    }
                                 }
                             }
-                            */
-#if DEBUG
-                            Mtx_Stokes.CheckForNanOrInf();
-#endif
-                        }
 
-                        stpwGetQuadRuleSet_SolveRHS.Start();
-
-                        // convert to FORTRAN order
-                        MultidimensionalArray _Mtx = MultidimensionalArray.Create(NoOfEqTotal, NoOfNodes * 2);
-                        _Mtx.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NoOfEqPerSy - 1, NoOfNodes * 2 - 1 }).Set(Mtx_Gauss);
-                        if (this.UseAlsoStokes) {
-                            _Mtx.ExtractSubArrayShallow(new int[] { NoOfEqPerSy, NoOfNodes }, new int[] { 2 * NoOfEqPerSy - 1, 2 * NoOfNodes - 1 }).Set(Mtx_Stokes);
-
-                        }
-                        
-                        // convert to FORTRAN order
-                        Debug.Assert(NoOfNodes * 2 >= NoOfEqTotal);
-                        MultidimensionalArray RHSandSolution = MultidimensionalArray.Create(NoOfNodes * 2, 1); // this is also output, so it must be larger!
-                        {
-                            int I = NoOfEqPerSy, J = _mask.NoOfItemsLocally;
-                            for (int i = 0; i < I; i++) {
-                                RHSandSolution[i, 0] = RHS_Gauss[i, jSub];
+                            MultidimensionalArray __RHS = null, __Mtx = null;
+                            if(this.Docheck) {
+                                // values used for testing:
+                                __RHS = MultidimensionalArray.Create(NoOfEqTotal);
+                                for(int i = 0; i < NoOfEqTotal; i++)
+                                    __RHS[i] = RHSandSolution[i, 0];
+                                __Mtx = MultidimensionalArray.Create(_Mtx.NoOfRows, _Mtx.NoOfCols);
+                                __Mtx.SetMatrix(_Mtx);
                             }
-                            if (this.UseAlsoStokes) {
-                                for (int i = 0; i < I; i++) {
-                                    RHSandSolution[i + NoOfEqPerSy, 0] = RHS_Stokes[i, jSub];
+
+                            // solve system
+                            // ============
+
+                            _Mtx.LeastSquareSolve(RHSandSolution);
+#if DEBUG
+                            RHSandSolution.CheckForNanOrInf();
+#endif
+
+
+
+                            if(this.Docheck) {
+                                // Probe:
+                                MultidimensionalArray X = MultidimensionalArray.Create(NoOfNodes * 2); // weights
+                                X.ResizeShallow(NoOfNodes * 2, 1).SetMatrix(RHSandSolution);
+
+                                double MaxWeight = X.Max(wi => wi.Pow2());
+                                double MinWeight = X.Min(wi => wi.Pow2());
+                                double wr = MaxWeight / MinWeight;
+
+                                __RHS.Multiply(-1.0, __Mtx, X, 1.0, "j", "jk", "k");
+                                double L2_ERR = __RHS.L2Norm();
+                                if(L2_ERR > 1.0e-7) {
+                                    Console.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
+                                    //throw new ApplicationException("Quadrature rule in cell " + jCell + " seems to be not very precise: L2_ERR = " + L2_ERR);
                                 }
                             }
-                        }
 
-                        MultidimensionalArray __RHS = null, __Mtx = null;
-                        if (this.Docheck) {
-                            // values used for testing:
-                            __RHS = MultidimensionalArray.Create(NoOfEqTotal);
-                            for (int i = 0; i < NoOfEqTotal; i++)
-                                __RHS[i] = RHSandSolution[i, 0];
-                            __Mtx = MultidimensionalArray.Create(_Mtx.NoOfRows, _Mtx.NoOfCols);
-                            __Mtx.SetMatrix(_Mtx);
-                        }
 
-                        // solve system
-                        // ============
+                            stpwGetQuadRuleSet_SolveRHS.Stop();
 
-                        _Mtx.LeastSquareSolve(RHSandSolution);
-#if DEBUG
-                        RHSandSolution.CheckForNanOrInf();
-#endif
+                            // return da rule!
+                            // ===============
 
-                        
+                            {
+                                {
+                                    // the volume rule!
+                                    // ----------------
 
-                        if (this.Docheck) {
-                            // Probe:
-                            MultidimensionalArray X = MultidimensionalArray.Create(NoOfNodes * 2); // weights
-                            X.ResizeShallow(NoOfNodes * 2, 1).SetMatrix(RHSandSolution);
+                                    QuadRule qr_l = new QuadRule() {
+                                        OrderOfPrecision = IntOrder - 1,
+                                        Weights = MultidimensionalArray.Create(NoOfNodes),
+                                        Nodes = VolNodes
+                                    };
 
-                            double MaxWeight = X.Max(wi => wi.Pow2());
-                            double MinWeight = X.Min(wi => wi.Pow2());
-                            double wr = MaxWeight / MinWeight;
+                                    int Kend = VolNodes.GetLength(0);
+
+                                    for(int k = 0; k < Kend; k++) {
+                                        qr_l.Weights[k] = RHSandSolution[k, 0];
+                                    }
+
+                                    VolumeRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
+
+                                }
+
+                                {
+                                    // the surface rule
+                                    // ----------------
+
+                                    QuadRule qr_l = new QuadRule() {
+                                        OrderOfPrecision = IntOrder,
+                                        Weights = MultidimensionalArray.Create(NoOfNodes),
+                                        Nodes = surfNodes
+                                    };
+
+                                    int Kend = VolNodes.GetLength(0) + surfNodes.GetLength(0);
+                                    int Kstr = VolNodes.GetLength(0);
+
+                                    for(int k = Kstr; k < Kend; k++) {
+                                        qr_l.Weights[k - Kstr] = RHSandSolution[k, 0] / metrics[0, k - Kstr];
+                                    }
+                                    
+                                    SurfaceRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
+                                }
+                            }
+
+                        } else {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // special case: level-set coincides with a cell-face; 
+                            // cell is either full or empty 
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                             
-                            __RHS.Multiply(-1.0, __Mtx, X, 1.0, "j", "jk", "k");
-                            double L2_ERR = __RHS.L2Norm();
-                            if (L2_ERR > 1.0e-7) {
-                                Console.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
-                                //throw new ApplicationException("Quadrature rule in cell " + jCell + " seems to be not very precise: L2_ERR = " + L2_ERR);
+                            // determine whether this cell is 
+                            // inside or outside 
+                            // w.r.t. the edge that corresponds with face 
+
+                            int iEdge = grddat.Cells.GetEdgesForFace(jCell, SpecialFace, out int InOrOut, out int[] FurtherEdges);
+                            if(FurtherEdges != null && FurtherEdges.Length > 0) {
+                                throw new NotSupportedException("Hanging node on a edge which coincides with the level set - this should be avoided.");
                             }
-                        }
-                        
+                            int J = grddat.CellPartitioning.LocalLength;
 
-                        stpwGetQuadRuleSet_SolveRHS.Stop();
+                            // surface rule
+                            // ------------
 
-                        // return da rule!
-                        // ===============
+                            //
+                            // Note:
+                            // Only one of the two cells on the special edge should have a surface rule, the other cell should be empty
+                            // Otherwise, the level-set components are integrates twice (or never)!
+                            //
+                            // The convention which we use is:
+                            //   - the cell with the **lower global index** has the full rule
+                            //   - the other cell is empty
+                            // We use the global index here, so that the result is "stable" even if we are at an MPI boundary.
+                            //
 
-                        {
+
+                            bool EmptyOrFool; // true: full rule; false: empty rule
                             {
-                                // the volume rule!
-                                // ----------------
+                                int OtherCell = grddat.Edges.CellIndices[iEdge, InOrOut == 0 ? 1 : 0];
+                                Debug.Assert(OtherCell != jCell);
+                                Debug.Assert(grddat.Edges.CellIndices[iEdge, InOrOut] == jCell);
+                                long jCellGlob = jCell + grddat.CellPartitioning.i0;
+                                long OtherCellGlob = OtherCell < J ? OtherCell + grddat.CellPartitioning.i0 : grddat.Parallel.GlobalIndicesExternalCells[OtherCell - J];
+                                EmptyOrFool = jCellGlob < OtherCellGlob;
+                            }
 
-                                QuadRule qr_l = new QuadRule() {
-                                    OrderOfPrecision = IntOrder - 1, 
-                                    Weights = MultidimensionalArray.Create(NoOfNodes),
-                                    Nodes = VolNodes
-                                };
+                            if(EmptyOrFool) {
 
-                                int Kend = VolNodes.GetLength(0);
+                                var FaceRule = RefElement.FaceRefElement.GetQuadratureRule(IntOrder);
+                                int K = FaceRule.NoOfNodes;
+                                NodeSet VolumeNodes = new NodeSet(RefElement, K, D);
+                                RefElement.TransformFaceCoordinates(SpecialFace, FaceRule.Nodes, VolumeNodes);
+                                VolumeNodes.LockForever();
 
-                                for (int k = 0; k < Kend; k++) {
-                                    qr_l.Weights[k] = RHSandSolution[k, 0];
-                                }
-
-                                VolumeRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
+                                double gTrF = RefElement.FaceTrafoGramianSqrt[SpecialFace];
+                                var metrics = this.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(VolumeNodes, jCell, 1);
                                 
-                            }
-
-                            {
-                                // the surface rule
-                                // ----------------
-
                                 QuadRule qr_l = new QuadRule() {
                                     OrderOfPrecision = IntOrder,
-                                    Weights = MultidimensionalArray.Create(NoOfNodes),
-                                    Nodes = surfNodes
+                                    Weights = MultidimensionalArray.Create(K),
+                                    Nodes = VolumeNodes
                                 };
 
-                                int Kend = VolNodes.GetLength(0) + surfNodes.GetLength(0);
-                                int Kstr = VolNodes.GetLength(0);
-
-                                for (int k = Kstr; k < Kend; k++) {
-                                    qr_l.Weights[k - Kstr] = RHSandSolution[k, 0] / metrics[0, k - Kstr];
+                                for(int k = 0; k < K; k++) {
+                                    qr_l.Weights[k] = FaceRule.Weights[k]*gTrF / metrics[0, k];
                                 }
 
                                 SurfaceRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
+
+                            } else {
+                                // use empty rule
+                                QuadRule empty = new QuadRule() {
+                                    OrderOfPrecision = IntOrder,
+                                    Weights = MultidimensionalArray.Create(1),
+                                    Nodes = RefElement.Center
+                                };
+
+                                SurfaceRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), empty);
                             }
+
+                            // Volume rule
+                            // -----------
+
+                            // we assume that the cell is either completely empty or completely occupied
+                            bool EmptyOrFoolVol; // true: full rule; false: empty rule
+                            {
+                                var LsVals = LevelSetData.GetLevSetValues(RefElement.Center, jCell, 1);
+                                EmptyOrFoolVol = LsVals[0, 0] > 0;
+                            }
+
+                            if(EmptyOrFoolVol) {
+
+                                var VolRule = RefElement.GetQuadratureRule(IntOrder);
+
+                                VolumeRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), VolRule);
+
+                            } else {
+                                // use empty rule
+                                QuadRule empty = new QuadRule() {
+                                    OrderOfPrecision = IntOrder,
+                                    Weights = MultidimensionalArray.Create(1),
+                                    Nodes = RefElement.Center
+                                };
+
+                                VolumeRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), empty);
+                            }
+
                         }
                         jSub++;
                     }
@@ -866,6 +983,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return Coeffs.ResizeShallow(N * D, NoOfNodes);
         }
 
+        /// <summary>
+        /// Computes outward-pointing tangent
+        /// </summary>
+        /// <param name="SurfN">IN: surface normal</param>
+        /// <param name="EdgeN">IN: edge normal</param>
+        /// <param name="tan">OUT: outward-pointing tangent to level-set</param>
         static void tangente(double[] SurfN, double[] EdgeN, double[] tan) {
             Debug.Assert(SurfN.Length == EdgeN.Length);
             if (SurfN.Length != 2)

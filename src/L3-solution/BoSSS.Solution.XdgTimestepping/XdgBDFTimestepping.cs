@@ -1219,13 +1219,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);
 
-                if(Linearization) {
-                    m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-                    m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-                } else {
-                    m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-                }
-
 
                 // assemble system
                 // ---------------
@@ -1344,11 +1337,20 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // perform agglomeration
                 // ---------------------
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, CurrentStateMapping, CurrentStateMapping);
+                m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, Affine, CurrentStateMapping, CurrentStateMapping);
+                
+                if(Linearization) {
+                    m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+                    m_LsTrk.CheckMatrixZeroInEmptyCutCells(System, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+                } else {
+                    m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+                }
 
+                //MiscExtensions.CheckGauss1stOrder(this.m_LsTrk, this.Config_CutCellQuadratureOrder);
 
                 // increase iteration counter         
                 // --------------------------
+                //OpMatrix.SaveToTextFileSparse("OpMatrix49e.txt");
                 abstractOperator = AbstractOperator;
                 m_IterationCounter++;
             }

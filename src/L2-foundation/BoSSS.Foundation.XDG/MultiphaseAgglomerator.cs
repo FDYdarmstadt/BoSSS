@@ -832,7 +832,12 @@ namespace BoSSS.Foundation.XDG {
                             frac = Math.Min(1.0, Math.Max(0.0, frac));
 
 
-                            if (frac < alpha) {
+                            //
+                            // NOTE !!!!!!!!!!
+                            // Do not exclude empty cells here! Empty cells (volume is zero or negative) must be agglomerated to 
+                            // yield a correct matrix structure.
+                            //
+                            if (frac <= alpha) {
                                 // cell 'jCell' should be agglomerated to some other cell
                                 AgglomCellsBitmask[jCell] = true;
                                 AgglomCellsList.Add(jCell);

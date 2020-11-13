@@ -106,6 +106,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
+            Console.WriteLine("Testing Cut-Cell quadrature type: " + momentFittingVariant);
             
             IsPassed = true;
             try {
@@ -197,18 +198,32 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                         Console.WriteLine("levelset + cell-boundary error for species B: " + areaBL2err);
                     }
 
-                    {
+                    for(int iSpc = 0; iSpc < 2; iSpc++) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++
                         // check Gauss theorem for 1st order polynomials
                         // ++++++++++++++++++++++++++++++++++++++++++++++
 
-                        var VolB = CellQuadrature(volSchemeB.Compile(this.GridData, this.QUAD_ORDER));
-                        var VolBbnd = CellVolumeFromGauss(edgeSchemeB.Compile(this.GridData, this.QUAD_ORDER), surfScheme.Compile(this.GridData, this.QUAD_ORDER), -1);
+                        CellQuadratureScheme volScheme;
+                        EdgeQuadratureScheme edgeScheme;
+                        double sign;
+
+                        if(iSpc == 0) {
+                            volScheme = volSchemeA;
+                            edgeScheme = edgeSchemeA;
+                            sign = +1;
+                        } else {
+                            volScheme = volSchemeB;
+                            edgeScheme = edgeSchemeB;
+                            sign = -1;
+                        }
+
+                        var Vol = CellQuadrature(volScheme.Compile(this.GridData, this.QUAD_ORDER));
+                        var VolBnd = CellVolumeFromGauss(edgeScheme.Compile(this.GridData, this.QUAD_ORDER), surfScheme.Compile(this.GridData, this.QUAD_ORDER), sign);
 
                         int D = this.GridData.SpatialDimension;
                         for(int d = 0; d < D; d++) {
-                            var Err = VolB.CloneAs();
-                            Err.Acc(-1.0, VolBbnd.ExtractSubArrayShallow(-1, d));
+                            var Err = Vol.CloneAs();
+                            Err.Acc(-1.0, VolBnd.ExtractSubArrayShallow(-1, d));
                             double gaussErrTot = Err.L2Norm();
 
                             if (gaussErrTot >= 1.0e-5)

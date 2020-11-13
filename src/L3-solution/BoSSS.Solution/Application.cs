@@ -3266,14 +3266,15 @@ namespace BoSSS.Solution {
 
                         foreach (MethodCallRecord mcr in L) {
                             MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-
-                            foreach (var subBlock in quadCall.Calls.Values) {
-                                List<MethodCallRecord> col;
-                                if (!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
-                                    col = new List<MethodCallRecord>();
-                                    QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                            if(quadCall != null) {
+                                foreach(var subBlock in quadCall.Calls.Values) {
+                                    List<MethodCallRecord> col;
+                                    if(!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
+                                        col = new List<MethodCallRecord>();
+                                        QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                                    }
+                                    col.Add(subBlock);
                                 }
-                                col.Add(subBlock);
                             }
                         }
                     }

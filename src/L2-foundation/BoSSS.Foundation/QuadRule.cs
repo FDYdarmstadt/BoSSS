@@ -98,7 +98,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if(Weights.Length == 1 && Weights[0] == 0.0)
                     return true; // also quite often the case
 
-                return Weights.AbsSum() == 0.0; // should be quite rare that we need to check this.
+                return Weights.Sum() > 0.0; // should be quite rare that we need to check this.
             }
         }
 

@@ -149,25 +149,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void BcTest_PressureOutletTest(
             [Values(1)] int deg,
-            [Values(0)] double AgglomerationTreshold,
+            [Values(0.1)] double AgglomerationTreshold,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.Curvature_Projected, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(true, false)] bool performsolve
             ) {
-            //XNSE_ConsistencyTestMain p = null;
-            //BoSSS.Solution.Application._Main(new string[0], true, "", delegate() {
-            //    p = new XNSE_ConsistencyTestMain();
-            //    p.Testcase = new BcTest_PressureOutlet();
-            //    p.FlowSolverDegree = deg;
-            //    p.m_dntParams.CellAgglomerationThreshold = AgglomerationTreshold;
-            //    p.SolverMode = performsolve;
-            //    p.m_dntParams.ViscosityMode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
-            //    return p;
-            //});
 
             var Tst = new BcTest_PressureOutlet();
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.Standard, GridResolution:2, CutCellQuadratureType:CutCellQuadratureType, SurfTensionMode:SurfTensionMode);
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+#if DEBUG
+            const int GridRes = 4; // resolutions 1, 3, etc. place level-set at cell center
+#else
+            const int GridRes = 4; // resolutions 2, 4, etc. place level-set at cell boundary
+#endif
+
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.Standard, GridResolution:GridRes, CutCellQuadratureType:CutCellQuadratureType, SurfTensionMode:SurfTensionMode);
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);

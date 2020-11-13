@@ -155,24 +155,6 @@ namespace BoSSS.Foundation.XDG {
                     IGridData GridDat = lsTrk.GridDat;
 
                     #region Check Input Arguments
-                    // --------------------------------
-                    //if (!this.IsCommited)
-                    //    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-
-                    //if (DomainMap.BasisS.Count != this.DomainVar.Count)
-                    //    throw new ArgumentException("mismatch between specified domain variables and number of DG fields in domain mapping", "DomainMap");
-                    //if (CodomainMap.BasisS.Count != this.CodomainVar.Count)
-                    //    throw new ArgumentException("mismatch between specified codomain variables and number of DG fields in codomain mapping", "CodomainMap");
-
-                    //if (this.ParameterVar.Count == 0) {
-                    //    if (Parameters != null && Parameters.Count > 0)
-                    //        throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
-                    //} else {
-                    //    if (Parameters == null)
-                    //        throw new ArgumentNullException("Parameters", "parameters must be specified");
-                    //    if (Parameters.Count != this.ParameterVar.Count)
-                    //        throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
-                    //}
 
                     if(OnlyAffine == false) {
                         if(!Matrix.RowPartitioning.Equals(base.CodomainMapping))
@@ -180,13 +162,6 @@ namespace BoSSS.Foundation.XDG {
                         if(!Matrix.ColPartition.Equals(base.DomainMapping))
                             throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                     }
-
-
-                    //if (!ReqSpecies.IsSubsetOf(agg.SpeciesList))
-                    //    throw new ArgumentException("HMF mismatch");
-
-                    //if (momentFittingVariant != agg.HMFvariant)
-                    //    throw new ArgumentException("HMF mismatch");
 
                     #endregion
 
@@ -229,7 +204,6 @@ namespace BoSSS.Foundation.XDG {
                             var _mtx = Matrix != null ? mtx : default(SpeciesFrameMatrix<M>);
 
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
-
 
                             foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
 
@@ -621,6 +595,10 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
+            /// <summary>
+            /// Write quadrature rules to text file, for debugging
+            /// </summary>
+            static private bool ruleDiagnosis = false;
 
             /// <summary>
             /// ctor
@@ -712,6 +690,18 @@ namespace BoSSS.Foundation.XDG {
                             EdgeQuadratureScheme edgeScheme = m_Xowner.EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             CellQuadratureScheme cellScheme = m_Xowner.VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             
+
+                            if(ruleDiagnosis) {
+                                var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
+                                var volRule = cellScheme.Compile(this.GridData, quadOrder);
+                                //edgeRule.(GridData, $"Edge{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
+
+                                volRule.ToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
+                                volRule.SumOfWeightsToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
+                            }
+
+
                             ctorSpeciesIntegrator(SpeciesId, quadOrder, cellScheme, edgeScheme, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
@@ -824,19 +814,6 @@ namespace BoSSS.Foundation.XDG {
                                             } else {
                                                 throw new ArgumentException($"Unable to determine negative (aka. In, A) and positive (aka. Out, B) species out of {m_lsTrk.GetSpeciesName(SpeciesA)}, {m_lsTrk.GetSpeciesName(SpeciesA)} w.r.t. Level-Set {iLevSet}.");
                                             }
-
-
-
-                                            //if(lsTrk.ContainesSpecies(SpeciesA, cscNeg) == false)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell MUST contain negative species
-                                            //if(lsTrk.ContainesSpecies(SpeciesA, cscNeg) == true)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell should NOT contain positive species
-
-                                            //if(lsTrk.ContainesSpecies(SpeciesB, cscPos) == false)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell MUST contain positive species
-                                            //if(lsTrk.ContainesSpecies(SpeciesB, cscPos) == true)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell should NOT contain negative species
-
                                         }
 
                                         
@@ -845,10 +822,10 @@ namespace BoSSS.Foundation.XDG {
                                             CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
                                             rule = SurfIntegration.Compile(GridData, quadOrder);
 
-                                            //if (ruleDiagnosis) {
-                                                //rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
-                                                //rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
-                                            //}
+                                            if (ruleDiagnosis) {
+                                                rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
+                                                rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                            }
                                         }
 
                                         LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, __TrackerHistoryIndex, SpeciesA, SpeciesB, iLevSet);
@@ -915,11 +892,6 @@ namespace BoSSS.Foundation.XDG {
             /// the spatial operator
             /// </summary>
             protected XSpatialOperatorMk2 m_Xowner;
-
-            ///// <summary>
-            ///// edge and volume scheme for each species
-            ///// </summary>
-            //protected IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes;
 
             /// <summary>
             /// Parameter fields for each species, for <see cref="XDGField"/>s the species shadow, see <see cref="XDGField.GetSpeciesShadowField(SpeciesId)"/>

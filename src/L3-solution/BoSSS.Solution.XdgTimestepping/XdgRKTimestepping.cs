@@ -721,12 +721,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             double[] OpAffine = new double[Ndof];
             this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, 1);
 
-            if(Linearization) {
-                m_LsTrk.CheckMatrixZeroInEmptyCutCells(OpMatrix, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-                m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-            } else {
-                m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAffine, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
-            }
+            
 
             //if (Linearization == false)
             //    throw new NotImplementedException("todo");
@@ -801,6 +796,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ---------------------
             Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
             m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, Affine, CurrentStateMapping, CurrentStateMapping);
+
+            if(Linearization) {
+                m_LsTrk.CheckMatrixZeroInEmptyCutCells(System, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+                m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+            } else {
+                m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+            }
+
 
             // increase iteration counter         
             // --------------------------
@@ -943,7 +946,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             //BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
             base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime, 1);
-            m_LsTrk.CheckVectorZeroInEmptyCutCells(OpAff, CurrentStateMapping, this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder);
             k.SetV(OpAff);
             //OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
         }
