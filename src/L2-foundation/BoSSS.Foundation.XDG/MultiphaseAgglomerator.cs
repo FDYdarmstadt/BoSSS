@@ -1022,10 +1022,10 @@ namespace BoSSS.Foundation.XDG {
                     var failCells = new List<int>();
                     foreach (int jCell in AgglomCellsList) {
                         var Cell2Edge_jCell = Cell2Edge[jCell];
-                        bool[] EdgeIsNonempty = new bool[Cell2Edge_jCell.Length];
-                        int[] jNeigh = new int[Cell2Edge_jCell.Length];
-                        bool[] isAggCandidate = new bool[Cell2Edge_jCell.Length];
-                        bool[] passed1 = new bool[Cell2Edge_jCell.Length];
+                        //bool[] EdgeIsNonempty = new bool[Cell2Edge_jCell.Length];
+                        //int[] jNeigh = new int[Cell2Edge_jCell.Length];
+                        //bool[] isAggCandidate = new bool[Cell2Edge_jCell.Length];
+                        //bool[] passed1 = new bool[Cell2Edge_jCell.Length];
 
                         // cell 'jCell' should be agglomerated to some other cell
                         Debug.Assert(AgglomCellsBitmask[jCell] == true);
@@ -1056,7 +1056,7 @@ namespace BoSSS.Foundation.XDG {
 
                             double EdgeArea_iEdge = edgeArea[iEdge];
                             if(jCellNeigh >= 0 && EdgeArea_iEdge > EmptyEdgeTreshold) {
-                                EdgeIsNonempty[e] = true;
+                                //EdgeIsNonempty[e] = true;
                                 NonEmptyEdgeAvailable = true;
                             }
                         }
@@ -1082,14 +1082,14 @@ namespace BoSSS.Foundation.XDG {
                             Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
                             int jCellNeigh = Edge2Cell[iEdge, OtherCell];
-                            jNeigh[e] = jCellNeigh;
+                            //jNeigh[e] = jCellNeigh;
                             if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
                                 // boundary edge, no neighbour for agglomeration
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
                                 continue;
                             }
-                            passed1[e] = true;
-                            isAggCandidate[e] = AggCandidates[jCellNeigh];
+                            //passed1[e] = true;
+                            //isAggCandidate[e] = AggCandidates[jCellNeigh];
                             if (!AggCandidates[jCellNeigh])
                                 // not suitable for agglomeration
                                 continue;
