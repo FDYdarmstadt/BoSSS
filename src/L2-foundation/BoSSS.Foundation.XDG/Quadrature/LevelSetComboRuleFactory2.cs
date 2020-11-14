@@ -393,7 +393,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int jSub = 0; // subgrid cell counter
                     foreach (int jCell in _mask.ItemEnum) { // loop over cells in the mask
                         int SpecialFace = IsSpecialCell(jCell);
-
+                        
                         if(SpecialFace < 0) {
                             // +++++++++++++
                             // standard case
@@ -555,7 +555,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // special case: level-set coincides with a cell-face; 
                             // cell is either full or empty 
                             // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            
+
                             // determine whether this cell is 
                             // inside or outside 
                             // w.r.t. the edge that corresponds with face 

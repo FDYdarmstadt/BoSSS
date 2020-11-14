@@ -807,7 +807,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // mask for the cells in which we -- potentially -- want to do agglomeration
                     var AggCandidates = Tracker.Regions.GetSpeciesMask(spId).GetBitMaskWithExternal().CloneAs();
-
+                    var SpeciesMask = Tracker.Regions.GetSpeciesMask(spId).GetBitMask();
 
                     // pass 1: determine agglomeration sources
                     // ---------------------------------------
@@ -1022,6 +1022,10 @@ namespace BoSSS.Foundation.XDG {
                     var failCells = new List<int>();
                     foreach (int jCell in AgglomCellsList) {
                         var Cell2Edge_jCell = Cell2Edge[jCell];
+                        bool[] EdgeIsNonempty = new bool[Cell2Edge_jCell.Length];
+                        int[] jNeigh = new int[Cell2Edge_jCell.Length];
+                        bool[] isAggCandidate = new bool[Cell2Edge_jCell.Length];
+                        bool[] passed1 = new bool[Cell2Edge_jCell.Length];
 
                         // cell 'jCell' should be agglomerated to some other cell
                         Debug.Assert(AgglomCellsBitmask[jCell] == true);
@@ -1051,8 +1055,10 @@ namespace BoSSS.Foundation.XDG {
                             int jCellNeigh = Edge2Cell[iEdge, OtherCell];
 
                             double EdgeArea_iEdge = edgeArea[iEdge];
-                            if (jCellNeigh >= 0 && EdgeArea_iEdge > EmptyEdgeTreshold)
+                            if(jCellNeigh >= 0 && EdgeArea_iEdge > EmptyEdgeTreshold) {
+                                EdgeIsNonempty[e] = true;
                                 NonEmptyEdgeAvailable = true;
+                            }
                         }
 
                         for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
@@ -1076,12 +1082,14 @@ namespace BoSSS.Foundation.XDG {
                             Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
                             int jCellNeigh = Edge2Cell[iEdge, OtherCell];
+                            jNeigh[e] = jCellNeigh;
                             if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
                                 // boundary edge, no neighbour for agglomeration
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
                                 continue;
                             }
-
+                            passed1[e] = true;
+                            isAggCandidate[e] = AggCandidates[jCellNeigh];
                             if (!AggCandidates[jCellNeigh])
                                 // not suitable for agglomeration
                                 continue;
@@ -1102,7 +1110,7 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         if (jCellNeigh_max < 0) {
-
+                            //Debugger.Launch();
                             failCells.Add(jCell);
                         } else {
                             _AccEdgesMask[jEdge_max] = true;
@@ -1123,7 +1131,7 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    if (failCells.Count > 0) {
+                    if (failCells.Count.MPISum() > 0) {
 
 
                         Basis b = new Basis(grdDat, 0);
@@ -1145,6 +1153,7 @@ namespace BoSSS.Foundation.XDG {
                         foreach (int j in failCells) {
                             FailedViz.SetMeanValue(j, 1);
                         }
+
 
                         if (Katastrophenplot != null)
                             Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));

@@ -1156,11 +1156,23 @@ namespace BoSSS.Foundation.XDG {
             /// - 1st index: local cell index
             /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
             /// - entry: if null, there is no face on the cell which coincides with any level-set 
-            /// - 
+            /// - contains tuples, which level-set coincides with which face (if any)
             /// </summary>
             internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
 
-
+            /// <summary>
+            /// Handling of special cases, when the level-set coincides with a cell face;
+            /// It can be null, if there is no such face in the entire mesh;
+            /// - 1st index: local cell index
+            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
+            /// - entry: if null, there is no face on the cell which coincides with any level-set 
+            /// - contains tuples, which level-set coincides with which face (if any)
+            /// </summary>
+            public (int iLevSet, int iFace)[][] LevSetCoincidingFaces {
+                get {
+                    return m_LevSetCoincidingFaces;
+                }
+            }
 
             /// <summary>
             /// Returns the sign (pos, neg, both) for all level-sets in cell <paramref name="jCell"/>

@@ -2258,11 +2258,9 @@ namespace BoSSS.Solution {
                     //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
                     //        }
                     //    }
-
-
                     //}
 
-                    // set dg co�rdinates
+                    // set dg coordinates
                     foreach (var f in m_RegisteredFields) {
                         if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
@@ -2271,6 +2269,7 @@ namespace BoSSS.Solution {
                         }
                         loadbal.RestoreDGField(f);
                     }
+                    
 
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(loadbal);

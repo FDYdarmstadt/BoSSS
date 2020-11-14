@@ -1282,13 +1282,24 @@ namespace BoSSS.Foundation.XDG {
         /// Can be used as input for <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], int)"/> or <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], ushort[], int)"/>.
         /// - 1st item: clone of the level-set fields, <see cref="m_LevelSetHistories"/>
         /// - 2nd item: region code for each cell, <see cref="LevelSetRegions.RegionsCode"/>
-        /// - 3rd item: level-set version index, <see cref="LevelSetRegions.Version"/>
-        /// - 4th item: associated physical time, <see cref="LevelSetRegions.Time"/>
+        /// - 3rd item: <see cref="LevelSetRegions.m_LevSetCoincidingFaces"/>
+        /// - 4th item: level-set version index, <see cref="LevelSetRegions.Version"/>
+        /// - 5th item: associated physical time, <see cref="LevelSetRegions.Time"/>
         /// </returns>
-        public (LevelSet[] LevelSets, ushort[] Regions, int Version, double time) BackupTimeLevel(int iHistory) {
+        public (LevelSet[] LevelSets, ushort[] Regions, (int iLevSet, int iFace)[][] LevSetCoincidingFaces, int Version, double time) BackupTimeLevel(int iHistory) {
             int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
+            
             ushort[] RegionClone = new ushort[Jup];
             Array.Copy(this.RegionsHistory[iHistory].RegionsCode, 0, RegionClone, 0, Jup);
+
+            var LSCF = this.RegionsHistory[iHistory].m_LevSetCoincidingFaces;
+            (int iLevSet, int iFace)[][] _LevSetCoincidingFaces;
+            _LevSetCoincidingFaces = new (int iLevSet, int iFace)[Jup][];
+            if(LSCF != null) {
+                for(int j = 0; j < Jup; j++) {
+                    _LevSetCoincidingFaces[j] = LSCF[j].CloneAs();
+                }
+            }
 
             int NoOfLevelSets = this.NoOfLevelSets;
             LevelSet[] LevSetClones = new LevelSet[NoOfLevelSets];
@@ -1297,7 +1308,7 @@ namespace BoSSS.Foundation.XDG {
                 LevSetClones[iLs] = Ls;
             }
 
-            return (LevSetClones, RegionClone, this.RegionsHistory[iHistory].Version, this.RegionsHistory[iHistory].Time);
+            return (LevSetClones, RegionClone, _LevSetCoincidingFaces, this.RegionsHistory[iHistory].Version, this.RegionsHistory[iHistory].Time);
         }
 
         /// <summary>
@@ -1350,9 +1361,10 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="LevSet">Level-Sets</param>
         /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
-        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>#
+        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>
+        /// <param name="LevSetCoincidingFaces"><see cref="LevelSetRegions.LevSetCoincidingFaces"/></param>
         /// <param name="time"><see cref="LevelSetRegions.Time"/></param>
-        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, int VersionCounter, double time) {
+        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, (int iLevSet, int iFace)[][] LevSetCoincidingFaces, int VersionCounter, double time) {
             if(LevSet.Length != this.NoOfLevelSets)
                 throw new ArgumentOutOfRangeException();
             int NoOfLevelSet = this.NoOfLevelSets;
@@ -1384,6 +1396,12 @@ namespace BoSSS.Foundation.XDG {
             // ==================
 
             Array.Copy(RegionCode, 0, this.Regions.m_LevSetRegions, 0, RegionCode.Length);
+            if(LevSetCoincidingFaces.Any(e => e != null && e.Length > 0)) {
+                this.Regions.m_LevSetCoincidingFaces = new (int iLevSet, int iFace)[RegionCode.Length][];
+                Array.Copy(LevSetCoincidingFaces, 0, this.Regions.m_LevSetCoincidingFaces, 0, RegionCode.Length);
+            } else {
+                this.Regions.m_LevSetCoincidingFaces = null;
+            }
             this.Regions.Version = VersionCounter;
             this.m_VersionCnt = VersionCounter;
             this.Regions.Time = time;

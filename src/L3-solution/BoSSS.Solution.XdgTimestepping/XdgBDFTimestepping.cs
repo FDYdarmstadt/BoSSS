@@ -783,31 +783,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 }
 
-                /*
-                // restore operator matrix
-                m_Stack_OpMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_Operator.Length];
-                m_Stack_OpAffine = new double[m_PrivateBalancingInfo.m_Stack_Operator.Length][];
-                for (int i = 0; i < m_Stack_OpMatrix.Length; i++) {
-                    //if (m_PrivateBalancingInfo.m_Stack_OpMatrix[i]) {
-                    //    m_Stack_OpMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
-                    //    L.RestoreMatrix(m_Stack_OpMatrix[i], GetName__Stack_OpMatrix(i), CurrentStateMapping, CurrentStateMapping);
-                    //}
-
-                    //if (m_PrivateBalancingInfo.m_Stack_OpAffine[i]) {
-                    //    m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
-                    //    L.RestoreVector(m_Stack_OpAffine[i], GetName__Stack_OpAffine(i));
-                    //}
-
-                    if (!m_PrivateBalancingInfo.m_Stack_Operator[i])
-                        continue;
-
-                    m_Stack_OpMatrix[i] = new BlockMsrMatrix(CurrentStateMapping);
-                    m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
-                    this.ComputeOperatorMatrix(m_Stack_OpMatrix[i], m_Stack_OpAffine[i],
-                        m_Stack_u[i].Mapping, m_Stack_u[i].Mapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
-                }
-                */
-
                 // finished
                 m_PrivateBalancingInfo = null;
                 base.MultigridSequence = _MultigridSequence;

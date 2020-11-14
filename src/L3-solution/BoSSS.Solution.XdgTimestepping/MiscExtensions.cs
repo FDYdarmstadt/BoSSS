@@ -110,9 +110,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
-            Console.WriteLine("REm: remove hardcoded plot.");
-            Tecplot.Tecplot.PlotFields(new DGField[] { LsTrk.LevelSets[0] as DGField }, "SeriousError", 0.0, 4);
             if(allErrors != null && allErrors.Count > 0) {
+                Console.WriteLine("REm: remove hardcoded plot.");
+                Tecplot.Tecplot.PlotFields(new DGField[] { LsTrk.LevelSets[0] as DGField }, "SeriousError", 0.0, 4);
+
                 OpMatrix.SaveToTextFileSparse("OpMatrix.txt");
                 var ErrBitMask = new BitArray(J);
                 foreach(var tt in allErrors) {
