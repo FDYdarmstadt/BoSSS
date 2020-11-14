@@ -337,12 +337,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         private static void GenericTest(ITest Tst, XNSE_Control C) {
-            using(var solver = new XNSE_SolverMain()) {
 
-                if(C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                    Console.WriteLine($"Reminder: skipping test of {C.CutCellQuadratureType} wor now...");
-                    return;
-                }
+            if(C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                Console.WriteLine($"Reminder: skipping test of {C.CutCellQuadratureType} wor now...");
+                return;
+            }
+
+            using(var solver = new XNSE_SolverMain()) {
 
 
                 //C.ImmediatePlotPeriod = 1;
@@ -387,7 +388,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         private static void ScalingTest(ITest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode) {
             if(CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                Console.WriteLine($"Reminder: skipping test of {CutCellQuadratureType} wor now...");
+                Console.WriteLine($"Reminder: skipping test of {CutCellQuadratureType} for now...");
                 return;
             }
 
