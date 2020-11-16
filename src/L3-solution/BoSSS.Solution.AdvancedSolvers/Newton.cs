@@ -307,16 +307,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 bool success = false;
 
 
-                // double[] CurSol, // "current (approximate) solution", i.e.
-                //     CurRes; // residual associated with 'CurSol'
+                double[] CurSol, // "current (approximate) solution", i.e.
+                    CurRes; // residual associated with 'CurSol'
 
 
-                // using (new BlockTrace("Slv Init", tr)) {
-                //     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
-                // };
+                using (new BlockTrace("Slv Init", tr)) {
+                    base.Init(SolutionVec, RHS, out CurSol, out CurRes);
+                };
 
-                // this.CurrentLin.TransformSolFrom(SolutionVec, CurSol); // CurSol -> SolutionVec
-                // EvaluateOperator(1, SolutionVec.Fields, CurRes, 1.0); // seems redundant, but don't dare to remove!
+                this.CurrentLin.TransformSolFrom(SolutionVec, CurSol); // CurSol -> SolutionVec
+                EvaluateOperator(1, SolutionVec.Fields, CurRes, 1.0); // seems redundant, but don't dare to remove!
 
                 double HomotopyParameter = 0.0;
                 EvaluateOperator(1, SolutionVec.Fields, CurRes, HomotopyParameter);
