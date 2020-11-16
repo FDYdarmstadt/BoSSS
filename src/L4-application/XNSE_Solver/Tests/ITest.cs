@@ -58,6 +58,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         Func<double[], double, double> GetPress(string species);
 
         /// <summary>
+        /// if known the exact solution will be set
+        /// </summary>
+        //bool setExtSol { get; }
+
+        /// <summary>
         /// Time step size.
         /// </summary>
         double dt { get; }

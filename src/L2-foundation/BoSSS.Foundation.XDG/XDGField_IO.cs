@@ -273,13 +273,25 @@ namespace BoSSS.Foundation.XDG {
                 //var coords_j = data[j].DGCoordinateData[MyIndex];
                 var coords_j = data[j].GetDGCoordinates(MyIndex);
 
+                int cjL = coords_j.Length;
                 //if (coords_j.Length != field.Basis.GetLength(j))
-                if (coords_j.Length != field.Basis.GetLength(j)) {
-                    throw new Exception();
+                if (cjL != field.Basis.GetLength(j)) {
+                    //throw new Exception();
                     //Console.WriteLine("Bullshit in cell {0}", j);
                     //field.Coordinates.ClearRow(j);
+                    ReducedRegionCode dummy;
+                    int NoSpc = field.Basis.Tracker.Regions.GetNoOfSpecies(j, out dummy);
+                    if (cjL == field.Basis.GetLength(j) / NoSpc) {
+                        Console.WriteLine("Warning: field marked as cut-cell but not sufficient data to load");
+                        for (int spc = 0; spc < NoSpc; spc++) {
+                            for (int n = 0; n < cjL; n++)
+                                field.Coordinates[j, (spc * cjL) + n] = coords_j[n];
+                        }
+                    } else {
+                        throw new Exception();
+                    }
                 } else {
-                    for (int n = 0; n < coords_j.Length; n++)
+                    for (int n = 0; n < cjL; n++)
                         field.Coordinates[j, n] = coords_j[n];
                 }
             }

@@ -176,7 +176,8 @@ namespace BoSSS.Application.BoSSSpad {
                 
                     try {
                         databases = DatabaseController.LoadDatabaseInfosFromXML();
-                    
+                        
+                        ReloadExecutionQueues();
                         string summary = databases.Summary();
                         Console.WriteLine(""Databases loaded:"");
                         Console.WriteLine(summary);

@@ -12,7 +12,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            EquidistandGrid();
+            CornerSpeziale();
         }
 
         [Test]
@@ -41,7 +41,7 @@ namespace VoronoiTests.Grid
             var rectangle = GridShapes.Rectangle(2, 2);
 
             VoronoiGrid grid = VoronoiGrid2D.Polygonal(rectangle, 0, 10000);
-            Plotter.Plot(grid);
+            //Plotter.Plot(grid);
         }
 
         [Test]

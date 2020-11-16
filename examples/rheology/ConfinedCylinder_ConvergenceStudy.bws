@@ -4,45 +4,40 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
+Opening existing database '\\dc1\scratch\kummer\bosss_db'.
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
-  0: { Session Count = 40; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\Channel_ConvergenceStudy_Wi=0.0 }
-  1: { Session Count = 55; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0 }
-  2: { Session Count = 45; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.5 }
-  3: { Session Count = 59; Grid Count = 11; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag }
-  4: { Session Count = 45; Grid Count = 6; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady }
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = P:\bosss_db2 }
+  1: { Session Count = 64; Grid Count = 5; Path = \\dc1\scratch\kummer\bosss_db }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
-LastError
-**************
-==============
 using BoSSS.Application.Rheology;
 **************
 ==============
+WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_04nov20");
 **************
-==============
-WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG");
-**************
-Project name is set to 'ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG'.
+Project name is set to 'ConfinedCylinder_ConvergenceStudy_04nov20'.
 
 ==============
-var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0");
+ExecutionQueues;
 **************
-Opening existing database '\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0'.
-
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @d:\Users\kummer\AppData\Local\BoSSS-LocalJobs
+  1: MiniBatchProcessor client @\\terminal03\Jenkins
+  2: MS HPC client DC2, @\\dc1\userspace\kummer\cluster
+}
 ==============
-//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
-var myBatch = new MiniBatchProcessorClient(@"\\dc1\userspace\kikker\cluster\ConfinedCylinder");
+var myBatch = ExecutionQueues[2];
 **************
 ==============
-MiniBatchProcessor.Server.StartIfNotRunning();
+var myDb = myBatch.AllowedDatabases.First();
 **************
-Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 24916.
-
+==============
+WorkflowMgm.DefaultDatabase = myDb;
+**************
 ==============
 // ======================
 // Convergence Parameters
@@ -53,73 +48,88 @@ int[] pOrder = new int[] {1, 2, 3, 4};
 int numberGrids = 4;
 **************
 ==============
+double[] WeissenbergS = new double[] { 0.0, 0.2 };
+**************
+==============
 // ===============================
 // Init grids and save to database
 // ===============================
 **************
 ==============
-GridCommons[] grids = new GridCommons[numberGrids];
+IGridInfo[] grids = new IGridInfo[numberGrids];
 //GridCommons grid;
 for (int k = 0; k < numberGrids; k++) {
-    //int k = 2;
-Gmsh gmshGrid         = new Gmsh(@"c:\Users\kikker\AnnesBoSSSdb\Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+k+"_half.msh");
-GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
-bosssGrid.Name        = "confined_cylinder";
-bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
-//bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
-bosssGrid.EdgeTagNames.Add(2, "Freeslip");
-bosssGrid.EdgeTagNames.Add(3, "Wall_top");
-bosssGrid.EdgeTagNames.Add(4, "Pressure_Outlet");
-bosssGrid.EdgeTagNames.Add(5, "Wall_cylinder");
 
-Func<double[], byte> edgeTagFunc = delegate (double[] X) {
-                    double x = X[0];
-                    double y = X[1];
-//                  if (!C.FixedStreamwisePeriodicBC)
-//                  {
-                      if (Math.Abs(x - (-15)) < 1.0e-10)
-                          return 1;
-                      if (Math.Abs(x - (15)) < 1.0e-10)
-                          return 4;
-//                  }
-                    //if (Math.Abs(y - (-2)) < 1.0e-10)
-                    //    return 2;
+//bosssGrid.Name        = "confined_cylinder";
+
+Func<double[], string> edgeTagFunc = delegate (double[] X) {
+    double x = X[0];
+    double y = X[1];
+//  if (!C.FixedStreamwisePeriodicBC)
+//  {
+    if (Math.Abs(x - (-15)) < 1.0e-10)
+        return "Velocity_inlet";
+    if (Math.Abs(x - (15)) < 1.0e-10)
+        return "Pressure_Outlet";
+//  }
+//  if (Math.Abs(y - (-2)) < 1.0e-10)
+//      return "Freeslip";
                     
-                    if (Math.Abs(y - (0)) < 1.0e-10)
-                        return 2;
+    if (Math.Abs(y - (0)) < 1.0e-10)
+        return "Freeslip";
                     
-                    if (Math.Abs(y - (+2)) < 1.0e-10)
-                        return 3;
+    if (Math.Abs(y - (+2)) < 1.0e-10)
+        return "Wall_top";
                     
-                    //if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
-                    //    return 5;
+//  if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+//    return "Wall_cylinder";
                     
-                    if (0.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
-                        return 5;
+    if (0.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+        return "Wall_cylinder";
                     
-                    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " +y);
+    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " +y);
 };
 
-bosssGrid.DefineEdgeTags(edgeTagFunc);            
-//myDb.Controller.SaveGridInfo(bosssGrid);
-myDb.SaveGrid(ref bosssGrid);
-//grid = bosssGrid;   
-grids[k] = bosssGrid;           
+   
+grids[k] = WorkflowMgm.ImportGrid(@"Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+k+"_half.msh", EdgeTagFunc:edgeTagFunc);
  }
 **************
 
-An equivalent grid is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid (bae711d7-8d20-4f4a-9e93-a54e18cfa200) is already present in the database -- the grid will not be saved.
 
-An equivalent grid is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid (b4102be2-51a1-4f92-b021-e254425c1d72) is already present in the database -- the grid will not be saved.
 
-An equivalent grid is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid (c466f51f-410f-4790-9618-dc4d6d3aebd0) is already present in the database -- the grid will not be saved.
 
-An equivalent grid is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid (6c490918-4cd4-4393-b5e5-867cef2efc18) is already present in the database -- the grid will not be saved.
 
 ==============
+grids;
+**************
+List of 4 instances of IGridInfo {
+  0: { Guid = bae711d7-8d20-4f4a-9e93-a54e18cfa200; Name = confined_cylinder; Cell Count = 320; Dim = 2 }
+  1: { Guid = b4102be2-51a1-4f92-b021-e254425c1d72; Name = confined_cylinder; Cell Count = 1208; Dim = 2 }
+  2: { Guid = c466f51f-410f-4790-9618-dc4d6d3aebd0; Name = confined_cylinder; Cell Count = 4252; Dim = 2 }
+  3: { Guid = 6c490918-4cd4-4393-b5e5-867cef2efc18; Name = confined_cylinder; Cell Count = 14712; Dim = 2 }
+}
+==============
+//grids[0] = myDb.Grids.Single(g => g.ID == new Guid("bae711d7-8d20-4f4a-9e93-a54e18cfa200"));
 **************
 ==============
-LastError
+//grids[1] = myDb.Grids.Single(g => g.ID == new Guid("b4102be2-51a1-4f92-b021-e254425c1d72"));
+**************
+==============
+//grids[2] = myDb.Grids.Single(g => g.ID == new Guid("c466f51f-410f-4790-9618-dc4d6d3aebd0"));
+**************
+==============
+//grids[3] = myDb.Grids.Single(g => g.ID == new Guid("6c490918-4cd4-4393-b5e5-867cef2efc18"));
+**************
+==============
+//LastError
 **************
 ==============
 // =====================================
@@ -131,13 +141,9 @@ using BoSSS.Solution.AdvancedSolvers;
 **************
 ==============
 //Physical Params
-double u0                   = 1.5; // 0.375;// 0.66;// 3 / 2;
-double h                    = 4;
-double beta                 = 0.59;
 double Reynolds             = 1;
-double Weissenberg          = 0.0; //aim Weissenberg number!
-bool RaiseWeissenberg       = false;
-double WeissenbergIncrement = 0.1;
+//bool RaiseWeissenberg       = false;
+//double WeissenbergIncrement = 0.0;
 **************
 ==============
 // Set Initial Conditions  
@@ -145,9 +151,9 @@ static class InitialValues {
     
     static double u0                   = 1.5; // 0.375;// 0.66;// 3 / 2;
     static double h                    = 4;
-    static double beta                 = 0.59;
+    public static double beta          = 0.59;
     static double Reynolds             = 1;
-    static double Weissenberg          = 0.0; //aim Weissenberg number!
+    //static double Weissenberg          = 0.2; //aim Weissenberg number!
     
     public static double VelocityXfunction(double[] X) {
         return u0 * (1  - (X[1] *  X[1])/h);
@@ -161,7 +167,13 @@ static class InitialValues {
         return u0 * 0.5 * Reynolds * (35 - X[0]);
     }
     
-    public static double StressXXfunction(double[] X) {
+    public static double StressXXfunction_wi02(double[] X) {
+        const double Weissenberg = 0.2;
+        return 2 * Weissenberg * (1 - beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
+    }
+    
+    public static double StressXXfunction_wi00(double[] X) {
+        const double Weissenberg = 0.0;
         return 2 * Weissenberg * (1 - beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
     }
     
@@ -172,14 +184,7 @@ static class InitialValues {
     public static double StressYYfunction(double[] X) {
         return 0.0;
     }
-    public static double Phi(double[] X) {
-        return -1.0;
-    }
 }          
-**************
-==============
-//Set boundary conditions
-var Wall = new Formula("X => 0");
 **************
 ==============
 List<RheologyControl> Controls = new List<RheologyControl>();
@@ -196,18 +201,19 @@ List of 4 instances of Int32 {
 ==============
 grids;
 **************
-List of 4 instances of GridCommons {
-  0: { Guid = 8ee81c34-79d3-43ea-a4da-75200314515d; Name = confined_cylinder; Cell Count = 320; Dim = 2 }
-  1: { Guid = 7f091341-034e-40a0-82b3-49a3e7793da3; Name = confined_cylinder; Cell Count = 1208; Dim = 2 }
-  2: { Guid = 6cba560e-00c9-45c6-8675-01bc6bb47671; Name = confined_cylinder; Cell Count = 4252; Dim = 2 }
-  3: { Guid = daa1e93e-dbc9-4bc3-992b-73ed27dd255a; Name = confined_cylinder; Cell Count = 14712; Dim = 2 }
+List of 4 instances of IGridInfo {
+  0: { Guid = bae711d7-8d20-4f4a-9e93-a54e18cfa200; Name = confined_cylinder; Cell Count = 320; Dim = 2 }
+  1: { Guid = b4102be2-51a1-4f92-b021-e254425c1d72; Name = confined_cylinder; Cell Count = 1208; Dim = 2 }
+  2: { Guid = c466f51f-410f-4790-9618-dc4d6d3aebd0; Name = confined_cylinder; Cell Count = 4252; Dim = 2 }
+  3: { Guid = 6c490918-4cd4-4393-b5e5-867cef2efc18; Name = confined_cylinder; Cell Count = 14712; Dim = 2 }
 }
 ==============
 Controls.Clear();
+foreach(double Weissenberg in WeissenbergS) {
 foreach(int degree in pOrder) {
-    int elemInd = 0;
-foreach(GridCommons grd in grids) {
-//GridCommons grd = grid;
+int elemInd = 0;
+foreach(var grd in grids) {
+
     //Database
     RheologyControl C = new RheologyControl();
     C.savetodb        = true;
@@ -220,18 +226,16 @@ foreach(GridCommons grd in grids) {
     C.NonLinearSolver.MaxSolverIterations  = 100;
     C.NonLinearSolver.MinSolverIterations  = 3;
     C.NonLinearSolver.ConvergenceCriterion = 1E-6;
-    C.LinearSolver.MaxSolverIterations     = 100;
-    C.LinearSolver.MinSolverIterations     = 3;          
-    C.LinearSolver.ConvergenceCriterion    = 1E-6;
+    //C.LinearSolver.MaxSolverIterations     = 100;
+    //C.LinearSolver.MinSolverIterations     = 3;          
+    //C.LinearSolver.ConvergenceCriterion    = 1E-6;
     C.NonLinearSolver.SolverCode           = NonLinearSolverCode.Newton;
-    C.LinearSolver.SolverCode              = LinearSolverCode.exp_OrthoS_pMG;//classic_pardiso;//_mumps;
-    C.useJacobianForOperatorMatrix         = false;
+    //C.LinearSolver.SolverCode              = LinearSolverCode.exp_OrthoS_pMG;//classic_pardiso;//_mumps;
+    //C.useJacobianForOperatorMatrix         = false;
+    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
     //Timestepping
-    C.NoOfTimesteps      = 1;
-    C.dt                 = 1E20;
-    C.dtMax              = C.dt;
-    C.dtMin              = C.dt;
+    C.TimesteppingMode   = AppControl._TimesteppingMode.Steady;
     C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
     C.ObjectiveParam     = 1.0;
 
@@ -244,11 +248,11 @@ foreach(GridCommons grd in grids) {
     C.Bodyforces             = true;
 
     //Physical parameters
-    C.beta                 = beta;
+    C.beta                 = InitialValues.beta;
     C.Reynolds             = Reynolds;
     C.Weissenberg          = Weissenberg; //aim Weissenberg number!
-    C.RaiseWeissenberg     = RaiseWeissenberg;
-    C.WeissenbergIncrement = WeissenbergIncrement;
+    C.RaiseWeissenberg     = false;
+    C.WeissenbergIncrement = 0.0;
 
     //Penalties
     C.ViscousPenaltyScaling = 1;
@@ -262,75 +266,81 @@ foreach(GridCommons grd in grids) {
     C.StressPenalty         = 1.0;
 
     //Create Fields
-    C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("ResidualMomentumX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualMomentumY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualConti", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("ResidualStressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.SetDGdegree(degree);
 
     //Set initial values
     C.InitialValues.Add("VelocityX", GetFormulaObject(InitialValues.VelocityXfunction));
     C.InitialValues.Add("VelocityY", GetFormulaObject(InitialValues.VelocityYfunction));
-    C.InitialValues.Add("StressXX", GetFormulaObject(InitialValues.StressXXfunction));
+    if(Weissenberg == 0.0)
+        C.InitialValues.Add("StressXX", GetFormulaObject(InitialValues.StressXXfunction_wi00));
+    else if(Weissenberg == 0.2)
+        C.InitialValues.Add("StressXX", GetFormulaObject(InitialValues.StressXXfunction_wi02));
+    else
+        throw new NotImplementedException("Missing Weissenberg = " + Weissenberg);    
     C.InitialValues.Add("StressXY", GetFormulaObject(InitialValues.StressXYfunction));
     C.InitialValues.Add("StressYY", GetFormulaObject(InitialValues.StressYYfunction));
-    C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
 
     //Set Boundary Conditions
-    //C.AddBoundaryValue("Wall_bottom", "VelocityX", Wall);
-    //C.AddBoundaryValue("Wall_bottom", "VelocityY", Wall);
-    C.AddBoundaryValue("Wall_top", "VelocityX", Wall);
-    C.AddBoundaryValue("Wall_top", "VelocityY", Wall);
-    C.AddBoundaryValue("Wall_cylinder", "VelocityX", Wall);
-    C.AddBoundaryValue("Wall_cylinder", "VelocityY", Wall);
+    //C.AddBoundaryValue("Wall_top", "VelocityX", Wall);
+    //C.AddBoundaryValue("Wall_top", "VelocityY", Wall);
+    //C.AddBoundaryValue("Wall_cylinder", "VelocityX", Wall);
+    //C.AddBoundaryValue("Wall_cylinder", "VelocityY", Wall);
 
     C.AddBoundaryValue("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityXfunction));
     C.AddBoundaryValue("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.VelocityYfunction));
-    C.AddBoundaryValue("Velocity_inlet", "StressXX", GetFormulaObject(InitialValues.StressXXfunction));
+    if(Weissenberg == 0.0)
+        C.AddBoundaryValue("Velocity_inlet", "StressXX", GetFormulaObject(InitialValues.StressXXfunction_wi00));
+    else if(Weissenberg == 0.2)
+        C.AddBoundaryValue("Velocity_inlet", "StressXX", GetFormulaObject(InitialValues.StressXXfunction_wi02));
+    else
+        throw new NotImplementedException("Missing Weissenberg = " + Weissenberg);
     C.AddBoundaryValue("Velocity_inlet", "StressXY", GetFormulaObject(InitialValues.StressXYfunction));
     C.AddBoundaryValue("Velocity_inlet", "StressYY", GetFormulaObject(InitialValues.StressYYfunction)); 
-    C.AddBoundaryValue("Pressure_Outlet");
-    C.AddBoundaryValue("Freeslip");
             
     //Save Session and next...
-    C.SessionName = "ConfinedCylinder_ConvergenceStudy_p"+degree+"_meshNo"+elemInd+"_Wi0.0_half_levelPMG";
+    C.SessionName = $"ConfinedCylinder_ConvergenceStudy_p{degree}_meshNo{elemInd}_Wi{Weissenberg}_half";
     Controls.Add(C);
-    elemInd += 1;
     Console.WriteLine("Created control: " + C.SessionName);
- }
+    elemInd++;
+}
+}
 }
 **************
-Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half_levelPMG
-Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half
 
 ==============
+LastError;
 **************
 ==============
 // ===========
@@ -340,130 +350,57 @@ Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.0_half_levelPM
 ==============
 Controls.Count;
 **************
-16
+32
 ==============
-int[] procs = new int[] {4};
 foreach(var ctrl in Controls) {
-foreach (int element in procs){
-var oneJob              = ctrl.CreateJob();
-oneJob.NumberOfMPIProcs = element;
-oneJob.ExecutionTime    = "24:00:00";
-oneJob.Activate(myBatch);
-}
+    var oneJob              = ctrl.CreateJob();
+    oneJob.NumberOfMPIProcs = 1;
+    oneJob.ExecutionTime    = "24:00:00";
+    oneJob.Activate(myBatch);
 }
 **************
-Job not submitted yet, or no result session is known - starting submission.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0_half	11/04/2020 17:49:50	da5dfb61..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0_half	11/04/2020 17:49:57	a7c37982..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0_half	11/04/2020 17:50:08	3373e2ba..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0_half	11/04/2020 17:50:13	d06263f0..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0_half	11/04/2020 17:50:29	8c760621..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0_half	11/04/2020 17:50:37	4b621d78..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0_half	11/04/2020 17:50:48	88732c1d..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0_half	11/04/2020 17:50:54	3b903acb..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0_half	11/04/2020 17:51:01	4806a76b..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half	11/04/2020 17:51:20	5018a1ab..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half	11/04/2020 17:51:26	20b2e09a..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half	11/04/2020 17:51:36	33c2bf51..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half	11/05/2020 07:47:51	085bb6e5..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half	11/04/2020 17:51:58	cdd3d452..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half	11/04/2020 17:52:04	98f1df8d..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half	11/04/2020 17:52:13	14cc7ec4..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.2_half	11/04/2020 17:52:26	f3d0ace4..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.2_half	11/04/2020 17:52:39	ddaf35b6..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.2_half	11/04/2020 17:52:51	a67fe565..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.2_half	11/04/2020 17:53:01	f94e1915..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.2_half	11/04/2020 17:53:10	0e62ff55..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.2_half	11/04/2020 17:53:18	d79c2c2a..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half	11/05/2020 07:48:00	a7a5b89d..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half	11/05/2020 07:48:08	cdaec6a9..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half	11/05/2020 07:48:13	7ad1070e..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half	11/05/2020 07:48:23	89d5012e..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half	11/05/2020 07:48:31	16879f45..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half	11/05/2020 07:48:40	aa68fbd2..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half	11/05/2020 07:48:50	a39061f2..." -- job is marked as successful, no further action.
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half	11/05/2020 07:49:07	2cdc6fe9..." -- job is marked as successful, no further action.
+Deploying job ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half ... 
+Submitting job with the following database info: 
+Primary: \\dc1\scratch\kummer\bosss_db
+No alternative paths specified.
 Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-00
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
+Deployment directory: \\dc1\userspace\kummer\cluster\ConfinedCylinder_ConvergenceStudy_04nov20-RheologySolver2020Nov06_131557
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
 deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-01
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-03
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-05
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-12
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-15
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-17
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-25
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-27
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-29
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-37
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-39
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-44
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-45
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-47
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-55
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
+
+Info: Found successful session "ConfinedCylinder_ConvergenceStudy_04nov20	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half	11/05/2020 07:49:21	5ea47c3b..." -- job is marked as successful, no further action.
 
 ==============
 LastError
@@ -471,103 +408,179 @@ LastError
 ==============
 WorkflowMgm.AllJobs
 **************
-System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
+List of 32 instances of KeyValuePair{String,Job} {
+  0: [ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  1: [ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  2: [ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  3: [ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  4: [ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  5: [ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  6: [ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  7: [ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  8: [ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  9: [ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  10: [ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  11: [ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  12: [ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  13: [ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  14: [ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  15: [ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  16: [ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  17: [ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  18: [ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  19: [ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  20: [ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  21: [ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  22: [ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  23: [ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  24: [ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  25: [ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  26: [ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  27: [ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  28: [ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  29: [ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  30: [ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+  31: [ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half, ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.2_half: FinishedSuccessful (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)]
+}
+==============
+var suspects = WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(job => job.Status == JobStatus.FailedOrCanceled).ToArray();
+**************
+==============
+suspects;
+**************
+List of 0 instances of Job {
+}
+==============
+//suspects[0].DeleteOldDeploymentsAndSessions();
+**************
+==============
+**************
+==============
+var suspects = WorkflowMgm.AllJobs.Select(kv => kv.Value)
+    .Where(job => job.LatestSession.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)
+                  || job.LatestSession.Tags.Contains(SessionInfo.SOLVER_ERROR)).ToArray();
+suspects;
+**************
+List of 1 instances of Job {
+  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+}
+==============
+**************
+==============
+//foreach(Job j in suspects) {
+//    j.DeleteOldDeploymentsAndSessions(); 
+//}
+**************
+==============
+**************
+==============
+var active = WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(job => job.Status == JobStatus.InProgress).ToArray();
+**************
+==============
+active
+**************
+List of 1 instances of Job {
+  0: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half: InProgress (MS HPC client DC2, @\\dc1\userspace\kummer\cluster)
+}
+==============
+active[0].LatestDeployment.DeploymentDirectory;
+**************
+\\dc1\userspace\kummer\cluster\ConfinedCylinder_ConvergenceStudy_04nov20-RheologySolver2020Nov06_131557
+==============
+active[0].Stdout;
+**************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 1 MPI process (single core)
+Node: hpccluster2.fdy.maschinenbau.tu-darmstadt.de (rank 0)
+arg #0 override from environment variable 'BOSSS_ARG_0': --control
+arg #1 override from environment variable 'BOSSS_ARG_1': control.obj
+arg #2 override from environment variable 'BOSSS_ARG_2': --prjnmn
+arg #3 override from environment variable 'BOSSS_ARG_3': ConfinedCylinder_ConvergenceStudy_04nov20
+arg #4 override from environment variable 'BOSSS_ARG_4': --sesnmn
+arg #5 override from environment variable 'BOSSS_ARG_5': ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.2_half
+Exception IOException during logging of key/value [DGdegree:ResidualStressYY,4].
+Exception IOException during logging of key/value [DGdegree:PhiDG,1].
+Exception IOException during logging of key/value [DGdegree:Phi,1].
+Exception IOException during logging of key/value [Bndtype:Velocity_inlet,auto:Velocity_inlet].
+Exception IOException during logging of key/value [NoOfMultigridLevels,1].
+Exception IOException during logging of key/value [TimesteppingMode,Steady].
+Exception IOException during logging of key/value [GeneratedFromCode,False].
+Exception IOException during logging of key/value [ControlFileText_Index,0].
+Exception IOException during logging of key/value [InitialValues_EvaluatorsVec[0].Key,VelocityX].
+Session ID: 73535c84-261d-479a-93c1-41781b24c708, DB path: '\\dc1\scratch\kummer\bosss_db'.
+configuring Weissenberg number: 2e-01
+setting Weissenberg Number to 0.2
+Total number of cells:    4252
+Total number of DOFs:     361420
+Instationary solve, timestep #1.0, dt = 1.79769313486232E+304 ...
+setting Weissenberg Number to 0
+#Line,#Time,#Iter	 L2Norm momX	 L2Norm momY	 L2Norm div	 L2Norm constitutiveXX	 L2Norm constitutiveXY	 L2Norm constitutiveYY	 L2Norm Total
+1,1,1	 1.760576E+005	 1.004441E-007	 4.654791E+001	 2.389713E+001	 1.038133E+001	 0.000000E+000	 1.760576E+005
+       -------- using Newton step (delta = 16890986.2561419)
+       -------- using Newton step (delta = 16890986.2561419)
+       -------- between Cauchy point and Newton step (delta = 8445493.12807094)
+       -------- between Cauchy point and Newton step (delta = 4222746.56403547)
+       -------- between Cauchy point and Newton step (delta = 2111373.28201774)
+       -------- between Cauchy point and Newton step (delta = 1055686.64100887)
+       -------- between Cauchy point and Newton step (delta = 527843.320504434)
+       -------- between Cauchy point and Newton step (delta = 263921.660252217)
+       -------- between Cauchy point and Newton step (delta = 131960.830126108)
+       -------- between Cauchy point and Newton step (delta = 65980.4150630542)
+       -------- between Cauchy point and Newton step (delta = 32990.2075315271)
+       -------- between Cauchy point and Newton step (delta = 16495.1037657636)
+       -------- between Cauchy point and Newton step (delta = 8247.55188288178)
+       -------- between Cauchy point and Newton step (delta = 4123.77594144089)
+       -------- between Cauchy point and Newton step (delta = 2061.88797072044)
+       -------- between Cauchy point and Newton step (delta = 1030.94398536022)
+       -------- between Cauchy point and Newton step (delta = 515.471992680111)
+       -------- between Cauchy point and Newton step (delta = 257.735996340056)
+       -------- between Cauchy point and Newton step (delta = 128.867998170028)
+       -------- between Cauchy point and Newton step (delta = 64.4339990850139)
+       -------- between Cauchy point and Newton step (delta = 32.2169995425069)
+       -------- between Cauchy point and Newton step (delta = 16.1084997712535)
+       -------- between Cauchy point and Newton step (delta = 8.05424988562674)
+       -------- between Cauchy point and Newton step (delta = 4.02712494281337)
+       -------- between Cauchy point and Newton step (delta = 2.01356247140668)
+       -------- between Cauchy point and Newton step (delta = 1.00678123570334)
+       -------- between Cauchy point and Newton step (delta = 0.503390617851671)
+       -------- between Cauchy point and Newton step (delta = 0.251695308925836)
+       -------- between Cauchy point and Newton step (delta = 0.125847654462918)
+       -------- between Cauchy point and Newton step (delta = 0.0629238272314589)
+       -------- between Cauchy point and Newton step (delta = 0.0314619136157294)
+       -------- between Cauchy point and Newton step (delta = 0.0157309568078647)
+       -------- between Cauchy point and Newton step (delta = 0.00786547840393236)
+       -------- between Cauchy point and Newton step (delta = 0.00393273920196618)
+       -------- between Cauchy point and Newton step (delta = 0.00196636960098309)
+       -------- using Cauchy point (delta = 0.000983184800491545)
+       -------- using Cauchy point (delta = 0.000491592400245773)
+       -------- using Cauchy point (delta = 0.000245796200122886)
+2,1,2	 1.760575E+005	 8.862399E-002	 4.654787E+001	 2.389711E+001	 1.038133E+001	 2.143296E-004	 1.760575E+005
+       -------- using Cauchy point (delta = 3.07245250153608E-05)
+3,1,3	 1.760574E+005	 8.972701E-002	 4.654785E+001	 2.389711E+001	 1.038134E+001	 2.145402E-004	 1.760574E+005
+       -------- using Cauchy point (delta = 0.000122898100061443)
+4,1,4	 1.760573E+005	 9.737122E-002	 4.654777E+001	 2.389709E+001	 1.038135E+001	 2.158497E-004	 1.760573E+005
+       -------- using Cauchy point (delta = 0.000491592400245773)
+5,1,5	 1.760566E+005	 1.596722E-001	 4.654747E+001	 2.389702E+001	 1.038140E+001	 2.282111E-004	 1.760566E+005
 
 ==============
+//var j = WorkflowMgm.AllJobs.Where(kv => kv.Key.ToLower().Contains("p4_meshno3_wi0_")).Single().Value;
 **************
 ==============
+//j;
 **************
 ==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+//j.Stderr;
 **************
 ==============
 **************

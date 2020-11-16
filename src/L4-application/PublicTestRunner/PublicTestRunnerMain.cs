@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+
 namespace PublicTestRunner {
 
     /// <summary>
@@ -539,9 +540,9 @@ namespace PublicTestRunner {
                                 YAML.WriteLine("   stage: test parallel");
                             YAML.WriteLine("   script:");
                             if (t.NoOfProcs == 1)
-                                YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml'");
+                                YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml'");
                             else
-                                YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)}* --test={t.testname} --result=TestResult.xml");
+                                YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml");
                             if (t.NoOfProcs > 1)
                             {
                                 YAML.WriteLine("   tags:");
@@ -632,8 +633,7 @@ namespace PublicTestRunner {
                 Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
                 DateTime start = DateTime.Now;
-
-
+                
                 cnt = 0;
                 var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
                 using (new BlockTrace("DEPLOYMENT", tr)) {
@@ -1232,7 +1232,9 @@ namespace PublicTestRunner {
                 break;
 
                 default:
-                throw new NotSupportedException("unknown subprogram.");
+                PrintMainUsage();
+                ret = -1000;
+                break;
             }
 
             csMPI.Raw.mpiFinalize();

@@ -57,6 +57,32 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// Generic Lambda for convective operators of form \nabla(U Scalar)
+        /// </summary>
+        /// <param name="ScalarMean"></param>
+        /// <param name="VelocityMean"></param>
+        /// <param name="Normal"></param>
+        /// <param name="FactorTwo">
+        /// True: Lambda = 2.0 * rho * V_n (used for momentum equation).
+        /// False: Lambda = rho * V_n (used for temperature equation).
+        /// </param>
+        /// <returns>        
+        /// </returns>
+        static public double GetLambda(double NormalVelocityMean, bool FactorTwo, double ScalarMean = 1)
+        {
+            double V_n = NormalVelocityMean;
+
+            double Lambda = ScalarMean * V_n;
+            if (FactorTwo)
+                Lambda *= 2.0;
+
+            if (double.IsNaN(Lambda) || double.IsInfinity(Lambda))
+                throw new NotFiniteNumberException();
+
+            return Math.Abs(Lambda);
+        }
+
+        /// <summary>
         /// Lambda for convective operators with variable density,
         /// i.e. momentum equation for multiphase and Low-Mach flows
         /// and temperature advection for Low-Mach flows.

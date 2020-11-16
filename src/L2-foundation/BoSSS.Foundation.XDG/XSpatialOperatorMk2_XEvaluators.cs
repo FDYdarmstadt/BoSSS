@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.XDG {
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
 
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, this.m_lsTrk, spcName, quadOrder, edgeScheme, cellScheme, this.TrackerHistory, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, this.m_lsTrk, spcName, quadOrder, edgeScheme, cellScheme, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var BulkMtxBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 BulkMtxBuilder.MPITtransceive = false;
@@ -86,7 +86,7 @@ namespace BoSSS.Foundation.XDG {
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
 
                 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, this.m_lsTrk, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme, this.TrackerHistory, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, this.m_lsTrk, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var GhostEdgeBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params4Spc, CodomFrame.FrameMap);
                 GhostEdgeBuilder.MPITtransceive = false;
@@ -103,7 +103,7 @@ namespace BoSSS.Foundation.XDG {
                 CellLengthScales.TryGetValue(SpeciesId, out var cls);
                 EdgeLengthScales.TryGetValue(SpeciesId, out var els);
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator, this.m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistory, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator, this.m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var SurfElmBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 SurfElmBuilder.MPITtransceive = false;
@@ -155,24 +155,6 @@ namespace BoSSS.Foundation.XDG {
                     IGridData GridDat = lsTrk.GridDat;
 
                     #region Check Input Arguments
-                    // --------------------------------
-                    //if (!this.IsCommited)
-                    //    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-
-                    //if (DomainMap.BasisS.Count != this.DomainVar.Count)
-                    //    throw new ArgumentException("mismatch between specified domain variables and number of DG fields in domain mapping", "DomainMap");
-                    //if (CodomainMap.BasisS.Count != this.CodomainVar.Count)
-                    //    throw new ArgumentException("mismatch between specified codomain variables and number of DG fields in codomain mapping", "CodomainMap");
-
-                    //if (this.ParameterVar.Count == 0) {
-                    //    if (Parameters != null && Parameters.Count > 0)
-                    //        throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
-                    //} else {
-                    //    if (Parameters == null)
-                    //        throw new ArgumentNullException("Parameters", "parameters must be specified");
-                    //    if (Parameters.Count != this.ParameterVar.Count)
-                    //        throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
-                    //}
 
                     if(OnlyAffine == false) {
                         if(!Matrix.RowPartitioning.Equals(base.CodomainMapping))
@@ -180,13 +162,6 @@ namespace BoSSS.Foundation.XDG {
                         if(!Matrix.ColPartition.Equals(base.DomainMapping))
                             throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                     }
-
-
-                    //if (!ReqSpecies.IsSubsetOf(agg.SpeciesList))
-                    //    throw new ArgumentException("HMF mismatch");
-
-                    //if (momentFittingVariant != agg.HMFvariant)
-                    //    throw new ArgumentException("HMF mismatch");
 
                     #endregion
 
@@ -229,7 +204,6 @@ namespace BoSSS.Foundation.XDG {
                             var _mtx = Matrix != null ? mtx : default(SpeciesFrameMatrix<M>);
 
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
-
 
                             foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
 
@@ -295,7 +269,7 @@ namespace BoSSS.Foundation.XDG {
                                                              m_Xowner,
                                                              OnlyAffine ? default(M) : Matrix, AffineOffset,
                                                              CodomainMapping, Parameters, DomainMapping,
-                                                             lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                                                             lsTrk, iLevSet, TrackerHistoryIndex, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
                             allBuilders.Add(MtxBuilder);
 
@@ -476,7 +450,7 @@ namespace BoSSS.Foundation.XDG {
                                                              m_Xowner,
                                                              output,
                                                              this.DomainFields.Fields, Parameters, base.CodomainMapping,
-                                                             lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                                                             lsTrk, iLevSet, TrackerHistoryIndex, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
                             necList.Add(LsEval);
 
@@ -531,7 +505,7 @@ namespace BoSSS.Foundation.XDG {
                 CellLengthScales.TryGetValue(SpeciesId, out var cls);
                 EdgeLengthScales.TryGetValue(SpeciesId, out var els);
 
-                var tempOp = base.m_Xowner.FilterSpeciesOperator(base.m_Xowner, m_lsTrk, spcName, quadOrder, edgeScheme, cellScheme, TrackerHistory, CellLengthScales, EdgeLengthScales);
+                var tempOp = base.m_Xowner.FilterSpeciesOperator(base.m_Xowner, m_lsTrk, spcName, quadOrder, edgeScheme, cellScheme, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var BulkEval = tempOp.GetEvaluatorEx(DomFld4Species, Params_4Species, CodomFrame.FrameMap);
 
@@ -549,7 +523,7 @@ namespace BoSSS.Foundation.XDG {
                 CellLengthScales.TryGetValue(SpeciesId, out var cls);
                 EdgeLengthScales.TryGetValue(SpeciesId, out var els);
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme, TrackerHistory, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, ghostEdgeScheme, nullvolumeScheme, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var GhostEdgeEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
                 GhostEdgeEval.MPITtransceive = false;
@@ -566,7 +540,7 @@ namespace BoSSS.Foundation.XDG {
                 CellLengthScales.TryGetValue(SpeciesId, out var cls);
                 EdgeLengthScales.TryGetValue(SpeciesId, out var els);
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistory, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var SurfElmEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
                 SurfElmEval.MPITtransceive = false;
@@ -621,6 +595,10 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
+            /// <summary>
+            /// Write quadrature rules to text file, for debugging
+            /// </summary>
+            static private bool ruleDiagnosis = false;
 
             /// <summary>
             /// ctor
@@ -629,7 +607,7 @@ namespace BoSSS.Foundation.XDG {
                 XSpatialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 UnsetteledCoordinateMapping DomainVarMap, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-                int TrackerHistory) //
+                int __TrackerHistoryIndex) //
             {
                 using (var tr = new FuncTrace()) {
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
@@ -672,10 +650,10 @@ namespace BoSSS.Foundation.XDG {
                     ReqSpecies = ownr.Species.Select(spcNmn => lsTrk.GetSpeciesId(spcNmn)).ToArray();
 
                     this.UsedQuadOrder = quadOrder;
-                    this.TrackerHistory = TrackerHistory;
+                    this.TrackerHistoryIndex = __TrackerHistoryIndex;
 
-                    var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, quadOrder, TrackerHistory).XQuadSchemeHelper;
-                    var TrackerRegions = lsTrk.RegionsHistory[TrackerHistory];
+                    var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, quadOrder, __TrackerHistoryIndex).XQuadSchemeHelper;
+                    var TrackerRegions = lsTrk.RegionsHistory[__TrackerHistoryIndex];
 
                     tr.Info("XSpatialOperator.ComputeMatrixEx quad order: " + quadOrder);
 
@@ -709,21 +687,33 @@ namespace BoSSS.Foundation.XDG {
                         // ----------------
 
                         if (m_Xowner.TotalNoOfComponents > 0) {
-                            EdgeQuadratureScheme edgeScheme = m_Xowner.EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, TrackerHistory);
-                            CellQuadratureScheme cellScheme = m_Xowner.VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, TrackerHistory);
+                            EdgeQuadratureScheme edgeScheme = m_Xowner.EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                            CellQuadratureScheme cellScheme = m_Xowner.VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             
+
+                            if(ruleDiagnosis) {
+                                var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
+                                var volRule = cellScheme.Compile(this.GridData, quadOrder);
+                                //edgeRule.(GridData, $"Edge{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
+
+                                volRule.ToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
+                                volRule.SumOfWeightsToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
+                            }
+
+
                             ctorSpeciesIntegrator(SpeciesId, quadOrder, cellScheme, edgeScheme, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
                         if (m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0) {
                             CellQuadratureScheme nullvolumeScheme = new CellQuadratureScheme(false, CellMask.GetEmptyMask(GridData));
-                            EdgeQuadratureScheme ghostEdgeScheme = m_Xowner.GhostEdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, TrackerHistory);
+                            EdgeQuadratureScheme ghostEdgeScheme = m_Xowner.GhostEdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             ctorGhostSpeciesIntegrator(SpeciesId, quadOrder, nullvolumeScheme, ghostEdgeScheme, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
                         if (m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                            EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, TrackerHistory);
-                            CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, TrackerHistory);
+                            EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                            CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
                     }
@@ -740,7 +730,7 @@ namespace BoSSS.Foundation.XDG {
                             // loop over all possible pairs of species
                             for (int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
                                 var SpeciesA = AllSpc[iSpcA];
-                                var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
+                                var SpeciesADom = TrackerRegions.GetSpeciesMask(SpeciesA);
                                 //if (SpeciesADom.NoOfItemsLocally <= 0)
                                 //    continue;
 
@@ -753,7 +743,7 @@ namespace BoSSS.Foundation.XDG {
                                     if (_iSpcA < 0 && _iSpcB < 0)
                                         continue;
 
-                                    var SpeciesBDom = lsTrk.Regions.GetSpeciesMask(SpeciesB);
+                                    var SpeciesBDom = TrackerRegions.GetSpeciesMask(SpeciesB);
                                     var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
 
                                     // Checks removed since they can cause parallel problems
@@ -767,7 +757,7 @@ namespace BoSSS.Foundation.XDG {
                                     int NoOfLs = lsTrk.LevelSets.Count;
                                     for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
 
-                                        var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
+                                        var LsDom = TrackerRegions.GetCutCellMask4LevSet(iLevSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
                                         Chunk c = IntegrationDom.FirstOrDefault();
@@ -775,7 +765,7 @@ namespace BoSSS.Foundation.XDG {
                                             Debug.Assert(IntegrationDom.IsEmptyOnRank == false);
                                             int jtest = c.i0;
 
-                                            LevelsetCellSignCode csc = lsTrk.Regions.GetCellSignCode(jtest);
+                                            LevelsetCellSignCode csc = lsTrk.RegionsHistory[__TrackerHistoryIndex].GetCellSignCode(jtest);
 
                                             if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
                                                 throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
@@ -824,19 +814,6 @@ namespace BoSSS.Foundation.XDG {
                                             } else {
                                                 throw new ArgumentException($"Unable to determine negative (aka. In, A) and positive (aka. Out, B) species out of {m_lsTrk.GetSpeciesName(SpeciesA)}, {m_lsTrk.GetSpeciesName(SpeciesA)} w.r.t. Level-Set {iLevSet}.");
                                             }
-
-
-
-                                            //if(lsTrk.ContainesSpecies(SpeciesA, cscNeg) == false)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell MUST contain negative species
-                                            //if(lsTrk.ContainesSpecies(SpeciesA, cscNeg) == true)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell should NOT contain positive species
-
-                                            //if(lsTrk.ContainesSpecies(SpeciesB, cscPos) == false)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell MUST contain positive species
-                                            //if(lsTrk.ContainesSpecies(SpeciesB, cscPos) == true)
-                                            //    throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell should NOT contain negative species
-
                                         }
 
                                         
@@ -845,13 +822,13 @@ namespace BoSSS.Foundation.XDG {
                                             CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
                                             rule = SurfIntegration.Compile(GridData, quadOrder);
 
-                                            //if (ruleDiagnosis) {
-                                                //rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
-                                                //rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
-                                            //}
+                                            if (ruleDiagnosis) {
+                                                rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
+                                                rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                            }
                                         }
 
-                                        LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, SpeciesA, SpeciesB, iLevSet);
+                                        LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, __TrackerHistoryIndex, SpeciesA, SpeciesB, iLevSet);
 
                                         CouplingRules.Add((iLevSet, SpeciesA, SpeciesB, rule));
                                         ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
@@ -876,9 +853,9 @@ namespace BoSSS.Foundation.XDG {
             protected int UsedQuadOrder;
 
             /// <summary>
-            /// 
+            /// Index into <see cref="LevelSetTracker.RegionsHistory"/> and similar stacks.
             /// </summary>
-            protected int TrackerHistory;
+            protected int TrackerHistoryIndex;
 
 
             /// <summary>
@@ -916,11 +893,6 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             protected XSpatialOperatorMk2 m_Xowner;
 
-            ///// <summary>
-            ///// edge and volume scheme for each species
-            ///// </summary>
-            //protected IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes;
-
             /// <summary>
             /// Parameter fields for each species, for <see cref="XDGField"/>s the species shadow, see <see cref="XDGField.GetSpeciesShadowField(SpeciesId)"/>
             /// </summary>
@@ -952,7 +924,7 @@ namespace BoSSS.Foundation.XDG {
                 
                 void FF(SpeciesId spc, out CoefficientSet cs) {
                     if(this.ReqSpecies.Contains(spc)) {
-                        cs = m_Xowner.OperatorCoefficientsProvider(m_lsTrk, spc, UsedQuadOrder, TrackerHistory, time);
+                        cs = m_Xowner.OperatorCoefficientsProvider(m_lsTrk, spc, UsedQuadOrder, TrackerHistoryIndex, time);
 
                         // hackedihack: i hate this shit
                         this.CellLengthScales.TryGetValue(spc, out var cls); cs.CellLengthScales = cls;
