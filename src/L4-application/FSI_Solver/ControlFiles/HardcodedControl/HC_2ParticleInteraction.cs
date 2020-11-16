@@ -21,10 +21,10 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(double angle = 180, double verticalDistance = 0.25, double distance = 5.25, double particleLength = 2.5, double aspectRatio = 0.5) {
+        public static FSI_Control Main(double angle = 0, double verticalDistance = 1, double distance = 6, double particleLength = 2.5, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
-            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
-            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
+            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             //C.AlternateDbPaths = new[] { new ValueTuple<string, string>(@"/work/scratch/ij83requ/default_bosss_db", ""), new ValueTuple<string, string>(@"U:\default_bosss_db", "") };
             // Domain
             // =============================
@@ -32,8 +32,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 50, lengthY: 50, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(3);
+            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(0);
 
             // Coupling Properties
             // =============================
@@ -41,7 +41,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = 1e-6;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
 
             // Fluid Properties
             // =============================
@@ -54,7 +54,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================   
             C.fixPosition = true;
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5, true);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0, true);
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, particleLength, aspectRatio * particleLength, new double[] { -distance / 2, -verticalDistance / 2 }, 0, 1),
                 new Particle_Ellipsoid(motion, particleLength, aspectRatio * particleLength, new double[] { distance / 2, verticalDistance / 2 }, angle, 1)

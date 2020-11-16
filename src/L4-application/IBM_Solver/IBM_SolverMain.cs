@@ -644,9 +644,6 @@ namespace BoSSS.Application.IBM_Solver {
 
             }
 
-            m_LenScales = null;
-
-
             if (OpMatrix != null)
                 OpMatrix.CheckForNanOrInfM();
             OpAffine.CheckForNanOrInfV();
@@ -1082,9 +1079,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// </param>
         protected void PerformLevelSetSmoothing(CellMask SmoothingDomain) {
             const bool SetFarField = true;
-
-            
-
+            if (SmoothingDomain.IsNullOrEmpty())
+                SmoothingDomain = CellMask.GetEmptyMask(GridData);
             if (this.Control.LevelSetSmoothing) 
                 {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

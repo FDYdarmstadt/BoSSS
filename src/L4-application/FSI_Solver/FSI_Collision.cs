@@ -196,9 +196,9 @@ namespace FSI_Solver {
                             }
                             if (DistanceVector[p0][p1].Abs() < globalMinimalDistance) {
                                 globalMinimalDistance = DistanceVector[p0][p1].Abs();
-                                if (DistanceVector[p0][p1].Abs() < MinimalDistance && temp_SaveTimeStep > 0) {
-                                    saveTimestep = 1e-10;
-                                }
+                                //if (DistanceVector[p0][p1].Abs() < MinimalDistance && temp_SaveTimeStep > 0) {
+                                //    saveTimestep = 1e-10;
+                                //}
                             }
                             if (temp_Overlapping) {
                                 double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.

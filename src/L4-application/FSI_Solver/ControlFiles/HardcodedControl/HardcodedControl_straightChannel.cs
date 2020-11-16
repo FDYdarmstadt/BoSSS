@@ -28,13 +28,13 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int angle = 20, double aspectRatio = 3, double activeStress = 10) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int angle = 0, double aspectRatio = 4, double activeStress = 10) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            //string ID = "3debf19b-821a-4a76-8b06-e1b945b4393e";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
-            //C.IsRestart = true;
+            string ID = "4c56455c-7661-4117-b4e3-dd5a5e54c0d4";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 240);
+            C.IsRestart = true;
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
@@ -44,8 +44,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Dirichlet_left"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2.5, lengthY: 0.5, cellsPerUnitLength: 25, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(3);
+            C.SetGrid(lengthX: 20, lengthY: 1.5, cellsPerUnitLength: 16, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(1);
 
             // Coupling Properties
             // =============================
@@ -60,15 +60,32 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 1;
-            C.minDistanceThreshold = 0.005;
+            double particleDensity = 100;
+            C.minDistanceThreshold = 0.01;
 
             // Particle Properties
             // =============================   
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
-            double particleRadius = 0.05;
+            double particleRadius = 0.1;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0, 0.0 }, angle, activeStress)
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -9, 0.4 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -9, 0.05 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -9, -0.5 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -8, 0.5 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -8, 0.1 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -8, -0.5 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -7, 0.3 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -7, 0.0 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -7, -0.5 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -6, 0.5 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -6, -0.2 }, angle, activeStress),
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -6, -0.5 }, angle, activeStress),
+                //new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -8.5, -0.25 }, angle, activeStress),
+                //new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -8.5, 0.25 }, angle, activeStress),
+                //new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -7.5, 0.25 }, angle, activeStress),
+                //new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -7.5, -0.25 }, angle, activeStress),
+                //new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -6.5, 0.25 }, angle, activeStress),
+                //new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { -6.5, -0.25 }, angle, activeStress)
             };   
 
             // misc. solver options

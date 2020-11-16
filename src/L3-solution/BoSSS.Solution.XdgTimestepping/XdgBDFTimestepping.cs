@@ -344,9 +344,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // Solution-Stack
             // --------------
-            if(m_CurrentPhystime != fsiOldPhystime) { // only true in case of fsi_splitting fully coupled
+            if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled) {
                 // entry 0 should remain the same object all the time
-                var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
+                CoordinateVector Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
                 for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
                     m_Stack_u[i] = m_Stack_u[i - 1];
                 }
