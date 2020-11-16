@@ -93,7 +93,6 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
         }
-
         /// <summary>
         /// flux at inner edges
         /// </summary>        
@@ -470,6 +469,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected Func<double[], double, double>[,] velFunction;
 
+        bool isEnergy = false;
+
         /// <summary>
         /// Ctor
         /// </summary>
@@ -491,6 +492,9 @@ namespace BoSSS.Solution.NSECommon {
             for(int d = 0; d < SpatDim; d++)
                 velFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d)], d);
 
+            //if idx == 0, the heat capacity should multiply this term.
+            if (idx == 0)
+                isEnergy = true;
 
             switch(BcMap.PhysMode) {
                 case PhysicsMode.Multiphase:
@@ -539,6 +543,9 @@ namespace BoSSS.Solution.NSECommon {
             // 2 * (rho u_j * scalar) * n_j
             double rhoIn = 0.0;
             double rhoOut = 0.0;
+            double cpIn = 1.0;
+            double cpOut = 1.0;
+
             switch (m_bcmap.PhysMode) {
                 case PhysicsMode.MixtureFraction:
                     rhoIn = EoS.getDensityFromZ(Uin[inp.D]);
@@ -555,17 +562,19 @@ namespace BoSSS.Solution.NSECommon {
                     double[] DensityArgumentsOut2 = Uout.GetSubVector(m_SpatialDimension, NumberOfReactants);
                     rhoIn = EoS.GetDensity(DensityArgumentsIn2);
                     rhoOut = EoS.GetDensity(DensityArgumentsOut2);
+                    if (isEnergy) {
+                        cpIn = EoS.GetMixtureHeatCapacity(DensityArgumentsIn2);
+                        cpOut = EoS.GetMixtureHeatCapacity(DensityArgumentsOut2);
+                    }
                     break;
                 default:
                     throw new NotImplementedException("PhysicsMode not implemented");
             }
-            //Debug.Assert((rhoIn > 0.0) && (rhoOut > 0.0));
 
-            r += rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);
-            r += rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
+            r += cpIn*rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);
+            r += cpOut*rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
             if(m_SpatialDimension == 3) {
-                //r += rhoIn * Uin[idx] * (Uin[2] * inp.Normal[2] + Uout[2] * inp.Normal[2]);
-                r += rhoIn * Uin[idx] * Uin[2] * inp.Normal[2] + rhoOut * Uout[idx] * Uout[2] * inp.Normal[2];
+                r += cpIn*rhoIn * Uin[idx] * Uin[2] * inp.Normal[2] +cpOut*rhoOut * Uout[idx] * Uout[2] * inp.Normal[2];
             } 
 
             // Calculate dissipative part
@@ -576,7 +585,7 @@ namespace BoSSS.Solution.NSECommon {
 
             double LambdaIn;
             double LambdaOut;
-            switch(m_bcmap.PhysMode) {
+            switch (m_bcmap.PhysMode) {
                 case PhysicsMode.MixtureFraction:
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, false, rhoIn);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, false, rhoOut);
@@ -588,16 +597,16 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.LowMach:
                     double ScalarMeanIn = Uin[m_SpatialDimension];
                     double ScalarMeanOut = Uout[m_SpatialDimension];
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, ScalarMeanIn);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, ScalarMeanOut);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, isEnergy, ScalarMeanIn);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, isEnergy, ScalarMeanOut);
                     break;
-                case PhysicsMode.Combustion: {
-                        double[] ScalarMeanIn_vec = Uin.GetSubVector(m_SpatialDimension, NumberOfReactants - 1 + 1);
-                        double[] ScalarMeanOut_vec = Uout.GetSubVector(m_SpatialDimension, NumberOfReactants - 1 + 1);
-                        LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, ScalarMeanIn_vec);
-                        LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, ScalarMeanOut_vec);
-                        break;
-                    }
+                case PhysicsMode.Combustion:
+                    double[] ScalarMeanIn_vec = Uin.GetSubVector(m_SpatialDimension, NumberOfReactants - 1 + 1);
+                    double[] ScalarMeanOut_vec = Uout.GetSubVector(m_SpatialDimension, NumberOfReactants - 1 + 1);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, isEnergy, ScalarMeanIn_vec);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, isEnergy, ScalarMeanOut_vec);
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -764,6 +773,7 @@ namespace BoSSS.Solution.NSECommon {
                             r += Uin[argumentIndex] * u3 * inp.Normal[2];
                         }
                         double rho = 1.0;
+                        double cp = 1.0;
                         switch(m_bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
                                 break;
@@ -777,11 +787,13 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Combustion: 
                                 double[] args = ArrayTools.GetSubVector(Uin, m_SpatialDimension, NumberOfReactants - 1 + 1);
                                 rho = EoS.GetDensity(args);
+                                if (isEnergy == true)
+                                    cp = EoS.GetMixtureHeatCapacity(args);
                                 break;
                             default:
                                 throw new NotImplementedException("not implemented physmode");
                         }
-                        r *= rho;
+                        r *= (cp*rho);
 
                         if(double.IsNaN(r))
                             throw new NotFiniteNumberException();
@@ -813,6 +825,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
             double rho;
+            double cp = 1.0;
             switch (m_bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
                     rho = 1.0;
@@ -825,8 +838,10 @@ namespace BoSSS.Solution.NSECommon {
                     rho = EoS.GetDensity(DensityArguments);
                     break;
                 case PhysicsMode.Combustion:
-                    double[] DensityArguments2 = U.GetSubVector(m_SpatialDimension, NumberOfReactants); // T, Y0,Y1,Y2
-                    rho = EoS.GetDensity(DensityArguments2);
+                    double[] arguments = U.GetSubVector(m_SpatialDimension, NumberOfReactants); // T, Y0,Y1,Y2, Y3
+                    rho = EoS.GetDensity(arguments);
+                    if(isEnergy)
+                        cp = EoS.GetMixtureHeatCapacity(arguments);
                     break;
                 default:
                     throw new NotImplementedException("not implemented physics mode");
@@ -837,7 +852,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
             for (int d = 0; d < m_SpatialDimension; d++)
-                output[d] *= rho;
+                output[d] *= (cp*rho);
 
 
             for (int d = 0; d < m_SpatialDimension; d++) {

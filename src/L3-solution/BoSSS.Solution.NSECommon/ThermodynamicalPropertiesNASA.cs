@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ilPSP.Tracing;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -15,8 +16,6 @@ namespace BoSSS.Solution.NSECommon {
     public class ThermodynamicalProperties{
         private NumberFormatInfo provider;
         public ThermodynamicalProperties() {
-
-
             string dataPath = @"..\..\thermo30.dat.txt"; // TODO change  
 
             StreamReader sr = new StreamReader(dataPath);
@@ -62,6 +61,8 @@ namespace BoSSS.Solution.NSECommon {
                 atomicWeigthsDictionary.Add(a[j], atomicWeigths[j]);
             }
         }
+
+
  
         Dictionary<char, double> atomicWeigthsDictionary = new Dictionary<char, double>();
         /// <summary>
@@ -198,22 +199,34 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="T"> Temperature </param>
         /// <returns></returns>
         public double getCp(string name, double T) {
-            double[] coefficients;
-            if (T >= TemperatureLimits[0] && T < TemperatureLimits[1]) { // Lower range
-                coefficients = coefficientsDict[name][1];
-            } else if (T >= TemperatureLimits[1] && T <= TemperatureLimits[2]) { // Higher range
-                coefficients = coefficientsDict[name][0];
-            } else {
-                throw new ArgumentOutOfRangeException("Temperature for calculation of cp is out of bounds");
-            }
-            double R = 8.314; // J /mol K
-            double cp = (
-                coefficients[0] +
-                coefficients[1] * T +
-                coefficients[2] * T * T +
-                coefficients[3] * T * T * T +
-                coefficients[4] * T * T * T * T) * R;
-            return cp;
+            //using (var tr = new FuncTrace()) {
+                double[] coefficients;
+                if (/*T >= TemperatureLimits[0] - 200.0 &&*/ T < TemperatureLimits[1]) { // Lower range, with a threshold 5.0 K
+                    coefficients = coefficientsDict[name][1];
+                } else if (T >= TemperatureLimits[1] && T <= TemperatureLimits[2] + 5.0) { // Higher range
+                    coefficients = coefficientsDict[name][0];
+                } else {
+                    throw new ArgumentOutOfRangeException("Temperature for calculation of cp is out of bounds. The used temperature is" + T);
+                }
+
+            //Force temperature
+            if (T < TemperatureLimits[0])
+                T = TemperatureLimits[0];
+
+                double R = 8.314; // KJ /Kmol K
+                double MW = molecularWeightDict[name]; // Kg/Kmol
+                double cp;
+                //using (new BlockTrace("Heat capacity calculation", tr)) {
+                    cp = (
+                    coefficients[0] +
+                    coefficients[1] * T +
+                    coefficients[2] * T * T +
+                    coefficients[3] * T * T * T +
+                    coefficients[4] * T * T * T * T) * R / MW;
+                //}
+                return cp; // KJ/(kg K
+            //}
+
         }
 
         /// <summary>
@@ -224,6 +237,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="T"> Temperature </param>
         /// <returns></returns>
         public double getS(string name, double T) {
+
             double[] coefficients;
             if (T >= TemperatureLimits[0] && T < TemperatureLimits[1]) { // Lower range
                 coefficients = coefficientsDict[name][1];
@@ -258,7 +272,8 @@ namespace BoSSS.Solution.NSECommon {
                 double cp_i = getCp(Names[i], Temperature);
                 cpMixture = cpMixture + cp_i * MassFractions[i];
             }
-            return cpMixture;
+            double cpRef = 1.4;
+            return cpMixture/cpRef;
         }
 
 
