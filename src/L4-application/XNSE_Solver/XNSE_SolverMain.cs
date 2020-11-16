@@ -2312,12 +2312,5 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 #endregion
-
-        /// <summary>
-        /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis
-        /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
-            return this.m_BDF_Timestepper.OperatorAnalysis();
-        }
     }
 }
