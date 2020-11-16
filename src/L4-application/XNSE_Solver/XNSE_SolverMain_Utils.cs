@@ -1407,7 +1407,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                 DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.SaddlePointProblemMapping,
-                    this.CurrentSolution.Mapping.Fields.ToArray(), CurrentAgglomeration.CellLengthScales, 0.0);
+                    this.CurrentSolution.Mapping.Fields.ToArray(), CurrentAgglomeration.CellLengthScales, 0.0, 1);
 
                 // =============================
                 // AnalysisLevel 0

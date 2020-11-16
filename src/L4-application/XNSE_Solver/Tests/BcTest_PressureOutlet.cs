@@ -148,6 +148,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             return X => 0.0;
         }
         
+
+        /// <summary>
+        /// zero
+        /// </summary>
         public double Sigma {
             get {
                 return 0.0;

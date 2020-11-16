@@ -83,13 +83,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             if(hCutCellMin <= 1.0e-10 * hCellMin)
                 // very small cell -- clippling
                 hCutCellMin = hCellMin;
+            double scaledPenalty = (penalty / hCutCellMin);
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
 
             double Ret = 0.0;
             //switch (m_ViscosityImplementation) {
             //    case ViscosityImplementation.H: {
             Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
             Ret -= 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
-            Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * (Math.Abs(muA) > Math.Abs(muB) ? muA : muB); // penalty term
+            Ret += scaledPenalty * (uA[component] - uB[component]) * (vA - vB) * (Math.Abs(muA) > Math.Abs(muB) ? muA : muB); // penalty term
             //break;
             //        }
             //    case ViscosityImplementation.SWIP: {
@@ -157,44 +160,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         //public static Stopwatch Optimized = new Stopwatch();
         //public static Stopwatch Classic = new Stopwatch();
 
-
-
-        // public override void EdgeForm(LevSetIntParams inp, MultidimensionalArray Koeff_UxV, MultidimensionalArray Koeff_NablaUxV, MultidimensionalArray Koeff_UxNablaV, MultidimensionalArray Koeff_NablaUxNablaV) {
-        //Optimized.Start();
-        //this.EdgeForm_Perf(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-        //base.EdgeForm(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-        //Optimized.Stop();
-
-        /*
-        {
-            var chk_Koeff_UxV = Koeff_UxV.CloneAs();
-            var chk_Koeff_NablaUxV = Koeff_NablaUxV.CloneAs();
-            var chk_Koeff_UxNablaV = Koeff_UxNablaV.CloneAs();
-            var chk_Koeff_NablaUxNablaV = Koeff_NablaUxNablaV.CloneAs();
-            chk_Koeff_UxV.Clear();
-            chk_Koeff_UxNablaV.Clear();
-            chk_Koeff_NablaUxV.Clear();
-            chk_Koeff_NablaUxNablaV.Clear();
-
-            Classic.Start();
-            base.EdgeForm(inp, chk_Koeff_UxV, chk_Koeff_NablaUxV, chk_Koeff_UxNablaV, chk_Koeff_NablaUxNablaV);
-            Classic.Stop();
-
-            chk_Koeff_NablaUxNablaV.Acc(-1.0, Koeff_NablaUxNablaV);
-            chk_Koeff_UxNablaV.Acc(-1.0, Koeff_UxNablaV);
-            chk_Koeff_NablaUxV.Acc(-1.0, Koeff_NablaUxV);
-            chk_Koeff_UxV.Acc(-1.0, Koeff_UxV);
-
-            if (chk_Koeff_NablaUxNablaV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-            if (chk_Koeff_UxNablaV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-            if (chk_Koeff_NablaUxV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-            if (chk_Koeff_UxV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-        } // */
-        //}
 
 
 

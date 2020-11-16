@@ -287,9 +287,9 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// A mapping from edge tag names to a collection of boundary values.<br/>
-        /// key: edge tag names <see cref="GridCommons.EdgeTagNames"/><br/>
-        /// value: boundary values for various fields.
+        /// A mapping from edge tag names to a collection of boundary values.
+        /// - key: edge tag names <see cref="GridCommons.EdgeTagNames"/>
+        /// - value: boundary values for various fields.
         /// </summary>
         [DataMember]
         public IDictionary<string, BoundaryValueCollection> BoundaryValues {

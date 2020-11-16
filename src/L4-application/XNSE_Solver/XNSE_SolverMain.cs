@@ -492,6 +492,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._TimesteppingMode.Steady, LevelSetHandling.None));
             }
 
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
+            }
+
             int degU = this.CurrentVel[0].Basis.Degree;
 
             #endregion
@@ -586,9 +591,11 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime, int LsTrkHistoryIndex) {
             using (var tr = new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
+                if(LsTrkHistoryIndex != 1)
+                    throw new NotSupportedException("No supported for anything but the current tracker time level.");
 
                 // ============================
                 // treatment of surface tension

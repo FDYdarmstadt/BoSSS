@@ -28,6 +28,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation;
 using ilPSP.Utils;
+using BoSSS.Solution.GridImport;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -239,7 +240,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// All the databases; the workflow-management (see <see cref="WorkflowMgm"/>) must have access to those.
         /// </summary>
-        public static IList<IDatabaseInfo> databases;
+        public static IList<IDatabaseInfo> databases = new IDatabaseInfo[0];
 
         /// <summary>
         /// Sessions in all Databases
@@ -317,11 +318,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-            foreach(var existing_dbi in InteractiveShell.databases) {
-                if(existing_dbi.PathMatch(dbDir)) {
+            return OpenOrCreateDatabase_Impl(dbDir, true);
+        }
+
+        /// <summary>
+        /// Opens an existing database at a specific path
+        /// </summary>
+        static public IDatabaseInfo OpenDatabase(string dbDir) {
+            return OpenOrCreateDatabase_Impl(dbDir, false);
+        }
+
+        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+            foreach (var existing_dbi in InteractiveShell.databases) {
+                if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
                 }
             }
+        
             
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
@@ -329,8 +342,12 @@ namespace BoSSS.Application.BoSSSpad {
                 }
                 Console.WriteLine("Opening existing database '" + dbDir + "'.");
             } else {
-                DatabaseUtils.CreateDatabase(dbDir);
-                Console.WriteLine("Creating database '" + dbDir + "'.");
+                if (allowCreation) {
+                    DatabaseUtils.CreateDatabase(dbDir);
+                    Console.WriteLine("Creating database '" + dbDir + "'.");
+                } else {
+                    throw new ArgumentException("Database Directory '" + dbDir + "' does not exist.");
+                }
             }
 
             var dbi = DatabaseInfo.Open(dbDir);
@@ -427,6 +444,17 @@ namespace BoSSS.Application.BoSSSpad {
                 return Path.GetDirectoryName(f);
             }
         }
+
+        /// <summary>
+        /// <see cref="GridImporter.Import(string)"/>
+        /// </summary>
+        public static GridCommons ImportGrid(string fileName) {
+            GridCommons r = GridImporter.Import(fileName);
+
+            return r;
+        }
+
+
 
         /// <summary>
         /// Simple plotting interface
@@ -641,7 +669,7 @@ namespace BoSSS.Application.BoSSSpad {
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
-
+               
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
 
@@ -650,6 +678,9 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
+            foreach (var q in bpc.AllQueues)
+                _ = q.AllowedDatabases;
+
         }
 
 

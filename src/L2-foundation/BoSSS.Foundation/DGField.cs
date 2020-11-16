@@ -531,7 +531,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <param name="v">the new mean value in this cell</param>
         virtual public void SetMeanValue(int j, double v) {
-            if (j < 0 || j >= Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
+            if (j < 0 || j >= this.GridDat.CellPartitioning.LocalLength)
                 throw new ArgumentException("j must be in the range of locally updated cells.", "j");
 
             int iKref = this.Basis.GridDat.iGeomCells.GetRefElementIndex(j);

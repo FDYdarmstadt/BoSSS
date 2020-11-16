@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// ranging from -1 to 1. Here, t=-1 marks the start point and t=1 marks
     /// the end point of the segment.
     /// </summary>
-    public class LineSegment : IEquatable<LineSegment>, IObserver<LevelSetTracker.LevelSetRegions> {
+    public class LineSegment : IEquatable<LineSegment> {
 
         /// <summary>
         /// Minimal distance between two points.
@@ -847,7 +847,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <returns>
             /// p(x)
             /// </returns>
-            private unsafe double Eval(double x, double* pCoeff, int numberOfCoefficients) {
+            static private unsafe double Eval(double x, double* pCoeff, int numberOfCoefficients) {
                 double p = *pCoeff;
                 for (int i = 1; i < numberOfCoefficients; i++) {
                     p = p * x + *(--pCoeff);
@@ -879,32 +879,5 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
             }
         }
-
-
-        #region IObserver<LevelSetStatus> Members
-
-        /// <summary>
-        /// Does nothing.
-        /// </summary>
-        public void OnCompleted() {
-        }
-
-        /// <summary>
-        /// Does nothing.
-        /// </summary>
-        public void OnError(Exception error) {
-        }
-
-        /// <summary>
-        /// Clear cache
-        /// </summary>
-        /// <param name="status">
-        /// Not used.
-        /// </param>
-        public void OnNext(LevelSetTracker.LevelSetRegions status) {
-            //rootsCache.Clear();
-        }
-
-        #endregion
     }
 }

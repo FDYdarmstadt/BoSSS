@@ -27,7 +27,6 @@ using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
-
     /// <summary>
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
     /// </summary>
@@ -190,7 +189,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                         case JobState.Running:
                         case JobState.Finishing:
-                            return (JobStatus.PendingInExecutionQueue, null);
+                            return (JobStatus.InProgress, null);
 
                         case JobState.Finished:
                             return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);

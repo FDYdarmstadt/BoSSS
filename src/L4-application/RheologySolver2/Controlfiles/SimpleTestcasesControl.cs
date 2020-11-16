@@ -74,13 +74,13 @@ namespace BoSSS.Application.Rheology
             // Maximum analytical output ...
             C.ObjectiveParam = 1.0;
 
-            C.UsePerssonSensor = false;
-            C.SensorLimit = 1e-4;
+            //C.UsePerssonSensor = false;
+            //C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = false;
+            //C.UseArtificialDiffusion = false;
 
             C.Bodyforces = false;
             //C.WhichWall = "Wall_Cylinder";
@@ -102,7 +102,7 @@ namespace BoSSS.Application.Rheology
             C.Reynolds = 1;
             C.Weissenberg = 0.0; //aim Weissenberg number!
             C.RaiseWeissenberg = false;
-            C.WeissenbergIncrement = 0.1;
+            //C.WeissenbergIncrement = 0.1;
 
             //Grid Params
             //double GridLevel = 5;
@@ -273,13 +273,13 @@ namespace BoSSS.Application.Rheology
             // Maximum analytical output ...
             C.ObjectiveParam = 1.0;
 
-            C.UsePerssonSensor = false;
-            C.SensorLimit = 1e-4;
+            //C.UsePerssonSensor = false;
+            //C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = false;
+            //C.UseArtificialDiffusion = false;
 
             C.Bodyforces = false;
             //C.WhichWall = "Wall_Cylinder";
@@ -301,7 +301,7 @@ namespace BoSSS.Application.Rheology
             C.Reynolds = 1;
             C.Weissenberg = 0.3; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
-            C.WeissenbergIncrement = 0.1;
+            //C.WeissenbergIncrement = 0.1;
 
             
 
@@ -901,7 +901,7 @@ namespace BoSSS.Application.Rheology
             //C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.ObjectiveParam = 1.0;
-            C.UsePerssonSensor = false;
+            //C.UsePerssonSensor = false;
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 3;
 
