@@ -29,11 +29,11 @@ ExQueque.AllowedDatabases;
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-string WFlowName = "Xdg_Stokes_Kcycle_Schwarz_2";
+string WFlowName = "Xdg_Stokes_Schwarz";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_Kcycle_Schwarz_2'.
+Project name is set to 'Xdg_Stokes_Schwarz'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -94,7 +94,7 @@ List of 4 instances of IGridInfo {
   3: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 8,16,32,64 };
+int[] Resolutions_3D = new int[] { 8,16,32 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -158,16 +158,14 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
 Found Grid: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
 Found Grid: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
 Found Grid: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-Found Grid: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 4 instances of IGridInfo {
+List of 3 instances of IGridInfo {
   0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
   1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
   2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-  3: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -273,12 +271,12 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     //C.VelocityBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
     //C.PressureBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
     C.UseSchurBlockPrec                = true;
-    C.LinearSolver.NoOfMultigridLevels = 5;
+    C.LinearSolver.NoOfMultigridLevels = 2;
     C.LinearSolver.MaxSolverIterations = 5000;
     C.LinearSolver.pMaxOfCoarseSolver  = p;
     
-    C.LinearSolver.TargetBlockSize = Math.Min(J*DOF/2,10000); //Make at least two blocks with Schwarz plz...
-    //C.LinearSolver.TargetBlockSize = (int)(J*DOF/(NoSblocks-1));
+    //#C.LinearSolver.TargetBlockSize = Math.Min(J*DOF/2,10000); //Make at least two blocks with Schwarz plz...
+    C.LinearSolver.TargetBlockSize = (int)(J*DOF/(NoSblocks-1));
 
     C.LinearSolver.ConvergenceCriterion = 1e-8;
     C.LevelSet_ConvergenceCriterion     = 1e-6;
@@ -298,15 +296,13 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     C.Timestepper_BDFinit          = TimeStepperInit.SingleInit;
     C.Timestepper_LevelSetHandling = LevelSetHandling.None;
     C.Option_LevelSetEvolution     = LevelSetEvolution.None;
+    //C.TimesteppingMode             = AppControl._TimesteppingMode.Steady;
     C.TimesteppingMode             = AppControl._TimesteppingMode.Transient;
-    C.dtFixed = 1E-4;
+    C.dtFixed                      = 1E-4;
             
     return C;
     }
 **************
-(5,9): warning CS0219: The variable `NoSblocks' is assigned but its value is never used
-No. of errors|warnings: 0|1.
-
 ==============
 **************
 ==============
@@ -327,9 +323,9 @@ int[] PolyDegS = new int[] {2 ,3, 5};
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
     //LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
-    //LinearSolverCode.exp_gmres_levelpmg,
+    LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
-    LinearSolverCode.exp_Kcycle_schwarz,
+    //LinearSolverCode.exp_Kcycle_schwarz,
     //LinearSolverConfig.Code.classic_mumps, 
     //LinearSolverConfig.Code.classic_cg,
     //LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
@@ -343,11 +339,10 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 4 instances of IGridInfo {
+List of 3 instances of IGridInfo {
   0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
   1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
   2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-  3: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
@@ -383,16 +378,15 @@ foreach(IGridInfo grd in t_grids) {
 }
 }
 **************
-setting up: J512_p2_exp_Kcycle_schwarz
-setting up: J4096_p2_exp_Kcycle_schwarz
-setting up: J32768_p2_exp_Kcycle_schwarz
-setting up: J262144_p2_exp_Kcycle_schwarz
-setting up: J512_p3_exp_Kcycle_schwarz
-setting up: J4096_p3_exp_Kcycle_schwarz
-setting up: J32768_p3_exp_Kcycle_schwarz
-setting up: J512_p5_exp_Kcycle_schwarz
-setting up: J4096_p5_exp_Kcycle_schwarz
-setting up: J32768_p5_exp_Kcycle_schwarz
+setting up: J512_p2_exp_gmres_levelpmg
+setting up: J4096_p2_exp_gmres_levelpmg
+setting up: J32768_p2_exp_gmres_levelpmg
+setting up: J512_p3_exp_gmres_levelpmg
+setting up: J4096_p3_exp_gmres_levelpmg
+setting up: J32768_p3_exp_gmres_levelpmg
+setting up: J512_p5_exp_gmres_levelpmg
+setting up: J4096_p5_exp_gmres_levelpmg
+setting up: J32768_p5_exp_gmres_levelpmg
 
 ==============
 **************
@@ -434,1091 +428,83 @@ foreach(var ctrl in controls) {
     aJob.SetControlObject(ctrl);
     ((SlurmClient)ExQueque).SlurmAccount = "project01287";  // Jens 
     aJob.NumberOfMPIProcs         = 1;
-    aJob.ExecutionTime            = "12:00:00";
+    aJob.ExecutionTime            = "3:00:00";
     aJob.MemPerCPU                = "50000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J512_p2_exp_Kcycle_schwarz
+ Submitting: J512_p2_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225743
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131837
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225743/batch.sh"
-Submitted batch job 16222064
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J4096_p2_exp_Kcycle_schwarz
+ Submitting: J4096_p2_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225753
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131845
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225753/batch.sh"
-Submitted batch job 16222065
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J32768_p2_exp_Kcycle_schwarz
+ Submitting: J32768_p2_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225801
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131852
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225801/batch.sh"
-Submitted batch job 16222066
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J262144_p2_exp_Kcycle_schwarz
+ Submitting: J512_p3_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225809
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131903
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225809/batch.sh"
-Submitted batch job 16222067
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J512_p3_exp_Kcycle_schwarz
+ Submitting: J4096_p3_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225817
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131911
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225817/batch.sh"
-Submitted batch job 16222068
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J4096_p3_exp_Kcycle_schwarz
+ Submitting: J32768_p3_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225825
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131919
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225825/batch.sh"
-Submitted batch job 16222069
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J32768_p3_exp_Kcycle_schwarz
+ Submitting: J512_p5_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225836
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131927
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225836/batch.sh"
-Submitted batch job 16222070
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J512_p5_exp_Kcycle_schwarz
+ Submitting: J4096_p5_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225844
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131938
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
 
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225844/batch.sh"
-Submitted batch job 16222071
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J4096_p5_exp_Kcycle_schwarz
+ Submitting: J32768_p5_exp_gmres_levelpmg
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225852
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz-XNSE_Solver2020Nov16_131946
+copied 31 files.
    written file: control.obj
 deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225852/batch.sh"
-Submitted batch job 16222072
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
-
- Submitting: J32768_p5_exp_Kcycle_schwarz
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225900
-copied 32 files.
-   written file: control.obj
-deployment finished.
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "ls"
-4cores_run0_stdtxt
-BoSSSPadCheck.log
-BoSSSpad
-BoSSSpad-test
-Deployerie
-SerTest
-blat.txt
-bosss_install
-bosss_install_linux.tar.gz
-dbpath
-dbpaths
-hypre-2.11.2.tar.gz
-libBoSSSnative_mpi.so
-libBoSSSnative_omp.so
-libBoSSSnative_seq.so
-mono-5.14.0.177.tar.bz2
-native-git
-portlibs.tar
-start_kate.sh
-test
-tests
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-Microsoft Windows [Version 10.0.17763.1518]
-(c) 2018 Microsoft Corporation. All rights reserved.
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>ssh jw52xeqa@lcluster5.hrz.tu-darmstadt.de "sbatch /home/jw52xeqa/Deployerie/Xdg_Stokes_Kcycle_Schwarz_2-XNSE_Solver2020Nov06_225900/batch.sh"
-Submitted batch job 16222073
-[1;37m[I][0m Selected project: project01287
-[1;37m[I][0m Without AVX2 requirement, this job might run on MEM nodes.
-[1;37m[I][0m Due to a high memory requirement, a lot of CPU cores will be unused.
-[1;37m[I][0m Possible CPU types    = Haswell([1;32mavx2[0m)
-
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes>
-rm: cannot remove 'core.*': No such file or directory
-rm: cannot remove 'mono_crash.*': No such file or directory
-rm: cannot remove 'mono_crash.mem.*': No such file or directory
-Lmod: loading git 2.26.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.17.1 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.3 
-Lmod: loading matlab R2019a 
-
-
 
 
 ==============
@@ -1915,6 +901,10 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

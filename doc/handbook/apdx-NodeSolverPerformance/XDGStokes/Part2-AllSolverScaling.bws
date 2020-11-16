@@ -1,5 +1,6 @@
 restart
 **************
+(18,7): error CS0246: The type or namespace name `Renci' could not be found. Are you missing an assembly reference?
 
   BoSSSpad C# interpreter
   _______________________
@@ -12,10 +13,10 @@ List of 1 instances of IDatabaseInfo {
  Console ready for input. Type 'help' for help.
 
 ==============
-string WFlowName = "Xdg_Stokes_run0";
+string WFlowName = "Xdg_Stokes_Kcycle_Schwarz_2";
 WorkflowMgm.Init(WFlowName);
 **************
-Project name is set to 'Xdg_Stokes_run0'.
+Project name is set to 'Xdg_Stokes_Kcycle_Schwarz_2'.
 
 ==============
 **************
@@ -571,6 +572,10 @@ B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes\plots\M
 CL.WriteMinimalCompileableExample(
    Path.Combine(dirpath, "MainXdgStokesScaling.tex"),
    "XdgStokesScaling.tex");
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

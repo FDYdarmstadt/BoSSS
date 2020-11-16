@@ -1,5 +1,6 @@
 restart
 **************
+(18,7): error CS0246: The type or namespace name `Renci' could not be found. Are you missing an assembly reference?
 
   BoSSSpad C# interpreter
   _______________________
@@ -20,6 +21,10 @@ Project name is set to 'Xdg_SFB_Performance_r3'.
 using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
+(1,2): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Application.SipPoisson' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
 ==============
 string dateString = "2020-10-8";
 string File       = "SolverRuns--" + dateString + ".json";
@@ -466,10 +471,6 @@ System.Drawing.Bitmap
 //var CL = AllMultiplots[0].ToGnuplot().PlotCairolatex(xSize:14, ySize:12);
 //CL.PlotNow();
 **************
-Using gnuplot: B:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key font ",12"inside top left Left reverse 
-System.ComponentModel.Win32Exception occurred: The system cannot find the file specified. Type 'LastError' for details.
-
 ==============
 //CL.WriteMinimalCompileableExample(
 //    Path.Combine(CurrentDocDir, "plots", "Main_Kcycle_Schwarz.tex"),
@@ -511,6 +512,10 @@ CL.WriteMinimalCompileableExample(
 Using gnuplot: B:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",12"inside top left Left reverse 
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

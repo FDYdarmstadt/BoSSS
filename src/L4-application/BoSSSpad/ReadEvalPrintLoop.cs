@@ -156,7 +156,7 @@ namespace BoSSS.Application.BoSSSpad {
                 "using BoSSS.Solution.Utils;" + Console.Out.NewLine +
                 "using BoSSS.Solution.Gnuplot;" + Console.Out.NewLine +
                 "using BoSSS.Application.BoSSSpad;" + Console.Out.NewLine +
-                "using Renci.SshNet;" + Console.Out.NewLine +
+                //"using Renci.SshNet;" + Console.Out.NewLine +
                 "using Mono.CSharp;"
             );
             

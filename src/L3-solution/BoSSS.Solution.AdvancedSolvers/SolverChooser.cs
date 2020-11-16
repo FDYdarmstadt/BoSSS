@@ -68,6 +68,10 @@ namespace BoSSS.Solution {
         private Action<int, double[], double[], MultigridOperator> DefaultItCallback;
         private int[] m_Iterations;
 
+
+        private MultigridOperator.ChangeOfBasisConfig[][] m_MGchangeofBasis;
+        private IEnumerable<AggregationGridBasis[]> m_MGBasis;
+
         /// <summary>
         /// Is get and set by <see cref="Selfmade_linsolver"/> and used by <see cref="GenerateLinear"/>.
         /// </summary>
@@ -218,6 +222,9 @@ namespace BoSSS.Solution {
             if (m_linsolver != null)
                 m_lc.SolverCode = LinearSolverCode.selfmade;
 
+            m_MGchangeofBasis = ts_MultigridOperatorConfig;
+            m_MGBasis = ts_MultigridBasis;
+
             linsolver = null;
             nonlinSolver = null;
             ISolverSmootherTemplate precondonly = null;
@@ -239,9 +246,11 @@ namespace BoSSS.Solution {
         /// This will return a linear solver object, which is configured according to <see cref="LinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>). 
         /// </summary>
         public void GenerateLinear(out ISolverSmootherTemplate linSolve, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig) {
-            if (m_linsolver != null) {
+            if (m_linsolver != null)
                 m_lc.SolverCode = LinearSolverCode.selfmade;
-            }
+
+            m_MGchangeofBasis = ts_MultigridOperatorConfig;
+            m_MGBasis = ts_MultigridBasis;
 
             ISolverSmootherTemplate[] preconds;
             linSolve = GenerateLinear_body(ts_MultigridBasis, ts_MultigridOperatorConfig, out preconds);
@@ -388,7 +397,7 @@ namespace BoSSS.Solution {
             var precond = new ISolverSmootherTemplate[1];
 
             // some solver require special parameters, like ...
-            int[] LocalDOF = GetLocalDOF(MultigridBasis, MultigridOperatorConfig);
+            int[] LocalDOF = GetLocalDOF();
             int NoOfBlocks = (int)Math.Max(1, Math.Round(LocalDOF[0] / (double)lc.TargetBlockSize));
             //int SpaceDim = MultigridSequence[0].SpatialDimension;
             int MaxMGDepth = MultigridBasis.Count();
@@ -406,7 +415,6 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_AS:
                 case LinearSolverCode.exp_AS_MG:
                 case LinearSolverCode.automatic:
-                case LinearSolverCode.exp_another_Kcycle:
                     precond[0] = null;
                     break;
 
@@ -555,8 +563,10 @@ namespace BoSSS.Solution {
                     Console.WriteLine("INFO: Selfmade Preconditioner is used!");
                     precond[0] = m_precond;
                     break;
-
-
+                case LinearSolverCode.exp_another_Kcycle:
+                    precond[0] = null;
+                    //precond[0]= expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize);
+                    break;
 
 
                 default:
@@ -588,7 +598,7 @@ namespace BoSSS.Solution {
             precond = GeneratePrecond(MultigridBasis, MultigridOperatorConfig);
 
             // some solver require special parameters, like ...
-            int[] LocalDOF = GetLocalDOF(MultigridBasis, MultigridOperatorConfig);
+            int[] LocalDOF = GetLocalDOF();
             int NoCellsLoc = MultigridBasis.First()[0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int NoOfBlocks = (int)Math.Max(1, Math.Round(LocalDOF[0] / (double)lc.TargetBlockSize));
             int SpaceDim = MultigridBasis.First()[0].AggGrid.ParentGrid.SpatialDimension;
@@ -722,7 +732,11 @@ namespace BoSSS.Solution {
                     };
                     break;
                 case LinearSolverCode.exp_another_Kcycle:
-                    templinearSolve = expKcycleSchwarz(MaxMGDepth,LocalDOF,X=>m_lc.TargetBlockSize);
+                    //templinearSolve = new SoftGMRES() {
+                    //    Precond = precond[0],
+                    //    MaxKrylovDim = m_lc.MaxKrylovDim,
+                    //};
+                    templinearSolve = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize);
                     break;
                 case LinearSolverCode.selfmade:
                     Console.WriteLine("INFO: Selfmade LinearSolver is used!");
@@ -783,27 +797,37 @@ namespace BoSSS.Solution {
                 Console.WriteLine(solvername + " INFO:\t" + line);
         }
 
-        private int[] GetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
-
+        private int getMaxDG (int iLevel, int iVar) {
             //This workaround takes into account, the wierd structure of the ChangeOfBasis-thing
             //prohibits out of bounds exception
-            Func<int, int, int[]> getDGs = delegate (int iLevel, int iVar) {
-                int tLevel = iLevel < MGChangeOfBasis.Length ? iLevel : MGChangeOfBasis.Length - 1;
-                int tVar = iVar < MGChangeOfBasis[tLevel].Length ? iVar : MGChangeOfBasis[tLevel].Length - 1;
-                return MGChangeOfBasis[tLevel][tVar].DegreeS;
-            };
 
+            var MGChangeOfBasis = m_MGchangeofBasis;
+
+            int tLevel = iLevel < MGChangeOfBasis.Length ? iLevel : MGChangeOfBasis.Length - 1;
+            int tVar = iVar < MGChangeOfBasis[tLevel].Length ? iVar : MGChangeOfBasis[tLevel].Length - 1;
+            return MGChangeOfBasis[tLevel][tVar].DegreeS[0];
+        }
+
+        private int[] GetLocalDOF(int p=-1) {
+            var MGChangeOfBasis = m_MGchangeofBasis;
+            var MultigridBasis = m_MGBasis;
             var MGBasis = MultigridBasis.ToArray();
             int MGDepth = MGBasis.Length;
             int[] LocalDOF = new int[MGDepth];
+            int D = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.ParentGrid.SpatialDimension;
 
-            for(int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
+            for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
                 LocalDOF[iLevel] = 0;
                 int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
                 for(int iCell = 0; iCell < NoOfCells; iCell++) {
                     for(int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
-                        int pmax = getDGs(iLevel, iVar)[0];
+                        int pmax = -1;
+                        if(p <= -1) {
+                            pmax = getMaxDG(iLevel, iVar);
+                        } else {
+                            pmax = iVar == D? p-1 : p;
+                        }
                         try {
                             LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
                         } catch(Exception) {
@@ -1426,6 +1450,12 @@ namespace BoSSS.Solution {
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
 
+            var LocalDOF4directSolver = _LocalDOF;
+            // if we use lvlpmg in Sblocks, we can have less blocks ...
+            if (m_lc.pMaxOfCoarseSolver < getMaxDG(0, 0)) {
+                LocalDOF4directSolver = GetLocalDOF(m_lc.pMaxOfCoarseSolver);
+            }
+
             int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
             int LocSysSizeZeroLvl = _LocalDOF[0];
             if (DirectKickIn < _LocalDOF.Last()) {
@@ -1437,7 +1467,7 @@ namespace BoSSS.Solution {
 
             for (int iLevel = 0; iLevel < MaxMGDepth; iLevel++) {
                 MaxMGLevel = iLevel;
-                double SizeFraction = (double)_LocalDOF[iLevel] / (double)SchwarzblockSize(iLevel);
+                double SizeFraction = (double)LocalDOF4directSolver[iLevel] / (double)SchwarzblockSize(iLevel);
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 if(SizeFraction < 1 && iLevel == 0) {
                     Console.WriteLine($"WARNING: Schwarz-Block size ({SchwarzblockSize}) exceeds local system size ({_LocalDOF[iLevel]});");
@@ -1481,7 +1511,7 @@ namespace BoSSS.Solution {
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = false,
+                        UsePMGinBlocks = true,
                         CoarseSolveOfCutcells = true,
                         CoarseLowOrder = m_lc.pMaxOfCoarseSolver
                     };
@@ -1615,6 +1645,10 @@ namespace BoSSS.Solution {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
+                    //levelSolver = new SoftGMRES() {
+                    //    MaxKrylovDim = 100,
+                    //    TerminationCriterion = (int iter, double r0, double r) => iter <= 100,
+                    //};
 
                 } else {
 
@@ -1649,7 +1683,7 @@ namespace BoSSS.Solution {
 
                     levelSolver = new kcycle() {
                         PreSmoother = solve1,
-                        PostSmoother = solve1.CloneAs(),
+                        PostSmoother = solve1,
                     };
 
                     if (iLevel > 0) {

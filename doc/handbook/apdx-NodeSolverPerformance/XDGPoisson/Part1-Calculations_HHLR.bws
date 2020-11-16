@@ -1,6 +1,5 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
@@ -24,31 +23,101 @@ List of 0 instances of IDatabaseInfo {
 //myBatch.MonoDebug = true;
 **************
 ==============
-string WFlowName = "Xdg_single_test";
+string WFlowName = "Xdg_Poisson_scaling";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_single_test'.
+Project name is set to 'Xdg_Poisson_scaling'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 **************
 ==============
 //on HHLR path has to be something, which linux can work with e.g. /work/scratch/...
-string dirname = "DB_XDGPoisson_Single";
+string dirname = "DB_XDGPoisson_pLow";
 string linpath = @"/work/scratch/jw52xeqa/"+dirname;
 string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_Single'.
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_pLow'.
 
 ==============
 tempDB.Sessions
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_Single'.
-List of 0 instances of ISessionInfo {
+List of 71 instances of ISessionInfo {
+  0: Xdg_Poisson_scaling	J262144_k2_exp_gmres_levelpmg	11/11/2020 22:53:00	b052003e...
+  1: Xdg_Poisson_scaling	J32768_k3_classic_pardiso	11/11/2020 22:37:50	143c576d...
+  2: Xdg_Poisson_scaling	J262144_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:37:44	9c82f65e...
+  3: Xdg_Poisson_scaling	J110592_k3_exp_gmres_levelpmg	11/11/2020 22:53:03	4c33952f...
+  4: Xdg_Poisson_scaling	J110592_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:42:54	f00ae1b4...
+  5: Xdg_Poisson_scaling	J13824_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:47:51	2949e104...
+  6: Xdg_Poisson_scaling	J13824_k5_exp_gmres_levelpmg	11/11/2020 22:58:00	7e86ffc4...
+  7: Xdg_Poisson_scaling	J110592_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	4ddbc11b...
+  8: Xdg_Poisson_scaling	J110592_k2_exp_gmres_levelpmg	11/11/2020 22:53:01	d9114350...
+  9: Xdg_Poisson_scaling	J4096_k5_exp_Kcycle_schwarz_p5	11/11/2020 23:08:05	5a6db82d...
+  10: Xdg_Poisson_scaling	J32768_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:03:10	21e476e5...
+  11: Xdg_Poisson_scaling	J32768_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:09	d77d01f0...
+  12: Xdg_Poisson_scaling	J512_k5_exp_Kcycle_schwarz_p5	11/11/2020 23:08:13	9fe2851e...
+  13: Xdg_Poisson_scaling	J13824_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:03:06	4db88446...
+  14: Xdg_Poisson_scaling	J4096_k5_exp_gmres_levelpmg	11/11/2020 22:58:02	1e18f8e3...
+  15: Xdg_Poisson_scaling	J32768_k5_exp_Kcycle_schwarz_p5*	11/11/2020 23:08:06	304ba182...
+  16: Xdg_Poisson_scaling	J64_k5_exp_Kcycle_schwarz_p5	11/11/2020 23:08:10	498a0f38...
+  17: Xdg_Poisson_scaling	J13824_k5_exp_Kcycle_schwarz_p5*	11/11/2020 23:08:12	8cb2b8c4...
+  18: Xdg_Poisson_scaling	J512_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:08:04	8157b6f2...
+  19: Xdg_Poisson_scaling	J262144_k2_exp_Kcycle_schwarz_p2*	11/11/2020 23:03:03	12340b60...
+  20: Xdg_Poisson_scaling	J64_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:08:06	c4c540af...
+  21: Xdg_Poisson_scaling	J32768_k3_exp_gmres_levelpmg	11/11/2020 22:52:57	c266ef73...
+  22: Xdg_Poisson_scaling	J110592_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:37:50	371a16de...
+  23: Xdg_Poisson_scaling	J13824_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	bf52ba79...
+  24: Xdg_Poisson_scaling	J110592_k3_exp_Kcycle_schwarz_p3*	11/11/2020 23:03:11	9b623dc2...
+  25: Xdg_Poisson_scaling	J4096_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:03:02	bc1061e0...
+  26: Xdg_Poisson_scaling	J512_k5_exp_gmres_levelpmg	11/11/2020 23:03:08	83d99301...
+  27: Xdg_Poisson_scaling	J4096_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:52:56	8878d9bd...
+  28: Xdg_Poisson_scaling	J4096_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	adffe52d...
+  29: Xdg_Poisson_scaling	J64_k5_exp_gmres_levelpmg	11/11/2020 23:03:06	a0528633...
+  30: Xdg_Poisson_scaling	J4096_k5_classic_pardiso	11/11/2020 22:37:46	5ce14a2c...
+  31: Xdg_Poisson_scaling	J512_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:09	2f7213dd...
+  32: Xdg_Poisson_scaling	J64_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	300b2a13...
+  33: Xdg_Poisson_scaling	J32768_k2_exp_gmres_levelpmg	11/11/2020 22:52:59	18c77868...
+  34: Xdg_Poisson_scaling	J4096_k3_exp_gmres_levelpmg	11/11/2020 22:58:01	358d1189...
+  35: Xdg_Poisson_scaling	J32768_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:42:49	bc1d93ba...
+  36: Xdg_Poisson_scaling	J13824_k3_exp_gmres_levelpmg	11/11/2020 22:52:58	49bbbff4...
+  37: Xdg_Poisson_scaling	J32768_k5_exp_gmres_levelpmg*	11/11/2020 22:57:59	16f46510...
+  38: Xdg_Poisson_scaling	J13824_k3_classic_pardiso	11/11/2020 22:42:54	6b00553f...
+  39: Xdg_Poisson_scaling	J512_k3_exp_gmres_levelpmg	11/11/2020 22:57:58	63ce7d2f...
+  40: Xdg_Poisson_scaling	J64_k3_exp_gmres_levelpmg	11/11/2020 22:58:05	8af5dee9...
+  41: Xdg_Poisson_scaling	J13824_k2_exp_gmres_levelpmg	11/11/2020 22:52:58	2eb51322...
+  42: Xdg_Poisson_scaling	J512_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:53:01	8dfb8456...
+  43: Xdg_Poisson_scaling	J4096_k2_exp_gmres_levelpmg	11/11/2020 22:52:57	db5cff36...
+  44: Xdg_Poisson_scaling	J64_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:52:58	7d6bcdbb...
+  45: Xdg_Poisson_scaling	J512_k2_exp_gmres_levelpmg	11/11/2020 22:52:59	1f779afa...
+  46: Xdg_Poisson_scaling	J64_k2_exp_gmres_levelpmg	11/11/2020 22:52:57	82ef5a81...
+  47: Xdg_Poisson_scaling	J4096_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:47:55	c8abd99c...
+  48: Xdg_Poisson_scaling	J13824_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:42:49	234cfe5b...
+  49: Xdg_Poisson_scaling	J512_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:47:58	a075f358...
+  50: Xdg_Poisson_scaling	J64_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:47:56	8e6c7f71...
+  51: Xdg_Poisson_scaling	J32768_k2_classic_pardiso	11/11/2020 22:32:50	f1f2ab41...
+  52: Xdg_Poisson_scaling	J13824_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:47	b124196a...
+  53: Xdg_Poisson_scaling	J32768_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:37:50	f7dab90d...
+  54: Xdg_Poisson_scaling	J4096_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:47	6ec25ae4...
+  55: Xdg_Poisson_scaling	J512_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:46	6ee7ea5d...
+  56: Xdg_Poisson_scaling	J64_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:51	9ec8db9e...
+  57: Xdg_Poisson_scaling	J110592_k3_classic_pardiso*	11/11/2020 22:37:48	27aeed14...
+  58: Xdg_Poisson_scaling	J4096_k3_classic_pardiso	11/11/2020 22:37:45	a29e17d3...
+  59: Xdg_Poisson_scaling	J512_k5_classic_pardiso	11/11/2020 22:37:54	49c1fc66...
+  60: Xdg_Poisson_scaling	J32768_k5_classic_pardiso*	11/11/2020 22:37:51	9bcb68c5...
+  61: Xdg_Poisson_scaling	J512_k3_classic_pardiso	11/11/2020 22:37:50	ae1ae655...
+  62: Xdg_Poisson_scaling	J262144_k2_classic_pardiso*	11/11/2020 22:32:50	08d4715f...
+  63: Xdg_Poisson_scaling	J64_k5_classic_pardiso	11/11/2020 22:37:46	7fdb786e...
+  64: Xdg_Poisson_scaling	J13824_k5_classic_pardiso*	11/11/2020 22:37:52	c0002167...
+  65: Xdg_Poisson_scaling	J512_k2_classic_pardiso	11/11/2020 22:37:54	78ba3404...
+  66: Xdg_Poisson_scaling	J64_k3_classic_pardiso	11/11/2020 22:37:46	5c42ee42...
+  67: Xdg_Poisson_scaling	J13824_k2_classic_pardiso	11/11/2020 22:32:46	63c8e45f...
+  68: Xdg_Poisson_scaling	J110592_k2_classic_pardiso*	11/11/2020 22:32:46	348645b4...
+  69: Xdg_Poisson_scaling	J4096_k2_classic_pardiso	11/11/2020 22:32:46	4aaacd10...
+  70: Xdg_Poisson_scaling	J64_k2_classic_pardiso	11/11/2020 22:32:50	49b44f2c...
 }
 ==============
 // ===================
@@ -86,13 +155,16 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = 9de0032c-5c55-4d25-becd-7747b5e55195; Name = Xdg_single_test_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = 5bcf2ac2-c098-4cc6-bbd6-bf20b34deb9d; Name = Xdg_single_test_J32768; Cell Count = 32768; Dim = 3 }
-  2: { Guid = e82c1a99-4293-4501-9c00-9d87fb5399a0; Name = Xdg_single_test_J4096; Cell Count = 4096; Dim = 3 }
-  3: { Guid = 355350d0-cea6-41fd-a533-8dd2df8f75c5; Name = Xdg_single_test_J512; Cell Count = 512; Dim = 3 }
-  4: { Guid = 4306a506-8879-4257-9707-a0d8dbd255f7; Name = Xdg_single_test_J64; Cell Count = 64; Dim = 3 }
-  5: { Guid = 118d7f4f-b40d-47ab-8a51-7f0fe2f78d3c; Name = Xdg_single_test_J8; Cell Count = 8; Dim = 3 }
+List of 9 instances of IGridInfo {
+  0: { Guid = 815c2449-5d68-474a-8553-56eee003ef4e; Name = Xdg_Poisson_scaling_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = b36cb0e0-581d-4517-a051-260744607d8c; Name = Xdg_Poisson_scaling_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = 1a0b83a4-14c8-480d-a807-44ef4b31969c; Name = Xdg_Poisson_scaling_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = 56896b71-d068-4c9c-af6e-0a490e72c960; Name = Xdg_Poisson_scaling_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = d9c4e32e-01a2-4538-89c3-3df94687a80c; Name = Xdg_Poisson_scaling_J4096; Cell Count = 4096; Dim = 3 }
+  5: { Guid = b08dbdf4-e7dd-4762-a9a9-65c08c1bd031; Name = Xdg_Poisson_scaling_J512; Cell Count = 512; Dim = 3 }
+  6: { Guid = cd18e3fd-0adf-4a83-a592-168e46d80a29; Name = Xdg_Poisson_scaling_J64; Cell Count = 64; Dim = 3 }
+  7: { Guid = 4197351a-c11d-4ade-813a-249e3eef03f4; Name = Xdg_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+  8: { Guid = 529dc7dc-7f52-4754-a746-dac78663f6aa; Name = Xdg_pLow_study_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 double xMax = 1.0, yMax = 1.0, zMax=1.0;
@@ -103,7 +175,7 @@ double xMin = -1.0, yMin = -1.0,zMin = -1.0;
 ==============
 **************
 ==============
-var res =new int[] { 2 ,4,8,16,32,64 };
+var res = new int[] { 4,8,16,24,32,48,64};
 **************
 ==============
 int[] Resolutions_3D = res;
@@ -141,7 +213,7 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
             return ret;
         });
       
-        tempDB.SaveGrid(ref g, true);  
+        tempDB.SaveGrid(ref g);  
         grids[cnt] = g;
     } else {
         Console.WriteLine("Found Grid: " + grids[cnt]);
@@ -153,48 +225,59 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Creating grid with 8 cells.
-Grid Edge Tags changed.
 Creating grid with 64 cells.
 Grid Edge Tags changed.
-List of 7 instances of IGridInfo {
-  0: { Guid = c50b61e3-a3c7-4b19-8790-c42d4674ae0a; Name = Xdg_single_test_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = 9de0032c-5c55-4d25-becd-7747b5e55195; Name = Xdg_single_test_J262144; Cell Count = 262144; Dim = 3 }
-  2: { Guid = 5bcf2ac2-c098-4cc6-bbd6-bf20b34deb9d; Name = Xdg_single_test_J32768; Cell Count = 32768; Dim = 3 }
-  3: { Guid = e82c1a99-4293-4501-9c00-9d87fb5399a0; Name = Xdg_single_test_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = 355350d0-cea6-41fd-a533-8dd2df8f75c5; Name = Xdg_single_test_J512; Cell Count = 512; Dim = 3 }
-  5: { Guid = 4306a506-8879-4257-9707-a0d8dbd255f7; Name = Xdg_single_test_J64; Cell Count = 64; Dim = 3 }
-  6: { Guid = 118d7f4f-b40d-47ab-8a51-7f0fe2f78d3c; Name = Xdg_single_test_J8; Cell Count = 8; Dim = 3 }
-}Creating grid with 512 cells.
+An equivalent grid (cd18e3fd-0adf-4a83-a592-168e46d80a29) is already present in the database -- the grid will not be saved.
+Creating grid with 512 cells.
 Grid Edge Tags changed.
+An equivalent grid (b08dbdf4-e7dd-4762-a9a9-65c08c1bd031) is already present in the database -- the grid will not be saved.
 Creating grid with 4096 cells.
-List of 1 instances of IGridInfo {
-  0: { Guid = fd4338e7-1a39-4184-80cb-d30508093421; Name = Xdg_single_test_J64; Cell Count = 64; Dim = 3 }
-}Grid Edge Tags changed.
-System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+Grid Edge Tags changed.
+An equivalent grid (d9c4e32e-01a2-4538-89c3-3df94687a80c) is already present in the database -- the grid will not be saved.
+Creating grid with 13824 cells.
+Grid Edge Tags changed.
+An equivalent grid (56896b71-d068-4c9c-af6e-0a490e72c960) is already present in the database -- the grid will not be saved.
+Creating grid with 32768 cells.
+Grid Edge Tags changed.
+An equivalent grid (1a0b83a4-14c8-480d-a807-44ef4b31969c) is already present in the database -- the grid will not be saved.
+Creating grid with 110592 cells.
+Grid Edge Tags changed.
+An equivalent grid (b36cb0e0-581d-4517-a051-260744607d8c) is already present in the database -- the grid will not be saved.
+Creating grid with 262144 cells.
+Grid Edge Tags changed.
+An equivalent grid (815c2449-5d68-474a-8553-56eee003ef4e) is already present in the database -- the grid will not be saved.
 
 ==============
 tempDB.Grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = 9de0032c-5c55-4d25-becd-7747b5e55195; Name = Xdg_single_test_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = 5bcf2ac2-c098-4cc6-bbd6-bf20b34deb9d; Name = Xdg_single_test_J32768; Cell Count = 32768; Dim = 3 }
-  2: { Guid = e82c1a99-4293-4501-9c00-9d87fb5399a0; Name = Xdg_single_test_J4096; Cell Count = 4096; Dim = 3 }
-  3: { Guid = 355350d0-cea6-41fd-a533-8dd2df8f75c5; Name = Xdg_single_test_J512; Cell Count = 512; Dim = 3 }
-  4: { Guid = 4306a506-8879-4257-9707-a0d8dbd255f7; Name = Xdg_single_test_J64; Cell Count = 64; Dim = 3 }
-  5: { Guid = 118d7f4f-b40d-47ab-8a51-7f0fe2f78d3c; Name = Xdg_single_test_J8; Cell Count = 8; Dim = 3 }
+List of 9 instances of IGridInfo {
+  0: { Guid = 815c2449-5d68-474a-8553-56eee003ef4e; Name = Xdg_Poisson_scaling_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = b36cb0e0-581d-4517-a051-260744607d8c; Name = Xdg_Poisson_scaling_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = 1a0b83a4-14c8-480d-a807-44ef4b31969c; Name = Xdg_Poisson_scaling_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = 56896b71-d068-4c9c-af6e-0a490e72c960; Name = Xdg_Poisson_scaling_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = d9c4e32e-01a2-4538-89c3-3df94687a80c; Name = Xdg_Poisson_scaling_J4096; Cell Count = 4096; Dim = 3 }
+  5: { Guid = b08dbdf4-e7dd-4762-a9a9-65c08c1bd031; Name = Xdg_Poisson_scaling_J512; Cell Count = 512; Dim = 3 }
+  6: { Guid = cd18e3fd-0adf-4a83-a592-168e46d80a29; Name = Xdg_Poisson_scaling_J64; Cell Count = 64; Dim = 3 }
+  7: { Guid = 4197351a-c11d-4ade-813a-249e3eef03f4; Name = Xdg_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+  8: { Guid = 529dc7dc-7f52-4754-a746-dac78663f6aa; Name = Xdg_pLow_study_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 // Overwrite Selection
-var ListOfgrids = new List<IGridInfo>();
-ListOfgrids.AddRange(tempDB.Grids.Pick(2));
-IGridInfo[] grids = ListOfgrids.ToArray();
+//var ListOfgrids = new List<IGridInfo>();
+//ListOfgrids.AddRange(tempDB.Grids.Pick(2));
+//IGridInfo[] grids = ListOfgrids.ToArray();
 **************
 ==============
 grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = e82c1a99-4293-4501-9c00-9d87fb5399a0; Name = Xdg_single_test_J4096; Cell Count = 4096; Dim = 3 }
+List of 7 instances of IGridInfo {
+  0: { Guid = cd18e3fd-0adf-4a83-a592-168e46d80a29; Name = Xdg_Poisson_scaling_J64; Cell Count = 64; Dim = 3 }
+  1: { Guid = b08dbdf4-e7dd-4762-a9a9-65c08c1bd031; Name = Xdg_Poisson_scaling_J512; Cell Count = 512; Dim = 3 }
+  2: { Guid = d9c4e32e-01a2-4538-89c3-3df94687a80c; Name = Xdg_Poisson_scaling_J4096; Cell Count = 4096; Dim = 3 }
+  3: { Guid = 56896b71-d068-4c9c-af6e-0a490e72c960; Name = Xdg_Poisson_scaling_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = 1a0b83a4-14c8-480d-a807-44ef4b31969c; Name = Xdg_Poisson_scaling_J32768; Cell Count = 32768; Dim = 3 }
+  5: { Guid = b36cb0e0-581d-4517-a051-260744607d8c; Name = Xdg_Poisson_scaling_J110592; Cell Count = 110592; Dim = 3 }
+  6: { Guid = 815c2449-5d68-474a-8553-56eee003ef4e; Name = Xdg_Poisson_scaling_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -250,16 +333,16 @@ List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
 **************
 ==============
 // polynomial degrees to test
-//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-int[] PolyDegS = new int[] {5};
+int[] PolyDegS = new int[] {2, 3, 5};
+//int[] PolyDegS = new int[] {5};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_pardiso, 
     //LinearSolverCode.classic_mumps, 
     LinearSolverCode.exp_Kcycle_schwarz, 
-    LinearSolverCode.exp_gmres_levelpmg, 
+    //LinearSolverCode.exp_gmres_levelpmg, 
 }; 
 **************
 ==============
@@ -270,6 +353,10 @@ int MaxDof = 3000000;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
 ==============
 controls.Clear();
 foreach(LinearSolverCode solver_name in solver_nameS) {
@@ -280,8 +367,8 @@ foreach(IGridInfo grd in grids) {
     int J  = grd.NumberOfCells;
     if(J*Np > MaxDof)
         continue;
-    
     string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    
     Console.WriteLine("setting up: " + caseName);
     Console.WriteLine("based on grid: "+grd.Name);
 
@@ -304,11 +391,11 @@ foreach(IGridInfo grd in grids) {
          SaveToDB = FieldOpts.SaveToDBOpt.TRUE
     });
 
-    ctrl.LinearSolver.SolverCode                = solver_name;
-    ctrl.LinearSolver.NoOfMultigridLevels       = 10;
-    ctrl.LinearSolver.TargetBlockSize           = Math.Min(J*Np-1,100000);
-    ctrl.LinearSolver.ConvergenceCriterion      = 1e-8;
-    ctrl.LinearSolver.AssignXdGCellsToLowBlocks = true;
+    ctrl.LinearSolver.SolverCode           = solver_name;
+    ctrl.LinearSolver.NoOfMultigridLevels  = 10;
+    ctrl.LinearSolver.TargetBlockSize      = Math.Min(J*Np-1,100000);
+    ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
+    ctrl.LinearSolver.pMaxOfCoarseSolver   = k;
     
     double radius           = 0.7;
     ctrl.ExcactSolSupported = false;
@@ -323,24 +410,57 @@ foreach(IGridInfo grd in grids) {
     ctrl.SetDefaultDiriBndCnd  = true;
     //ctrl.TracingNamespaces     = "*";
     
-    ctrl.ViscosityMode = XLaplace_Interface.Mode.SIP;
-    ctrl.SessionName   = caseName;
-    ctrl.ProjectName   = WFlowName;
-    ctrl.GridPartType  = BoSSS.Foundation.Grid.GridPartType.METIS;
-    
+    ctrl.ViscosityMode          = XLaplace_Interface.Mode.SIP;
+    ctrl.GridPartType           = BoSSS.Foundation.Grid.GridPartType.METIS;
     ctrl.AgglomerationThreshold = 0.1;
     
+    if(solver_name == LinearSolverCode.exp_Kcycle_schwarz){
+        caseName += "_p"+ctrl.LinearSolver.pMaxOfCoarseSolver;
+        caseName += "_sb"+ctrl.LinearSolver.TargetBlockSize;
+    }
+    ctrl.SessionName = caseName;
+    ctrl.ProjectName = WFlowName;
     controls.Add(ctrl);
 }
 }
 }
 **************
-setting up: J4096_k5_classic_pardiso
-based on grid: Xdg_single_test_J4096
+setting up: J64_k2_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J64
+setting up: J512_k2_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J512
+setting up: J4096_k2_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J4096
+setting up: J13824_k2_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J13824
+setting up: J32768_k2_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J32768
+setting up: J110592_k2_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J110592
+setting up: J262144_k2_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J262144
+setting up: J64_k3_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J64
+setting up: J512_k3_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J512
+setting up: J4096_k3_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J4096
+setting up: J13824_k3_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J13824
+setting up: J32768_k3_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J32768
+setting up: J110592_k3_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J110592
+setting up: J64_k5_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J64
+setting up: J512_k5_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J512
 setting up: J4096_k5_exp_Kcycle_schwarz
-based on grid: Xdg_single_test_J4096
-setting up: J4096_k5_exp_gmres_levelpmg
-based on grid: Xdg_single_test_J4096
+based on grid: Xdg_Poisson_scaling_J4096
+setting up: J13824_k5_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J13824
+setting up: J32768_k5_exp_Kcycle_schwarz
+based on grid: Xdg_Poisson_scaling_J32768
 
 ==============
 //controls[0].SessionName+="_METIS";
@@ -377,44 +497,158 @@ foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
     var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
     aJob.SetControlObject(ctrl);
-    ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
+    ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01287";  // Jens 
     aJob.NumberOfMPIProcs         = 1;
-    aJob.ExecutionTime            = "02:00:00";
-    aJob.MemPerCPU                = "2500";
+    aJob.ExecutionTime            = "03:00:00";
+    aJob.MemPerCPU                = "50000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J4096_k5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
+ Submitting: J64_k2_exp_Kcycle_schwarz_p1_sb639
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_single_test-XdgPoisson32020Sep21_184929
-copied 30 files.
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124033
+copied 29 files.
    written file: control.obj
 deployment finished.
 
-15691774
- Submitting: J4096_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
+ Submitting: J512_k2_exp_Kcycle_schwarz_p1_sb5119
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_single_test-XdgPoisson32020Sep21_184936
-copied 30 files.
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124045
+copied 29 files.
    written file: control.obj
 deployment finished.
 
-15691775
- Submitting: J4096_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
+ Submitting: J4096_k2_exp_Kcycle_schwarz_p1_sb40959
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_single_test-XdgPoisson32020Sep21_184939
-copied 30 files.
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124100
+copied 29 files.
    written file: control.obj
 deployment finished.
 
-15691776
+ Submitting: J13824_k2_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124113
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J32768_k2_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124125
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J110592_k2_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124140
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J262144_k2_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124152
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J64_k3_exp_Kcycle_schwarz_p1_sb1279
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124204
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J512_k3_exp_Kcycle_schwarz_p1_sb10239
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124219
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J4096_k3_exp_Kcycle_schwarz_p1_sb81919
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124230
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J13824_k3_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124242
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J32768_k3_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124257
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J110592_k3_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124309
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J64_k5_exp_Kcycle_schwarz_p1_sb3583
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124321
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J512_k5_exp_Kcycle_schwarz_p1_sb28671
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124337
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J4096_k5_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124349
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J13824_k5_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124401
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
+ Submitting: J32768_k5_exp_Kcycle_schwarz_p1_sb100000
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Poisson_scaling-XdgPoisson32020Nov16_124417
+copied 29 files.
+   written file: control.obj
+deployment finished.
+
 
 ==============
 **************
@@ -763,6 +997,14 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

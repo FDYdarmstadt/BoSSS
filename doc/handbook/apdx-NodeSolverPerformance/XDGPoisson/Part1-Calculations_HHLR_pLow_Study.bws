@@ -24,11 +24,11 @@ List of 0 instances of IDatabaseInfo {
 //myBatch.MonoDebug = true;
 **************
 ==============
-string WFlowName = "Xdg_pLow_study";
+string WFlowName = "Xdg_Poisson_scaling";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_pLow_study'.
+Project name is set to 'Xdg_Poisson_scaling'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -42,12 +42,82 @@ string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Creating database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_pLow'.
-
 ==============
 tempDB.Sessions
 **************
-List of 0 instances of ISessionInfo {
+List of 72 instances of ISessionInfo {
+  0: Xdg_Poisson_scaling	J262144_k2_exp_gmres_levelpmg	11/11/2020 22:53:00	b052003e...
+  1: Xdg_Poisson_scaling	J32768_k3_classic_pardiso	11/11/2020 22:37:50	143c576d...
+  2: Xdg_Poisson_scaling	J262144_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:37:44	9c82f65e...
+  3: Xdg_Poisson_scaling	J110592_k3_exp_gmres_levelpmg	11/11/2020 22:53:03	4c33952f...
+  4: Xdg_Poisson_scaling	J110592_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:42:54	f00ae1b4...
+  5: Xdg_Poisson_scaling	J13824_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:47:51	2949e104...
+  6: Xdg_Poisson_scaling	J13824_k5_exp_gmres_levelpmg	11/11/2020 22:58:00	7e86ffc4...
+  7: Xdg_Poisson_scaling	J110592_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	4ddbc11b...
+  8: Xdg_Poisson_scaling	J110592_k2_exp_gmres_levelpmg	11/11/2020 22:53:01	d9114350...
+  9: Xdg_Poisson_scaling	J4096_k5_exp_Kcycle_schwarz_p5	11/11/2020 23:08:05	5a6db82d...
+  10: Xdg_Poisson_scaling	J32768_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:03:10	21e476e5...
+  11: Xdg_Poisson_scaling	J32768_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:09	d77d01f0...
+  12: Xdg_Poisson_scaling	J512_k5_exp_Kcycle_schwarz_p5	11/11/2020 23:08:13	9fe2851e...
+  13: Xdg_Poisson_scaling	J13824_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:03:06	4db88446...
+  14: Xdg_Poisson_scaling	J4096_k5_exp_gmres_levelpmg	11/11/2020 22:58:02	1e18f8e3...
+  15: Xdg_Poisson_scaling	J32768_k5_exp_Kcycle_schwarz_p5*	11/11/2020 23:08:06	304ba182...
+  16: Xdg_Poisson_scaling	J64_k5_exp_Kcycle_schwarz_p5	11/11/2020 23:08:10	498a0f38...
+  17: Xdg_Poisson_scaling	J13824_k5_exp_Kcycle_schwarz_p5*	11/11/2020 23:08:12	8cb2b8c4...
+  18: Xdg_Poisson_scaling	J512_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:08:04	8157b6f2...
+  19: Xdg_Poisson_scaling	J262144_k2_exp_Kcycle_schwarz_p2*	11/11/2020 23:03:03	12340b60...
+  20: Xdg_Poisson_scaling	J64_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:08:06	c4c540af...
+  21: Xdg_Poisson_scaling	J32768_k3_exp_gmres_levelpmg	11/11/2020 22:52:57	c266ef73...
+  22: Xdg_Poisson_scaling	J110592_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:37:50	371a16de...
+  23: Xdg_Poisson_scaling	J13824_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	bf52ba79...
+  24: Xdg_Poisson_scaling	J110592_k3_exp_Kcycle_schwarz_p3*	11/11/2020 23:03:11	9b623dc2...
+  25: Xdg_Poisson_scaling	J4096_k3_exp_Kcycle_schwarz_p3	11/11/2020 23:03:02	bc1061e0...
+  26: Xdg_Poisson_scaling	J512_k5_exp_gmres_levelpmg	11/11/2020 23:03:08	83d99301...
+  27: Xdg_Poisson_scaling	J4096_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:52:56	8878d9bd...
+  28: Xdg_Poisson_scaling	J4096_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	adffe52d...
+  29: Xdg_Poisson_scaling	J64_k5_exp_gmres_levelpmg	11/11/2020 23:03:06	a0528633...
+  30: Xdg_Poisson_scaling	J4096_k5_classic_pardiso	11/11/2020 22:37:46	5ce14a2c...
+  31: Xdg_Poisson_scaling	J512_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:09	2f7213dd...
+  32: Xdg_Poisson_scaling	J64_k2_exp_Kcycle_schwarz_p2	11/11/2020 23:03:03	300b2a13...
+  33: Xdg_Poisson_scaling	J32768_k2_exp_gmres_levelpmg	11/11/2020 22:52:59	18c77868...
+  34: Xdg_Poisson_scaling	J4096_k3_exp_gmres_levelpmg	11/11/2020 22:58:01	358d1189...
+  35: Xdg_Poisson_scaling	J32768_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:42:49	bc1d93ba...
+  36: Xdg_Poisson_scaling	J13824_k3_exp_gmres_levelpmg	11/11/2020 22:52:58	49bbbff4...
+  37: Xdg_Poisson_scaling	J32768_k5_exp_gmres_levelpmg*	11/11/2020 22:57:59	16f46510...
+  38: Xdg_Poisson_scaling	J13824_k3_classic_pardiso	11/11/2020 22:42:54	6b00553f...
+  39: Xdg_Poisson_scaling	J512_k3_exp_gmres_levelpmg	11/11/2020 22:57:58	63ce7d2f...
+  40: Xdg_Poisson_scaling	J64_k3_exp_gmres_levelpmg	11/11/2020 22:58:05	8af5dee9...
+  41: Xdg_Poisson_scaling	J13824_k2_exp_gmres_levelpmg	11/11/2020 22:52:58	2eb51322...
+  42: Xdg_Poisson_scaling	J512_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:53:01	8dfb8456...
+  43: Xdg_Poisson_scaling	J4096_k2_exp_gmres_levelpmg	11/11/2020 22:52:57	db5cff36...
+  44: Xdg_Poisson_scaling	J64_k5_exp_Kcycle_schwarz_p1	11/11/2020 22:52:58	7d6bcdbb...
+  45: Xdg_Poisson_scaling	J512_k2_exp_gmres_levelpmg	11/11/2020 22:52:59	1f779afa...
+  46: Xdg_Poisson_scaling	J64_k2_exp_gmres_levelpmg	11/11/2020 22:52:57	82ef5a81...
+  47: Xdg_Poisson_scaling	J4096_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:47:55	c8abd99c...
+  48: Xdg_Poisson_scaling	J13824_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:42:49	234cfe5b...
+  49: Xdg_Poisson_scaling	J512_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:47:58	a075f358...
+  50: Xdg_Poisson_scaling	J32768_k5_exp_Kcycle_schwarz_p1*	11/11/2020 22:47:50	fd7dbc93...
+  51: Xdg_Poisson_scaling	J64_k3_exp_Kcycle_schwarz_p1	11/11/2020 22:47:56	8e6c7f71...
+  52: Xdg_Poisson_scaling	J32768_k2_classic_pardiso	11/11/2020 22:32:50	f1f2ab41...
+  53: Xdg_Poisson_scaling	J13824_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:47	b124196a...
+  54: Xdg_Poisson_scaling	J32768_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:37:50	f7dab90d...
+  55: Xdg_Poisson_scaling	J4096_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:47	6ec25ae4...
+  56: Xdg_Poisson_scaling	J512_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:46	6ee7ea5d...
+  57: Xdg_Poisson_scaling	J64_k2_exp_Kcycle_schwarz_p1	11/11/2020 22:42:51	9ec8db9e...
+  58: Xdg_Poisson_scaling	J110592_k3_classic_pardiso*	11/11/2020 22:37:48	27aeed14...
+  59: Xdg_Poisson_scaling	J4096_k3_classic_pardiso	11/11/2020 22:37:45	a29e17d3...
+  60: Xdg_Poisson_scaling	J512_k5_classic_pardiso	11/11/2020 22:37:54	49c1fc66...
+  61: Xdg_Poisson_scaling	J32768_k5_classic_pardiso*	11/11/2020 22:37:51	9bcb68c5...
+  62: Xdg_Poisson_scaling	J512_k3_classic_pardiso	11/11/2020 22:37:50	ae1ae655...
+  63: Xdg_Poisson_scaling	J262144_k2_classic_pardiso*	11/11/2020 22:32:50	08d4715f...
+  64: Xdg_Poisson_scaling	J64_k5_classic_pardiso	11/11/2020 22:37:46	7fdb786e...
+  65: Xdg_Poisson_scaling	J13824_k5_classic_pardiso*	11/11/2020 22:37:52	c0002167...
+  66: Xdg_Poisson_scaling	J512_k2_classic_pardiso	11/11/2020 22:37:54	78ba3404...
+  67: Xdg_Poisson_scaling	J64_k3_classic_pardiso	11/11/2020 22:37:46	5c42ee42...
+  68: Xdg_Poisson_scaling	J13824_k2_classic_pardiso	11/11/2020 22:32:46	63c8e45f...
+  69: Xdg_Poisson_scaling	J110592_k2_classic_pardiso*	11/11/2020 22:32:46	348645b4...
+  70: Xdg_Poisson_scaling	J4096_k2_classic_pardiso	11/11/2020 22:32:46	4aaacd10...
+  71: Xdg_Poisson_scaling	J64_k2_classic_pardiso	11/11/2020 22:32:50	49b44f2c...
 }
 ==============
 // ===================
@@ -85,7 +155,16 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 0 instances of IGridInfo {
+List of 9 instances of IGridInfo {
+  0: { Guid = 815c2449-5d68-474a-8553-56eee003ef4e; Name = Xdg_Poisson_scaling_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = b36cb0e0-581d-4517-a051-260744607d8c; Name = Xdg_Poisson_scaling_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = 1a0b83a4-14c8-480d-a807-44ef4b31969c; Name = Xdg_Poisson_scaling_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = 56896b71-d068-4c9c-af6e-0a490e72c960; Name = Xdg_Poisson_scaling_J13824; Cell Count = 13824; Dim = 3 }
+  4: { Guid = d9c4e32e-01a2-4538-89c3-3df94687a80c; Name = Xdg_Poisson_scaling_J4096; Cell Count = 4096; Dim = 3 }
+  5: { Guid = b08dbdf4-e7dd-4762-a9a9-65c08c1bd031; Name = Xdg_Poisson_scaling_J512; Cell Count = 512; Dim = 3 }
+  6: { Guid = cd18e3fd-0adf-4a83-a592-168e46d80a29; Name = Xdg_Poisson_scaling_J64; Cell Count = 64; Dim = 3 }
+  7: { Guid = 4197351a-c11d-4ade-813a-249e3eef03f4; Name = Xdg_pLow_study_J4096; Cell Count = 4096; Dim = 3 }
+  8: { Guid = 529dc7dc-7f52-4754-a746-dac78663f6aa; Name = Xdg_pLow_study_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 double xMax = 1.0, yMax = 1.0, zMax=1.0;
@@ -401,26 +480,18 @@ deployment finished.
 ==============
 LastError
 **************
-Renci.SshNet.Common.SshConnectionException: Client not connected.
-   at Renci.SshNet.Session.SendMessage(Message message)
-   at Renci.SshNet.Channels.ChannelSession.Open()
-   at Renci.SshNet.SshCommand.BeginExecute(AsyncCallback callback, Object state)
-   at BoSSS.Application.BoSSSpad.SlurmClient.EvaluateStatus(Job myJob, Int32& SubmitCount, Boolean& isRunning, Boolean& wasSuccessful, Boolean& isFailed, String& DeployDir) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 74
-   at BoSSS.Application.BoSSSpad.Job.GetStatus(Int32& SubmitCount, String& DD) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\Job.cs:line 534
-   at <InteractiveExpressionClass>.<Host>m__0(KeyValuePair`2 s)
-   at ilPSP.IEnumerableExtensions.ForEach[T](IEnumerable`1 source, Action`1 action) in G:\BoSSS-HHLR\public\src\ilPSP\layer_1.2-ilPSP\ilPSP\IEnumerableExtensions.cs:line 437
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 345
 ==============
 var somelist = WorkflowMgm.AllJobs;
 somelist.ForEach(s=>Console.WriteLine(s.Value.Name +"Status: "+s.Value.Status));
 //somelist.ForEach(s=>Console.WriteLine(s.Value.Name));
 **************
 ==============
-WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
+WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
 **************
-List of 0 instances of KeyValuePair{String,Job} {
-}
+(1,63): error CS0117: `BoSSS.Application.BoSSSpad.JobStatus' does not contain a definition for `Failed'
+B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe (Location of the symbol related to previous error)
+No. of errors|warnings: 1|0.
+
 ==============
 using System.IO
 **************
@@ -438,60 +509,13 @@ foreach(KeyValuePair<string,string> stout in Stoutlist){
     }
 }
 **************
-writing XdgPoissonVelocity_J8_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J262144_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz ...done.
-
 ==============
 WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
 **************
-List of 0 instances of KeyValuePair{String,Job} {
-}
+(1,63): error CS0117: `BoSSS.Application.BoSSSpad.JobStatus' does not contain a definition for `Failed'
+B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe (Location of the symbol related to previous error)
+No. of errors|warnings: 1|0.
+
 ==============
 //write out stdout of Failed Jobs
 Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
@@ -542,7 +566,7 @@ Parameter name: index. Type 'LastError' for details.
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-40
+72
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
@@ -550,21 +574,7 @@ WorkflowMgm.SessionTable.Rows.Count;
 ==============
 tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timesteps.Last().Fields.Pick(1).Coordinates.NoOfCols;
 **************
-Interrupted!
-System.Threading.ThreadAbortException: Thread was being aborted.
-   at BoSSS.Foundation.XDG.LevelSetTracker.UpdateTracker(Int32 __NearRegionWith, Boolean incremental, Int32[] __LevSetAllowedMovement) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 1528
-   at BoSSS.Foundation.XDG.LevelSetTracker.ConstructorCommon(GridData griData, Int32 __NearRegionWidth, Int32 BruteForceDivisions, Int32 BruteForceOrder, Array SpeciesTable, MomentFittingVariants cutCellQuadratureType, ILevelSet[] levSets) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 305
-   at BoSSS.Foundation.XDG.LevelSetTracker..ctor(GridData BackgroundGrid, MomentFittingVariants cutCellquadType, Int32 __NearRegionWidth, Array SpeciesTable, ILevelSet[] levSets) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 163
-   at BoSSS.Foundation.XDG.LevelSetTracker.LevelSetTrackerInitializer.Initialize(IInitializationContext c) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker_IO.cs:line 82
-   at BoSSS.Foundation.XDG.XDGBasis.XDGBasisInitializer.Initialize(IInitializationContext c) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\XDGBasis_IO.cs:line 54
-   at BoSSS.Foundation.XDG.XDGField.XDGFieldInitializer.Initialize(IInitializationContext c) in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation.XDG\XDGField_IO.cs:line 45
-   at BoSSS.Foundation.IO.TimestepInfo.GetFields() in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation\TimestepInfo.cs:line 257
-   at System.Lazy`1.CreateValue()
-   at System.Lazy`1.LazyInitValue()
-   at BoSSS.Foundation.IO.TimestepInfo.get_Fields() in V:\BoSSS-HHLR\public\src\L2-foundation\BoSSS.Foundation\TimestepInfo.cs:line 231
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-
+40
 ==============
 // =====================================
 // Session table
@@ -580,6 +590,9 @@ System.Threading.ThreadAbortException: Thread was being aborted.
 ==============
 using ilPSP.Tracing;
 **************
+(1,2): warning CS0105: The using directive for `ilPSP.Tracing' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
 ==============
 static class AddCols {
     static public double _getMaxTime(ISessionInfo SI, string method, bool exclusive) {
@@ -711,10 +724,14 @@ WorkflowMgm.AdditionalSessionTableColums.Add("SumRunSolver",AddCols.SumExperimen
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
+J32768_k5_exp_Kcycle_schwarz_p1
+fd7dbc93-aef2-4ed6-8b44-1ebfa9817e61
+Session fd7dbc93-aef2-4ed6-8b44-1ebfa9817e61 deleted.
+
 ==============
 SessTab.Rows.Count;
 **************
-40
+72
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -728,6 +745,9 @@ SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 ==============
 using System.IO;
 **************
+(1,2): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
 ==============
 // Filename
 var now           = DateTime.Now;
@@ -743,6 +763,8 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
 **************
 ==============
 **************

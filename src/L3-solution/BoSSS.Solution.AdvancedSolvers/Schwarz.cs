@@ -957,10 +957,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // hi order smoother
                                 SolveHiSystem(iPart);
 
-                                // re-evaluate residual
-                                ReEvaluateRes(iPart, bi);
-                                // hi order smoother
-                                SolveLoSystem(iPart);
+                                //// re-evaluate residual
+                                //ReEvaluateRes(iPart, bi);
+                                //// hi order smoother
+                                //SolveLoSystem(iPart);
 
                                 xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
 
