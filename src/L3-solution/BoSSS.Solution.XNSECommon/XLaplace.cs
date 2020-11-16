@@ -123,7 +123,10 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
 
-            return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return mu;
         }
         
 
@@ -281,7 +284,10 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
 
-            return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return mu;
         }
 
         //List<int> cellElo = new List<int>();

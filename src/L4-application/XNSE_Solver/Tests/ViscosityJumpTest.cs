@@ -42,12 +42,18 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// </summary>
     class ViscosityJumpTest : ITest {
 
+        /// <summary>
+        /// 2
+        /// </summary>
         public int SpatialDimension {
             get {
                 return 2;
             }
         }
 
+        /// <summary>
+        /// 45 degree 
+        /// </summary>
         public Func<double[],double,double> GetPhi() {
             return ((_3D)((time, x, y) => x + y)).Convert_txy2Xt();
         }
@@ -74,6 +80,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /// <summary>
+        /// arranged so that the level-set passes through the corners
+        /// </summary>
         public GridCommons CreateGrid(int Resolution) {
             if (Resolution < 1)
                 throw new ArgumentException();

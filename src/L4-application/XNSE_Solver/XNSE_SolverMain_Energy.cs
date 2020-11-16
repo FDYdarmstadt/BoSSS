@@ -533,7 +533,9 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        void DelComputeEnergyOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+        void DelComputeEnergyOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime, int iLsTrkHist) {
+            if(iLsTrkHist != 1)
+                throw new NotSupportedException();
             
             // parameter assembly
             // ==================

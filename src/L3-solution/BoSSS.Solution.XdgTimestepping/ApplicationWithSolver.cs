@@ -53,16 +53,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-        /*
-        /// <summary>
-        /// Mapping for fields defined by <see cref="InstantiateParameterFields"/>
-        /// </summary>
-        public virtual CoordinateMapping CurrentParameters {
-            get;
-            private set;
-        }
-        */
-
         /// <summary>
         /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis
         /// </summary>
@@ -70,9 +60,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return this.Timestepping.OperatorAnalysis();
         }
 
-
         abstract internal void CreateTrackerHack();
-
 
         /// <summary>
         ///

@@ -118,13 +118,13 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// Factor for the operator at t^1, i.e. 
-        /// 0: explicit, 0.5: Crank-Nicoloson, 1: implicit;
+        /// 0: explicit, 0.5: Crank-Nicolson, 1: implicit;
         /// </summary>
         public double theta1;
 
         /// <summary>
         /// Factor for the operator at t^0, i.e. 
-        /// 1: explicit, 0.5: Crank-Nicoloson, 0: implicit;
+        /// 1: explicit, 0.5: Crank-Nicolson, 0: implicit;
         /// </summary>
         public double theta0;
 

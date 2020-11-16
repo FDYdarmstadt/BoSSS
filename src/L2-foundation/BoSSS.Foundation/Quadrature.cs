@@ -435,7 +435,13 @@ namespace BoSSS.Foundation.Quadrature {
                             // =======================
                             stpwEval.Start();
                             m_EvalResults.Clear();
-                            this.Evaluate(j, ChunkLength, this.CurrentRule, m_EvalResults);
+                            if(this.CurrentRule.IsEmpty) {
+                                // this is an empty rule
+                                m_EvalResults.Clear();
+                            } else {
+                                // normal evaluation
+                                this.Evaluate(j, ChunkLength, this.CurrentRule, m_EvalResults);
+                            }
                             stpwEval.Stop();
 
                             // quadrature
@@ -449,7 +455,13 @@ namespace BoSSS.Foundation.Quadrature {
                             // evaluation of integrand
                             // =======================
                             stpwEval.Start();
-                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults);
+                            if(this.CurrentRule.IsEmpty) {
+                                // this is an empty rule
+                                m_QuadResults.Clear();
+                            } else {
+                                // normal evaluation
+                                this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults);
+                            }
                             stpwEval.Stop();
                         }
 
