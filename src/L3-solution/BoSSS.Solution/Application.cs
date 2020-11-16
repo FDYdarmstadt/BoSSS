@@ -1750,7 +1750,7 @@ namespace BoSSS.Solution {
                     }
                 }
 
- 
+
                 // pass 1: single phase fields
                 // ===========================
 
@@ -2269,7 +2269,7 @@ namespace BoSSS.Solution {
                         }
                         loadbal.RestoreDGField(f);
                     }
-                    
+
 
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(loadbal);
@@ -2407,8 +2407,8 @@ namespace BoSSS.Solution {
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            if (f.Identification == "Phi")
-                                throw new ApplicationException("ask Smuda why he did this");
+                            // if (f.Identification == "Phi")
+                            //     throw new ApplicationException("ask Smuda why he did this");
                             //continue;
                             //f.Clear();
 
@@ -3265,10 +3265,10 @@ namespace BoSSS.Solution {
 
                         foreach (MethodCallRecord mcr in L) {
                             MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-                            if(quadCall != null) {
-                                foreach(var subBlock in quadCall.Calls.Values) {
+                            if (quadCall != null) {
+                                foreach (var subBlock in quadCall.Calls.Values) {
                                     List<MethodCallRecord> col;
-                                    if(!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
+                                    if (!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
                                         col = new List<MethodCallRecord>();
                                         QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
                                     }
