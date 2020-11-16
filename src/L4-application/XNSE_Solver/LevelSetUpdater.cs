@@ -63,6 +63,8 @@ namespace BoSSS.Application.XNSE_Solver
                 enforcer
             };
             Tracker = new LevelSetTracker(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levelSet);
+            Tracker.UpdateTracker(0.0);
+            Tracker.PushStacks();
             lsHandlers = new Dictionary<string, ILevelSetHandler>(4);
         }
 

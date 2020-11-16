@@ -159,21 +159,31 @@ namespace BoSSS.Application.XNSE_Solver
                     }
 
                     double scale = 1.0;
-                    switch (control.InterAverage)
+                    switch (control.InterVelocAverage)
                     {
-                        case XNSE_Control.InterfaceAveraging.mean:
+                        case XNSE_Control.InterfaceVelocityAveraging.mean:
                             {
                                 scale = 0.5;
                                 break;
                             }
-                        case XNSE_Control.InterfaceAveraging.density:
+                        case XNSE_Control.InterfaceVelocityAveraging.density:
                             {
                                 scale = rhoSpc / (rho_A + rho_B);
                                 break;
                             }
-                        case XNSE_Control.InterfaceAveraging.viscosity:
+                        case XNSE_Control.InterfaceVelocityAveraging.viscosity:
                             {
                                 scale = muSpc / (mu_A + mu_B);
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseA:
+                            {
+                                scale = (spc == "A") ? 1.0 : 0.0;
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseB:
+                            {
+                                scale = (spc == "B") ? 1.0 : 0.0;
                                 break;
                             }
                     }

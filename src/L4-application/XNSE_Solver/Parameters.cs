@@ -1,10 +1,13 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -46,12 +49,15 @@ namespace BoSSS.Application.XNSE_Solver
 
         LevelSetTracker LsTrk;
 
-        public Velocity0Mean(int D, LevelSetTracker LsTrk)
+        int cutCellQuadOrder;
+
+        public Velocity0Mean(int D, LevelSetTracker LsTrk, int cutCellQuadOrder)
         {
             this.D = D;
             this.LsTrk = LsTrk;
             Factory = Velocity0MeanFactory;
             Update = Velocity0MeanUpdate;
+            this.cutCellQuadOrder = cutCellQuadOrder;
         }
 
         public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
@@ -81,9 +87,57 @@ namespace BoSSS.Application.XNSE_Solver
                     XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
                     DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
 
-                    speciesParam.SetMeanValue(speciesVelocity);
+                    //Uncut
+                    speciesParam.SetMeanValueTo(speciesVelocity);
+
+                    //Cut
+                    CellMask cutCells = LsTrk.Regions.GetSpeciesMask(speciesName);
+                    SpeciesId[ ] speciesIds = LsTrk.SpeciesIdS.ToArray();
+                    XQuadSchemeHelper qh = LsTrk.GetXDGSpaceMetrics(speciesIds, cutCellQuadOrder).XQuadSchemeHelper;
+
+                    SpeciesId speciesId = LsTrk.GetSpeciesId(speciesName);
+                    double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
+                    CellQuadratureScheme scheme = qh.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
+
+                    SetMeanValueToMeanOf(speciesParam, speciesVelocity, minvol, cutCellQuadOrder, scheme);
                 }
             }
+        }
+
+        void SetMeanValueToMeanOf(DGField target, DGField source, double minvol, int order, CellQuadratureScheme scheme)
+        {
+            //Cut
+            int D = source.GridDat.SpatialDimension;
+            var rule = scheme.Compile(source.GridDat, order);
+            CellQuadrature.GetQuadrature(new int[] { 2 },
+                source.GridDat,
+                rule,
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                    EvalResult.Clear();
+                    source.Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    var Vol = EvalResult.ExtractSubArrayShallow(-1, -1, 1);
+                    Vol.SetAll(1.0);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < Length; i++)
+                    {
+                        int jCell = i + i0;
+
+                        double Volume = ResultsOfIntegration[i, 1];
+                        if (Math.Abs(Volume) < minvol * 1.0e-12)
+                        {
+                            // keep current value
+                            // since the volume of species 'Spc' in cell 'jCell' is 0.0, the value in this cell should have no effect
+                        }
+                        else
+                        {
+                            
+                            double IntVal = ResultsOfIntegration[i, 0];
+                            target.SetMeanValue( jCell, IntVal / Volume);
+                        }
+
+                    }
+                }).Execute();
         }
     }
 

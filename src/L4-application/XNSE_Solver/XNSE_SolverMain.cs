@@ -86,7 +86,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestCapillaryWave();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASPolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0, ViscosityMode.Standard, 0.0);
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASChannelTest(2, 0, ViscosityMode.Standard, 0.0);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASChannelTest(2, 0.1, ViscosityMode.Standard, 0.0);
 
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestRayleighTaylorInstability();

@@ -420,7 +420,7 @@ namespace BoSSS.Application.XNSE_Solver
                     }
                     else
                     {
-                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, sigma * 0.5, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
+                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         AddSurfaceComponent(isoSurfT);
                     }
                     AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
@@ -480,15 +480,38 @@ namespace BoSSS.Application.XNSE_Solver
                     }
                     AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
                 }
-
                 // stabilization
                 // =============
 
-                if (dntParams.UseLevelSetStabilization)
+                switch (dntParams.STFstabilization)
                 {
-                    AddComponent(new LevelSetStabilization(d, D, LsTrk));
-                }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDeformationRateLocal:
+                        {
+                            AddSurfaceComponent(new SurfaceDeformationRate_LocalStabilization(d, D, false));
+                            break;
+                        }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.GradUxGradV:
+                        {
+                            AddSurfaceComponent(new LevelSetStabilization(d, D, 0.1, LsTrk));
+                            break;
+                        }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDivergence:
+                        {
+                            AddSurfaceComponent(new DynamicSurfaceTension_LB_SurfaceVelocityDivergence(d, D, 0.1));
+                            break;
+                        }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.EdgeDissipation:
+                        {
+                            AddSurfaceComponent(new DynamicSurfaceTension_LB_EdgeDissipation(d, D, sigma, 0.0));
+                            break;
+                        }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.None:
+                        break;
+                    default:
+                        throw new NotImplementedException();
 
+
+                }
             }
 
             // artificial surface tension force 

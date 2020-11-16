@@ -19,13 +19,12 @@ using BoSSS.Solution.Control;
 using System.Runtime.CompilerServices;
 using NUnit.Framework.Constraints;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.XNSE_Solver
 {
     class XNSE : XdgApplicationWithSolver<XNSE_Control>
     {
-        LevelSet levelSet;
-
         LevelSetUpdater lsUpdater;
 
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
@@ -54,7 +53,7 @@ namespace BoSSS.Application.XNSE_Solver
 
         protected override LevelSetTracker InstantiateTracker() 
         {
-            levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
+            LevelSet levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
             lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
             switch (Control.Option_LevelSetEvolution)
@@ -69,6 +68,9 @@ namespace BoSSS.Application.XNSE_Solver
                 default:
                     throw new NotImplementedException();
             }
+            //RegisterField(levelSet);
+            lsUpdater.Tracker.UpdateTracker(0.0);
+            lsUpdater.Tracker.PushStacks();
             return lsUpdater.Tracker;
         }
         
@@ -107,7 +109,7 @@ namespace BoSSS.Application.XNSE_Solver
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
             opFactory.AddParameter(new Velocity0(D));
-            opFactory.AddParameter(new Velocity0Mean(D, LsTrk));
+            opFactory.AddParameter(new Velocity0Mean(D, LsTrk, quadOrder));
             opFactory.AddParameter(new Normals(D, LsTrk));
             opFactory.AddParameter(Curvature.CreateFrom(Control, config, LsTrk, quadOrder));
             
@@ -151,9 +153,23 @@ namespace BoSSS.Application.XNSE_Solver
 
             //Update Calls
             dt = GetFixedTimestep();
-            dt = Math.Min(dt, 1e100);
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             return dt;
+        }
+
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1)
+        {
+            if(timestepNo == 0)
+            {
+                this.LsTrk.UpdateTracker(0.0);
+                XDGField velX = (XDGField)this.CurrentStateVector.Fields[0];
+                var vxA = velX.GetSpeciesShadowField("A");
+                //vxA.ProjectField((double[] X) => 0.0);
+                var cxB = velX.GetSpeciesShadowField("B");
+                //cxB.ProjectField((double[] X) => 20.0);
+                Tecplot.PlotFields(new DGField[] { velX, vxA, cxB }, "grid" + timestepNo, physTime, 4);
+            }
+            Tecplot.PlotFields(this.CurrentStateVector.Fields, "XNSE_Solver" + timestepNo, physTime, superSampling);
         }
     }
 }

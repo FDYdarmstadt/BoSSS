@@ -192,18 +192,23 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle
 #endif
-            ) {
-
+            )
+        {
             var Tst = new ChannelTest(angle);
 
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, GridResolution: 1);
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            if (angle > 0.0) // intermediate solution (smuda 10.11.)
+                C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             ApplicationWithSolverTest(Tst, C);
-            if(deg < 3)
+            if (deg == 2)
+                ASScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg);
+            if (deg == 3)
                 ASScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
 
         }
-      
+
         /// <summary>
         /// <see cref="Tests.TranspiratingChannelTest"/>
         /// </summary>
@@ -246,7 +251,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             using(var solver = new XNSE()) {
 
                 C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
+                C.SuperSampling = 4;
 
                 solver.Init(C);
                 solver.RunSolverMode();
