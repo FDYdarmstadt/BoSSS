@@ -1750,7 +1750,7 @@ namespace BoSSS.Solution {
                     }
                 }
 
-
+ 
                 // pass 1: single phase fields
                 // ===========================
 
@@ -1981,7 +1981,7 @@ namespace BoSSS.Solution {
                             throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
                                 + " both cannot be unequal null at the same time.");
 
-                        if(this.Control.RestartInfo != null) {
+                        if (this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
                             TimeStepNoRestart = i0;
                         } else {
@@ -2015,13 +2015,12 @@ namespace BoSSS.Solution {
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
                     if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
-                            PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
                 }
                 {
 
-                    if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
+                    if (this.Control != null && this.Control.AdaptiveMeshRefinement && this.Control.RestartInfo == null) {
                         ResetInitial();
-                        
                     }
 
                     bool RunLoop(int i) {
@@ -2044,8 +2043,8 @@ namespace BoSSS.Solution {
                         }
 
 
-                        for(int sb = 0; sb < this.BurstSave; sb++) {
-                            if((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
+                        for (int sb = 0; sb < this.BurstSave; sb++) {
+                            if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
                                 tsi = SaveToDatabase(i, physTime);
                                 this.ProfilingLog();
                                 break;
@@ -2078,6 +2077,7 @@ namespace BoSSS.Solution {
                         if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
+
 
                     // Evaluate queries and write log file (either to session directory
                     // or current directory)
@@ -2119,6 +2119,7 @@ namespace BoSSS.Solution {
                     }
 
                     CorrectlyTerminated = true;
+
                 }
             }
         }
@@ -2257,11 +2258,9 @@ namespace BoSSS.Solution {
                     //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
                     //        }
                     //    }
-
-
                     //}
 
-                    // set dg co�rdinates
+                    // set dg coordinates
                     foreach (var f in m_RegisteredFields) {
                         if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
@@ -2270,6 +2269,7 @@ namespace BoSSS.Solution {
                         }
                         loadbal.RestoreDGField(f);
                     }
+                    
 
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(loadbal);
@@ -3266,14 +3266,15 @@ namespace BoSSS.Solution {
 
                         foreach (MethodCallRecord mcr in L) {
                             MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-
-                            foreach (var subBlock in quadCall.Calls.Values) {
-                                List<MethodCallRecord> col;
-                                if (!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
-                                    col = new List<MethodCallRecord>();
-                                    QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                            if(quadCall != null) {
+                                foreach(var subBlock in quadCall.Calls.Values) {
+                                    List<MethodCallRecord> col;
+                                    if(!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
+                                        col = new List<MethodCallRecord>();
+                                        QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                                    }
+                                    col.Add(subBlock);
                                 }
-                                col.Add(subBlock);
                             }
                         }
                     }

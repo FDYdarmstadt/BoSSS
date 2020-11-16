@@ -87,6 +87,22 @@ namespace BoSSS.Foundation.Quadrature {
         public int OrderOfPrecision;
 
         /// <summary>
+        /// Guess What?
+        /// </summary>
+        public bool IsEmpty {
+            get {
+                if(NoOfNodes < 0)
+                    return true;
+                if(Weights[0] != 0.0)
+                    return false; 
+                if(Weights.Length == 1 && Weights[0] == 0.0)
+                    return true; // also quite often the case
+
+                return Weights.Sum() > 0.0; // should be quite rare that we need to check this.
+            }
+        }
+
+        /// <summary>
         /// spatial dimension of quad rule.
         /// </summary>
         public int SpatialDim {

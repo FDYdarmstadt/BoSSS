@@ -35,14 +35,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
         /// </summary>
-        [Test]
-        public static void TestCapillaryWave() {
-            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
-            using (var solver = new XNSE_SolverMain()) {
-                solver.Init(C);
-                solver.RunSolverMode();
-            }
-        }
+        //[Test]
+        //public static void TestCapillaryWave() {
+        //    var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
+        //    using (var solver = new XNSE_SolverMain()) {
+        //        solver.Init(C);
+        //        solver.RunSolverMode();
+        //    }
+        //}
 
         /// <summary>
         /// See <see cref="PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test"/>.

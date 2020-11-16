@@ -192,13 +192,12 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) {
             if(!IsCommited)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap,
-                1 // based on actual level-set tracker state
-                );
+            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
         }
 
         /// <summary>
@@ -214,13 +213,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) {
             if(!IsCommited)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
-                1);
+                lsTrkHistoryIndex);
         }
 
 
@@ -269,12 +269,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public FDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) //
+
         {
             if(!IsCommited)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
+            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
 
             Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
                 delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {

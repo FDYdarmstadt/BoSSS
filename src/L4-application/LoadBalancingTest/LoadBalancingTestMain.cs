@@ -30,15 +30,21 @@ namespace BoSSS.Application.LoadBalancingTest {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
+            //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
-            //Debugger.Launch();
+            ////Debugger.Launch();
             //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
             //throw new NotImplementedException("remove me");
+
 
             BoSSS.Solution.Application<AppControlSolver>._Main(
                 args,
                 true,
                 () => new LoadBalancingTestMain());
+        }
+
+        static void KatastrophenPlot(DGField[] f) {
+            Tecplot.PlotFields(f, "Katastrophe", 0.0, 3);
         }
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
@@ -246,10 +252,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-
-        const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-
-        
+       
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             
             OpAffine.ClearEntries();

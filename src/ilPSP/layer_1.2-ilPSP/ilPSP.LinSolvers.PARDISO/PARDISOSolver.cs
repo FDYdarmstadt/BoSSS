@@ -324,24 +324,29 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                 IMutableMatrixEx Mtx;
                 bool throwAwayMtx;
-                if (d != null || Scale != 1.0) {
-                    // not very efficient, but _I_dont_care_ !
-
+                if (d != null || Scale != 1.0)
+                {
                     MsrMatrix _Mtx = new MsrMatrix(m_OrgMatrix);
                     Mtx = _Mtx;
-                    _Mtx.Scale(Scale);
-
-                    int dLen = d.Count, L = _Mtx.RowPartitioning.LocalLength, i0 = (int)(_Mtx.RowPartitioning.i0);
-                    if ((L % dLen) != 0)
-                        throw new ApplicationException("wrong length of 'd'.");
-
-                    for (int l = 0; l < L; l++) {
-                        _Mtx[i0 + l, i0 + l] += d[l % dLen];
+                    if ( Scale != 1.0)
+                    {
+                        // not very efficient, but _I_dont_care_ !
+                        _Mtx.Scale(Scale);
                     }
+                    if(d != null)
+                    {
+                        int dLen = d.Count, L = _Mtx.RowPartitioning.LocalLength, i0 = (int)(_Mtx.RowPartitioning.i0);
+                        if ((L % dLen) != 0)
+                            throw new ApplicationException("wrong length of 'd'.");
 
+                        for (int l = 0; l < L; l++)
+                        {
+                            _Mtx[i0 + l, i0 + l] += d[l % dLen];
+                        }
+                    }
                     throwAwayMtx = true;
-
-                } else {
+                }
+                else { 
                     throwAwayMtx  = false;
                     Mtx = m_OrgMatrix;
                 }

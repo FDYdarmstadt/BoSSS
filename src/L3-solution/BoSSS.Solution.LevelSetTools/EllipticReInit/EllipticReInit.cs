@@ -164,6 +164,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 OldResidual = Residual;
             }
             slv.Dispose();
+            if (Control.PrintIterations) Console.WriteLine("ReInit done");
             return new Tuple<int, double> (IterationCounter,Residual);
         }
 
@@ -664,7 +665,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             InterfaceQuadOrder = QuadOrderFunc.FixedOrder(Phi.Basis.Degree * 2 + 2);
 
             // Generate Interface Operator
-            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface*PenaltyBase, LSTrck)).XOperator(new[] { "A" }, InterfaceQuadOrder);
+            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface*PenaltyBase, LSTrck)).XOperator(new[] { "A", "B" }, InterfaceQuadOrder);
             
             // Nonlinear Part on the RHS
             // switch for the potential functions

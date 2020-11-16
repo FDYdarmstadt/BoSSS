@@ -40,6 +40,15 @@ namespace ilPSP.Utils {
             }
         }
 
+        //public static void SaveToCSVFile<T, V>(this IDictionary<string, T> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true)
+        //    where T : IEnumerable<V> //
+        //{
+        //    using (var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
+        //        WriteCSVToStream<T, V>(table, txt, ColSep, writeHeader);
+        //        txt.Flush();
+        //    }
+        //}
+
         /*
 
         static void Test() {
@@ -147,6 +156,10 @@ namespace ilPSP.Utils {
         public static void WriteCSVToStream<T>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
             where T : System.Collections.IEnumerable //
         {
+            //public static void WriteCSVToStream<T, V>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
+            //    where T : IEnumerable<V> //
+            //{ 
+
             string[] cols = table.Keys.ToArray();
             if(cols.Length <= 0)
                 return;

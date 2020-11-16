@@ -118,6 +118,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.TimeSteppingScheme = tsc;
             ctrl.InterfaceMode = InterfaceMode.MovingInterface;
 
+            ctrl.NonLinearSolver.SolverCode = Solution.Control.NonLinearSolverCode.Newton;
             
             // run
             // ------------------------------------------
@@ -368,8 +369,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.NoOfTimesteps = NoOfTs;
             ctrl.dtFixed = TimestepSize;
             ctrl.Endtime = ctrl.dtFixed * ctrl.NoOfTimesteps;
-            
-            
+
+            ctrl.NonLinearSolver.SolverCode = Solution.Control.NonLinearSolverCode.Picard;
 
             // run
             // ------------------------------------------

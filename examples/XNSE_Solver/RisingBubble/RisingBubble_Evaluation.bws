@@ -1,0 +1,802 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 7 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 93; Grid Count = 945; Path = D:\local\local_Testcase_databases\Testcase_HeatedWall }
+  2: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  3: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  4: { Session Count = 753; Grid Count = 20965; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  5: { Session Count = 173; Grid Count = 341; Path = D:\local\local_XNSE_StudyDB }
+  6: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation.XDG;
+**************
+==============
+WorkflowMgm.Init("RisingBubble")
+**************
+Project name is set to 'RisingBubble'.
+
+==============
+//WorkflowMgm.Sessions;
+**************
+==============
+var sess = WorkflowMgm.Sessions;
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+
+==============
+string studyName = "RisingBubble_ConvStudy_k2";
+//string studyName = "methodStudy_k2_";
+//string studyName = "RisingBubble_tc2_ConvStudy_k2";
+//string studyName = "RisingBubble_pStudy_k";
+//string studyName = "_tc2_k2_mesh";
+//string studyName = "Volume";
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            evalSess.Add(sess);  
+        else 
+            evalSessNT.Add(sess);
+    }        
+}
+evalSessNT
+**************
+List of 1 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_ConvStudy_k2_mesh3*	03/23/2020 11:06:06	be84e68d...
+}
+==============
+//evalSessNT.ElementAt(0).Export().WithSupersampling(2).Do(); //.KeysAndQueries["Grid:NoOfCells"]
+**************
+==============
+//var gridCount = evalSessNT.ElementAt(2).Timesteps.Select(ts => ts.Grid.NumberOfCells);
+//gridCount.Max()
+**************
+==============
+//List<ISessionInfo> evalSess = new List<ISessionInfo>();
+//evalSess.Add(WorkflowMgm.Sessions.Pick(6));
+//evalSess.AddRange(evalSessNT.Skip(5).Take(2));
+//evalSess.Add(evalSessNT.Pick(0));
+//evalSess.RemoveAt(2);
+evalSess
+**************
+List of 5 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_ConvStudy_k2_mesh2	03/23/2020 11:06:01	b74d773f...
+  1: RisingBubble	RisingBubble_ConvStudy_k2_mesh12	03/26/2020 09:42:42	4510aed9...
+  2: RisingBubble	RisingBubble_ConvStudy_k2_mesh02	03/26/2020 09:42:38	9b4dcbd7...
+  3: RisingBubble	RisingBubble_ConvStudy_k2_mesh1	03/23/2020 10:43:12	97e8e806...
+  4: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
+}
+==============
+evalSess.Pick(0).Timesteps.Pick(15).Export().WithSupersampling(3).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\RisingBubble__RisingBubble_ConvStudy_k2_mesh2__b74d773f-a537-4431-b724-b7b2d8794d6d
+==============
+evalSess = evalSess.OrderBy(s => s.KeysAndQueries["Grid:hMax"]).ToList();
+//evalSess = evalSess.OrderBy(s => s.KeysAndQueries["Grid:hMin"]).ToList();
+**************
+==============
+// extract NEL / NDOF / NTS
+int sessInd = 4;
+var sess    = evalSess.ElementAt(sessInd);
+int Pdeg    = 2;
+
+sess.OpenSessionDirectory();
+
+int NEL = Convert.ToInt32(sess.KeysAndQueries["Grid:NoOfCells"]);
+Console.WriteLine("NEL = {0}", NEL);
+
+int timesteps = sess.Timesteps.Count;
+int numCCmax  = 0;
+for(int ts = 0; ts < timesteps; ts++) {
+    
+    var phi    = sess.Timesteps.Pick(ts).Fields.ElementAt(0);
+    var LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+    LevSet.Acc(1.0, phi);
+    var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+    LsTrk.UpdateTracker();
+    
+    int numCC = LsTrk.Regions.GetCutCellMask().Count();
+    if(numCC > numCCmax)
+        numCCmax = numCC;
+}
+Console.WriteLine("max number of CC = {0}", numCCmax);
+int NDOF = (Pdeg == 2) ? (NEL + numCCmax) * 15 : (NEL + numCCmax) * 26;
+Console.WriteLine("NDOF = {0} (Pdeg = {1})", NDOF, Pdeg);
+
+int NTS = Convert.ToInt32(sess.KeysAndQueries["NoOfTimesteps"]);
+Console.WriteLine("NTS = {0}", NTS);
+**************
+NEL = 800
+max number of CC = 26
+NDOF = 12390 (Pdeg = 2)
+NTS = 600
+
+==============
+LastError
+**************
+==============
+var data = evalSess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.RisingBubble); //, evalName: "NoCells-", keyName: "Grid:NoOfCells");
+**************
+Element at 0: time vs area
+Element at 1: time vs center of mass - x
+Element at 2: time vs center of mass - y
+Element at 3: time vs circularity
+Element at 4: time vs rise velocity
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "circularity")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(4), "time", "rise velocity")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(2), "time", "centre of mass")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "area")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+// ===========
+// export data
+// ===========
+var grps = data.ElementAt(4).dataGroups;
+//string qName = "area"; //0
+//string qName = "centerOfMass"; //2
+//string qName = "circularity"; //3
+string qName = "riseVelocity"; //4
+string[] setupName = new string[]{ "mesh3", "mesh1", "mesh0" };
+for(int i = 0; i < grps.Count(); i++) {
+    Plot2Ddata dat = new Plot2Ddata();
+    //Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+    dat.AddDataGroup(grps.ElementAt(i));
+    string name = "RB_convStudy_tc2_k2_"+setupName[i]+"_"+qName+".txt";
+    dat.SaveToTextFile(name);
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+**************
+==============
+using ilPSP.Utils;
+**************
+(1,2): warning CS0105: The using directive for `ilPSP.Utils' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+int n = 0;
+foreach(var grp in data.ElementAt(3).dataGroups) {
+    Plot2Ddata dat = new Plot2Ddata();
+    dat.AddDataGroup(grp);
+    string name = "RB_test"+n+".txt";
+    dat.SaveToTextFile(name);
+    n++;
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+**************
+==============
+// ===================
+// read reference data
+// ===================
+bool setup2 = false;
+**************
+==============
+using System.IO;
+**************
+(1,2): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+// g1 TU Dortmund (TP2D); g2 EPFL Lausanne (FreeLIFE); g3 Uni Magdebug (MooNMD)
+string[] groups = new string[] {"TP2D", "FreeLIFE", "MooNMD"};
+int[,] datLvl;
+string datCase;
+if(!setup2) {
+    datCase = "c1g";
+    datLvl  = new int[,] {{4, 5, 6, 7}, {1, 2, 3, -1}, {1, 2, 3, 4}};    // testcase 1
+} else {    
+    datCase = "c2g";
+    datLvl  = new int[,] {{4, 5, 6, 7, 8}, {1, 2, 3, -1, -1}, {2, 3, 4, -1, -1}};    // testcase 2
+}
+List<Plot2Ddata>[,] dataRef = new List<Plot2Ddata>[4,3];
+for (int grp = 1; grp <= 3; grp++) {
+    List<Plot2Ddata>[] datSet = new List<Plot2Ddata>[4];
+    // 1: area 2: circularity 3: center y 4: rise velocity
+    for (int j = 0; j < 4; j++) {
+        datSet[j] = new List<Plot2Ddata>();
+    }
+
+    int numL = datLvl.GetLength(1);
+    for (int l = 0; l < numL; l++) {
+        if(datLvl[grp-1,l] == -1)
+            continue;
+        // Read all data
+        string dat  = datCase+grp+"l"+datLvl[grp - 1,l]+".txt";
+        string path = @"D:\BoSSS-experimental\public\examples\XNSE_Solver\RisingBubble\referenceData_Featflow\data_bench_quantities\"+dat;
+        string[] lines = File.ReadAllLines(path);
+        double[] time = new double[lines.Length];
+        double[][] valueDat = new double[4][];
+        for(int j = 0; j < 4; j++)
+            valueDat[j] = new double[lines.Length];
+
+        for (int i = 0; i < lines.Length; i++) {
+            //var datString = lines[i].Split(new string[] {" "}, StringSplitOptions.RemoveEmptyEntries);
+            //Console.WriteLine("num split strings at 0: {0}", datString[0]);
+            time[i] = Convert.ToDouble(lines[i].Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0]);            
+            for (int j = 0; j < 4; j++) {
+                valueDat[j][i] = Convert.ToDouble(lines[i].Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[j+1]);
+            }
+        }        
+        // Build DataSet
+        for (int j = 0; j < 4; j++) {
+            string datName = groups[grp-1]+"_l"+datLvl[grp - 1,l];
+            datSet[j].Add(new Plot2Ddata(new KeyValuePair<string, double[][]>(datName, new double[][] { time, valueDat[j] })));
+        }
+    }
+    
+    for (int j = 0; j < 4; j++) {
+        dataRef[j,grp-1] = datSet[j];
+    }
+}
+**************
+==============
+//ISessionInfoExtensions.PlotData(dataRef[1,0].Last(), "time", "circularity")
+**************
+==============
+List<Plot2Ddata> dataRefm = data;
+for (int i = 0; i < 2; i++) {
+    dataRefm[0] = dataRefm.ElementAt(0).Merge(dataRef[0,i].Last());
+    dataRefm[3] = dataRefm.ElementAt(3).Merge(dataRef[1,i].Last());
+    dataRefm[2] = dataRefm.ElementAt(2).Merge(dataRef[2,i].Last());
+    dataRefm[4] = dataRefm.ElementAt(4).Merge(dataRef[3,i].Last());
+}
+**************
+==============
+ISessionInfoExtensions.PlotData(dataRefm.ElementAt(3), "time", "circularity")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(dataRefm.ElementAt(4), "time", "rise velocity")
+**************
+(1,34): error CS0103: The name `dataRefm' does not exist in the current context
+No. of errors|warnings: 1|0.
+
+==============
+ISessionInfoExtensions.PlotData(dataRefm.ElementAt(0), "time", "area")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+// ======================================
+// check specific values against ref Data
+// ======================================
+int numDat = data.ElementAt(3).dataGroups.Length;
+**************
+==============
+// eval min circularity (0.9010 - 0.9013) at (1.875 - 1.9041)
+double[] circMin = new double[numDat];
+double[] circMinTime = new double[numDat];
+int nd = 0;
+foreach(var dgrp in data.ElementAt(3).dataGroups) {
+    double Min  = Double.MaxValue;
+    double time = 0.0;
+    for(int i = 0; i < dgrp.Values.Length; i++) {
+        if(dgrp.Values[i] < Min) {
+            Min  = dgrp.Values[i];
+            time = dgrp.Abscissas[i];
+        }
+    }
+    circMin[nd] = Min;
+    circMinTime[nd] = time;
+    nd++;
+    
+    double cMinErr = 0.0;
+    if(Min < 0.9010)
+        cMinErr = 100*(Min-0.9010)/0.9010;
+    if(Min > 0.9013)
+        cMinErr = 100*(Min-0.9013)/0.9013;
+    double tcMinErr = 0.0;
+    if(time < 1.875)
+        tcMinErr = 100*(time-1.875)/1.875;
+    if(time > 1.9041)
+        tcMinErr = 100*(time-1.9041)/1.9041;
+    Console.WriteLine("c_{min} = "+Min+" ("+cMinErr+") at t = "+time+" ("+tcMinErr+")");
+}
+**************
+c_{min} = 0.9025299283894 (0.136461598735167) at t = 1.88699999999993 (0)
+c_{min} = 0.903072994645932 (0.196715260837907) at t = 1.8779999999999 (0)
+c_{min} = 0.90468266591862 (0.37530965478975) at t = 1.8689999999999 (-0.320000000005329)
+c_{min} = 0.903048843092959 (0.194035625536333) at t = 1.854 (-1.11999999999999)
+
+==============
+int lineColor     = 0;
+PlotFormat format = new PlotFormat(Style: Styles.Boxes);
+// min circularity (0.9010 - 0.9013)
+Gnuplot gp        = new Gnuplot(baseLineFormat: format);
+gp.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp.Cmd("set yrange [0.9007:0.9016]");
+gp.Cmd("set grid xtics ytics");
+double[] range = Enumerable.Range(0, numDat).Select(i => 1 + (numDat - 1) * ((double)i / (numDat - 1))).ToArray();
+gp.PlotXY(range, circMin, "test", format);
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9010, 0.9010 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9013, 0.9013 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp.WriteDeferredPlotCommands();
+gp.Execute();
+// at (1.875 - 1.9041)
+Gnuplot gp2 = new Gnuplot(baseLineFormat: format);
+gp2.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp2.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp2.Cmd("set yrange [1.7799:1.9332]");
+gp2.Cmd("set grid xtics ytics");
+gp2.PlotXY(range, circMinTime, "test", format);
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.875, 1.875 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.9041, 1.9041 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp2.WriteDeferredPlotCommands();
+gp2.Execute();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+// eval max rise velocity (0.2415 - 0.2421) at (0.9211 - 0.9313)
+double[] riseMax = new double[numDat];
+double[] riseMaxTime = new double[numDat];
+nd = 0;
+foreach(var dgrp in data.ElementAt(4).dataGroups) {
+    double Max  = Double.MinValue;
+    double time = 0.0;
+    for(int i = 0; i < dgrp.Values.Length; i++) {
+        if(dgrp.Values[i] > Max) {
+            Max  = dgrp.Values[i];
+            time = dgrp.Abscissas[i];
+        }
+    }
+    riseMax[nd] = Max;
+    riseMaxTime[nd] = time;
+    nd++;
+    
+    double vMaxErr = 0.0;
+    if(Max < 0.2415)
+        vMaxErr = 100*(Max-0.2415)/0.2415;
+    if(Max > 0.2421)
+        vMaxErr = 100*(Max-0.2421)/0.2421;
+    double tvMaxErr = 0.0;
+    if(time < 0.9211)
+        tvMaxErr = 100*(time-0.9211)/0.9211;
+    if(time > 0.9313)
+        tvMaxErr = 100*(time-0.9313)/0.9313;
+    Console.WriteLine("V_{max} = "+Max+" ("+vMaxErr+") at t = "+time+" ("+tvMaxErr+")");
+}
+**************
+V_{max} = 0.241201457700652 (-0.123619999730022) at t = 0.918000000000025 (-0.336554120071112)
+V_{max} = 0.240916157035802 (-0.241756920992961) at t = 0.915000000000001 (-0.66225165562903)
+V_{max} = 0.240090442874801 (-0.583667546666251) at t = 0.912000000000001 (-0.987949191184345)
+V_{max} = 0.240392539422866 (-0.458575808337053) at t = 0.900000000000001 (-2.2907393334056)
+
+==============
+int lineColor     = 0;
+PlotFormat format = new PlotFormat(Style: Styles.Boxes);
+//
+// max rise velocity (0.2415 - 0.2421)
+//
+Gnuplot gp        = new Gnuplot(baseLineFormat: format);
+gp.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp.Cmd("set yrange [0.2409:0.2427]");
+gp.Cmd("set grid xtics ytics");
+gp.PlotXY(range, riseMax, "test", format);
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.2415, 0.2415 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.2421, 0.2421 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp.WriteDeferredPlotCommands();
+gp.Execute();
+//
+// at (0.9211 - 0.9313)
+//
+Gnuplot gp2 = new Gnuplot(baseLineFormat: format);
+gp2.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp2.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp2.Cmd("set yrange [0.9109:0.9415]");
+gp2.Cmd("set grid xtics ytics");
+gp2.PlotXY(range, riseMaxTime, "test", format);
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9211, 0.9211 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp2.PlotXY(new double[] { 0, numDat+1 }, new double[] { 0.9313, 0.9313 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp2.WriteDeferredPlotCommands();
+gp2.Execute();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+// get terminal height (1.0799 - 1.081)
+double[] height = new double[numDat];
+nd = 0;
+List<double> terminalHeight = new List<double>();
+foreach(var dgrp in data.ElementAt(2).dataGroups) {
+    //terminalHeight.Add(dgrp.Values.Last());
+    double theight = dgrp.Values.Last();
+    height[nd] = theight;
+    nd++;
+    
+    double hErr = 0.0;
+    if(theight < 1.0799)
+        hErr = 100*(theight-1.0799)/1.0799;
+    if(theight > 1.081)
+        hErr = 100*(theight-1.081)/1.081;
+    Console.WriteLine("h_{end} = "+theight+" ("+hErr+")");
+}
+**************
+h_{end} = 1.08001207446236 (0)
+h_{end} = 1.07902120278965 (-0.0813776470367731)
+h_{end} = 1.07682400906871 (-0.284840349225861)
+h_{end} = 1.05784525149138 (-2.04229544482082)
+
+==============
+int lineColor     = 0;
+PlotFormat format = new PlotFormat(Style: Styles.Boxes);
+//
+// terminal height (1.0799 - 1.081)
+//
+Gnuplot gp        = new Gnuplot(baseLineFormat: format);
+gp.Cmd("set boxwidth 0.2");
+//gp.SetXLabel(xLabel);
+gp.Cmd("set xrange [0:"+(numDat+1)+"]");
+//gp.SetYLabel(yLabel);
+gp.Cmd("set yrange [1.079:1.082]");
+gp.Cmd("set grid xtics ytics");
+gp.PlotXY(range, height, "test", format);
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.0799, 1.0799 }, "ref min", new PlotFormat(Style: Styles.Lines));
+gp.PlotXY(new double[] { 0, numDat+1 }, new double[] { 1.081, 1.081 }, "ref max", new PlotFormat(Style: Styles.Lines));
+gp.WriteDeferredPlotCommands();
+gp.Execute();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+// ======================
+// convergence evaluation
+// ======================
+**************
+==============
+string keyName = "Grid:hMax";
+double[] abscissas = evalSess.Skip(1).Select(s => Convert.ToDouble(s.KeysAndQueries[keyName])).ToArray();
+var convData = ISessionInfoExtensions.LogDataToConvergenceData(data, abscissas);
+**************
+==============
+ISessionInfoExtensions.PlotData(convData.ElementAt(3), keyName, "circularity - norm", true)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(convData.ElementAt(4), keyName, "rise velocity - norm", true)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(convData.ElementAt(0), keyName, "area - norm", true)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+convData.ElementAt(3)
+**************
+Grouping:l_1 error norm
+# x 	 y
+3.5355339059327646E-002	3.4495712956772299E-004
+7.0710678118654821E-002	1.2563170736540528E-003
+1.4142135623730964E-001	7.2934192565665744E-004
+
+ 
+Grouping:l_2 error norm
+# x 	 y
+3.5355339059327646E-002	4.6746907676203285E-004
+7.0710678118654821E-002	1.6497245501094489E-003
+1.4142135623730964E-001	9.5818732351085243E-004
+
+ 
+Grouping:l_{inf} error norm
+# x 	 y
+3.5355339059327646E-002	7.7099339518635964E-004
+7.0710678118654821E-002	2.5852162238495322E-003
+1.4142135623730964E-001	2.0380694528501003E-003
+
+ 
+
+==============
+**************
+==============
+convData.ElementAt(3).Regression()
+**************
+List of 3 instances of KeyValuePair{String,Double} {
+  0: [l_1 error norm, 2.13950995052142]
+  1: [l_2 error norm, 2.18997656543082]
+  2: [l_{inf} error norm, 2.38831349833077]
+}
+==============
+**************
+==============
+using MathNet.Numerics.Interpolation.Algorithms;
+**************
+==============
+var p2d = data.ElementAt(2);
+**************
+==============
+double[] refAbs = p2d.dataGroups[0].Abscissas;
+double[] refVal = p2d.dataGroups[0].Values;
+int numRefVal = refVal.Length;
+**************
+1001
+==============
+//List<double[]> differences = new List<double[]>();
+**************
+==============
+int dat = 2;
+p2d.dataGroups[dat].Name
+**************
+RisingBubble-ConvStudy-k3-mesh0-restart3
+==============
+double[] abs = p2d.dataGroups[dat].Abscissas;
+double[] val = p2d.dataGroups[dat].Values;
+int numVal = val.Length;
+
+double[] diff = new double[numRefVal];
+if (numVal != numRefVal) {
+    if (numRefVal < numVal)
+        throw new ArgumentException("reference data should have at least the same length as comparison data");
+    // interpolate solution
+    LinearSplineInterpolation LinSpline = new LinearSplineInterpolation();
+    LinSpline.Initialize(abs, val);
+
+    val = new double[numRefVal];
+    for (int p = 0; p < numRefVal; p++) {
+        val[p] = LinSpline.Interpolate(refAbs[p]);
+    }
+}
+diff = refVal.Zip(val, (r, v) => Math.Abs(v - r)).ToArray();
+**************
+==============
+//p2d.dataGroups[dat].Values
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+plt.PlotXY(refAbs, diff, format:new PlotFormat(){LineColor = LineColors.Red});
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

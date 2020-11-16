@@ -97,6 +97,11 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="database"></param>
         /// <param name="grd"></param>
+        /// <param name="force">
+        /// - false (default): Only store the grid, if no equivalent grid is in the database
+        /// - true: store always
+        /// </param>
+
         /// <returns></returns>
         public static Guid SaveGrid<TG>(this IDatabaseInfo database, ref TG grd, bool force = false) where TG : IGrid //
         {

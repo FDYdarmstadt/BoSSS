@@ -1,0 +1,297 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 151; Grid Count = 135; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 36; Grid Count = 106; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation.XDG;
+**************
+==============
+WorkflowMgm.Init("CapillaryWave_TemporalConvergence");
+**************
+Project name is set to 'CapillaryWave_TemporalConvergence'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 21 instances of ISessionInfo {
+  0: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy01_k2_timesteps3	05/11/2020 14:12:37	c2674b41...
+  1: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy01_k2_timesteps0	05/11/2020 14:12:33	e4b71370...
+  2: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy01_k2_timesteps7*	05/11/2020 14:12:41	e3803e89...
+  3: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy01_k2_timesteps6*	05/11/2020 14:12:41	d6c6bc73...
+  4: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy01_k2_timesteps5*	05/11/2020 14:12:40	2cc9ee60...
+  5: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps7	05/14/2020 17:22:27	25daf991...
+  6: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps6	05/14/2020 17:19:57	92cfdbcc...
+  7: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps5	05/14/2020 17:18:42	c7ac9e06...
+  8: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps4	05/14/2020 17:17:57	d6916fe1...
+  9: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps3	05/14/2020 17:16:56	59f05824...
+  10: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps2	05/14/2020 17:16:56	fcc1c4b8...
+  11: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps1	05/14/2020 17:16:56	8d23ae47...
+  12: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_Lie_k2_timesteps0	05/14/2020 17:16:56	16f693a2...
+  13: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps7	05/12/2020 10:26:48	3fec3233...
+  14: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps6	05/12/2020 10:21:02	0a97bc1d...
+  15: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps5	05/12/2020 10:18:17	196cc629...
+  16: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps4	05/12/2020 10:16:01	5eb1a7c2...
+  17: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps3	05/12/2020 10:15:31	37bf9e8d...
+  18: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps2	05/12/2020 10:15:16	d96d9f0b...
+  19: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps1	05/12/2020 10:14:17	49f18aa9...
+  20: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps0	05/12/2020 10:14:17	b30f98a5...
+}
+==============
+string studyName = "tempConvStudy_k2";
+string[] FieldsToCompare = new string[] {"VelocityX", "VelocityY", "Pressure"};
+int numFields = FieldsToCompare.Length;
+**************
+==============
+List<ISessionInfo> studySess = new List<ISessionInfo>();
+List<ISessionInfo> studySessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            studySess.Add(sess);  
+        else 
+            studySessNT.Add(sess);
+    }        
+}
+studySessNT
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+studySess
+**************
+List of 8 instances of ISessionInfo {
+  0: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps7	05/12/2020 10:26:48	3fec3233...
+  1: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps6	05/12/2020 10:21:02	0a97bc1d...
+  2: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps5	05/12/2020 10:18:17	196cc629...
+  3: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps4	05/12/2020 10:16:01	5eb1a7c2...
+  4: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps3	05/12/2020 10:15:31	37bf9e8d...
+  5: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps2	05/12/2020 10:15:16	d96d9f0b...
+  6: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps1	05/12/2020 10:14:17	49f18aa9...
+  7: CapillaryWave_TemporalConvergence	CapillaryWave_Setup0_tempConvStudy_k2_timesteps0	05/12/2020 10:14:17	b30f98a5...
+}
+==============
+ITimestepInfo[] timesteps = studySess.Select(S => S.Timesteps.Newest()).ToArray();
+**************
+==============
+double[] TimeRes = studySess.Select(S => Convert.ToDouble(S.KeysAndQueries["dtFixed"])).ToArray();
+Dictionary<string, double[]> L2Errors;
+**************
+==============
+TimeRes
+**************
+List of 8 instances of Double {
+  0: 7.8125E-06
+  1: 1.5625E-05
+  2: 3.125E-05
+  3: 6.25E-05
+  4: 0.000125
+  5: 0.00025
+  6: 0.0005
+  7: 0.001
+}
+==============
+// load DG-Fields
+List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
+foreach (var timestep in timesteps) {
+    fields.Add(timestep.Fields);
+}
+**************
+==============
+// compute errors
+L2Errors = new Dictionary<string, double[]>();
+foreach (string id in FieldsToCompare) {
+    double[] L2Error = new double[TimeRes.Length - 1];
+    
+    DGField finestSolution = fields.First().Single(f => f.Identification == id);
+    
+    for (int i = 1; i < TimeRes.Length; i++) {
+        CoordinateVector coarseSolution = fields[i].Single(f => f.Identification == id).CoordinateVector;
+        DGField ErrorField              = finestSolution.CloneAs();
+        ErrorField.Clear();
+        ErrorField.CoordinateVector.Acc(1.0, coarseSolution);
+        ErrorField.Acc(-1.0, finestSolution);
+              
+        L2Error[i-1] = ErrorField.L2Norm();   
+    }
+    
+    L2Errors.Add(id, L2Error);
+}
+**************
+==============
+L2Errors["Pressure"]
+**************
+List of 7 instances of Double {
+  0: 2.36885241381657E-08
+  1: 7.11089159993548E-08
+  2: 1.66014904990555E-07
+  3: 3.54459339069429E-07
+  4: 7.64475272236135E-07
+  5: 1.46307746551254E-06
+  6: 3.16508666950271E-06
+}
+==============
+double[] relevantTimeRes = new double[TimeRes.Length - 1];
+double[] errors = new double[relevantTimeRes.Length];
+for (int i = 0; i < relevantTimeRes.Length; i++) {
+    relevantTimeRes[i] = TimeRes[i + 1];
+    errors[i] = Math.Sqrt(L2Errors["VelocityX"][i].Pow2() + L2Errors["VelocityY"][i].Pow2());
+} 
+**************
+==============
+errors
+**************
+List of 7 instances of Double {
+  0: 1.37610264958812E-07
+  1: 4.78627467802942E-07
+  2: 1.55604835406955E-06
+  3: 5.42688204642307E-06
+  4: 2.07659523719458E-05
+  5: 8.75333455676967E-05
+  6: 0.000234485397189161
+}
+==============
+var gpL2Errors = new Gnuplot();
+gpL2Errors.PlotLogXLogY(relevantTimeRes, errors);
+gpL2Errors.PlotLogXLogY(relevantTimeRes, L2Errors["Pressure"]);
+gpL2Errors.PlotNow();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+Func < double [], double [], double > slope =
+delegate ( double [] xValues , double [] yValues ) {
+
+    if ( xValues . Length != yValues . Length ) {
+        throw new ArgumentException ();
+    }
+
+    xValues = xValues . Select (s => Math . Log10 (s)). ToArray ();
+    yValues = yValues . Select (s => Math . Log10 (s)). ToArray ();
+
+    double xAverage = xValues .Sum () / xValues . Length ;
+    double yAverage = yValues .Sum () / yValues . Length ;
+
+    double v1 = 0.0;
+    double v2 = 0.0;
+
+    // Computation of the regressioncoefficient for the slope
+    for (int i = 0; i < yValues . Length ; i++) {
+        v1 += ( xValues [i] - xAverage ) * ( yValues [i] - yAverage );
+        v2 += Math .Pow( xValues [i] - xAverage , 2);
+    }
+    
+    return v1 / v2;
+};
+**************
+==============
+slope(relevantTimeRes, errors)
+**************
+1.820425552809
+==============
+slope(relevantTimeRes, L2Errors["Pressure"])
+**************
+1.14694855229299
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

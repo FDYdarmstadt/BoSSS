@@ -1,0 +1,671 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 737; Grid Count = 16706; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB");
+**************
+==============
+/*
+bool local = true;
+IDatabaseInfo myDb;
+BatchProcessorClient myBatch;
+if(!local){
+    myDb    = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB");
+    myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+}else{ 
+    myDb    = OpenOrCreateDatabase(@"D:\local\local_XNSE_StudyDB");
+    myBatch = new MiniBatchProcessorClient(@"D:\local\binaries");
+    MiniBatchProcessor.Server.StartIfNotRunning(false);
+}
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+ExecutionQueues;
+**************
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @D:\local\binaries
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\smuda\binaries
+  2: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
+}
+==============
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+var myBatch = ExecutionQueues[1];
+**************
+==============
+//var myDb = ExecutionQueues[1].AllowedDatabases[0];
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("StaticDroplet");   // set project name
+**************
+Project name is set to 'StaticDroplet'.
+
+==============
+//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+bool kummer = false;
+bool hysing = true;
+**************
+==============
+// Testcase setup
+// ==============
+bool elliptic  = false;
+bool quadratic = false;
+
+double radius      = 0.2;  
+double ellipsDelta = 0.1; 
+double a           = (1.0 + ellipsDelta)*radius;
+double b           = (1.0 - ellipsDelta)*radius;
+if(kummer) {
+    radius = 0.8;
+    a      = 0.816;
+    b      = 0.784;
+}
+if(hysing) {
+    radius = 0.25;
+}
+**************
+==============
+bool onWall = false;
+
+double theta0 = Math.PI/2.0;
+double thetaE = 1.0 * Math.PI / 2.0;
+double beta   = 5.0;
+**************
+==============
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[1];
+int[] kelemSeq = new int[]{4, 8, 16, 32, 64, 128, 256};
+int[] NoProc;
+if(kummer) {
+    //kelemSeq = new int[]{9, 18, 36, 72, 144, 288, 576};
+    kelemSeq = new int[]{8, 16, 32, 64, 128, 256, 512};
+    //NoProc   = new int[]{1, 1, 1, 2, 3, 3 };
+}
+if(hysing) {
+    //kelemSeq = new int[]{20, 40, 80, 160};
+    kelemSeq = new int[]{40};
+}
+**************
+==============
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+
+    if(!onWall){
+        
+        if(kummer) {
+        
+            double[] xNodes = GenericBlas.Linspace(-3.0/2.0, 3.0/2.0, kelem + 1);
+            double[] yNodes = GenericBlas.Linspace(-3.0/2.0, 3.0/2.0, kelem + 1);    
+            grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+            grd.EdgeTagNames.Add(1, "wall");
+ 
+            grd.DefineEdgeTags(delegate (double[] X) {
+                byte et = 0;
+                if (Math.Abs(X[1] + 3.0/2.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[1] - 3.0/2.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[0] + 3.0/2.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[0] - 3.0/2.0) <= 1.0e-8)
+                    et = 1;
+                return et;
+            });
+            
+            grd.Name = "StaticDroplet_meshStudyKummer";
+            
+        } else if(hysing) {
+        
+            double[] xNodes = GenericBlas.Linspace(-1.0/2.0, 1.0/2.0, kelem + 1);
+            double[] yNodes = GenericBlas.Linspace(-1.0/2.0, 1.0/2.0, kelem + 1);    
+            grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+            grd.EdgeTagNames.Add(1, "wall");
+ 
+            grd.DefineEdgeTags(delegate (double[] X) {
+                byte et = 0;
+                if (Math.Abs(X[1] + 1.0/2.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[1] - 1.0/2.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[0] + 1.0/2.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[0] - 1.0/2.0) <= 1.0e-8)
+                    et = 1;
+                return et;
+            });
+            
+            grd.Name = "StaticDroplet_meshStudyHysing";
+            
+        } else {
+            double[] xNodes = GenericBlas.Linspace(-1.0, 1.0, kelem + 1);
+            double[] yNodes = GenericBlas.Linspace(-1.0, 1.0, kelem + 1);    
+            grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+            grd.EdgeTagNames.Add(1, "wall");
+ 
+            grd.DefineEdgeTags(delegate (double[] X) {
+                byte et = 0;
+                if (Math.Abs(X[1] + 1.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[1] - 1.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[0] + 1.0) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[0] - 1.0) <= 1.0e-8)
+                    et = 1;
+                return et;
+            });
+
+            grd.Name = "StaticDroplet_meshStudy";
+        }
+    
+    } else {
+    
+    double[] xNodes = GenericBlas.Linspace(-3.0/2.0, 3.0/2.0, kelem + 1);
+    double[] yNodes = GenericBlas.Linspace(0.0, 3.0/2.0, kelem/2 + 1);    
+    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+    grd.EdgeTagNames.Add(1, "navierslip_linear");
+ 
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+        if (Math.Abs(X[1] + 0.0) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[1] - 3.0/2.0) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[0] + 3.0/2.0) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[0] - 3.0/2.0) <= 1.0e-8)
+            et = 1;
+        return et;
+    });
+
+    grd.Name = "StaticDropletOnWall_meshStudy";
+        
+    }
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+Grid Edge Tags changed.
+An equivalent grid (f47831b2-fef2-4a2a-a12a-1ea3279257de) is already present in the database -- the grid will not be saved.
+
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+==============
+int[] degS = new int[] { 2 };
+**************
+==============
+int iDeg0 = 0;
+int iGrd0 = 0;
+**************
+==============
+//XNSE_Control[,] controls = new XNSE_Control[degS.Length - iDeg0, GridSeq.Length - iGrd0];
+List<XNSE_Control> controls = new List<XNSE_Control>();
+//List<int> procPerCntrl = new List<int>();
+**************
+==============
+for(int iDeg = iDeg0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = iGrd0; iGrd < GridSeq.Length; iGrd++) {
+    
+    var C                   = Droplet.Droplet_forWorksheet(!hysing);
+    //C.LogValues             = XNSE_Control.LoggingValues.None;
+    C.TimesteppingMode      = (hysing) ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;
+    //C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+    
+    C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+    
+    C.ComputeEnergyProperties = true;
+    C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+        Degree = 2*iDeg,
+        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+    });
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+    //procPerCntrl.Add(NoProc[iGrd]);
+
+    //C.SetDGdegree(pDeg);
+    C.SetFieldOptions(pDeg,2);
+    C.InitSignedDistance = true;
+    
+    C.SetGrid(grd);
+    
+    if(kummer) {
+        C.PhysicalParameters.rho_A             = 1.0;
+        C.PhysicalParameters.rho_B             = 1.0;
+        C.PhysicalParameters.mu_A              = 0.5;
+        C.PhysicalParameters.mu_B              = 0.05;
+        C.PhysicalParameters.Sigma             = 0.1;
+        C.PhysicalParameters.IncludeConvection = false;
+        
+        C.LinearSolver.SolverCode           = LinearSolverCode.classic_pardiso;
+        C.LinearSolver.ConvergenceCriterion = 1e-12;
+        
+    } else if(hysing) {
+        C.PhysicalParameters.rho_A             = 1.0e4;
+        C.PhysicalParameters.rho_B             = 1.0e4;
+        C.PhysicalParameters.mu_A              = 1.0;
+        C.PhysicalParameters.mu_B              = 1.0;
+        C.PhysicalParameters.Sigma             = 1.0;
+        C.PhysicalParameters.IncludeConvection = false;
+        
+        C.LinearSolver.SolverCode           = LinearSolverCode.classic_pardiso;
+        C.LinearSolver.ConvergenceCriterion = 1e-10;
+        
+    } else {
+        C.PhysicalParameters                   = BoSSS.Solution.XNSECommon.PhysicalParameters.AllOne;
+        C.PhysicalParameters.IncludeConvection = true;
+    }
+    C.PhysicalParameters.Material = true;
+    
+    C.VelocityBlockPrecondMode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+    C.PressureBlockPrecondMode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite;
+    
+    if(!onWall) {
+        C.AddBoundaryValue("wall");
+
+        if(elliptic){
+            string a_str = a.ToString();
+            string b_str = b.ToString();
+            if(quadratic) {
+                C.AddInitialValue("Phi", "X => ((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2()) - 1.0", false);
+            } else { 
+                C.AddInitialValue("Phi", "X => Math.Sqrt(((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2())) - 1.0", false);   
+            }
+        } else {
+            string r_str = radius.ToString();
+            C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt() - "+r_str, false);
+        }
+        
+        C.SessionName = "StaticDroplet_ConvStudyPhi8HMF_k" + pDeg + "_mesh" + iGrd;
+        if(kummer) {
+            C.SessionName = "StaticDroplet_newConvStudySt_dropIndef_k" + pDeg + "_mesh" + iGrd;
+        }
+        if(hysing) {
+            //C.SessionName = "StaticDroplet_ConvStudyHysing_k" + pDeg + "_mesh" + iGrd;
+            C.SessionName = "StaticDroplet_ConvStudyHysing_k" + pDeg + "_mesh40_implicit";
+        }
+    
+    } else {
+        C.AddBoundaryValue("navierslip_linear");
+        
+        //double s     = 2 * radius * Math.Sin(theta0);
+        //double h     = Math.Sqrt(radius.Pow2() - (0.25 * s.Pow2()));
+        //string h_str = h.ToString();
+        //string r_str = radius.ToString();
+        //C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1] - "+h_str+").Pow2()).Sqrt() - "+r_str, false);
+        string a_str = a.ToString();
+        string b_str = b.ToString();
+        if(quadratic) {
+            C.AddInitialValue("Phi", "X => ((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2()) - 1.0", false);
+        } else { 
+            C.AddInitialValue("Phi", "X => Math.Sqrt(((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2())) - 1.0", false);   
+        }
+            
+        C.PhysicalParameters.betaS_A = beta;
+        C.PhysicalParameters.betaS_B = beta;
+        C.PhysicalParameters.betaL   = 0.0;
+        C.PhysicalParameters.theta_e = thetaE;
+        
+        C.SessionName = "StaticDropletOnWall_90Deg_beta5_cAstat90_ConvStudy2_k" + pDeg + "_mesh" + iGrd;
+    }
+    
+    //C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+    if(kummer) {
+        //C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+    }
+    if(hysing) {
+        C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+        
+        C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.Coupled_Iterative;
+        C.dtMin                        = 0.01;
+        C.dtMax                        = 0.01;
+        C.NoOfTimesteps                = 12500;
+    }
+       
+    //controls[iDeg - iDeg0,iGrd - iGrd0] = C;
+    controls.Add(C);
+    C.CreateJob(); // job will be permanently linked to control object
+
+}
+}
+**************
+==============
+controls.Count;
+**************
+1
+==============
+//Info(controls[0,0]);
+//controls[0,0].SessionName
+controls.ElementAt(0).SessionName
+**************
+StaticDroplet_ConvStudyHysing_k2_mesh40_implicit
+==============
+LastError
+**************
+System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection.
+Parameter name: index
+   at System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument argument, ExceptionResource resource)
+   at System.Collections.Generic.List`1.get_Item(Int32 index)
+   at System.Linq.Enumerable.ElementAt[TSource](IEnumerable`1 source, Int32 index)
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
+==============
+//var j00 = controls.ElementAt(0).GetJob();
+**************
+==============
+//j00.Activate(myBatch);
+**************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+using System.Threading;
+**************
+==============
+bool run      = true;
+bool parallel = false;
+**************
+==============
+//int j = 0;
+foreach(var cntrl in controls) {
+    var job = cntrl.GetJob();
+    if(run) {
+        Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
+        //if(parallel) {
+        //    job.NumberOfMPIProcs = procPerCntrl.ElementAt(j);
+        //    j++;
+        //}
+        job.Activate(myBatch);
+    } else {
+        Console.WriteLine("Status Session: {0}", cntrl.SessionName);
+        var jS = job.Status;
+        Console.WriteLine(jS);
+    }
+}
+**************
+Submitting Session: StaticDroplet_ConvStudyHysing_k2_mesh40_implicit
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\StaticDroplet-XNSE_Solver2020Aug31_183016
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+LastError
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+/*
+List<ISessionInfo> filtSess = new List<ISessionInfo>();
+foreach(var sess in databases.Pick(3).Sessions) {
+    if(sess.Name.Contains("StaticDroplet_ConvStudyKummer2")) {
+        filtSess.Add(sess);  
+    }        
+}
+filtSess
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+//filtSess.DeleteAll()
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions
+**************
+==============
+//databases.Pick(3).Sessions.Pick(0).Delete()
+**************
+Session: StaticDroplet  StaticDroplet_ConvStudyHysing_k2_mesh40_implicit*   08/31/2020 18:25:44 b3e8b952...
+Do you really want to delete this session? [y/n]: Session b3e8b952-0e03-423d-b911-2a7afd1e4a7e deleted.
+
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

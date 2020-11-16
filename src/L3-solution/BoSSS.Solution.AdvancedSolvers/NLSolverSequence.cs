@@ -63,17 +63,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         //public event Action<int, double[], double[], MultigridOperator> IterationCallback;
 
-        public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
+        public override bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
             if (m_NLSequence == null)
                 throw new FormatException("m_NLSequence is empty. You fool!");
+
+            bool finalResult = false;
             foreach (NonlinearSolver NL in m_NLSequence) {
 
                 //NL.IterationCallback += IterationCallback;
-                NL.SolverDriver(SolutionVec, RHS);
+                finalResult = NL.SolverDriver(SolutionVec, RHS);
             }
 
-
+            return finalResult;
 
         }
     }

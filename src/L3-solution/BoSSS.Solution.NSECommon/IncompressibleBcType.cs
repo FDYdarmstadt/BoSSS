@@ -94,9 +94,5 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         ScalarDirichlet_PressureOutlet = 9
 
-
-        //NavierSlip_localized = 9
-
-
     }
 }
