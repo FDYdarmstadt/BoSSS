@@ -133,7 +133,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public bool UseHomotopy {
             get {
-                if (this.AbstractOperator == null)
+                if(this.AbstractOperator == null)
                     return false;
 
                 return this.AbstractOperator.HomotopyUpdate.Count > 0;
@@ -146,8 +146,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public override bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
-            var gnSuccess = GlobalizedNewton(SolutionVec, RHS); // note: we have to run the default branch first, before we can query 'UseHomotopy'
-            if (gnSuccess == false && UseHomotopy == true) {
+            var gnSuccess = GlobalizedNewton(SolutionVec, RHS); // note: we have to run the default branch first, before we can query 'UseHomotopy' 
+            if(gnSuccess == false && UseHomotopy == true) {
                 return HomotopyNewton(SolutionVec, RHS);
             } else {
                 return gnSuccess;
@@ -159,7 +159,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Main solver routine
         /// </summary>
         public bool GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
 
                 bool success = false;
 
@@ -170,13 +170,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     CurRes; // residual associated with 'CurSol'
 
 
-                using (new BlockTrace("Slv Init", tr)) {
+                using(new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
 
                 this.CurrentLin.TransformSolFrom(SolutionVec, CurSol);
                 EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
-                if (UseHomotopy) { // after the first operator eval, we can access the 'base.AbstractOperator'
+                if(UseHomotopy) { // after the first operator eval, we can access the 'base.AbstractOperator'
                     // don't run this branch - use the Homotopy branch
                     return false;
                 }
@@ -196,12 +196,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int itc = 0;
                 double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
-                using (new BlockTrace("Slv Iter", tr)) {
+                using(new BlockTrace("Slv Iter", tr)) {
                     //while((norm_CurRes > ConvCrit * fnorminit + ConvCrit
                     //    && itc < MaxIter)
                     //    || itc < MinIter) {
-                    while (true) {
-                        if (CheckTermination(ref success, norm_CurRes, fnorminit, normHistory, itc))
+                    while(true) {
+                        if(CheckTermination(ref success, norm_CurRes, fnorminit, normHistory, itc))
                             break;
 
                         itc++;
@@ -221,10 +221,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             double LastAverageNormReduction() {
                 const int N = 3; // look at latest 3 residuals
-                if (N < 1)
+                if(N < 1)
                     throw new ArgumentException();
 
-                if (normHistory.Count - N < 0)
+                if(normHistory.Count - N < 0)
                     return 1e100; // ignore if we have not at least 'N'  residuals so far.
 
                 int i0 = normHistory.Count - N;
@@ -232,16 +232,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // take the (minimum) skyline to be immune against residual oscillations...
                 double[] NormHistorySkyline = new double[normHistory.Count];
                 NormHistorySkyline[0] = normHistory[0];
-                for (int i = 1; i < N; i++) {
+                for(int i = 1; i < N; i++) {
                     NormHistorySkyline[i] = Math.Min(NormHistorySkyline[i - 1], normHistory[i]);
                 }
 
 
                 double Avg = 0;
                 double Count = 0;
-                for (int i = i0; i < normHistory.Count - 1; i++) { // look at the last 'N' residual norms...
-                    double ResNormReductionFactor = NormHistorySkyline[i] / Math.Max(NormHistorySkyline[i + 1], double.Epsilon);
-                    if (ResNormReductionFactor < 1)
+                for(int i = i0; i < normHistory.Count -1; i++) { // look at the last 'N' residual norms...
+                    double ResNormReductionFactor = NormHistorySkyline[i] / Math.Max(NormHistorySkyline[i+1], double.Epsilon);
+                    if(ResNormReductionFactor < 1)
                         ResNormReductionFactor = 1; // should never happen anyway due to skylining...
                     Count = Count + 1;
                     Avg = Avg + ResNormReductionFactor;
@@ -258,23 +258,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int i = normHistory.Count - 1; i >= SeqLen; i--) {
                     double RedFactor1 = normHistory[i-1] / Math.Max(normHistory[i], double.Epsilon);
                     if(RedFactor1 > 0) {
-                        nextExpect =
+                        nextExpect = 
                     }
                 }
             }
             */
 
-            if (itc >= MinIter) {
+            if(itc >= MinIter) {
                 // only terminate if we reached the minimum number of iterations
 
-                if (norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
+                if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
                     // reached convergence criterion
 
                     double ALNR = LastAverageNormReduction();
                     //Console.Write($"Want to terminate {ALNR}, {norm_CurRes} ...");
 
                     // continue until the solver stalls
-                    if (ALNR <= 1.5) {
+                    if(ALNR <= 1.5) {
                         //Console.WriteLine("no sufficient further progress");
                         success = true;
                         terminateLoop = true;
@@ -283,7 +283,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                if (itc >= MaxIter) {
+                if(itc >= MaxIter) {
                     // run out of iterations
                     terminateLoop = true;
                 }
@@ -293,25 +293,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return terminateLoop;
         }
-
-
+        
+     
         /// <summary>
         /// Main solver routine with homotopy;
         /// </summary>
         public bool HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
 
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 // Initialization
                 // =============
 
                 bool success = false;
 
-
                 double[] CurSol, // "current (approximate) solution", i.e.
                     CurRes; // residual associated with 'CurSol'
-
-
-                using (new BlockTrace("Slv Init", tr)) {
+                
+                                
+                using(new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out CurSol, out CurRes);
                 };
 
@@ -336,17 +335,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // Lagrange polynomial (aka. nodal interpolation) over the last 'N' accepted solutions
                 double Lagrange(int N, int n, double alpha) {
-                    if (N > AcceptedHomoSolutions.Count)
+                    if(N > AcceptedHomoSolutions.Count)
                         throw new ArgumentOutOfRangeException();
-                    if (n < 0 || n >= N)
+                    if(n < 0 || n >= N)
                         throw new ArgumentOutOfRangeException();
 
                     int M0 = AcceptedHomoSolutions.Count - N;
                     double polyVal = 1.0;
 
                     double alpha_n = AcceptedHomoSolutions[n + M0].HomoValue;
-                    for (int i = 0; i < N; i++) {
-                        if (i != n) {
+                    for(int i = 0; i < N; i++) {
+                        if(i != n) {
                             double alpha_i = AcceptedHomoSolutions[i + M0].HomoValue;
                             polyVal *= (alpha - alpha_i) / (alpha_n - alpha_i);
                         }
@@ -357,17 +356,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // extrapolation from accepted solutions to new homotopy parameter values
                 void SolutionExtrapolation(double newHomoParam, int N) {
-                    if (N > AcceptedHomoSolutions.Count || N < 0)
+                    if(N > AcceptedHomoSolutions.Count || N < 0)
                         throw new ArgumentOutOfRangeException();
 
                     SolutionVec.Clear();
                     int M0 = AcceptedHomoSolutions.Count - N;
-                    for (int n = 0; n < N; n++) {
-                        if (Math.Abs(Lagrange(N, n, AcceptedHomoSolutions[n + M0].HomoValue) - 1.0) > 1.0e-10)
+                    for(int n = 0; n < N; n++) {
+                        if(Math.Abs(Lagrange(N, n, AcceptedHomoSolutions[n + M0].HomoValue) - 1.0) > 1.0e-10)
                             throw new ArithmeticException("Error in Lagrange");
-                        for (int i = 0; i < N; i++) {
-                            if (i != n) {
-                                if (Math.Abs(Lagrange(N, i, AcceptedHomoSolutions[n + M0].HomoValue)) > 1.0e-10)
+                        for(int i = 0; i < N; i++) {
+                            if(i != n) {
+                                if(Math.Abs(Lagrange(N, i, AcceptedHomoSolutions[n + M0].HomoValue)) > 1.0e-10)
                                     throw new ArithmeticException("Error in Lagrange (2)");
                             }
                         }
@@ -379,21 +378,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // hard-coded constants
                 // ===============================
-                const double HomotopyStepAcceptedFactor = 10.0; // a solution for a specific homotopy value is accepted,
+                const double HomotopyStepAcceptedFactor = 10.0; // a solution for a specific homotopy value is accepted, 
                 //                                                 if the residual is below the convergence criterion, scaled by this factor
 
                 double allowedIncrease = 1e6; // initial value for acceptable residual increase when the homotopy parameter is increased.
 
                 // preventing step width being to long:
                 // ---------------------------------------
-
+             
                 const int HomotopyStepLongFail = 10; // If, for a specific homotopy parameter value, Newton does not converges successfully,
                 //   (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
                 const double StepWidthReductionFactor = 0.2; // Reduction factor (must be smaller 1.0) for the homotopy step (if homotopy step failed)
 
                 // preventing step width being to short:
                 // ---------------------------------------
-
+             
                 const int HomotopyStepShortFail = 3; // If, for a specific homotopy parameter value, Newton converges successfully
                 //       with less than this number of iterations, the step width should be increased.
                 const double StepWidthIncreaseFactor = 8; // Increase factor (must be bigger then the inverse of the reduction factor) for the homotopy step
@@ -401,11 +400,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // main Loop
                 // ===============================
-
+                
                 int IterCounter = 0;
                 int HomoStepCounter = 0; // no of iterations spent in current Homotopy step
                 double TrustRegionDelta = -1; // only used for dogleg (aka Trust-Region) method
-                using (new BlockTrace("Slv Iter", tr)) {
+                using(new BlockTrace("Slv Iter", tr)) {
 
                     bool ResidualCrit(double fac = 1.0) {
                         return norm_CurRes <= ConvCrit * fnorminit * fac + ConvCrit * fac;
@@ -413,34 +412,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                     //while(!ResidualCrit() || IterCounter < MinIter || HomotopyParameter < 1.0) {
-                    while (true) {
+                    while(true) {
                         //if(IterCounter > MaxIter) {
                         //    Console.WriteLine($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
                         //    break;
                         //}
 
 
-                        if (HomotopyParameter >= 1.0) {
-                            if (CheckTermination(ref success, norm_CurRes, fnorminit, normHistory, IterCounter))
+                        if(HomotopyParameter >= 1.0) {
+                            if(CheckTermination(ref success, norm_CurRes, fnorminit, normHistory, IterCounter))
                                 break;
                         } else {
-                            if (IterCounter >= MinIter) {
-                                if (IterCounter >= MaxIter) {
+                            if(IterCounter >= MinIter) {
+                                if(IterCounter >= MaxIter) {
                                     Console.WriteLine($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
                                     break;
                                 }
                             }
                         }
 
-                        // test
+                        // test 
 
                         bool GoodForHomoIncrease = ResidualCrit(HomotopyStepAcceptedFactor) && HomotopyParameter < 1.0;
                         bool BadHomo = (HomoStepCounter >= HomotopyStepLongFail) && (AcceptedHomoSolutions.Count > 0);
 
-                        if (!GoodForHomoIncrease && BadHomo) {
+                        if(!GoodForHomoIncrease && BadHomo) {
                             allowedIncrease *= StepWidthReductionFactor;
-
-                            if (allowedIncrease < 1) {
+                            
+                            if(allowedIncrease < 1) {
                                 Console.WriteLine($"Failed Newton: unable to raise Homotopy parameter without loosing convergence.");
                                 break;
                             }
@@ -449,7 +448,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             HomotopyParameter = ll.HomoValue;
                             SolutionVec.SetV(ll.HomoSolution);
                             this.UpdateLinearization(SolutionVec.Fields, HomotopyParameter);
-
+                            
                             this.CurrentLin.TransformSolInto(SolutionVec, CurSol);
                             this.EvaluateOperator(1, SolutionVec.Fields, CurRes, HomotopyParameter);
                             norm_CurRes = CurRes.MPI_L2Norm();
@@ -457,17 +456,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //Console.WriteLine($"Homo Rollback: homotopy value {Homotopy}, old Res norm {ll.norm_Res}, now {norm_CurRes}");
                         }
 
-                        if (GoodForHomoIncrease) {
+                        if(GoodForHomoIncrease) {
                             // +++++++++++++++
                             // accept solution
                             // +++++++++++++++
                             AcceptedHomoSolutions.Add((HomotopyParameter, SolutionVec.ToArray(), norm_CurRes));
-                            while (AcceptedHomoSolutions.Count > 8)
+                            while(AcceptedHomoSolutions.Count > 8)
                                 AcceptedHomoSolutions.RemoveAt(0);
                         }
 
 
-                        if (GoodForHomoIncrease || BadHomo) {
+                        if(GoodForHomoIncrease || BadHomo) {
 
 
                             Debug.Assert(AcceptedHomoSolutions.Count > 0);
@@ -481,27 +480,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             //int PlotCount = 0;
 
-                            for (i = 0; i < 100; i++) {
+                            for(i = 0; i < 100; i++) {
                                 double tryHomotopyValue;
-                                if (i == 0)
+                                if(i == 0)
                                     tryHomotopyValue = 1.0; // nail it exactly, avoid any round-off-error
                                 else
                                     tryHomotopyValue = Math.Pow(2.0, -i) * (1.0 - HomotopyParameter) + HomotopyParameter;
 
                                 LastN = -1;
-                                for (int N = AcceptedHomoSolutions.Count; N > 0; N--) {
+                                for(int N = AcceptedHomoSolutions.Count; N > 0; N--) {
                                     SolutionExtrapolation(tryHomotopyValue, N);
                                     EvaluateOperator(1, SolutionVec.Fields, CurRes, tryHomotopyValue);
                                     double norm_TryValue = CurRes.MPI_L2Norm();
 
                                     //Console.WriteLine($"({i},{N}) resNorm: {norm_TryValue}");
 
-                                    if (norm_TryValue < targetResNorm) {
+                                    if(norm_TryValue < targetResNorm) {
                                         HomotopyParameter = tryHomotopyValue;
 
-                                        if (N > 1) {
+                                        if(N > 1) {
                                             this.UpdateLinearization(SolutionVec.Fields, HomotopyParameter);
-
+                            
                                             this.CurrentLin.TransformSolInto(SolutionVec, CurSol);
                                             this.EvaluateOperator(1, SolutionVec.Fields, CurRes, HomotopyParameter);
                                             norm_CurRes = CurRes.MPI_L2Norm();
@@ -515,13 +514,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     }
                                 }
 
-                                if (LastN > 0)
+                                if(LastN > 0)
                                     break;
                             }
 
-                            Console.WriteLine($"   raised to {HomotopyParameter}, (new residual {norm_CurRes}, tried {i + 1} times, used {LastN}-th order extrapolation.");
+                            Console.WriteLine($"   raised to {HomotopyParameter}, (new residual {norm_CurRes}, tried {i+1} times, used {LastN}-th order extrapolation.");
 
-                            if (HomoStepCounter < HomotopyStepShortFail)
+                            if(HomoStepCounter < HomotopyStepShortFail)
                                 allowedIncrease *= StepWidthIncreaseFactor;
                             HomoStepCounter = 0;
                         }
@@ -544,20 +543,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue,
             ref double norm_CurRes, ref double TrustRegionDelta) {
-
+            
             // computation of Newton step
             // --------------------------
 
             double[] step = new double[CurSol.Length];
-
+                
 
             // How should the inverse of the Jacobian be approximated?
-            if (ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
+            if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
                 // ++++++++++++++++++++++++++
                 // Option: Matrix-Free GMRES
                 // ++++++++++++++++++++++++++
 
-                if (Precond != null) {
+                if(Precond != null) {
                     Precond.Init(CurrentLin);
                 }
                 var mtxFreeSlv = new MatrixFreeGMRES() { owner = this, HomotopyValue = HomotopyValue };
@@ -570,7 +569,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 step.ScaleV(-1);
 
 
-            } else if (ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
+            } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                 // +++++++++++++++++++++++++++++
                 // Option: use 'external' solver
                 // +++++++++++++++++++++++++++++
@@ -581,7 +580,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var check = CurRes.CloneAs();
                 solver.ResetStat();
 
-                if (solver is IProgrammableTermination pt) {
+                if(solver is IProgrammableTermination pt) {
                     // iterative solver with programmable termination is used - so use it
 
                     double thresh = norm_CurRes * 1e-5;
@@ -601,26 +600,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // globalization
             // -------------
             double[] OldSolClone;
-            if (base.AbstractOperator.SolverSafeguard != null) {
+            if(base.AbstractOperator.SolverSafeguard != null) {
                 OldSolClone = SolutionVec.ToArray();
             } else {
                 OldSolClone = null;
             }
 
-            switch (Globalization) {
+            switch(Globalization) {
                 case GlobalizationOption.Dogleg:
-                    DogLeg(SolutionVec, CurSol, CurRes, step, HomotopyValue, itc, ref TrustRegionDelta);
-                    break;
+                DogLeg(SolutionVec, CurSol, CurRes, step, HomotopyValue, itc, ref TrustRegionDelta);
+                break;
 
                 case GlobalizationOption.LineSearch:
-                    LineSearch(SolutionVec, CurSol, CurRes, step, HomotopyValue);
-                    break;
+                LineSearch(SolutionVec, CurSol, CurRes, step, HomotopyValue);
+                break;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
 
-            if (base.AbstractOperator.SolverSafeguard != null) {
+            if(base.AbstractOperator.SolverSafeguard != null) {
                 var newSol = SolutionVec.Fields.ToArray();
                 var oldSol = newSol.Select(f => f.CloneAs()).ToArray();
                 var oldSolVec = new CoordinateVector(oldSol);
@@ -633,15 +632,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // fix the pressure
             // ----------------
-            if (CurrentLin.FreeMeanValue.Any()) {
+            if(CurrentLin.FreeMeanValue.Any()) {
 
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                 bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
-                if (flds.Length != FreeMeanValue.Length)
+                if(flds.Length != FreeMeanValue.Length)
                     throw new ApplicationException();
 
-                for (int iFld = 0; iFld < flds.Length; iFld++) {
-                    if (FreeMeanValue[iFld]) {
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+                    if(FreeMeanValue[iFld]) {
                         double mean = flds[iFld].GetMeanValueTotal(null);
                         flds[iFld].AccConstant(-mean);
                     }
@@ -652,12 +651,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // update linearization
             // --------------------
-            if (itc % constant_newton_it == 0) {
+            if(itc % constant_newton_it == 0) {
                 //base.UpdateLinearization(SolutionVec.Mapping.Fields);
 
                 base.Update(SolutionVec.Mapping.Fields, CurSol, HomotopyValue);
-
-                if (constant_newton_it != 1) {
+               
+                if(constant_newton_it != 1) {
                     Console.WriteLine("Jacobian is updated: it {0}", itc);
                 }
             }
@@ -718,10 +717,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             // Control of the the step size
-            while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
+            while(nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
 
                 // Line search starts here
-                if (iarm == 0)
+                if(iarm == 0)
                     lambda = sigma1 * lambda;
                 else
                     lambda = parab3p(lamc, lamm, ff0, ffc, ffm); // ff0: curent sol, ffc: most recent reduction, ffm: previous reduction
@@ -740,7 +739,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ffc = nft * nft;
                 iarm++;
 
-                if (printLambda)
+                if(printLambda)
                     Console.WriteLine("    Residuum:  " + nft + " lambda = " + lambda);
 
             }
@@ -792,11 +791,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // initial estimate of trust region width in first iteration
             // =========================================================
-            if (NewtonIterCnt < 1)
+            if(NewtonIterCnt < 1)
                 throw new ArgumentException();
-            if (NewtonIterCnt == 1) {
+            if(NewtonIterCnt == 1) {
                 double norm_step = stepIN.MPI_L2Norm();
-                if (norm_step < delta_min)
+                if(norm_step < delta_min)
                     TrustRegionDelta = 2 * delta_min;
                 else
                     TrustRegionDelta = norm_step;
@@ -808,7 +807,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // TODO change later: always use a very small initial trust region!
             // TrustRegionDelta = TrustRegionDelta / 10;
 
-            if (TrustRegionDelta < delta_min || TrustRegionDelta > delta_max)
+            if(TrustRegionDelta < delta_min || TrustRegionDelta > delta_max)
                 throw new ArithmeticException("trust region width out of allowed range");
 
             // compute Cauchy point
@@ -826,7 +825,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.CurrentLin.OperatorMatrix.SpMV(1.0, dk, 0.0, Mdk);
                 double[] a = (new[] { CurRes.InnerProd(Mdk), Mdk.L2NormPow2() }).MPISum();
 
-                double lambda = -a[0] / Math.Max(double.Epsilon * 100, a[1]);
+                double lambda = -a[0] / Math.Max(double.Epsilon*100, a[1]);
 
                 stepCP = dk;
                 stepCP.ScaleV(lambda);
@@ -855,12 +854,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double l2_stepIN = stepIN.MPI_L2Norm();
             double[] NewSol;
             void PointOnDogleg(double _TrustRegionDelta) {
-                if (l2_stepIN <= _TrustRegionDelta) {
+                if(l2_stepIN <= _TrustRegionDelta) {
                     // use Newton Step
                     //Console.WriteLine($"       -------- using Newton step (delta = {_TrustRegionDelta})");
                     step.SetV(stepIN);
                 } else {
-                    if (l2_stepCP < _TrustRegionDelta) {
+                    if(l2_stepCP < _TrustRegionDelta) {
                         // interpolate between Cauchy-point and Newton-step
                         Console.WriteLine($"Info: Newton solver - between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
                         Debug.Assert(l2_stepCP * 0.99999 <= _TrustRegionDelta); // Cauchy Point is INSIDE   trust region
@@ -874,7 +873,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             double A = l2_stepCP, B = l2_stepIN, C = stepCP.MPI_ddot(stepIN);
                             tau = (A.Pow2() - C + Math.Sqrt((A.Pow2() + B.Pow2() - 2 * C) * _TrustRegionDelta.Pow2() - A.Pow2() * B.Pow2() + C.Pow2()))
                                 / (A.Pow2() + B.Pow2() - 2 * C);
-                            if (!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
+                            if(!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
                                 throw new ArithmeticException();
                         }
                         // do interpolation
@@ -922,9 +921,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // trust region adaptation loop
             double last_ared = ared();
             double last_pred = pred();
-            while (last_ared < t * last_pred) {
+            while(last_ared < t * last_pred) {
                 double newTrustRegionDelta = TrustRegionDelta * 0.5;
-                if (newTrustRegionDelta <= delta_min)
+                if(newTrustRegionDelta <= delta_min)
                     break;
 
                 PointOnDogleg(TrustRegionDelta);
@@ -947,11 +946,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 const double beta_s = 0.25;
                 const double beta_e = 4.0;
 
-                if (last_ared / last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
+                if(last_ared / last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
                     TrustRegionDelta = Math.Max(l2_stepIN, delta_min);
-                } else if (last_ared / last_pred < rho_s) {
+                } else if(last_ared / last_pred < rho_s) {
                     TrustRegionDelta = Math.Max(beta_s * TrustRegionDelta, delta_min); // shrinking
-                } else if (last_ared / last_pred > rho_e) {
+                } else if(last_ared / last_pred > rho_e) {
                     TrustRegionDelta = Math.Min(beta_e * TrustRegionDelta, delta_max); // enhancing
                 }
             }
@@ -1003,16 +1002,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int maxKrylovDim = 200;
 
-            public Func<int, double, double, bool> TerminationCriterion {
+            public Func<int, double, double, bool> TerminationCriterion { 
                 get;
                 set;
             }
 
             static private bool DefaultTermination(int iter, double R0_l2, double R_l2) {
-                if (iter > 100)
+                if(iter > 100)
                     return false;
 
-                if (R_l2 < R0_l2 * 10e-8 + 10e-8)
+                if(R_l2 < R0_l2 * 10e-8 + 10e-8)
                     return false;
 
                 return true;
@@ -1024,7 +1023,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             bool Termination(double R_l2) {
                 bool ret = TerminationCriterion(this.ThisLevelIterations - ThisRunFirstIter, rho0, R_l2);
-                if (ret)
+                if(ret)
                     Converged = true;
                 return ret;
             }
@@ -1034,7 +1033,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int IterationsInNested {
                 get {
-                    if (this.owner.Precond != null) {
+                    if(this.owner.Precond != null) {
                         return this.owner.Precond.ThisLevelIterations;
                     } else {
                         return 0;
@@ -1075,7 +1074,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <param name="currentX"></param>
             /// <returns></returns>
             double[] Solve(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     int n = f0.Length;
 
                     int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
@@ -1093,12 +1092,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     r = b;
 
                     //Initial solution
-                    if (xinit.L2Norm() != 0) {
+                    if(xinit.L2Norm() != 0) {
                         x = xinit.CloneAs();
                         r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
                     }
                     // Precond = null;
-                    if (owner.Precond != null) {
+                    if(owner.Precond != null) {
                         var temp2 = r.CloneAs();
                         r.ClearEntries();
                         //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: false, Subblocks: false).SpMV(1, temp2, 0, r);
@@ -1121,14 +1120,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // Termination of entry
                     //if(rho < GMRESConvCrit)
-                    if (Termination(rho))
+                    if(Termination(rho))
                         return SolutionVec.ToArray();
 
                     V[0].SetV(r, alpha: (1.0 / rho));
                     double beta = rho;
                     int k = 1;
 
-                    while ((!Termination(rho)) && k <= m) {
+                    while((!Termination(rho)) && k <= m) {
                         V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
                         //CurrentLin.OperatorMatrix.SpMV(1.0, V[k-1], 0.0, temp3);
                         // Call directional derivative
@@ -1136,7 +1135,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         ThisLevelIterations++;
 
-                        if (owner.Precond != null) {
+                        if(owner.Precond != null) {
                             var temp3 = V[k].CloneAs();
                             V[k].ClearEntries();
                             //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
@@ -1146,7 +1145,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         double normav = V[k].MPI_L2Norm();
 
                         // Modified Gram-Schmidt
-                        for (int j = 1; j <= k; j++) {
+                        for(int j = 1; j <= k; j++) {
                             H[j - 1, k - 1] = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                             V[k].AccV(-H[j - 1, k - 1], V[j - 1]);
                         }
@@ -1155,8 +1154,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                         // Reorthogonalize ?
-                        if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3)) || reorth == 3) {
-                            for (int j = 1; j <= k; j++) {
+                        if((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3)) || reorth == 3) {
+                            for(int j = 1; j <= k; j++) {
                                 double hr = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                                 H[j - 1, k - 1] = H[j - 1, k - 1] + hr;
                                 V[k].AccV(-hr, V[j - 1]);
@@ -1165,7 +1164,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         // Watch out for happy breakdown
-                        if (H[k, k - 1] != 0)
+                        if(H[k, k - 1] != 0)
                             V[k].ScaleV(1 / H[k, k - 1]);
 
 
@@ -1179,7 +1178,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // Givens rotation from SoftGMRES
                         double temp;
-                        for (int l = 1; l <= k - 1; l++) {
+                        for(int l = 1; l <= k - 1; l++) {
                             // apply Givens rotation, H is Hessenbergmatrix
                             temp = c[l - 1] * H[l - 1, k - 1] + s[l - 1] * H[l + 1 - 1, k - 1];
                             H[l + 1 - 1, k - 1] = -s[l - 1] * H[l - 1, k - 1] + c[l - 1] * H[l + 1 - 1, k - 1];
@@ -1194,7 +1193,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // Don't divide by zero if solution has  been found
                         var nu = (H[k - 1, k - 1].Pow2() + H[k, k - 1].Pow2()).Sqrt();
-                        if (nu != 0) {
+                        if(nu != 0) {
                             //c[k - 1] = H[k - 1, k - 1] / nu;
                             //s[k - 1] = H[k, k - 1] / nu;
                             //H[k - 1, k - 1] = c[k - 1] * H[k - 1, k - 1] - s[k - 1] * H[k, k - 1];
@@ -1233,7 +1232,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int totalIter = k;
 
                     // x = x + V(:,1:i)*y;
-                    for (int ii = 0; ii < k; ii++) {
+                    for(int ii = 0; ii < k; ii++) {
                         x.AccV(y[ii], V[ii]);
                     }
 
@@ -1248,7 +1247,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-
+            
 
 
             /// <summary>
@@ -1256,7 +1255,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
                 //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
-
+                
                 ThisRunFirstIter = ThisLevelIterations;
                 Converged = false;
                 rho0 = double.NaN;
@@ -1270,7 +1269,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 //while(kinn < restart_limit && errstep > GMRESConvCrit) {
-                while (!Termination(errstep)) {
+                while(!Termination(errstep)) { 
                     kinn++;
 
                     step = Solve(SolutionVec, currentX, f0, step, out errstep);
@@ -1293,14 +1292,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
             /// <returns></returns>
             double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     double epsnew = 1E-7;
 
                     int n = SolutionVec.Length;
                     double[] fx = new double[f0.Length];
 
                     // Scale the step
-                    if (w.L2NormPow2().MPISum().Sqrt() == 0) {
+                    if(w.L2NormPow2().MPISum().Sqrt() == 0) {
                         fx.Clear();
                         return fx;
                     }
@@ -1309,7 +1308,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     double xs = GenericBlas.InnerProd(currentX, w).MPISum() / normw;
 
-                    if (xs != 0) {
+                    if(xs != 0) {
                         epsnew = epsnew * Math.Max(Math.Abs(xs), 1) * Math.Sign(xs);
                     }
                     epsnew = epsnew / w.L2NormPow2().MPISum().Sqrt();
@@ -1328,7 +1327,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //var OpAffineRaw = this.LinearizationRHS.CloneAs();
                     //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                     //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
-                    if (linearization == false) {
+                    if(linearization == false) {
                         owner.EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx, this.HomotopyValue);
                     }
                     //else {
@@ -1363,7 +1362,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] vrot = vin;
                 double w1, w2;
 
-                for (int i = 1; i < k; i++) {
+                for(int i = 1; i < k; i++) {
                     w1 = c[i - 1] * vrot[i - 1] - s[i - 1] * vrot[i];
                     w2 = s[i - 1] * vrot[i - 1] + c[i - 1] * vrot[i];
                     vrot[i - 1] = w1;
@@ -1377,10 +1376,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             static void rotmat(out double c, out double s, double a, double b) {
                 double temp;
-                if (b == 0.0) {
+                if(b == 0.0) {
                     c = 1.0;
                     s = 0.0;
-                } else if (Math.Abs(b) > Math.Abs(a)) {
+                } else if(Math.Abs(b) > Math.Abs(a)) {
                     temp = a / b;
                     s = 1.0 / Math.Sqrt(1.0 + temp * temp);
                     c = temp * s;
@@ -1397,9 +1396,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public void Init(MultigridOperator op) {
                 var baseMapping = op.BaseGridProblemMapping;
                 DGField[] ff = new DGField[baseMapping.BasisS.Count];
-                for (int i = 0; i < ff.Length; i++) {
+                for(int i = 0; i < ff.Length; i++) {
                     var b = baseMapping.BasisS[i];
-                    if (b is XDGBasis xb) {
+                    if(b is XDGBasis xb) {
                         ff[i] = new XDGField(xb);
                     } else {
                         ff[i] = new SinglePhaseField(b);
@@ -1408,7 +1407,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OrgDG = new CoordinateVector(ff);
             }
 
-            CoordinateVector OrgDG;
+            CoordinateVector OrgDG; 
 
             /// <summary>
             /// Solution routine as defined by interface
@@ -1466,12 +1465,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double sigma1 = 0.5;
 
             double c2 = lambdam * (ffc - ff0) - lambdac * (ffm - ff0);
-            if (c2 >= 0)
+            if(c2 >= 0)
                 return sigma1 * lambdac;
             double c1 = lambdac * lambdac * (ffm - ff0) - lambdam * lambdam * (ffc - ff0);
             double lambdap = -c1 * 0.5 / c2;
-            if (lambdap < sigma0 * lambdac) lambdap = sigma0 * lambdac;
-            if (lambdap > sigma1 * lambdac) lambdap = sigma1 * lambdac;
+            if(lambdap < sigma0 * lambdac) lambdap = sigma0 * lambdac;
+            if(lambdap > sigma1 * lambdac) lambdap = sigma1 * lambdac;
 
             return lambdap;
         }
