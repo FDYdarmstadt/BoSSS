@@ -75,13 +75,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
             InitMPI();
             DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASTranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ASBcTest_PressureOutletTest(1, 0.0d, true);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(1, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, true);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest(1, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8, ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
 
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestRayleighTaylorInstability();

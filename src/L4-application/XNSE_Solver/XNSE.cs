@@ -109,7 +109,6 @@ namespace BoSSS.Application.XNSE_Solver
             return 0.0;
         }
 
-
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
 
             int quadOrder = QuadOrder();
