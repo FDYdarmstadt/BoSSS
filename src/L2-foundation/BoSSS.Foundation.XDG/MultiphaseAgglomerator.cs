@@ -1098,6 +1098,10 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         if (jCellNeigh_max < 0) {
+                            // ----------------------------------------------------------------------------------------------------------------------
+                            // in case of a "failed cell": Test whether the cell is at a periodic boundary and agglomerate over the periodic boundary
+                            // "Periodic boundary rescue program" (BD)
+                            // ----------------------------------------------------------------------------------------------------------------------
                             Vector cellCenter = new Vector(grdDat.iGeomCells.GetCenter(jCell));
                             for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
                                 int iEdge = Cell2Edge_jCell[e];
@@ -1122,10 +1126,9 @@ namespace BoSSS.Foundation.XDG {
 
                                 int jCellNeigh = Edge2Cell[iEdge, OtherCell];
                                 if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
-                                    // boundary edge, no neighbour for agglomeration
+                                    // boundary edge, now a possible neighbour for agglomeration
                                     Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
-                                    double spcVol_neigh = CellVolumes[jCellNeigh];
-                                    //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
+                                    double spcVol_neigh = CellVolumes[jCellNeigh]; 
                                     double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
                                     double frac_neigh = spcVol_neigh / totVol_neigh;
 
@@ -1139,6 +1142,9 @@ namespace BoSSS.Foundation.XDG {
                                 }
                             }
                             if (jCellNeigh_max < 0) {
+                                // ----------------------------------------------------------------------------------------------------------------------
+                                // still failing... now there is nothing we can do about it
+                                // ----------------------------------------------------------------------------------------------------------------------
                                 throw new Exception("Fail: " + cellCenter);
                                 failCells.Add(jCell);
                             }
@@ -1160,7 +1166,9 @@ namespace BoSSS.Foundation.XDG {
                                     OwnerRank4Source = myMpiRank
                                 });
                             }
-
+                            // ----------------------------------------------------------------------------------------------------------------------
+                            // End of "Periodic boundary rescue program"
+                            // ----------------------------------------------------------------------------------------------------------------------
                         }
                         else {
                             _AccEdgesMask[jEdge_max] = true;

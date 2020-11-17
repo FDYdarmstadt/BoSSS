@@ -282,23 +282,24 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 35) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.3, int cellsPerUnitLength = 35) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "0f60a63a-b124-46d5-b2ab-4a8889f514c5";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 190);
-            C.IsRestart = true;
+            //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
+            //string ID = "0f60a63a-b124-46d5-b2ab-4a8889f514c5";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 190);
+            //C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 1e-2;
             C.PhysicalParameters.IncludeConvection = false;
 
             // Particle Properties
             // =============================
             double particleDensity = 100;
-            double activeStress = 10;
+            double activeStress = 0.1;
             double nextParticleDistance = 0.2;
             double domainLength = nextParticleDistance * 9;
             //List<string> boundaryValues = new List<string> {

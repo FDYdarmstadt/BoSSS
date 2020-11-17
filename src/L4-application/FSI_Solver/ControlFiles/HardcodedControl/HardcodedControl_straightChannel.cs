@@ -31,10 +31,10 @@ namespace BoSSS.Application.FSI_Solver {
         public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int angle = 0, double aspectRatio = 4, double activeStress = 10) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "4c56455c-7661-4117-b4e3-dd5a5e54c0d4";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 240);
-            C.IsRestart = true;
+            C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\pusherInChannel", savePeriod: 1);
+            //string ID = "ab427c8a-fb05-455b-ac79-1b458563fdf8";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 100);
+            //C.IsRestart = true;
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
@@ -45,7 +45,7 @@ namespace BoSSS.Application.FSI_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 20, lengthY: 1.5, cellsPerUnitLength: 16, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(1);
+            C.SetAddaptiveMeshRefinement(0);
 
             // Coupling Properties
             // =============================
@@ -61,7 +61,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             double particleDensity = 100;
-            C.minDistanceThreshold = 0.01;
+            C.minDistanceThreshold = 0.1;
 
             // Particle Properties
             // =============================   
