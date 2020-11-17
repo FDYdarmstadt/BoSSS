@@ -66,7 +66,6 @@ namespace BoSSS.Solution.NSECommon {
             switch (edgType) {
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet:
-                case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
                     // Atmospheric outlet/pressure outlet: inhom. Dirichlet
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                     return pressureFunction[inp.EdgeTag](inp.X, inp.time) * inp.Normal[m_d];

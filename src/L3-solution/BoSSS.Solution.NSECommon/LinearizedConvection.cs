@@ -752,8 +752,7 @@ namespace BoSSS.Solution.NSECommon {
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Outflow:
-                case IncompressibleBcType.Pressure_Outlet:
-                case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
+                case IncompressibleBcType.Pressure_Outlet: {
                         double r = 0.0;
                         double u1, u2, u3 = 0, u_d;
 

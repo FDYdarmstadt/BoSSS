@@ -28,8 +28,7 @@ namespace BoSSS.Solution.NSECommon {
 
     [DataContract]
     [Serializable]
-    
-    public class MaterialLawMixtureFraction : MaterialLawCombustion {
+    public class MaterialLawLowMach_MF : MaterialLawCombustion {
         /// <summary>
         /// 
         /// </summary>
@@ -46,7 +45,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         /// <param name="Prandtl"></param>
         /// 
-        public MaterialLawMixtureFraction(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(T_ref, MolarMasses, MatParamsMode, rhoOne, false, Q, TO0, TF0, YO0, YF0, zst, CC, Prandtl) { 
+        public MaterialLawLowMach_MF(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(T_ref, MolarMasses,  MatParamsMode,  rhoOne,  Q,  TO0,  TF0,  YO0,  YF0,  zst,  CC, Prandtl) { 
             this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
@@ -72,7 +71,7 @@ namespace BoSSS.Solution.NSECommon {
         //[DataMember] public double YF0;
         //[DataMember] public double YO0;
         //[DataMember] public double zst;
-        [DataMember] public double cp;
+        //[DataMember] public double cp;
         //[DataMember] public ChemicalConstants CC;
         //[DataMember] public double s;
 
@@ -95,7 +94,7 @@ namespace BoSSS.Solution.NSECommon {
                         Y2 = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
                         Y3 = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
                         Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
-                    } else if (Z < zst) { // Oxidizer side
+                    } else if (Z < zst) { // Oxydizer side
                         T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
                         Y0 = 0;
                         Y1 = YO0 * (1 - Z / zst);

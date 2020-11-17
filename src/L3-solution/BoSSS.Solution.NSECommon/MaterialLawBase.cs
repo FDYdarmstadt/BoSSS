@@ -132,24 +132,16 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public abstract double getDensityFromZ(double Z);
 
+#region CoupledLaxFriedrichs
 
-        /// <summary>
-        /// Returns the mixture heat capacity from the 5 components mixture.
-        /// </summary>
-        /// <param name="Z"></param>
-        /// <returns></returns>
-        public abstract double GetMixtureHeatCapacity(double[] MassFractions);
-
-        #region CoupledLaxFriedrichs
-
-        /// <summary>
-        /// Returns lambda, i.e. penalty parameter for coupled Lax-Friedrichs flux.
-        /// Not to be confused with heat conductivity!!!
-        /// </summary>
-        /// <param name="VelocityMean"></param>
-        /// <param name="Normal"></param>
-        /// <param name="ScalarMean"></param>
-        /// <returns>Absolute value of lambda.</returns>
+            /// <summary>
+            /// Returns lambda, i.e. penalty parameter for coupled Lax-Friedrichs flux.
+            /// Not to be confused with heat conductivity!!!
+            /// </summary>
+            /// <param name="VelocityMean"></param>
+            /// <param name="Normal"></param>
+            /// <param name="ScalarMean"></param>
+            /// <returns>Absolute value of lambda.</returns>
         public abstract double GetLambda(double[] VelocityMean, double[] Normal, double ScalarMean);
 
         /// <summary>

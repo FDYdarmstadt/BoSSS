@@ -123,7 +123,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="EoS">MaterialLawCombustion</param>  
         public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLawCombustion EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
             m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
-            m_ParameterOrdering = null;
+            m_ParameterOrdering = null; 
             this.HeatReleaseFactor = HeatReleaseFactor;
             this.ReactionRateConstants = ReactionRateConstants;
             this.molarMasses = molarmasses;
@@ -188,17 +188,20 @@ namespace BoSSS.Solution.NSECommon {
             double YF = U[1];
             double YO = U[2];
 
-            if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
+            if (YF * YO > 1e-6 && VariableOneStepParameters) {//  calculate one-Step model parameters
                 Ta = EoS.getTa(YF, YO) / TRef;
                 HeatReleaseFactor = EoS.getHeatRelease(YF, YO) / (cpRef * TRef);
             }
             double PM_CH4 = molarMasses[0];
             double PM_O2 = molarMasses[1];
 
-            ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2);
+            ReactionRate = m_Da * Math.Exp( -Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2) ;
 
             return -HeatReleaseFactor * ReactionRate * PM_CH4;
 
         }
     }
+
+
+
 }

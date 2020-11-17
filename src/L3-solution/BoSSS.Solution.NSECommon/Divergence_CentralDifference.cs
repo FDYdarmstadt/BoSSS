@@ -324,8 +324,7 @@ namespace BoSSS.Solution.NSECommon {
                     }
                     break;
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Pressure_Outlet:
-                case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
+                case IncompressibleBcType.Pressure_Outlet: {
                         switch (Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
                                 res = Uin[Component] * inp.Normal[Component];
