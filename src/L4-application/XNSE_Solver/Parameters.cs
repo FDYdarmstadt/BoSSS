@@ -131,7 +131,6 @@ namespace BoSSS.Application.XNSE_Solver
                         }
                         else
                         {
-                            
                             double IntVal = ResultsOfIntegration[i, 0];
                             target.SetMeanValue( jCell, IntVal / Volume);
                         }

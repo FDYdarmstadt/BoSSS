@@ -14,16 +14,9 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver
 {
-    interface ILevelSetHandler
+    interface ILevelSetUpdater
     {
-        void MovePhaseInterface(
-            DualLevelSet levelSet,
-            LevelSetTracker lsTrkr,
-            double time,
-            double dt,
-            bool incremental,
-            IReadOnlyDictionary<string, DGField> DomainVarFields,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields);
+        string[] ParameterNames { get; }
 
         //Curvature and Normals, etc.
         void UpdateParameters(
@@ -33,7 +26,78 @@ namespace BoSSS.Application.XNSE_Solver
             IReadOnlyDictionary<string, DGField> ParameterVarFields);
     }
 
-    class FastMarcher : ILevelSetHandler
+    interface ILevelSetMover
+    {
+        string[] ParameterNames { get; }
+
+        string[] VariableNames { get;}
+
+        void MovePhaseInterface(
+            DualLevelSet levelSet,
+            LevelSetTracker lsTrkr,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields);
+    }
+
+    class CurvatureProvider : ILevelSetUpdater
+    {
+        XNSE_Control Control;
+
+        int m_HMForder;
+
+        public string[] ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+
+        public CurvatureProvider(XNSE_Control control, int hMForder)
+        {
+            this.Control = control;
+            this.m_HMForder = hMForder;
+        }
+
+        public void UpdateParameters(
+            DualLevelSet phaseInterface,
+            LevelSetTracker lsTrkr,
+            double time,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            //dgLevSetGradient and update curvature
+            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
+            VectorField<SinglePhaseField> filtLevSetGradient;
+            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode)
+            {
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
+                    {
+                        CurvatureAlgorithms.LaplaceBeltramiDriver(
+                            Control.AdvancedDiscretizationOptions.SST_isotropicMode,
+                            Control.AdvancedDiscretizationOptions.FilterConfiguration,
+                            out filtLevSetGradient,
+                            lsTrkr,
+                            phaseInterface.DGLevelSet);
+                        break;
+                    }
+                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
+                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
+                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
+                    CurvatureAlgorithms.CurvatureDriver(
+                        Control.AdvancedDiscretizationOptions.SST_isotropicMode,
+                        Control.AdvancedDiscretizationOptions.FilterConfiguration,
+                        Curvature,
+                        out filtLevSetGradient,
+                        lsTrkr,
+                        this.m_HMForder,
+                        phaseInterface.DGLevelSet);
+                    //CurvatureAlgorithms.MakeItConservative(LsTrk, this.Curvature, this.Control.PhysicalParameters.Sigma, this.SurfaceForce, filtLevSetGradient, MomentFittingVariant, this.m_HMForder);
+                    break;
+                default: throw new NotImplementedException("Unknown SurfaceTensionMode");
+            }
+        }
+    }
+
+    class FastMarcher : ILevelSetMover, ILevelSetUpdater
     {
         SinglePhaseField[] extensionVelocity;
 
@@ -42,6 +106,10 @@ namespace BoSSS.Application.XNSE_Solver
         XNSE_Control Control;
 
         VectorField<SinglePhaseField> filtLevSetGradient;
+
+        public string[] ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+
+        public string[] VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX , BoSSS.Solution.NSECommon.VariableNames.VelocityY };
 
         public FastMarcher(XNSE_Control control, int hMForder)
         {
@@ -202,7 +270,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class FourierEvolver : ILevelSetHandler
+    class FourierEvolver : ILevelSetMover, ILevelSetUpdater
     {
 
         FourierLevSetBase Fourier_LevSet;
@@ -215,6 +283,10 @@ namespace BoSSS.Application.XNSE_Solver
         XNSE_Control Control;
 
         int m_HMForder;
+
+        public string[] ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+
+        public string[] VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX, BoSSS.Solution.NSECommon.VariableNames.VelocityY };
 
         public FourierEvolver(XNSE_Control Control, int hMForder)
         {
@@ -239,9 +311,9 @@ namespace BoSSS.Application.XNSE_Solver
             double time,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
+            Fourier_Timestepper.updateFourierLevSet();
             VectorField<SinglePhaseField> filtLevSetGradient;
             SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
-
             Fourier_LevSet.ProjectToDGCurvature(Curvature, out filtLevSetGradient, lsTrkr.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
         }
 
@@ -254,9 +326,6 @@ namespace BoSSS.Application.XNSE_Solver
             IReadOnlyDictionary<string, DGField> DomainVarFields, 
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            Fourier_Timestepper.updateFourierLevSet();
-            Fourier_LevSet.ProjectToDGLevelSet(levelSet.DGLevelSet, lsTrkr);
-
             //Mean Velocity
             XDGField[] EvoVelocity = new XDGField[]
             {
@@ -265,9 +334,9 @@ namespace BoSSS.Application.XNSE_Solver
             };
             ConventionalDGField[] meanVelocity = FastMarcher.GetMeanVelocityFromXDGField(EvoVelocity, lsTrkr, Control);
 
-            Fourier_Timestepper.moveLevelSet(dt, meanVelocity);
-            //if (incremental)
-            //    Fourier_Timestepper.updateFourierLevSet();
+            Fourier_Timestepper.moveLevelSet(dt, meanVelocity, lsTrkr.Regions.GetNearFieldMask(1));
+            if (incremental)
+                Fourier_Timestepper.updateFourierLevSet();
             Fourier_LevSet.ProjectToDGLevelSet(levelSet.DGLevelSet, lsTrkr);
         }
     }

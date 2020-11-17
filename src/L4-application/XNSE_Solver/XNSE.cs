@@ -59,21 +59,37 @@ namespace BoSSS.Application.XNSE_Solver
             switch (Control.Option_LevelSetEvolution)
             {
                 case LevelSetEvolution.Fourier:
-                    lsUpdater.AddEvolver("Phi", new FourierEvolver(Control, QuadOrder()));
+                    var fourrier = new FourierEvolver(Control, QuadOrder());
+                    lsUpdater.AddParameterUpdate("Phi", fourrier);
+                    lsUpdater.AddEvolver("Phi", fourrier);
                     break;
                 case LevelSetEvolution.FastMarching:
+                    var fastMarcher = new FastMarcher(Control, QuadOrder());
+                    lsUpdater.AddParameterUpdate("Phi", fastMarcher);
+                    lsUpdater.AddEvolver("Phi", fastMarcher);
+                    break;
                 case LevelSetEvolution.None:
-                    lsUpdater.AddEvolver("Phi", new FastMarcher(Control, QuadOrder()));
                     break;
                 default:
                     throw new NotImplementedException();
             }
-            //RegisterField(levelSet);
-            lsUpdater.Tracker.UpdateTracker(0.0);
-            lsUpdater.Tracker.PushStacks();
             return lsUpdater.Tracker;
         }
-        
+
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L)
+        {
+            base.CreateEquationsAndSolvers(L);
+
+            var parameterFields = Timestepping.Parameters;
+            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
+            for (int iVar = 0; iVar < parameterFields.Count(); iVar++)
+            {
+                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
+            }
+            lsUpdater.UpdateParameters(ParameterVarsDict, 0.0);
+            
+        }
+
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental)
         {
             var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
@@ -89,8 +105,10 @@ namespace BoSSS.Application.XNSE_Solver
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             double residual = lsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
-            return residual;
+            Console.WriteLine(residual);
+            return 0.0;
         }
+
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
 
@@ -142,15 +160,6 @@ namespace BoSSS.Application.XNSE_Solver
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt)
         {
-            var parameterFields = Timestepping.Parameters;
-            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-            for (int iVar = 0; iVar < parameterFields.Count(); iVar++)
-            {
-                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
-            }
-            //if (TimestepNo == 1)
-            //    lsUpdater.Initialize(ParameterVarsDict, phystime);
-
             //Update Calls
             dt = GetFixedTimestep();
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
@@ -159,17 +168,11 @@ namespace BoSSS.Application.XNSE_Solver
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1)
         {
-            if(timestepNo == 0)
+            Tecplot.PlotFields(this.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
+            if(Timestepping?.Parameters != null)
             {
-                this.LsTrk.UpdateTracker(0.0);
-                XDGField velX = (XDGField)this.CurrentStateVector.Fields[0];
-                var vxA = velX.GetSpeciesShadowField("A");
-                //vxA.ProjectField((double[] X) => 0.0);
-                var cxB = velX.GetSpeciesShadowField("B");
-                //cxB.ProjectField((double[] X) => 20.0);
-                Tecplot.PlotFields(new DGField[] { velX, vxA, cxB }, "grid" + timestepNo, physTime, 4);
+                Tecplot.PlotFields(Timestepping.Parameters, "XNSE_Solver_Params" + timestepNo, physTime, superSampling);
             }
-            Tecplot.PlotFields(this.CurrentStateVector.Fields, "XNSE_Solver" + timestepNo, physTime, superSampling);
         }
     }
 }

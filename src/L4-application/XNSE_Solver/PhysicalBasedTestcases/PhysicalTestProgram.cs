@@ -30,11 +30,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class UnitTest {
 
-#if !DEBUG
-        /// <summary>
-        /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
-        /// </summary>
-        [Test]
+//#if !DEBUG
         public static void ASTestCapillaryWave()
         {
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
@@ -133,7 +129,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
         */
-#endif
+//#endif
 
     }
 }
