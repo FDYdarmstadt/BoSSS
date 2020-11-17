@@ -20,6 +20,7 @@ using System.Runtime.CompilerServices;
 using NUnit.Framework.Constraints;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.AdvancedSolvers;
 
 namespace BoSSS.Application.XNSE_Solver
 {
@@ -28,6 +29,76 @@ namespace BoSSS.Application.XNSE_Solver
         LevelSetUpdater lsUpdater;
 
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
+
+        /// <summary>
+        /// configuration options for <see cref="MultigridOperator"/>.
+        /// </summary>
+        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
+        {
+            get
+            {
+                int pVel = this.Control.FieldOptions["Velocity*"].Degree;
+                int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+                int D = this.GridData.SpatialDimension;
+
+                // set the MultigridOperator configuration for each level:
+                // it is not necessary to have exactly as many configurations as actual multigrid levels:
+                // the last configuration enty will be used for all higher level
+                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
+                for (int iLevel = 0; iLevel < configs.Length; iLevel++)
+                {
+
+
+                    var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
+
+
+                    if (this.Control.UseSchurBlockPrec)
+                    {
+                        // using a Schur complement for velocity & pressure
+                        var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                        for (int d = 0; d < D; d++)
+                        {
+                            d.AddToArray(ref confMomConti.VarIndex);
+                            //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                            pVel.AddToArray(ref confMomConti.DegreeS);
+                        }
+                        D.AddToArray(ref confMomConti.VarIndex);
+                        //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pPrs.AddToArray(ref confMomConti.DegreeS);
+
+                        confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                        configsLevel.Add(confMomConti);
+                    }
+                    else
+                    {
+                        // configurations for velocity
+                        for (int d = 0; d < D; d++)
+                        {
+                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig()
+                            {
+                                DegreeS = new int[] { pVel },
+                                //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                                VarIndex = new int[] { d }
+                            };
+                            configsLevel.Add(configVel_d);
+                        }
+                        // configuration for pressure
+                        var configPres = new MultigridOperator.ChangeOfBasisConfig()
+                        {
+                            DegreeS = new int[] { pPrs },
+                            //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                            VarIndex = new int[] { D }
+                        };
+                        configsLevel.Add(configPres);
+                    }
+                    configs[iLevel] = configsLevel.ToArray();
+                }
+                return configs;
+            }
+        }
 
         int QuadOrder()
         {
@@ -53,6 +124,14 @@ namespace BoSSS.Application.XNSE_Solver
 
         protected override LevelSetTracker InstantiateTracker() 
         {
+            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
+            {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+                    $"If you do not know how to remove this exception, you should better return now!");
+            }
             LevelSet levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
             lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
@@ -140,10 +219,11 @@ namespace BoSSS.Application.XNSE_Solver
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
             //final settings
-            //XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
+            XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.Commit();
 
-            // test the ordering
+            // test the ordering: Should not make a difference anyways!
             Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityX) < XOP.DomainVar.IndexOf(VariableNames.VelocityY));
             Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
             Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationX) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY));
