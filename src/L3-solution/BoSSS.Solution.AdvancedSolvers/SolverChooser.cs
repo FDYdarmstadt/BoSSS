@@ -303,7 +303,7 @@ namespace BoSSS.Solution {
                             ApproxJac = Newton.ApproxInvJacobianOptions.MatrixFreeGMRES,
                             Precond = precondonly,
                             ConvCrit = nc.ConvergenceCriterion,
-                            printLambda = false,
+                            printLambda = nc.printLambda,
                             Globalization = nc.Globalization,
                         };
                         linsolver = precondonly; // put out the solver, which is actually used!
@@ -804,9 +804,9 @@ namespace BoSSS.Solution {
                         } catch(Exception) {
                             Console.WriteLine("WARNING: internal error occurred during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
                             return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-                        }
-                    }
-                }
+        }
+    }
+}
             }
 
             return LocalDOF;
