@@ -79,8 +79,8 @@ namespace BoSSS.Solution.XheatCommon {
             //    // very small cell -- clippling
             //    hCutCellMin = hCellMin;
 
-            double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
 
+            double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
 
             double M = ComputeEvaporationMass(inp.Parameters_IN, inp.Parameters_OUT, N, inp.jCellIn);
             if (M == 0.0)
@@ -94,7 +94,6 @@ namespace BoSSS.Solution.XheatCommon {
             //Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
             Ret += 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[component];     // symmetry term
             Ret -= M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[component] * (vA - vB) * pnlty * muMax; // penalty term
-                                                                                                 // Transpose Term
             for (int i = 0; i < m_D; i++) {
                 //Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
                 Ret += 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * N[component] * M * ((1 / m_rhoA) - (1 / m_rhoB)) * N[i];
@@ -135,7 +134,11 @@ namespace BoSSS.Solution.XheatCommon {
             Debug.Assert(!double.IsInfinity(m_penalty));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
-            return penaltySizeFactor * m_penalty * m_penalty_base;
+            double scaledPenalty = penaltySizeFactor * m_penalty * m_penalty_base;
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
+
+            return scaledPenalty;
         }
 
 

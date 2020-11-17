@@ -37,10 +37,10 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     /// <param name="OpMtx">
     /// Output for the linear part; the operator matrix must be stored in the valeu that is passes to the function, i.e. the caller allocates memory;
-    /// if null, an explixit evaluation of the operator is required, which should be stored the affine part.
+    /// if null, an explicit evaluation of the operator is required, which should be stored the affine part. 
     /// </param>
     /// <param name="OpAffine">
-    /// Output for the affine part.
+    /// Output for the affine part. 
     /// </param>
     /// <param name="Mapping">
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
@@ -49,14 +49,16 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
     /// </param>
-    /// <param name="time"></param>
-    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
+    /// <param name="time">
+    /// physical time
+    /// </param>
+    /// <param name="LsTrkHistoryIndex">
+    /// history index into the various stacks of the level-set tracker (<see cref="LevelSetTracker.RegionsHistory"/>, <see cref="LevelSetTracker.DataHistories"/>, etc.);
+    /// Note that, especially for splitting schemes, the physical time usually does NOT match the tracker region timestamp <see cref="LevelSetTracker.LevelSetRegions.Time"/>;
+    /// </param>
+    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex);
         
-    ///// <summary>
-    ///// Callback-Template for the mass matrix update.
-    ///// </summary>
-    //public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
- 
+   
     /// <summary>
     /// Callback-template for level-set updates.
     /// </summary>

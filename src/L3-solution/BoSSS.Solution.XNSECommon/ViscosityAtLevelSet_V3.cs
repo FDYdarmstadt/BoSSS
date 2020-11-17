@@ -94,8 +94,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             //if (hCutCellMin <= 1.0e-10 * hCellMin)
             //    // very small cell -- clippling
             //    hCutCellMin = hCellMin;
-
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
+
 
             Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(uB.Length == this.ArgumentOrdering.Count);
@@ -143,118 +143,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                         Ret -= N[dN] * (wA * muA * Grad_vA[dN] + wB * muB * Grad_vB[dN]) * N[component] * (uA[dD] - uB[dD]) * N[dD];  // symmetry term
                     }
                 }
-
-                //Ret -= (muA * Grad_uA_xN[component]) * (vA);                           // consistency term
-                //Ret -= (muA * Grad_vA_xN) * (uA[component]);     // symmetry term
-                //Ret += (penalty / hCutCellMin) * (uA[component]) * (vA) * muA; // penalty term
-                //// Transpose Term
-                //for (int i = 0; i < D; i++) {
-                //    Ret -= (muA * Grad_uA[i, component]) * (vA) * N[i];  // consistency term
-                //    Ret -= (muA * Grad_vA[i]) * (uA[i]) * N[component];  // symmetry term
-                //}
-                //Ret += (wB * muB * Grad_uB_xN[component]) * (vB);
-
-                //for (int d = 0; d < D; d++) {
-                //    Ret -= N[d] * (wA * muA * Grad_uA_xN[d]) * (vA) * N[component];                           // consistency term
-                //    Ret -= N[component] * (wA * muA * Grad_vA_xN) * (uA[d]) * N[d];     // symmetry term
-                //    Ret += (penalty / hCutCellMin) * (uA[d] - 0) * N[d] * (vA) * N[component] * muA; // penalty term
-
-                //    Ret += N[d] * (wB * muB * Grad_uB_xN[d]) * (vB) * N[component];                           // consistency term
-                //    Ret += N[component] * (wB * muB * Grad_vB_xN) * (uB[d]) * N[d];     // symmetry term
-                //    Ret += (penalty / hCutCellMin) * (0 - uB[d]) * N[d] * (0 - vB) * N[component] * muB; // penalty term
-                //}
-                //// Transpose Term
-                //for (int dN = 0; dN < D; dN++) {
-                //    for (int dD = 0; dD < D; dD++) {
-                //        Ret -= N[dN] * (wA * muA * Grad_uA[dD, dN]) * N[dD] * (vA) * N[component];  // consistency term
-                //        Ret -= N[dN] * (wA * muA * Grad_vA[dN]) * N[component] * (uA[dD]) * N[dD];  // symmetry term
-                //        Ret += N[dN] * (wB * muB * Grad_uB[dD, dN]) * N[dD] * (vB) * N[component];  // consistency term
-                //        Ret += N[dN] * (wB * muB * Grad_vB[dN]) * N[component] * (uB[dD]) * N[dD];  // symmetry term
-                //    }
-                //}
-
             }
-                        
-
-
-            //break;^^
-            //    }
-            //    // SWIP-form nach DiPietro/Ern:
-            //    case ViscosityImplementation.SWIP:{
-            //        Ret -= ( muB * muA * Grad_uA_xN + muA* muB* Grad_uB_xN) / (muA+muB) * (vA - vB);
-            //        Ret -= (muB * muA * Grad_vA_xN + muA* muB* Grad_vB_xN)  / (muA + muB) * (uA[component] - uB[component]);
-            //        Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) *(2.0*muA*muB/(muA + muB));
-            //        // Transpose-Term
-            //        for (int i = 0; i < D; i++) {
-            //            Ret -= (muB * muA * Grad_uA[i, component] + muA * muB * Grad_uB[i, component]) / (muA + muB) * (vA - vB) * N[i];  // consistency term
-            //            Ret -= (muB * muA * Grad_vA[i] + muA * muB * Grad_vB[i]) / (muA + muB) * (uA[i] - uB[i]) * N[component];  // symmetry term
-            //        }
-            //        break;
-            //    }
-            //    default: { throw new ArgumentException(); }
-            //}
-            /*
-            {
-                double Acc = 0.0;
-                for (int i = 0; i < D; i++) {
-                    Acc += 0.5 * (muA*Grad_uA[i, i] + muB*Grad_uB[i, i]) * (vA - vB) * N[component];  // consistency term
-                    Acc += 0.5 * (muA*Grad_vA[component] + muB*Grad_vB[component]) * (uA[i] - uB[i]) * N[i];  // symmetry term
-                }
-                
-                //double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-                //Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax; // penalty term
-
-                Ret += Acc*(2.0/3.0);
-
-            } // */
-
-
             return Ret;
         }
 
-
-
-        //public static Stopwatch Optimized = new Stopwatch();
-        //public static Stopwatch Classic = new Stopwatch();
-
-
-
-        // public override void EdgeForm(LevSetIntParams inp, MultidimensionalArray Koeff_UxV, MultidimensionalArray Koeff_NablaUxV, MultidimensionalArray Koeff_UxNablaV, MultidimensionalArray Koeff_NablaUxNablaV) {
-        //Optimized.Start();
-        //this.EdgeForm_Perf(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-        //base.EdgeForm(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-        //Optimized.Stop();
-
-        /*
-        {
-            var chk_Koeff_UxV = Koeff_UxV.CloneAs();
-            var chk_Koeff_NablaUxV = Koeff_NablaUxV.CloneAs();
-            var chk_Koeff_UxNablaV = Koeff_UxNablaV.CloneAs();
-            var chk_Koeff_NablaUxNablaV = Koeff_NablaUxNablaV.CloneAs();
-            chk_Koeff_UxV.Clear();
-            chk_Koeff_UxNablaV.Clear();
-            chk_Koeff_NablaUxV.Clear();
-            chk_Koeff_NablaUxNablaV.Clear();
-
-            Classic.Start();
-            base.EdgeForm(inp, chk_Koeff_UxV, chk_Koeff_NablaUxV, chk_Koeff_UxNablaV, chk_Koeff_NablaUxNablaV);
-            Classic.Stop();
-
-            chk_Koeff_NablaUxNablaV.Acc(-1.0, Koeff_NablaUxNablaV);
-            chk_Koeff_UxNablaV.Acc(-1.0, Koeff_UxNablaV);
-            chk_Koeff_NablaUxV.Acc(-1.0, Koeff_NablaUxV);
-            chk_Koeff_UxV.Acc(-1.0, Koeff_UxV);
-
-            if (chk_Koeff_NablaUxNablaV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-            if (chk_Koeff_UxNablaV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-            if (chk_Koeff_NablaUxV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-            if (chk_Koeff_UxV.L2Norm() > 1.0e-10)
-                throw new ApplicationException();
-        } // */
-        //}
 
 
         /// <summary>
@@ -287,7 +179,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             Debug.Assert(!double.IsInfinity(m_penalty));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
-            return penaltySizeFactor * m_penalty * m_penalty_base;
+            double scaledPenalty = penaltySizeFactor * m_penalty * m_penalty_base;
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
+            return scaledPenalty;
+
         }
 
 

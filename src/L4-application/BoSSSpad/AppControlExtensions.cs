@@ -105,16 +105,24 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns the job correlated to a control object
         /// </summary>
         public static Job GetJob(this AppControl ctrl) {
-            foreach(var j in InteractiveShell.WorkflowMgm.AllJobs.Values) {
+            foreach (var j in InteractiveShell.WorkflowMgm.AllJobs.Values) {
                 var cj = j.GetControl();
-                if(cj == null)
+                if (cj == null)
                     continue;
 
-                if(cj.Equals(ctrl))
+                if (cj.Equals(ctrl))
                     return j;
             }
             Console.WriteLine("No Job assigned for given control object yet.");
             return null;
+        }
+        
+        /// <summary>
+        /// Returns the job correlated to a session
+        /// </summary>
+        public static Job GetJob(this ISessionInfo s) {
+            var ctrl = s.GetControl();
+            return ctrl.GetJob();
         }
 
         /// <summary>

@@ -341,7 +341,11 @@ namespace BoSSS.Solution.XheatCommon {
             Debug.Assert(!double.IsInfinity(m_penalty));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
-            return penaltySizeFactor * m_penalty * m_penalty_base;
+            var mu = penaltySizeFactor * m_penalty * m_penalty_base;
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+
+            return mu;
         }
 
 
