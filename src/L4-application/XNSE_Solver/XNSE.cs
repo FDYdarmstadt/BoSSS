@@ -37,7 +37,19 @@ namespace BoSSS.Application.XNSE_Solver
         {
             get
             {
-                int pVel = this.Control.FieldOptions["Velocity*"].Degree;
+                int pVel;
+                if(this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))
+                {
+                    pVel = v.Degree;
+                }
+                else if(this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1))
+                {
+                    pVel = v1.Degree;
+                }
+                else
+                {
+                    throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+                }
                 int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
                 int D = this.GridData.SpatialDimension;
 
@@ -47,11 +59,7 @@ namespace BoSSS.Application.XNSE_Solver
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++)
                 {
-
-
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
-
-
                     if (this.Control.UseSchurBlockPrec)
                     {
                         // using a Schur complement for velocity & pressure
