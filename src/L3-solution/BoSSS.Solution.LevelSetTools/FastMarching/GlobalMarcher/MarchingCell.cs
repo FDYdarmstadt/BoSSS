@@ -24,6 +24,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.LevelSetTools.FastMarcher;
+using ilPSP;
 
 namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
 
@@ -41,6 +42,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         static ILocalSolver fMSolver;
         static BitArray inUseMask;
         static BitArray reinitField;
+        static Partitioning reinitPart;
         static int[] queueIDList;
         static SinglePhaseField phi;
         static GridData gridDat;
@@ -64,9 +66,11 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             fMSolver = FMSolver;
             phi = Phi;
             gridDat = GridDat;
-            inUseMask = new BitArray(GridDat.Cells.Count);
+            int J = GridDat.Cells.NoOfLocalUpdatedCells;
+            inUseMask = new BitArray(J);
             reinitField = ReinitField.GetBitMask();
-            queueIDList = new int[GridDat.Cells.Count];
+            reinitPart = new Partitioning(J);
+            queueIDList = new int[J];
         }
 
         //Create an array of Cells from the Accepted CellMask. 
@@ -115,7 +119,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
                     LinkedList<MarchingCell> neighborsList = new LinkedList<MarchingCell>();
                     for (int i = 0; i < bossNeighbors.Length; ++i) {
                         int jCellNeighbor = bossNeighbors[i].Item1;
-                        if (reinitField[jCellNeighbor]) {   //only use cells in reinitField
+                        if (reinitPart.IsInLocalRange(jCellNeighbor) && reinitField[jCellNeighbor]) {   //only use cells in reinitField
                             neighborsList.AddLast( new MarchingCell(jCellNeighbor));
                         } 
                     }

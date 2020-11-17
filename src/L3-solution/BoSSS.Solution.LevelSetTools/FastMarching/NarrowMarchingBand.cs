@@ -305,7 +305,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // identify cells for Reinit
             // -------------------------
-            
+
+            Partitioning ReinitPosPart = new Partitioning(J);
+            Partitioning ReinitNegPart = new Partitioning(J);
+            Partitioning ReinitPart = new Partitioning(J);
+            Partitioning KnownPart = new Partitioning(J);
+
             BitArray ReinitPosBitmask = new BitArray(J);
             BitArray ReinitNegBitmask = new BitArray(J);
             BitArray ReinitBitmask = new BitArray(J);
@@ -345,11 +350,11 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
 
-            CellMask ReintPos = new CellMask(gdat, ReinitPosBitmask);
-            CellMask ReintNeg = new CellMask(gdat, ReinitNegBitmask);
-            CellMask Reint = new CellMask(gdat, ReinitBitmask);
+            CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
+            CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmask);
+            CellMask Reinit = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);
-
+            
 
             // perform Reinitialization
             // ------------------------
@@ -359,19 +364,21 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             marcher.AvgInit(NewLevelSet, Known);
 
-            //CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
-            //marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, NEAR);
+            if (NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0) {
+                CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
+                marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, Reinit);
+            }
 
-            if (NoOfPosReinit > 0)
-                marcher.Reinitialize(NewLevelSet, ReintPos, +1, Known, LevelSetGrad, null);
-            if (NoOfNegReinit > 0)
-                marcher.Reinitialize(NewLevelSet, ReintNeg, -1, Known, LevelSetGrad, null);
+            //if (NoOfPosReinit.MPISum() > 0)
+            //    marcher.Reinitialize(NewLevelSet, ReinitPos, +1, Known, LevelSetGrad, null);
+            //if (NoOfNegReinit.MPISum() > 0)
+            //    marcher.Reinitialize(NewLevelSet, ReinitNeg, -1, Known, LevelSetGrad, null);
 
             // save reinit at OLD levelset, to prevent doing it multiple times
-            OldLevSet.Clear(ReintPos);
-            OldLevSet.Clear(ReintNeg);
-            OldLevSet.Acc(1.0, NewLevelSet, ReintPos);
-            OldLevSet.Acc(1.0, NewLevelSet, ReintNeg);
+            OldLevSet.Clear(ReinitPos);
+            OldLevSet.Clear(ReinitNeg);
+            OldLevSet.Acc(1.0, NewLevelSet, ReinitPos);
+            OldLevSet.Acc(1.0, NewLevelSet, ReinitNeg);
 
             //Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_afterReinit", 0.0, 2);
 
@@ -1122,7 +1129,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 // test matrix and affine vectors
 #if DEBUG
                 int J = grdDat.Cells.NoOfLocalUpdatedCells;
-                BitArray CCbitmask = subMask.GetBitMaskWithExternal();
+                BitArray CCbitmask = subMask.GetBitMask();
                 for(int j = 0; j < J; j++) {
                     int N = map.BasisS[0].GetLength(j);
                     for(int n = 0; n < N; n++) {
@@ -1173,12 +1180,13 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // solving
             // -------
 
-            if (UsedRows.Count == 0)
+            Partitioning usedRowsPart = new Partitioning(UsedRows.Count);
+            if (usedRowsPart.TotalLength == 0)
                 return;
 
             MsrMatrix essExtVelMatrix;
             {
-                essExtVelMatrix = new MsrMatrix(new Partitioning(UsedRows.Count));
+                essExtVelMatrix = new MsrMatrix(usedRowsPart);
                 ExtVelMatrix.WriteSubMatrixTo(essExtVelMatrix, UsedRows, default(int[]), UsedRows, default(int[]));
             }
 
@@ -1248,17 +1256,16 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // Eigentlich bräuchten wir Min/Max am Interface, aber dafür bräuchten wir wieder den ClosestPointfinder
 
-            foreach(int j in subMask.ItemEnum) {
-                for(int d = 0; d < ExtVel.Length; d++) {
-                    double miniCell, maxiCell;
-                    ExtVel[d].GetExtremalValuesInCell(out miniCell, out maxiCell, j);
+            //foreach(int j in subMask.ItemEnum) {
+            //    for(int d = 0; d < ExtVel.Length; d++) {
+            //        double miniCell, maxiCell;
+            //        ExtVel[d].GetExtremalValuesInCell(out miniCell, out maxiCell, j);
 
-                    ExtVelMin[d][j] = miniCell;
-                    ExtVelMax[d][j] = maxiCell;
-                }
-            }
+            //        ExtVelMin[d][j] = miniCell;
+            //        ExtVelMax[d][j] = maxiCell;
+            //    }
+            //}
 
-            
         }
 
         
