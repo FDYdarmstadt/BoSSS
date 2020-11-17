@@ -136,6 +136,8 @@ namespace BoSSS.Solution.NSECommon {
                 double cj_out = InverseLengthScales[jCellOut];
                 mu = Math.Max(mu, m_penalty * cj_out);
             }
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
 
             return mu;
         }

@@ -2316,6 +2316,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 private set;
             }
 
+           
+
             /// <summary>
             /// Edge Tags
             /// index: local edge index;

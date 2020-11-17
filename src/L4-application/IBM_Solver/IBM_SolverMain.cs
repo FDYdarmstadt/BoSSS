@@ -558,7 +558,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
         /// </summary>
-        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime, int LsTrkHistoryIndex) {
             DelComputeOperatorMatrix_CallCounter++;
             int D = this.LsTrk.GridDat.SpatialDimension;
 
@@ -589,7 +589,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
                 ParameterUpdate(CurrentState, Params);
-                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping);
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, LsTrkHistoryIndex);
                 mtxBuilder.time = phystime;
                 mtxBuilder.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
@@ -636,7 +636,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             } else {
                 ParameterUpdate(CurrentState, Params);
-                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping);
+                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, LsTrkHistoryIndex);
                 eval.time = phystime;
                 eval.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
@@ -822,9 +822,8 @@ namespace BoSSS.Application.IBM_Solver {
                 hCutCellMin = hCellMin;
 
             double µ = penalty_base / hCutCellMin;
-            if (double.IsNaN(µ) || double.IsInfinity(µ))
-                throw new ArgumentOutOfRangeException("Invalid penalty parameter");
-            Debug.Assert(!(double.IsNaN(µ) || double.IsInfinity(µ)));
+            if(µ.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
             return µ;
         }
 

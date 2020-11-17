@@ -150,13 +150,17 @@ namespace BoSSS.Solution {
                 if(vec.Count != m_newJ)
                     throw new ArgumentException();
 
-                var SerializedData = m_newDGFieldData_OnlyRedist[Reference];
+                double[][] SerializedData = m_newDGFieldData_OnlyRedist[Reference];
                 Debug.Assert(SerializedData.Length == m_newJ);
                 var fmt = new BinaryFormatter();
 
                 for(int j = 0; j < m_newJ; j++) {
-                    using(var ms = new MemoryStream(ConvertBuffer(SerializedData[j]))) {
-                        vec[j] = (T)(fmt.Deserialize(ms));
+                    if(SerializedData[j].Length > 0) {
+                        using(var ms = new MemoryStream(ConvertBuffer(SerializedData[j]))) {
+                            vec[j] = (T)(fmt.Deserialize(ms));
+                        }
+                    } else {
+                        vec[j] = default(T);
                     }
                 }
             }
@@ -283,7 +287,11 @@ namespace BoSSS.Solution {
                         ushort[] RegionCode = new ushort[m_newJ];
                         this.RestoreVector(RegionCode, base.GetLSregioncodeName(iH));
 
-                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, RegionCode, m_LsTrkPrivData.Versions[1 - iH], m_LsTrkPrivData.Times[1 - iH]);
+                        
+                        (int iLevSet, int iFace)[][] LevSetCoincidingFaces = new (int iLevSet, int iFace)[m_newJ][];
+                        this.RestoreVector<(int iLevSet, int iFace)[],(int iLevSet, int iFace)[][]>(LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+
+                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, RegionCode, LevSetCoincidingFaces, m_LsTrkPrivData.Versions[1 - iH], m_LsTrkPrivData.Times[1 - iH]);
 
                         if(iH < 1) {
                             m_NewTracker.PushStacks();

@@ -303,7 +303,7 @@ namespace BoSSS.Solution {
                             ApproxJac = Newton.ApproxInvJacobianOptions.MatrixFreeGMRES,
                             Precond = precondonly,
                             ConvCrit = nc.ConvergenceCriterion,
-                            printLambda = nc.printLambda,
+                            printLambda = false,
                             Globalization = nc.Globalization,
                         };
                         linsolver = precondonly; // put out the solver, which is actually used!
@@ -315,7 +315,7 @@ namespace BoSSS.Solution {
                             //maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            printLambda = nc.printLambda,
+                            printLambda = false,
                             Globalization = nc.Globalization,
                             ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                             Precond = linsolver,
@@ -777,7 +777,9 @@ namespace BoSSS.Solution {
         }
 
         private int[] GetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
+            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
 
+            /*
             //This workaround takes into account, the wierd structure of the ChangeOfBasis-thing
             //prohibits out of bounds exception
             Func<int, int, int[]> getDGs = delegate (int iLevel, int iVar) {
@@ -808,20 +810,19 @@ namespace BoSSS.Solution {
             }
 
             return LocalDOF;
+            */
         }
 
         private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
             int NoOfLevels = MultigridBasis.Count();
             int[] DOFperCell = new int[NoOfLevels];
             int[] LocalDOF = new int[NoOfLevels];
-            int counter = 0;
+
             
 
             for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
-                counter = iLevel;
-                if (iLevel > NoOfLevels - 1)
-                    counter = NoOfLevels - 1;
-                foreach (var cob in MGChangeOfBasis[counter]) {
+                var MGChangeOfBasis_iLevel = MGChangeOfBasis[Math.Min(iLevel, MGChangeOfBasis.Length - 1)];
+                foreach (var cob in MGChangeOfBasis_iLevel) {
                     for (int iVar = 0; iVar < cob.VarIndex.Length; iVar++) {
                         int d = ((AggregationGridBasis)MultigridBasis.First()[iVar]).AggGrid.ParentGrid.SpatialDimension;
                         int p = cob.DegreeS[iVar];

@@ -90,7 +90,12 @@ namespace BoSSS.Foundation.Grid {
             int[] globalDesiredLevel = GetGlobalDesiredLevel(levelIndicator, globalCellNeigbourship);
             cellsToRefine = GetCellsToRefine(globalDesiredLevel);
 
-            BitArray oK2Coarsen = GetCellsOk2Coarsen(globalDesiredLevel, globalCellNeigbourship);
+            BitArray oK2Coarsen = GetCellsOk2Coarsen(globalDesiredLevel, globalCellNeigbourship);        
+            //int numOk2Coarsen = 0;
+            //for (int i = 0; i < oK2Coarsen.Count(); i++) {
+            //    if (oK2Coarsen[i])
+            //        numOk2Coarsen++;
+            //}
             int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen);
             cellsToCoarsen = GetCoarseningCells(coarseningClusters);
 
@@ -412,7 +417,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="globalCellNeigbourship">
         /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
         /// </param>
-        private BitArray GetCellsOk2Coarsen(int[] globalDesiredLevel, int[][] globalCellNeigbourship) {
+        private BitArray GetCellsOk2Coarsen(int[] globalDesiredLevel, int[][] globalCellNeigbourship) { 
             BitArray oK2Coarsen = new BitArray(LocalNumberOfCells);
             int myRank = CurrentGrid.MpiRank;
             int[][] cellNeighbours = CurrentGrid.Cells.CellNeighbours;
@@ -420,18 +425,60 @@ namespace BoSSS.Foundation.Grid {
             for (int globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) {
                 int localCellIndex = globalCellIndex - myI0;
                 int ActualLevel_j = CurrentGrid.Cells.GetCell(localCellIndex).RefinementLevel;
+                int DesiredLevel_j = globalDesiredLevel[globalCellIndex];
 
-                if (ActualLevel_j > globalDesiredLevel[globalCellIndex] && ActualLevel_j > globalCellNeigbourship[globalCellIndex].Select(neighbourIndex => globalDesiredLevel[neighbourIndex]).Max()) {
+                if (CellsNotOK2Coarsen != null && CellsNotOK2Coarsen[localCellIndex]) 
+                    continue;
+  
+
+                //if (ActualLevel_j > globalDesiredLevel[globalCellIndex] && ActualLevel_j > globalCellNeigbourship[globalCellIndex].Select(neighbourIndex => globalDesiredLevel[neighbourIndex]).Max()) {
+                if (ActualLevel_j > DesiredLevel_j) {
                     oK2Coarsen[localCellIndex] = true;
+                    foreach (int neighIdx in cellNeighbours[globalCellIndex]) {
+                        int ActualLevel_jNeigh = CurrentGrid.Cells.GetCell(neighIdx).RefinementLevel;
+                        int DesiredLevel_jNeigh = globalDesiredLevel[neighIdx];
+                        if (ActualLevel_jNeigh == DesiredLevel_jNeigh && ActualLevel_j < ActualLevel_jNeigh) {
+                            //  neigbourig cell is not changing
+                            oK2Coarsen[localCellIndex] = false;
+                            break;
+                        } else if (ActualLevel_jNeigh < DesiredLevel_jNeigh && ActualLevel_j <= ActualLevel_jNeigh) {
+                            // neighbouring cell needs to be refined
+                            oK2Coarsen[localCellIndex] = false;
+                            break;
+                        } else if (ActualLevel_jNeigh > DesiredLevel_jNeigh && ActualLevel_j < ActualLevel_jNeigh - 1) {
+                            // neighbouring cell also may be coarsen
+                            oK2Coarsen[localCellIndex] = false;
+                            break;
+                        } 
+                    }
+                } 
+            }
+
+            for (int globalCellIndex = GlobalIndexOfFirstLocalCell; globalCellIndex < GlobalIndexOfFirstLocalCell + LocalNumberOfCells; globalCellIndex++) {
+                int localCellIndex = globalCellIndex - GlobalIndexOfFirstLocalCell;
+                int ActualLevel_j = CurrentGrid.Cells.GetCell(localCellIndex).RefinementLevel;
+                int DesiredLevel_j = globalDesiredLevel[globalCellIndex];
+
+                if (!oK2Coarsen[localCellIndex])
+                    continue;
+
+                foreach (int neighIdx in cellNeighbours[globalCellIndex]) {
+                    int ActualLevel_jNeigh = CurrentGrid.Cells.GetCell(neighIdx).RefinementLevel;
+                    int DesiredLevel_jNeigh = globalDesiredLevel[neighIdx];
+                    if (ActualLevel_jNeigh > DesiredLevel_jNeigh && !oK2Coarsen[neighIdx] && ActualLevel_j < ActualLevel_jNeigh) {
+                        // potentionally coarsening neighbour is not coarsend
+                        oK2Coarsen[localCellIndex] = false;
+                        break;
+                    }
                 }
             }
 
-            if (CellsNotOK2Coarsen != null) {
-                for (int j = 0; j < LocalNumberOfCells; j++) {
-                    if (CellsNotOK2Coarsen[j])
-                        oK2Coarsen[j] = false;
-                }
-            }
+            //if (CellsNotOK2Coarsen != null) {
+            //    for (int j = 0; j < LocalNumberOfCells; j++) {
+            //        if (CellsNotOK2Coarsen[j])
+            //            oK2Coarsen[j] = false;
+            //    }
+            //}
 
             return oK2Coarsen;
         }
@@ -488,9 +535,9 @@ namespace BoSSS.Foundation.Grid {
                 CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighborsEdges, out _);
                 CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] CellNeighborsVertices, out _);
                 List<int> cellNeighbours = new List<int>();
-                cellNeighbours.AddRange(CellNeighborsEdges);
+                //cellNeighbours.AddRange(CellNeighborsEdges);
                 cellNeighbours.AddRange(CellNeighborsVertices);
-                bool complete = false;
+                bool complete = false; 
                 FindCoarseiningClusterRecursive(j, RecursionDepth, cellNeighbours.ToArray(), marker, CurrentGrid.Cells.GetCell, currentRefinmentLevel, searchClusterID, currentClusterSize, tempCoarseningCluster, ref complete);
                 foreach (int jC in tempCoarseningCluster) {
                     marker[jC] = true;

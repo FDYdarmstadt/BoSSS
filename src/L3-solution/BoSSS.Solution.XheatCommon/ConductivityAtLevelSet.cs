@@ -39,7 +39,8 @@ namespace BoSSS.Solution.XheatCommon {
         public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
             this.kA = _kA;
             this.kB = _kB;
-            this.penalty = _penalty;
+            this.m_penalty_base = _penalty;
+            this.m_D = lstrk.GridDat.SpatialDimension;
 
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
@@ -52,6 +53,7 @@ namespace BoSSS.Solution.XheatCommon {
         double kB;
 
         double penalty;
+        int m_D;
 
         //bool DirichletCond;
         double Tsat;
@@ -68,32 +70,34 @@ namespace BoSSS.Solution.XheatCommon {
             Debug.Assert(inp.jCellIn == inp.jCellOut);
 
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
+            //double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
-            int D = N.Length;
             //Debug.Assert(this.ArgumentOrdering.Count == D);
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
-            Debug.Assert(Grad_uA.GetLength(1) == D);
-            Debug.Assert(Grad_uB.GetLength(1) == D);
+            Debug.Assert(Grad_uA.GetLength(1) == m_D);
+            Debug.Assert(Grad_uB.GetLength(1) == m_D);
 
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
-            for (int d = 0; d < D; d++) {
+            for (int d = 0; d < m_D; d++) {
                 Grad_uA_xN += Grad_uA[0, d] * N[d];
                 Grad_uB_xN += Grad_uB[0, d] * N[d];
                 Grad_vA_xN += Grad_vA[d] * N[d];
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
+            //double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            //double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
-            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
-            Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
+            //double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
+            //Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
 
-            if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
-                hCutCellMin = hCellMin;
+            //if (hCutCellMin <= 1.0e-10 * hCellMin)
+            //    // very small cell -- clippling
+            //    hCutCellMin = hCellMin;
+
+            double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
+            double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
 
             double Ret = 0.0;
 
@@ -107,14 +111,21 @@ namespace BoSSS.Solution.XheatCommon {
                 //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - Tsat);
                 //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (Tsat - uB[0]);
 
-                Ret += (2.0 * penalty / hCutCellMin) * (uA[0] - Tsat) * (vA - 0) * kA; // penalty term
-                Ret += (2.0 * penalty / hCutCellMin) * (Tsat - uB[0]) * (0 - vB) * kB; // penalty term
+                Ret += (uA[0] - Tsat) * (vA - 0) * 2.0 * pnlty * kA; // penalty term
+                Ret += (Tsat - uB[0]) * (0 - vB) * 2.0 * pnlty * kB; // penalty term
+
+                //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * Tsat;
+
+                //Ret += (uA[0] - uB[0]) * (vA - vB) * pnlty * wPenalty; // penalty term
+                //Ret -= Tsat * (vA - vB) * pnlty * wPenalty;
 
             } else {
-                Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
-                Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+                //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
 
-                Ret += (penalty / hCutCellMin) * (uA[0] - uB[0]) * (vA - vB) * (Math.Abs(kA) > Math.Abs(kB) ? kA : kB); // penalty term
+                //Ret += (penalty / hCutCellMin) * (uA[0] - uB[0]) * (vA - vB) * (Math.Abs(kA) > Math.Abs(kB) ? kA : kB); // penalty term
             }
 
 
@@ -122,20 +133,83 @@ namespace BoSSS.Solution.XheatCommon {
             return Ret;
         }
 
+        //MultidimensionalArray PosLengthScaleS;
+        //MultidimensionalArray NegLengthScaleS;
+
+        //public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+        //    NegLengthScaleS = csA.CellLengthScales;
+        //    PosLengthScaleS = csB.CellLengthScales;
+
+        //    if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+        //        evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        //}
+
+        BitArray evapMicroRegion;
+
+
+        /// <summary>
+        /// base multiplier for the penalty computation
+        /// </summary>
+        protected double m_penalty_base;
+
+        /// <summary>
+        /// penalty adapted for spatial dimension and DG-degree
+        /// </summary>
+        double m_penalty;
+
+        /// <summary>
+        /// computation of penalty parameter according to:
+        /// An explicit expression for the penalty parameter of the
+        /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
+        /// look at formula (7) in cited paper
+        /// </summary>
+        protected double Penalty(int jCellIn, int jCellOut) {
+
+            double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
+            double penaltySizeFactor_B = 1.0 / PosLengthScaleS[jCellOut];
+
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+
+            return penaltySizeFactor * m_penalty * m_penalty_base;
+        }
+
+
         MultidimensionalArray PosLengthScaleS;
         MultidimensionalArray NegLengthScaleS;
 
+        /// <summary>
+        /// Update of penalty length scales.
+        /// </summary>
+        /// <param name="csA"></param>
+        /// <param name="csB"></param>
+        /// <param name="DomainDGdeg"></param>
+        /// <param name="TestDGdeg"></param>
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            double _D = m_D;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
 
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
-
         }
 
-        BitArray evapMicroRegion;
 
         public int LevelSetIndex {
             get { return 0; }
@@ -191,7 +265,7 @@ namespace BoSSS.Solution.XheatCommon {
 
                 double FlxNeg = -0.5 * q;
                 double FlxPos = +0.5 * q;
-
+                
                 double Ret = FlxNeg * vA - FlxPos * vB;
 
                 return Ret;

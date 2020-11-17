@@ -51,15 +51,16 @@ namespace BoSSS.Application.FSI_Solver {
         static void Main(string[] args) {
 
             //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Application.FSI_Solver.TestProgram.PeriodicTest();
+            ////BoSSS.Application.FSI_Solver.TestProgram.PeriodicTest();
+            //BoSSS.Application.FSI_Solver.TestProgram.TestParticleInShearFlow();
             //BoSSS.Solution.Application.FinalizeMPI();
-            //throw new ApplicationException( "remove me");
-            
+            //throw new ApplicationException("remove me");
+
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
                 return p;
             });
-            
+
         }
 
         /// <summary>
