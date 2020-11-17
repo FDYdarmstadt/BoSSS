@@ -29,7 +29,7 @@ set ytics format "$10^{%L}$"
 set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
-plot "XdgPoissonScaling_data_0.csv" title "GMRES w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_1.csv" title "Kcycle w. add.-Schwarz w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgPoissonScaling_data_2.csv" title "Kcycle w. add.-Schwarz w. direct" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_3.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_4.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "XdgPoissonScaling_data_0.csv" title "Kcycle w. add.-Schwarz w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgPoissonScaling_data_1.csv" title "Kcycle w. add.-Schwarz w. direct" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_2.csv" title "GMRES w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_3.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_4.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 set size 0.98,0.326666666666667
 set origin 0.01,0.336666666666667
 set lmargin 1e01
@@ -56,7 +56,7 @@ set ytics format "$10^{%L}$"
 set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
-plot "XdgPoissonScaling_data_5.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_6.csv" title "GMRES w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_7.csv" title "Kcycle w. add.-Schwarz w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgPoissonScaling_data_8.csv" title "Kcycle w. add.-Schwarz w. direct" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_9.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "XdgPoissonScaling_data_5.csv" title "Kcycle w. add.-Schwarz w. direct" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_6.csv" title "Kcycle w. add.-Schwarz w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgPoissonScaling_data_7.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_8.csv" title "GMRES w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_9.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 set size 0.98,0.326666666666667
 set origin 0.01,0.00333333333333333
 set lmargin 1e01
@@ -85,7 +85,7 @@ set ytics format "$10^{%L}$"
 set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
-plot "XdgPoissonScaling_data_10.csv" title "Kcycle w. add.-Schwarz w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgPoissonScaling_data_11.csv" title "GMRES w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_12.csv" title "Kcycle w. add.-Schwarz w. direct" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_13.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_14.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "XdgPoissonScaling_data_10.csv" title "Kcycle w. add.-Schwarz w. direct" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_11.csv" title "Kcycle w. add.-Schwarz w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgPoissonScaling_data_12.csv" title "GMRES w. pTG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_13.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_14.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 
 
 exit

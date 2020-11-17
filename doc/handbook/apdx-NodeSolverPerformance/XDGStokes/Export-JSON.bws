@@ -1,6 +1,5 @@
 restart
 **************
-(18,7): error CS0246: The type or namespace name `Renci' could not be found. Are you missing an assembly reference?
 
   BoSSSpad C# interpreter
   _______________________
@@ -13,9 +12,9 @@ List of 1 instances of IDatabaseInfo {
  Console ready for input. Type 'help' for help.
 
 ==============
-var tmpDB = OpenOrCreateDatabase(@"D:\SyncHHLR\DB_XdgStokes_Schurprec");
+var tmpDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_XdgStokes_trans");
 **************
-Opening existing database 'D:\SyncHHLR\DB_XdgStokes_Schurprec'.
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes_trans'.
 
 ==============
 tmpDB.Sessions.Pick(0).NumberOfCores()
@@ -24,40 +23,63 @@ tmpDB.Sessions.Pick(0).NumberOfCores()
 ==============
 tmpDB.Sessions
 **************
-List of 33 instances of ISessionInfo {
-  0: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J512_p5_exp_Kcycle_schwarz	11/10/2020 11:22:54	8fc2948a...
-  1: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J4096_p3_exp_Kcycle_schwarz	11/10/2020 11:22:28	7a327f59...
-  2: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J4096_p2_exp_Kcycle_schwarz	11/10/2020 11:22:01	0d1c44b5...
-  3: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J512_p3_exp_Kcycle_schwarz	11/10/2020 11:22:16	6ba3ddc4...
-  4: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J32768_p5_exp_Kcycle_schwarz*	11/10/2020 11:23:04	4f698779...
-  5: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J32768_p3_exp_Kcycle_schwarz*	11/10/2020 11:22:42	627f4699...
-  6: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J4096_p5_exp_Kcycle_schwarz*	11/10/2020 11:22:53	f1c88551...
-  7: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J32768_p2_exp_Kcycle_schwarz*	11/10/2020 11:22:11	72117c56...
-  8: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J512_p2_exp_Kcycle_schwarz	11/10/2020 11:21:52	cbd4eac3...
-  9: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1_failure	J32768_p2_exp_Kcycle_schwarz_Sblocks2_pLow2*	10/23/2020 14:06:57	2256f034...
-  10: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1_failure	J32768_p2_classic_pardiso_Sblocks4_pLow2*	10/23/2020 14:06:00	95f45546...
-  11: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1_failure	J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2*	10/23/2020 14:06:55	96abb973...
-  12: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1_failure	J32768_p2_classic_pardiso_Sblocks2_pLow2*	10/23/2020 14:06:02	c2a42901...
-  13: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2	10/23/2020 14:05:55	d3e9efa8...
-  14: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J4096_p2_classic_pardiso_Sblocks2_pLow2	10/23/2020 14:06:02	39b3f7d6...
-  15: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J4096_p2_classic_pardiso_Sblocks4_pLow2	10/23/2020 14:05:56	e11dd697...
-  16: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow2	10/23/2020 14:05:55	45894ad2...
-  17: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2	10/23/2020 14:06:01	b70e8f37...
-  18: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J512_p2_exp_Kcycle_schwarz_Sblocks2_pLow2	10/23/2020 14:06:03	2a25e276...
-  19: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J512_p2_classic_pardiso_Sblocks4_pLow2	10/23/2020 14:05:54	a5b1a717...
-  20: Xdg_Stokes_Schwarz-Schur_scaling_Sayex1	J512_p2_classic_pardiso_Sblocks2_pLow2	10/23/2020 14:05:55	4c373283...
-  21: Xdg_Stokes_Schwarz-Schur_scaling	J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2	10/23/2020 13:10:31	d505e135...
-  22: Xdg_Stokes_Schwarz-Schur_scaling	J4096_p2_classic_pardiso_Sblocks4_pLow2	10/23/2020 13:10:23	adfc07e4...
-  23: Xdg_Stokes_Schwarz-Schur_scaling	J4096_p2_classic_pardiso_Sblocks2_pLow2	10/23/2020 13:10:28	de8ca950...
-  24: Xdg_Stokes_Schwarz-Schur_scaling	J4096_p2_exp_Kcycle_schwarz_Sblocks2_pLow2	10/23/2020 13:10:23	8396db57...
-  25: Xdg_Stokes_Schwarz-Schur_scaling	J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2*	10/23/2020 13:10:56	8dbb26cc...
-  26: Xdg_Stokes_Schwarz-Schur_scaling	J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2	10/23/2020 13:10:31	2e704e14...
-  27: Xdg_Stokes_Schwarz-Schur_scaling	J32768_p2_exp_Kcycle_schwarz_Sblocks2_pLow2*	10/23/2020 13:10:28	b0dd6b69...
-  28: Xdg_Stokes_Schwarz-Schur_scaling	J32768_p2_classic_pardiso_Sblocks4_pLow2*	10/23/2020 13:10:24	9104016c...
-  29: Xdg_Stokes_Schwarz-Schur_scaling	J32768_p2_classic_pardiso_Sblocks2_pLow2*	10/23/2020 13:10:23	d87d2179...
-  30: Xdg_Stokes_Schwarz-Schur_scaling	J512_p2_exp_Kcycle_schwarz_Sblocks2_pLow2	10/23/2020 13:10:29	9035e0be...
-  31: Xdg_Stokes_Schwarz-Schur_scaling	J512_p2_classic_pardiso_Sblocks4_pLow2	10/23/2020 13:10:31	ebe26d2e...
-  32: Xdg_Stokes_Schwarz-Schur_scaling	J512_p2_classic_pardiso_Sblocks2_pLow2	10/23/2020 13:09:55	1e07c1d4...
+List of 56 instances of ISessionInfo {
+  0: Xdg_Stokes_Schwarz_test_failure	J262144_p2_exp_gmres_levelpmg_pLow1*	11/16/2020 22:17:56	05bd3b0e...
+  1: Xdg_Stokes_Schwarz_test_failure	J110592_p2_exp_Kcycle_schwarz_pLow2*	11/16/2020 22:40:46	26fc86ca...
+  2: Xdg_Stokes_Schwarz_test_failure	J32768_p2_exp_Kcycle_schwarz_pLow2_4Sblocks*	11/16/2020 19:41:21	3a560b9d...
+  3: Xdg_Stokes_Schwarz_test_failure	J262144_p2_exp_Kcycle_schwarz_pLow2*	11/16/2020 22:40:56	51dbd9f0...
+  4: Xdg_Stokes_Schwarz_test_failure	J110592_p2_exp_gmres_levelpmg_pLow1*	11/16/2020 22:17:36	89623ed8...
+  5: Xdg_Stokes_Schwarz_test_failure	J32768_p2_classic_pardiso*	11/16/2020 19:19:44	9a6318bf...
+  6: Xdg_Stokes_Schwarz_test_failure	J262144_p2_exp_Kcycle_schwarz_pLow1*	11/16/2020 22:35:18	ac41a19b...
+  7: Xdg_Stokes_Schwarz_test_failure	J32768_p2_exp_Kcycle_schwarz_pLow1_4Sblocks*	11/16/2020 19:23:16	b4dec385...
+  8: Xdg_Stokes_Schwarz_test_failure	J110592_p2_exp_Kcycle_schwarz_pLow1*	11/16/2020 22:35:14	d5d699ef...
+  9: Xdg_Stokes_Schwarz_test_failure	J32768_p2_exp_Kcycle_schwarz_pLow2*	11/16/2020 22:40:37	e3e287a0...
+  10: Xdg_Stokes_Schwarz_test	J32768_p2_exp_Kcycle_schwarz_pLow1	11/16/2020 22:35:03	db1f83f0...
+  11: Xdg_Stokes_Schwarz_test	J4096_p2_exp_Kcycle_schwarz_pLow2_4Sblocks	11/16/2020 19:41:13	0239710b...
+  12: Xdg_Stokes_Schwarz_test	J4096_p2_exp_Kcycle_schwarz_pLow1_4Sblocks	11/16/2020 19:22:43	1c5775be...
+  13: Xdg_Stokes_Schwarz_test	J512_p2_exp_Kcycle_schwarz_pLow2_4Sblocks	11/16/2020 19:41:02	e7c8d1d9...
+  14: Xdg_Stokes_Schwarz_test	J512_p2_exp_Kcycle_schwarz_pLow1_4Sblocks	11/16/2020 19:21:42	f86cf970...
+  15: Xdg_Stokes_Schwarz_test	J32768_p2_exp_gmres_levelpmg	11/16/2020 19:20:45	681d2216...
+  16: Xdg_Stokes_Schwarz_test	J4096_p2_classic_pardiso	11/16/2020 19:19:32	cae76bee...
+  17: Xdg_Stokes_Schwarz_test	J4096_p2_exp_gmres_levelpmg	11/16/2020 19:20:03	fac479f3...
+  18: Xdg_Stokes_Schwarz_test	J512_p2_exp_gmres_levelpmg	11/16/2020 19:19:54	c1fdee49...
+  19: Xdg_Stokes_Schwarz_test	J512_p2_classic_pardiso	11/16/2020 19:19:22	1221206a...
+  20: Xdg_Stokes_Kcycle_Schwarz	J512_p2_classic_pardiso	11/06/2020 19:05:40	0be6cd66...
+  21: Xdg_Stokes_Kcycle_Schwarz	J4096_p2_classic_pardiso	11/06/2020 19:05:41	1eb6d3d7...
+  22: Xdg_Stokes_Kcycle_Schwarz	J4096_p3_classic_pardiso	11/06/2020 19:05:40	4cf00615...
+  23: Xdg_Stokes_Kcycle_Schwarz	J512_p3_classic_pardiso	11/06/2020 19:05:40	8756a384...
+  24: Xdg_Stokes_Kcycle_Schwarz	J512_p5_classic_pardiso	11/06/2020 19:06:45	975aba33...
+  25: Xdg_Stokes_Kcycle_Schwarz	J4096_p5_classic_pardiso*	11/06/2020 19:06:47	a1134f75...
+  26: Xdg_Stokes_Kcycle_Schwarz	J32768_p3_classic_pardiso*	11/06/2020 19:06:45	ccc9e4d3...
+  27: Xdg_Stokes_Kcycle_Schwarz	J32768_p2_classic_pardiso*	11/06/2020 19:05:40	e8b3055c...
+  28: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J4096_p2_exp_Kcycle_schwarz	11/06/2020 19:06:42	314b5e94...
+  29: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J4096_p5_exp_Kcycle_schwarz*	11/06/2020 19:09:47	547fbad7...
+  30: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J512_p3_exp_Kcycle_schwarz	11/06/2020 19:07:48	5609b9b3...
+  31: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J512_p2_exp_Kcycle_schwarz	11/06/2020 19:06:40	6025cd74...
+  32: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J512_p5_exp_Kcycle_schwarz	11/06/2020 19:08:45	62718015...
+  33: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J4096_p3_exp_Kcycle_schwarz	11/06/2020 19:07:42	869d7dca...
+  34: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J32768_p3_exp_Kcycle_schwarz*	11/06/2020 19:07:46	8d50229b...
+  35: Xdg_Stokes_Kcycle_Schwarz_2Mglvl	J32768_p2_exp_Kcycle_schwarz*	11/06/2020 19:07:47	aeb1a329...
+  36: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J32768_p5_exp_Kcycle_schwarz*	11/06/2020 23:04:57	06ae4bcc...
+  37: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J512_p2_exp_Kcycle_schwarz	11/06/2020 22:58:05	3fdfc097...
+  38: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J32768_p3_exp_Kcycle_schwarz*	11/06/2020 23:01:53	4ef5f53b...
+  39: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J32768_p2_exp_Kcycle_schwarz*	11/06/2020 22:59:25	6d456228...
+  40: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J262144_p2_exp_Kcycle_schwarz*	11/06/2020 23:01:58	7194dfb2...
+  41: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J4096_p3_exp_Kcycle_schwarz	11/06/2020 23:01:49	8c5c59be...
+  42: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J512_p5_exp_Kcycle_schwarz	11/06/2020 23:04:00	913c77be...
+  43: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J4096_p5_exp_Kcycle_schwarz*	11/06/2020 23:04:01	bcb1e058...
+  44: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J4096_p2_exp_Kcycle_schwarz	11/06/2020 22:58:10	bf4cd172...
+  45: Xdg_Stokes_Kcycle_Schwarz_5Mglvl	J512_p3_exp_Kcycle_schwarz	11/06/2020 23:01:57	dcd6fbed...
+  46: Xdg_Stokes_Kcycle_Schwarz_4cores	J512_p2_exp_Kcycle_schwarz	11/06/2020 19:50:51	1225b5b2...
+  47: Xdg_Stokes_Kcycle_Schwarz_4cores	J512_p5_exp_Kcycle_schwarz	11/06/2020 19:51:50	19c70c4b...
+  48: Xdg_Stokes_Kcycle_Schwarz_4cores	J262144_p2_exp_Kcycle_schwarz*	11/06/2020 19:51:21	2a00732c...
+  49: Xdg_Stokes_Kcycle_Schwarz_4cores	J4096_p3_exp_Kcycle_schwarz	11/06/2020 19:51:42	4db24b4e...
+  50: Xdg_Stokes_Kcycle_Schwarz_4cores	J512_p3_exp_Kcycle_schwarz	11/06/2020 19:51:27	6d992a07...
+  51: Xdg_Stokes_Kcycle_Schwarz_4cores	J32768_p3_exp_Kcycle_schwarz*	11/06/2020 19:51:49	7cab6453...
+  52: Xdg_Stokes_Kcycle_Schwarz_4cores	J4096_p2_exp_Kcycle_schwarz	11/06/2020 19:51:28	9c45c99a...
+  53: Xdg_Stokes_Kcycle_Schwarz_4cores	J4096_p5_exp_Kcycle_schwarz*	11/06/2020 19:52:44	df9baea8...
+  54: Xdg_Stokes_Kcycle_Schwarz_4cores	J32768_p5_exp_Kcycle_schwarz*	11/06/2020 19:52:42	e17fa8cd...
+  55: Xdg_Stokes_Kcycle_Schwarz_4cores	J32768_p2_exp_Kcycle_schwarz*	11/06/2020 19:51:25	e823929d...
 }
 ==============
 **************
@@ -68,11 +90,11 @@ List of 33 instances of ISessionInfo {
 ==============
 **************
 ==============
-string WFlowName = "Xdg_Stokes_Schwarz-direct_4SB_2Lvl";
+string WFlowName = "Xdg_Stokes_Schwarz_test";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_Schwarz-direct_4SB_2Lvl'.
+Project name is set to 'Xdg_Stokes_Schwarz_test'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -82,23 +104,31 @@ tmpDB.Sessions.Where(s=>!s.SuccessfulTermination).Where(s=>s.ProjectName==WFlowN
 ==============
 WorkflowMgm.Sessions
 **************
-List of 5 instances of ISessionInfo {
-  0: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J512_p5_exp_Kcycle_schwarz	11/10/2020 11:22:54	8fc2948a...
-  1: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J4096_p3_exp_Kcycle_schwarz	11/10/2020 11:22:28	7a327f59...
-  2: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J4096_p2_exp_Kcycle_schwarz	11/10/2020 11:22:01	0d1c44b5...
-  3: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J512_p3_exp_Kcycle_schwarz	11/10/2020 11:22:16	6ba3ddc4...
-  4: Xdg_Stokes_Schwarz-direct_4SB_2Lvl	J512_p2_exp_Kcycle_schwarz	11/10/2020 11:21:52	cbd4eac3...
+List of 10 instances of ISessionInfo {
+  0: Xdg_Stokes_Schwarz_test	J32768_p2_exp_Kcycle_schwarz_pLow1	11/16/2020 22:35:03	db1f83f0...
+  1: Xdg_Stokes_Schwarz_test	J4096_p2_exp_Kcycle_schwarz_pLow2_4Sblocks	11/16/2020 19:41:13	0239710b...
+  2: Xdg_Stokes_Schwarz_test	J4096_p2_exp_Kcycle_schwarz_pLow1_4Sblocks	11/16/2020 19:22:43	1c5775be...
+  3: Xdg_Stokes_Schwarz_test	J512_p2_exp_Kcycle_schwarz_pLow2_4Sblocks	11/16/2020 19:41:02	e7c8d1d9...
+  4: Xdg_Stokes_Schwarz_test	J512_p2_exp_Kcycle_schwarz_pLow1_4Sblocks	11/16/2020 19:21:42	f86cf970...
+  5: Xdg_Stokes_Schwarz_test	J32768_p2_exp_gmres_levelpmg	11/16/2020 19:20:45	681d2216...
+  6: Xdg_Stokes_Schwarz_test	J4096_p2_classic_pardiso	11/16/2020 19:19:32	cae76bee...
+  7: Xdg_Stokes_Schwarz_test	J4096_p2_exp_gmres_levelpmg	11/16/2020 19:20:03	fac479f3...
+  8: Xdg_Stokes_Schwarz_test	J512_p2_exp_gmres_levelpmg	11/16/2020 19:19:54	c1fdee49...
+  9: Xdg_Stokes_Schwarz_test	J512_p2_classic_pardiso	11/16/2020 19:19:22	1221206a...
 }
+==============
+AddCols.NoIter(WorkflowMgm.Sessions.Pick(5))
+**************
+(1,2): error CS0103: The name `AddCols' does not exist in the current context
+No. of errors|warnings: 1|0.
+
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-5
+10
 ==============
 using System.IO;
 **************
-(1,2): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
-No. of errors|warnings: 0|1.
-
 ==============
 //DirectoryInfo dir = Directory.CreateDirectory(CurrentDocDir+@"\"+WFlowName);
 //string dirpath    = dir.FullName;
@@ -150,8 +180,20 @@ static class AddCols {
     }
     // ugly hack, works only for V-cycle
     static public object NoIter(ISessionInfo SI){
-        var mcr = SI.GetProfiling()[0];
-        var ndS = mcr.FindChildren("BoSSS.Solution.AdvancedSolvers.DirectSolver.Solve");
+        var solvercode   = (LinearSolverCode)(Convert.ToInt32(SI.KeysAndQueries["LinearSolver.SolverCode"]));
+        var mcr          = SI.GetProfiling()[0];
+        string searchstr = "";
+        switch(solvercode){
+        case LinearSolverCode.exp_Kcycle_schwarz:
+            searchstr = "BoSSS.Solution.AdvancedSolvers.DirectSolver.Solve";
+            break;
+        case LinearSolverCode.exp_gmres_levelpmg:
+            searchstr = "ilPSP.LinSolvers.PARDISO.PARDISOSolver.PARDISOInitAndSolve";
+            break;
+        default:
+            throw new NotSupportedException();
+        }
+        var ndS = mcr.FindChildren(searchstr);
         var nd  = ndS.ElementAt(0);
         return nd.CallCount;
     }
@@ -180,210 +222,16 @@ WorkflowMgm.AdditionalSessionTableColums.Add("minSolRunT",AddCols.minSolRunT);
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
+System.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+System.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+System.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+System.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
 ==============
 SessTab.GetColumnNames().OrderBy(s=>s);
 **************
-List of 199 instances of String {
-  0: AdaptiveMeshRefinement
-  1: AdvancedDiscretizationOptions.alpha
-  2: AdvancedDiscretizationOptions.CellAgglomerationThreshold
-  3: AdvancedDiscretizationOptions.ContiSign
-  4: AdvancedDiscretizationOptions.CurvatureNeeded
-  5: AdvancedDiscretizationOptions.FilterConfiguration.CurvatureLimiting
-  6: AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles
-  7: AdvancedDiscretizationOptions.FilterConfiguration.gradOpt
-  8: AdvancedDiscretizationOptions.FilterConfiguration.hessOpt
-  9: AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource
-  10: AdvancedDiscretizationOptions.FilterConfiguration.NoOfPatchRecoverySweeps
-  11: AdvancedDiscretizationOptions.FilterConfiguration.PatchRecoveryDomWidth
-  12: AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetGrad
-  13: AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetHess
-  14: AdvancedDiscretizationOptions.FilterConfiguration.UseWholeField
-  15: AdvancedDiscretizationOptions.GNBC_Localization
-  16: AdvancedDiscretizationOptions.GNBC_SlipLength
-  17: AdvancedDiscretizationOptions.LFFA
-  18: AdvancedDiscretizationOptions.LFFB
-  19: AdvancedDiscretizationOptions.ObjectiveParam
-  20: AdvancedDiscretizationOptions.Penalty1[0]
-  21: AdvancedDiscretizationOptions.Penalty1[1]
-  22: AdvancedDiscretizationOptions.Penalty2
-  23: AdvancedDiscretizationOptions.PenaltySafety
-  24: AdvancedDiscretizationOptions.PresPenalty1[0]
-  25: AdvancedDiscretizationOptions.PresPenalty1[1]
-  26: AdvancedDiscretizationOptions.PresPenalty2
-  27: AdvancedDiscretizationOptions.RescaleConti
-  28: AdvancedDiscretizationOptions.SST_isotropicMode
-  29: AdvancedDiscretizationOptions.StressPenalty
-  30: AdvancedDiscretizationOptions.SurfStressTensor
-  31: AdvancedDiscretizationOptions.UseGhostPenalties
-  32: AdvancedDiscretizationOptions.UseLevelSetStabilization
-  33: AdvancedDiscretizationOptions.UseWeightedAverages
-  34: AdvancedDiscretizationOptions.ViscosityMode
-  35: AgglomerationThreshold
-  36: Aggregation_basis_init_time
-  37: AlternateDbPaths[0].Item1
-  38: AlternateDbPaths[0].Item2
-  39: AlternateDbPaths[1].Item1
-  40: AlternateDbPaths[1].Item2
-  41: AMR_startUpSweeps
-  42: BaseRefinementLevel
-  43: BurstSave
-  44: CheckInterfaceProps
-  45: CheckJumpConditions
-  46: ComputeEnergyProperties
-  47: conductMode
-  48: ContinueOnIoError
-  49: ControlFileText_Index
-  50: CutCellQuadratureType
-  51: DGdegree:Curvature
-  52: DGdegree:GravityY
-  53: DGdegree:Phi
-  54: DGdegree:PhiDG
-  55: DGdegree:Pressure
-  56: DGdegree:Velocity*
-  57: DOFs
-  58: dtFixed
-  59: dtMax
-  60: dtMin
-  61: DynamicLoadBalancing_ImbalanceThreshold
-  62: DynamicLoadBalancing_On
-  63: DynamicLoadBalancing_Period
-  64: DynamicLoadBalancing_RedistributeAtStartup
-  65: EllipticExtVelAlgoControl.FluxVariant
-  66: EllipticExtVelAlgoControl.IsotropicViscosity
-  67: EllipticExtVelAlgoControl.PenaltyMultiplierFlux
-  68: EllipticExtVelAlgoControl.PenaltyMultiplierInterface
-  69: EllipticExtVelAlgoControl.subGridRestriction
-  70: Endtime
-  71: EnforceLevelSetConservation
-  72: GeneratedFromCode
-  73: Grid:hMax
-  74: Grid:hMin
-  75: Grid:NoOfCells
-  76: Grid:SpatialDimension
-  77: GridPartType
-  78: ImmediatePlotPeriod
-  79: incrementTimesteps
-  80: InitialValues_EvaluatorsVec[0].Key
-  81: InterAverage
-  82: kinEPressureDiscretization
-  83: KineticEnergyeBlockPrecondMode
-  84: kinEViscousDiscretization
-  85: LevelSet_ConvergenceCriterion
-  86: LinearSolver.ConvergenceCriterion
-  87: LinearSolver.exp_localPrec_Min_dt
-  88: LinearSolver.exp_localPrec_muA
-  89: LinearSolver.MaxKrylovDim
-  90: LinearSolver.MaxSolverIterations
-  91: LinearSolver.MinSolverIterations
-  92: LinearSolver.NoOfMultigridLevels
-  93: LinearSolver.pMaxOfCoarseSolver
-  94: LinearSolver.SolverCode
-  95: LinearSolver.SolverMode
-  96: LinearSolver.TargetBlockSize
-  97: LinearSolver.verbose
-  98: logFileDirectory
-  99: LogPeriod
-  100: LogValues
-  101: LS_TrackerWidth
-  102: LSContiProjectionMethod
-  103: LSunderrelax
-  104: minSolRunT
-  105: MultiStepInit
-  106: NoIter
-  107: NonLinearSolver.constantNewtonIterations
-  108: NonLinearSolver.ConvergenceCriterion
-  109: NonLinearSolver.Globalization
-  110: NonLinearSolver.MaxSolverIterations
-  111: NonLinearSolver.MinSolverIterations
-  112: NonLinearSolver.printLambda
-  113: NonLinearSolver.SolverCode
-  114: NonLinearSolver.UnderRelax
-  115: NonLinearSolver.verbose
-  116: NoOfCores
-  117: NoOfMultigridLevels
-  118: NoOfTimesteps
-  119: Option_LevelSetEvolution
-  120: Paramstudy_ContinueOnError
-  121: PhysicalParameters.beta_a
-  122: PhysicalParameters.beta_b
-  123: PhysicalParameters.betaL
-  124: PhysicalParameters.betaS_A
-  125: PhysicalParameters.betaS_B
-  126: PhysicalParameters.Giesekus_a
-  127: PhysicalParameters.Giesekus_b
-  128: PhysicalParameters.giesekusfactor_a
-  129: PhysicalParameters.giesekusfactor_b
-  130: PhysicalParameters.IncludeConvection
-  131: PhysicalParameters.lambda_I
-  132: PhysicalParameters.lambdaI_tilde
-  133: PhysicalParameters.Material
-  134: PhysicalParameters.mu_A
-  135: PhysicalParameters.mu_B
-  136: PhysicalParameters.mu_I
-  137: PhysicalParameters.reynolds_A
-  138: PhysicalParameters.reynolds_B
-  139: PhysicalParameters.rho_A
-  140: PhysicalParameters.rho_B
-  141: PhysicalParameters.Sigma
-  142: PhysicalParameters.sliplength
-  143: PhysicalParameters.theta_e
-  144: PhysicalParameters.useArtificialSurfaceForce
-  145: PhysicalParameters.Weissenberg_a
-  146: PhysicalParameters.Weissenberg_b
-  147: ProjectName
-  148: RefinementLevel
-  149: RefineNavierSlipBoundary
-  150: RefineStrategy
-  151: RegisterUtilitiesToIOFields
-  152: RegularTerminated
-  153: ReInitControl.ConvergenceCriterion
-  154: ReInitControl.FastMarchingPrecond
-  155: ReInitControl.MaxIt
-  156: ReInitControl.PenaltyMultiplierFlux
-  157: ReInitControl.PenaltyMultiplierInterface
-  158: ReInitControl.Potential
-  159: ReInitControl.PrintIterations
-  160: ReInitControl.underrelaxation
-  161: ReInitControl.Upwinding
-  162: ReInitPeriod
-  163: rollingSaves
-  164: saveperiod
-  165: savetodb
-  166: Session
-  167: SessionName
-  168: SkipSolveAndEvaluateResidual
-  169: solveCoupledHeatEquation
-  170: solveKineticEnergyEquation
-  171: Solver_Init_time
-  172: Solver_Run_time
-  173: staticTimestep
-  174: SuperSampling
-  175: TemperatureBlockPrecondMode
-  176: TestMode
-  177: ThermalParameters.c_A
-  178: ThermalParameters.c_B
-  179: ThermalParameters.fc
-  180: ThermalParameters.hVap
-  181: ThermalParameters.IncludeConvection
-  182: ThermalParameters.k_A
-  183: ThermalParameters.k_B
-  184: ThermalParameters.p_sat
-  185: ThermalParameters.pc
-  186: ThermalParameters.Rc
-  187: ThermalParameters.rho_A
-  188: ThermalParameters.rho_B
-  189: ThermalParameters.T_sat
-  190: Timestepper_BDFinit
-  191: Timestepper_LevelSetHandling
-  192: TimesteppingMode
-  193: TimeSteppingScheme
-  194: UseSchurBlockPrec
-  195: useSolutionParamUpdate
-  196: withDissipativePressure
-  197: WriteInterfaceP
-  198: XdgMatrixAssembly
-}
+System.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
 ==============
 **************
 ==============
@@ -392,7 +240,8 @@ List of 199 instances of String {
 List<string> AllCols = SessTab.GetColumnNames().ToList();
 AllCols.Remove("Session");
 **************
-True
+System.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
 ==============
 // ==================================
 // Testing if every Column has values
@@ -401,6 +250,8 @@ True
 ==============
 SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
+System.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
 ==============
 var SubTab = SessTab.ExtractColumns("SessionName","DGdegree:Velocity*", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "XdgMatrixAssembly",
 "Aggregation_basis_init_time",
@@ -408,12 +259,19 @@ var SubTab = SessTab.ExtractColumns("SessionName","DGdegree:Velocity*", "Grid:No
 "Solver_Run_time", "NoIter");
 SubTab.Print();
 **************
-   SessionName                 DGdegree:Velocity* Grid:NoOfCells LinearSolver.SolverCode DOFs   XdgMatrixAssembly Aggregation_basis_init_time Solver_Init_time Solver_Run_time NoIter 
-0: J512_p5_exp_Kcycle_schwarz  5                  512            41                      104139 157.0791881       4.3731497                   155.1058635      13628.5915319   443    
-1: J4096_p3_exp_Kcycle_schwarz 3                  4096           41                      286790 102.2325547       2.4452608                   71.5459992       3200.6355949    72     
-2: J4096_p2_exp_Kcycle_schwarz 2                  4096           41                      139298 37.2924334        0.9290242                   18.3826656       261.3072545     50     
-3: J512_p3_exp_Kcycle_schwarz  3                  512            41                      35910  16.0832644        0.2916491                   10.1733746       209.4347505     145    
-4: J512_p2_exp_Kcycle_schwarz  2                  512            41                      17442  6.3044496         0.0989321                   2.6844845        13.3899112      37     
+   SessionName                        DGdegree:Velocity* Grid:NoOfCells LinearSolver.SolverCode DOFs    XdgMatrixAssembly Aggregation_basis_init_time Solver_Init_time Solver_Run_time NoIter 
+0: J32768_p2_exp_Kcycle_schwarz_pLow1 2                  32768          41                      1120368 755.0061955       23.3559349                  211.6673744      1503.6206116    72     
+1: J4096_p2_exp_Kcycle_schwarz_pLow2  2                  4096           41                      140760  111.6371973       0.9325852                   18.3651412       92.5569804      12     
+2: J4096_p2_exp_Kcycle_schwarz        2                  4096           41                      140760  111.3440831       0.9242456                   24.5380765       193.0987057     48     
+3: J512_p2_exp_Kcycle_schwarz_pLow2   2                  512            41                      17680   16.6463163        0.0970905                   2.5941598        5.489931        11     
+4: J512_p2_exp_Kcycle_schwarz         2                  512            41                      17680   16.5490086        0.0971381                   3.5737218        9.9487621       31     
+5: J32768_p2_exp_gmres_levelpmg       2                  32768          47                      1120368 747.3177945       20.8867196                  129.111292       1784.061175     287    
+6: J4096_p2_classic_pardiso           2                  4096           2                       140760  112.0892156       0.9186114                   13.5068863       125.8822566     NULL   
+7: J4096_p2_exp_gmres_levelpmg        2                  4096           47                      140760  111.0235519       0.9333516                   16.0009813       59.8921094      155    
+8: J512_p2_exp_gmres_levelpmg         2                  512            47                      17680   16.651785         0.0975974                   2.1534464        3.4405514       76     
+9: J512_p2_classic_pardiso            2                  512            2                       17680   16.5252523        0.0964983                   1.8381009        3.3734474       NULL   
+==============
+**************
 ==============
 // ===========
 // Export json
@@ -428,12 +286,16 @@ string docpath    = Path.Combine(dirpath, SessTab.TableName + ".json");
 ==============
 SessTab.SaveToFile(docpath);
 **************
+B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes\Xdg_Stokes_Schwarz_test_2020-11-17.jsonSystem.NullReferenceException: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
 ==============
 docpath
 **************
-B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes\Xdg_Stokes_Schwarz-direct_4SB_2Lvl_2020-11-10.json
+B:\BoSSS-gitlab\public\doc\handbook\apdx-NodeSolverPerformance\XDGStokes\Xdg_Stokes_Schwarz_test_2020-11-17.json
 ==============
 SubTab.ToCSVFile(dirpath+@"\"+WFlowName+"_scaling.txt");
+**************
+==============
 **************
 ==============
 **************
