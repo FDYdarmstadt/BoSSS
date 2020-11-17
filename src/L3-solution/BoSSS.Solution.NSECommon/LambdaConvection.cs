@@ -35,7 +35,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Normal"></param>
         /// <param name="FactorTwo">
         /// True: Lambda = 2.0 * rho * V_n (used for momentum equation).
-        /// False: Lambda = rho * V_n (used for scalar transport equation).
+        /// False: Lambda = rho * V_n (used for temperature equation).
         /// </param>
         /// <returns>        
         /// </returns>
@@ -88,15 +88,12 @@ namespace BoSSS.Solution.NSECommon {
         /// and temperature advection for Low-Mach flows.
         /// </summary>
         /// <param name="ScalarMean"></param>
-        /// <param name="isEnergy">
-        /// If true, heat capacity is included in the calculation of Lambda
-        /// </param>
         /// <param name="VelocityMean"></param>
         /// <param name="Normal"></param>
         /// <param name="EoS"></param>
         /// <param name="FactorTwo">
         /// True: Lambda = 2.0 * rho * V_n (used for momentum equation).
-        /// False: Lambda = rho * V_n (used for scalar transport equation).
+        /// False: Lambda = rho * V_n (used for temperature equation).
         /// </param>
         /// <returns>        
         /// </returns>
@@ -104,38 +101,6 @@ namespace BoSSS.Solution.NSECommon {
             double rhoMean = EoS.GetDensity(ScalarMean);
             return GetLambda(VelocityMean, Normal, FactorTwo, rhoMean);
         }
-
-
-
-        /// <summary>
-        /// Lambda for convective operators with variable density and heat capacity,
-        /// i.e. temperature advection for Low-Mach flows.
-        /// </summary>
-        /// <param name="ScalarMean"></param>
-        /// <param name="isEnergy">
-        /// If true, heat capacity is included in the calculation of Lambda
-        /// </param>
-        /// <param name="VelocityMean"></param>
-        /// <param name="Normal"></param>
-        /// <param name="EoS"></param>
-        /// <param name="FactorTwo">
-        /// True: Lambda = 2.0 * rho * V_n (used for momentum equation).
-        /// False: Lambda = rho * V_n (used for scalar transport equation).
-        /// </param>
-        /// <returns>        
-        /// </returns>
-        static public double GetLambda(double[] VelocityMean, double[] Normal, MaterialLaw EoS, bool FactorTwo, bool isEnergy,params double[] ScalarMean) {
-            double rhoMean = EoS.GetDensity(ScalarMean);
-            double cpMean = 1.0;
-            if (isEnergy)
-                cpMean = EoS.GetMixtureHeatCapacity(ScalarMean);
-
-            return GetLambda(VelocityMean, Normal, FactorTwo, rhoMean * cpMean);
-        }
-
-
-
-
 
     }
 }

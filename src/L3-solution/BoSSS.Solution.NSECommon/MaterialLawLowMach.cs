@@ -157,13 +157,6 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        public override double GetMixtureHeatCapacity(double[] MassFraction) {
-            double cp = 1.0;           
-            return cp;
-        }
-
-
-
 
         /// <summary>
         /// Sutherlands law for air. 
@@ -203,14 +196,12 @@ namespace BoSSS.Solution.NSECommon {
                         break;
                     }
                 case MaterialParamsMode.Sutherland: {
-                        double S = 110.56;                   
+                        double S = 110.56;
                         visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         break;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        double exponent = 0.7;
-                        //double exponent = 2.0 / 3.0;//
-                        visc = Math.Pow(phi, exponent) ;
+                        visc = Math.Pow(phi, 2.0 / 3.0);
                         break;
                     }
                 default:
@@ -302,7 +293,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Temperature"></param>
         /// <returns></returns>
         public double get_LambdaCp_Term(double Temperature) {
-            double res = 2.58e-5 * Math.Pow(Temperature / 298, 0.7); // in Kg/(m.s)
+            double TREF = 298;
+            double res = 2.58e-5 * (Temperature / TREF); // in Kg/(m.s)
             return res;
         }
 
@@ -332,8 +324,5 @@ namespace BoSSS.Solution.NSECommon {
         public override double getDensityFromZ(double Z) {
             throw new NotImplementedException();
         }
-
-
-
     }
 }

@@ -97,7 +97,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public bool DirichletPressureBoundary {
             get {
-                return ((BCTypeUseCount[IncompressibleBcType.Pressure_Outlet] > 0) || (BCTypeUseCount[IncompressibleBcType.Pressure_Dirichlet] > 0) || (BCTypeUseCount[IncompressibleBcType.ScalarDirichlet_PressureOutlet] > 0));
+                return ((BCTypeUseCount[IncompressibleBcType.Pressure_Outlet] > 0) || (BCTypeUseCount[IncompressibleBcType.Pressure_Dirichlet] > 0));
             }
         }
 

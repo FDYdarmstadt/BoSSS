@@ -218,7 +218,7 @@ namespace BoSSS.Solution.NSECommon {
             double MM_F = MolarMasses[0];
             double MM_O = MolarMasses[1];
  
-            if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
+            if (YF * YO > 1e-6 && VariableOneStepParameters) {//  calculate one-Step model parameters
                 Ta = EoS.getTa(YF, YO) / TRef;                
             }
 
