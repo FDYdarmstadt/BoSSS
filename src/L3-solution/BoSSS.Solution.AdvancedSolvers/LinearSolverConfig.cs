@@ -113,6 +113,10 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_Kcycle_schwarz_4Rheology = 52,
 
+        /// <summary>
+        /// 
+        /// </summary>
+        exp_another_Kcycle = 53,
 
 
         selfmade = 999,
@@ -212,6 +216,12 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         [BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]
         public int TargetBlockSize = 10000;
+
+        /// <summary>
+        /// Determines maximal DG order within coarse system of a p-Multigrid. Only applicable for p-two-grid, e.g. Schwarz with p-MG or PTG <see cref="exp_gmres_levelpmg"/> preconditioner.
+        /// </summary>
+        [DataMember]
+        public int pMaxOfCoarseSolver = 1;
 
         /// <summary>
         /// Clones the LinearConfig

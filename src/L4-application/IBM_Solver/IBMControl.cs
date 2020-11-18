@@ -218,6 +218,8 @@ namespace BoSSS.Application.IBM_Solver {
             MultiInit
         }
 
+        public Func<double[], double, double> ForcedPhi;
+
         [DataMember]
         public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
 

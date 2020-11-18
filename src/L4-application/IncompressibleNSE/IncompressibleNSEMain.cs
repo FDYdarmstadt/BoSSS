@@ -17,7 +17,7 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// A minimal solver for the incompressible Navier-Stokes equation.
     /// </summary>
     public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<IncompressibleControl> {
-        
+
         static void Main(string[] args) {
             _Main(args, false, delegate () {
                 var p = new IncompressibleNSEMain();
@@ -86,7 +86,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             // instantiate operator
             // ====================
             string[] CodName = (new[] { "ResidualMomentumX", "ResidualMomentumY", "ResidualMomentumZ" }).GetSubVector(0, D).Cat("ResidualConti");
-            
+
             var op = new SpatialOperator(
                 __DomainVar: VariableNames.VelocityVector(D).Cat(VariableNames.Pressure),
                 __ParameterVar: VariableNames.GravityVector(D),
@@ -116,7 +116,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             // convective part:
             {
-                for(int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++) {
 
                     var comps = op.EquationComponents[CodName[d]];
 
@@ -127,7 +127,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             // pressure part:
             {
-                for(int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++) {
                     var comps = op.EquationComponents[CodName[d]];
                     var pres = new PressureGradientLin_d(d, boundaryCondMap);
                     comps.Add(pres); // bulk component
@@ -137,7 +137,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             // viscous part:
             {
-                for(int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++) {
                     var comps = op.EquationComponents[CodName[d]];
 
                     double penalty_bulk = this.Control.PenaltySafety;
@@ -145,15 +145,15 @@ namespace BoSSS.Application.IncompressibleNSE {
                     var Visc = new swipViscosity_Term1(penalty_bulk, d, D, boundaryCondMap,
                         ViscosityOption.ConstantViscosity,
                         constantViscosityValue: Control.Viscosity);
-                    comps.Add(Visc); // bulk component GradUTerm 
+                    comps.Add(Visc); // bulk component GradUTerm
                 }
             }
-            
+
 
             // Continuity equation
             // ===================
             {
-                for(int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++) {
                     var src = new Divergence_DerivativeSource(d, D);
                     var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
                     op.EquationComponents[CodName[D]].Add(src);
@@ -164,7 +164,7 @@ namespace BoSSS.Application.IncompressibleNSE {
                 //IBM_Op.EquationComponents["div"].Add(new PressureStabilization(1, 1.0 / this.Control.PhysicalParameters.mu_A));
             }
 
-            // Gravity parameter 
+            // Gravity parameter
             // =================
 
             op.ParameterFactories.Add(delegate (IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -186,7 +186,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             return Velocity.Cat(Pressure);
         }
 
-       
+
 
         /// <summary>
         /// Returns the fields where we want to store our residuals

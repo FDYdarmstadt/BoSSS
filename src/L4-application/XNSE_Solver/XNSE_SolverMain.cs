@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//#define TEST
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -499,7 +501,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (this.Control.solveKineticEnergyEquation)
                 m_HMForder *= 2;
             
-            //m_HMForder *= 2; // may have an influence on no of iterations of lin sovler for small Operator-Matrix
+            //m_HMForder *= 2; // more points, better results you know ...                      
 
 
             // Create Spatial Operator
@@ -570,7 +572,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
             #endregion
-
+                                
         }
 
 
@@ -1433,9 +1435,18 @@ namespace BoSSS.Application.XNSE_Solver {
                 //PlotCurrentState(phystime, TimestepNo, 2);
 #endif
 #if TEST
-                // Reference Solver for spectral-Analysis ...
-                m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
+
+                //m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
                 //WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+                //m_BDF_Timestepper.ExecuteWaterfallAnalysis(Directory.GetCurrentDirectory()+@"\waterfall");
+                //int Iter=-1;
+                //m_BDF_Timestepper.ExecuteRandom(out Iter);
+                //base.QueryHandler.ValueQuery("NoIter", Iter, false);
+                var dict = OperatorAnalysis();
+                foreach (KeyValuePair<string, double> kv in dict) {
+                    Console.WriteLine(kv.Key + " : " + kv.Value);
+                    base.QueryHandler.ValueQuery("OpAnalysis:"+kv.Key, kv.Value, false);
+                }
 #endif
                 // ================
                 // Good bye
@@ -1495,7 +1506,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     ExtVelMover.FinishTimeStep();
                 }
-
+                
 #if DEBUG
                 // in case of Debugging Save first Timesteps
                 //if(TimestepNo[1] <= 2) {
@@ -2301,8 +2312,5 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 #endregion
-
-
-
     }
 }
