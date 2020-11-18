@@ -100,7 +100,7 @@ namespace BoSSS.Application.FSI_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
-            C.SetAddaptiveMeshRefinement(amrLevel: 0);
+            C.SetAddaptiveMeshRefinement(amrLevel: 1);
 
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);

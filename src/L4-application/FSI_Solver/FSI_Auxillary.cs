@@ -294,12 +294,12 @@ namespace FSI_Solver {
                     }
 
                     // matrix values
-                    //Offset += D * 8;
-                    //for (int d1 = 0; d1 < matrixDim; d1++) {
-                    //    for(int d2 = 0; d2 < matrixDim; d2++) {
-                    //        CheckSend[p * NoOfVars + Offset + d1 + d1 * d2] = P.Motion.AddedDampingTensor[d1, d2];
-                    //    }
-                    //}
+                    Offset += D * 8;
+                    for (int d1 = 0; d1 < matrixDim; d1++) {
+                        for(int d2 = 0; d2 < matrixDim; d2++) {
+                            CheckSend[p * NoOfVars + Offset + d1 + d1 * d2] = P.Motion.AddedDampingTensor[d1, d2];
+                        }
+                    }
                 }
 
                 double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPISize];
