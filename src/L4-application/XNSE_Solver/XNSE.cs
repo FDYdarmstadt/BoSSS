@@ -125,8 +125,11 @@ namespace BoSSS.Application.XNSE_Solver
                 throw new Exception("Velocity not found!");
             }
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if (this.Control.solveKineticEnergyEquation)
+            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) 
+            {
                 quadOrder *= 2;
+                quadOrder += 1;
+            }
             return quadOrder;
         }
 
