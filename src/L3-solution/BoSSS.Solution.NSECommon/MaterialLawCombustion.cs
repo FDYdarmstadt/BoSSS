@@ -91,7 +91,6 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-
             if (IsInitialized) {
                 double rho;
             
