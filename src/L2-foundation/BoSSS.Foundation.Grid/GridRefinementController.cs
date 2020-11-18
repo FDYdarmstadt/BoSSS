@@ -421,6 +421,7 @@ namespace BoSSS.Foundation.Grid {
             BitArray oK2Coarsen = new BitArray(LocalNumberOfCells);
             int myRank = CurrentGrid.MpiRank;
             int[][] cellNeighbours = CurrentGrid.Cells.CellNeighbours;
+            int GlobalIndexOfFirstLocalCell = CellPartitioning.i0;
 
             for (int globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) {
                 int localCellIndex = globalCellIndex - myI0;
