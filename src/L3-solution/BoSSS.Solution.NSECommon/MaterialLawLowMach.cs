@@ -208,8 +208,8 @@ namespace BoSSS.Solution.NSECommon {
                         break;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        double exponent = 0.7;
-                        //double exponent = 2.0 / 3.0;//
+                        //double exponent = 0.7;
+                        double exponent = 2.0 / 3.0;//
                         visc = Math.Pow(phi, exponent) ;
                         break;
                     }
