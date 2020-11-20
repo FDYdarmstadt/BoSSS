@@ -71,10 +71,60 @@ namespace BoSSS.Solution.Gnuplot {
                 return null;
             }
         }
+
+        /// <summary>
+        /// Plotting using Gnuplot with Cairolatex output.
+        /// </summary>
+        /// <param name="xSize">Horizontal size in centimeters, ignored if <paramref name="xSize"/> or <paramref name="ySize"/> is negative.</param>
+        /// <param name="ySize">Vertical size in centimeters.</param>
+        /// <param name="Options">
+        /// Options for gnuplot cairolatex terminal
+        /// </param>
+        /// <param name="plot"></param>
+        /// <returns>
+        /// A memory-image of gnuplot cairolatex output.
+        /// </returns>
+        static public CairolatexContainer PlotCairolatex(this Plot2Ddata plot,
+            //string Options = " pdf input noheader blacktext nobackground noenhanced fontscale 0.6 ", 
+            string Options = " pdf  ",
+            double xSize = 14, double ySize = 10.5) {
+
+
+            using(var gp = plot.ToGnuplot()) {
+                return gp.PlotCairolatex(Options, xSize, ySize);
+            }
+
+        }
+
+
+        /// <summary>
+        /// Plotting using Gnuplot with Cairolatex output.
+        /// </summary>
+        /// <param name="xSize">Horizontal size in centimeters, ignored if <paramref name="xSize"/> or <paramref name="ySize"/> is negative.</param>
+        /// <param name="ySize">Vertical size in centimeters.</param>
+        /// <param name="Options">
+        /// Options for gnuplot cairolatex terminal
+        /// </param>
+        /// <param name="plots"></param>
+        /// <returns>
+        /// A memory-image of gnuplot cairolatex output.
+        /// </returns>
+        static public CairolatexContainer PlotCairolatex(this Plot2Ddata[,] plots,
+            //string Options = " pdf input noheader blacktext nobackground noenhanced fontscale 0.6 ", 
+            string Options = " pdf  ",
+            double xSize = 14, double ySize = 10.5) {
+
+           
+
+            using(var gp = plots.ToGnuplot()) {
+                return gp.PlotCairolatex(Options, xSize, ySize);
+            }
+
+        }
         
      
         /// <summary>
-        /// Plot to a gif file ('set terminal gif').
+        /// Plotting using Gnuplot with Cairolatex output.
         /// </summary>
         /// <param name="xSize">Horizontal size in centimeters, ignored if <paramref name="xSize"/> or <paramref name="ySize"/> is negative.</param>
         /// <param name="ySize">Vertical size in centimeters.</param>

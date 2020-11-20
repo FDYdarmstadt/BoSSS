@@ -467,7 +467,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                         if(GoodForHomoIncrease || BadHomo) {
-
+                            // +++++++++++++++++++++++++
+                            // Update the homotopy value
+                            // +++++++++++++++++++++++++
 
                             Debug.Assert(AcceptedHomoSolutions.Count > 0);
 
