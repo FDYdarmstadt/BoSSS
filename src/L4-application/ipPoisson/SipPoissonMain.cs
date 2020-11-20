@@ -675,7 +675,7 @@ namespace BoSSS.Application.SipPoisson {
                 }
 
                 GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData,null);
-                bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator(), out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
