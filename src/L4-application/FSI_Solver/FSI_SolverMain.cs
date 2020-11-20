@@ -667,8 +667,8 @@ namespace BoSSS.Application.FSI_Solver {
             catch (LevelSetCFLException e) {//hacky workaround
                 if (AddedGhostParticle)
                     Console.WriteLine("Ghost particle added, exception thrown: " + e);
-                else
-                    throw e;
+                //else
+                   // throw e;
                 AddedGhostParticle = false;
             }
         }
