@@ -287,7 +287,6 @@ namespace BoSSS.Application.FSI_Solver {
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             string ID = "66b7dd59-bec7-4970-8e84-da3d368be1b5";
-            string ID = "aab57672-ac36-4f82-b9f9-8e5c89cd06eb";
             C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1980);
             C.IsRestart = true;
             // Fluid Properties
