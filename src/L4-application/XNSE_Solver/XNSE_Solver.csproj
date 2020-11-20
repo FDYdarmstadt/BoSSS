@@ -79,7 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Equations.cs" />
-    <Compile Include="LevelSetHandler.cs" />
+    <Compile Include="LevelSetMover.cs" />
     <Compile Include="LevelSetUpdater.cs" />
     <Compile Include="OperatorFactory.cs" />
     <Compile Include="ParameterList.cs" />

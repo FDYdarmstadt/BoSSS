@@ -1487,5 +1487,10 @@ namespace BoSSS.Solution.NSECommon {
         /// Helical: call dierkes
         /// </summary>
         public const string w = "ueta";
+
+        /// <summary>
+        /// Max Sigma
+        /// </summary>
+        public const string MaxSigma = "MaximalSigma";
     }
 }

@@ -27,7 +27,7 @@ namespace BoSSS.Application.XNSE_Solver
             Factory = Velocity0Factory;
         }
 
-        public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
+        public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
 
         (string, DGField)[] Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -43,24 +43,24 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class Velocity0Mean : Parameter
+    class Velocity0Mean : Parameter, ILevelSetParameter
     {
         int D;
 
-        LevelSetTracker LsTrk;
-
         int cutCellQuadOrder;
+
+        LevelSetTracker LsTrk;
 
         public Velocity0Mean(int D, LevelSetTracker LsTrk, int cutCellQuadOrder)
         {
             this.D = D;
-            this.LsTrk = LsTrk;
             Factory = Velocity0MeanFactory;
             Update = Velocity0MeanUpdate;
             this.cutCellQuadOrder = cutCellQuadOrder;
+            this.LsTrk = LsTrk;
         }
 
-        public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
+        public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
 
         (string, DGField)[] Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -75,11 +75,36 @@ namespace BoSSS.Application.XNSE_Solver
             return velocity0Mean;
         }
 
+        IList<string> SpeciesNames;
+
+        LevelSetTracker.LevelSetRegions regions;
+
+        IDictionary<string, SpeciesId> speciesMap;
+
+        XQuadSchemeHelper schemeHelper;
+
+        double minvol;
+
+        public void UpdateParameters(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            SpeciesNames = lsTrkr.SpeciesNames;
+            regions = lsTrkr.Regions;
+            IList<SpeciesId> speciesIds = lsTrkr.SpeciesIdS;
+            schemeHelper = lsTrkr.GetXDGSpaceMetrics(speciesIds.ToArray(), cutCellQuadOrder).XQuadSchemeHelper;
+            minvol = Math.Pow(lsTrkr.GridDat.Cells.h_minGlobal, D);
+
+            speciesMap = new Dictionary<string, SpeciesId>(SpeciesNames.Count);
+            foreach (string name in SpeciesNames)
+            {
+                speciesMap.Add(name, lsTrkr.GetSpeciesId(name));
+            }
+        }
+
         void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             for(int d = 0; d < D; ++d)
             {
-                foreach(string speciesName in LsTrk.SpeciesNames)
+                foreach(string speciesName in SpeciesNames)
                 {
                     XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
                     DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
@@ -91,20 +116,15 @@ namespace BoSSS.Application.XNSE_Solver
                     speciesParam.SetMeanValueTo(speciesVelocity);
 
                     //Cut
-                    CellMask cutCells = LsTrk.Regions.GetSpeciesMask(speciesName);
-                    SpeciesId[ ] speciesIds = LsTrk.SpeciesIdS.ToArray();
-                    XQuadSchemeHelper qh = LsTrk.GetXDGSpaceMetrics(speciesIds, cutCellQuadOrder).XQuadSchemeHelper;
-
-                    SpeciesId speciesId = LsTrk.GetSpeciesId(speciesName);
-                    double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
-                    CellQuadratureScheme scheme = qh.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
-
+                    CellMask cutCells = regions.GetSpeciesMask(speciesName);
+                    SpeciesId speciesId = speciesMap[speciesName];
+                    CellQuadratureScheme scheme = schemeHelper.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
                     SetMeanValueToMeanOf(speciesParam, speciesVelocity, minvol, cutCellQuadOrder, scheme);
                 }
             }
         }
 
-        void SetMeanValueToMeanOf(DGField target, DGField source, double minvol, int order, CellQuadratureScheme scheme)
+        static void SetMeanValueToMeanOf(DGField target, DGField source, double minvol, int order, CellQuadratureScheme scheme)
         {
             //Cut
             int D = source.GridDat.SpatialDimension;
@@ -189,7 +209,7 @@ namespace BoSSS.Application.XNSE_Solver
             return new Gravity(species, d, D, initialGravity, rho, gravityDegree);
         }
 
-        public override IList<string> Names => names;
+        public override IList<string> ParameterNames => names;
 
         (string, DGField)[] GravityFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -200,39 +220,24 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class Normals : Parameter
+    class Normals : Parameter, ILevelSetParameter
     {
-        LevelSetTracker LsTrk;
-
         int D;
 
-        public Normals(int D, LevelSetTracker LsTrk)
+        int degree;
+        
+        public Normals(int D, int degree)
         {
-            this.LsTrk = LsTrk;
             this.D = D;
+            this.degree = degree;
             Factory = NormalFactory;
-            Update = NormalUpdate;
         }
 
-        public override IList<string> Names => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
+        public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
 
-        (string, DGField)[] NormalFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        public void UpdateParameters(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            LevelSet Phi = (LevelSet)(LsTrk.LevelSets[0]);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, Phi.Basis, SinglePhaseField.Factory);
-            Normals.Gradient(1.0, Phi);
-
-            (string, DGField)[] normals = new (string, DGField)[D];
-            for(int d = 0; d <D; ++d)
-            {
-                normals[d] = (BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d], Normals[d] );
-            }
-            return normals;
-        }
-
-        void NormalUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
-            LevelSet Phi = (LevelSet)(LsTrk.LevelSets[0]);
+            LevelSet Phi = levelSet.DGLevelSet;
             DGField[] Normals = new SinglePhaseField[D];
             for (int i = 0; i < D; ++i)
             {
@@ -241,6 +246,20 @@ namespace BoSSS.Application.XNSE_Solver
             VectorField<DGField> normalVector = new VectorField<DGField>(Normals);
             Normals.Clear();
             normalVector.Gradient(1.0, Phi);
+        }
+
+        (string, DGField)[] NormalFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+            Basis basis = new Basis(gridData, degree);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, SinglePhaseField.Factory);
+
+            (string, DGField)[] normals = new (string, DGField)[D];
+            for(int d = 0; d <D; ++d)
+            {
+                normals[d] = (BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d], Normals[d] );
+            }
+            return normals;
         }
     }
     
@@ -292,7 +311,7 @@ namespace BoSSS.Application.XNSE_Solver
             return new Curvature(LsTrkr, degree, m_HMForder, isEvaporation, solveKineticEnergyEquation, AdvancedDiscretizationOptions);
         }
 
-        public override IList<string> Names => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
 
         (string, DGField)[] CurvatureFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
@@ -306,4 +325,67 @@ namespace BoSSS.Application.XNSE_Solver
             };
         }
     }
+
+    class MaxSigma : Parameter, ILevelSetParameter
+    {
+        PhysicalParameters physParams;
+
+        DoNotTouchParameters dntParams;
+
+        int cutCellQuadOrder;
+
+        double dt;
+
+        public MaxSigma(PhysicalParameters physParams, DoNotTouchParameters dntParams, int cutCellQuadOrder, double dt)
+        {
+            this.physParams = physParams;
+            this.dntParams = dntParams;
+            this.cutCellQuadOrder = cutCellQuadOrder;
+            this.dt = dt;
+            Factory = MaxSigmaFactory;
+        }
+
+        string[] name = new string[] { BoSSS.Solution.NSECommon.VariableNames.MaxSigma };
+
+        public override IList<string> ParameterNames => name;
+
+        (string ParameterName, DGField ParamField)[] MaxSigmaFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            string name = BoSSS.Solution.NSECommon.VariableNames.MaxSigma;
+            IGridData grid = DomainVarFields.FirstOrDefault().Value.GridDat;
+            Basis constant = new Basis(grid, 0);
+            SinglePhaseField sigmaField = new SinglePhaseField(constant, name);
+            return new (string ParameterName, DGField ParamField)[] { (name, sigmaField) };
+        }
+
+        public void UpdateParameters(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            DGField sigmaMax = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MaxSigma];
+
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths =
+                lsTrkr.GetXDGSpaceMetrics(lsTrkr.SpeciesIdS.ToArray(), cutCellQuadOrder).CutCellMetrics.InterfaceArea;
+
+            foreach (Chunk cnk in lsTrkr.Regions.GetCutCellMask())
+            {
+                for (int i = cnk.i0; i < cnk.JE; i++)
+                {
+                    double ILen = InterfaceLengths.ElementAt(0).Value[i];
+                    //ILen /= LevSet_Deg;
+                    double sigmaILen_Max = (this.physParams.rho_A + this.physParams.rho_B)
+                           * Math.Pow(ILen, 3) / (2 * Math.PI * dt.Pow2());
+
+                    if (dntParams.SetSurfaceTensionMaxValue && (physParams.Sigma > sigmaILen_Max))
+                    {
+                        sigmaMax.SetMeanValue(i, sigmaILen_Max * 0.5);
+                        //Console.WriteLine("set new sigma value: {0}; {1}", sigmaILen_Max, sigmaILen_Max/physParams.Sigma);
+                    }
+                    else
+                    {
+                        sigmaMax.SetMeanValue(i, this.physParams.Sigma * 0.5);
+                    }
+                }
+            }
+        }
+    }
 }
+

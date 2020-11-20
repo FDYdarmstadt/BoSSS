@@ -150,12 +150,12 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 case LevelSetEvolution.Fourier:
                     var fourrier = new FourierEvolver(Control, QuadOrder());
-                    lsUpdater.AddParameterUpdate("Phi", fourrier);
+                    lsUpdater.AddLevelSetParameter("Phi", fourrier);
                     lsUpdater.AddEvolver("Phi", fourrier);
                     break;
                 case LevelSetEvolution.FastMarching:
                     var fastMarcher = new FastMarcher(Control, QuadOrder());
-                    lsUpdater.AddParameterUpdate("Phi", fastMarcher);
+                    lsUpdater.AddLevelSetParameter("Phi", fastMarcher);
                     lsUpdater.AddEvolver("Phi", fastMarcher);
                     break;
                 case LevelSetEvolution.None:
@@ -163,6 +163,7 @@ namespace BoSSS.Application.XNSE_Solver
                 default:
                     throw new NotImplementedException();
             }
+
             return lsUpdater.Tracker;
         }
 
@@ -216,9 +217,22 @@ namespace BoSSS.Application.XNSE_Solver
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
             opFactory.AddParameter(new Velocity0(D));
-            opFactory.AddParameter(new Velocity0Mean(D, LsTrk, quadOrder));
-            opFactory.AddParameter(new Normals(D, LsTrk));
+            Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
+            opFactory.AddParameter(v0Mean);
+            lsUpdater.AddLevelSetParameter("Phi", v0Mean);
+
+            Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
+            opFactory.AddParameter(normalsParameter);
+            lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
+
             opFactory.AddParameter(Curvature.CreateFrom(Control, config, LsTrk, quadOrder));
+            
+            if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)
+            {
+                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
+                opFactory.AddParameter(maxSigmaParameter);
+                lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
+            }
             
             if (config.isContinuity)
             {

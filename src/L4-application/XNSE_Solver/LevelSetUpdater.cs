@@ -35,7 +35,7 @@ namespace BoSSS.Application.XNSE_Solver
         
         Dictionary<string, ILevelSetMover> lsMovers;
 
-        Dictionary<string, ILevelSetUpdater> lsUpdaters;
+        Dictionary<string, ICollection<ILevelSetParameter>> lsParameterUpdaters;
 
         DualLevelSet[] currentInterfaces;
 
@@ -66,13 +66,22 @@ namespace BoSSS.Application.XNSE_Solver
             };
             Tracker = new LevelSetTracker(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levelSet);
             lsMovers = new Dictionary<string, ILevelSetMover>(4);
-            lsUpdaters = new Dictionary<string, ILevelSetUpdater>(4);
+            lsParameterUpdaters = new Dictionary<string, ICollection<ILevelSetParameter>>(4);
             Tracker.UpdateTracker(0.0);
         }
 
-        public void AddParameterUpdate(string levelSetName, ILevelSetUpdater updater)
+        public void AddLevelSetParameter(string levelSetName, ILevelSetParameter updater)
         {
-            lsUpdaters.Add(levelSetName, updater);
+            if(lsParameterUpdaters.TryGetValue(levelSetName, out ICollection<ILevelSetParameter> parameters))
+            {
+                parameters.Add(updater);
+            }
+            else
+            {
+                ICollection<ILevelSetParameter> parameterCollection = new LinkedList<ILevelSetParameter>();
+                parameterCollection.Add(updater);
+                lsParameterUpdaters.Add(levelSetName, parameterCollection);
+            }
         }
 
         public void AddEvolver(string levelSetName, ILevelSetMover evolver)
@@ -182,17 +191,46 @@ namespace BoSSS.Application.XNSE_Solver
             for (int i = 0; i < currentInterfaces.Length; ++i)
             {
                 var singleInterface = currentInterfaces[i];
-                if (lsUpdaters.TryGetValue(singleInterface.CGLevelSet.Identification, out ILevelSetUpdater updater))
+                if (lsParameterUpdaters.TryGetValue(singleInterface.CGLevelSet.Identification, out ICollection<ILevelSetParameter> parameters))
                 {
-                    updater.UpdateParameters(
-                        singleInterface,
-                        Tracker,
-                        time,
-                        ParameterVarFields);
+                    UpdateLevelSetParameter(parameters, singleInterface, ParameterVarFields, time);
                 }
                 else
                 {
                     Console.WriteLine($"Warning: LevelSet #{i} does not have a registered updater");
+                }
+            }
+        }
+
+        void UpdateLevelSetParameter(ICollection<ILevelSetParameter> parameters, DualLevelSet levelSet, IReadOnlyDictionary<string, DGField> ParameterVarFields, double time)
+        {
+            foreach (ILevelSetParameter parameter in parameters)
+            {
+                bool parametermatch = true;
+                foreach (string pName in parameter.ParameterNames)
+                {
+                    if (!ParameterVarFields.ContainsKey(pName))
+                    {
+                        parametermatch = false;
+                        break;
+                    }
+                }
+                if (parametermatch)
+                {
+                    parameter.UpdateParameters(
+                    levelSet,
+                    Tracker,
+                    time,
+                    ParameterVarFields);
+                }
+                else
+                {
+                    string names = "";
+                    foreach (string name in parameter.ParameterNames)
+                    {
+                        names += name + ",";
+                    }
+                    Console.WriteLine($"Warning: LevelSet Parameters {names}  not found in global Parameters.");
                 }
             }
         }

@@ -420,8 +420,9 @@ namespace BoSSS.Application.XNSE_Solver
                     }
                     else
                     {
-                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
+                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami_Parameter(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         AddSurfaceComponent(isoSurfT);
+                        AddParameter(BoSSS.Solution.NSECommon.VariableNames.MaxSigma);
                     }
                     AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
                 }

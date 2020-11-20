@@ -5,6 +5,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.XNSECommon;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -14,9 +15,9 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver
 {
-    interface ILevelSetUpdater
+    interface ILevelSetParameter
     {
-        string[] ParameterNames { get; }
+        IList<string> ParameterNames { get; }
 
         //Curvature and Normals, etc.
         void UpdateParameters(
@@ -28,9 +29,9 @@ namespace BoSSS.Application.XNSE_Solver
 
     interface ILevelSetMover
     {
-        string[] ParameterNames { get; }
+        IList<string> ParameterNames { get; }
 
-        string[] VariableNames { get;}
+        IList<string> VariableNames { get; }
 
         void MovePhaseInterface(
             DualLevelSet levelSet,
@@ -42,13 +43,13 @@ namespace BoSSS.Application.XNSE_Solver
             IReadOnlyDictionary<string, DGField> ParameterVarFields);
     }
 
-    class CurvatureProvider : ILevelSetUpdater
+    class CurvatureProvider : ILevelSetParameter
     {
         XNSE_Control Control;
 
         int m_HMForder;
 
-        public string[] ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+        public IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
 
         public CurvatureProvider(XNSE_Control control, int hMForder)
         {
@@ -97,7 +98,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class FastMarcher : ILevelSetMover, ILevelSetUpdater
+    class FastMarcher : ILevelSetMover, ILevelSetParameter
     {
         SinglePhaseField[] extensionVelocity;
 
@@ -107,9 +108,9 @@ namespace BoSSS.Application.XNSE_Solver
 
         VectorField<SinglePhaseField> filtLevSetGradient;
 
-        public string[] ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+        public IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
 
-        public string[] VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX , BoSSS.Solution.NSECommon.VariableNames.VelocityY };
+        public IList<string> VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX, BoSSS.Solution.NSECommon.VariableNames.VelocityY };
 
         public FastMarcher(XNSE_Control control, int hMForder)
         {
@@ -163,7 +164,7 @@ namespace BoSSS.Application.XNSE_Solver
             double time,
             double dt,
             bool incremental,
-            IReadOnlyDictionary<string, DGField> DomainVarFields, 
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             //Mean Velocity
@@ -173,20 +174,20 @@ namespace BoSSS.Application.XNSE_Solver
                 (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
             };
             ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(EvoVelocity, lsTrkr, Control);
-            
+
             //Extension Velocity
-            if(extensionVelocity == null)
+            if (extensionVelocity == null)
             {
                 int D = lsTrkr.GridDat.SpatialDimension;
                 extensionVelocity = new SinglePhaseField[D];
                 Basis basis = new Basis(lsTrkr.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
-                for(int d = 0; d < D; ++d)
+                for (int d = 0; d < D; ++d)
                 {
                     extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity" + d);
                 }
             }
             //Move LevelSet
-            SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs(); 
+            SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
 
             NarrowMarchingBand.Evolve_Mk2(
                 dt, lsTrkr, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
@@ -270,9 +271,9 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class FourierEvolver : ILevelSetMover, ILevelSetUpdater
+    class FourierEvolver : ILevelSetMover, ILevelSetParameter
     {
-
+        
         FourierLevSetBase Fourier_LevSet;
 
         /// <summary>
@@ -284,9 +285,9 @@ namespace BoSSS.Application.XNSE_Solver
 
         int m_HMForder;
 
-        public string[] ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+        public IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
 
-        public string[] VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX, BoSSS.Solution.NSECommon.VariableNames.VelocityY };
+        public IList<string> VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX, BoSSS.Solution.NSECommon.VariableNames.VelocityY };
 
         public FourierEvolver(XNSE_Control Control, int hMForder)
         {
@@ -318,12 +319,12 @@ namespace BoSSS.Application.XNSE_Solver
         }
 
         public void MovePhaseInterface(
-            DualLevelSet levelSet, 
-            LevelSetTracker lsTrkr, 
-            double time, 
-            double dt, 
-            bool incremental, 
-            IReadOnlyDictionary<string, DGField> DomainVarFields, 
+            DualLevelSet levelSet,
+            LevelSetTracker lsTrkr,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             //Mean Velocity

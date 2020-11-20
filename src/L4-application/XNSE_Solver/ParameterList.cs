@@ -10,7 +10,7 @@ namespace BoSSS.Application.XNSE_Solver
 {
     abstract class Parameter
     {
-        public abstract IList<string> Names { get;}
+        public abstract IList<string> ParameterNames { get;}
 
         public DelParameterFactory Factory;
 
@@ -45,13 +45,13 @@ namespace BoSSS.Application.XNSE_Solver
                 for(int i = 0; i < parameters.Count; ++i)
                 {
                     Parameter parameter = parameters[i];
-                    if (parameter.Names.Contains(name))
+                    if (parameter.ParameterNames.Contains(name))
                     {
                         if(parameter.Factory != null)
                         {
                             parameterFactories.AddLast(parameter.Factory);
                         }
-                        foreach(string otherParamName in parameter.Names)
+                        foreach(string otherParamName in parameter.ParameterNames)
                         {
                             nameList.Remove(otherParamName);
                         }
@@ -76,13 +76,13 @@ namespace BoSSS.Application.XNSE_Solver
                 for (int i = 0; i < parameters.Count; ++i)
                 {
                     Parameter parameter = parameters[i];
-                    if (parameter.Names.Contains(name))
+                    if (parameter.ParameterNames.Contains(name))
                     {
                         if(parameter.Update != null)
                         {
                             parameterUpdates.AddLast(parameter.Update);
                         }
-                        foreach (string otherParamName in parameter.Names)
+                        foreach (string otherParamName in parameter.ParameterNames)
                         {
                             nameList.Remove(otherParamName);
                         }
