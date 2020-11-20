@@ -29,6 +29,7 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 
+
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
@@ -36,10 +37,10 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     /// <param name="OpMtx">
     /// Output for the linear part; the operator matrix must be stored in the valeu that is passes to the function, i.e. the caller allocates memory;
-    /// if null, an explixit evaluation of the operator is required, which should be stored the affine part.
+    /// if null, an explicit evaluation of the operator is required, which should be stored the affine part. 
     /// </param>
     /// <param name="OpAffine">
-    /// Output for the affine part.
+    /// Output for the affine part. 
     /// </param>
     /// <param name="Mapping">
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
@@ -48,14 +49,16 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
     /// </param>
-    /// <param name="time"></param>
-    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
+    /// <param name="time">
+    /// physical time
+    /// </param>
+    /// <param name="LsTrkHistoryIndex">
+    /// history index into the various stacks of the level-set tracker (<see cref="LevelSetTracker.RegionsHistory"/>, <see cref="LevelSetTracker.DataHistories"/>, etc.);
+    /// Note that, especially for splitting schemes, the physical time usually does NOT match the tracker region timestamp <see cref="LevelSetTracker.LevelSetRegions.Time"/>;
+    /// </param>
+    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex);
         
-    ///// <summary>
-    ///// Callback-Template for the mass matrix update.
-    ///// </summary>
-    //public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
- 
+   
     /// <summary>
     /// Callback-template for level-set updates.
     /// </summary>
@@ -621,7 +624,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumV = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             
@@ -641,6 +644,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Ret.Add(kv.Key, kv.Value);
                     }
                 }
+
+                if (plotStencilCondNumV) {
+                    var fullStencil = ana.StencilCondNumbersV();
+                    ana.VarGroup = new int[] { 0, 1 };
+                    var sipStencil = ana.StencilCondNumbersV();
+                    Tecplot.Tecplot.PlotFields(new DGField[] { fullStencil, sipStencil, (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCond", 0.0, 1);
+                    //ana.VarGroup = new int[] { 2 };
+                    //Tecplot.Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV(), (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCn_varGroup2", 0.0, 1);
+                }
+
             }
 
             return Ret;

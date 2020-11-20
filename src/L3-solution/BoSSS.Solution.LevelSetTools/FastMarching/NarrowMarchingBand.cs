@@ -227,11 +227,11 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         /// <param name="Tracker"></param>
         /// <param name="dt">Size of time-step.</param>
         /// <param name="HMForder"></param>
-        public static void Evolve_Mk2(
+        public static bool Evolve_Mk2(
             double dt, LevelSetTracker Tracker,
             SinglePhaseField OldLevSet, SinglePhaseField NewLevelSet, VectorField<SinglePhaseField> LevelSetGrad,
             ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel, //DGField[] SourceParams,
-            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false) //
+            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false, JumpPenalization.jumpPenalizationTerms penalization = JumpPenalization.jumpPenalizationTerms.None) //
         {
             GridData gdat = Tracker.GridDat;
             int D = gdat.SpatialDimension;
@@ -299,7 +299,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // recalculate Level-Set Gradient
             //-------------------------------
-            LevelSetGrad.Clear(NEAR);
+            LevelSetGrad.Clear();
             LevelSetGrad.Gradient(1.0, NewLevelSet, NEAR);
 
 
@@ -308,6 +308,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             
             BitArray ReinitPosBitmask = new BitArray(J);
             BitArray ReinitNegBitmask = new BitArray(J);
+            BitArray ReinitBitmask = new BitArray(J);
             BitArray KnownBitmask = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
             foreach(var j in NEAR.ItemEnum) {
@@ -316,8 +317,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     GradNorm += LevelSetGrad[d].Coordinates.GetRow(j).L2NormPow2();
                 }
 
-                if (GradNorm < 1.0e-12) {
-                    //if (!CCBitMask[j] && (GradNorm < 0.9 || GradNorm > 1.1)) { 
+                if (GradNorm < 1.0e-12) { 
+                    //|| (!CCBitMask[j] && (GradNorm < 0.99 || GradNorm > 1.01))) { 
 
                     // the level-set field is flat (+1 or -1) in cell j
                     // it must be initialized
@@ -329,10 +330,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                     if(PosBitMask[j]) {
                         ReinitPosBitmask[j] = true;
+                        ReinitBitmask[j] = true;
                         NoOfPosReinit++;
                     }
                     if(NegBitMask[j]) {
                         ReinitNegBitmask[j] = true;
+                        ReinitBitmask[j] = true;
                         NoOfNegReinit++;
                     }
                 } else {
@@ -340,23 +343,28 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 }
             }
 
-            //Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
+            Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
 
             CellMask ReintPos = new CellMask(gdat, ReinitPosBitmask);
             CellMask ReintNeg = new CellMask(gdat, ReinitNegBitmask);
+            CellMask Reint = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);
 
 
             // perform Reinitialization
             // ------------------------
-                        
+
+            //Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_beforeReinit", 0.0, 2);
             var marcher = new Reinit.FastMarch.FastMarchReinit(NewLevelSet.Basis);
 
             marcher.AvgInit(NewLevelSet, Known);
 
-            if(NoOfPosReinit > 0)
+            //CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
+            //marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, NEAR);
+
+            if (NoOfPosReinit > 0)
                 marcher.Reinitialize(NewLevelSet, ReintPos, +1, Known, LevelSetGrad, null);
-            if(NoOfNegReinit > 0)
+            if (NoOfNegReinit > 0)
                 marcher.Reinitialize(NewLevelSet, ReintNeg, -1, Known, LevelSetGrad, null);
 
             // save reinit at OLD levelset, to prevent doing it multiple times
@@ -365,7 +373,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             OldLevSet.Acc(1.0, NewLevelSet, ReintPos);
             OldLevSet.Acc(1.0, NewLevelSet, ReintNeg);
 
-
+            //Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_afterReinit", 0.0, 2);
 
             // bring gradient up to date
             marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);
@@ -422,10 +430,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
 
 
-
             // time evolution
             // --------------
-
             if (ComponentMode) {
                 MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, NEARgrid, marcher);
             }
@@ -433,6 +439,18 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 throw new NotImplementedException("todo");
             }
 
+
+            // penalization
+            // ============
+            if (penalization != JumpPenalization.jumpPenalizationTerms.None) {
+                var jp = new JumpPenalization(penalization, 10.0);
+                jp.ImplicitEuler(dt * 0.001, NEARgrid, NewLevelSet);
+            }
+
+            if(NoOfNegReinit > 0 || NoOfPosReinit > 0)
+                return true;
+            else 
+                return false;
 
             // finally, apply the stabilization
             // --------------------------------
@@ -997,7 +1015,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 else
                     InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker);
 
-                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A" }, (int[] A, int[] B, int[] C) => HMForder);
+                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
 
                 var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 ,InterfaceFlux,Tracker, subMask.GetBitMaskWithExternal());
 
@@ -1154,6 +1172,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // solving
             // -------
+
+            if (UsedRows.Count == 0)
+                return;
+
             MsrMatrix essExtVelMatrix;
             {
                 essExtVelMatrix = new MsrMatrix(new Partitioning(UsedRows.Count));

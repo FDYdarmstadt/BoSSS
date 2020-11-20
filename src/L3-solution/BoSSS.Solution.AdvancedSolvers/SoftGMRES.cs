@@ -351,7 +351,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 if (IterationCallback != null) {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
                 }
 
 

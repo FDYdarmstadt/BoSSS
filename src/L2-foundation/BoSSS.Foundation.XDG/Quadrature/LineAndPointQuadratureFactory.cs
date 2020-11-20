@@ -32,8 +32,16 @@ using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
+    /// <summary>
+    /// in a 2D calculation, this code should provide 
+    /// - a quadrature rule the cell boundary, <see cref="GetLineFactory(bool)"/>
+    /// - a point measure where the level-set enters and exits a cell, <see cref="GetPointFactory"/>
+    /// </summary>
     public class LineAndPointQuadratureFactory {
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public LineAndPointQuadratureFactory(RefElement Kref, 
             LevelSetTracker.LevelSetData levelSetData, 
             bool SupportPointrule, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null) {
@@ -213,43 +221,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
                 return Ret;
-
-
-                /*
-#if DEBUG
-                if (mask.Except(m_Owner.MaxGrid).NoOfItemsLocally > 0)
-                    throw new NotSupportedException("'mask' must be a subset of the cut cells, for my reference element.");
-#endif
-                if (!Rules.ContainsKey(order))
-                    m_Owner.GetQuadRuleSet_Internal(order);
-
-                if (mask.NoOfItemsLocally == m_Owner.MaxGrid.NoOfItemsLocally) {
-                    // aggressive
-                    return this.Rules[order];
-                } else {
-                    var Rule = Rules[order];
-
-                    var Ret = new ChunkRulePair<CellBoundaryQuadRule>[mask.NoOfItemsLocally];
-
-                    int L = Ret.Length, H = Rule.Length;
-                    int h = 0;
-                    int jsub = -1;
-                    foreach(int jCell in mask.ItemEnum) {
-                        jsub++;
-
-                        Debug.Assert(Rule[h].Chunk.Len == 1);
-                        while (jCell > Rule[h].Chunk.i0) {
-                            h++;
-                        }
-
-                        Debug.Assert(jCell == Rule[h].Chunk.i0);
-                        Ret[jsub] = Rule[h];
-                    }
-
-                    return Ret;
-                }
-                 * 
-                 */
             }
         }
 
@@ -338,7 +309,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         /// <summary>
         /// Quadrature rules for the positive level set region 
-        /// - key: quadrature order <br/>
+        /// - key: quadrature order 
         /// - value: quadrature rule
         /// </summary>
         Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_LineMeasurePos = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
@@ -418,7 +389,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int jCell = i + chunk.i0;
                     Debug.Assert(iKref == _Cells.GetRefElementIndex(jCell));
 
-                    var cell2Edge_j = cell2Edge[jCell];
+                    int[] cell2Edge_j = cell2Edge[jCell];
 
 
 

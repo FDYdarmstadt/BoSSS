@@ -31,42 +31,41 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
     [TestFixture]
     public class AllUpTest { 
         /// <summary>
-        /// not the smartest way to define such a test...
+        /// Level-Set is parallel resp. close-to-parallel ot a cell edge
         /// </summary>
         [Test]
-        public static void AllUp(
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)]
-            XQuadFactoryHelper.MomentFittingVariants variant
-            ) {
-            //static void Main(string[] args) {
+        public static void ParalleTest_2D(
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)]
+            XQuadFactoryHelper.MomentFittingVariants variant) {
 
-           
-            var Tests = new ITest[] { new Schraeg(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()),
-                new Parallel(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()) };
+            TestTemplate(variant, new Parallel(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()));
+        }
 
-            XQuadFactoryHelper.MomentFittingVariants[] Variants = new[] {
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGauss,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes };
+        /// <summary>
+        /// Level-Set passes through a corner 
+        /// </summary>
+        [Test]
+        public static void CornerTest_2D(
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)]
+            XQuadFactoryHelper.MomentFittingVariants variant) {
+
+            TestTemplate(variant, new Schraeg(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()));
+        }
 
 
-            foreach(var tst in Tests) {
+        static void TestTemplate(XQuadFactoryHelper.MomentFittingVariants variant, ITest tst) {
+            XdgNastyLevsetLocationTest p = null;
 
+            tst.ResetTest();
 
-                XdgNastyLevsetLocationTest p = null;
+            BoSSS.Solution.Application._Main(new string[0], true, delegate () {
+                p = new XdgNastyLevsetLocationTest();
+                p.test = tst;
+                p.momentFittingVariant = variant;
+                return p;
+            });
 
-                tst.ResetTest();
-
-                BoSSS.Solution.Application._Main(new string[0], true, delegate () {
-                    p = new XdgNastyLevsetLocationTest();
-                    p.test = tst;
-                    p.momentFittingVariant = variant;
-                    return p;
-                });
-
-                Assert.IsTrue(p.IsPassed);
-
-            }
-
+            Assert.IsTrue(p.IsPassed);
         }
 
     }

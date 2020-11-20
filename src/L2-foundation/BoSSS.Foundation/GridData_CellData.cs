@@ -896,6 +896,56 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             /// <summary>
+            /// Finds all edges for a specific face of a cell
+            /// </summary>
+            /// <param name="jCell">cell index</param>
+            /// <param name="iFace">face index (<see cref="RefElement.NoOfFaces"/>)</param>
+            /// <param name="InOrOut">
+            /// - 0 if <paramref name="jCell"/> is the IN-cell w.r.t. the found edge
+            /// - 1 if <paramref name="jCell"/> is the OUT-cell w.r.t. the found edge
+            /// </param>
+            /// <param name="MoreEdges">
+            /// Only used for hanging nodes:
+            /// If there is more than one edge on the face, the indices of all edges in addition to the return value
+            /// </param>
+            /// <returns>
+            /// the first found edge on the face; if there are no hanging node, this is typically the only edge.
+            /// </returns>
+            public int GetEdgesForFace(int jCell, int iFace, out int InOrOut, out int[] MoreEdges) {
+                int[] CellToEdges = this.Cells2Edges[jCell];
+                int[,] E2C = m_owner.Edges.CellIndices;
+                byte[,] E2F = m_owner.Edges.FaceIndices; // edge -> face1, face2
+
+                if(iFace < 0 || iFace >= GetRefElement(jCell).NoOfFaces)
+                    throw new ArgumentException("Face index out ouf range.");
+
+                int Ret = -1;
+                int[] _MoreEdges = null;
+                int L = CellToEdges.Length;
+                InOrOut = -1;
+                for(int l = 0; l < L; l++) { // loop over potential edges
+                    int iEdge = Math.Abs(CellToEdges[l]) - 1;
+                    int __InOut = CellToEdges[l] > 0 ? 0 : 1; 
+                    
+                    if(E2F[iEdge,__InOut] == iFace) {
+                        Debug.Assert(m_owner.Edges.CellIndices[iEdge, __InOut] == jCell);
+
+                        if(Ret < 0) {
+                            Ret = iEdge;
+                            InOrOut = __InOut;
+                        } else {
+                            iEdge.AddToArray(ref _MoreEdges);
+                        }
+                    }
+                }
+
+                MoreEdges = _MoreEdges; 
+                return Ret;
+            }
+
+
+
+            /// <summary>
             /// Since each cell is already elementary (i.e. it maps to one reference element)
             /// this is not required and therefore, equal to null.
             /// </summary>

@@ -481,9 +481,10 @@ namespace BoSSS.Solution.Gnuplot {
             : this() {
             this.dataGroups = dataRows.
                 Select(p => new XYvalues(p.Key, p.Value[0], p.Value[1])).
-                OrderBy(p => p.Name).
+                //OrderBy(p => p.Name).
                 ToArray();
         }
+
 
         /// <summary>
         /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for a single set
@@ -549,7 +550,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// the new object
         /// </param>
         private Plot2Ddata(params XYvalues[] groups) : this() {
-            this.dataGroups = groups.OrderBy(p => p.Name).ToArray();
+            this.dataGroups = groups.
+                //OrderBy(p => p.Name).
+                ToArray();
         }
 
         /// <summary>

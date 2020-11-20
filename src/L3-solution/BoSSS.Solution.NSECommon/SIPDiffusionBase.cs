@@ -125,7 +125,10 @@ namespace BoSSS.Solution.NSECommon
             Debug.Assert(!double.IsInfinity(m_penalty));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
-            return penaltySizeFactor * m_penalty * PenaltyBase;
+            double µ = penaltySizeFactor * m_penalty * PenaltyBase;
+            if(µ.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return µ;
         }
 
         /// <summary>

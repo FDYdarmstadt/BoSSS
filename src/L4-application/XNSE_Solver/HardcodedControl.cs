@@ -1132,6 +1132,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.MaxSolverIterations = 20;
@@ -3837,7 +3838,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem = 64, string _DbPath = null, int D = 2) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem =8, string _DbPath = null, int D = 3) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -3969,12 +3970,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //double delta = 0.0;
 
-            double r = 0.5;
+            double r = 0.49;
             double nonsp = 0.5;
 
-            if(D == 2)
+            if (D == 2)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() - 1.0", false));
-            else if(D == 3)
+            else if (D == 3)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2() - 1.0", false));
             else
                 throw new ArgumentOutOfRangeException();
@@ -4004,7 +4005,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.ComputeEnergyProperties = false;
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
@@ -4013,15 +4014,16 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-            C.UseSchurBlockPrec = false;
+            C.UseSchurBlockPrec = true;
 
-            C.LinearSolver.NoOfMultigridLevels = 2;
-            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.MaxSolverIterations = 5000;
             C.LinearSolver.TargetBlockSize = 1000;
-            C.LinearSolver.MaxKrylovDim = 1000;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.MaxKrylovDim = 50;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.verbose = true;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -4048,6 +4050,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            //C.dtFixed = 1E-4;
 
 
             #endregion

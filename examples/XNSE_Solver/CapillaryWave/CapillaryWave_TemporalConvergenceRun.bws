@@ -1,0 +1,506 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 430; Grid Count = 8984; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 152; Grid Count = 150; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 63; Grid Count = 241; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 2 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @D:\local\binaries
+  1: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
+}
+==============
+ExecutionQueues[0].AllowedDatabases;
+**************
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 152; Grid Count = 150; Path = D:\local\local_XNSE_StudyDB }
+}
+==============
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+**************
+==============
+bool local = false;
+int eqI    = (local) ? 0 : 1;
+**************
+==============
+var myBatch = ExecutionQueues[eqI];
+**************
+==============
+var myDb = ExecutionQueues[eqI].AllowedDatabases[0];
+**************
+==============
+if(local) {
+    myDb    = OpenOrCreateDatabase(@"D:\local\local_XNSE_StudyDB");
+    myBatch = new MiniBatchProcessorClient(@"D:\local\binaries");
+    MiniBatchProcessor.Server.StartIfNotRunning(false);
+}
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("CapillaryWave_TemporalConvergence");   // set project name
+**************
+Project name is set to 'CapillaryWave_TemporalConvergence'.
+
+==============
+//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+**************
+==============
+// ===========================
+// Grid for Convergence Study
+// ===========================
+**************
+==============
+int kelem = 8;
+**************
+==============
+double L = 1;    // equals lambda
+**************
+==============
+    GridCommons grd;
+
+
+        double[] xNodes = GenericBlas.Linspace(0, L, kelem + 1);
+        double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, (3.0/2.0)*L, (3 * kelem) * 1); 
+        grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+
+        //double[] xNodes = GenericBlas.Linspace(0, L, (kelem/2) + 1);
+        //double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, -(1.0/2.0)*L, (1 * kelem) * 1); 
+        //var grd_lower = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        //xNodes        = GenericBlas.Linspace(0, L, (kelem/2) + 1);
+        //yNodes        = GenericBlas.Linspace((1.0/2.0)*L, (3.0/2.0)*L, (1 * kelem) * 1); 
+        //var grd_upper = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        //xNodes         = GenericBlas.Linspace(0, L, kelem + 1);
+        //yNodes         = GenericBlas.Linspace(-(1.0/2.0)*L, (1.0/2.0)*L, (1 * kelem) * 1); 
+        //var grd_center = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        //var grdMrgd = GridCommons.MergeLogically(new GridCommons[] {grd_lower, grd_center, grd_upper});
+        //grd         = GridCommons.Seal(grdMrgd, 4);
+  
+
+    grd.EdgeTagNames.Add(1, "wall");
+ 
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+        if (Math.Abs(X[1] + (3.0/2.0)*L) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[1] - (3.0/2.0)*L) <= 1.0e-8)
+            et = 1;
+        return et;
+    });
+
+    grd.Name = "CapillaryWave_studyMesh"+kelem;
+    myDb.SaveGrid(ref grd);
+    
+**************
+Grid Edge Tags changed.
+An equivalent grid (052b658a-8c52-4239-9c05-e7e3c3bc8c35) is already present in the database -- the grid will not be saved.
+052b658a-8c52-4239-9c05-e7e3c3bc8c35
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+==============
+int[] degS = new int[] { 2 };
+**************
+==============
+**************
+==============
+// physical parameter setups
+
+double rho;               
+double mu;
+double sigma;
+
+double[,] dts;
+double t_end;
+bool dt_fixed = true;    // smallest timestep is chosen for convergence study
+ 
+int setup = 0;
+switch(setup) {
+    case 0: {
+        // Capillary wave: Laplace number La = 3e5: 
+        rho   = 1e-3;
+        mu    = 1e-5;
+        sigma = 3e-2;
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
+        t_end = 0.4;
+        break;
+    }
+    case 1: {
+        // Capillary wave: Laplace number La = 3000: 
+        rho   = 1e-3;
+        mu    = 1e-4;
+        sigma = 3e-2;
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
+        t_end = 0.4;
+        break;
+    }
+    case 2: {
+        // Capillary wave: Laplace number La = 120: 
+        rho   = 1e-3;
+        mu    = 5e-4;
+        sigma = 3e-2;
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
+        t_end = 0.4;
+        break;
+    }
+    case 3: {
+        // Capillary wave: Laplace number La = 3: 
+        rho   = 1e-3;
+        mu    = 1e-3;
+        sigma = 3e-3;
+        dts   = new double[,] {{2e-3, 1e-3, 3e-4, 2e-4}, {1e-3, 6e-4, 2e-4, 8e-5}};
+        t_end = 1.3;
+        break;
+    }
+}
+**************
+==============
+double[] timestepSeq = new double[] { 8, 16, 32, 64, 128, 256, 512, 1024};
+int[] savePeriod = new int[] { 4, 8, 16, 32, 64, 128, 256, 512};
+double tend = 4e-2;
+**************
+==============
+using System.IO;
+**************
+==============
+int deg0   = 0;
+int Tstep0 = 0;
+List<XNSE_Control> controls = new List<XNSE_Control>();
+**************
+==============
+for(int iDeg = deg0; iDeg < degS.Length; iDeg++) {
+for(int iTstep = Tstep0; iTstep < timestepSeq.Length; iTstep++) {
+    
+    var C       = CapillaryWave.CW_forWorksheet();
+    C.LogValues = XNSE_Control.LoggingValues.None;
+    
+    int pDeg = degS[iDeg];   
+    C.SetDGdegree(pDeg);
+    
+    C.SetGrid(grd);
+    C.AddBoundaryValue("wall");
+    
+    string L_str  = L.ToString();
+    double A0     = L/100;
+    string A0_str = A0.ToString();
+    C.AddInitialValue("Phi", "X => X[1] - "+A0_str+" * Math.Sin(X[0] * 2.0 * Math.PI / "+L_str+")", false);
+    
+    
+    // Read prescribed LS data
+    string dat  = "CWtempConvData_La3e5_tend4e-2_timesteps"+timestepSeq[iTstep]+".txt";
+    string path = @"D:\BoSSS-experimental\public\examples\XNSE_Solver\CapillaryWave\RefData_Prosperetti\TemporalConvStudy\"+dat;
+    string[] lines = File.ReadAllLines(path);
+    double[] time = new double[lines.Length];
+    double[] val = new double[lines.Length];
+
+    for (int i = 0; i < lines.Length; i++) {
+        //var datString = lines[i].Split(new string[] {" "}, StringSplitOptions.RemoveEmptyEntries);
+        //Console.WriteLine("num split strings at 0: {0}", datString[0]);
+        time[i] = Convert.ToDouble(lines[i].Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)[0]);            
+        val[i] = Convert.ToDouble(lines[i].Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)[1]);
+    } 
+    // check input Data
+    int len = time.Length;
+    if(len != (int)timestepSeq[iTstep]+1)
+        throw new ArgumentException("non-matching time step sequences");
+    if(time[len-1] != tend)
+        throw new ArgumentException("non-matching tend");
+    //if((time[1] - time[0]) != tend / timestepSeq[iTstep])
+    //    throw new ArgumentException("non-matching dt");
+    
+    C.prescribedLSwaveData = val;
+    
+    C.AdaptiveMeshRefinement = true;
+    C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
+    C.BaseRefinementLevel    = 2;
+    
+    
+    double[] param = new double[4];
+    param[0] = 1;        // wavenumber;
+    param[1] = L;        // wavelength
+    param[2] = A0;       // initial disturbance
+    param[3] = 0.0;      // y-gravity
+    C.AdditionalParameters = param;
+
+    C.PhysicalParameters.rho_A = rho;
+    C.PhysicalParameters.rho_B = rho;
+    C.PhysicalParameters.mu_A  = mu;
+    C.PhysicalParameters.mu_B  = mu;
+    C.PhysicalParameters.Sigma = sigma;
+    
+    double dt       = tend / timestepSeq[iTstep];
+    C.dtMin         = dt;
+    C.dtMax         = dt;
+    C.NoOfTimesteps = (int)timestepSeq[iTstep]; 
+    
+    C.Timestepper_Scheme           = XNSE_Control.TimesteppingScheme.BDF3;
+    C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.Coupled_Once;
+    
+    C.saveperiod = savePeriod[iTstep];
+    
+    C.SessionName = "CapillaryWave_Setup"+setup+"_tempConvStudy2_k" + pDeg + "_timesteps" + iTstep;
+    
+    controls.Add(C);
+    C.CreateJob(); // job will be permanently linked to control object
+}
+}
+**************
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+
+==============
+LastError
+**************
+==============
+//Info(controls[0,0]);
+controls.ElementAt(0).SessionName
+**************
+CapillaryWave_Setup0_tempConvStudy2_k2_timesteps7
+==============
+//var j00 = controls[0,0].GetJob();
+**************
+==============
+//j00.Activate(myBatch);
+**************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
+    var job = cntrl.GetJob();
+    job.Activate(myBatch);
+}
+**************
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps0
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221200
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps1
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221341
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps2
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221352
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps3
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221402
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps4
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221413
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps5
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221425
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps6
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221442
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+Submitting Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps7
+Job not submitted yet, or no result session is known - starting submission.
+Submitting job with the following database info: 
+Primary: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\CapillaryWave_TemporalConvergence-XNSE_Solver2020May22_221453
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Session: {0}", cntrl.SessionName);
+    var job    = cntrl.GetJob();
+    var status = job.Status;
+    Console.WriteLine(status);
+}
+**************
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps0
+InProgress
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps1
+InProgress
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps2
+InProgress
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps3
+InProgress
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps4
+InProgress
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps5
+InProgress
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps6
+InProgress
+Session: CapillaryWave_Setup0_tempConvStudy2_k2_timesteps7
+InProgress
+
+==============
+WorkflowMgm.Sessions
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions
+**************
+==============
+**************
+==============
+//databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

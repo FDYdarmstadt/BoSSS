@@ -846,6 +846,7 @@ namespace BoSSS.Foundation {
 
             OpSolver.DefineMatrix(AAT);
             OpSolver.Solve(v, RHS);
+            OpSolver.Dispose();
 
             A.Transpose().SpMVpara(-1.0, v, 0.0, x);
 

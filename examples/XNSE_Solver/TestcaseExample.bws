@@ -1,0 +1,41 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 176; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 39; Grid Count = 608; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 1 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+}
+==============
+ExecutionQueues[0].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+**************
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("testcase")
+**************
+==============

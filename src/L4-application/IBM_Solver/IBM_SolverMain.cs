@@ -346,7 +346,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="Residual"></param>
         protected virtual XdgBDFTimestepping CreateTimeStepper(IEnumerable<DGField> Unknowns, IEnumerable<DGField> Residual)
         {
-            LevelSetHandling lsh = LevelSetHandling.None;
+            LevelSetHandling lsh = LevelSetHandling.Coupled_Once;
+            //LevelSetHandling lsh = LevelSetHandling.None;
             SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
 
             if (this.Control.PhysicalParameters.IncludeConvection)
@@ -391,6 +392,7 @@ namespace BoSSS.Application.IBM_Solver {
                     f => f.Identification), this.ResidualContinuity.Identification),
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
             };
+           
             return m_BDF_Timestepper;
         }
 
@@ -558,7 +560,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
         /// </summary>
-        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime, int LsTrkHistoryIndex) {
             DelComputeOperatorMatrix_CallCounter++;
             int D = this.LsTrk.GridDat.SpatialDimension;
 
@@ -589,7 +591,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
                 ParameterUpdate(CurrentState, Params);
-                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping);
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, LsTrkHistoryIndex);
                 mtxBuilder.time = phystime;
                 mtxBuilder.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
@@ -627,6 +629,9 @@ namespace BoSSS.Application.IBM_Solver {
                     Err.Acc(+1.0, pGradT);
                     double ErrInfAbs = Err.InfNorm();
                     double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
+                    //pGradT.SaveToTextFileSparseDebug("pGradT");du 
+                    //divVel.SaveToTextFileSparseDebug("divVel");
+
                     double ErrInfRel = ErrInfAbs / denom;
                     if (ErrInfRel >= 1e-8)
                         throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
@@ -636,7 +641,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             } else {
                 ParameterUpdate(CurrentState, Params);
-                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping);
+                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, LsTrkHistoryIndex);
                 eval.time = phystime;
                 eval.CellLengthScales[FluidSpecies[0]] = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
@@ -675,13 +680,17 @@ namespace BoSSS.Application.IBM_Solver {
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
-            //this.LevSet.ProjectField(X => this.Control.Ph(X, phystime + dt));
-            //this.LsTrk.UpdateTracker(incremental: true);
-
+            //Console.WriteLine("I N F O: Updating the Levelset");
+            if (this.Control.ForcedPhi !=null) {
+                this.LevSet.ProjectField(X => this.Control.ForcedPhi(X, phystime + dt));
+            }
+            this.LsTrk.UpdateTracker(phystime + dt);
             //LevsetEvo(phystime, dt, null);
 
-            SmoothLevelSet();
-            LsTrk.UpdateTracker(0.0);
+            //SmoothLevelSet();
+            //LsTrk.UpdateTracker(0.0);
+
+
 
             return 0.0;
         }
@@ -825,9 +834,8 @@ namespace BoSSS.Application.IBM_Solver {
                 hCutCellMin = hCellMin;
 
             double µ = penalty_base / hCutCellMin;
-            if (double.IsNaN(µ) || double.IsInfinity(µ))
-                throw new ArgumentOutOfRangeException("Invalid penalty parameter");
-            Debug.Assert(!(double.IsNaN(µ) || double.IsInfinity(µ)));
+            if(µ.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
             return µ;
         }
 
@@ -1317,8 +1325,11 @@ namespace BoSSS.Application.IBM_Solver {
                 string[] fields_line2 = line2.Split('\t');
 
                 double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
-            } catch (FileNotFoundException) {
-                Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
+            } catch (Exception ex) {
+                if (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                    Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
+                else
+                    Console.WriteLine("An unexpected error occured. This might lead to bad behavior.");
             }
             //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
@@ -1369,7 +1380,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Attention: SENSITIVE TO LEVEL INDICATOR
         /// </summary>
-        readonly bool debug = true;
+        readonly bool debug = false;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.
@@ -1427,7 +1438,8 @@ namespace BoSSS.Application.IBM_Solver {
                 bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
+
+                if (AnyChange.MPIOr()) {
                     int[] glb = (new int[] {
                     CellsToRefineList.Count,
                     Coarsening.Sum(L => L.Length),
@@ -1440,7 +1452,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // Update Grid
                 // ===========
 
-                if (AnyChange) {
+                if (AnyChange.MPIOr()) {
 
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");

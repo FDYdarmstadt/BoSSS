@@ -652,7 +652,9 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime, int LsTrkHistIdx) {
+            if(LsTrkHistIdx != 1)
+                throw new NotSupportedException("No supported for anything but the current tracker time level.");
 
             int D = this.GridData.SpatialDimension;
 
@@ -1270,7 +1272,7 @@ namespace BoSSS.Application.XRheology_Solver {
                                     var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
 
                                     DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.CurrentSolution.Mapping,
-                                    this.CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, 0.0);
+                                    this.CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, 0.0, 1);
 
                                     AggregationGridBasis[][] MgBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, this.CurrentSolution.Mapping.BasisS);
                                     //todo: AsyncCallback update

@@ -308,17 +308,6 @@ namespace BoSSS.Solution.NSECommon {
         /// look at formula (7) in cited paper
         /// </summary>
         protected double penalty(IGridData g, int jCellIn, int jCellOut, int iEdge) {
-            /*
-              double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
-              double cVA = g.iGeomCells.GetCellVolume(jCellIn);
-              double penaltySizeFactor_A = eAr / cVA;
-
-              double penaltySizeFactor_B = 0;
-              if(jCellOut >= 0) {
-              double cVB = g.iGeomCells.GetCellVolume(jCellOut);
-              penaltySizeFactor_B = eAr / cVB;
-              }
-            */
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
 
@@ -331,7 +320,10 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsInfinity(m_penalty));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
-            return penaltySizeFactor * m_penalty * m_penalty_base;
+            double µ = penaltySizeFactor * m_penalty * m_penalty_base;
+            if(µ.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return µ;
         }
 
 
@@ -1091,21 +1083,20 @@ namespace BoSSS.Solution.NSECommon {
 
 
                 }
-                    //case IncompressibleBcType.NavierSlip_localized: {
+                //case IncompressibleBcType.InnerValues: {
 
-                    //        double ls = Lslip[inp.jCellIn];
-                    //        if(ls > 0.0) {
-                    //            m_beta = muA / ls;
-                    //            goto case IncompressibleBcType.NavierSlip_Linear;
-                    //        } else {
-                    //            goto case IncompressibleBcType.Velocity_Inlet;
-                    //        }
-                    //    }
-                case IncompressibleBcType.Pressure_Dirichlet:
+                //        for (int i = 0; i < inp.D; i++) {
+                //            Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                //        }
+                //        Acc *= base.m_alpha;
+
+                //        break;
+                //    }
+                case IncompressibleBcType.Pressure_Dirichlet: 
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
-                    if(base.g_Neu_Override == null) {
+                    if (base.g_Neu_Override == null) {
                         // Inner values of velocity gradient are taken, i.e.
                         // no boundary condition for the velocity (resp. velocity gradient) is imposed.
                         for(int i = 0; i < inp.D; i++) {

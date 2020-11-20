@@ -1,0 +1,434 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 7 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 93; Grid Count = 945; Path = D:\local\local_Testcase_databases\Testcase_HeatedWall }
+  2: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  3: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  4: { Session Count = 753; Grid Count = 20965; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  5: { Session Count = 173; Grid Count = 341; Path = D:\local\local_XNSE_StudyDB }
+  6: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Application.XNSE_Solver;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Foundation' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+WorkflowMgm.Init("TwoPhaseCouetteFlow")
+**************
+Project name is set to 'TwoPhaseCouetteFlow'.
+
+==============
+//WorkflowMgm.Sessions;
+**************
+==============
+//evalSessNT.Pick(2).OpenSessionDirectory();  //.Export().WithSupersampling(2).Do();  //.KeysAndQueries["Grid:NoOfCells"]
+**************
+==============
+string studyName = "compDOFstudy_k";
+//string studyName = "compDOFstudy_asymmetric_k";
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            evalSess.Add(sess);  
+        else 
+            evalSessNT.Add(sess);
+    }        
+}
+evalSessNT
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+List of 3 instances of ISessionInfo {
+  0: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k4_mesh0_AMR1cL_restart2*	10/08/2020 09:51:08	8916f4e6...
+  1: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k4_mesh0_AMR1cL_restart*	10/07/2020 18:01:46	0953d866...
+  2: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k4_mesh0_AMR1cL*	06/04/2020 09:50:30	8cdb0ffb...
+}
+==============
+//evalSess.Add(evalSessNT.Pick(0));
+//evalSess.RemoveAt(2);
+evalSess
+**************
+List of 5 instances of ISessionInfo {
+  0: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k3_mesh1_AMR1cL	06/04/2020 09:50:35	05c5e5a5...
+  1: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k2_mesh2_AMR1cL	06/04/2020 09:50:42	d34f2da8...
+  2: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k4_mesh0	05/22/2020 16:00:56	6a7e9d71...
+  3: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k3_mesh1	05/22/2020 16:00:56	7bc14576...
+  4: TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k2_mesh2	05/22/2020 16:01:05	765e6d5e...
+}
+==============
+**************
+List of 1 instances of ISessionInfo {
+  0: TwoPhaseCouetteFlow    CouetteGNBC_compDOFstudy_k4_mesh0_AMR1cL*   06/04/2020 09:50:30 8cdb0ffb...
+}
+==============
+var data = evalSessNT.ReadLogDataForMovingContactLine();
+//var data = evalSess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.MovingContactLine);
+**************
+number of contact lines: 4
+Element at 0: time vs contact-pointX
+Element at 1: time vs contact-pointY
+Element at 2: time vs contact-VelocityX
+Element at 3: time vs contact-VelocityY
+Element at 4: time vs contact-angle
+
+==============
+LastError
+**************
+System.IndexOutOfRangeException: Index was outside the bounds of the array.
+   at BoSSS.Foundation.IO.ISessionInfoExtensions.ReadLogDataForMovingContactLine(IEnumerable`1 sess) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ISessionInfoExtensions.cs:line 2156
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
+==============
+int clp = 0;
+**************
+==============
+ISessionInfoExtensions.PlotData(data[clp].ElementAt(0), "time", "contact-point x")
+**************
+System.IndexOutOfRangeException occurred: Index was outside the bounds of the array.. Type 'LastError' for details.
+
+==============
+ISessionInfoExtensions.PlotData(data[clp].ElementAt(2), "time", "contact-velocity x")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data[clp].ElementAt(3), "time", "contact-velocity y")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data[clp].ElementAt(4), "time", "contact-angle")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+// ===========
+// export data
+// ===========
+//string qName = "contact-point x";
+//int qI       = 0; //0
+//string qName = "contact-velocity x"; 
+//int qI       = 2;
+string qName = "contact-velocity y"; 
+int qI       = 3;
+//string qName = "contact-angle"; 
+//int qI       = 4;
+
+for(int clpI = 0; clpI < 4; clpI++) {
+var grps = data[clpI].ElementAt(qI).dataGroups;
+string[] setupName = new string[]{ "k4_mesh0", "k3_mesh1", "k2_mesh2" };
+//string[] setupName = new string[]{ "k3_mesh1_AMR1cL", "k2_mesh2_AMR1cL" };
+for(int i = 0; i < grps.Count(); i++) {
+    Plot2Ddata dat = new Plot2Ddata();
+    //Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+    dat.AddDataGroup(grps.ElementAt(i));
+    string name = "CouetteGNBC_symmetric_"+setupName[i]+"_clp"+clpI+"_"+qName+".txt";
+    dat.SaveToTextFile(name);
+}
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+//string qName = "contact-velocity x"; 
+//int qI       = 2;
+**************
+==============
+// ==================================
+// reevaluate contact line properties
+// ==================================
+**************
+==============
+**************
+==============
+**************
+==============
+//evalSessNT.Pick(0).Timesteps
+**************
+==============
+**************
+==============
+**************
+==============
+// ==================
+// interface position
+// ==================
+**************
+==============
+var terminalStep = evalSess.Pick(4).Timesteps.Pick(640); //.Last();
+terminalStep
+**************
+ { Time-step: 6400; Physical time: 160.000000000019s; Fields: Phi, Curvature, PhiDG, Pressure, VelocityX, VelocityY; Name:  }
+==============
+DGField phi = terminalStep.Fields.ElementAt(0);
+phi
+**************
+Phi
+==============
+**************
+==============
+LevelSet LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+LevSet.Acc(1.0, phi); 
+**************
+==============
+LevelSetTracker LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+LsTrk.UpdateTracker();
+**************
+==============
+MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, quadRuleOrderForNodeSet:10);
+
+**************
+==============
+**************
+==============
+double[] x = interP.ExtractSubArrayShallow(new int[] { -1, 0 }).To1DArray();
+double[] y = interP.ExtractSubArrayShallow(new int[] { -1, 1 }).To1DArray();
+**************
+==============
+List<double> x_left = new List<double>();
+List<double> y_left = new List<double>();
+int numP = x.Length;
+for(int i = 0; i < numP; i++) {
+    if(x[i] < 54.4) {
+        x_left.Add(x[i] - 27.2);
+        y_left.Add(y[i]);
+    }
+}
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+PlotFormat pltForm = new PlotFormat();
+pltForm.LineColor  = LineColors.Red;
+pltForm.Style      = Styles.Points;
+pltForm.PointType  = PointTypes.Dot;
+**************
+==============
+plt.PlotXY(x_left.ToArray(), y_left.ToArray(), format: pltForm);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, x_left.ToArray(), y_left.ToArray());
+dat.AddDataGroup(xyVal);
+string[] setupName = new string[]{ "k4_mesh0", "k3_mesh1", "k2_mesh2" };
+//string name = "CouetteGNBC_symmetric_"+setupName[2]+"_interfaceP.txt";
+string name = "CouetteGNBC_symmetric_"+setupName[1]+"_AMRcL_interfaceP.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+**************
+==============
+// ===================
+// VelocityX profile
+// ===================
+**************
+==============
+DGField VelocityX = terminalStep.Fields.ElementAt(4);
+VelocityX 
+**************
+VelocityX
+==============
+DGField VelocityY = terminalStep.Fields.ElementAt(5);
+VelocityY
+**************
+VelocityY
+==============
+int N = 2000;
+double[] xValues = new double[N-1];
+double[] VmagValues = new double[N-1];
+for(int n = 1; n < N; n++) {
+    double[] probe = new double[] {(2*27.2/(double)N)*n, 13.6 };
+    xValues[n-1] = (2*27.2/(double)N)*n;
+    try {
+        double velX = VelocityX.ProbeAt(probe); 
+        double velY = VelocityY.ProbeAt(probe); 
+        VmagValues[n-1] = Math.Sqrt(velX*velX + velY*velY);    
+    } catch {
+        VmagValues[n-1] = 0.0;
+    }
+}
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+plt.PlotXY(xValues, VmagValues);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+//evalSess.Pick(2).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\TwoPhaseCouetteFlow__CouetteGNBC_compDOFstudy_k2_mesh2__765e6d5e-5ea5-4798-815d-2ec15851cce1
+==============
+**************
+==============
+// ======================
+// contact line velocity
+// ======================
+**************
+==============
+var sess = evalSess.Pick(2);
+sess
+**************
+TwoPhaseCouetteFlow	CouetteGNBC_compDOFstudy_k4_mesh0	05/22/2020 16:00:56	6a7e9d71...
+==============
+int timesteps = sess.Timesteps.Count;
+timesteps
+**************
+801
+==============
+//sess.Timesteps.Pick(640).PhysicalTime
+**************
+==============
+var sessData = sess.ToEnumerable().ReadLogDataForMovingContactLine();
+**************
+number of contact lines: 4
+Element at 0: time vs contact-pointX
+Element at 1: time vs contact-pointY
+Element at 2: time vs contact-VelocityX
+Element at 3: time vs contact-VelocityY
+Element at 4: time vs contact-angle
+
+==============
+int cpI = 1;
+**************
+==============
+ISessionInfoExtensions.PlotData(sessData[cpI].ElementAt(0), "time", "contact-point x")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+//sessData[cpI].ElementAt(0).dataGroups[0].Abscissas.Length
+sess.Timesteps.Pick(640).Fields;
+timesteps = 640;
+**************
+List of 6 instances of DGField {
+  0: Phi
+  1: Curvature
+  2: PhiDG
+  3: Pressure
+  4: VelocityX
+  5: VelocityY
+}
+==============
+//var grp = sessData[cpI].ElementAt(0).dataGroups[0];
+double[] time = new double[timesteps-1];
+//double[] cpPos = grp.Values;
+double[] cpVeloc = new double[timesteps-1];
+//double[] cpVelocA = new double[timesteps-1];
+//double[] cpVelocB = new double[timesteps-1];
+for(int ts = 0; ts < timesteps-1; ts++) {
+    time[ts] = sess.Timesteps.Pick(ts).PhysicalTime; //grp.Abscissas[ts*2];
+    //double[] probe = new double[] {cpPos[ts*2], 13.6 };
+    double[] probe = new double[] { 54.4, 13.599 };
+    DGField VelocityX = sess.Timesteps.Pick(ts).Fields.ElementAt(4);
+    //DGField VelocX_A  = ((XDGField)VelocityX).GetSpeciesShadowField("A");
+    //DGField VelocX_B  = ((XDGField)VelocityX).GetSpeciesShadowField("B");
+    try {
+        double velX = VelocityX.ProbeAt(probe); 
+        cpVeloc[ts] = velX;   
+        //double velXA = VelocX_A.ProbeAt(probe); 
+        //cpVelocA[ts] = velXA; 
+        //double velXB = VelocX_B.ProbeAt(probe); 
+        //cpVelocB[ts] = velXB;  
+    } catch {
+        cpVeloc[ts] = 0.0;
+        //cpVelocA[ts] = 0.0;
+        //cpVelocB[ts] = 0.0;
+    }
+}
+//cpVeloc
+**************
+==============
+//double[] time = new double[timesteps-1];//
+//for(int ts = 0; ts < timesteps-1; ts++) {
+//    time[ts] = grp.Abscissas[ts*2]; DGField velcoX_A  = ((XDGField)VelocityX).GetSpeciesShadowField("A");
+//}
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+plt.PlotXY(time, cpVeloc);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+ISessionInfoExtensions.PlotData(sessData[1].ElementAt(2), "time", "contact-velocity x")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, time, cpVeloc);
+dat.AddDataGroup(xyVal);
+string[] setupName = new string[]{ "k4_mesh0", "k3_mesh1", "k2_mesh2" };
+//string name = "CouetteGNBC_symmetric_"+setupName[2]+"_interfaceP.txt";
+string name = "CouetteGNBC_symmetric_"+setupName[0]+"_velocityWall.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

@@ -1,0 +1,609 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 749; Grid Count = 20812; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 173; Grid Count = 341; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+**************
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @D:\local\binaries
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\smuda\binaries
+  2: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
+}
+==============
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+var myBatch = ExecutionQueues[1];
+**************
+==============
+//var myDb = ExecutionQueues[0].AllowedDatabases[0];
+**************
+==============
+//MiniBatchProcessor.Server.StartIfNotRunning(false);
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("RisingBubble");   // set project name
+**************
+Project name is set to 'RisingBubble'.
+
+==============
+//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+//databases.Pick(3).Sessions.Pick(407).KeysAndQueries
+**************
+==============
+**************
+==============
+// ========================
+// physical parameter setup
+// ========================
+**************
+==============
+int setup = 1;
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[1];
+//int[] kelemSeq = new int[]{ 10, 20, 40, 60, 80 };
+int[] kelemSeq = new int[]{ 20 };
+**************
+==============
+//double[] dt = 3e-3; 
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+
+    double[] Xnodes = GenericBlas.Linspace(0, 1.0, kelem + 1);
+    double[] Ynodes = GenericBlas.Linspace(0, 2.0, 2 * kelem + 1);
+    grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+    grd.EdgeTagNames.Add(1, "wall_lower");
+    grd.EdgeTagNames.Add(2, "wall_upper");
+    grd.EdgeTagNames.Add(3, "freeslip_left");
+    grd.EdgeTagNames.Add(4, "freeslip_right");
+
+    grd.DefineEdgeTags(delegate (double[] X) {   
+        byte et = 0;
+        if (Math.Abs(X[1]) <= 1.0e-8)       
+            et = 1;
+        if (Math.Abs(X[1] - 2.0) <= 1.0e-8)
+            et = 2;
+        if (Math.Abs(X[0]) <= 1.0e-8)
+            et = 3;
+        if (Math.Abs(X[0] - 1.0) <= 1.0e-8)
+            et = 4;
+        return et;
+    });
+/*    
+    grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
+        int rank;
+        double x = X[0];
+        if (x < 0.5)
+            rank = 0;
+        else
+            rank = 1;
+        return rank;
+    });
+
+    grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
+        int rank;
+        double x = X[0];
+        if (x < 0.35)
+            rank = 0;
+        else if (x < 0.5)
+           rank = 1;
+        else if (x < 0.75)
+            rank = 2;
+        else
+            rank = 3;
+        return rank;
+    });
+*/
+    grd.Name = "RisingBubble_ConvergenceStudy2Mesh"+iGrid; //+"_withPartitioning";
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+Grid Edge Tags changed.
+An equivalent grid (b72ceac9-2b69-4345-80e8-5813ee2773ee) is already present in the database -- the grid will not be saved.
+
+==============
+/*
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    ((GridCommons)GridSeq[iGrid]).AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
+        int rank;
+        double x = X[0];
+        if (x < 0.5)
+            rank = 0;
+        else
+            rank = 1;
+        return rank;
+    });
+
+    ((GridCommons)GridSeq[iGrid]).AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
+        int rank;
+        double x = X[0];
+        if (x < 0.35)
+            rank = 0;
+        else if (x < 0.5)
+            rank = 1;
+        else if (x < 0.75)
+            rank = 2;
+        else
+            rank = 3;
+        return rank;
+    });
+}
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+// Fourier Level Set
+// =================
+double[] center = new double[] { 0.5, 0.5 }; 
+double radius = 0.25;
+
+int numSp = 640;    // should increase for higher resolutions
+double[] FourierP = new double[numSp];
+double[] samplP = new double[numSp];
+for (int sp = 0; sp < numSp; sp++) {
+    FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
+    samplP[sp] = radius;
+}
+
+var FLSCSeq = new FourierLevSetControl[GridSeq.Length];
+//double circum = 2.0 * Math.PI * radius;
+//double filter = (circum * 20.0) / ((double)numSp / 2.0);
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+FLSCSeq[iGrid] = new BoSSS.Solution.LevelSetTools.FourierLevelSet.FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelemSeq[iGrid]) {
+    //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2.0*Math.PI, PeriodicFunc, radius, 1.0/(double)kelem) { 
+    center = center,
+    FourierEvolve = Fourier_Evolution.MaterialPoints,
+    centerMove = CenterMovement.Reconstructed
+    //curvComp_extended = false
+};
+}
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+==============
+int[] degS = new int[] { 2 };
+**************
+==============
+bool dt_min = true;
+double[,] dts = new double[,] {{1.5e-2, 5e-3, 2e-3, 1e-3, 6e-4}, {1e-2, 3e-3, 1e-3, 6e-4, 5e-4}, {6e-3, 2e-3, 7.5e-4, 5e-4, 3e-4}};   // for tc1 and grids {10, 20, 40, 60, 80}
+double dt_fixed = 0.001; //5e-4;
+//int[] timesteps = new int[,] {{200, 600, 1500, 3000, 5000}, {300, 1000, 3000, 5000, 6000}, {500, 1500, 4000, 6000, 10000}};
+//double[,] dts = new double[,] {{6e-3, 2e-3, 1e-3, 7.5e-4}, {4e-3, 1.5e-3, 7.5e-9, 6e-4}, {3e-3, 1e-3, 6e-4, 4e-4}};    // for tc2 and grids {20, 40, 60, 80} with AMR lvl1
+//int[] timesteps = new int[,] {{500, 1500, 3000, 4000}, {750, 2000, 4000, 5000}, {1000, 3000, 5000, 7500}};
+**************
+==============
+int[,] logPs = new int[,] {{1, 1, 1, 1, 2}, {1, 1, 1, 2, 2}, {1, 1, 2, 2, 3}};
+int logP_fixed = 1;
+//int[,] logPs = new int[,] {{1, 1, 1, 2}, {1, 1, 1, 2}, {1, 1, 2, 3}};
+**************
+==============
+**************
+==============
+string restartStudyName = "_tc2_k2_mesh20_newAMR4";
+List<ISessionInfo> restartStudySess = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(restartStudyName)) {
+        if(!Convert.ToBoolean(sess.SuccessfulTermination))
+            restartStudySess.Add(sess);  
+    }        
+}
+restartStudySess
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+List of 2 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_tc2_k2_mesh20_newAMR4_restart*	09/23/2020 15:21:14	b1fba22a...
+  1: RisingBubble	RisingBubble_tc2_k2_mesh20_newAMR4*	08/31/2020 18:18:48	474a04c2...
+}
+==============
+//restartStudySess.Pick(0).Timesteps.Last();//.OpenSessionDirectory()
+**************
+==============
+bool restart = true;
+Guid[] restartID = new Guid[1];
+restartID[0] = restartStudySess.ElementAt(1).ID;
+//restartID[1] = databases.Pick(3).Sessions.Pick(407);
+restartID
+**************
+List of 1 instances of Guid {
+  0: 474a04c2-6939-4d74-85ea-ad11a5acc6b0
+}
+==============
+bool withAMR = true;
+**************
+==============
+int deg0 = 0;
+int grd0 = 0;
+//XNSE_Control[,] controls = new XNSE_Control[degS.Length-deg0, GridSeq.Length-grd0];
+List<XNSE_Control> controls = new List<XNSE_Control>();
+**************
+==============
+for(int iDeg = deg0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
+    
+    var C = RisingBubble.RB_forWorksheet(setup, restart);
+    
+    C.switchOffPlotting = true;
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+
+    C.SetDGdegree2(pDeg);
+    C.FieldOptions.Add("GravityY", new FieldOpts() {
+        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+    });
+    
+    if(restart) {
+        C.ReInitOnRestart = false;
+        C.DbPath          = myDb.Path;
+        C.GridGuid        = restartStudySess.ElementAt(1).Timesteps.Last().GridID;
+        C.RestartInfo     = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restartID[iGrd], null);
+    } else {
+        C.SetGrid(grd);
+    }
+    //C.GridPartType    = GridPartType.Predefined;
+    //C.GridPartOptions = "ZwoProcSplit";
+    C.AddBoundaryValue("wall_lower");
+    C.AddBoundaryValue("wall_upper");
+    C.AddBoundaryValue("freeslip_left");
+    C.AddBoundaryValue("freeslip_right");
+    
+    C.SetLevelSetMethod(0, FLSCSeq[iGrd]);
+    if(setup == 1 || withAMR) {
+        C.AdaptiveMeshRefinement = true;
+        C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
+        C.BaseRefinementLevel    = 4;
+        //C.AMR_startUpSweeps      = 5;
+        //C.RefinementLevel        = 2;
+    }
+    
+    //C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
+    //C.adaptiveReInit           = true;
+    //C.ReInitControl.FastMarchingPrecond = true;
+    //C.EnforceLevelSetConservation = true;
+    //C.ReInitPeriod = 50;
+        
+    double dt       = (dt_min) ? dt_fixed : dts[iDeg, iGrd];
+    C.dtMin         = dt;
+    C.dtMax         = dt;
+    C.NoOfTimesteps = (int)(3.0/dt);
+    
+    int logP     = (dt_min) ? logP_fixed : logPs[iDeg, iGrd];
+    C.LogPeriod  = logP;
+    C.saveperiod = 10*logP;   
+    
+    //C.SessionName = "RisingBubble_tc2_ConvStudy2_k" + pDeg + "_mesh" + iGrd;
+    C.SessionName = "RisingBubble_tc2_k2_mesh20_newAMR4_restart2";
+    //C.SessionName = "RisingBubble_tc1_k2_mesh40_noPenalty_AR_int01";
+    //C.SessionName = "RisingBubble_ConvStudy_k" + pDeg + "_mesh02_rerunWithReInit50";
+    //C.SessionName = "RisingBubble_"+C.methodTagLS+"3_k" + pDeg + "_mesh" + iGrd;
+    
+    //controls[iDeg-deg0,iGrd-grd0] = C;
+    controls.Add(C);
+    C.CreateJob(); // job will be permanently linked to control object
+}
+}
+**************
+==============
+controls.Count()
+**************
+1
+==============
+//Info(controls[0,0]);
+//controls[0,0].SessionName
+controls.ElementAt(0).SessionName
+**************
+RisingBubble_tc2_k2_mesh20_newAMR4_restart2
+==============
+**************
+==============
+//LastError
+**************
+==============
+//j00.Activate(myBatch);
+**************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
+    var job              = cntrl.GetJob();
+    //job.NumberOfMPIProcs = 4;
+    job.Activate(myBatch);
+}
+**************
+Submitting Session: RisingBubble_tc2_k2_mesh20_newAMR4_restart2
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Sep30_173929
+copied 32 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Status Session: {0}", cntrl.SessionName);
+    var job              = cntrl.GetJob();
+    Console.WriteLine(job.Status);
+}
+**************
+Status Session: RisingBubble_tc2_ConvStudy_k2_mesh2_restart5
+InProgress
+
+==============
+LastError
+**************
+==============
+//WorkflowMgm.Sessions
+**************
+==============
+//WorkflowMgm.Sessions.Pick(23).OpenSessionDirectory()
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Pick(0).Delete()
+**************
+Session: RisingBubble   RisingBubble_tc2_k2_mesh20_newAMR4_restart2*    09/30/2020 17:29:36 e1d730e3...
+Do you really want to delete this session? [y/n]: Session e1d730e3-1fde-4d19-95e4-a3fa0ae9b633 deleted.
+
+==============
+//databases.Pick(3).Sessions
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Take(2).DeleteAll()
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

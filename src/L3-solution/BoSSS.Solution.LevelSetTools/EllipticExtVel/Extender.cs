@@ -186,13 +186,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 
                 
         }
-        
+
 
 
         /// <summary>
         /// Create Spatial Operators and build the corresponding Matrices
         /// </summary>
-        public void ComputeMatrices(IList<DGField> InterfaceParams,bool nearfield) {
+        public void ComputeMatrices(IList<DGField> InterfaceParams, bool nearfield) {
             OpMatrix = new MsrMatrix(this.Extension.Mapping, this.Extension.Mapping);
             OpAffine = new double[OpMatrix.RowPartitioning.LocalLength];
 
@@ -219,7 +219,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                     BulkParams = new List<DGField> { }; // Hack, to make ArrayTools.Cat produce a List of DGFields
                     // second Hack: Does only work, when InterfaceParams is according to a single component flux,
                     // else, we will have to change the boundary edge flux
-                    BulkParams = ArrayTools.Cat(BulkParams,LevelSetGradient.ToArray(), Phi, MeanLevelSetGradient.ToArray(),InterfaceParams.ToArray());
+                    BulkParams = ArrayTools.Cat(BulkParams, LevelSetGradient.ToArray(), Phi, MeanLevelSetGradient.ToArray(), InterfaceParams.ToArray());
                     MeanLevelSetGradient.Clear();
                     MeanLevelSetGradient.AccLaidBack(1.0, LevelSetGradient);
                     break;
@@ -276,7 +276,11 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 Extension.Mapping, InterfaceParams, Extension.Mapping);
 
             MultiphaseCellAgglomerator dummy = LevelSetTracker.GetAgglomerator(LevelSetTracker.SpeciesIdS.ToArray(), 2 * Extension.Basis.Degree + 2, 0.0);
-            mtxBuilder.CellLengthScales.Add(LevelSetTracker.GetSpeciesId("A"), dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")]);
+            foreach (SpeciesId spcId in LevelSetTracker.SpeciesIdS) {
+                //mtxBuilder.SpeciesOperatorCoefficients[spcId].CellLengthScales = dummy.CellLengthScales[spcId];
+                mtxBuilder.CellLengthScales.Add(spcId, dummy.CellLengthScales[spcId]);
+            }
+            //mtxBuilder.CellLengthScales.Add(LevelSetTracker.GetSpeciesId("A"), dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")]);
 
             mtxBuilder.time = 0;
             mtxBuilder.MPITtransceive = false;
@@ -469,7 +473,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             DefineBulkOperator(LSTrck, InterfaceFlux, D, PenaltyBase);
 
-            Operator_interface = InterfaceFlux.XOperator(new[] { "A" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
+            Operator_interface = InterfaceFlux.XOperator(new[] { "A", "B" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
+            //Operator_interface = InterfaceFlux.XOperator(new[] { "A" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
         }
 
         private void DefineBulkOperator(LevelSetTracker LSTrck, ILevelSetForm InterfaceFlux, int D, double PenaltyBase) {

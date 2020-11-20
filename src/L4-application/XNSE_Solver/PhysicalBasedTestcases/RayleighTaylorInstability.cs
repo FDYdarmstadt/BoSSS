@@ -1095,7 +1095,134 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
+        /// <summary>
+        /// control object for the use in BoSSSPad Worksheet mode
+        /// additional parameters need to be set during job creation
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control RT_forWorksheet() {
 
+
+            XNSE_Control C = new XNSE_Control();
+
+            // ======================
+            #region db
+
+            //C.DbPath = set by workflowMgm during job creation
+            C.savetodb = true;
+            C.ContinueOnIoError = false;
+
+            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+
+            #endregion
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            // need to be set by user via setDGdegree() in worksheet
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics  
+
+            // need to be set during job creation 
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid genration
+            // ==============
+            #region grid
+
+            // need to be set by user via setGrid() in worksheet
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            // need to be set during job creation 
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            // need to be set during job creation 
+
+            #endregion
+
+
+            // additional parameters (evaluation)
+            // ==================================
+
+            // need to be set during job creation 
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            #endregion
+
+
+            // Level-Set options (AMR)
+            // =======================
+            #region levset
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+
+            //C.dtMax = dt; // need to be set according to grid and DG degree
+            //C.dtMin = dt;
+            C.Endtime = 1000;
+            //C.NoOfTimesteps = 0; 
+
+            C.saveperiod = 1;
+            C.LogPeriod = 1;
+
+            #endregion
+
+
+            return C;
+
+        }
     }
 
 
