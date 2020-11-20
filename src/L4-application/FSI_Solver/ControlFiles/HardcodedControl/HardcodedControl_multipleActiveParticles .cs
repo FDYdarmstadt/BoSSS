@@ -287,7 +287,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             string ID = "66b7dd59-bec7-4970-8e84-da3d368be1b5";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1980);
             C.IsRestart = true;
             // Fluid Properties
             // =============================
@@ -308,7 +308,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
-            C.minDistanceThreshold = 0.03;
+            C.minDistanceThreshold = 0.025;
             C.CoefficientOfRestitution = 1;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
