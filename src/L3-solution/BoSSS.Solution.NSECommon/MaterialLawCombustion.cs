@@ -35,13 +35,14 @@ namespace BoSSS.Solution.NSECommon {
         [DataMember] MaterialParamsMode MatParamsMode;
         [DataMember] double[] MolarMasses;
         [DataMember] bool rhoOne;
+        [DataMember] bool cpOne;
         [DataMember] public double Q;
         [DataMember] public double TO0;
         [DataMember] public double TF0;
         [DataMember] public double YF0;
         [DataMember] public double YO0;
         [DataMember] public double zst;
-        [DataMember] public double cp;
+        //[DataMember] public double cp;
         [DataMember] public ChemicalConstants CC;
         public double s;
         /// <summary>
@@ -59,24 +60,27 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         /// <param name="Prandtl"></param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
-        public MaterialLawCombustion(double T_ref, double[] MolarMasses,  MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
+        public MaterialLawCombustion(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
             : base(T_ref, MatParamsMode, rhoOne, Prandtl) {
             this.MatParamsMode = MatParamsMode;
             this.Prandtl = Prandtl;
             this.MolarMasses = MolarMasses;
             this.rhoOne = rhoOne;
+            this.cpOne = _cpOne;
             this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
             this.YF0 = YF0;
             this.YO0 = YO0;
             this.zst = zst;
-            this.cp = 1.0;
+            //this.cp = 1.0;
             this.CC = CC;
             this.s = (CC.nu_O2 * CC.MW_O2) / (CC.nu_CH4 * CC.MW_CH4);
 
+            this.thermoProperties = new ThermodynamicalProperties();
         }
 
+        public ThermodynamicalProperties thermoProperties;
 
         /// <summary>
         /// Dimensionless ideal gas law for multicomponent flow - returns density as function of
@@ -87,28 +91,25 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-
             if (IsInitialized) {
                 double rho;
-                double MassFractionsOverMolarFractions;
+            
                 if (!rhoOne) {
                     if (phi.Length < 5)
-                        throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 4.");
+                       throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 4.");
 
-                    MassFractionsOverMolarFractions = 0.0;
+                    double MassFractionsOverMolarFractions = 0.0;
                     double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
                     for (int n = 1; n < phi.Length; n++) {
                         lastMassFract -= phi[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
                     }
 
                     phi = ArrayTools.Cat(phi, lastMassFract);
-
                     for (int n = 1; n < phi.Length; n++) {
                         MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                     }
 
                     rho = ThermodynamicPressureValue / (phi[0] * MassFractionsOverMolarFractions);
-                 //   rho = rho > 0.05 ? rho : 0.05;
                     Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                     Debug.Assert((rho > 0.0));
                 } else {
@@ -119,57 +120,45 @@ namespace BoSSS.Solution.NSECommon {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
         }
-        
+        /// <summary>
+        /// Calculation of the heat capacity of the mixture. 
+        /// The first element of the argument corresponds to the adimensional temperature
+        /// the next N arguments are the mass fractions.
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        public override double GetMixtureHeatCapacity(double[] arguments) {
+            double cp;
+            if (!cpOne) {
+
+                double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
+                for (int n = 1; n < arguments.Length; n++) {
+                    lastMassFract -= arguments[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
+                }
+
+                arguments = ArrayTools.Cat(arguments, lastMassFract);
+                double TRef = 300;
+                double DimensionalTemperature = arguments[0] * TRef;
+                double[] massFractions = arguments.Skip(1).Take(arguments.Length - 1).ToArray();
+                string[] names = new string[] { "CH4", "O2", "CO2", "H2O", "N2" };
+                cp = thermoProperties.Calculate_Cp_Mixture(massFractions, names, DimensionalTemperature);
+
+            
+            } else {
+                cp = 1.0;
+            }
+
+
+            return cp;
+        }
+
+
+
+
         public override IList<string> ParameterOrdering {
             get {
                 return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; 
             }
-        }
-
-        //public double Prandtl { get { base.Prandtl; } }
-
-        /// <summary>
-        /// Calculates heat capacity of air for a given temperature and composition.
-        /// Constant pressure heat capacity (c_p), in [KJ/Kg K] 
-        /// </summary>
-        /// <param name="T">Temperature, in Kelvin</param>
-        /// <param name="Y_N2_air">Mass fraction of nitrogen in air</param>
-        /// <param name="Y_O2_air">Mass fraction of oxygen in air</param>
-        /// <returns>Constant pressure heat capacity (c_p), in [KJ/Kmol K] </returns>
-        public double get_cp_air(double T, double Y_N2_air, double Y_O2_air) {
-            double cp = 0;
-            double R = 8.314; // Gas constant, J/mol K 
-            // Cp correlations for O2 and N2. The polynomials used are the NASA Polynomials for cp. http://combustion.berkeley.edu/gri-mech/version30/files30/thermo30.dat
-            // For each component two polynomials are given. One for temperatures 300<T<1000 and other for 1000<T<5000
-            // N2 Hot
-            double[] cp_N2COLD = new double[] { +0.32986769E+01, +0.14082404E-02, -0.39632223E-05, +0.56415153E-08, -0.24448549E-11 };
-            double[] cp_O2COLD = new double[] { +0.32129364E+01, +0.11274863E-02, -0.57561505E-06, +0.13138772E-08, -0.87685539E-12 };
-
-            double[] cp_N2HOT = new double[] { +0.29266400E+01, +0.14879767E-02, -0.56847608E-06, +0.10097038E-09, -0.67533513E-14 };
-            double[] cp_O2HOT = new double[] { +0.36975782E+01, +0.61351969E-03, -0.12588419E-06, +0.17752815E-10, -0.11364353E-14 };
-
-            if (T <= 1000) {
-                double cp_N2 = cp_N2COLD[0] + cp_N2COLD[1] * Math.Pow(T, 1) + cp_N2COLD[2] * Math.Pow(T, 2) + cp_N2COLD[3] * Math.Pow(T, 3) + cp_N2COLD[4] * Math.Pow(T, 4);
-                double cp_O2 = cp_O2COLD[0] + cp_O2COLD[1] * Math.Pow(T, 1) + cp_O2COLD[2] * Math.Pow(T, 2) + cp_O2COLD[3] * Math.Pow(T, 3) + cp_O2COLD[4] * Math.Pow(T, 4);
-                cp = Y_N2_air * cp_N2 + Y_O2_air * cp_O2;
-                if (T < 200) {
-                    throw new Exception("Temperature value out of bounds for calculating cp!");
-                }
-            } else if (T > 1000) {
-                double cp_N2 = cp_N2HOT[0] + cp_N2HOT[1] * Math.Pow(T, 1) + cp_N2HOT[2] * Math.Pow(T, 2) + cp_N2HOT[3] * Math.Pow(T, 3) + cp_N2HOT[4] * Math.Pow(T, 4);
-                double cp_O2 = cp_O2HOT[0] + cp_O2HOT[1] * Math.Pow(T, 1) + cp_O2HOT[2] * Math.Pow(T, 2) + cp_O2HOT[3] * Math.Pow(T, 3) + cp_O2HOT[4] * Math.Pow(T, 4);
-                cp = Y_N2_air * cp_N2 + Y_O2_air * cp_O2;
-                if (T > 5000) {
-                    throw new Exception("Temperature value out of bounds for calculating cp!");
-                }
-            } else {
-                throw new Exception("äh?");
-            }
-            double MW_O2 = 32;
-            double MW_N2 = 28;
-            double avgMW = 1 / (Y_O2_air / MW_O2 + Y_N2_air/MW_N2);
-            cp *= R / avgMW; // cp in KJ/Kg K
-            return cp; // 
         }
 
 

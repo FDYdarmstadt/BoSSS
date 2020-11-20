@@ -1019,7 +1019,7 @@ namespace BoSSS.Foundation.XDG {
                     // pass 2: determine agglomeration targets
                     // ---------------------------------------
 
-                    List<int> failCells = new List<int>();
+                    var failCells = new List<int>();
                     foreach (int jCell in AgglomCellsList) {
                         var Cell2Edge_jCell = Cell2Edge[jCell];
                         //bool[] EdgeIsNonempty = new bool[Cell2Edge_jCell.Length];
@@ -1110,78 +1110,9 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         if (jCellNeigh_max < 0) {
-                            // ----------------------------------------------------------------------------------------------------------------------
-                            // in case of a "failed cell": Test whether the cell is at a periodic boundary and agglomerate over the periodic boundary
-                            // "Periodic boundary rescue program" (BD)
-                            // ----------------------------------------------------------------------------------------------------------------------
-                            Vector cellCenter = new Vector(grdDat.iGeomCells.GetCenter(jCell));
-                            for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
-                                int iEdge = Cell2Edge_jCell[e];
-                                int OtherCell, ThisCell;
-                                if (iEdge < 0) {
-                                    // cell 'jCell' is the OUT-cell of edge 'iEdge'
-                                    OtherCell = 0;
-                                    ThisCell = 1;
-                                    iEdge *= -1;
-                                }
-                                else {
-                                    OtherCell = 1;
-                                    ThisCell = 0;
-                                }
-                                iEdge--;
-
-                                double EdgeArea_iEdge = edgeArea[iEdge];
-
-                                _AgglomCellsEdges[iEdge] = true;
-                                Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
-
-                                int jCellNeigh = Edge2Cell[iEdge, OtherCell];
-                                if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
-                                    // boundary edge, now a possible neighbour for agglomeration
-                                    Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
-                                    double spcVol_neigh = CellVolumes[jCellNeigh]; 
-                                    double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
-                                    double frac_neigh = spcVol_neigh / totVol_neigh;
-
-                                    // max?
-                                    if (frac_neigh > frac_neigh_max) {
-                                        frac_neigh_max = frac_neigh;
-                                        e_max = e;
-                                        jCellNeigh_max = jCellNeigh;
-                                        jEdge_max = iEdge;
-                                    }
-                                }
-                            }
-                            if (jCellNeigh_max < 0) {
-                                // ----------------------------------------------------------------------------------------------------------------------
-                                // still failing... now there is nothing we can do about it
-                                // ----------------------------------------------------------------------------------------------------------------------
-                                throw new Exception("Fail: " + cellCenter);
-                                failCells.Add(jCell);
-                            }
-                            else {
-                                _AccEdgesMask[jEdge_max] = true;
-
-                                int jCellNeighRank;
-                                if (jCellNeigh_max < Jup) {
-                                    jCellNeighRank = myMpiRank;
-                                }
-                                else {
-                                    jCellNeighRank = CellPart.FindProcess(GidxExt[jCellNeigh_max - Jup]);
-                                }
-
-                                AgglomerationPairs.Add(new CellAgglomerator.AgglomerationPair() {
-                                    jCellTarget = jCellNeigh_max,
-                                    jCellSource = jCell,
-                                    OwnerRank4Target = jCellNeighRank,
-                                    OwnerRank4Source = myMpiRank
-                                });
-                            }
-                            // ----------------------------------------------------------------------------------------------------------------------
-                            // End of "Periodic boundary rescue program"
-                            // ----------------------------------------------------------------------------------------------------------------------
-                        }
-                        else {
+                            //Debugger.Launch();
+                            failCells.Add(jCell);
+                        } else {
                             _AccEdgesMask[jEdge_max] = true;
 
                             int jCellNeighRank;
@@ -1221,14 +1152,13 @@ namespace BoSSS.Foundation.XDG {
                         DGField FailedViz = new SinglePhaseField(b, "FailedCells");
                         foreach (int j in failCells) {
                             FailedViz.SetMeanValue(j, 1);
-
-                           
                         }
+
+
                         if (Katastrophenplot != null)
                             Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
-                        ExceptionOnFailedAgglomeration = false;
                         if (ExceptionOnFailedAgglomeration)
                             throw new Exception(message);
                         else

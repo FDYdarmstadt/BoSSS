@@ -569,12 +569,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         private int[] GetNeighboursViaEdgesAndVertices(int currentCellIndex) {
-            Tuple<int, int, int>[] edgeNeighbours = this.GetCellNeighboursViaEdges(currentCellIndex, OmmitPeriodic: false);
-            List<int> extractEdgeNeighbours = new List<int>();
+            this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCellsEdges, out _);
+            Tuple<int, int, int>[] edgeNeighbours = this.GetCellNeighboursViaEdges(currentCellIndex);
+            List<int> testSomething = new List<int>();
             foreach(Tuple<int, int, int> i in edgeNeighbours) {
-                extractEdgeNeighbours.Add(i.Item1);
+                testSomething.Add(i.Item1);
             }
-            int[] neighbourCellsEdges = extractEdgeNeighbours.ToArray();
+            neighbourCellsEdges = testSomething.ToArray();
             this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaVertices, out int[] neighbourCellsVertices, out _);
             int[] neighbourCells = new int[neighbourCellsEdges.Length + neighbourCellsVertices.Length];
             for (int i = 0; i < neighbourCellsEdges.Length; i++) {

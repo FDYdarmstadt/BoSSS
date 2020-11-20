@@ -321,8 +321,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetAddaptiveMeshRefinement(0);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 20, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(3);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
             C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.pureDryCollisions = false;
 
@@ -375,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-2, 30, true);
+            C.SetTimesteps(1e-3, 200, true);
 
 
 

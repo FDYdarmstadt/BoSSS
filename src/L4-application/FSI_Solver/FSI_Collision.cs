@@ -37,8 +37,7 @@ namespace FSI_Solver {
         private Vector[][] ClosestPoints;
         private readonly double[][] WallCoordinates;
         private readonly bool[] IsPeriodicBoundary;
-        private readonly double DistanceThreshold;
-        private double MinimalDistance;
+        private readonly double MinDistance;
         private double[][] TemporaryVelocity;
         private Particle[] Particles;
         private int[][] CollisionCluster;
@@ -82,7 +81,7 @@ namespace FSI_Solver {
             TimestepSize = dt;
             GridLengthScale = gridLenghtscale;
             WallCoordinates = wallCoordinates;
-            DistanceThreshold = minDistance;
+            MinDistance = minDistance;
             this.IsPeriodicBoundary = IsPeriodicBoundary;
         }
 
@@ -120,9 +119,8 @@ namespace FSI_Solver {
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
             double distanceThreshold = GridLengthScale / 10;
-            if (DistanceThreshold != 0)
-                distanceThreshold = DistanceThreshold;
-            MinimalDistance = distanceThreshold / 10;
+            if (MinDistance != 0)
+                distanceThreshold = MinDistance;
             // Step 2
             // Loop over time until the particles hit.
             // =======================================================
@@ -196,9 +194,6 @@ namespace FSI_Solver {
                             }
                             if (DistanceVector[p0][p1].Abs() < globalMinimalDistance) {
                                 globalMinimalDistance = DistanceVector[p0][p1].Abs();
-                                //if (DistanceVector[p0][p1].Abs() < MinimalDistance && temp_SaveTimeStep > 0) {
-                                //    saveTimestep = 1e-10;
-                                //}
                             }
                             if (temp_Overlapping) {
                                 double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.
@@ -266,12 +261,12 @@ namespace FSI_Solver {
 
         private int[][] ClusterCollisionsContainingSameParticles() {
             List<int[]> globalParticleCluster = new List<int[]>();
-            bool[] partOfCollisionCluster = new bool[Particles.Length + 4];
+            bool[] partOfCollisionCluster = new bool[Particles.Length];
             for (int p0 = 0; p0 < Particles.Length; p0++) {
-                if (!partOfCollisionCluster[p0] && ParticleCollidedWith[p0].Count() > 0) {
+                if (!partOfCollisionCluster[p0]) {
                     List<int> currentParticleCluster = new List<int> { p0 };
                     partOfCollisionCluster[p0] = true;
-                    for (int p1 = 0; p1 < ParticleCollidedWith[p0].Count(); p1++) {
+                    for (int p1 = 1; p1 < ParticleCollidedWith[p0].Count(); p1++) {
                         currentParticleCluster.Add(ParticleCollidedWith[p0][p1]);
                         partOfCollisionCluster[ParticleCollidedWith[p0][p1]] = true;
                         FindCollisionClusterRecursive(ParticleCollidedWith, ParticleCollidedWith[p0][p1], currentParticleCluster, partOfCollisionCluster);
@@ -315,7 +310,7 @@ namespace FSI_Solver {
             if (DistanceVector[particle][potentialCollisionPartner].Abs() <= distanceThreshold && AccumulatedCollisionTimestep < TimestepSize && AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner] > 0) {
                 int insertAtIndex = currentParticleCollidedWith.Count();
                 for (int i = 1; i < currentParticleCollidedWith.Count(); i++) {
-                    if (AccumulatedLocalSaveTimestep[particle][currentParticleCollidedWith[i]] > AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner])
+                    if (DistanceVector[particle][currentParticleCollidedWith[i]].Abs() > DistanceVector[particle][potentialCollisionPartner].Abs())
                         insertAtIndex = i;
                 }
                 currentParticleCollidedWith.Insert(insertAtIndex, potentialCollisionPartner);
@@ -456,7 +451,7 @@ namespace FSI_Solver {
             closestPoints[0] = new Vector(spatialDim);
             closestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
-            int maxNoOfIterations = 500;
+            int maxNoOfIterations = 50;
 
             // Step 2
             // Start the iteration
