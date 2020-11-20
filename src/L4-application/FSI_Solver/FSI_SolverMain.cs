@@ -1432,7 +1432,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
-        BitArray PeriodicBoundaryCells = null;
+        //BitArray PeriodicBoundaryCells = null;
         /// <summary>
         /// Adaptive mesh refinement
         /// </summary>
