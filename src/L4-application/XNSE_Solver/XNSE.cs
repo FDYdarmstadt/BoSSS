@@ -159,6 +159,7 @@ namespace BoSSS.Application.XNSE_Solver
                     lsUpdater.AddEvolver("Phi", fastMarcher);
                     break;
                 case LevelSetEvolution.None:
+                    lsUpdater.AddLevelSetParameter("Phi", new CurvatureProvider(Control, QuadOrder()));
                     break;
                 default:
                     throw new NotImplementedException();
