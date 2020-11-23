@@ -70,10 +70,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             return velocity;
         }
 
-        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal, Vector velocityIn, Vector velocityOut)
+        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal, Vector velocityOut, Vector velocityIn)
         {
-            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
-            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
+            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
+            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
             int jLogicalCell_in = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellIn];
             int jLogicalCell_ot = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellOut];
             MultidimensionalArray positions = Nodes.Positions;
@@ -116,8 +116,8 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                     }
                 }
             };
-            
-            double result = VoronoiEdge.NormalVelocity(posOt, velocityOut, posIn, velocityIn, x, normal);
+
+            double result = VoronoiEdge.NormalVelocity(posIn, velocityIn, posOt, velocityOut, x, normal) ;
             return result;
         }
 
