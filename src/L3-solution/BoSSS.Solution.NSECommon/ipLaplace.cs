@@ -104,7 +104,7 @@ namespace BoSSS.Solution.NSECommon {
             
             double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
             double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
-            
+
             m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
             
             this.LengthScales = cs.CellLengthScales;

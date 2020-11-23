@@ -397,6 +397,7 @@ namespace AdvancedSolverTests {
 
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
             mtxBuilder.time = 0.0;
+            mtxBuilder.CellLengthScales.AddRange(Agg.CellLengthScales);
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
 

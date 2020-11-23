@@ -24,7 +24,7 @@ namespace AdvancedSolverTests {
         }
 
         public static void Test() {
-           //SubBlockTests.LocalIndexTest(XDGusage.all,2);
+            //SubBlockTests.LocalIndexTest(XDGusage.all,2);
             //SubBlockTests.ExternalIndexTest(XDGusage.all, 2);
             //SubBlockTests.MapConsistencyTest(XDGusage.all, 2);
             //SubBlockTests.WriteOutTestMatrices();
@@ -48,7 +48,8 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.LocalTests.SplitVectorOperations(XDGusage.none, 2, MatrixShape.full_var);
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2, MatrixShape.full);
             //AdvancedSolverTests.SubBlocking.ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
-            AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
+            //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
+            AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.none, 2, 4);
             
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
         }
