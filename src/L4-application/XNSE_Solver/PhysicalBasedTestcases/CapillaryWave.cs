@@ -760,9 +760,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ======================
             #region db
 
+            string _DbPath = null;
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CWp3_spatialConv";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
-            string _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB";
             //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
 
             C.DbPath = _DbPath;
