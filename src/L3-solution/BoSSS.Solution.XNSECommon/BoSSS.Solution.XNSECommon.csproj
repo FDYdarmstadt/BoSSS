@@ -53,6 +53,7 @@
     <Compile Include="ConvectionInBulk_LLF.cs" />
     <Compile Include="ConvectionInBulk_Localized.cs" />
     <Compile Include="CutCellBoundingBoxes.cs" />
+    <Compile Include="ParameterSource.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
     <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
     <Compile Include="PressureStabilizationAtLevelSet.cs" />
