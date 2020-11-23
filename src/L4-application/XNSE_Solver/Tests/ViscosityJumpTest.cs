@@ -42,11 +42,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// </summary>
     class ViscosityJumpTest : ITest {
 
+
         private int m_SpatialDimension;
 
         public ViscosityJumpTest(int _SpatialDimension) {
             m_SpatialDimension = _SpatialDimension;
         }
+
 
         public int SpatialDimension {
             get {
@@ -54,6 +56,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /// <summary>
+        /// 45 degree 
+        /// </summary>
         public Func<double[],double,double> GetPhi() {
             switch (m_SpatialDimension) {
                 case 2:
@@ -102,6 +107,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /// <summary>
+        /// arranged so that the level-set passes through the corners
+        /// </summary>
         public GridCommons CreateGrid(int Resolution) {
             if (Resolution < 1)
                 throw new ArgumentException();

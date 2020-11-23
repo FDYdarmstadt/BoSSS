@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//#define TEST
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -77,19 +79,20 @@ namespace BoSSS.Application.XNSE_Solver {
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
 
-            ////Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0, true, 3);
-            //Tests.UnitTest.MovingDropletTest(1, 0.1d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8d, ViscosityMode.FullySymmetric, true, false, 3);
-            ////Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d); // 1.0471975511966d);
-            ////Tests.UnitTest.TranspiratingChannelTest(2, 0.1d, 0.0d, ViscosityMode.Standard, false, 3);
-            ////Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false, 3);
-            ////Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
-            ////Tests.UnitTest.TestRayleighTaylorInstability();
-            ////Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
+            //Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0, true, 3);
+            Tests.UnitTest.MovingDropletTest(2, 1, 0.1d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8d, 
+                ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d); // 1.0471975511966d);
+            //Tests.UnitTest.TranspiratingChannelTest(2, 0.1d, 0.0d, ViscosityMode.Standard, false, 3);
+            //Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false, 3);
+            //Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
+            //Tests.UnitTest.TestRayleighTaylorInstability();
+            //Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
 
-            //return;
+            return;
 
 
             _Main(args, false, delegate () {
@@ -485,6 +488,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._TimesteppingMode.Steady, LevelSetHandling.None));
             }
 
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
+            }
+
             int degU = this.CurrentVel[0].Basis.Degree;
 
             #endregion
@@ -504,7 +512,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (this.Control.solveKineticEnergyEquation)
                 m_HMForder *= 2;
             
-            //m_HMForder *= 2; // may have an influence on no of iterations of lin sovler for small Operator-Matrix
+            //m_HMForder *= 2; // more points, better results you know ...                      
 
 
             // Create Spatial Operator
@@ -575,13 +583,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
             #endregion
-
+                                
         }
 
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime, int LsTrkHistoryIndex) {
             using (var tr = new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
+                if(LsTrkHistoryIndex != 1)
+                    throw new NotSupportedException("No supported for anything but the current tracker time level.");
 
                 // ============================
                 // treatment of surface tension
@@ -1436,9 +1446,18 @@ namespace BoSSS.Application.XNSE_Solver {
                 //PlotCurrentState(phystime, TimestepNo, 2);
 #endif
 #if TEST
-                // Reference Solver for spectral-Analysis ...
-                m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
+
+                //m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
                 //WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+                //m_BDF_Timestepper.ExecuteWaterfallAnalysis(Directory.GetCurrentDirectory()+@"\waterfall");
+                //int Iter=-1;
+                //m_BDF_Timestepper.ExecuteRandom(out Iter);
+                //base.QueryHandler.ValueQuery("NoIter", Iter, false);
+                var dict = OperatorAnalysis();
+                foreach (KeyValuePair<string, double> kv in dict) {
+                    Console.WriteLine(kv.Key + " : " + kv.Value);
+                    base.QueryHandler.ValueQuery("OpAnalysis:"+kv.Key, kv.Value, false);
+                }
 #endif
                 // ================
                 // Good bye
@@ -1498,7 +1517,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     ExtVelMover.FinishTimeStep();
                 }
-
+                
 #if DEBUG
                 // in case of Debugging Save first Timesteps
                 //if(TimestepNo[1] <= 2) {
@@ -2304,8 +2323,5 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 #endregion
-
-
-
     }
 }

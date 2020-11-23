@@ -21,7 +21,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
-        /// to the <see cref="EdgeTagNames"/>-dictionary, if the edge tag
+        /// to the <see cref="GridCommons.EdgeTagNames"/>-dictionary, if the edge tag
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>

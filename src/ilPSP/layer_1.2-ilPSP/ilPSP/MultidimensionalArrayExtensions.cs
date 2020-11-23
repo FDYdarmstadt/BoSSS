@@ -16,6 +16,7 @@ limitations under the License.
 
 using ilPSP.Utils;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace ilPSP {
 
@@ -64,7 +65,7 @@ namespace ilPSP {
         static public double Sum(this MultidimensionalArray mda) {
             double ret = 0;
 
-            mda.ApplyAll(delegate(double entry) {
+            mda.ApplyAll(delegate (double entry) {
                 ret += entry;
             });
 

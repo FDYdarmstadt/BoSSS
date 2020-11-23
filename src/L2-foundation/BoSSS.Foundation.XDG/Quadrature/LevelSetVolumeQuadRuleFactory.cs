@@ -49,11 +49,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private JumpTypes jumpType;
 
-        ///// <summary>
-        ///// Tracker containing the level set to be integrated over
-        ///// </summary>
-        //private LevelSetTracker tracker;
-
         /// <summary>
         /// Index of the considered level set for <see cref="tracker"/>
         /// </summary>

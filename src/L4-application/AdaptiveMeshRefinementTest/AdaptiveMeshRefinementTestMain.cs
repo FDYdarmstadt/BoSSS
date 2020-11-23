@@ -257,24 +257,19 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// Creates the cellmask which should be refined.
         /// </summary>
-        private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevels() {
+        private int[] GetCellsToRefine() {
             int refinementLevel = 2;
             int coarseRefinementLevel = 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            BitArray coarse = new BitArray(noOfLocalCells);
-            BitArray fine = new BitArray(noOfLocalCells);
+            int[] cellsToRefine = new int[noOfLocalCells];
             for (int j = 0; j < noOfLocalCells; j++) {
                 double GradMag = MagGrad_u.GetMeanValue(j);
                 if (GradMag > 0.81)
-                    fine[j] = true;
+                    cellsToRefine[j] = refinementLevel;
                 else if (GradMag > 0.6)
-                    coarse[j] = true;
+                    cellsToRefine[j] = coarseRefinementLevel;
             }
-            List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
-                new Tuple<int, BitArray>(refinementLevel, fine),
-                new Tuple<int, BitArray>(coarseRefinementLevel, coarse)
-            };
-            return AllCellsWithMaxRefineLevel;
+            return cellsToRefine;
         }
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
@@ -292,8 +287,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             List<int[]> Coarsening;
             GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, LsTrk.Regions.GetCutCellMask());
             if (MPISize > 1) {
-                List<Tuple<int, BitArray>> cellMaskRefinementLevel = GetCellMaskWithRefinementLevels();
-                AnyChange = gridRefinementController.ComputeGridChange(cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
+                AnyChange = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
             }
             else
                 AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out CellsToRefineList, out Coarsening);

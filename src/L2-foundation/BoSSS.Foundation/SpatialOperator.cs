@@ -1577,15 +1577,13 @@ namespace BoSSS.Foundation {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
-                            mtxBuilder.Execute(volRule,
-                                CodomainMapping, Parameters, DomainMapping,
-                                OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
 
                             //volRule.ToTextFileVolume(this.GridData as BoSSS.Foundation.Grid.Classic.GridData, "Volume.csv");
                         }
 
                     } else {
-                        tr.Info("volume integration skipped: cell mask is empty");
+                        //tr.Info("volume integration skipped: cell mask is empty");
                     }
 
                     // edge integration
@@ -1594,6 +1592,7 @@ namespace BoSSS.Foundation {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
+                            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!! Reminder: Edge integration skipped");
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
                         }
                     }
@@ -1788,7 +1787,13 @@ namespace BoSSS.Foundation {
                 }
             }
 
-            IEvaluatorNonLin Eval;
+            /// <summary>
+            /// Internally used evaluation for finite differences
+            /// </summary>
+            public IEvaluatorNonLin Eval {
+                get;
+                private set;
+            }
 
             Action<IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
 

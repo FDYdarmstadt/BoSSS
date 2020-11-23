@@ -168,6 +168,13 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// Backup reference for some special edges marker.
+        /// </summary>
+        protected string GetLSlevsetcoincidingfacesName(int iHistory) {
+            return "LevelSetTracker_LevSetCoincidingFaces_at_time_level_" + iHistory + "_somewordstomakeitauniquekey34324276";
+        }
+
+        /// <summary>
         /// Saves the internal state of <see cref="m_OldTracker"/>.
         /// </summary>
         public void BackupTracker () {
@@ -189,6 +196,7 @@ namespace BoSSS.Solution {
                             this.BackupField(TimeLevel.LevelSets[iLs], GetLSbackupName(iH, iLs));
                         }
                         this.BackupVector(TimeLevel.Regions, GetLSregioncodeName(iH));
+                        this.BackupVector<(int iLevSet, int iFace)[],(int iLevSet, int iFace)[][]>(TimeLevel.LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
 
                         m_LsTrkPrivData.Versions[1 - iH] = TimeLevel.Version;
                         m_LsTrkPrivData.Times[1 - iH] = TimeLevel.time;
@@ -236,10 +244,14 @@ namespace BoSSS.Solution {
                     var fmt = new BinaryFormatter();
 
                     for(int j = 0; j < m_oldJ; j++) {
-                        ms.Position = 0;
-                        fmt.Serialize(ms, vec[j]);
+                        if(vec[j] != null) {
+                            ms.Position = 0;
+                            fmt.Serialize(ms, vec[j]);
 
-                        SerializedData[j] = CopyData(ms);
+                            SerializedData[j] = CopyData(ms);
+                        } else {
+                            SerializedData[j] = new double[0];
+                        }
                     }
                 }
 

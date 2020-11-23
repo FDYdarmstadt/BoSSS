@@ -74,7 +74,13 @@ namespace BoSSS.Foundation.XDG {
         /// ye good old level set tracker
         /// </summary>
         LevelSetTracker m_lsTrk;
-        
+
+        /// <summary>
+        /// index into <see cref="LevelSetTracker.RegionsHistory"/>, etc.
+        /// </summary>
+        int m_LsTrkHistoryIndex;
+
+
         /// <summary>
         /// Physical time.
         /// </summary>
@@ -117,7 +123,8 @@ namespace BoSSS.Foundation.XDG {
                                      IList<DGField> __DomainFields,
                                      IList<DGField> __Parameters,
                                      UnsetteledCoordinateMapping CodomainMap,
-                                     LevelSetTracker lsTrk, int _iLevSet, Tuple<SpeciesId, SpeciesId> SpeciesPair,
+                                     LevelSetTracker lsTrk, int _iLevSet, int TrackerHistoryHindex,
+                                     Tuple<SpeciesId, SpeciesId> SpeciesPair,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
             : base(new int[] { CodomainMap.GetNonXBasisLengths(0).Sum()*2 }, // we always integrate over species in pairs (neg + pos), so we need to alloc mem only 2 species
                  context,
@@ -129,6 +136,7 @@ namespace BoSSS.Foundation.XDG {
             // set members / check ctor parameters
             // -----------------------------------
             m_lsTrk = lsTrk;
+            m_LsTrkHistoryIndex = TrackerHistoryHindex;
             this.m_LevSetIdx = _iLevSet;
             this.m_SpeciesPair = SpeciesPair;
             this.ResultVector = __ResultVector;
@@ -163,7 +171,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, SpeciesA, SpeciesB, m_LevSetIdx);
+            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, m_LsTrkHistoryIndex, SpeciesA, SpeciesB, m_LevSetIdx);
 
             // ------------------------
             // sort equation components
@@ -378,7 +386,7 @@ namespace BoSSS.Foundation.XDG {
             int NoOfNodes = QuadNodes.NoOfNodes;
             int GAMMA = m_CodomainMap.NoOfVariables;  // GAMMA: number of codom variables
 
-            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, this.SpeciesA, this.SpeciesB, this.m_LevSetIdx);
+            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, m_LsTrkHistoryIndex, this.SpeciesA, this.SpeciesB, this.m_LevSetIdx);
 
 
             // Evaluate Domain & Parameter fields
@@ -433,8 +441,7 @@ namespace BoSSS.Foundation.XDG {
             // -------------------------------
 
             ParametersAndNormals.Start();
-            var NoOfLevSets = m_lsTrk.LevelSets.Count;
-            MultidimensionalArray Normals = m_lsTrk.DataHistories[m_LevSetIdx].Current.GetLevelSetNormals(QuadNodes, i0, Len);
+            MultidimensionalArray Normals = m_lsTrk.DataHistories[m_LevSetIdx][m_LsTrkHistoryIndex].GetLevelSetNormals(QuadNodes, i0, Len);
             MultidimensionalArray NodesGlobal = gridData.GlobalNodes.GetValue_Cell(QuadNodes, i0, Len);
             ParametersAndNormals.Stop();
 

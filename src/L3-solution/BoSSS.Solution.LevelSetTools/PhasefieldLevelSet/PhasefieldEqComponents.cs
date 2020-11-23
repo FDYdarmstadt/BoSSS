@@ -823,15 +823,16 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        protected virtual double GetPenalty(int jCellIn, int jCellOut)
-        {
+        protected virtual double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = InverseLengthScales[jCellIn];
             double mu = m_penalty * cj_in;
-            if (jCellOut >= 0)
-            {
+            if(jCellOut >= 0) {
                 double cj_out = InverseLengthScales[jCellOut];
                 mu = Math.Max(mu, m_penalty * cj_out);
             }
+
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
 
             return mu;
         }

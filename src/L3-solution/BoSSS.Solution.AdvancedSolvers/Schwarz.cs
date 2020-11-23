@@ -389,11 +389,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// The maximum order of the coarse system, which is solved by a direct solver.
+        /// NOTE: there is a hack, which consideres <see cref="CoarseLowOrder"/>-1 for pressure.
+        /// pressure is assumed to be the Dimension-1-th variable
+        /// </summary>
         public int CoarseLowOrder {
             get { return pLow; }
             set { pLow = value; }
         }
 
+        /// <summary>
+        /// Determines, if cutcells are fully assigned (<see cref="CoarseLowOrder"/>=p) to the coarse solver
+        /// </summary>
         public bool CoarseSolveOfCutcells {
             get;
             set;
@@ -949,10 +957,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // hi order smoother
                                 SolveHiSystem(iPart);
 
-                                // re-evaluate residual
-                                ReEvaluateRes(iPart, bi);
-                                // hi order smoother
-                                SolveLoSystem(iPart);
+                                //// re-evaluate residual
+                                //ReEvaluateRes(iPart, bi);
+                                //// hi order smoother
+                                //SolveLoSystem(iPart);
 
                                 xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
 
@@ -1031,8 +1039,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
         }
-
-
 
         /// <summary>
         /// ~
@@ -1341,6 +1347,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             } // end FuncTrace
         }
+
+
 
         /// <summary>
         /// ~

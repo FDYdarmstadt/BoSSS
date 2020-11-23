@@ -1787,7 +1787,7 @@ namespace BoSSS.Solution {
                     }
 
                     if (!found) {
-                        throw new ApplicationException(
+                        Console.WriteLine("Warning: " +
                             "initial value specified for a field named \"" + DesiredFieldName +
                             "\", but no field with that identification exists in context.");
                     }
@@ -2258,11 +2258,9 @@ namespace BoSSS.Solution {
                     //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
                     //        }
                     //    }
-
-
                     //}
 
-                    // set dg co�rdinates
+                    // set dg coordinates
                     foreach (var f in m_RegisteredFields) {
                         if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
@@ -2271,6 +2269,7 @@ namespace BoSSS.Solution {
                         }
                         loadbal.RestoreDGField(f);
                     }
+                    
 
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(loadbal);
@@ -3267,14 +3266,15 @@ namespace BoSSS.Solution {
 
                         foreach (MethodCallRecord mcr in L) {
                             MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-
-                            foreach (var subBlock in quadCall.Calls.Values) {
-                                List<MethodCallRecord> col;
-                                if (!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
-                                    col = new List<MethodCallRecord>();
-                                    QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                            if(quadCall != null) {
+                                foreach(var subBlock in quadCall.Calls.Values) {
+                                    List<MethodCallRecord> col;
+                                    if(!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
+                                        col = new List<MethodCallRecord>();
+                                        QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                                    }
+                                    col.Add(subBlock);
                                 }
-                                col.Add(subBlock);
                             }
                         }
                     }

@@ -356,6 +356,9 @@ namespace BoSSS.Foundation.IO {
         /// 
         /// </summary>
         public override bool Equals(object obj) {
+            if (object.ReferenceEquals(obj, this))
+                return true;
+
             return this.Equals(obj as NullDatabaseInfo);
         }
 

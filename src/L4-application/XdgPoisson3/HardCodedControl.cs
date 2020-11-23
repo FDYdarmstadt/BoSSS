@@ -521,9 +521,12 @@ namespace BoSSS.Application.XdgPoisson3 {
             {
                 case 0:
                     C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-                    break;
+                    break; 
                 case 1:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+                    break;
+                case 2:
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_AS;
                     break;
                 case 3:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
@@ -538,7 +541,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"D:\trash_db";
 
-            int Res = 8;
+            int Res = 16;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -563,7 +566,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.LinearSolver.NoOfMultigridLevels = 2;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MaxKrylovDim = 50;
+            C.LinearSolver.MaxKrylovDim = 1000;
+            C.LinearSolver.pMaxOfCoarseSolver = 1;
             //C.LinearSolver.TargetBlockSize = 79;
            C.ExcactSolSupported = false;
             double radius = 0.7;

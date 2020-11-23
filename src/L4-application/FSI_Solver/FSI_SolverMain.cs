@@ -651,6 +651,7 @@ namespace BoSSS.Application.FSI_Solver {
                 CellMask fluidCells = allParticleMask != null ? allParticleMask.Complement() : CellMask.GetFullMask(GridData);
                 SetLevelSet(levelSetFunctionFluid, fluidCells, phystime);
 
+
                 PerformLevelSetSmoothing(allParticleMask);
             }
 
@@ -660,8 +661,8 @@ namespace BoSSS.Application.FSI_Solver {
             catch (LevelSetCFLException e) {//hacky workaround
                 if (AddedGhostParticle)
                     Console.WriteLine("Ghost particle added, exception thrown: " + e);
-                else
-                    throw e;
+                //else
+                   // throw e;
                 AddedGhostParticle = false;
             }
         }
@@ -1431,7 +1432,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
-        BitArray PeriodicBoundaryCells = null;
+        //BitArray PeriodicBoundaryCells = null;
         /// <summary>
         /// Adaptive mesh refinement
         /// </summary>
@@ -1451,27 +1452,11 @@ namespace BoSSS.Application.FSI_Solver {
             List<int[]> Coarsening = new List<int[]>();
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
                 CellMask cutCells = LsTrk.Regions.GetCutCellMask();
-                PeriodicBoundaryCells = new BitArray(gridData.Cells.NoOfLocalUpdatedCells);
-                var hmin = gridData.Cells.h_minGlobal;
-                Console.WriteLine("hmin " + hmin);
-                for (int d = 0; d < spatialDim; d++) {
-                    if (IsPeriodic[d]) {
-                        for (int j = 0; j < gridData.Cells.NoOfLocalUpdatedCells; j++) {
-                            Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                            if((cellCenter[d] - BoundaryCoordinates[d][0]) < 2 * hmin) {
-                                PeriodicBoundaryCells[j] = true;
-                            }
-                            if ((-cellCenter[d] + BoundaryCoordinates[d][1]) < 2 * hmin) {
-                                PeriodicBoundaryCells[j] = true;
-                            }
-                        }
-                    }
-                }
-                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null, PeriodicBoundaryCells);
+                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null);
                 if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementForStartUpSweeps(), out CellsToRefineList, out Coarsening);
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefineForStartup(), out CellsToRefineList, out Coarsening);
                 else
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellMaskRefinementBasedOnParticleLength(), out CellsToRefineList, out Coarsening);
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
             }
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
@@ -1490,44 +1475,34 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Finds all cells to be refined with the perssonsensor.
         /// </summary>
-        private List<Tuple<int, BitArray>> GetCellMaskRefinementBasedOnParticleLength() {
+        private int[] GetCellsToRefine() {
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
-            int refinementLevel2 = refinementLevel >= 2 ? ((FSI_Control)Control).RefinementLevel / 2 : 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            BitArray particleNearRegionCells = new BitArray(noOfLocalCells);
-            BitArray particleFarRegionCells = new BitArray(noOfLocalCells);
+            int[] cellsToRefine = new int[noOfLocalCells];
             for (int p = 0; p < ParticleList.Count(); p++) {
                 for (int j = 0; j < noOfLocalCells; j++) {
-                    if (!particleNearRegionCells[j]) {
+                    if (cellsToRefine[j] < refinementLevel) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, MaxGridLength);
-                    }
-                    if (!particleFarRegionCells[j]) {
-                        Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleFarRegionCells[j] = ParticleList[p].Contains(cellCenter, 2 * MaxGridLength);
+                        cellsToRefine[j] = ParticleList[p].Contains(cellCenter, MaxGridLength) ? refinementLevel : 0;
                     }
                 }
             }
-            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, particleNearRegionCells),
-                                    //new Tuple<int, BitArray>(refinementLevel2, particleFarRegionCells),
-            };
+            return cellsToRefine;
         }
-        /// <summary>
-        /// Finds all cells to be refined with the perssonsensor.
-        /// </summary>
-        private List<Tuple<int, BitArray>> GetCellMaskRefinementForStartUpSweeps() {
+
+        private int[] GetCellsToRefineForStartup() {
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            BitArray particleNearRegionCells = new BitArray(noOfLocalCells);
+            int[] cellsToRefine = new int[noOfLocalCells];
             for (int p = 0; p < ParticleList.Count(); p++) {
                 for (int j = 0; j < noOfLocalCells; j++) {
-                    if (!particleNearRegionCells[j]) {
+                    if (cellsToRefine[j] < refinementLevel) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        particleNearRegionCells[j] = ParticleList[p].Contains(cellCenter, ParticleList[p].GetLengthScales().Max());
+                        cellsToRefine[j] = ParticleList[p].Contains(cellCenter, ParticleList[p].GetLengthScales().Max()) ? refinementLevel : 0;
                     }
                 }
             }
-            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, particleNearRegionCells), };
+            return cellsToRefine;
         }
     }
 }

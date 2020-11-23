@@ -112,7 +112,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.CompressibleFlowCommon.ShockFinding.InflectionPointFinder).Assembly);
             eval.ReferenceAssembly(typeof(BoSSSpad.BoSSSpadMain).Assembly);
-            eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
+            //eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
             eval.ReferenceAssembly(typeof(MiniBatchProcessor.Client).Assembly);
             eval.ReferenceAssembly(typeof(System.Numerics.Complex).Assembly);
             eval.ReferenceAssembly(typeof(MathNet.Numerics.Complex32).Assembly);
@@ -156,7 +156,7 @@ namespace BoSSS.Application.BoSSSpad {
                 "using BoSSS.Solution.Utils;" + Console.Out.NewLine +
                 "using BoSSS.Solution.Gnuplot;" + Console.Out.NewLine +
                 "using BoSSS.Application.BoSSSpad;" + Console.Out.NewLine +
-                "using Renci.SshNet;" + Console.Out.NewLine +
+                //"using Renci.SshNet;" + Console.Out.NewLine +
                 "using Mono.CSharp;"
             );
             
@@ -176,7 +176,8 @@ namespace BoSSS.Application.BoSSSpad {
                 
                     try {
                         databases = DatabaseController.LoadDatabaseInfosFromXML();
-                    
+                        
+                        ReloadExecutionQueues();
                         string summary = databases.Summary();
                         Console.WriteLine(""Databases loaded:"");
                         Console.WriteLine(summary);
