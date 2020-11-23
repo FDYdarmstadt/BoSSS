@@ -306,11 +306,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // identify cells for Reinit
             // -------------------------
 
-            Partitioning ReinitPosPart = new Partitioning(J);
-            Partitioning ReinitNegPart = new Partitioning(J);
-            Partitioning ReinitPart = new Partitioning(J);
-            Partitioning KnownPart = new Partitioning(J);
-
             BitArray ReinitPosBitmask = new BitArray(J);
             BitArray ReinitNegBitmask = new BitArray(J);
             BitArray ReinitBitmask = new BitArray(J);

@@ -383,28 +383,27 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
             Pmtx.Scale(-1.0);
 
             int[] SubVecIdx = Map.GetSubvectorIndices(S, true, new int[] { 0 });
-            BlockPartitioning SubvecPart = Map.GetSubBlocking(SubVecIdx, csMPI.Raw._COMM.WORLD);
-            int L = SubvecPart.TotalLength; // SubVecIdx.Length;
+            //BlockPartitioning SubvecPart = Map.GetSubBlocking(SubVecIdx, csMPI.Raw._COMM.WORLD);
+            int L = SubVecIdx.Length;
 
             MsrMatrix SubMtx = new MsrMatrix(L, L);
             Pmtx.AccSubMatrixTo(1.0, SubMtx, SubVecIdx, default(int[]), SubVecIdx, default(int[]));
-
             SubMtx.AccEyeSp(1.0 / dt);
 
             double[] RHS = new double[L];
             double[] SOL = new double[L];
 
-            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, SubVecIdx, default(int[]));
+            int[] SubVecIdxLoc = SubVecIdx.CloneAs();
+            for (int idx = 0; idx < SubVecIdxLoc.Length; idx++) {
+                SubVecIdxLoc[idx] = Map.TransformIndexToLocal(SubVecIdx[idx]);
+            }
+            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, SubVecIdxLoc, default(int[]));
             
             using (var solver = new PARDISOSolver()) {
                 solver.DefineMatrix(SubMtx);
                 solver.Solve(SOL, RHS);
             }
 
-            int[] SubVecIdxLoc = SubVecIdx.CloneAs();
-            for (int idx = 0; idx < SubVecIdxLoc.Length; idx++) {
-                SubVecIdxLoc[idx] = Map.TransformIndexToLocal(SubVecIdx[idx]);
-            }
             inout_Levset.CoordinateVector.ClearEntries(SubVecIdxLoc);
             inout_Levset.CoordinateVector.AccV(1.0, SOL, SubVecIdxLoc, default(int[]));
         }

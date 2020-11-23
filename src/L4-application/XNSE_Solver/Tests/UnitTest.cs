@@ -360,9 +360,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         private static void GenericTest(ITest Tst, XNSE_Control C) {
 
-            if(C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                Console.WriteLine($"Reminder: skipping test of {C.CutCellQuadratureType} for now...");
+            if(Tst.SpatialDimension == 2 && C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                Console.WriteLine($"Reminder: skipping 2D test of {C.CutCellQuadratureType} for now...");
                 return;
+            }
+
+            if (Tst.SpatialDimension == 3) {
+                Console.WriteLine($"Reminder: {C.CutCellQuadratureType} need to be tested in 2D.");
+                if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                    Console.WriteLine($"Reminder: {C.CutCellQuadratureType} changed to classic for 3D test.");
+                }
             }
 
             using(var solver = new XNSE_SolverMain()) {
