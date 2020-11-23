@@ -66,16 +66,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #if DEBUG
             [Values(1)] int deg,
             [Values(0.0, 0.1)] double AgglomerationTreshold,
-            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(2, 3)] int spatialDimension
 #else
             [Values(1, 2, 3, 4)] int deg,
             [Values(0.0, 0.1)] double AgglomerationTreshold,
-            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(2, 3)] int spatialDimension
 #endif
             ) {
 
-            var Tst = new ViscosityJumpTest();
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            var Tst = new ViscosityJumpTest(spatialDimension);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, GridResolution: 3);
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
 
             GenericTest(Tst, C);
@@ -90,8 +93,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void ScalingViscosityJumpTest_p2(
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            //[Values(2, 3)] int spatialDimension
             ) {
-            ScalingViscosityJumpTest(2, vmode);
+            ScalingViscosityJumpTest(2, vmode, 2);
         }
 
         /// <summary>
@@ -101,7 +105,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void ScalingViscosityJumpTest_p3(
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
             ) {
-            ScalingViscosityJumpTest(3, vmode);
+            ScalingViscosityJumpTest(3, vmode, 2);
         }
 
         /// <summary>
@@ -110,14 +114,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void ScalingViscosityJumpTest(
 
             [Values(2, 3)] int deg,
-            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(2)] int spatialDimension
             ) {
 
             double AgglomerationTreshold = 0.1;
 
-            var Tst = new ViscosityJumpTest();
+            var Tst = new ViscosityJumpTest(spatialDimension);
+            int[] resolutions = new[] { 4, 8, 16 };
+            //if (spatialDimension == 3)
+            //    resolutions = new[] { 1, 2, 4 }; 
+
             var LaLa = new List<XNSE_Control>();
-            foreach(var Res in new[] { 4, 8, 16 }) {
+
+            foreach (var Res in resolutions) {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
                 LaLa.Add(C);
             }
@@ -187,7 +197,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void BcTest_PressureOutletTest(
             [Values(1)] int deg,
             [Values(0)] double AgglomerationTreshold,
-            [Values(true, false)] bool performsolve
+            [Values(true, false)] bool performsolve,
+            [Values(2, 3)] int spatialDimension
             ) {
             //XNSE_ConsistencyTestMain p = null;
             //BoSSS.Solution.Application._Main(new string[0], true, "", delegate() {
@@ -200,12 +211,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //    return p;
             //});
 
-            var Tst = new BcTest_PressureOutlet();
+            var Tst = new BcTest_PressureOutlet(spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.Standard);
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
-            GenericTest(Tst, C);
-            ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg);
+            GenericTest(Tst, C); 
+            if(spatialDimension == 2)
+                ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg);
         }
 
 
@@ -220,7 +233,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.8)] double Radius,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(true)] bool bSteady,
-            [Values(false)] bool includeConvection
+            [Values(false)] bool includeConvection,
+            [Values(2, 3)] int spatialDimension
 #else
             [Values(2, 3)] int deg,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -229,16 +243,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(true)] bool bSteady,
-            [Values(false)] bool includeConvection
+            [Values(false)] bool includeConvection,
+            [Values(2, 3)] int spatialDimension
 #endif
             ) {
 
             if(deg == 3 && AgglomerationTreshold <= 0.01)
                 return;
 
-            var Tst = new MovingDropletTest(Radius, includeConvection, bSteady);
+            var Tst = new MovingDropletTest(Radius, includeConvection, bSteady, spatialDimension);
 
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm,
+                GridResolution: (spatialDimension == 2) ? 2 : 1);
+
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
@@ -282,14 +299,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TranspiratingChannelTest(
+#if DEBUG
             [Values(2)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(0.0, 0.1)] double U2,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
-            [Values(true, false)] bool periodicity
+            [Values(true, false)] bool periodicity,
+            [Values(2)] int spatialDimension
+#else
+            [Values(2)] int deg,
+            [Values(0.1)] double AgglomerationTreshold,
+            [Values(0.0, 0.1)] double U2,
+            [Values(ViscosityMode.Standard)] ViscosityMode vmode,
+            [Values(true, false)] bool periodicity,
+            [Values(2, 3)] int spatialDimension
+#endif
             ) {
 
-            var Tst = new TranspiratingChannelTest(U2, periodicity);
+            var Tst = new TranspiratingChannelTest(U2, periodicity, spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -309,13 +336,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void PolynomialTestForConvectionTest(
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
-            [Values(false)] bool SolverMode_performsolve
+            [Values(false)] bool SolverMode_performsolve,
+            [Values(2, 3)] int spatialDimension
             ) {
 
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
 
-            var Tst = new PolynomialTestForConvection();
+            var Tst = new PolynomialTestForConvection(spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            if (spatialDimension == 3)
+                C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             GenericTest(Tst, C);
         }
@@ -325,6 +355,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         private static void GenericTest(ITest Tst, XNSE_Control C) {
             using(var solver = new XNSE_SolverMain()) {
 
+                //Console.WriteLine("Warning! - enabled immediate plotting");
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 4;
 
@@ -386,9 +417,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         static XNSE_Control TstObj2CtrlObj(ITest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode, 
             SurfaceStressTensor_IsotropicMode SurfTensionMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local,
             int GridResolution = 1) {
+
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
-
 
             // database setup
             // ==============
@@ -452,7 +483,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = (D == 3) ? SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine : SurfTensionMode;
 
 
             // timestepping and solver

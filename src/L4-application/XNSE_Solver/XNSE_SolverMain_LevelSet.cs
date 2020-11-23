@@ -276,7 +276,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // level-set initialization
                 // ==============================
 
-                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 0 }), 3);
+                PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 0 }), 3);
 
                 #region Initialize Level Set Evolution Algorithm
                 switch (this.Control.Option_LevelSetEvolution) {
@@ -389,7 +389,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #endregion
 
-                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 1 }), 3);
+                PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 1 }), 3);
 
                 // =========================================
                 // Enforcing the continuity of the level-set
@@ -422,7 +422,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (PosFF.Count() > 0)
                     ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
 
-                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
+                PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
 
                 this.LsTrk.UpdateTracker(0.0);
 
@@ -604,8 +604,8 @@ namespace BoSSS.Application.XNSE_Solver {
                              this.m_HMForder, iTimestep, penalization: this.Control.FastMarchingPenaltyTerms);
 
                             //if (_reInit) {
-                            Console.WriteLine("Performing ReInit");
-                            performReInit(false);
+                            //Console.WriteLine("Performing ReInit");
+                            //performReInit(false);
                             //}
 
                             break;

@@ -262,7 +262,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
 
-            double U = 0; // 0.125;
+            double U = 0.125;
 
             if (D == 3) {
                 C.InitialValues_Evaluators.Add("VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
@@ -434,7 +434,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1; // 500;
+            C.NoOfTimesteps = 10; // 500;
             C.saveperiod = 10;
 
             #endregion

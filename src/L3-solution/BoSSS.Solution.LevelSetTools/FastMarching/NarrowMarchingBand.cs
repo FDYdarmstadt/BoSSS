@@ -1024,7 +1024,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
 
-                var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 ,InterfaceFlux,Tracker, subMask.GetBitMaskWithExternal());
+                var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 , InterfaceFlux, Tracker, subMask.GetBitMaskWithExternal());
 
                 var BulkOperator = BulkForm.Operator();
 
@@ -1075,7 +1075,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     mtxBuilder.CellLengthScales.Add(Tracker.GetSpeciesId("A"), dummy.CellLengthScales[Tracker.GetSpeciesId("A")]);
 
                     mtxBuilder.time = 0;
-                    mtxBuilder.MPITtransceive = false;
+                    mtxBuilder.MPITtransceive = true;
                     if(d != 0)
                         mtxBuilder.ComputeAffine(AffineOffset: ExtVelRHS[d]);
                     else 
@@ -1129,13 +1129,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 // test matrix and affine vectors
 #if DEBUG
                 int J = grdDat.Cells.NoOfLocalUpdatedCells;
-                BitArray CCbitmask = subMask.GetBitMask();
+                BitArray CCbitmask = subMask.GetBitMaskWithExternal();
                 for(int j = 0; j < J; j++) {
                     int N = map.BasisS[0].GetLength(j);
                     for(int n = 0; n < N; n++) {
                         int iL = map.LocalUniqueCoordinateIndex(0, j, n);
                         int iG = map.GlobalUniqueCoordinateIndex(0, j, n);
-
                         if(CCbitmask[j]) {
                             //var Row = ExtVelMatrix.GetRow(iG);
                             //foreach (var entry in Row) {
@@ -1201,11 +1200,15 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 Debug.Assert(ExtVelRHS.Length == ExtVel.Length);
 
+                List<int> UsedRowsLocal = new List<int>();
+                foreach (int row in UsedRows) {
+                    UsedRowsLocal.Add(ExtVelMatrix.RowPartitioning.TransformIndexToLocal(row));
+                }
                 for(int d = 0; d < ExtVelRHS.Length; d++) {
                     // extract rhs
                     double[] rhs = new double[UsedRows.Count];
                     double[] x = new double[UsedRows.Count];
-                    rhs.AccV(1.0, ExtVelRHS[d], default(int[]), UsedRows);
+                    rhs.AccV(1.0, ExtVelRHS[d], default(int[]), UsedRowsLocal);
 
                     double[] Resi_d = rhs.CloneAs();
                     double NORM_rhs = rhs.L2NormPow2().MPISum().Sqrt();
@@ -1224,7 +1227,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                     // write back solution
                     ExtVel[d].Clear();
-                    ExtVel[d].CoordinateVector.AccV(1.0, x, UsedRows, default(int[]));
+                    ExtVel[d].CoordinateVector.AccV(1.0, x, UsedRowsLocal, default(int[]));
                 }
             }
             
