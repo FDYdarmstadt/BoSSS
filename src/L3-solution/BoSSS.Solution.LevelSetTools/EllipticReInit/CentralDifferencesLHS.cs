@@ -41,7 +41,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// ctor
         /// </summary>
-        public CentralDifferencesLHSForm(double PenaltyBase, MultidimensionalArray PenaltyLengthScales) : base(PenaltyBase, PenaltyLengthScales, VariableNames.LevelSet) {
+        public CentralDifferencesLHSForm(double PenaltyBase) : base(PenaltyBase, VariableNames.LevelSet) {
             //Do nothing
         }
 

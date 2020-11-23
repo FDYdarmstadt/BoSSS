@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 using ilPSP;
@@ -36,24 +37,22 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="penalty">
-        /// basic value for penalty parameter: suggested to be <it>a*(p+1)*(p+D)/D</it>, where <it>p</it> is the polynomial degree of the involved DG field,
-        /// <it>A</it> is the spatial dimension and <it>a</it> is in the order of 1, e.g. 0.9 or 1.2; see <see cref="GetPenalty"/>;
+        /// <param name="penalty_base">
+        /// basic value for penalty parameter; in each cell it will be scaled 
+        /// (in the order of) the inverse length scale and the squared polynomial degree
         /// </param>
         /// <param name="ArgumentVarName">
         /// the one and only string that is returned by the default implementation of <see cref="ArgumentOrdering"/>;
         /// </param>
-        /// <param name="InverseLengthScales"></param>
-        public SIPLaplace(double penalty, MultidimensionalArray InverseLengthScales, string ArgumentVarName) {
-            m_penalty = penalty;
+        public SIPLaplace(double penalty_base, string ArgumentVarName) {
+            m_penalty_base = penalty_base;
             m_ArgumentOrdering = new string[] { ArgumentVarName };
-            this.InverseLengthScales = InverseLengthScales;
         }
 
         /// <summary>
-        /// penalty parameter (provided by ctor)
+        /// penalty parameter base multiplyer
         /// </summary>
-        private double m_penalty;
+        private double m_penalty_base;
 
         /// <summary>
         /// Dirichlet boundary value
@@ -96,32 +95,30 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
-        /// Currently, not operational - intended for update of penalty length scales.
+        /// update of penalty length scales.
         /// </summary>
         public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            /*
-            int m_D = cs.GrdDat.SpatialDimension;
-            double _D = m_D;
+            
+            double _D = cs.GrdDat.SpatialDimension;
             double _p = DomainDGdeg.Max();
-
+            
             double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
             double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
-
-            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
-
-            cj = cs.CellLengthScales;
-
-            */
-
-
+            
+            m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
+            
+            this.LengthScales = cs.CellLengthScales;
         }
 
-
-
+        /// <summary>
+        /// penalty degree multiplier
+        /// </summary>
+        double m_penalty_deg;
+        
         /// <summary>
         /// Length scales used in <see cref="GetPenalty"/>
         /// </summary>
-        protected MultidimensionalArray InverseLengthScales;
+        protected MultidimensionalArray LengthScales;
 
         /// <summary>
         /// computation of penalty parameter according to:
@@ -130,11 +127,11 @@ namespace BoSSS.Solution.NSECommon {
         /// look at formula (7) in cited paper
         /// </summary>
         protected virtual double GetPenalty(int jCellIn, int jCellOut) {
-            double cj_in = InverseLengthScales[jCellIn];
-            double mu = m_penalty * cj_in;
+            double cj_in = 1.0/LengthScales[jCellIn];
+            double mu = m_penalty_base*m_penalty_deg * cj_in;
             if(jCellOut >= 0) {
-                double cj_out = InverseLengthScales[jCellOut];
-                mu = Math.Max(mu, m_penalty * cj_out);
+                double cj_out = LengthScales[jCellOut];
+                mu = Math.Max(mu, m_penalty_base*m_penalty_deg * cj_out);
             }
             if(mu.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
@@ -147,18 +144,28 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double m_alpha = 1.0;
 
+
+        /// <summary>
+        /// Volume terms plus source terms for non-homogeneous boundary conditions
+        /// </summary>
         public TermActivationFlags BoundaryEdgeTerms {
             get {
                 return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
             }
         }
 
+        /// <summary>
+        /// as induced by the SIP method
+        /// </summary>
         public TermActivationFlags InnerEdgeTerms {
             get {
                 return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
             }
         }
 
+        /// <summary>
+        /// as induced by the SIP method
+        /// </summary>
         virtual public TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.GradUxGradV;

@@ -33,11 +33,14 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public IP1_Flux_PressureCorrection(double penalty_base, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap _BcMap)
-            : base(penalty_base, PenaltyLengthScales, VariableNames.PresCor) {
+        public IP1_Flux_PressureCorrection(double penalty_base, IncompressibleBoundaryCondMap _BcMap)
+            : base(penalty_base, VariableNames.PresCor) {
             m_BcMap = _BcMap;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected override bool IsDirichlet(ref BoSSS.Foundation.CommonParamsBnd inp) {
             IncompressibleBcType edgType = m_BcMap.EdgeTag2Type[inp.EdgeTag];
 

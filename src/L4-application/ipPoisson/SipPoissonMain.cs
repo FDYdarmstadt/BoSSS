@@ -321,23 +321,15 @@ namespace BoSSS.Application.SipPoisson {
                 // ===============
                 {
                     double D = this.GridData.SpatialDimension;
-                    double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
                     double penalty_factor = base.Control.penalty_poisson;
 
                     BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
 
                     LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
 
-                    MultidimensionalArray LengthScales;
-                    if (this.GridData is GridData) {
-                        LengthScales = ((GridData)GridData).Cells.cj;
-                    } else if (this.GridData is AggregationGridData) {
-                        LengthScales = ((AggregationGridData)GridData).AncestorGrid.Cells.cj;
-                    } else {
-                        throw new NotImplementedException();
-                    }
+                    
 
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, LengthScales, PoissonBcMap);
+                    var flux = new ipFlux(base.Control.penalty_poisson, PoissonBcMap);
 
                     LapaceIp.EquationComponents["T"].Add(flux);
 
@@ -1181,8 +1173,8 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     class ipFlux : BoSSS.Solution.NSECommon.SIPLaplace {
 
-        public ipFlux(double penalty_const, MultidimensionalArray cj, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-            : base(penalty_const, cj, "T") //
+        public ipFlux(double penalty_const, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+            : base(penalty_const, "T") //
         {
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap.bndFunction["T"];
