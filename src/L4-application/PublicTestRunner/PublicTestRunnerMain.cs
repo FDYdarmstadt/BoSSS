@@ -105,7 +105,8 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
-                        typeof(MPITest.Program)
+                        typeof(MPITest.Program),
+                        typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
         }

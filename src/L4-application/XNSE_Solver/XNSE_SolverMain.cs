@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//#define TEST
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -73,14 +75,27 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(
-            //    1, 0.0d,
-            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-            //    SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, true);
-            //throw new Exception("remove me");
+            /*
+            InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(1, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, true);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest(3, 0.3, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.85084, ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            */
 
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestRayleighTaylorInstability();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0d, true);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
 
             _Main(args, false, delegate () {
                 var p = new XNSE_SolverMain();
@@ -499,7 +514,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (this.Control.solveKineticEnergyEquation)
                 m_HMForder *= 2;
             
-            //m_HMForder *= 2; // may have an influence on no of iterations of lin sovler for small Operator-Matrix
+            //m_HMForder *= 2; // more points, better results you know ...                      
 
 
             // Create Spatial Operator
@@ -570,7 +585,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
             #endregion
-
+                                
         }
 
 
@@ -1433,9 +1448,18 @@ namespace BoSSS.Application.XNSE_Solver {
                 //PlotCurrentState(phystime, TimestepNo, 2);
 #endif
 #if TEST
-                // Reference Solver for spectral-Analysis ...
-                m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
+
+                //m_BDF_Timestepper.GetFAMatrices(Directory.GetCurrentDirectory());
                 //WriteTrendToDatabase(m_BDF_Timestepper.TestSolverOnActualSolution(null));
+                //m_BDF_Timestepper.ExecuteWaterfallAnalysis(Directory.GetCurrentDirectory()+@"\waterfall");
+                //int Iter=-1;
+                //m_BDF_Timestepper.ExecuteRandom(out Iter);
+                //base.QueryHandler.ValueQuery("NoIter", Iter, false);
+                var dict = OperatorAnalysis();
+                foreach (KeyValuePair<string, double> kv in dict) {
+                    Console.WriteLine(kv.Key + " : " + kv.Value);
+                    base.QueryHandler.ValueQuery("OpAnalysis:"+kv.Key, kv.Value, false);
+                }
 #endif
                 // ================
                 // Good bye
@@ -1495,7 +1519,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     ExtVelMover.FinishTimeStep();
                 }
-
+                
 #if DEBUG
                 // in case of Debugging Save first Timesteps
                 //if(TimestepNo[1] <= 2) {
@@ -2301,8 +2325,5 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 #endregion
-
-
-
     }
 }

@@ -57,7 +57,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 
-
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
         /// </summary>
@@ -290,7 +289,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             if (deg == 3)
                 ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
         }
-
+      
 
         /// <summary>
         /// <see cref="TranspiratingChannelTest"/>
@@ -316,8 +315,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
             //}
         }
-
-
+        
         /// <summary>
         /// <see cref="Tests.PolynomialTestForConvection"/>
         /// </summary>
@@ -337,8 +335,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             GenericTest(Tst, C);
         }
-
-
 
         private static void GenericTest(ITest Tst, XNSE_Control C) {
 
