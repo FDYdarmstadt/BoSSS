@@ -30,29 +30,65 @@ namespace BoSSS.Application.XNSE_Solver
 
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
 
+
+        protected virtual void MultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+
+            int pVel;
+            if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v)) {
+                pVel = v.Degree;
+            } else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1)) {
+                pVel = v1.Degree;
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+            int D = this.GridData.SpatialDimension;
+
+            if (this.Control.UseSchurBlockPrec) {
+                // using a Schur complement for velocity & pressure
+                var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                for (int d = 0; d < D; d++) {
+                    d.AddToArray(ref confMomConti.VarIndex);
+                    //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                    pVel.AddToArray(ref confMomConti.DegreeS);
+                }
+                D.AddToArray(ref confMomConti.VarIndex);
+                //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                pPrs.AddToArray(ref confMomConti.DegreeS);
+
+                confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                configsLevel.Add(confMomConti);
+            } else {
+                // configurations for velocity
+                for (int d = 0; d < D; d++) {
+                    var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { pVel },
+                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                    };
+                    configsLevel.Add(configVel_d);
+                }
+                // configuration for pressure
+                var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                    DegreeS = new int[] { pPrs },
+                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                    VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
+                };
+                configsLevel.Add(configPres);
+            }
+
+        }
+
         /// <summary>
         /// configuration options for <see cref="MultigridOperator"/>.
         /// </summary>
         protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
         {
             get
-            {
-                int pVel;
-                if(this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))
-                {
-                    pVel = v.Degree;
-                }
-                else if(this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1))
-                {
-                    pVel = v1.Degree;
-                }
-                else
-                {
-                    throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
-                }
-                int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
-                int D = this.GridData.SpatialDimension;
-
+            {       
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
@@ -60,55 +96,16 @@ namespace BoSSS.Application.XNSE_Solver
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++)
                 {
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
-                    if (this.Control.UseSchurBlockPrec)
-                    {
-                        // using a Schur complement for velocity & pressure
-                        var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
-                        for (int d = 0; d < D; d++)
-                        {
-                            d.AddToArray(ref confMomConti.VarIndex);
-                            //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                            pVel.AddToArray(ref confMomConti.DegreeS);
-                        }
-                        D.AddToArray(ref confMomConti.VarIndex);
-                        //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                        pPrs.AddToArray(ref confMomConti.DegreeS);
 
-                        confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+                    MultigridConfigLevel(configsLevel);
 
-                        configsLevel.Add(confMomConti);
-                    }
-                    else
-                    {
-                        // configurations for velocity
-                        for (int d = 0; d < D; d++)
-                        {
-                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig()
-                            {
-                                DegreeS = new int[] { pVel },
-                                //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                                VarIndex = new int[] { d }
-                            };
-                            configsLevel.Add(configVel_d);
-                        }
-                        // configuration for pressure
-                        var configPres = new MultigridOperator.ChangeOfBasisConfig()
-                        {
-                            DegreeS = new int[] { pPrs },
-                            //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
-                            VarIndex = new int[] { D }
-                        };
-                        configsLevel.Add(configPres);
-                    }
                     configs[iLevel] = configsLevel.ToArray();
                 }
                 return configs;
             }
         }
 
-        int QuadOrder()
+        protected int QuadOrder()
         {
             //QuadOrder
             int degU;
@@ -197,18 +194,17 @@ namespace BoSSS.Application.XNSE_Solver
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             double residual = lsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
-            Console.WriteLine(residual);
+            Console.WriteLine("Residual of level-set update: " + residual);
             return 0.0;
         }
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+        protected virtual void GetOperatorComponents(int D, OperatorFactory opFactory) {
 
             int quadOrder = QuadOrder();
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
             //Build Equations
-            OperatorFactory opFactory = new OperatorFactory();
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
                 opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
@@ -227,20 +223,27 @@ namespace BoSSS.Application.XNSE_Solver
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
 
             opFactory.AddParameter(Curvature.CreateFrom(Control, config, LsTrk, quadOrder));
-            
-            if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)
-            {
+
+            if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                 opFactory.AddParameter(maxSigmaParameter);
                 lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
             }
-            
-            if (config.isContinuity)
-            {
+
+            if (config.isContinuity) {
                 opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
                 opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
                 opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
             }
+        }
+
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+
+            int quadOrder = QuadOrder();
+            IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
+            OperatorFactory opFactory = new OperatorFactory();
+
+            GetOperatorComponents(D, opFactory);
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
