@@ -408,7 +408,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.AgglomerationThreshold,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver,
+                this.LsTrk);
 
             base.Timestepping = solver;
 

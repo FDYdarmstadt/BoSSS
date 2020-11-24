@@ -327,7 +327,7 @@ namespace MiniBatchProcessor {
 
             // Rename present queue and working directory to start fresh
             if(Reset) {
-                var date = DateTime.Now.ToString("ddMMMyyyy_HHmm");
+                var date = DateTime.Now.ToString("ddMMMyyyy_HHmmss");
                 foreach(string q in new[]{ 
                     Path.Combine(config.BatchInstructionDir, QUEUE_DIR),
                     Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR) }) {
