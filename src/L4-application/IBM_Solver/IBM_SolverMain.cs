@@ -1089,11 +1089,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// All fluid cell
         /// </param>
         protected void PerformLevelSetSmoothing(CellMask SmoothingDomain) {
+            
             const bool SetFarField = true;
 
-            
-
-            if (this.Control.LevelSetSmoothing) 
+            bool lsSmoothing = this.Control.LevelSetSmoothing.MPIOr();
+            if (lsSmoothing) 
                 {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // smoothing on: perform some kind of C0-projection
@@ -1120,7 +1120,8 @@ namespace BoSSS.Application.IBM_Solver {
                     LevSet.Clear(PosMask);
                     LevSet.AccConstant(+1, PosMask);
                }
-            } else {
+            }
+            else {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // no smoothing (not recommended): copy DGLevSet -> LevSet
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
