@@ -325,13 +325,15 @@ namespace MiniBatchProcessor {
                 return false;
             }
 
-            // Delete Que and working
+            // Rename present queue and working directory to start fresh
             if(Reset) {
+                var date = DateTime.Now.ToString("ddMMMyyyy_HHmm");
                 foreach(string q in new[]{ 
                     Path.Combine(config.BatchInstructionDir, QUEUE_DIR),
                     Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR) }) {
 
                     if(Directory.Exists(q)) {
+                        /*
                         foreach(string f in Directory.GetFiles(q)) {
                             try {
                                 File.Delete(f);
@@ -339,6 +341,8 @@ namespace MiniBatchProcessor {
                                 // ignore
                             }
                         }
+                        */
+                        Directory.Move(q, q + ".bkup-" + date);
                     }
 
                 }
