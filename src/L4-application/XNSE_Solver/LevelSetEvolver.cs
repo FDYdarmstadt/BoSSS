@@ -19,15 +19,16 @@ namespace BoSSS.Application.XNSE_Solver
     {
         IList<string> ParameterNames { get; }
 
-        //Curvature and Normals, etc.
-        void UpdateParameters(
+        (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields);
+
+        void LevelSetParameterUpdate(
             DualLevelSet levelSet,
             LevelSetTracker lsTrkr,
             double time,
             IReadOnlyDictionary<string, DGField> ParameterVarFields);
     }
 
-    interface ILevelSetMover
+    interface ILevelSetEvolver
     {
         IList<string> ParameterNames { get; }
 
@@ -43,62 +44,7 @@ namespace BoSSS.Application.XNSE_Solver
             IReadOnlyDictionary<string, DGField> ParameterVarFields);
     }
 
-    class CurvatureProvider : ILevelSetParameter
-    {
-        XNSE_Control Control;
-
-        int m_HMForder;
-
-        public IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
-
-        public CurvatureProvider(XNSE_Control control, int hMForder)
-        {
-            this.Control = control;
-            this.m_HMForder = hMForder;
-        }
-
-        public void UpdateParameters(
-            DualLevelSet phaseInterface,
-            LevelSetTracker lsTrkr,
-            double time,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
-            //dgLevSetGradient and update curvature
-            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
-            VectorField<SinglePhaseField> filtLevSetGradient;
-            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode)
-            {
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
-                    {
-                        CurvatureAlgorithms.LaplaceBeltramiDriver(
-                            Control.AdvancedDiscretizationOptions.SST_isotropicMode,
-                            Control.AdvancedDiscretizationOptions.FilterConfiguration,
-                            out filtLevSetGradient,
-                            lsTrkr,
-                            phaseInterface.DGLevelSet);
-                        break;
-                    }
-                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
-                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
-                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    CurvatureAlgorithms.CurvatureDriver(
-                        Control.AdvancedDiscretizationOptions.SST_isotropicMode,
-                        Control.AdvancedDiscretizationOptions.FilterConfiguration,
-                        Curvature,
-                        out filtLevSetGradient,
-                        lsTrkr,
-                        this.m_HMForder,
-                        phaseInterface.DGLevelSet);
-                    //CurvatureAlgorithms.MakeItConservative(LsTrk, this.Curvature, this.Control.PhysicalParameters.Sigma, this.SurfaceForce, filtLevSetGradient, MomentFittingVariant, this.m_HMForder);
-                    break;
-                default: throw new NotImplementedException("Unknown SurfaceTensionMode");
-            }
-        }
-    }
-
-    class FastMarcher : ILevelSetMover, ILevelSetParameter
+    class FastMarcher : ILevelSetEvolver
     {
         SinglePhaseField[] extensionVelocity;
 
@@ -106,57 +52,21 @@ namespace BoSSS.Application.XNSE_Solver
 
         XNSE_Control Control;
 
-        VectorField<SinglePhaseField> filtLevSetGradient;
+        string[] parameters;
 
-        public IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+        string[] variables;
 
-        public IList<string> VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX, BoSSS.Solution.NSECommon.VariableNames.VelocityY };
-
-        public FastMarcher(XNSE_Control control, int hMForder)
+        public FastMarcher(XNSE_Control control, int hMForder, int D)
         {
-            this.Control = control;
+            Control = control;
             this.m_HMForder = hMForder;
+            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Curvature);
+            variables = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
         }
 
-        public void UpdateParameters(
-            DualLevelSet phaseInterface,
-            LevelSetTracker lsTrkr,
-            double time,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
-            //dgLevSetGradient and update curvature
-            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
+        public IList<string> VariableNames => variables;
 
-            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode)
-            {
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
-                    {
-                        CurvatureAlgorithms.LaplaceBeltramiDriver(
-                            Control.AdvancedDiscretizationOptions.SST_isotropicMode,
-                            Control.AdvancedDiscretizationOptions.FilterConfiguration,
-                            out filtLevSetGradient,
-                            lsTrkr,
-                            phaseInterface.DGLevelSet);
-                        break;
-                    }
-                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
-                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
-                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    CurvatureAlgorithms.CurvatureDriver(
-                        Control.AdvancedDiscretizationOptions.SST_isotropicMode,
-                        Control.AdvancedDiscretizationOptions.FilterConfiguration,
-                        Curvature,
-                        out filtLevSetGradient,
-                        lsTrkr,
-                        this.m_HMForder,
-                        phaseInterface.DGLevelSet);
-                    //CurvatureAlgorithms.MakeItConservative(LsTrk, this.Curvature, this.Control.PhysicalParameters.Sigma, this.SurfaceForce, filtLevSetGradient, MomentFittingVariant, this.m_HMForder);
-                    break;
-                default: throw new NotImplementedException("Unknown SurfaceTensionMode");
-            }
-        }
+        public IList<string> ParameterNames => parameters;
 
         public void MovePhaseInterface(
             DualLevelSet phaseInterface,
@@ -175,6 +85,14 @@ namespace BoSSS.Application.XNSE_Solver
             };
             ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(EvoVelocity, lsTrkr, Control);
 
+            SinglePhaseField[] filtLevSetGradientArrray = new SinglePhaseField[]
+            {
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient0],
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient1],
+            };
+
+            VectorField<SinglePhaseField> filtLevSetGradient = new VectorField<SinglePhaseField>(filtLevSetGradientArrray);
+
             //Extension Velocity
             if (extensionVelocity == null)
             {
@@ -186,6 +104,7 @@ namespace BoSSS.Application.XNSE_Solver
                     extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity" + d);
                 }
             }
+            
             //Move LevelSet
             SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
 
@@ -271,9 +190,8 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class FourierEvolver : ILevelSetMover, ILevelSetParameter
+    class FourierEvolver : Parameter, ILevelSetParameter, ILevelSetEvolver
     {
-        
         FourierLevSetBase Fourier_LevSet;
 
         /// <summary>
@@ -285,11 +203,15 @@ namespace BoSSS.Application.XNSE_Solver
 
         int m_HMForder;
 
-        public IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+        int curvatureDegree;
 
         public IList<string> VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX, BoSSS.Solution.NSECommon.VariableNames.VelocityY };
 
-        public FourierEvolver(XNSE_Control Control, int hMForder)
+        public override IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public FourierEvolver(XNSE_Control Control, int hMForder, int curvatureDegree)
         {
             m_HMForder = hMForder;
             if (Control.FourierLevSetControl == null)
@@ -304,9 +226,10 @@ namespace BoSSS.Application.XNSE_Solver
                 throw new NotSupportedException("mass conservation correction currently not supported");
             }
             this.Control = Control;
+            this.curvatureDegree = curvatureDegree;
         }
 
-        public void UpdateParameters(
+        public void LevelSetParameterUpdate(
             DualLevelSet levelSet,
             LevelSetTracker lsTrkr,
             double time,
@@ -339,6 +262,17 @@ namespace BoSSS.Application.XNSE_Solver
             if (incremental)
                 Fourier_Timestepper.updateFourierLevSet();
             Fourier_LevSet.ProjectToDGLevelSet(levelSet.DGLevelSet, lsTrkr);
+        }
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            //Curvature
+            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[1];
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
+            string curvatureName = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            fields[0] = (curvatureName, new SinglePhaseField(curvatureBasis, curvatureName));
+            return fields;
         }
     }
 }

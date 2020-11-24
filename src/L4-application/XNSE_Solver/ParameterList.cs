@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using Microsoft.SqlServer.Server;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace BoSSS.Application.XNSE_Solver
     {
         public abstract IList<string> ParameterNames { get;}
 
-        public DelParameterFactory Factory;
+        public abstract DelParameterFactory Factory { get; }
 
         public DelPartialParameterUpdate Update;
     }
