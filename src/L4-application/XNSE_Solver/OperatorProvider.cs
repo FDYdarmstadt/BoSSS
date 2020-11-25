@@ -33,11 +33,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        public static void SetOperatorParameter(int D, OperatorFactory opFactory, int quadOrder, ThermalMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control control, XNSFE_OperatorConfiguration config) {
+        public static void SetOperatorParameter(int D, OperatorFactory opFactory, int quadOrder, ThermalMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control Control, XNSFE_OperatorConfiguration config) {
 
             // Add Velocity parameters as prescribed variables
             for (int d = 0; d < D; d++)
-                opFactory.AddParameter(Velocity0Prescribed.CreateFrom(lsUpdater.Tracker, d, D, control));
+                opFactory.AddParameter(Velocity0Prescribed.CreateFrom(lsUpdater.Tracker, d, D, Control));
 
             Velocity0MeanPrescribed v0Mean = new Velocity0MeanPrescribed(D, lsUpdater.Tracker, quadOrder);
             opFactory.AddParameter(v0Mean);
@@ -46,13 +46,14 @@ namespace BoSSS.Application.XNSE_Solver {
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
+            
         }
 
     }
 
     static class XNSEOperatorProvider {
 
-        public static void SetOperatorEquations(int D, OperatorFactory opFactory, int quadOrder, IncompressibleMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control Control, XNSFE_OperatorConfiguration config) {
+        public static void SetOperatorEquations(int D, OperatorFactory opFactory, int quadOrder, IncompressibleMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control Control, XNSFE_OperatorConfiguration config) {   
 
             ///Build Equations
             for (int d = 0; d < D; ++d) {
@@ -88,14 +89,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
-
-            opFactory.AddParameter(Curvature.CreateFrom(Control, config, lsUpdater.Tracker, quadOrder));
-
-            if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
-                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, quadOrder, Control.dtFixed);
-                opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
-            }
+        
         }
 
     }

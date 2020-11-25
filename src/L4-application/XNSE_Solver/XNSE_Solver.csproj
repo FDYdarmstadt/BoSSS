@@ -80,7 +80,7 @@
   <ItemGroup>
     <Compile Include="Equations.cs" />
     <Compile Include="OperatorProvider.cs" />
-    <Compile Include="LevelSetMover.cs" />
+    <Compile Include="LevelSetEvolver.cs" />
     <Compile Include="LevelSetUpdater.cs" />
     <Compile Include="NewXNSE_SimpleTests\BasicControls.cs" />
     <Compile Include="OperatorFactory.cs" />

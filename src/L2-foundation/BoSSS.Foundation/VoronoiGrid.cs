@@ -55,25 +55,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             this.boundary = boundary;
         }
 
-        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal)
+        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal, Vector velocityOut, Vector velocityIn)
         {
-            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
-            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
-            int jCell_in = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellIn];
-            int jCell_ot = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellOut];
-            MultidimensionalArray velocities = Nodes.Velocity;
-
-            double[] velOt = velocities.GetRow(jCell_ot);
-            double[] velIn = velocities.GetRow(jCell_in);
-
-            double velocity = NormalEdgeVelocity(jEdge, x, normal, velIn, velOt);
-            return velocity;
-        }
-
-        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal, Vector velocityIn, Vector velocityOut)
-        {
-            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
-            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
+            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
+            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
             int jLogicalCell_in = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellIn];
             int jLogicalCell_ot = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellOut];
             MultidimensionalArray positions = Nodes.Positions;
@@ -116,16 +101,9 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                     }
                 }
             };
-            
-            double result = VoronoiEdge.NormalVelocity(posOt, velocityOut, posIn, velocityIn, x, normal);
-            return result;
-        }
 
-        public Vector CellVelocity(int jCell)
-        {
-            int jCellIn = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCell];
-            var velocity = new Vector(Nodes.Velocity[jCellIn, 0], Nodes.Velocity[jCellIn, 1]);
-            return velocity;
+            double result = VoronoiEdge.NormalVelocity(posIn, velocityIn, posOt, velocityOut, x, normal) ;
+            return result;
         }
 
         public Vector DistanceBetweenNodes(int jEdge)

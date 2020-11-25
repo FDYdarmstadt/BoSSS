@@ -100,24 +100,24 @@ namespace BoSSS.Application.XNSE_Solver
                 quadOrder += 1;
             }
             return quadOrder;
-        }        
+        }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-            XSpatialOperatorMk2 XOP = base.GetOperatorInstance(D);            
+            XSpatialOperatorMk2 XOP = base.GetOperatorInstance(D);
 
             // test the ordering: Should not make a difference anyways!
             Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityX) < XOP.DomainVar.IndexOf(VariableNames.VelocityY));
             Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
             Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationX) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY));
             Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
-            if(D > 2) {
+            if (D > 2) {
                 Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.VelocityZ));
                 Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityZ) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
                 Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ));
                 Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
             }
             return XOP;
-        }
+        }               
 
         public override void SetOperatorEquations(int D, OperatorFactory opFactory) {
 
@@ -139,7 +139,7 @@ namespace BoSSS.Application.XNSE_Solver
             
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
-            XOP = opFactory.GetSpatialOperator(QuadOrder());
+            XOP = opFactory.GetSpatialOperator(QuadOrder());           
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
