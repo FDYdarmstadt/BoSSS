@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    public class VoronoiNodes : DataChameleon<MultidimensionalArray[], IList<VoronoiNode>>
+    public class VoronoiNodes : DataChameleon<MultidimensionalArray, IList<VoronoiNode>>
     {
         ulong[] globalIds;
 
@@ -45,34 +45,21 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         public MultidimensionalArray Positions {
-            get { return Red[0]; }
+            get { return Red; }
         }
 
         public IList<VoronoiNode> Nodes {
             get { return Blue; }
         }
 
-        //Velocity of each cell jCell
-        public MultidimensionalArray Velocity {
-            get { return Red[1]; }
-        }
-
         public VoronoiNodes(MultidimensionalArray positions)
-            : base(new MultidimensionalArray[]
-            {
-                positions,
-                InitializeVelocityFrom(positions)
-            })
+            : base(positions)
         {
             SetGlobalIds();
         }
 
         public VoronoiNodes(MultidimensionalArray positions, ulong[] globalIds)
-            : base(new MultidimensionalArray[]
-            {
-                positions,
-                InitializeVelocityFrom(positions)
-            })
+            : base(positions)
         {
             if (positions.GetLength(0) != globalIds.Length)
             {
@@ -81,32 +68,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
             this.globalIds = globalIds;
         }
 
-        public VoronoiNodes(MultidimensionalArray positions, MultidimensionalArray velocity, ulong[] globalIds)
-            : base(new MultidimensionalArray[]
-            {
-                positions,
-                velocity
-            })
-        {
-            if (positions.GetLength(0) != globalIds.Length)
-            {
-                throw new Exception("Dimension mismatch: Cannot create Nodes.");
-            }
-            if (velocity.GetLength(0) != globalIds.Length)
-            {
-                throw new Exception("Dimension mismatch: Cannot create Nodes.");
-            }
-            this.globalIds = globalIds;
-        }
-
         public VoronoiNodes(IList<VoronoiNode> nodes)
             : base(nodes)
         { }
-
-        static MultidimensionalArray InitializeVelocityFrom(MultidimensionalArray positions)
-        {
-            return MultidimensionalArray.Create(positions.Lengths);
-        } 
 
         void SetGlobalIds()
         {
@@ -118,39 +82,35 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        protected override IList<VoronoiNode> ToBlue(MultidimensionalArray[] positionsAndVelocity)
+        protected override IList<VoronoiNode> ToBlue(MultidimensionalArray positions)
         {
-            int numberOfNodes = positionsAndVelocity[0].GetLength(0);
+            int numberOfNodes = positions.GetLength(0);
             List<VoronoiNode> nodeList = new List<VoronoiNode>(numberOfNodes);
             for (int i = 0; i < numberOfNodes; ++i)
             {
                 VoronoiNode node = new VoronoiNode(
-                    new Vector(positionsAndVelocity[0].GetRow(i)),
-                    new Vector(positionsAndVelocity[1].GetRow(i)),
+                    new Vector(positions.GetRow(i)),
                     GlobalIds[i]);
                 nodeList.Add(node);
             }
             return nodeList;
         }
 
-        protected override MultidimensionalArray[] ToRed(IList<VoronoiNode> nodes)
+        protected override MultidimensionalArray ToRed(IList<VoronoiNode> nodes)
         {
             MultidimensionalArray positions = MultidimensionalArray.Create(nodes.Count, nodes[0].Dim);
-            MultidimensionalArray velocities = MultidimensionalArray.Create(nodes.Count, nodes[0].Dim);
             globalIds = new ulong[nodes.Count];
             for (int i = 0; i < nodes.Count; ++i)
             {
                 Vector position = nodes[i].Position;
                 positions.SetRowPt(i, position);
-                Vector velocity = nodes[i].Velocity;
-                velocities.SetRowPt(i, velocity);
                 globalIds[i] = nodes[i].GlobalID;
             }
-            return new[] { positions, velocities };
+            return positions;
         }
 
         public int Count {
-            get { return State == Color.Red ? Red[0].GetLength(0) : Blue.Count; }
+            get { return State == Color.Red ? Red.GetLength(0) : Blue.Count; }
         }
     }
 
@@ -159,8 +119,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public ulong GlobalID { get; }
 
         public Vector Position { get; set; }
-
-        public Vector Velocity{get; set;}
 
         public int Dim {
             get { return Position.Dim; }
@@ -171,18 +129,16 @@ namespace BoSSS.Foundation.Grid.Voronoi
             GlobalID = VoronoiIDProvider.GetID();
         }
 
-        public VoronoiNode(Vector position, Vector velocity)
+        public VoronoiNode(Vector position)
             : this()
         {
             Position = position;
-            Velocity = velocity;
         }
 
-        public VoronoiNode(Vector position, Vector velocity, ulong globalId)
+        public VoronoiNode(Vector position, ulong globalId)
         {
             GlobalID = globalId;
             Position = position;
-            Velocity = velocity; 
         }
     }
 

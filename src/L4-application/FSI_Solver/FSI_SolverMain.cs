@@ -608,7 +608,8 @@ namespace BoSSS.Application.FSI_Solver {
                 CellMask allParticleMask = null;
                 CellMask coloredCellMask = null;
 
-                if (CellColor != null) {
+                if (CellColor != null) 
+                    {
                     DeleteParticlesOutsideOfDomain();
                     CreateGhostParticleAtPeriodicBoundary();
                     SwitchGhostAndMasterParticle();
@@ -650,8 +651,8 @@ namespace BoSSS.Application.FSI_Solver {
                 double levelSetFunctionFluid(double[] X, double t) { return -1; }
                 CellMask fluidCells = allParticleMask != null ? allParticleMask.Complement() : CellMask.GetFullMask(GridData);
                 SetLevelSet(levelSetFunctionFluid, fluidCells, phystime);
-
-
+                if (allParticleMask.IsNullOrEmpty())// in case of restart
+                    allParticleMask = CellMask.GetFullMask(GridData);
                 PerformLevelSetSmoothing(allParticleMask);
             }
 
@@ -1272,16 +1273,15 @@ namespace BoSSS.Application.FSI_Solver {
         public override void PostRestart(double time, TimestepNumber timestep) {
             if (!((FSI_Control)Control).IsRestart)
                 return;
-            var fsDriver = this.DatabaseDriver.FsDriver;
-            string pathToOldSessionDir = System.IO.Path.Combine(
-                fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            string pathToPhysicalData = "";
-            if (MPIRank == 0)
-                pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+
+            IFileSystemDriver fsDriver = this.DatabaseDriver.FsDriver;
+            string pathToOldSessionDir = Path.Combine(fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+            string pathToPhysicalData = MPIRank == 0 ? Path.Combine(pathToOldSessionDir, "PhysicalData.txt") : "";
             pathToPhysicalData = pathToPhysicalData.MPIBroadcast(0);
+
             string[] records = File.ReadAllLines(pathToPhysicalData);
             int timestepIndexOffset = 0;
-            for (int r = 1; r < records.Length; r++) {
+            for (int r = 1; r < records.Length; r++) {// 0th line does not contain data
                 string currentLine = records[r];
                 string[] currentLineFields = currentLine.Split(',');
                 if (timestep.MajorNumber == Convert.ToInt32(currentLineFields[0])) {
@@ -1289,6 +1289,7 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
                 }
             }
+
             int historyLength = 3;
             for (int t = historyLength; t > 0; t--) {
                 for (int p = 0; p < ParticleList.Count(); p++) {
@@ -1299,6 +1300,7 @@ namespace BoSSS.Application.FSI_Solver {
                     double[] position = new double[2];
                     double[] translationalVelocity = new double[2];
                     double[] force = new double[2];
+                    double[] physicalData = currentLineFields.Select(eachElement => Convert.ToDouble(eachElement)).ToArray();
                     position[0] = Convert.ToDouble(currentLineFields[3]);
                     position[1] = Convert.ToDouble(currentLineFields[4]);
                     force[0] = Convert.ToDouble(currentLineFields[9]);
@@ -1308,9 +1310,9 @@ namespace BoSSS.Application.FSI_Solver {
                     translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
                     double angularVelocity = Convert.ToDouble(currentLineFields[8]);
                     double torque = Convert.ToDouble(currentLineFields[11]);
-                    currentParticle.Motion.InitializeParticlePositionAndAngle(position, angle, t);
-                    currentParticle.Motion.InitializeParticleVelocity(translationalVelocity, angularVelocity, t);
-                    currentParticle.Motion.InitializeParticleForceAndTorque(force, torque, t, RestartDt);
+                    currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), t);
+                    currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], t);
+                    currentParticle.Motion.InitializeParticleForceAndTorque(new double[] { physicalData[9], physicalData[10] }, physicalData[11], t, RestartDt);
                 }
             }
             CellColor = null;
@@ -1454,7 +1456,7 @@ namespace BoSSS.Application.FSI_Solver {
                 CellMask cutCells = LsTrk.Regions.GetCutCellMask();
                 GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null);
                 if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefineForStartup(), out CellsToRefineList, out Coarsening);
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
                 else
                     AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
             }
@@ -1473,7 +1475,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Finds all cells to be refined with the perssonsensor.
+        /// 
         /// </summary>
         private int[] GetCellsToRefine() {
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
@@ -1483,7 +1485,7 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (cellsToRefine[j] < refinementLevel) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        cellsToRefine[j] = ParticleList[p].Contains(cellCenter, MaxGridLength) ? refinementLevel : 0;
+                        cellsToRefine[j] = (ParticleList[p].Contains(cellCenter) && !ParticleList[p].Contains(cellCenter, -MaxGridLength)) ? refinementLevel : 0;
                     }
                 }
             }
