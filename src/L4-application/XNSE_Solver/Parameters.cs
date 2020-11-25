@@ -43,13 +43,103 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class Velocity0Mean : Parameter, ILevelSetParameter
-    {
-        int D;
+    class Velocity0Prescribed : Parameter {
+        int degree;
 
-        int cutCellQuadOrder;
+        IDictionary<string, Func<double[], double>> initial;
+
+        string[] names;
 
         LevelSetTracker LsTrk;
+
+        public Velocity0Prescribed(LevelSetTracker LsTrk, int d,int D, IDictionary<string, Func<double[], double>> initial, int degree) {
+            this.degree = degree;
+            this.LsTrk = LsTrk;
+            Factory = Velocity0PrescribedFactory;
+
+
+            names = new string[1];
+            string velocity = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d];
+            names[0] = velocity;
+            this.initial = initial;
+        }
+
+        public static Velocity0Prescribed CreateFrom(LevelSetTracker LsTrk, int d, int D, AppControl control) {
+            
+            string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
+
+            IDictionary<string, Func<double[], double>> initial = new Dictionary<string, Func<double[], double>>();
+            foreach (string species in LsTrk.SpeciesNames) {
+                string velocityOfSpecies = velocity + "#" + species;
+                Func<double[], double> initialVelocity;
+                if (control.InitialValues_Evaluators.TryGetValue(velocityOfSpecies, out Func<double[], double> initialValue)) {
+                    initialVelocity = initialValue;
+                } else {
+                    initialVelocity = X => 0.0;
+                }
+                initial.Add(species, initialVelocity);
+            }
+
+            int velocityDegree;
+            if (control.FieldOptions.TryGetValue(velocity, out FieldOpts opts)) {
+                velocityDegree = opts.Degree;
+            } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
+                velocityDegree = velOpts.Degree;
+            } else {
+                velocityDegree = -1;
+            }
+            return new Velocity0Prescribed(LsTrk, d, D, initial, velocityDegree);            
+        }
+
+        public override IList<string> ParameterNames => names;
+
+        (string, DGField)[] Velocity0PrescribedFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            XDGBasis basis = new XDGBasis(LsTrk, degree != -1 ? degree : DomainVarFields.First().Value.Basis.Degree);
+            XDGField velocity = new XDGField(basis, names[0]);
+
+            foreach(var species in LsTrk.SpeciesNames)
+                velocity.GetSpeciesShadowField(species).ProjectField(initial[species]);
+
+            return new (string, DGField)[] { (names[0], velocity) };
+        } 
+
+
+    }
+
+    class Velocity0MeanPrescribed : Velocity0Mean {
+        public Velocity0MeanPrescribed(int D, LevelSetTracker LsTrk, int cutCellQuadOrder) :
+            base(D, LsTrk, cutCellQuadOrder) { }        
+
+        protected override void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            for (int d = 0; d < D; ++d) {
+                foreach (string speciesName in SpeciesNames) {
+                    XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
+                    DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
+
+                    XDGField velocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]];
+                    DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
+
+                    //Uncut
+                    speciesParam.SetMeanValueTo(speciesVelocity);
+
+                    //Cut
+                    CellMask cutCells = regions.GetSpeciesMask(speciesName);
+                    SpeciesId speciesId = speciesMap[speciesName];
+                    CellQuadratureScheme scheme = schemeHelper.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
+                    SetMeanValueToMeanOf(speciesParam, speciesVelocity, minvol, cutCellQuadOrder, scheme);
+                }
+            }
+        }
+
+    }
+
+    class Velocity0Mean : Parameter, ILevelSetParameter
+    {
+        protected int D;
+
+        protected int cutCellQuadOrder;
+
+        protected LevelSetTracker LsTrk;
 
         public Velocity0Mean(int D, LevelSetTracker LsTrk, int cutCellQuadOrder)
         {
@@ -62,7 +152,7 @@ namespace BoSSS.Application.XNSE_Solver
 
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
 
-        (string, DGField)[] Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        protected (string, DGField)[] Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
             var velocity0Mean = new (string, DGField)[D];
             for(int d = 0; d < D; ++d)
@@ -75,15 +165,15 @@ namespace BoSSS.Application.XNSE_Solver
             return velocity0Mean;
         }
 
-        IList<string> SpeciesNames;
+        protected IList<string> SpeciesNames;
 
-        LevelSetTracker.LevelSetRegions regions;
+        protected LevelSetTracker.LevelSetRegions regions;
 
-        IDictionary<string, SpeciesId> speciesMap;
+        protected IDictionary<string, SpeciesId> speciesMap;
 
-        XQuadSchemeHelper schemeHelper;
+        protected XQuadSchemeHelper schemeHelper;
 
-        double minvol;
+        protected double minvol;
 
         public void UpdateParameters(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
@@ -100,7 +190,7 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
-        void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        protected virtual void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             for(int d = 0; d < D; ++d)
             {
@@ -124,7 +214,7 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
-        static void SetMeanValueToMeanOf(DGField target, DGField source, double minvol, int order, CellQuadratureScheme scheme)
+        protected static void SetMeanValueToMeanOf(DGField target, DGField source, double minvol, int order, CellQuadratureScheme scheme)
         {
             //Cut
             int D = source.GridDat.SpatialDimension;

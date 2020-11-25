@@ -79,8 +79,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Equations.cs" />
+    <Compile Include="OperatorProvider.cs" />
     <Compile Include="LevelSetMover.cs" />
     <Compile Include="LevelSetUpdater.cs" />
+    <Compile Include="NewXNSE_SimpleTests\BasicControls.cs" />
     <Compile Include="OperatorFactory.cs" />
     <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />
@@ -104,6 +106,8 @@
     <Compile Include="Tests\StaticDropletTest.cs" />
     <Compile Include="XBase_Solver.cs" />
     <Compile Include="XBase_Control.cs" />
+    <Compile Include="XCommon.cs" />
+    <Compile Include="XHeat.cs" />
     <Compile Include="XNSE.cs" />
     <Compile Include="XNSE_Control.cs" />
     <Compile Include="HardcodedControl.cs" />
@@ -121,6 +125,7 @@
     <Compile Include="XNSE_SolverMain.cs" />
     <Compile Include="XNSE_SolverMain_LevelSet.cs" />
     <Compile Include="XNSE_SolverMain_Utils.cs" />
+    <Compile Include="XNSFE.cs" />
     <Compile Include="XNSFE_OperatorComponents.cs" />
     <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>

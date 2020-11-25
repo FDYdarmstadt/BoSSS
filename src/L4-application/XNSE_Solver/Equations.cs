@@ -553,6 +553,8 @@ namespace BoSSS.Application.XNSE_Solver
             speciesName = spcName;
             codomainName = EquationNames.HeatEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(D));
+
             this.D = D;
 
             SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
@@ -578,9 +580,10 @@ namespace BoSSS.Application.XNSE_Solver
                     conv = new HeatConvectionInSpeciesBulk_Upwind(D, boundaryMap, spcName, spcId, capSpc);
                 else
                     conv = new HeatConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
-
                 AddComponent(conv);
 
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
             }
 
 
@@ -633,6 +636,7 @@ namespace BoSSS.Application.XNSE_Solver
             speciesName = spcName;
             codomainName = EquationNames.AuxHeatFluxComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(D)[d]);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
             this.D = D;
 
             SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
@@ -664,7 +668,7 @@ namespace BoSSS.Application.XNSE_Solver
 
 
         string codomainName;
-
+        string phaseA, phaseB;
         //Methode aus der XNSF_OperatorFactory
         public HeatInterface(
             string phaseA,
@@ -673,14 +677,21 @@ namespace BoSSS.Application.XNSE_Solver
             ThermalMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
             IXHeat_Configuration config) : base() {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
             codomainName = EquationNames.HeatEquation;
             AddInterfaceHeatEq(dimension, boundaryMap, LsTrk, config);
-            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
         }
 
-        public override string FirstSpeciesName => "A";
+        public override string FirstSpeciesName => phaseA;
 
-        public override string SecondSpeciesName => "B";
+        public override string SecondSpeciesName => phaseB;
 
         public override string CodomainName => codomainName;
 
@@ -721,22 +732,62 @@ namespace BoSSS.Application.XNSE_Solver
 
                 var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
                 AddComponent(Visc);
-
-
             } else {
-                throw new NotImplementedException();
-
-                //comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk));
-
-                //for (int d = 0; d < D; d++) {
-                //    comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
-
-                //    comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, Tsat));
-                //}
-
+                AddComponent(new HeatFluxDivergencetAtLevelSet(LsTrk));
             }
 
         }
+    }
+
+    class HeatFluxInterface : SurfaceEquation {
+
+
+        string codomainName;
+        string phaseA, phaseB;
+        //Methode aus der XNSF_OperatorFactory
+        public HeatFluxInterface(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            int d,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            IXHeat_Configuration config) : base() {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.AuxHeatFlux(dimension)[d];
+            AddInterfaceHeatEq(dimension, d, boundaryMap, LsTrk, config);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+
+
+        //Methode aus der XNSF_OperatorFactory
+        void AddInterfaceHeatEq(
+            int dimension,
+            int d,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            IXHeat_Configuration config) {
+
+            ThermalParameters thermParams = config.getThermParams;
+
+            // set species arguments
+            double kA = thermParams.k_A;
+            double kB = thermParams.k_B;
+
+            double Tsat = thermParams.T_sat;            
+
+            AddComponent(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, Tsat));
+
+        }        
     }
 
     class HeatInterfaceEvaporation : SurfaceEquation {
@@ -764,4 +815,5 @@ namespace BoSSS.Application.XNSE_Solver
 
         public override string CodomainName => throw new NotImplementedException();
     }
+    
 }

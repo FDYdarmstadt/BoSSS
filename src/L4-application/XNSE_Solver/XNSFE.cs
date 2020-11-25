@@ -1,6 +1,8 @@
-﻿using BoSSS.Solution.AdvancedSolvers;
+﻿using BoSSS.Foundation.XDG;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using System;
 using System.Collections.Generic;
@@ -9,49 +11,33 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver {
-    class XNSFE : XNSE {
+    class XNSFE : XCommon<XNSE_Control> {
 
-
-        protected override void MultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-
-            base.MultigridConfigLevel(configsLevel);
-
-            int D = this.GridData.SpatialDimension;
-
-            int pTemp = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Temperature].Degree;
-            // configuration for Temperature
-            var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
-                DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
-                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
-                VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Temperature) }
-            };
-            configsLevel.Add(confTemp);
-
-            // configuration for auxiliary heat flux
-            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                int pFlux;
-                if (this.Control.FieldOptions.TryGetValue("HeatFlux*", out FieldOpts f)) {
-                    pFlux = f.Degree;
-                } else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.HeatFluxX, out FieldOpts f1)) {
-                    pFlux = f1.Degree;
-                } else {
-                    throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of HeatFlux not found");
-                }
-                for (int d = 0; d < D; d++) {
-                    var confHeatFlux = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { pFlux }, // Math.Max(1, pFlux - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
-                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.HeatFluxVectorComponent(d)) }
-                    };
-                    configsLevel.Add(confHeatFlux);
-                }
-            }            
+        XNSE xnse = new XNSE();
+        private void GetXNSEOperatorComponents(int D, OperatorFactory opFactory) {
+            xnse.SetOperatorEquations(D, opFactory);
+        }
+        private void XNSEMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+            xnse.MultigridConfigLevel(configsLevel);
         }
 
+        XHeat xheat = new XHeat();
+        private void GetXHEATOperatorComponents(int D, OperatorFactory opFactory) {
+            xheat.SetOperatorEquations(D, opFactory);
+        }
+        private void XHEATMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+            xheat.MultigridConfigLevel(configsLevel);
+        }
+        public override void MultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
 
-        protected override void GetOperatorComponents(int D, OperatorFactory opFactory) {
+            XNSEMultigridConfigLevel(configsLevel);
+            XHEATMultigridConfigLevel(configsLevel);
+            
+        }
 
-            base.GetOperatorComponents(D, opFactory);
+        protected void GetXNSFEOperatorComponents(int D, OperatorFactory opFactory) {
+
+            //base.GetOperatorComponents(D, opFactory);
 
             int quadOrder = QuadOrder();
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
@@ -80,8 +66,27 @@ namespace BoSSS.Application.XNSE_Solver {
                 //    opFactory.AddEquation(new HeatInterfaceContinuityEvaporation("A", "B", d, D, boundaryMap, LsTrk, config));
 
             }
+        }       
+
+        public override void SetOperatorEquations(int D, OperatorFactory opFactory) {
+            GetXNSEOperatorComponents(D, opFactory);
+            GetXHEATOperatorComponents(D, opFactory);
         }
 
-        
+        protected override int QuadOrder() {
+            throw new NotImplementedException();
+        }
+
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+            throw new NotImplementedException();
+        }
+
+        public override void SetOperatorParameter(int D, OperatorFactory opFactory) {
+            throw new NotImplementedException();
+        }
+
+        public override void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory) {
+            throw new NotImplementedException();
+        }
     }
 }
