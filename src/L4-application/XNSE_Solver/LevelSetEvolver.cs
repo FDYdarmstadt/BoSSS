@@ -93,7 +93,7 @@ namespace BoSSS.Application.XNSE_Solver
 
             VectorField<SinglePhaseField> filtLevSetGradient = new VectorField<SinglePhaseField>(filtLevSetGradientArrray);
 
-            //Extension Velocity
+            //Extension Velocity: Was macht man damit?
             if (extensionVelocity == null)
             {
                 int D = lsTrkr.GridDat.SpatialDimension;

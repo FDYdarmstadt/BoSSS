@@ -183,7 +183,6 @@ namespace BoSSS.Application.XNSE_Solver
             }
             lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
             lsUpdater.UpdateParameters(ParameterVarsDict, 0.0);
-            
         }
 
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental)
