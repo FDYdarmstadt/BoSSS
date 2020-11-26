@@ -25,15 +25,16 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.LevelSetTools.FastMarcher;
 using ilPSP;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
 
     /// <summary>
     /// Wrapperclass for Fastmarcher. 
-    ///This class turns the information contained in GridData into a Graph that the fastmarcher needs.
-    ///The value that is used by the fastmarcher to find a marching order is the meanvalue of phi of a cell.
-    ///Usage :   Setup the general graph properties with the method Initialize(...). 
-    ///          Use BuildInitialAcceptedCells(...) to get the initial accepted Nodes in the Graph for FastMarching. 
+    /// This class turns the information contained in GridData into a Graph that the fastmarcher needs.
+    /// The value that is used by the fastmarcher to find a marching order is the meanvalue of phi of a cell.
+    /// Usage :   Setup the general graph properties with the method Initialize(...). 
+    ///           Use BuildInitialAcceptedCells(...) to get the initial accepted Nodes in the Graph for FastMarching. 
     /// 
     /// </summary>
 
@@ -42,7 +43,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         static ILocalSolver fMSolver;
         static BitArray inUseMask;
         static BitArray reinitField;
-        static Partitioning reinitPart;
+        //static Partitioning reinitPart;
         static int[] queueIDList;
         static SinglePhaseField phi;
         static GridData gridDat;
@@ -66,16 +67,25 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             fMSolver = FMSolver;
             phi = Phi;
             gridDat = GridDat;
-            int J = GridDat.Cells.NoOfLocalUpdatedCells;
+            int J = GridDat.Cells.Count;
             inUseMask = new BitArray(J);
-            reinitField = ReinitField.GetBitMask();
-            reinitPart = new Partitioning(J);
+            reinitField = ReinitField.GetBitMaskWithExternal();
+            for (int j = gridDat.CellPartitioning.LocalLength; j < J; j++) {
+                reinitField[j] = false;         // reinit only on local cells
+            }
+            //reinitPart = new Partitioning(J);
             queueIDList = new int[J];
         }
 
         //Create an array of Cells from the Accepted CellMask. 
         public static MarchingCell[] BuildInitialAcceptedCells(CellMask Accepted) {
-            int[] AcceptedCells_Indices = Accepted.ItemEnum.ToArray();
+            List<int> AcceptedCells_IndicesList = new List<int>();
+            BitArray AcceptedBitArray = Accepted.GetBitMaskWithExternal();
+            for (int j = 0; j < gridDat.Cells.Count; j++) {
+                if (AcceptedBitArray[j])
+                    AcceptedCells_IndicesList.Add(j);
+            }
+            int[] AcceptedCells_Indices = AcceptedCells_IndicesList.ToArray(); // Accepted.ItemEnum.ToArray();
             int AcceptedCells_Total = AcceptedCells_Indices.Length;
             MarchingCell[] AcceptedCells = new MarchingCell[AcceptedCells_Total];
 
@@ -115,11 +125,23 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
                 //GetNeighbors via BoSSS Framework
                 //Only calculate neighbors once:
                 if (neighbors == null) {
-                    Tuple<int, int, int>[] bossNeighbors = gridDat.GetCellNeighboursViaEdges(jCell);
+                    int[] bosssNeighbors;
+                    int LocalLength = gridDat.CellPartitioning.LocalLength;
+                    if (jCell < LocalLength) {
+                        Tuple<int, int, int>[] getCellNeighbors = gridDat.GetCellNeighboursViaEdges(jCell);
+                        bosssNeighbors = getCellNeighbors.Select(tpl => tpl.Item1).ToArray();
+                    } else {    // get cell neighbors for external cells 
+                        throw new NotImplementedException("ToDo: get neighbours of external cells");
+                        List<int> extCellneighbors = new List<int>();
+                        //long jGlob = gridDat.iParallel.GlobalIndicesExternalCells[jCell - LocalLength];
+                        //int proc = gridDat.CellPartitioning.FindProcess(jGlob);
+                        //gridDat.iLogicalCells.CellNeighbours.MPIBroadcast(proc);                       
+                        bosssNeighbors = extCellneighbors.ToArray();
+                    }                
                     LinkedList<MarchingCell> neighborsList = new LinkedList<MarchingCell>();
-                    for (int i = 0; i < bossNeighbors.Length; ++i) {
-                        int jCellNeighbor = bossNeighbors[i].Item1;
-                        if (reinitPart.IsInLocalRange(jCellNeighbor) && reinitField[jCellNeighbor]) {   //only use cells in reinitField
+                    for (int i = 0; i < bosssNeighbors.Length; ++i) {
+                        int jCellNeighbor = bosssNeighbors[i];
+                        if (reinitField[jCellNeighbor]) {   //only use cells in reinitField
                             neighborsList.AddLast( new MarchingCell(jCellNeighbor));
                         } 
                     }

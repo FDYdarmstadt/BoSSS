@@ -760,7 +760,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region ensure continuity
 
-                Console.WriteLine("MPI rank {0}: ensure continuity", this.GridData.MpiRank);
+                //Console.WriteLine("MPI rank {0}: ensure continuity", this.GridData.MpiRank);
 
                 // make level set continuous
                 CellMask CC = LsTrk.Regions.GetCutCellMask4LevSet(0);
@@ -775,7 +775,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region update regions
 
-                Console.WriteLine("MPI rank {0}: update regions", this.GridData.MpiRank);
+                //Console.WriteLine("MPI rank {0}: update regions", this.GridData.MpiRank);
 
                 for (int d = 0; d < D; d++)
                     this.XDGvelocity.Velocity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
@@ -792,7 +792,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region tracker update
 
-                Console.WriteLine("MPI rank {0}: update tracker", this.GridData.MpiRank);
+                //Console.WriteLine("MPI rank {0}: update tracker", this.GridData.MpiRank);
 
                 this.LsTrk.UpdateTracker(Phystime + dt, incremental: true);
 
@@ -842,7 +842,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 LsBkUp.Acc(-1.0, this.LevSet);
                 double LevSetResidual = LsBkUp.L2Norm(newCC.Union(oldCC));
 
-                Console.WriteLine("MPI rank {0}: return DelUpdateLevelSet", this.GridData.MpiRank);
+                //Console.WriteLine("MPI rank {0}: return DelUpdateLevelSet", this.GridData.MpiRank);
 
                 return LevSetResidual;
 

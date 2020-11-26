@@ -141,8 +141,14 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 PhiAvg = m_PhiAvg;
             }
 
-            foreach (int jCell in _Accepted.ItemEnum)
-                PhiAvg[jCell] = Phi.GetMeanValue(jCell);
+            //foreach (int jCell in _Accepted)
+            //    PhiAvg[jCell] = Phi.GetMeanValue(jCell);
+
+            for (int j = 0; j < J; j++) {
+                if (_Accepted.GetBitMaskWithExternal()[j])
+                    PhiAvg[j] = Phi.GetMeanValue(j);
+            }
+
         }
 
 
@@ -542,7 +548,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             //Build Global Solver that marches through all cells
             FastMarching.GlobalMarcher.CellMarcher fastMarcher = new FastMarching.GlobalMarcher.CellMarcher(Phi.Basis, localSolver);
-            
+
             //Solve
             fastMarcher.Reinit(Phi, Accepted, ReinitField);
 
@@ -550,7 +556,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             Phi.Scale(-1, NegativeField.Intersect(ReinitField).Except(Accepted));
         }
 
-        
+
         /// <summary>
         /// Reinitializes levelset in <paramref name="_LevelSetTracker"/> on a near field with width <paramref name="nearFieldWidth"/>
         /// </summary>

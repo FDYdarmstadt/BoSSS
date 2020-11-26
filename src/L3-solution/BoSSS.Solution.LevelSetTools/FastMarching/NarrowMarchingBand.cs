@@ -262,11 +262,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             SubGrid CCgrid = Tracker.Regions.GetCutCellSubgrid4LevSet(iLevSet);
             CellMask CC = CCgrid.VolumeMask;
-            BitArray CCBitMask = CC.GetBitMask();
+            BitArray CCBitMaskLocal = CC.GetBitMask();
+            BitArray CCBitMask = CC.GetBitMaskWithExternal();
             CellMask Pos = Tracker.Regions.GetLevelSetWing(iLevSet, +1.0).VolumeMask.Except(CC);
             CellMask Neg = Tracker.Regions.GetLevelSetWing(iLevSet, -1.0).VolumeMask.Except(CC);
-            BitArray PosBitMask = Pos.GetBitMask();
-            BitArray NegBitMask = Neg.GetBitMask();
+            BitArray PosBitMaskLocal = Pos.GetBitMask();
+            BitArray NegBitMaskLocal = Neg.GetBitMask();
+            BitArray PosBitMask = Pos.GetBitMaskWithExternal();
+            BitArray NegBitMask = Neg.GetBitMaskWithExternal();
 
             SubGrid PosGrid = new SubGrid(Pos);
             SubGrid NegGrid = new SubGrid(Neg);
@@ -296,20 +299,26 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             NewLevelSet.Clear(NegFAR);
             NewLevelSet.AccConstant(-1.0, NegFAR);
 
+            NewLevelSet.MPIExchange();
+
 
             // recalculate Level-Set Gradient
             //-------------------------------
             LevelSetGrad.Clear();
             LevelSetGrad.Gradient(1.0, NewLevelSet, NEAR);
+            for (int d = 0; d < D; d++) {
+                LevelSetGrad[d].MPIExchange();
+            }
 
 
             // identify cells for Reinit
             // -------------------------
 
-            BitArray ReinitPosBitmask = new BitArray(J);
-            BitArray ReinitNegBitmask = new BitArray(J);
-            BitArray ReinitBitmask = new BitArray(J);
-            BitArray KnownBitmask = new BitArray(J);
+
+            //BitArray ReinitPosBitmaskLocal = new BitArray(J);
+            //BitArray ReinitNegBitmaskLocal = new BitArray(J);
+            BitArray ReinitBitmaskLocal = new BitArray(J);
+            BitArray KnownBitmaskLocal = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
             foreach(var j in NEAR.ItemEnum) {
                 double GradNorm = 0;
@@ -323,38 +332,86 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     // the level-set field is flat (+1 or -1) in cell j
                     // it must be initialized
 
-                    if (CCBitMask[j])
+                    if (CCBitMaskLocal[j])
                         throw new ArithmeticException("Found vanishing level-set gradient on cut-cells.");
-                    if(PosBitMask[j] == NegBitMask[j])
+                    if(PosBitMaskLocal[j] == NegBitMaskLocal[j])
                         throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
 
-                    if(PosBitMask[j]) {
-                        ReinitPosBitmask[j] = true;
-                        ReinitBitmask[j] = true;
+                    if(PosBitMaskLocal[j]) {
+                        //ReinitPosBitmaskLocal[j] = true;
+                        ReinitBitmaskLocal[j] = true;
                         NoOfPosReinit++;
                     }
-                    if(NegBitMask[j]) {
-                        ReinitNegBitmask[j] = true;
-                        ReinitBitmask[j] = true;
+                    if(NegBitMaskLocal[j]) {
+                        //ReinitNegBitmaskLocal[j] = true;
+                        ReinitBitmaskLocal[j] = true;
                         NoOfNegReinit++;
                     }
                 } else {
-                    KnownBitmask[j] = true;
+                    KnownBitmaskLocal[j] = true;
                 }
             }
 
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
 
-            CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
-            CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmask);
-            CellMask Reinit = new CellMask(gdat, ReinitBitmask);
-            CellMask Known = new CellMask(gdat, KnownBitmask);
-            
+            //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmaskLocal);
+            //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmaskLocal);
+            CellMask Reinit = new CellMask(gdat, ReinitBitmaskLocal);
+            CellMask Known = new CellMask(gdat, KnownBitmaskLocal);
+
+
+            //int JExt = gdat.Cells.Count;
+            //BitArray ReinitPosBitmask = new BitArray(JExt);
+            //BitArray ReinitNegBitmask = new BitArray(JExt);
+            //BitArray ReinitBitmask = new BitArray(JExt);
+            //BitArray KnownBitmask = new BitArray(JExt);
+
+            //NoOfPosReinit = 0; NoOfNegReinit = 0;
+            //foreach (Chunk cnk in NEAR.GetEnumerableWithExternal()) {
+            //    for (int i = 0; i < cnk.Len; i++) {
+            //        int j = i + cnk.i0;
+            //        double GradNorm = 0;
+            //        for (int d = 0; d < D; d++) {
+            //            GradNorm += LevelSetGrad[d].Coordinates.GetRow(j).L2NormPow2();
+            //        }
+
+
+            //        if (GradNorm < 1.0e-12) {
+            //            //|| (!CCBitMask[j] && (GradNorm < 0.99 || GradNorm > 1.01))) { 
+
+            //            // the level-set field is flat (+1 or -1) in cell j
+            //            // it must be initialized
+
+            //            if (CCBitMask[j])
+            //                throw new ArithmeticException("Found vanishing level-set gradient on cut-cells.");
+            //            if (PosBitMask[j] == NegBitMask[j])
+            //                throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
+
+            //            if (PosBitMask[j]) {
+            //                ReinitPosBitmask[j] = true;
+            //                ReinitBitmask[j] = true;
+            //                if (j < gdat.Cells.NoOfLocalUpdatedCells)
+            //                    NoOfPosReinit++;
+            //            }
+            //            if (NegBitMask[j]) {
+            //                ReinitNegBitmask[j] = true;
+            //                ReinitBitmask[j] = true;
+            //                if (j < gdat.Cells.NoOfLocalUpdatedCells)
+            //                    NoOfNegReinit++;
+            //            }
+            //        } else {
+            //            KnownBitmask[j] = true;
+            //        }
+            //    }
+            //}
+
+            //Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
+
 
             // perform Reinitialization
             // ------------------------
 
-            //Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_beforeReinit", 0.0, 2);
+            Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_beforeReinit", 0.0, 2);
             var marcher = new Reinit.FastMarch.FastMarchReinit(NewLevelSet.Basis);
 
             marcher.AvgInit(NewLevelSet, Known);
@@ -370,12 +427,15 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //    marcher.Reinitialize(NewLevelSet, ReinitNeg, -1, Known, LevelSetGrad, null);
 
             // save reinit at OLD levelset, to prevent doing it multiple times
-            OldLevSet.Clear(ReinitPos);
-            OldLevSet.Clear(ReinitNeg);
-            OldLevSet.Acc(1.0, NewLevelSet, ReinitPos);
-            OldLevSet.Acc(1.0, NewLevelSet, ReinitNeg);
+            OldLevSet.Clear(Reinit);
+            OldLevSet.Acc(1.0, NewLevelSet, Reinit);
+            //OldLevSet.Clear(ReinitPos);
+            //OldLevSet.Clear(ReinitNeg);
+            //OldLevSet.Acc(1.0, NewLevelSet, ReinitPos);
+            //OldLevSet.Acc(1.0, NewLevelSet, ReinitNeg);
 
-            //Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_afterReinit", 0.0, 2);
+
+            Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_afterReinit", 0.0, 2);
 
             // bring gradient up to date
             marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);

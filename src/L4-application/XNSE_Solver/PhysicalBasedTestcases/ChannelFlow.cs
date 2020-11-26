@@ -145,12 +145,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 1;
+            double L = 2;
             double H = 1;
 
             if (D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, 1 * kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
@@ -245,7 +245,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
-            double[] center = (D == 2) ? new double[] { (H / 2.0), H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
+            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.045, H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
             double radius = 0.2;
 
             if (D == 2) {
@@ -434,7 +434,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 10; // 500;
+            C.NoOfTimesteps = 50; // 500;
             C.saveperiod = 10;
 
             #endregion

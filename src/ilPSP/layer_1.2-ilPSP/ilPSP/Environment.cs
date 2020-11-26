@@ -133,9 +133,9 @@ namespace ilPSP {
             // init MPI enviroment
             // ===================
             m_MpiEnv = new MPIEnviroment();
-            System.Threading.Thread.Sleep(10000);
-            Console.WriteLine("StdoutOnlyOnRank0 set to false");
-            StdoutOnlyOnRank0 = false;
+            //System.Threading.Thread.Sleep(10000);
+            //Console.WriteLine("StdoutOnlyOnRank0 set to false");
+            StdoutOnlyOnRank0 = true;
             NativeLibraryDir = ret;
             return ret;
         }
