@@ -32,19 +32,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// The density of the particle.
         /// </param>
         public MotionFixedWithVelocity(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
-            IncludeRotation = false;
-            IncludeTranslation = false;
+            IncludeRotation = true;
+            IncludeTranslation = true;
         }
 
         /// <summary>
         /// Include rotation?
         /// </summary>
-        internal override bool IncludeRotation { get; } = false;
+        internal override bool IncludeRotation { get; } = true;
 
         /// <summary>
         /// Include translation?
         /// </summary>
-        internal override bool IncludeTranslation { get; } = false;
+        internal override bool IncludeTranslation { get; } = true;
         
         /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.

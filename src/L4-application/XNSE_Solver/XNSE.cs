@@ -149,17 +149,13 @@ namespace BoSSS.Application.XNSE_Solver
             switch (Control.Option_LevelSetEvolution)
             {
                 case LevelSetEvolution.Fourier:
-                    var fourrier = new FourierEvolver(Control, QuadOrder());
-                    lsUpdater.AddLevelSetParameter("Phi", fourrier);
-                    lsUpdater.AddEvolver("Phi", fourrier);
+                    //Add this stuff later on
                     break;
                 case LevelSetEvolution.FastMarching:
-                    var fastMarcher = new FastMarcher(Control, QuadOrder());
-                    lsUpdater.AddLevelSetParameter("Phi", fastMarcher);
+                    var fastMarcher = new FastMarcher(Control, QuadOrder(), levelSet.GridDat.SpatialDimension);
                     lsUpdater.AddEvolver("Phi", fastMarcher);
                     break;
                 case LevelSetEvolution.None:
-                    lsUpdater.AddLevelSetParameter("Phi", new CurvatureProvider(Control, QuadOrder()));
                     break;
                 default:
                     throw new NotImplementedException();
@@ -172,14 +168,21 @@ namespace BoSSS.Application.XNSE_Solver
         {
             base.CreateEquationsAndSolvers(L);
 
+            var domainFields = CurrentState.Fields;
+            var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Count);
+            for (int iVar = 0; iVar < domainFields.Count; iVar++)
+            {
+                DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
+            }
+
             var parameterFields = Timestepping.Parameters;
             var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
             for (int iVar = 0; iVar < parameterFields.Count(); iVar++)
             {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
+            lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
             lsUpdater.UpdateParameters(ParameterVarsDict, 0.0);
-            
         }
 
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental)
@@ -225,15 +228,6 @@ namespace BoSSS.Application.XNSE_Solver
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
-
-            opFactory.AddParameter(Curvature.CreateFrom(Control, config, LsTrk, quadOrder));
-            
-            if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)
-            {
-                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
-                opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
-            }
             
             if (config.isContinuity)
             {
@@ -242,8 +236,43 @@ namespace BoSSS.Application.XNSE_Solver
                 opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
             }
 
+            if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)
+            {
+                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
+                opFactory.AddParameter(maxSigmaParameter);
+                lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
+            }
+            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode)
+            {
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
+                    BeltramiGradient lsGradient = BeltramiGradient.CreateFrom(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter("Phi", lsGradient);
+                    break;
+                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
+                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
+                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
+                    BeltramiGradientAndCurvature lsGradientAndCurvature = 
+                        BeltramiGradientAndCurvature.CreateFrom(Control, "Phi", quadOrder, D);
+                    opFactory.AddParameter(lsGradientAndCurvature);
+                    lsUpdater.AddLevelSetParameter("Phi", lsGradientAndCurvature);
+                    break;
+                case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
+                    var fourrier = new FourierEvolver(
+                        Control, 
+                        QuadOrder(), 
+                        Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
+                    lsUpdater.AddLevelSetParameter("Phi", fourrier);
+                    lsUpdater.AddEvolver("Phi", fourrier);
+                    opFactory.AddParameter(fourrier);
+                    break;
+                default:
+                    break;
+            }
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
+            
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;

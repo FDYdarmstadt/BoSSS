@@ -19,13 +19,14 @@ namespace BoSSS.Application.XNSE_Solver
 {
     class Velocity0 : Parameter
     {
-        int D; 
+        int D;
 
         public Velocity0(int D)
         {
             this.D = D;
-            Factory = Velocity0Factory;
         }
+
+        public override DelParameterFactory Factory => Velocity0Factory;
 
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
 
@@ -54,15 +55,16 @@ namespace BoSSS.Application.XNSE_Solver
         public Velocity0Mean(int D, LevelSetTracker LsTrk, int cutCellQuadOrder)
         {
             this.D = D;
-            Factory = Velocity0MeanFactory;
             Update = Velocity0MeanUpdate;
             this.cutCellQuadOrder = cutCellQuadOrder;
             this.LsTrk = LsTrk;
         }
 
+        public override DelParameterFactory Factory => ParameterFactory;
+
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
 
-        (string, DGField)[] Velocity0MeanFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
             var velocity0Mean = new (string, DGField)[D];
             for(int d = 0; d < D; ++d)
@@ -85,7 +87,7 @@ namespace BoSSS.Application.XNSE_Solver
 
         double minvol;
 
-        public void UpdateParameters(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             SpeciesNames = lsTrkr.SpeciesNames;
             regions = lsTrkr.Regions;
@@ -168,10 +170,11 @@ namespace BoSSS.Application.XNSE_Solver
 
         string[] names;
 
+        public override DelParameterFactory Factory => GravityFactory;
+
         public Gravity(string species, int d, int D, Func<double[], double> initial, double rho, int degree)
         {
             this.degree = degree;
-            Factory = GravityFactory;
 
             names = new string[1];
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
@@ -225,17 +228,18 @@ namespace BoSSS.Application.XNSE_Solver
         int D;
 
         int degree;
-        
+
         public Normals(int D, int degree)
         {
             this.D = D;
             this.degree = degree;
-            Factory = NormalFactory;
         }
+
+        public override DelParameterFactory Factory => ParameterFactory;
 
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
 
-        public void UpdateParameters(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             LevelSet Phi = levelSet.DGLevelSet;
             DGField[] Normals = new SinglePhaseField[D];
@@ -248,7 +252,7 @@ namespace BoSSS.Application.XNSE_Solver
             normalVector.Gradient(1.0, Phi);
         }
 
-        (string, DGField)[] NormalFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
@@ -262,67 +266,174 @@ namespace BoSSS.Application.XNSE_Solver
             return normals;
         }
     }
-    
-    class Curvature : Parameter
-    {
-        int D;
 
-        LevelSetTracker LsTrk;
+    class BeltramiGradient : ILevelSetParameter
+    {
+        DoNotTouchParameters AdvancedDiscretizationOptions;
+
+        string[] parameters;
 
         int degree;
 
-        int m_HMForder;
-
-        bool solveKineticEnergyEquation;
-
-        bool isEvaporation;
-
-        DoNotTouchParameters AdvancedDiscretizationOptions;
-
-        public Curvature(LevelSetTracker LsTrkr, int degree, int m_HMForder, bool isEvaporation, bool solveKineticEnergyEquation, DoNotTouchParameters AdvancedDiscretizationOptions)
+        public BeltramiGradient(int D, DoNotTouchParameters AdvancedDiscretizationOptions, int degree)
         {
-            this.LsTrk = LsTrkr;
-            this.degree = degree;
-            this.m_HMForder = m_HMForder;
-            this.isEvaporation = isEvaporation;
-            this.solveKineticEnergyEquation = solveKineticEnergyEquation;
+            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
             this.AdvancedDiscretizationOptions = AdvancedDiscretizationOptions;
-
-            Factory = CurvatureFactory;
+            this.degree = degree;
         }
 
-        public static Curvature CreateFrom(XNSE_Control control, XNSFE_OperatorConfiguration xopConfig, LevelSetTracker LsTrkr, int m_HMForder)
+        public IList<string> ParameterNames => parameters;
+
+        public static BeltramiGradient CreateFrom(XNSE_Control control, string levelSetName, int D)
         {
-            string curvature = BoSSS.Solution.NSECommon.VariableNames.Curvature;
-            int degree;
-            if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts))
+            string levelSet = levelSetName;
+            int levelSetDegree;
+            if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
             {
-                degree = opts.Degree;
+                levelSetDegree = lsOpts.Degree * 2;
             }
             else
             {
-                degree = 0;
+                levelSetDegree = 1;
             }
-            bool solveKineticEnergyEquation = control.solveKineticEnergyEquation;
-
-            bool isEvaporation = xopConfig.isEvaporation;
 
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
-            return new Curvature(LsTrkr, degree, m_HMForder, isEvaporation, solveKineticEnergyEquation, AdvancedDiscretizationOptions);
+            return new BeltramiGradient(D, AdvancedDiscretizationOptions, levelSetDegree);
         }
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            int paramCount = parameters.Length;
+            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[parameters.Length];
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+            Basis basis = new Basis(gridData, degree);
+            for (int i = 0; i < paramCount; ++i)
+            {
+                fields[i] = (parameters[i], new SinglePhaseField(basis, parameters[i]));
+            }
+            return fields;
+        }
+
+        public void LevelSetParameterUpdate(
+           DualLevelSet phaseInterface,
+           LevelSetTracker lsTrkr,
+           double time,
+           IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            //dgLevSetGradient and update curvature
+            VectorField<SinglePhaseField> filtLevSetGradient;
+            CurvatureAlgorithms.LaplaceBeltramiDriver(
+                AdvancedDiscretizationOptions.SST_isotropicMode,
+                AdvancedDiscretizationOptions.FilterConfiguration,
+                out filtLevSetGradient,
+                lsTrkr,
+                phaseInterface.DGLevelSet);
+            for(int i = 0; i < parameters.Length; ++i)
+            {
+                ParameterVarFields[parameters[i]].Clear();
+                ParameterVarFields[parameters[i]].Acc(1.0, filtLevSetGradient[i]);
+            }
+        }
+    }
+
+    class BeltramiGradientAndCurvature : Parameter, ILevelSetParameter
+    {
+        DoNotTouchParameters AdvancedDiscretizationOptions;
+
+        int m_HMForder;
+
+        string[] lsParameters;
+
+        int gradientDegree;
+
+        int curvatureDegree;
+
+        public BeltramiGradientAndCurvature(int curvatureDegree, int degree, int m_HMForder, DoNotTouchParameters AdvancedDiscretizationOptions, int D)
+        {
+            lsParameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Curvature);
+            this.AdvancedDiscretizationOptions = AdvancedDiscretizationOptions;
+            this.m_HMForder = m_HMForder;
+            this.gradientDegree = degree;
+            this.curvatureDegree = curvatureDegree;
+        }
+
+        IList<string> ILevelSetParameter.ParameterNames => lsParameters;
 
         public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
 
-        (string, DGField)[] CurvatureFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
-        {
-            string name = BoSSS.Solution.NSECommon.VariableNames.Curvature;
-            Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
-            SinglePhaseField curvature = new SinglePhaseField(basis, name);
+        public override DelParameterFactory Factory => CurvatureFactory;
 
-            return new (string, DGField)[]
+        (string ParameterName, DGField ParamField)[] CurvatureFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            //Curvature
+            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[1];
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
+            string curvatureName = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            fields[0] = (curvatureName, new SinglePhaseField(curvatureBasis, curvatureName));
+            return fields;
+        }
+
+        public static BeltramiGradientAndCurvature CreateFrom(XNSE_Control control, string levelSetName, int m_HMForder, int D)
+        {
+            string curvature = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            int curvatureDegree;
+            if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts))
             {
-                (name, curvature)
-            };
+                curvatureDegree = opts.Degree;
+            }
+            else
+            {
+                curvatureDegree = 1;
+            }
+            string levelSet = levelSetName;
+            int levelSetDegree;
+            if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
+            {
+                levelSetDegree = lsOpts.Degree * 2;
+            }
+            else
+            {
+                levelSetDegree = 1;
+            }
+            DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
+            return new BeltramiGradientAndCurvature(levelSetDegree, curvatureDegree, m_HMForder, AdvancedDiscretizationOptions, D);
+        }
+
+        (string ParameterName, DGField ParamField)[] ILevelSetParameter.ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            int paramCount = lsParameters.Length;
+            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[lsParameters.Length];
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+            Basis basis = new Basis(gridData, gradientDegree);
+            for (int i = 0; i < paramCount; ++i)
+            {
+                fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
+            }
+            return fields;
+        }
+
+        public void LevelSetParameterUpdate(
+           DualLevelSet phaseInterface,
+           LevelSetTracker lsTrkr,
+           double time,
+           IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
+            VectorField<SinglePhaseField> filtLevSetGradient;
+            CurvatureAlgorithms.CurvatureDriver(
+                AdvancedDiscretizationOptions.SST_isotropicMode,
+                AdvancedDiscretizationOptions.FilterConfiguration,
+                Curvature,
+                out filtLevSetGradient,
+                lsTrkr,
+                m_HMForder,
+                phaseInterface.DGLevelSet);
+            for (int i = 0; i < lsParameters.Length - 1; ++i)
+            {
+                ParameterVarFields[lsParameters[i]].Clear();
+                ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
+            }
         }
     }
 
@@ -342,14 +453,15 @@ namespace BoSSS.Application.XNSE_Solver
             this.dntParams = dntParams;
             this.cutCellQuadOrder = cutCellQuadOrder;
             this.dt = dt;
-            Factory = MaxSigmaFactory;
         }
+
+        public override DelParameterFactory Factory => ParameterFactory;
 
         string[] name = new string[] { BoSSS.Solution.NSECommon.VariableNames.MaxSigma };
 
         public override IList<string> ParameterNames => name;
 
-        (string ParameterName, DGField ParamField)[] MaxSigmaFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         {
             string name = BoSSS.Solution.NSECommon.VariableNames.MaxSigma;
             IGridData grid = DomainVarFields.FirstOrDefault().Value.GridDat;
@@ -358,7 +470,7 @@ namespace BoSSS.Application.XNSE_Solver
             return new (string ParameterName, DGField ParamField)[] { (name, sigmaField) };
         }
 
-        public void UpdateParameters(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             DGField sigmaMax = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MaxSigma];
 
@@ -386,6 +498,7 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
         }
+
     }
 }
 
