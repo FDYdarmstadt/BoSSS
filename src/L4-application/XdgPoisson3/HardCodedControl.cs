@@ -500,7 +500,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
             R.LinearSolver.SolverCode = solverCode;//R.solverName = "direct";
-            R.LinearSolver.MaxKrylovDim = int.MaxValue;
+            R.LinearSolver.MaxKrylovDim = 100;
 
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;

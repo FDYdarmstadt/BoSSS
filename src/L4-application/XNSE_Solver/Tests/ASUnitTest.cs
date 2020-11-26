@@ -40,26 +40,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         /// <summary>
-        /// MPI finalize.
-        /// </summary>
-        [OneTimeTearDown]
-        static public void OneTimeTearDown()
-        {
-            csMPI.Raw.mpiFinalize();
-        }
-
-        /// <summary>
-        /// MPI init.
-        /// </summary>
-        [OneTimeSetUp]
-        static public void OneTimeSetUp()
-        {
-
-            BoSSS.Solution.Application.InitMPI(new string[0]);
-            XQuadFactoryHelper.CheckQuadRules = true;
-        }
-
-        /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
         /// </summary>
         [Test]
