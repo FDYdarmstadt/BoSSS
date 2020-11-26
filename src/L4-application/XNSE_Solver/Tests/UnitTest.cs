@@ -116,6 +116,101 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
         [Test]
+        public static void ScalingStaticDropletTest_p2_Standard_OneStepGaussAndStokes() //1
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes() //2
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_FullySymmetric_OneStepGaussAndStokes() //3
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes() //4
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_Standard_Saye() //5
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_Standard_Saye() //6
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_FullySymmetric_Saye() //7
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_FullySymmetric_Saye() //8
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
         public static void ScalingStaticDropletTest(
             [Values(2, 3)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
