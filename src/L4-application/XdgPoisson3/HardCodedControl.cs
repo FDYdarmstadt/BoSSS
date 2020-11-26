@@ -464,6 +464,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode) {
             XdgPoisson3Control R = new XdgPoisson3Control();
+            //BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(5, 21, LinearSolverCode.exp_softgmres);
 
             R.ProjectName = "XdgPoisson3/Ball3D";
             R.savetodb = false;
@@ -499,6 +500,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
             R.LinearSolver.SolverCode = solverCode;//R.solverName = "direct";
+            R.LinearSolver.MaxKrylovDim = int.MaxValue;
+
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             R.penalty_multiplyer = 1.1;
