@@ -86,11 +86,14 @@ namespace BoSSS.Application.XNSE_Solver {
             ////Tests.UnitTest.MovingDropletTest(2, 1, 0.1d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8d,
             ////    ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             ////Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d); // 1.0471975511966d);
-            //Tests.UnitTest.TranspiratingChannelTest(3, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            ////Tests.UnitTest.TranspiratingChannelTest(3, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             ////Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false, 3);
             ////Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
             ////Tests.UnitTest.TestRayleighTaylorInstability();
             ////Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
+
+            //Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
+            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
 
             //return;
 

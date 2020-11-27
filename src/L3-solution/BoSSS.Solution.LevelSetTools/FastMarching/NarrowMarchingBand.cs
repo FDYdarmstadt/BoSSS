@@ -262,14 +262,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             SubGrid CCgrid = Tracker.Regions.GetCutCellSubgrid4LevSet(iLevSet);
             CellMask CC = CCgrid.VolumeMask;
-            BitArray CCBitMaskLocal = CC.GetBitMask();
-            BitArray CCBitMask = CC.GetBitMaskWithExternal();
+            BitArray CCBitMask = CC.GetBitMask();
+            //BitArray CCBitMask = CC.GetBitMaskWithExternal();
             CellMask Pos = Tracker.Regions.GetLevelSetWing(iLevSet, +1.0).VolumeMask.Except(CC);
             CellMask Neg = Tracker.Regions.GetLevelSetWing(iLevSet, -1.0).VolumeMask.Except(CC);
-            BitArray PosBitMaskLocal = Pos.GetBitMask();
-            BitArray NegBitMaskLocal = Neg.GetBitMask();
-            BitArray PosBitMask = Pos.GetBitMaskWithExternal();
-            BitArray NegBitMask = Neg.GetBitMaskWithExternal();
+            BitArray PosBitMask = Pos.GetBitMask();
+            BitArray NegBitMask = Neg.GetBitMask();
+            //BitArray PosBitMask = Pos.GetBitMaskWithExternal();
+            //BitArray NegBitMask = Neg.GetBitMaskWithExternal();
 
             SubGrid PosGrid = new SubGrid(Pos);
             SubGrid NegGrid = new SubGrid(Neg);
@@ -315,10 +315,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // -------------------------
 
 
-            //BitArray ReinitPosBitmaskLocal = new BitArray(J);
-            //BitArray ReinitNegBitmaskLocal = new BitArray(J);
-            BitArray ReinitBitmaskLocal = new BitArray(J);
-            BitArray KnownBitmaskLocal = new BitArray(J);
+            //BitArray ReinitPosBitmask = new BitArray(J);
+            //BitArray ReinitNegBitmask = new BitArray(J);
+            BitArray ReinitBitmask = new BitArray(J);
+            BitArray KnownBitmask = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
             foreach(var j in NEAR.ItemEnum) {
                 double GradNorm = 0;
@@ -332,23 +332,23 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     // the level-set field is flat (+1 or -1) in cell j
                     // it must be initialized
 
-                    if (CCBitMaskLocal[j])
+                    if (CCBitMask[j])
                         throw new ArithmeticException("Found vanishing level-set gradient on cut-cells.");
-                    if(PosBitMaskLocal[j] == NegBitMaskLocal[j])
+                    if(PosBitMask[j] == NegBitMask[j])
                         throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
 
-                    if(PosBitMaskLocal[j]) {
+                    if(PosBitMask[j]) {
                         //ReinitPosBitmaskLocal[j] = true;
-                        ReinitBitmaskLocal[j] = true;
+                        ReinitBitmask[j] = true;
                         NoOfPosReinit++;
                     }
-                    if(NegBitMaskLocal[j]) {
+                    if(NegBitMask[j]) {
                         //ReinitNegBitmaskLocal[j] = true;
-                        ReinitBitmaskLocal[j] = true;
+                        ReinitBitmask[j] = true;
                         NoOfNegReinit++;
                     }
                 } else {
-                    KnownBitmaskLocal[j] = true;
+                    KnownBitmask[j] = true;
                 }
             }
 
@@ -356,56 +356,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmaskLocal);
             //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmaskLocal);
-            CellMask Reinit = new CellMask(gdat, ReinitBitmaskLocal);
-            CellMask Known = new CellMask(gdat, KnownBitmaskLocal);
-
-
-            //int JExt = gdat.Cells.Count;
-            //BitArray ReinitPosBitmask = new BitArray(JExt);
-            //BitArray ReinitNegBitmask = new BitArray(JExt);
-            //BitArray ReinitBitmask = new BitArray(JExt);
-            //BitArray KnownBitmask = new BitArray(JExt);
-
-            //NoOfPosReinit = 0; NoOfNegReinit = 0;
-            //foreach (Chunk cnk in NEAR.GetEnumerableWithExternal()) {
-            //    for (int i = 0; i < cnk.Len; i++) {
-            //        int j = i + cnk.i0;
-            //        double GradNorm = 0;
-            //        for (int d = 0; d < D; d++) {
-            //            GradNorm += LevelSetGrad[d].Coordinates.GetRow(j).L2NormPow2();
-            //        }
-
-
-            //        if (GradNorm < 1.0e-12) {
-            //            //|| (!CCBitMask[j] && (GradNorm < 0.99 || GradNorm > 1.01))) { 
-
-            //            // the level-set field is flat (+1 or -1) in cell j
-            //            // it must be initialized
-
-            //            if (CCBitMask[j])
-            //                throw new ArithmeticException("Found vanishing level-set gradient on cut-cells.");
-            //            if (PosBitMask[j] == NegBitMask[j])
-            //                throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
-
-            //            if (PosBitMask[j]) {
-            //                ReinitPosBitmask[j] = true;
-            //                ReinitBitmask[j] = true;
-            //                if (j < gdat.Cells.NoOfLocalUpdatedCells)
-            //                    NoOfPosReinit++;
-            //            }
-            //            if (NegBitMask[j]) {
-            //                ReinitNegBitmask[j] = true;
-            //                ReinitBitmask[j] = true;
-            //                if (j < gdat.Cells.NoOfLocalUpdatedCells)
-            //                    NoOfNegReinit++;
-            //            }
-            //        } else {
-            //            KnownBitmask[j] = true;
-            //        }
-            //    }
-            //}
-
-            //Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
+            CellMask Reinit = new CellMask(gdat, ReinitBitmask);
+            CellMask Known = new CellMask(gdat, KnownBitmask);
 
 
             // perform Reinitialization
@@ -460,6 +412,11 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //x0 = ConstructExtVel_GOM_CC(Tracker, ExtVel, Velocity.ToArray(), NewLevelSet, LevelSetGrad, ExtVelMin, ExtVelMax);
 
             ConstructExtVel_PDE(Tracker, CCgrid, ExtVel, Velocity.ToArray(), NewLevelSet, LevelSetGrad, ExtVelMin, ExtVelMax, HMForder);
+
+            // exchange information in external cells
+            for (int d = 0; d < D; d++) {
+                ExtVel[d].MPIExchange();
+            }
 
             // then, on the rest of the domain
             marcher.ConstructExtension(NewLevelSet, NEAR.Except(CC), CC, ExtVel, ExtVelMin, ExtVelMax, LevelSetGrad, TimestepNo, plotMarchingSteps);

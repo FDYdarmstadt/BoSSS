@@ -84,6 +84,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new ViscosityJumpTest(spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfTensionMode);
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
+
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
 
             ApplicationWithSolverTest(Tst, C);
@@ -358,10 +360,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         private static void ApplicationWithSolverTest(ITest Tst, XNSE_Control C) {
 
-            if (C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
-            {
-                Console.WriteLine($"Reminder: skipping test of {C.CutCellQuadratureType} wor now...");
+            if (Tst.SpatialDimension == 2 && C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                Console.WriteLine($"Reminder: skipping 2D test of {C.CutCellQuadratureType} for now...");
                 return;
+            }
+
+            if (Tst.SpatialDimension == 3) {
+                if (C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                    Console.WriteLine($"Reminder: skipping 3D test of {C.CutCellQuadratureType} for now...");
+                    return;
+                }
+                if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                    Console.WriteLine($"Reminder: {C.CutCellQuadratureType} changed to classic for 3D test.");
+                    C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+                }
             }
 
             using (var solver = new XNSE()) {
@@ -507,7 +519,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
+            if (D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                Console.WriteLine($"Reminder: {SurfTensionMode} changed to LaplaceBeltrami_ContactLine for 3D test.");
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            } else {
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
+            }
             C.CutCellQuadratureType = CutCellQuadratureType;
 
             // timestepping and solver

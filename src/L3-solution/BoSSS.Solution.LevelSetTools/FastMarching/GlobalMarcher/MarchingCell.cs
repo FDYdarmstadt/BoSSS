@@ -47,6 +47,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         static int[] queueIDList;
         static SinglePhaseField phi;
         static GridData gridDat;
+        static int[][] extCellNeighbours;
 
         int jCell;
         MarchingCell[] neighbors = null;
@@ -62,7 +63,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         }
 
         //General information
-        public static void Initialize(ILocalSolver FMSolver, SinglePhaseField Phi, GridData GridDat, CellMask ReinitField) {
+        public static void Initialize(ILocalSolver FMSolver, SinglePhaseField Phi, GridData GridDat, CellMask ReinitField, int[][] _extCellNeighbours) {
             phi = Phi;
             fMSolver = FMSolver;
             phi = Phi;
@@ -75,6 +76,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             }
             //reinitPart = new Partitioning(J);
             queueIDList = new int[J];
+            extCellNeighbours = _extCellNeighbours;
         }
 
         //Create an array of Cells from the Accepted CellMask. 
@@ -130,13 +132,8 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
                     if (jCell < LocalLength) {
                         Tuple<int, int, int>[] getCellNeighbors = gridDat.GetCellNeighboursViaEdges(jCell);
                         bosssNeighbors = getCellNeighbors.Select(tpl => tpl.Item1).ToArray();
-                    } else {    // get cell neighbors for external cells 
-                        throw new NotImplementedException("ToDo: get neighbours of external cells");
-                        List<int> extCellneighbors = new List<int>();
-                        //long jGlob = gridDat.iParallel.GlobalIndicesExternalCells[jCell - LocalLength];
-                        //int proc = gridDat.CellPartitioning.FindProcess(jGlob);
-                        //gridDat.iLogicalCells.CellNeighbours.MPIBroadcast(proc);                       
-                        bosssNeighbors = extCellneighbors.ToArray();
+                    } else {    // get cell neighbors for external cells                     
+                        bosssNeighbors = extCellNeighbours[jCell - LocalLength];
                     }                
                     LinkedList<MarchingCell> neighborsList = new LinkedList<MarchingCell>();
                     for (int i = 0; i < bosssNeighbors.Length; ++i) {

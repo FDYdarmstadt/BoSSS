@@ -367,6 +367,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
             ) {
 
+            if (spatialDimension == 3 && periodicity) {
+                Console.WriteLine($"Reminder: check constained DG projection in 3D for periodic BC");
+                return;
+            }
+
             var Tst = new TranspiratingChannelTest(U2, periodicity, spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local); // surface tension plays no role in this test, so ignore it
             //C.SkipSolveAndEvaluateResidual = true;
@@ -558,7 +563,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = (D == 3) ? SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine : SurfTensionMode;
+            if (D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                Console.WriteLine($"Reminder: {SurfTensionMode} changed to LaplaceBeltrami_ContactLine for 3D test.");
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            } else {
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
+            }
             C.CutCellQuadratureType = CutCellQuadratureType;
 
 

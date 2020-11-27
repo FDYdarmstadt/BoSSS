@@ -290,7 +290,8 @@ namespace BoSSS.Application.XNSE_Solver
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
             {
-                levelSetDegree = lsOpts.Degree * 2;
+                var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
+                levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             }
             else
             {
@@ -390,7 +391,8 @@ namespace BoSSS.Application.XNSE_Solver
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
             {
-                levelSetDegree = lsOpts.Degree * 2;
+                var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
+                levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             }
             else
             {
