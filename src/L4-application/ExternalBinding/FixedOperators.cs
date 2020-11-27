@@ -53,7 +53,7 @@ namespace BoSSS.Application.ExternalBinding {
             var b = new Basis(grd, DgDegree);
             var map = new UnsetteledCoordinateMapping(b);
 
-            var L = new Laplace(1.3, grd.Cells.cj);
+            var L = new Laplace(1.3);
             var op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
             op.EquationComponents["c1"].Add(L);
             op.Commit();
@@ -75,16 +75,24 @@ namespace BoSSS.Application.ExternalBinding {
 
         }
 
-
+        /// <summary>
+        /// SIP-form for the Laplacian
+        /// </summary>
         class Laplace : BoSSS.Solution.NSECommon.SIPLaplace {
-            public Laplace(double penalty_const, MultidimensionalArray cj)
-                : base(penalty_const, cj, "T") //
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public Laplace(double penalty_const)
+                : base(penalty_const, "T") //
             {
                 //m_boundaryCondMap = __boundaryCondMap;
                 //m_bndFunc = m_boundaryCondMap.bndFunction["T"];
             }
 
-
+            /// <summary>
+            /// always true
+            /// </summary>
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
                 return true;
             }

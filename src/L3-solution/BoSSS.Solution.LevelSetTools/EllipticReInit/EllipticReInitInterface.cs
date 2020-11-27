@@ -61,6 +61,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
         MultidimensionalArray NegCellLengthScaleS;
         MultidimensionalArray PosCellLengthScaleS;
+        double PenaltyDegScale;
 
         /// <summary>
         /// Called by 
@@ -72,6 +73,10 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             NegCellLengthScaleS = csA.CellLengthScales;
             if(csB != null)
                 PosCellLengthScaleS = csB.CellLengthScales;
+
+            int Degree = DomainDGdeg.Max();
+            int D = csA.GrdDat.SpatialDimension;
+            PenaltyDegScale = ((double)((Degree + 1) * (Degree + D))) / ((double)D);
         }
 
 
@@ -91,7 +96,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 hmin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             }
 
-            return -2 * PenaltyBase / hmin * (uA[0]) * (vA);
+            return (-2 * PenaltyDegScale * PenaltyBase / hmin) * (uA[0]) * (vA);
 
         }
 

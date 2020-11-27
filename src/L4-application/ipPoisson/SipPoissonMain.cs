@@ -155,8 +155,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
+            //BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_Kcycle_schwarz);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
@@ -315,40 +315,15 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="L"></param>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            using (FuncTrace tr = new FuncTrace()) {
+            using(FuncTrace tr = new FuncTrace()) {
 
                 // create operator
                 // ===============
-                {
-                    double D = this.GridData.SpatialDimension;
-                    double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
-                    double penalty_factor = base.Control.penalty_poisson;
-
-                    BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
-
-                    LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
-
-                    MultidimensionalArray LengthScales;
-                    if (this.GridData is GridData) {
-                        LengthScales = ((GridData)GridData).Cells.cj;
-                    } else if (this.GridData is AggregationGridData) {
-                        LengthScales = ((AggregationGridData)GridData).AncestorGrid.Cells.cj;
-                    } else {
-                        throw new NotImplementedException();
-                    }
-
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, LengthScales, PoissonBcMap);
-
-                    LapaceIp.EquationComponents["T"].Add(flux);
-
-                    LapaceIp.Commit();
-                }
-
-
-
-                //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
-                //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
-
+                BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
+                LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
+                var flux = new ipFlux(base.Control.penalty_poisson, PoissonBcMap);
+                LapaceIp.EquationComponents["T"].Add(flux);
+                LapaceIp.Commit();
             }
         }
 
@@ -517,102 +492,6 @@ namespace BoSSS.Application.SipPoisson {
             
         }
 
-        /*
-        /// <summary>
-        /// Deprecated utility, writes matrices for spectral element method.
-        /// </summary>
-        public void WriteSEMMatrices() {
-            int kSEM; // nodes per edge
-
-            if (this.Grid.RefElements[0] is Triangle) {
-                kSEM = this.T.Basis.Degree + 1;
-            } else if (this.Grid.RefElements[0] is Square) {
-                switch (this.T.Basis.Degree) {
-                    case 2: kSEM = 2; break;
-                    case 3: kSEM = 2; break;
-                    case 4: kSEM = 3; break;
-                    case 5: kSEM = 3; break;
-                    case 6: kSEM = 4; break;
-                    default: throw new NotSupportedException();
-                }
-            } else {
-                throw new NotImplementedException();
-            }
-
-            SpecFemBasis SEM_basis = new SpecFemBasis((GridData)(this.GridData), kSEM);
-
-            SEM_basis.CellNodes[0].SaveToTextFile("NODES_SEM" + kSEM + ".txt");
-            SEM_basis.MassMatrix.SaveToTextFileSparse("MASS_SEM" + kSEM + ".txt");
-
-            var Mod2Nod = SEM_basis.GetModal2NodalOperator(this.T.Basis);
-            var Nod2Mod = SEM_basis.GetNodal2ModalOperator(this.T.Basis);
-
-            Mod2Nod.SaveToTextFileSparse("MODAL" + this.T.Basis.Degree + "_TO_NODAL" + kSEM + ".txt");
-            Nod2Mod.SaveToTextFileSparse("NODAL" + kSEM + "_TO_MODAL" + this.T.Basis.Degree + ".txt");
-
-            this.LaplaceMtx.SaveToTextFileSparse("OPERATOR" + this.T.Basis.Degree + ".txt");
-
-
-            {
-                var TEST = this.T.CloneAs();
-                TEST.Clear();
-                TEST.ProjectField((_2D)((x, y) => x * y));
-
-                int J = this.GridData.iGeomCells.Count;
-                int N = SEM_basis.NodesPerCell[0];
-                MultidimensionalArray TEST_at_NODES = MultidimensionalArray.Create(J, N);
-
-                TEST.Evaluate(0, J, SEM_basis.CellNodes[0], TEST_at_NODES);
-
-                double[] CompareAtNodes = new double[J * N];
-                Mod2Nod.SpMVpara(1.0, TEST.CoordinateVector, 0.0, CompareAtNodes);
-
-                double[] gretchen = TEST_at_NODES.ResizeShallow(J * N).To1DArray();
-
-                double fdist = GenericBlas.L2Dist(gretchen, CompareAtNodes);
-                Debug.Assert(fdist < 1.0e-8);
-
-                double[] bak = new double[TEST.Mapping.LocalLength];
-                Nod2Mod.SpMVpara(1.0, CompareAtNodes, 0.0, bak);
-
-                double hdist = GenericBlas.L2Dist(bak, TEST.CoordinateVector);
-                Debug.Assert(hdist < 1.0e-8);
-            }
-
-
-            var Scatter = SEM_basis.GetNodeScatterMatrix();
-
-            Scatter.SaveToTextFileSparse("SCATTER_SEM" + kSEM + ".txt");
-
-
-            {
-                var SEMTEST = new SpecFemField(SEM_basis);
-                var csem = SEMTEST.Coordinates;
-
-                Random r = new Random(666);
-                for (int i = 0; i < csem.GetLength(0); i++) {
-                    csem[i] = r.NextDouble();
-                }
-
-
-                var DG_TEST0 = new SinglePhaseField(SEMTEST.Basis.ContainingDGBasis);
-                var DG_TEST = this.T.CloneAs();
-                DG_TEST.Clear();
-                SEMTEST.AccToDGField(1.0, DG_TEST0);
-                DG_TEST.AccLaidBack(1.0, DG_TEST0);
-
-                double[] S2 = new double[Scatter.RowPartitioning.LocalLength];
-                double[] S3 = new double[DG_TEST.Mapping.LocalLength];
-
-                Scatter.SpMVpara(1.0, csem.To1DArray(), 0.0, S2);
-                Nod2Mod.SpMVpara(1.0, S2, 0.0, S3);
-
-                double gdist = GenericBlas.L2Dist(S3, DG_TEST.CoordinateVector);
-                Debug.Assert(gdist < 1.0e-8);
-            }
-        }
-
-        */
         /// <summary>
         /// control of mesh adaptation
         /// </summary>
@@ -721,37 +600,7 @@ namespace BoSSS.Application.SipPoisson {
             
         }
 
-        /*
-        protected void GimmeKondnumber(MultigridOperator Mgop, out double[] condests, out int[] DOFs, out int[] Level) {
-            MultigridOperator Mgop_ptr = Mgop;
-
-            List<double> _condests = new List<double>();
-            List<int> _DOFs = new List<int>();
-            List<int> _Level = new List<int>();
-
-            while (Mgop_ptr != null) {
-                BatchmodeConnector bmc = new BatchmodeConnector();
-                //MultidimensionalArray cond = MultidimensionalArray.Create(1, 1);
-                MultidimensionalArray condest = MultidimensionalArray.Create(1, 1);
-
-                //bmc.PutSparseMatrix(Mgop_ptr.OperatorMatrix.ToMsrMatrix(), "Matrix_A");
-                //bmc.Cmd("m_condest=condest(Matrix_A)");
-                //bmc.GetMatrix(condest, "m_condest");
-                //bmc.Execute(false);
-
-                _condests.Add(condest[0, 0]);
-                _DOFs.Add(Mgop_ptr.Mapping.LocalLength.MPISum());
-                _Level.Add(Mgop_ptr.LevelIndex);
-
-                Mgop_ptr = Mgop_ptr.CoarserLevel;
-            }
-
-            condests = _condests.ToArray();
-            DOFs = _DOFs.ToArray();
-            Level = _Level.ToArray();
-        }
-        */
-
+        
         /// <summary>
         /// Single run of the solver
         /// </summary>
@@ -937,26 +786,6 @@ namespace BoSSS.Application.SipPoisson {
             }
 
         }
-
-        /*
-        private string m_AnalyseOutputpath;
-
-        private string AnalyseOutputpath {
-            get {
-                return m_AnalyseOutputpath;
-            }
-            set {
-                if (!Directory.Exists(value))
-                {
-                    m_AnalyseOutputpath = String.Concat(Directory.GetCurrentDirectory(), @"\");
-                }
-                else
-                {
-                    m_AnalyseOutputpath = value;
-                }
-            }
-        }
-        */
 
         /// <summary>
         /// Solution of the system
@@ -1181,8 +1010,8 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     class ipFlux : BoSSS.Solution.NSECommon.SIPLaplace {
 
-        public ipFlux(double penalty_const, MultidimensionalArray cj, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-            : base(penalty_const, cj, "T") //
+        public ipFlux(double penalty_const, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+            : base(penalty_const, "T") //
         {
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap.bndFunction["T"];
