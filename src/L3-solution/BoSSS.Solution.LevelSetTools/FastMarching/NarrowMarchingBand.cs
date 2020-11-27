@@ -14,31 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.LevelSetTools.Smoothing;
+using BoSSS.Solution.Timestepping;
+using ilPSP;
+using ilPSP.LinSolvers;
+using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.XDG;
-using BoSSS.Platform;
-using BoSSS.Solution.LevelSetTools.Smoothing;
-using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.Timestepping;
-using BoSSS.Solution.Utils;
-using ilPSP;
-using ilPSP.Connectors.Matlab;
-using ilPSP.LinSolvers;
-using ilPSP.Utils;
-using MPI.Wrappers;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Solution.LevelSetTools.Advection {
-    
+
     /// <summary>
     /// Extension Velocity by a particle method.
     /// </summary>
@@ -353,6 +349,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             }
 
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
+            bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
 
             //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmaskLocal);
             //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmaskLocal);
@@ -363,14 +360,26 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // perform Reinitialization
             // ------------------------
 
-            Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_beforeReinit", 0.0, 2);
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
+
+
             var marcher = new Reinit.FastMarch.FastMarchReinit(NewLevelSet.Basis);
 
             marcher.AvgInit(NewLevelSet, Known);
 
-            if (NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0) {
+            if (reinitialize) {
                 CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
                 marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, Reinit);
+                OldLevSet.Clear(Reinit);
+                OldLevSet.Acc(1.0, NewLevelSet, Reinit);
+            }
+
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
             //if (NoOfPosReinit.MPISum() > 0)
@@ -379,18 +388,13 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //    marcher.Reinitialize(NewLevelSet, ReinitNeg, -1, Known, LevelSetGrad, null);
 
             // save reinit at OLD levelset, to prevent doing it multiple times
-            OldLevSet.Clear(Reinit);
-            OldLevSet.Acc(1.0, NewLevelSet, Reinit);
             //OldLevSet.Clear(ReinitPos);
             //OldLevSet.Clear(ReinitNeg);
             //OldLevSet.Acc(1.0, NewLevelSet, ReinitPos);
             //OldLevSet.Acc(1.0, NewLevelSet, ReinitNeg);
 
-
-            Tecplot.Tecplot.PlotFields(new DGField[] { OldLevSet, NewLevelSet }, "NarrowMarchingBand_afterReinit", 0.0, 2);
-
             // bring gradient up to date
-            marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);
+            marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);    
 
 
             // compute velocity extension
@@ -418,8 +422,23 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 ExtVel[d].MPIExchange();
             }
 
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 2 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
+
             // then, on the rest of the domain
-            marcher.ConstructExtension(NewLevelSet, NEAR.Except(CC), CC, ExtVel, ExtVelMin, ExtVelMax, LevelSetGrad, TimestepNo, plotMarchingSteps);
+            marcher.ConstructExtension(NewLevelSet, NEAR.Except(CC), CC, ExtVel, ExtVelMin, ExtVelMax, LevelSetGrad, TimestepNo, (gdat.MpiSize > 1) ? false : plotMarchingSteps);
+
+            // exchange information in external cells
+            //for (int d = 0; d < D; d++) {
+            //    ExtVel[d].MPIExchange();
+            //}
+
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 3 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>( ExtVel, NewLevelSet ), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
 
 
             // construct via PDE all cells at once
@@ -459,6 +478,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             }
 
 
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 4 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
+
+
             // penalization
             // ============
             if (penalization != JumpPenalization.jumpPenalizationTerms.None) {
@@ -466,7 +491,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 jp.ImplicitEuler(dt * 0.001, NEARgrid, NewLevelSet);
             }
 
-            if(NoOfNegReinit > 0 || NoOfPosReinit > 0)
+
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 5 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
+
+
+            if (NoOfNegReinit > 0 || NoOfPosReinit > 0)
                 return true;
             else 
                 return false;
@@ -520,18 +552,19 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm());
             TimeEvoOp.Commit();
 
-            RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.TVD3, TimeEvoOp,
+            RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.ExplicitEuler, TimeEvoOp,
                 LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel)), sgrd: NEARgrid);
 
             RunschCjuda.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {
                 marcher.GradientUpdate(NEARgrid, LevelSet, LevelSetGrad);
+                //Console.WriteLine("marcher gradient update (ExplicitEuler)");
             };
 
             double dt_CFL = gdat.ComputeCFLTime(ExtVel.ToArray(), 10000, NEARgrid.VolumeMask);
             dt_CFL *= 1.0 / (((double)(LevelSet.Basis.Degree)).Pow2());
             if (dt / dt_CFL >= 1.0) {
                 Console.WriteLine(" Warning: exceeding Level-Set CFL: dt = {0:e4}, dt_CFL = {1:e4}, frac = {2:e4}", dt, dt_CFL, dt / dt_CFL);
-                //throw new ArithmeticException("Levelset CFL exceeded");
+                throw new ArithmeticException("Levelset CFL exceeded");
             }
 
             RunschCjuda.Perform(dt);

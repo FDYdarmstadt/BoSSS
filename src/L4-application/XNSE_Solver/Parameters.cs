@@ -399,7 +399,7 @@ namespace BoSSS.Application.XNSE_Solver
                 levelSetDegree = 1;
             }
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
-            return new BeltramiGradientAndCurvature(levelSetDegree, curvatureDegree, m_HMForder, AdvancedDiscretizationOptions, D);
+            return new BeltramiGradientAndCurvature(curvatureDegree, levelSetDegree, m_HMForder, AdvancedDiscretizationOptions, D);
         }
 
         (string ParameterName, DGField ParamField)[] ILevelSetParameter.ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
@@ -407,10 +407,16 @@ namespace BoSSS.Application.XNSE_Solver
             int paramCount = lsParameters.Length;
             (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[lsParameters.Length];
             IGridData gridData = DomainVarFields.First().Value.GridDat;
-            Basis basis = new Basis(gridData, gradientDegree);
+            //Basis basis = new Basis(gridData, gradientDegree);
             for (int i = 0; i < paramCount; ++i)
             {
-                fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
+                if (i == 2) {
+                    Basis basis = new Basis(gridData, curvatureDegree);
+                    fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
+                } else {
+                    Basis basis = new Basis(gridData, gradientDegree);
+                    fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
+                }
             }
             return fields;
         }

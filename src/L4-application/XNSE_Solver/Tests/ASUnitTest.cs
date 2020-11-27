@@ -510,7 +510,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             if (Tst.SpatialDimension == 3) {
-                if (C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                     Console.WriteLine($"Reminder: skipping 3D test of {C.CutCellQuadratureType} for now...");
                     return;
                 }

@@ -532,49 +532,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
-        /// </summary>
-        [Test]
-        public static void MovingDroplet3DTest(
-#if DEBUG
-            [Values(3)] int spatialDimension,
-            [Values(1)] int deg,
-            [Values(0.1)] double AgglomerationTreshold,
-            [Values(true)] bool performsolve,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
-            [Values(0.8)] double Radius,
-            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(true)] bool bSteady,
-            [Values(false)] bool includeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
-#else
-            [Values(3)] int spatialDimension,
-            [Values(2, 3)] int deg,
-            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
-            [Values(true)] bool performsolve,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
-            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
-            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(true)] bool bSteady,
-            [Values(false)] bool includeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
-#endif
-            ) {
-
-            if (deg == 3 && AgglomerationTreshold <= 0.01)
-                return;
-
-            var Tst = new MovingDropletTest(Radius, includeConvection, bSteady, spatialDimension);
-
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm,
-                CutCellQuadratureType: CutCellQuadratureType, GridResolution: (spatialDimension == 2) ? 2 : 1);
-            C.SkipSolveAndEvaluateResidual = !performsolve;
-
-            GenericTest(Tst, C);
-        }
-
-
-        /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>
         [Test]
@@ -668,7 +625,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             if (Tst.SpatialDimension == 3) {
-                if (C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                     Console.WriteLine($"Reminder: skipping 3D test of {C.CutCellQuadratureType} for now...");
                     return;
                 }

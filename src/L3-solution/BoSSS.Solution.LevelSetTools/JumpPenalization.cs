@@ -397,7 +397,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
             for (int idx = 0; idx < SubVecIdxLoc.Length; idx++) {
                 SubVecIdxLoc[idx] = Map.TransformIndexToLocal(SubVecIdx[idx]);
             }
-            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, SubVecIdxLoc, default(int[]));
+            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, default(int[]), SubVecIdxLoc);
             
             using (var solver = new PARDISOSolver()) {
                 solver.DefineMatrix(SubMtx);

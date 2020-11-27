@@ -92,8 +92,10 @@ namespace BoSSS.Application.XNSE_Solver {
             ////Tests.UnitTest.TestRayleighTaylorInstability();
             ////Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
 
-            //Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
-            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            ////Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
+            ////    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0d, false,
+            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
 
             //return;
 
