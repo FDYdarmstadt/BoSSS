@@ -48,7 +48,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        /// <param name="T_ref">Reference temperature - used in Sutherland's law.</param>
+        /// <param name="T_ref_Sutherland">Reference temperature - used in Sutherland's law.</param>
         /// <param name="MatParamsMode">The selected material parameter mode.</param>
         /// <param name="rhoOne"></param>
         /// <param name="Q"></param>
@@ -60,8 +60,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         /// <param name="Prandtl"></param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
-        public MaterialLawCombustion(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
-            : base(T_ref, MatParamsMode, rhoOne, Prandtl) {
+        public MaterialLawCombustion(double T_ref_Sutherland, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
+            : base(T_ref_Sutherland, MatParamsMode, rhoOne, Prandtl) {
             this.MatParamsMode = MatParamsMode;
             this.Prandtl = Prandtl;
             this.MolarMasses = MolarMasses;
