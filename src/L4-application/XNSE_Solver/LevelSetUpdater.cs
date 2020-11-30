@@ -59,7 +59,7 @@ namespace BoSSS.Application.XNSE_Solver
                 levelSet.Basis,
                 dgLevelSet.Basis,
                 BackgroundGrid,
-                ContinuityProjectionOption.SpecFEM);
+                ContinuityProjectionOption.ConstrainedDG);
             enforcers = new ContinuityProjection[]
             {
                 enforcer
@@ -99,6 +99,7 @@ namespace BoSSS.Application.XNSE_Solver
             bool incremental) 
         {
             SetCurrentInterfaces(currentInterfaces, Tracker);
+            var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
             for (int i = 0; i < currentInterfaces.Length; ++i)
             {
@@ -115,7 +116,7 @@ namespace BoSSS.Application.XNSE_Solver
                         enforcer,
                         singleInterface,
                         DomainVarFields,
-                        ParameterVarFields,
+                        InnerParameterFields,
                         time,
                         dt,
                         underRelax,

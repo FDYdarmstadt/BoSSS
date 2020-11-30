@@ -1,5 +1,6 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
@@ -14,11 +15,13 @@ using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using ilPSP.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static BoSSS.Foundation.SpatialOperator;
 
 namespace BoSSS.Application.XNSE_Solver {
     class XHeat : XCommon<XNSE_Control> {
@@ -85,20 +88,45 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             ThermalMultiphaseBoundaryCondMap boundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
-            XHeatOperatorProvider.SetOperatorEquations(D, opFactory, QuadOrder(), boundaryMap, this.lsUpdater, this.Control, config);         
+            XHeatOperatorProvider.SetOperatorEquations(D, opFactory, QuadOrder(), boundaryMap, this.lsUpdater, this.Control, config);
         }
 
         public override void SetOperatorParameter(int D, OperatorFactory opFactory) {
 
+            opFactory.SetCoefficient(XHeatCoefficients);
+
             XHeatOperatorProvider.SetOperatorParameter(D, opFactory, QuadOrder(), null, this.lsUpdater, this.Control, null);
 
+        }
+        private CoefficientSet XHeatCoefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time){
+
+            var r = new CoefficientSet() {
+                GrdDat = lstrk.GridDat
+            };
+            var g = lstrk.GridDat;
+            if (g is Foundation.Grid.Classic.GridData cgdat) {
+                r.CellLengthScales = cgdat.Cells.CellLengthScale;
+                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
+
+            } else {
+                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
+            }
+
+            //Console.WriteLine("Heat configured without Evaporation and no fixed Interface Temperature");
+            BitArray EvapMicroRegion = lstrk.GridDat.GetBoundaryCells().GetBitMask();
+            EvapMicroRegion.SetAll(true);
+            r.UserDefinedValues["EvapMicroRegion"] = EvapMicroRegion;
+
+            return r;
         }
 
         public override void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory) {
             XOP = opFactory.GetSpatialOperator(QuadOrder());
+
             //final settings
             XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.Commit();
-        }
+        }        
+
     }
 }

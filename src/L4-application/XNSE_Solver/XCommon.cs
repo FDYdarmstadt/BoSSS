@@ -136,6 +136,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             var parameterFields = Timestepping.Parameters;
+
             var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
             for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);

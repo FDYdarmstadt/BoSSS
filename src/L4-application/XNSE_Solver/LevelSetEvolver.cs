@@ -78,11 +78,22 @@ namespace BoSSS.Application.XNSE_Solver
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             //Mean Velocity
-            XDGField[] EvoVelocity = new XDGField[]
-            {
-                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
-                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
-            };
+            XDGField[] EvoVelocity;
+            try {
+                EvoVelocity = new XDGField[]
+                {
+                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
+                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
+                };
+            } catch (KeyNotFoundException e) {
+                Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                EvoVelocity = new XDGField[]
+                {                    
+                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X],
+                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Y],
+                };
+            }
+
             ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(EvoVelocity, lsTrkr, Control);
 
             SinglePhaseField[] filtLevSetGradientArrray = new SinglePhaseField[]
@@ -98,7 +109,13 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 int D = lsTrkr.GridDat.SpatialDimension;
                 extensionVelocity = new SinglePhaseField[D];
-                Basis basis = new Basis(lsTrkr.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
+                Basis basis;
+                try {
+                    basis = new Basis(lsTrkr.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
+                } catch (KeyNotFoundException e) {
+                    Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                    basis = new Basis(lsTrkr.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
+                }
                 for (int d = 0; d < D; ++d)
                 {
                     extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity" + d);
