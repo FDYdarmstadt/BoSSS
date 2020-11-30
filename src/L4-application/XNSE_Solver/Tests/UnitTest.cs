@@ -625,14 +625,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             if (Tst.SpatialDimension == 3) {
-                if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
-                    Console.WriteLine($"Reminder: skipping 3D test of {C.CutCellQuadratureType} for now...");
-                    return;
-                }
-                if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                    Console.WriteLine($"Reminder: {C.CutCellQuadratureType} changed to classic for 3D test.");
-                    C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
-                }
+                Console.WriteLine($"Reminder: skipping 3D test for now...");
+                //if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                //    Console.WriteLine($"Reminder: skipping 3D test of {C.CutCellQuadratureType} for now...");
+                //    return;
+                //}
+                //if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                //    Console.WriteLine($"Reminder: {C.CutCellQuadratureType} changed to classic for 3D test.");
+                //    C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+                //}
             }
 
             using(var solver = new XNSE_SolverMain()) {

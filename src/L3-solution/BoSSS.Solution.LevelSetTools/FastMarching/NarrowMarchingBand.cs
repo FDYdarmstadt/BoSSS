@@ -1075,7 +1075,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 VectorField<SinglePhaseField> meanLevSetGrad = new VectorField<SinglePhaseField>(D, new Basis(grdDat, 0), SinglePhaseField.Factory);
                 meanLevSetGrad.AccLaidBack(1.0, LevSetGrad, subMask);
-                
+
+                for (int d = 0; d < D; d++) {
+                    meanLevSetGrad[d].MPIExchange();
+                }
 
                 // quadrature schemes
                 //var SchHelper = new XQuadSchemeHelper(Tracker, HMFversion, Tracker.SpeciesIdS.ToArray());
@@ -1120,7 +1123,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     mtxBuilder.CellLengthScales.Add(Tracker.GetSpeciesId("A"), dummy.CellLengthScales[Tracker.GetSpeciesId("A")]);
 
                     mtxBuilder.time = 0;
-                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.MPITtransceive = false;
                     if(d != 0)
                         mtxBuilder.ComputeAffine(AffineOffset: ExtVelRHS[d]);
                     else 
