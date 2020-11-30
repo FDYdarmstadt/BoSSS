@@ -268,13 +268,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
                     MassMatrix.AccEyeSp(1.0);
                 } else {
-                    if(TemporalOperator is ConstantXTemporalOperator cxt) {
-                        cxt.SetTrackerHack(this.m_LsTrk);
-                    }
+                    if(TemporalOperator != null) {
+                        if(TemporalOperator is ConstantXTemporalOperator cxt) {
+                            cxt.SetTrackerHack(this.m_LsTrk);
+                        }
 
-                    var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
-                    builder.time = time;
-                    builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
+                        var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
+                        builder.time = time;
+                        builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
+                    } else {
+                        Console.Error.WriteLine("Warning: no temporal operator specified: any result will always be steady-state.");
+                    }
                 }
             }
         }
@@ -309,8 +313,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
                     return true;
 
-                //if (Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeAndSolutionDependent)
-                //    return true;
+                if (Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeAndSolutionDependent)
+                    return true;
 
                 return false;
             }
