@@ -39,23 +39,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     static public partial class UnitTest {
 
 
-        /// <summary>
-        /// MPI finalize.
-        /// </summary>
-        [OneTimeTearDown]
-        static public void OneTimeTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
-
-        /// <summary>
-        /// MPI init.
-        /// </summary>
-        [OneTimeSetUp]
-        static public void OneTimeSetUp() {
-
-            BoSSS.Solution.Application.InitMPI(new string[0]);
-            XQuadFactoryHelper.CheckQuadRules = true;
-        }
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
@@ -133,6 +116,101 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
         [Test]
+        public static void ScalingStaticDropletTest_p2_Standard_OneStepGaussAndStokes() //1
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes() //2
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_FullySymmetric_OneStepGaussAndStokes() //3
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes() //4
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_Standard_Saye() //5
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_Standard_Saye() //6
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_FullySymmetric_Saye() //7
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_FullySymmetric_Saye() //8
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
         public static void ScalingStaticDropletTest(
             [Values(2, 3)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
@@ -217,12 +295,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
+#if DEBUG
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
         [Test]
-        public static void MovingDropletTest(
-#if DEBUG
+        public static void MovingDropletTest_debug(
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(true)] bool performsolve,
@@ -232,19 +310,184 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(true)] bool bSteady,
             [Values(false)] bool includeConvection,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
-#else
-            [Values(2, 3)] int deg,
+            ) //
+        {
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        }
+#else 
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p2_OneStepGaussAndStokes_Standard(
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
             [Values(true)] bool performsolve,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
             [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
-            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(true)] bool bSteady,
-            [Values(false)] bool includeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
-            
+            [Values(false)] bool includeConvection
+            )//1
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p3_OneStepGaussAndStokes_Standard(
+            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+            )//2
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        }
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p2_Saye_Standard(
+            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+            )//3
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p3_Saye_Standard(
+            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+            )//4
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(
+            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+            )//5
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric(
+            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+            )//6
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        }
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p2_Saye_FullySymmetric(
+            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+            )//7
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void MovingDropletTest_rel_p3_Saye_FullySymmetric(
+            [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
+            [Values(true)] bool performsolve,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.85984)] double Radius,
+            [Values(true)] bool bSteady,
+            [Values(false)] bool includeConvection
+            )//8
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
+        }
 #endif
-            ) {
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
+        /// </summary>
+        public static void MovingDropletTest(
+            int deg, double AgglomerationTreshold,
+            bool performsolve,
+            SurfaceStressTensor_IsotropicMode stm,
+            double Radius,
+            ViscosityMode vmode,
+            bool bSteady,
+            bool includeConvection,
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType) //
+       {
 
             if(deg == 3 && AgglomerationTreshold <= 0.01)
                 return;

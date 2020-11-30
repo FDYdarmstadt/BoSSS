@@ -36,8 +36,11 @@ namespace NSE_SIMPLE {
         public IP1_PressureCorrectionOperator(UnsetteledCoordinateMapping PressureMapping, SolverConfiguration SolverConf)
             : base(PressureMapping, PressureMapping, null, SolverConf, true) { }
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
-            return (new IP1_Flux_PressureCorrection(SolverConf.PenaltyPressureCorrection, base.GridData.Cells.cj, SolverConf.BcMap)).Operator();
+            return (new IP1_Flux_PressureCorrection(SolverConf.PenaltyPressureCorrection, SolverConf.BcMap)).Operator();
         }
     }
 }

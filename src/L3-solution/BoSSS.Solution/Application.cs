@@ -326,6 +326,8 @@ namespace BoSSS.Solution {
                     else
                         Console.WriteLine("Running with " + size + " MPI processes ");
 
+                    Console.WriteLine("User: " + System.Environment.UserName);
+
                     using (var stw = new StringWriter()) {
                         var HostName = ilPSP.Environment.MPIEnv.AllHostNames;
                         int I = HostName.Count;

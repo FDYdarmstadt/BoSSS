@@ -100,6 +100,7 @@ namespace BoSSS.Application.XNSE_Solver
             bool incremental) 
         {
             SetCurrentInterfaces(currentInterfaces, Tracker);
+            var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
             for (int i = 0; i < currentInterfaces.Length; ++i)
             {
@@ -116,7 +117,7 @@ namespace BoSSS.Application.XNSE_Solver
                         enforcer,
                         singleInterface,
                         DomainVarFields,
-                        ParameterVarFields,
+                        InnerParameterFields,
                         time,
                         dt,
                         underRelax,
@@ -157,7 +158,6 @@ namespace BoSSS.Application.XNSE_Solver
             bool incremental)
         {
             LevelSet dglsBkUp = null;
-            IReadOnlyDictionary<string, DGField> combinedParameters = Combine(ParameterVarFields, lsParameterFields);
             if (underRelax < 1.0)
             {
                 dglsBkUp = phaseInterface.DGLevelSet.CloneAs();
@@ -169,8 +169,8 @@ namespace BoSSS.Application.XNSE_Solver
                 time, 
                 dt,
                 incremental,
-                DomainVarFields,
-                combinedParameters);
+                DomainVarFields, 
+                ParameterVarFields);
             
             //UnderRelax
             if (underRelax < 1.0)

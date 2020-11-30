@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
@@ -182,8 +183,8 @@ namespace AdvancedSolverTests {
     public class XLaplace_Bulk : BoSSS.Solution.NSECommon.SIPLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient
     {
 
-        public XLaplace_Bulk(LevelSetTracker __LsTrk, double _muA, double _muB,double __penatly_baseFactor, string n, MultidimensionalArray LenScales)
-            : base(__penatly_baseFactor, LenScales, n) {
+        public XLaplace_Bulk(double _muA, double _muB, double __penatly_baseFactor, string n)
+            : base(__penatly_baseFactor, n) {
             muA = _muA;
             muB = _muB;
             base.m_alpha = 1.0;
@@ -191,20 +192,16 @@ namespace AdvancedSolverTests {
             BC.g_Diri = ((CommonParamsBnd inp) => 0.0);
             BC.IsDirichlet = (inp => true);
             this.boundaries = BC;
-            this.LsTrk = __LsTrk;
             this.penatly_baseFactor = __penatly_baseFactor;
             this.m_Mode = XLaplace_Interface.Mode.SIP;
-            this.m_LenScales = LenScales;
         }
 
         double muA;
         double muB;
         SpeciesId SpcId;
-        LevelSetTracker LsTrk;
         double penatly_baseFactor;
         XLaplace_Interface.Mode m_Mode;
-        MultidimensionalArray m_LenScales;
-
+        
         string current_species;
 
         public void SetParameter(string speciesName, SpeciesId __SpcId) {
@@ -237,14 +234,7 @@ namespace AdvancedSolverTests {
         }
 
         double GetPenalty(ref CommonParams inp) {
-            double penaltySizeFactor_A = 1.0 / this.m_LenScales[inp.jCellIn];
-            double penaltySizeFactor_B = 1.0 / this.m_LenScales[inp.jCellOut];
-            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
-            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
-            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
-
+            double mu = base.GetPenalty(inp.jCellIn, inp.jCellOut);
 
             double penalty_muFactor;
             switch (this.m_Mode) {
@@ -258,8 +248,9 @@ namespace AdvancedSolverTests {
                     throw new NotImplementedException();
             }
 
-            return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            return mu * penalty_muFactor;
         }
+
 
 
         override public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
@@ -325,18 +316,18 @@ namespace AdvancedSolverTests {
 
         protected LevelSetTracker m_LsTrk;
 
-        public XLaplace_Interface(LevelSetTracker lstrk, double _muA, double _muB, double __penatly_baseFactor, string varname, MultidimensionalArray LenScales) {
+        public XLaplace_Interface(LevelSetTracker lstrk, double _muA, double _muB, double __penatly_baseFactor, string varname) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.penatly_baseFactor = __penatly_baseFactor;
             this.m_mode = XLaplace_Interface.Mode.SIP;
             this.m_varname = varname;
-            this.LengthScaleS = LenScales;
+
         }
 
 
-        private MultidimensionalArray LengthScaleS;
+
         protected double muA;
         protected double muB;
         protected double penatly_baseFactor;
@@ -375,10 +366,30 @@ namespace AdvancedSolverTests {
             return Ret;
         }
 
+        MultidimensionalArray NegLengthScaleS, PosLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegLengthScaleS = csA.CellLengthScales;
+            PosLengthScaleS = csB.CellLengthScales;
+
+            double _p = DomainDGdeg.Max();
+            double _D = csA.GrdDat.SpatialDimension;
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
+
+        }
+
+        /// <summary>
+        /// penalty degree multiplier
+        /// </summary>
+        double m_penalty_deg;
+        
         protected double GetPenalty(ref CommonParams inp) {
 
-            double PosCellLengthScale = LengthScaleS[inp.jCellOut];
-            double NegCellLengthScale = LengthScaleS[inp.jCellIn];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double penaltySizeFactor_A = 1.0 / NegCellLengthScale;
             double penaltySizeFactor_B = 1.0 / PosCellLengthScale;
@@ -405,7 +416,10 @@ namespace AdvancedSolverTests {
                     throw new NotImplementedException();
             }
 
-            return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor * m_penalty_deg;
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("NAN/INF in penalty param");
+            return mu;
         }
 
         //List<int> cellElo = new List<int>();
@@ -433,10 +447,6 @@ namespace AdvancedSolverTests {
             }
         }
 
-        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
-            //NegLengthScaleS = csA.CellLengthScales;
-            //PosLengthScaleS = csB.CellLengthScales;
-        }
 
         public int LevelSetIndex {
             get { return 0; }

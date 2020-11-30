@@ -1,11 +1,14 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XNSECommon.Operator;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static BoSSS.Foundation.XDG.XSpatialOperatorMk2;
 
 namespace BoSSS.Application.XNSE_Solver
 {
@@ -15,10 +18,13 @@ namespace BoSSS.Application.XNSE_Solver
 
         ParameterList parameters;
 
+        DelOperatorCoefficientsProvider coefficientsProvider;
+
         public OperatorFactory()
         {
             eqSystem = new SystemOfEquations();
             parameters = new ParameterList();
+            coefficientsProvider = Coefficients;
         }
 
         public void AddEquation(SpatialEquation equation)
@@ -39,6 +45,11 @@ namespace BoSSS.Application.XNSE_Solver
         public void AddParameter(Parameter parameter)
         {
             parameters.AddParameter(parameter);
+        }
+
+        public void SetCoefficient(DelOperatorCoefficientsProvider Coeff) {
+            Console.WriteLine("Warning overriding default coefficients, make sure you know what you are doing, I do not!");
+            coefficientsProvider = Coeff;
         }
 
         public XSpatialOperatorMk2 GetSpatialOperator(int quadOrder)
@@ -137,10 +148,11 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
         }
+        
 
         void AddCoefficients(XSpatialOperatorMk2 spatialOperator)
         {
-            spatialOperator.OperatorCoefficientsProvider = Coefficients;
+            spatialOperator.OperatorCoefficientsProvider = coefficientsProvider;
         }
 
         CoefficientSet Coefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time)
@@ -160,6 +172,7 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
+
             return r;
         }
     }

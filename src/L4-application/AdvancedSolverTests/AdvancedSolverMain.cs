@@ -12,10 +12,10 @@ using NUnit.Framework;
 using AdvancedSolverTests.SubBlocking;
 
 namespace AdvancedSolverTests {
-    
+
     public class AdvancedSolverMain {
 
-      
+
 
         public static void Main() {
             BoSSS.Solution.Application.InitMPI();
@@ -24,8 +24,8 @@ namespace AdvancedSolverTests {
         }
 
         public static void Test() {
-            Console.WriteLine("wer hat den output eingestellt: "+ilPSP.Environment.StdoutOnlyOnRank0);
-           //SubBlockTests.LocalIndexTest(XDGusage.all,2);
+            Console.WriteLine("wer hat den output eingestellt: " + ilPSP.Environment.StdoutOnlyOnRank0);
+            //SubBlockTests.LocalIndexTest(XDGusage.all,2);
             //SubBlockTests.ExternalIndexTest(XDGusage.all, 2);
             //SubBlockTests.MapConsistencyTest(XDGusage.all, 2);
             //SubBlockTests.WriteOutTestMatrices();
@@ -51,9 +51,10 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
             //AdvancedSolverTests.SubBlocking.ExternalTests.FastSubMatrixExtraction(XDGusage.none, 2, MatrixShape.laplace, 4);
-            AdvancedSolverTests.SubBlocking.ExternalTests.VectorSplitOperation_Op2(XDGusage.all,2,   MatrixShape.full_spec,  8);
+            AdvancedSolverTests.SubBlocking.ExternalTests.VectorSplitOperation_Op2(XDGusage.all, 2, MatrixShape.full_spec, 8);
             AdvancedSolverTests.SubBlocking.ExternalTests.CompareVectorOps(XDGusage.all, 2, MatrixShape.full_spec, 8);
-                //AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
-            }
+            //AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
+        }
+
     }
 }

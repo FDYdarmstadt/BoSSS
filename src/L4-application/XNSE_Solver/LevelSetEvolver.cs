@@ -105,7 +105,6 @@ namespace BoSSS.Application.XNSE_Solver
             //Move LevelSet
             SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
 
-            phaseInterface.DGLevelSet.Clear();
             NarrowMarchingBand.Evolve_Mk2(
                 dt, lsTrkr, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
                 meanVelocity, extensionVelocity,
