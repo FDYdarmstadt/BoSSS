@@ -93,7 +93,4 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
     }
-
-
-
 }

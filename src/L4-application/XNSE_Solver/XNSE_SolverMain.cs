@@ -75,7 +75,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            /*
+            
             InitMPI();
             DeleteOldPlotFiles();
             BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
@@ -87,7 +87,7 @@ namespace BoSSS.Application.XNSE_Solver {
             BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            */
+            
 
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestRayleighTaylorInstability();

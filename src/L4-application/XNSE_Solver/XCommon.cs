@@ -17,6 +17,24 @@ using BoSSS.Solution.XNSECommon;
 namespace BoSSS.Application.XNSE_Solver {
     abstract class XCommon<T> : XdgApplicationWithSolver<T> where T : XNSE_Control, new() {
 
+        protected int VelocityDegree()
+        {
+            int pVel;
+            if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))
+            {
+                pVel = v.Degree;
+            }
+            else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1))
+            {
+                pVel = v1.Degree;
+            }
+            else
+            {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            return pVel;
+        }
+
         public abstract void SetOperatorEquations(int D, OperatorFactory opFactory);
         public abstract void SetOperatorParameter(int D, OperatorFactory opFactory);
         public virtual void SetLevelSetParameter(int D, OperatorFactory opFactory) {
@@ -27,7 +45,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
             }
 
-            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
+            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode)
+            {
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
@@ -44,8 +63,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     break;
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
                     var fourrier = new FourierEvolver(
-                        Control,
-                        QuadOrder(),
+                        "Phi",
+                        Control.FourierLevSetControl,
                         Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
                     lsUpdater.AddLevelSetParameter("Phi", fourrier);
                     lsUpdater.AddEvolver("Phi", fourrier);
@@ -109,23 +128,32 @@ namespace BoSSS.Application.XNSE_Solver {
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
-            LevelSet levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
+            int levelSetDegree = Control.FieldOptions["Phi"].Degree;
+            LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-            lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
-            switch (Control.Option_LevelSetEvolution) {
+
+            switch (Control.Option_LevelSetEvolution)
+            {
                 case LevelSetEvolution.Fourier:
-                    //Add this stuff later on
+                    if (Control.EnforceLevelSetConservation)
+                    {
+                        throw new NotSupportedException("mass conservation correction currently not supported");
+                    }
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, Control.LSContiProjectionMethod);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
                     break;
                 case LevelSetEvolution.FastMarching:
-                    var fastMarcher = new FastMarcher(Control, QuadOrder(), levelSet.GridDat.SpatialDimension);
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                    var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
                     lsUpdater.AddEvolver("Phi", fastMarcher);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
                     break;
                 case LevelSetEvolution.None:
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
                     break;
                 default:
                     throw new NotImplementedException();
             }
-
             return lsUpdater.Tracker;
         }
 
@@ -161,8 +189,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-            lsUpdater.UpdateParameters(ParameterVarsDict, 0.0);
-
+            lsUpdater.UpdateParameters(DomainVarsDict, ParameterVarsDict, 0.0);
         }                    
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

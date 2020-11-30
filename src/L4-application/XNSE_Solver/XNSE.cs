@@ -26,43 +26,24 @@ namespace BoSSS.Application.XNSE_Solver
 {
     class XNSE : XCommon<XNSE_Control>
     {
-        public override void MultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
 
-        int VelocityDegree()
-        {
-            int pVel;
-            if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))
-            {
-                pVel = v.Degree;
-            }
-            else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1))
-            {
-                pVel = v1.Degree;
-            }
-            else
-            {
-                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
-            }
-            return pVel;
-        }
 
         /// <summary>
         /// configuration options for <see cref="MultigridOperator"/>.
         /// </summary>
-        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
+        public override void MultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
         {
-            get
-            {
-                int pVel = VelocityDegree();
-                int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
-                int D = this.GridData.SpatialDimension;
+            int pVel = VelocityDegree();
+            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+            int D = this.GridData.SpatialDimension;
 
-            if (this.Control.UseSchurBlockPrec) {
+            if (this.Control.UseSchurBlockPrec)
+            {
                 // using a Schur complement for velocity & pressure
                 var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
-                for (int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++)
+                {
                     d.AddToArray(ref confMomConti.VarIndex);
                     //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
                     pVel.AddToArray(ref confMomConti.DegreeS);
@@ -74,10 +55,14 @@ namespace BoSSS.Application.XNSE_Solver
                 confMomConti.mode = MultigridOperator.Mode.SchurComplement;
 
                 configsLevel.Add(confMomConti);
-            } else {
+            }
+            else
+            {
                 // configurations for velocity
-                for (int d = 0; d < D; d++) {
-                    var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                for (int d = 0; d < D; d++)
+                {
+                    var configVel_d = new MultigridOperator.ChangeOfBasisConfig()
+                    {
                         DegreeS = new int[] { pVel },
                         //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                         mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
@@ -86,7 +71,8 @@ namespace BoSSS.Application.XNSE_Solver
                     configsLevel.Add(configVel_d);
                 }
                 // configuration for pressure
-                var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                var configPres = new MultigridOperator.ChangeOfBasisConfig()
+                {
                     DegreeS = new int[] { pPrs },
                     //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                     mode = MultigridOperator.Mode.IdMass_DropIndefinite,
@@ -94,7 +80,6 @@ namespace BoSSS.Application.XNSE_Solver
                 };
                 configsLevel.Add(configPres);
             }
-
         }
 
         protected override int QuadOrder()
