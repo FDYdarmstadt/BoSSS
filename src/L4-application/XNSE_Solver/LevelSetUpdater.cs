@@ -41,10 +41,11 @@ namespace BoSSS.Application.XNSE_Solver
 
         ContinuityProjection[] enforcers;
 
-        public LevelSetUpdater(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet)
+        public LevelSetUpdater(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, 
+            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG)
         {
             LevelSet levelSet = ContinuityProjection.CreateField(
-                    dgLevelSet, BackgroundGrid, ContinuityProjectionOption.SpecFEM);
+                    dgLevelSet, BackgroundGrid, continuityMode);
             levelSet.AccLaidBack(1.0, dgLevelSet);
             currentInterfaces = new DualLevelSet[]
             {
@@ -59,7 +60,7 @@ namespace BoSSS.Application.XNSE_Solver
                 levelSet.Basis,
                 dgLevelSet.Basis,
                 BackgroundGrid,
-                ContinuityProjectionOption.SpecFEM);
+                continuityMode);
             enforcers = new ContinuityProjection[]
             {
                 enforcer
@@ -128,7 +129,7 @@ namespace BoSSS.Application.XNSE_Solver
                     residual += levSetResidual;
                 }
             }
-            UpdateParameters(ParameterVarFields, time + dt);
+            UpdateParameters(DomainVarFields, ParameterVarFields, time + dt);
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
             return residual;
         }
@@ -156,6 +157,7 @@ namespace BoSSS.Application.XNSE_Solver
             bool incremental)
         {
             LevelSet dglsBkUp = null;
+            IReadOnlyDictionary<string, DGField> combinedParameters = Combine(ParameterVarFields, lsParameterFields);
             if (underRelax < 1.0)
             {
                 dglsBkUp = phaseInterface.DGLevelSet.CloneAs();
@@ -167,8 +169,8 @@ namespace BoSSS.Application.XNSE_Solver
                 time, 
                 dt,
                 incremental,
-                DomainVarFields, 
-                ParameterVarFields);
+                DomainVarFields,
+                combinedParameters);
             
             //UnderRelax
             if (underRelax < 1.0)
@@ -255,14 +257,17 @@ namespace BoSSS.Application.XNSE_Solver
         }
 
         public void UpdateParameters(
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields,
             double time)
         {
             IReadOnlyDictionary<string, DGField> combinedParameters = Combine(ParameterVarFields, lsParameterFields);
-            UpdateLevelSetParameters(combinedParameters, time);
+            UpdateLevelSetParameters(DomainVarFields, combinedParameters, time);
         }
 
-        void UpdateLevelSetParameters(IReadOnlyDictionary<string, DGField> combinedParameters,
+        void UpdateLevelSetParameters(
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> combinedParameters,
             double time)
         {
             for (int i = 0; i < currentInterfaces.Length; ++i)
@@ -270,7 +275,7 @@ namespace BoSSS.Application.XNSE_Solver
                 var singleInterface = currentInterfaces[i];
                 if (lsParameters.TryGetValue(singleInterface.CGLevelSet.Identification, out ICollection<ILevelSetParameter> parameters))
                 {
-                    UpdateLevelSetParameters(parameters, singleInterface, combinedParameters, time);
+                    UpdateLevelSetParameters(parameters, singleInterface, DomainVarFields, combinedParameters, time);
                 }
                 else
                 {
@@ -279,7 +284,10 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
-        void UpdateLevelSetParameters(ICollection<ILevelSetParameter> parameters, DualLevelSet levelSet, IReadOnlyDictionary<string, DGField> ParameterVarFields, double time)
+        void UpdateLevelSetParameters(
+            ICollection<ILevelSetParameter> parameters, DualLevelSet levelSet, 
+            IReadOnlyDictionary<string, DGField> DomainVarFields, 
+            IReadOnlyDictionary<string, DGField> ParameterVarFields, double time)
         {
             foreach (ILevelSetParameter parameter in parameters)
             {
@@ -287,6 +295,7 @@ namespace BoSSS.Application.XNSE_Solver
                     levelSet,
                     Tracker,
                     time,
+                    DomainVarFields,
                     ParameterVarFields);
             }
         }

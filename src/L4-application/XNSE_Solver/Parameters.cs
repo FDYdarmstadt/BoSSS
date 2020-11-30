@@ -87,7 +87,9 @@ namespace BoSSS.Application.XNSE_Solver
 
         double minvol;
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             SpeciesNames = lsTrkr.SpeciesNames;
             regions = lsTrkr.Regions;
@@ -239,7 +241,9 @@ namespace BoSSS.Application.XNSE_Solver
 
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             LevelSet Phi = levelSet.DGLevelSet;
             DGField[] Normals = new SinglePhaseField[D];
@@ -290,7 +294,7 @@ namespace BoSSS.Application.XNSE_Solver
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
             {
-                levelSetDegree = lsOpts.Degree * 2;
+                levelSetDegree = lsOpts.Degree + 1;
             }
             else
             {
@@ -318,6 +322,7 @@ namespace BoSSS.Application.XNSE_Solver
            DualLevelSet phaseInterface,
            LevelSetTracker lsTrkr,
            double time,
+           IReadOnlyDictionary<string, DGField> DomainVarFields,
            IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             //dgLevSetGradient and update curvature
@@ -348,12 +353,12 @@ namespace BoSSS.Application.XNSE_Solver
 
         int curvatureDegree;
 
-        public BeltramiGradientAndCurvature(int curvatureDegree, int degree, int m_HMForder, DoNotTouchParameters AdvancedDiscretizationOptions, int D)
+        public BeltramiGradientAndCurvature(int curvatureDegree, int gradientDegree, int m_HMForder, DoNotTouchParameters AdvancedDiscretizationOptions, int D)
         {
             lsParameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Curvature);
             this.AdvancedDiscretizationOptions = AdvancedDiscretizationOptions;
             this.m_HMForder = m_HMForder;
-            this.gradientDegree = degree;
+            this.gradientDegree = gradientDegree;
             this.curvatureDegree = curvatureDegree;
         }
 
@@ -390,14 +395,14 @@ namespace BoSSS.Application.XNSE_Solver
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
             {
-                levelSetDegree = lsOpts.Degree * 2;
+                levelSetDegree = lsOpts.Degree + 1;
             }
             else
             {
                 levelSetDegree = 1;
             }
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
-            return new BeltramiGradientAndCurvature(levelSetDegree, curvatureDegree, m_HMForder, AdvancedDiscretizationOptions, D);
+            return new BeltramiGradientAndCurvature(curvatureDegree, levelSetDegree, m_HMForder, AdvancedDiscretizationOptions, D);
         }
 
         (string ParameterName, DGField ParamField)[] ILevelSetParameter.ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
@@ -417,6 +422,7 @@ namespace BoSSS.Application.XNSE_Solver
            DualLevelSet phaseInterface,
            LevelSetTracker lsTrkr,
            double time,
+           IReadOnlyDictionary<string, DGField> DomainVarFields,
            IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
@@ -470,7 +476,8 @@ namespace BoSSS.Application.XNSE_Solver
             return new (string ParameterName, DGField ParamField)[] { (name, sigmaField) };
         }
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, 
+            IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             DGField sigmaMax = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MaxSigma];
 
@@ -499,6 +506,127 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
+    }
+
+    class LevelSetVelocity : ILevelSetParameter
+    {
+        int D;
+        
+        IList<string> parameters;
+
+        int degree;
+
+        public IList<string> ParameterNames => parameters;
+
+        XNSE_Control.InterfaceVelocityAveraging averagingMode;
+
+        PhysicalParameters physicalParameters;
+
+        public LevelSetVelocity(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters)
+        {
+            this.averagingMode = averagingMode;
+            this.physicalParameters = physicalParameters;
+            this.D = D;
+            this.degree = degree;
+            parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+        }
+
+        public void LevelSetParameterUpdate(
+            DualLevelSet levelSet, LevelSetTracker lsTrkr, double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            //Mean Velocity
+            XDGField[] EvoVelocity = new XDGField[]
+            {
+                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
+                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
+            };
+
+            int D = EvoVelocity.Length;
+            DGField[] meanVelocity;
+
+            meanVelocity = new ConventionalDGField[D];
+
+            double rho_A = physicalParameters.rho_A, rho_B = physicalParameters.rho_B;
+            double mu_A = physicalParameters.mu_A, mu_B = physicalParameters.mu_B;
+            CellMask CC = lsTrkr.Regions.GetCutCellMask4LevSet(0);
+            CellMask Neg = lsTrkr.Regions.GetLevelSetWing(0, -1).VolumeMask;
+            CellMask Pos = lsTrkr.Regions.GetLevelSetWing(0, +1).VolumeMask;
+            CellMask posNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Neg);
+            CellMask negNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Pos);
+
+            for (int d = 0; d < D; d++)
+            {
+                Basis b = EvoVelocity[d].Basis.NonX_Basis;
+                meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
+
+
+                foreach (string spc in lsTrkr.SpeciesNames)
+                {
+                    double rhoSpc;
+                    double muSpc;
+                    switch (spc)
+                    {
+                        case "A": rhoSpc = rho_A; muSpc = mu_A; break;
+                        case "B": rhoSpc = rho_B; muSpc = mu_B; break;
+                        default: throw new NotSupportedException("Unknown species name '" + spc + "'");
+                    }
+
+                    double scale = 1.0;
+                    switch (averagingMode)
+                    {
+                        case XNSE_Control.InterfaceVelocityAveraging.mean:
+                            {
+                                scale = 0.5;
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.density:
+                            {
+                                scale = rhoSpc / (rho_A + rho_B);
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.viscosity:
+                            {
+                                scale = muSpc / (mu_A + mu_B);
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseA:
+                            {
+                                scale = (spc == "A") ? 1.0 : 0.0;
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseB:
+                            {
+                                scale = (spc == "B") ? 1.0 : 0.0;
+                                break;
+                            }
+                    }
+
+                    meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
+                    switch (spc)
+                    {
+                        //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
+                        case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear); break;
+                        case "B": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear); break;
+                        default: throw new NotSupportedException("Unknown species name '" + spc + "'");
+                    }
+                }
+            }
+        }
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            var velocties = new (string, DGField)[D];
+            for (int d = 0; d < D; ++d)
+            {
+                Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
+                string paramName = ParameterNames[d];
+                DGField lsVelocity = new SinglePhaseField(basis, paramName);
+                velocties[d] = (paramName, lsVelocity);
+            }
+            return velocties;
+        }
     }
 }
 
