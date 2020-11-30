@@ -221,6 +221,9 @@ namespace BoSSS.Foundation {
                 r.CellLengthScales = cgdat.Cells.CellLengthScale;
                 r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
 
+            } else if(g is Grid.Aggregation.AggregationGridData agDat) { 
+                r.CellLengthScales =  agDat.AncestorGrid.Cells.CellLengthScale;
+                r.EdgeLengthScales =  agDat.AncestorGrid.Edges.h_min_Edge;
             } else {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }

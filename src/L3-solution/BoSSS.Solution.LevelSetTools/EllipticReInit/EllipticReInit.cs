@@ -610,7 +610,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             this.ConvergenceCriterion = Control.ConvergenceCriterion;
             this.MaxIteration = Control.MaxIt;
 
-            double PenaltyBase = ((double)((Phi.Basis.Degree + 1) * (Phi.Basis.Degree + D))) / ((double)D);
+            //double PenaltyBase = ((double)((Phi.Basis.Degree + 1) * (Phi.Basis.Degree + D))) / ((double)D);
 
 
             // Choose Forms according to Upwinding or Central Fluxes
@@ -633,8 +633,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
                 parameterFields = ArrayTools.Cat(new SinglePhaseField[] { OldPhi }, MeanLevelSetGradient.ToArray());
                 //throw new NotImplementedException("ToDO");
-                BulkForm = new EllipticReInitUpwindForm_Laplace(Control.PenaltyMultiplierFlux*PenaltyBase, LSTrck);
-                myRHSForm = new EllipticReInitUpwindForm_RHS(Control.PenaltyMultiplierFlux*PenaltyBase, LSTrck);
+                BulkForm = new EllipticReInitUpwindForm_Laplace(Control.PenaltyMultiplierFlux, LSTrck);
+                myRHSForm = new EllipticReInitUpwindForm_RHS(Control.PenaltyMultiplierFlux, LSTrck);
 
                 OldDirection = new double[MeanLevelSetGradient.CoordinateVector.ToArray().Length];
                 for (int i = 0; i < MeanLevelSetGradient.CoordinateVector.Length; i++) {
@@ -648,8 +648,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 paramNames = new string[] { };
                 noOfParamFields = 0;
                 parameterFields = new SinglePhaseField[] { };
-                BulkForm = new CentralDifferencesLHSForm(Control.PenaltyMultiplierFlux*PenaltyBase, LSTrck.GridDat.Cells.cj);
-                myRHSForm = new CentralDifferencesRHSForm(Control.PenaltyMultiplierFlux*PenaltyBase, LSTrck);
+                BulkForm = new CentralDifferencesLHSForm(Control.PenaltyMultiplierFlux);
+                myRHSForm = new CentralDifferencesRHSForm(Control.PenaltyMultiplierFlux, LSTrck);
             }
 
 
@@ -665,7 +665,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             InterfaceQuadOrder = QuadOrderFunc.FixedOrder(Phi.Basis.Degree * 2 + 2);
 
             // Generate Interface Operator
-            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface*PenaltyBase, LSTrck)).XOperator(new[] { "A", "B" }, InterfaceQuadOrder);
+            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface, LSTrck)).XOperator(new[] { "A", "B" }, InterfaceQuadOrder);
             
             // Nonlinear Part on the RHS
             // switch for the potential functions

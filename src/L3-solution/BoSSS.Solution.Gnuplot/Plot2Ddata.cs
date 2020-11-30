@@ -678,7 +678,7 @@ namespace BoSSS.Solution.Gnuplot {
         public IEnumerable<KeyValuePair<string, double>> Regression() {
             foreach (var group in dataGroups) {
                 double[] xValues;
-                if (LogX) {
+                if ((LogX && !group.UseX2) || (LogX2 && group.UseX2)) {
                     xValues = group.Abscissas.Select(x => x.Log10()).ToArray();
                 } else {
                     xValues = group.Abscissas;
@@ -686,7 +686,7 @@ namespace BoSSS.Solution.Gnuplot {
                 double xAvg = xValues.Average();
 
                 double[] yValues;
-                if (LogY) {
+                if ((LogY && !group.UseY2) || (LogY2 && group.UseY2)) {
                     yValues = group.Values.Select(y => y.Log10()).ToArray();
                 } else {
                     yValues = group.Values;
