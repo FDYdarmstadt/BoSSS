@@ -602,7 +602,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             bool _reInit = NarrowMarchingBand.Evolve_Mk2(
                              dt, this.LsTrk, DGLevSet_old, this.DGLevSet.Current, this.DGLevSetGradient,
                              meanVelocity, this.ExtensionVelocity.Current.ToArray(),
-                             this.m_HMForder, iTimestep, plotMarchingSteps: true,
+                             this.m_HMForder, iTimestep, plotMarchingSteps: false,
                              penalization: this.Control.FastMarchingPenaltyTerms);
 
                             //if (_reInit) {

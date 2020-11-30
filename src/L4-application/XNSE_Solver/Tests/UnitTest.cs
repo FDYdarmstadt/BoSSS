@@ -626,6 +626,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             if (Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
+                return;
                 //if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                 //    Console.WriteLine($"Reminder: skipping 3D test of {C.CutCellQuadratureType} for now...");
                 //    return;
