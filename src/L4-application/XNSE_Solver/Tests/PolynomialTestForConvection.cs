@@ -30,7 +30,7 @@ using ilPSP.Utils;
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
-    class PolynomialTestForConvection : ITest {
+    class PolynomialTestForConvection : IXNSETest {
 
 
          public Func<double[], double, double> GetPhi() {

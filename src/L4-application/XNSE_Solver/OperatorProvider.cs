@@ -56,7 +56,7 @@ namespace BoSSS.Application.XNSE_Solver {
         {
             //Console.WriteLine("Heat configured without Evaporation and no fixed Interface Temperature");
             BitArray EvapMicroRegion = lstrk.GridDat.GetBoundaryCells().GetBitMask();
-            EvapMicroRegion.SetAll(true);
+            EvapMicroRegion.SetAll(false);
             r.UserDefinedValues["EvapMicroRegion"] = EvapMicroRegion;
         }
 
