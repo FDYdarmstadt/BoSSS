@@ -2,7 +2,9 @@
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
+using BoSSS.Solution.NSECommon;
 using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,10 +19,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class RisingBubble2DBenchmarkQuantities : InSituPostProcessingModule<XNSE_SolverMain, XNSE_Control> {
+    public class RisingBubble2DBenchmarkQuantities : XNSEinSituPostProcessingModule {
         
         /// <summary>
-        /// Hardcoded name for the Rising bubble
+        /// hard-coded name for the Rising bubble
         /// </summary>
         protected override string LogFileName => "BenchmarkQuantities_RisingBubble";
 
@@ -28,7 +30,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// Header for the rising bubble log
         /// </summary>
         protected override void WriteHeader(TextWriter textWriter) {
-            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity");
+            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity x", "rise velocity y");
             textWriter.WriteLine(header);
             Log.Flush();
         }
@@ -36,10 +38,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <summary>
         /// compute and log
         /// </summary>
-        public override void PerformPostProcessing(int iTimestep, double PhysTime, double dt) {
-            ValueTuple<double,double,double,double,double,double> R = ComputeBenchmarkQuantities_RisingBubble();
-            
-            
+        protected override void PerformTimestepPostProcessing(int iTimestep, double PhysTime) {
+            using(new FuncTrace()) {
+                var R = ComputeBenchmarkQuantities_RisingBubble();
+                AppendToLog(iTimestep);
+                AppendToLog(PhysTime);
+                AppendToLog(R);
+
+
+                base.QueryResultTable.LogValue("area", R.area);
+                base.QueryResultTable.LogValue("yCM", R.centerY);
+                base.QueryResultTable.LogValue("circ", R.circularity);
+                base.QueryResultTable.LogValue("riseV", R.VelocityAtCenterY);
+
+            }
         }
 
 
@@ -99,7 +111,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 vqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                     for (int d = 0; d < D; d++) {
-                        this.CurrentVel[d].Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
+                        CurrentVel[d].Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
                     }
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {

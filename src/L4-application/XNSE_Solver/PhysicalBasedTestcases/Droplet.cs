@@ -68,7 +68,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SessionName = "SD_meshStudy_Hysing_mesh" + kelem; // "_AMR"+AMRlvl;
 
             C.ContinueOnIoError = false;
-            C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
+            //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
+            C.PostprocessingModules.Add(new Dropletlike() { LogPeriod = 10 });
 
             #endregion
 
@@ -446,8 +447,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Endtime = 1000;
             C.NoOfTimesteps = 1; // 12500; // (int)(125.0 / dt);
             C.saveperiod = 10;
-            C.LogPeriod = 10;
-
+            
             #endregion
 
 
@@ -489,8 +489,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             }
 
             C.ContinueOnIoError = false;
-            C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
+            //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
             //C.LogPeriod = 10;
+            C.PostprocessingModules.Add(new Dropletlike() { LogPeriod = 4 });
 
             #endregion
 
@@ -815,7 +816,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Endtime = (hysing) ? 1000 : 0.15;
             C.NoOfTimesteps = (hysing) ? 2000 : (int)(0.15 / dt);
             C.saveperiod = 10;
-            C.LogPeriod = 4;
 
             #endregion
 
@@ -841,9 +841,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.SessionName = "OD_AirWater_Kummer";
             
             C.ContinueOnIoError = false;
-            C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
+            //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
             //C.LogPeriod = 10;
-
+            C.PostprocessingModules.Add(new Dropletlike());
             #endregion
 
 
@@ -1090,8 +1090,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Endtime = 1.5;
             C.NoOfTimesteps = (int)(1.5 / dt);
             C.saveperiod = 10;
-            C.LogPeriod = 1;
-
+           
             #endregion
 
             return C;
@@ -1676,8 +1675,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
-
+            //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
+            C.PostprocessingModules.Add(new Dropletlike());
             #endregion
 
 
@@ -1780,8 +1779,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
+            
             #endregion
 
 

@@ -64,7 +64,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/RT-Instability";
 
-            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            C.PostprocessingModules.Add(new WaveLikeLogging());
             C.WriteInterfaceP = true;
 
             #endregion
@@ -1112,8 +1113,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
-
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            C.PostprocessingModules.Add(new WaveLikeLogging());
+            
             #endregion
 
             // DG degrees
@@ -1215,8 +1217,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
+            
             #endregion
 
 

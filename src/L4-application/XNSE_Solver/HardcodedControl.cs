@@ -4908,7 +4908,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.PostprocessingModules.Add(new PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities());
 
             C.savetodb = false;
             int p = 2;

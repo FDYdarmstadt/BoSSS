@@ -353,7 +353,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Current Velocity
         /// </summary>
-        XDGField[] CurrentVel {
+        public XDGField[] CurrentVel {
             get {
                 return this.XDGvelocity.Velocity.ToArray();
             }

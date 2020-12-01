@@ -1,9 +1,11 @@
 ﻿using BoSSS.Foundation.XDG;
+using ilPSP;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,6 +31,11 @@ namespace BoSSS.Solution {
         protected abstract string LogFileName {
             get;
         }
+
+        /// <summary>
+        /// if the log is a CSV-table, the character which should be used for column separation
+        /// </summary>
+        virtual protected char ColumnSeperator => '\t';
 
 
 
@@ -91,9 +98,24 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Main implementation point for the post-processing routine
+        /// Main implementation point for the post-processing routine after each time-step
         /// </summary>
-        abstract public void PerformPostProcessing(int iTimestep, double PhysTime, double dt);
+        abstract protected void PerformTimestepPostProcessing(int iTimestep, double PhysTime);
+
+        /// <summary>
+        /// Driver routine for the application to call the post-processing
+        /// </summary>
+        public void DriverTimestepPostProcessing(int iTimestep, double PhysTime) {
+            if(iTimestep % LogPeriod == 0) {
+                PerformTimestepPostProcessing(iTimestep, PhysTime);
+
+                if(Log != null && ColumnCounter > 0) {
+                    Log.WriteLine();
+                    Log.Flush();
+                    ColumnCounter = 0;
+                }
+            }
+        }
 
 
         /// <summary>
@@ -108,6 +130,62 @@ namespace BoSSS.Solution {
             }
         }
 
+        int ColumnCounter = 0;
+
+        /// <summary>
+        /// writes an integer number to the current log
+        /// </summary>
+        protected void AppendToLog(int I) {
+            if(ColumnCounter > 0)
+                Log.Write(ColumnSeperator);
+            Log.Write(I);
+            ColumnCounter++;
+        }
+
+        /// <summary>
+        /// writes a string to the current log
+        /// </summary>
+        protected void AppendToLog(string s) {
+            if(ColumnCounter > 0)
+                Log.Write(ColumnSeperator);
+            Log.Write(s);
+            ColumnCounter++;
+        }
+
+        /// <summary>
+        /// appends a floating-point number to the current log
+        /// </summary>
+        protected void AppendToLog(double d) {
+            if(ColumnCounter > 0)
+                Log.Write(ColumnSeperator);
+            Log.Write(d.ToStringDot());
+            ColumnCounter++;
+        }
+
+        /// <summary>
+        /// writes an entire collection of floating-point values to the log
+        /// </summary>
+        protected void AppendToLog(IEnumerable<double> values) {
+            foreach(var d in values)
+                AppendToLog(d);
+        }
+
+        /// <summary>
+        /// writes an entire collection of values to the log
+        /// </summary>
+        protected void AppendToLog(System.Runtime.CompilerServices.ITuple t) {
+            for(int i = 0; i < t.Length; i++) {
+                object o = t[i];
+                if(o is double d) {
+                    AppendToLog(d);
+                } else if(o is int k) {
+                    AppendToLog(k);
+                } else {
+                    AppendToLog(o.ToString());
+                }
+            }
+        }
+
 
         /// <summary>
         /// Logfile 
@@ -119,6 +197,21 @@ namespace BoSSS.Solution {
         }
 
 
+        /// <summary>
+        /// <see cref="Application{T}.QueryResultTable"/>
+        /// </summary>
+        protected QueryResultTable QueryResultTable {
+            get {
+                return SolverMain.QueryResultTable;
+            }
+        }
+
+
+        /// <summary>
+        /// Period between two logged timesteps (1 is logging every timetesp, 2 is every second...)
+        /// </summary>
+        [DataMember]
+        public int LogPeriod = 1;
 
 
     }
