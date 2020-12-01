@@ -1,4 +1,7 @@
-﻿using BoSSS.Solution.XNSECommon;
+﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Tracing;
 using System;
@@ -69,6 +72,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 if(this.mode == Mode.LineInterface)
                     posI = InterfacePoints.ExtractSubArrayShallow(-1, 1).To1DArray().Sum() / nNodes;
 
+                double EvapVelocMean = this.ComputeEvapVelocityMean();
                 double hVap = this.Control.ThermalParameters.hVap;
                 double MassFlux = EvapVelocMean * hVap;
 
@@ -100,5 +104,49 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             }
         }
+
+        ConventionalDGField[] ConstructEvaporativeVelocity(DGField[] EvoVelocity) {
+            
+            if(base.SolverMain is XNSE_SolverMain oldSolver) {
+                return oldSolver.ConstructEvaporativeVelocity(oldSolver.GetMeanVelocityFromXDGField(EvoVelocity));
+            } else if(base.SolverMain is XNSE newSolver) {
+                throw new NotImplementedException("your turn, Lauritz");
+            } else {
+                throw new NotSupportedException();
+            }
+        }
+
+        double ComputeEvapVelocityMean() {
+            double EvapVelocMean = 0.0;
+
+            var evapVelocity = ConstructEvaporativeVelocity(this.CurrentVel);
+
+            int p = evapVelocity[0].Basis.Degree;
+            SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+            NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
+
+            var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
+            MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
+            double nNodes = VelocityEval[0].Length;
+
+            if(this.mode == Mode.LineInterface) {
+                double evapVelY = VelocityEval[1].Sum() / nNodes;
+                EvapVelocMean = evapVelY;
+            } else if(this.mode == Mode.CircleInterface) {
+                EvapVelocMean = 0.0;
+                for(int s = 0; s < sgrd.GlobalNoOfCells; s++) {
+                    for(int n = 0; n < Nodes.Length; n++) {
+                        double velX = VelocityEval[0].To2DArray()[s, n];
+                        double velY = VelocityEval[1].To2DArray()[s, n];
+                        EvapVelocMean += Math.Sqrt(velX.Pow2() + velY.Pow2());
+                    }
+                }
+                EvapVelocMean /= nNodes;
+            }
+
+            return EvapVelocMean;
+        }
+
+
     }
 }

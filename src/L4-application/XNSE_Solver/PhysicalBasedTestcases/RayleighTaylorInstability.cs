@@ -66,7 +66,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
             C.PostprocessingModules.Add(new WaveLikeLogging());
-            C.WriteInterfaceP = true;
+            //C.WriteInterfaceP = true;
+            C.PostprocessingModules.Add(new InterfacePointsLogger());
 
             #endregion
 

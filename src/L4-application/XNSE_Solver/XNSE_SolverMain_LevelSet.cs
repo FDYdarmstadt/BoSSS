@@ -212,7 +212,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Information of the current Fourier Level-Set
         /// DFT_coeff
         /// </summary>
-        FourierLevSetBase Fourier_LevSet;
+        internal FourierLevSetBase Fourier_LevSet {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// specialized timestepper (Runge-Kutta-based) for the evoultion of the Fourier-LS
@@ -846,7 +849,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         /// <param name="EvoVelocity"></param>
         /// <returns></returns>
-        private ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
+        internal ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
             int D = EvoVelocity.Length;
             ConventionalDGField[] meanVelocity;
 
@@ -927,7 +930,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         /// <param name="meanVelocity"></param>
         /// <returns></returns>
-        private ConventionalDGField[] ConstructEvaporativeVelocity(DGField[] meanVelocity) {
+        internal ConventionalDGField[] ConstructEvaporativeVelocity(DGField[] meanVelocity) {
 
             ComputeMassFluxField();
             if (this.hack_TimestepIndex > 1)
@@ -1054,30 +1057,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // check interface velocity (used for logging)
-            int p = evapVelocity[0].Basis.Degree;
-            SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
-            NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
-
-            var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
-            MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
-            double nNodes = VelocityEval[0].Length;
-
-            if (this.Control.LogValues == XNSE_Control.LoggingValues.EvaporationL) {
-                double evapVelY = VelocityEval[1].Sum() / nNodes;
-                EvapVelocMean = evapVelY;
-            }
-
-            if (this.Control.LogValues == XNSE_Control.LoggingValues.EvaporationC) {
-                EvapVelocMean = 0.0;
-                for (int s = 0; s < sgrd.GlobalNoOfCells; s++) {
-                    for (int n = 0; n < Nodes.Length; n++) {
-                        double velX = VelocityEval[0].To2DArray()[s, n];
-                        double velY = VelocityEval[1].To2DArray()[s, n];
-                        EvapVelocMean += Math.Sqrt(velX.Pow2() + velY.Pow2());
-                    }
-                }
-                EvapVelocMean /= nNodes;
-            }
+            
 
             //Console.WriteLine("meanEvapVelocity = {0}", EvapVelocMean);
 
@@ -1088,6 +1068,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+       
 
         /// <summary>
         /// perform ReInit ... 

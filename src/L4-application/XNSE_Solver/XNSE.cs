@@ -108,7 +108,7 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
-        int QuadOrder()
+        internal int QuadOrder()
         {
             //QuadOrder
             int degU;

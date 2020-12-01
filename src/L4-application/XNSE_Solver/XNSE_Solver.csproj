@@ -79,9 +79,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CapillaryHeightLogging.cs" />
+    <Compile Include="ChannelFlowLogging.cs" />
     <Compile Include="Dropletlike.cs" />
     <Compile Include="Equations.cs" />
     <Compile Include="EvaporationLogging.cs" />
+    <Compile Include="FourierLevelSetLogger.cs" />
+    <Compile Include="InterfacePointsLogger.cs" />
+    <Compile Include="L2ErrorLogger.cs" />
     <Compile Include="LevelSetEvolver.cs" />
     <Compile Include="LevelSetUpdater.cs" />
     <Compile Include="MovingContactLineLogging.cs" />

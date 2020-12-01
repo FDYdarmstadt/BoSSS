@@ -18,8 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
-using System.Numerics;
 
 using ilPSP;
 using ilPSP.Connectors.Matlab;
@@ -30,33 +28,17 @@ using ilPSP.LinSolvers;
 using BoSSS.Platform;
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools;
-using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using BoSSS.Solution.LevelSetTools.EllipticReInit;
-using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
-using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Utils;
-using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Foundation.Grid.Aggregation;
 using NUnit.Framework;
 using MPI.Wrappers;
-using System.Collections;
-using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -453,7 +435,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // L2 error against exact solution
             // ====================================
 
-            this.ComputeL2Error(phystime + dt);
+            //this.ComputeL2Error(phystime + dt);
 
             // =========== 
             // check area
@@ -509,17 +491,17 @@ namespace BoSSS.Application.XNSE_Solver {
             // IO for further external postprocessing/ Query handling for Testprogram
             // ======================================================================
 
-            if (this.Control.TestMode == true) {
-                LogQueryValue(phystime + dt);
-            } else {
-                if (Log != null && this.Control.LogValues != XNSE_Control.LoggingValues.None && base.MPIRank == 0 && (TimestepNo.MajorNumber % this.Control.LogPeriod == 0))
-                    try {
-                        WriteLogLine(TimestepNo, phystime + dt);
-                    } catch (Exception e) {
-                        Console.WriteLine("An error occured during WriteLogLine: '{0}'", e);
-                    }
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            }
+            //if (this.Control.TestMode == true) {
+            //    //LogQueryValue(phystime + dt);
+            //} else {
+            //    if (Log != null && this.Control.LogValues != XNSE_Control.LoggingValues.None && base.MPIRank == 0 && (TimestepNo.MajorNumber % this.Control.LogPeriod == 0))
+            //        try {
+            //            WriteLogLine(TimestepNo, phystime + dt);
+            //        } catch (Exception e) {
+            //            Console.WriteLine("An error occurred during WriteLogLine: '{0}'", e);
+            //        }
+            //    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            //}
 
             //Console.WriteLine("Pause");
 
@@ -539,6 +521,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //==============================
         #region property computation
 
+        /*
 
         public double GetContactLineLength() {
 
@@ -587,7 +570,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-
+        */
         
 
 
@@ -607,104 +590,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        /// <summary>
-        /// Computes the L2 Error of the actual solution against the exact solution in the control object 
-        /// (<see cref="XNSE_Control.ExactSolutionVelocity"/> and <see cref="XNSE_Control.ExactSolutionPressure"/>).
-        /// </summary>
-        internal double[] ComputeL2Error(double time) {
-            int D = this.GridData.SpatialDimension;
-            double[] Ret = new double[D + 1];
-
-            if (this.Control.ExactSolutionVelocity == null && this.Control.ExactSolutionPressure == null)
-                // nothing to do
-                return Ret;
-
-            int order = 0;
-            if (LsTrk.GetCachedOrders().Count > 0) {
-                order = LsTrk.GetCachedOrders().Max();
-            } else {
-                order = 1;
-            }
-
-            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-
-
-            // Velocity error
-            // ==============
-            if (this.Control.ExactSolutionVelocity != null) {
-                Dictionary<string, double[]> L2Error_Species = new Dictionary<string, double[]>();
-                double[] L2Error = new double[D];
-
-                foreach (var spc in this.LsTrk.SpeciesNames) {
-                    L2Error_Species.Add(spc, new double[D]);
-
-                    SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
-                    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-
-
-                    for (int d = 0; d < D; d++) {
-                        ConventionalDGField Vel_d = ((XDGField)this.CurrentVel[d]).GetSpeciesShadowField(spc);
-
-                        L2Error_Species[spc][d] = Vel_d.L2Error(this.Control.ExactSolutionVelocity[spc][d].Vectorize(time), order, scheme);
-                        L2Error[d] += L2Error_Species[spc][d].Pow2();
-
-                        base.QueryHandler.ValueQuery("L2err_" + VariableNames.Velocity_d(d) + "#" + spc, L2Error_Species[spc][d], true);
-                    }
-                }
-                L2Error = L2Error.Select(x => x.Sqrt()).ToArray();
-
-                for (int d = 0; d < D; d++) {
-                    base.QueryHandler.ValueQuery("L2err_" + VariableNames.Velocity_d(d), L2Error[d], true);
-                    Ret[d] = L2Error[d];
-                }
-
-            }
-
-
-            // pressure error
-            // ==============
-            if (this.Control.ExactSolutionPressure != null) {
-
-                // pass 1: mean value of pressure difference
-                double DiffInt = 0;
-                foreach (var spc in this.LsTrk.SpeciesNames) {
-
-                    SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
-                    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                    var rule = scheme.Compile(this.GridData, order);
-
-                    DiffInt += this.Pressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b), rule);
-                    //Volume +=  this.Pressure.GetSpeciesShadowField(spc).LxError(null, (a, b) => (1.0), rule);
-                }
-                double Volume2 = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
-                double PressureDiffMean = DiffInt / Volume2;
-
-
-                double L2Error = 0;
-                Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
-
-                foreach (var spc in this.LsTrk.SpeciesNames) {
-
-                    SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
-                    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                    var rule = scheme.Compile(this.GridData, order);
-
-                    double IdV = this.Pressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b - PressureDiffMean).Pow2(), rule);
-                    L2Error += IdV;
-                    L2Error_Species.Add(spc, IdV.Sqrt());
-
-                    base.QueryHandler.ValueQuery("L2err_" + VariableNames.Pressure + "#" + spc, L2Error_Species[spc], true);
-                }
-
-
-                L2Error = L2Error.Sqrt();
-                base.QueryHandler.ValueQuery("L2err_" + VariableNames.Pressure, L2Error, true);
-                Ret[D] = L2Error;
-
-            } //*/
-
-            return Ret;
-        }
+        
 
 
         #endregion
@@ -715,6 +601,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //=========
         #region logging
 
+        
         /// <summary>
         /// saves the vector Guid for the sample points 
         /// </summary>
@@ -732,6 +619,7 @@ namespace BoSSS.Application.XNSE_Solver {
         TextWriter LogInterfaceP;
         */
 
+        /*
         /// <summary>
         /// initializes the format of the Log File
         /// </summary>
@@ -740,12 +628,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             string header;
 
-            if (this.Control.WriteInterfaceP) {
-                LogInterfaceP = base.DatabaseDriver.FsDriver.GetNewLog("InterfaceP", sessionID);
-                header = String.Format("{0}\t{1}\t{2}", "#timestep", "#time", "interfacePoints");
-                LogInterfaceP.WriteLine(header);
-                LogInterfaceP.Flush();
-            }
 
             switch (this.Control.LogValues) {
                 case XNSE_Control.LoggingValues.Wavelike: {
@@ -761,68 +643,31 @@ namespace BoSSS.Application.XNSE_Solver {
                         setUpData.Flush();
 
 
-                        // Log file for the interface height
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("Amplitude", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "time", "magnitude", "real", "imaginary");
-
-                        break;
+                        
                     }
                 
-               
-                
-                case XNSE_Control.LoggingValues.ChannelFlow: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("ChannelFlow", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "time", "U_max", "derivedKinEnergy_max", "KinEnergy_max");
-
-                        break;
-                    }
             }
 
             
         }
+        */
 
-
-        List<double[]> contactPointsRef;
 
         
+        /*
         /// <summary>
         /// writes one line to the Log File
         /// </summary>
         public void WriteLogLine(TimestepNumber TimestepNo, double phystime) {
 
-            if (this.Control.WriteInterfaceP) {
-                double[] interfaceP;
-                if (Fourier_LevSet != null) {
-                    interfaceP = Fourier_LevSet.current_interfaceP.To1DArray();
-                } else {
-                    MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                    interfaceP = interP.ResizeShallow(interP.Length).To1DArray();
-                }
-                string logline = String.Format("{0}\t{1}", TimestepNo, phystime);
-                //for (int ip = 0; ip < interfaceP.Length; ip++) {
-                //    logline = logline + "\t" + interfaceP[ip].ToString();
-                //}
-                logline = logline + "\t" + String.Join("\t", interfaceP.Select(ip => ip.ToString()).ToArray());
-                LogInterfaceP.WriteLine(logline);
-                LogInterfaceP.Flush();
-            }
+            
 
             switch (this.Control.LogValues) {
 
 
                 case XNSE_Control.LoggingValues.ChannelFlow: {
 
-                        double C_halfw = 0.5;
-
-                        double Umax = this.XDGvelocity.Velocity[0].ProbeAt(new double[]{ 1.01, C_halfw });
-                        double derivedKinEmax = 0.5 * Umax.Pow2();
-                        double KinEmax = this.KineticEnergy.ProbeAt(new double[] { 1.01, C_halfw });
-
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, Umax, derivedKinEmax, KinEmax);
-
-                        Log.WriteLine(line);
-                        Log.Flush();
+                        
 
                         break;
                     }
@@ -834,42 +679,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
         double EvapVelocMean;
 
+        /*
         /// <summary>
         /// encapsulated handling of query values
         /// </summary>
         public void LogQueryValue(double phystime) {
 
-            base.QueryResultTable.LogValue("time", phystime);
-
-            if (this.Control.WriteInterfaceP) {
-                double[] interfaceP;
-                if (Fourier_LevSet != null) {
-                    interfaceP = Fourier_LevSet.current_interfaceP.To1DArray();
-                } else {
-                    MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                    interfaceP = interP.ResizeShallow(interP.Length).To1DArray();
-                }
-
-                base.QueryResultTable.LogValue("interfaceP", interfaceP);
-
-            }
+           
 
             switch (this.Control.LogValues) {
-                case XNSE_Control.LoggingValues.Wavelike: {
-
-                        double amplitude;
-                        if (Fourier_LevSet != null) {
-                            amplitude = 2.0 * (Fourier_LevSet.DFT_coeff[1].Magnitude / Fourier_LevSet.current_samplP.Length);
-                        } else {
-                            MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                            Complex[] DFT_coeff = DiscreteFourierTransformation.TransformForward_nonequidistant(interP, this.Control.AdditionalParameters[1]);
-                            amplitude = -2.0 * DFT_coeff[1].Imaginary / (double)interP.Lengths[0];
-                            //amplitude = DiscreteFourierTransformation.SingleSidedPowerSpectrum(DFT_coeff)[1];
-                        }
-
-                        base.QueryResultTable.LogValue("amplitude", amplitude);
-                        return;
-                    }
+                
                 
 
 
@@ -891,7 +710,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
         }
-
+        //*/
 
         #endregion
 

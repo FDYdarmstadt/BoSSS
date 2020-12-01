@@ -55,7 +55,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-        (double area, double centerX, double centerY, double circularity, double VelocityAtCenterX, double VelocityAtCenterY) ComputeBenchmarkQuantities_RisingBubble() {
+        internal (double area, double centerX, double centerY, double circularity, double VelocityAtCenterX, double VelocityAtCenterY) ComputeBenchmarkQuantities_RisingBubble() {
 
             int order = 0;
             if (LsTrk.GetCachedOrders().Count > 0) {

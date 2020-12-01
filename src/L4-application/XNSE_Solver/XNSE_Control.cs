@@ -425,8 +425,12 @@ namespace BoSSS.Application.XNSE_Solver {
         */
 
 
-        public bool WriteInterfaceP = false;
+        //public bool WriteInterfaceP = false;
 
+        /// <summary>
+        /// Seems to be unused...
+        /// </summary>
+        [DataMember]
         public bool TestMode = false;
 
 

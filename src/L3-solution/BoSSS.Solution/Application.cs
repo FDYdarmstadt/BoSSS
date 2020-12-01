@@ -1279,13 +1279,15 @@ namespace BoSSS.Solution {
                 m_Database.Controller.AddGridInitializationContext(GridData);
 
                 // create fields
-                //=============
+                // =============
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
+
+                
 
                 // load queries from control file
                 //========================
@@ -1298,14 +1300,34 @@ namespace BoSSS.Solution {
                 }
                 //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
-                //save session information
-                //========================
+                // logging
+                // ==================================
+                m_PostprocessingModules.Clear();
+                if(this.Control != null && this.Control.PostprocessingModules != null) {
+                    m_PostprocessingModules.AddRange(this.Control.PostprocessingModules);
+                }
+
+                // save session information
+                // ========================
                 if (DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
                 }
             }
         }
+
+        List<InSituPostProcessingModule> m_PostprocessingModules = new List<InSituPostProcessingModule>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.PostprocessingModules"/>
+        /// </summary>
+        public IList<InSituPostProcessingModule> PostprocessingModules {
+            get {
+                return m_PostprocessingModules;
+            }
+        }
+
+
 
         /// <summary>
         /// Information about the currently active session.
@@ -1935,7 +1957,7 @@ namespace BoSSS.Solution {
         protected Boolean TerminationKey = false;
 
         /// <summary>
-        /// If the current simualation has been restarted, <see cref="TimeStepNoRestart"/>
+        /// If the current simulation has been restarted, <see cref="TimeStepNoRestart"/>
         /// is set by the method <see cref="LoadRestart(out double, out TimestepNumber)"/>.
         /// </summary>
         protected TimestepNumber TimeStepNoRestart = null;
@@ -2043,6 +2065,11 @@ namespace BoSSS.Solution {
                         tr.LogMemoryStat();
                         physTime += dt;
 
+                        
+                        foreach(var l in PostprocessingModules) {
+                            l.DriverTimestepPostProcessing(i, physTime);
+                        }
+
                         ITimestepInfo tsi = null;
 
                         if (this.BurstSave < 1) {
@@ -2083,6 +2110,11 @@ namespace BoSSS.Solution {
 
                         if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
+                    }
+
+                    // setup of logging
+                    foreach( var l in PostprocessingModules) {
+                        l.Setup(this);
                     }
 
 
@@ -2630,6 +2662,8 @@ namespace BoSSS.Solution {
                 m_ResLogger.Close();
                 m_ResLogger = null;
             }
+
+
         }
 
         /// <summary>
@@ -3108,6 +3142,10 @@ namespace BoSSS.Solution {
                     ByeInt();
                     Bye();
                     ProfilingLog();
+
+                    foreach( var l in PostprocessingModules) {
+                        l.Dispose();
+                    }
 
                     if (this.CurrentSessionInfo != null)
                         this.CurrentSessionInfo.Dispose();

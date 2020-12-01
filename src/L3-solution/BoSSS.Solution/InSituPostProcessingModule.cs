@@ -53,7 +53,11 @@ namespace BoSSS.Solution {
             this.SolverMain = solverMain;
             if(LogFileName != null) {
                 if(solverMain.CurrentSessionInfo.ID != null && !solverMain.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                    this.Log = SolverMain.DatabaseDriver.FsDriver.GetNewLog(LogFileName, solverMain.CurrentSessionInfo.ID);
+                    if(solverMain.MPIRank == 0) {
+                        this.Log = SolverMain.DatabaseDriver.FsDriver.GetNewLog(LogFileName, solverMain.CurrentSessionInfo.ID);
+                    } else {
+                        this.Log = new StreamWriter(Stream.Null);
+                    }
                 } else {
                     this.Log = new StreamWriter(LogFileName + ".txt");
                 }
@@ -206,6 +210,15 @@ namespace BoSSS.Solution {
             }
         }
 
+
+        /// <summary>
+        /// <see cref="Application{T}.QueryResultTable"/>
+        /// </summary>
+        protected Queries.QueryHandler QueryHandler {
+            get {
+                return SolverMain.QueryHandler;
+            }
+        }
 
         /// <summary>
         /// Period between two logged timesteps (1 is logging every timetesp, 2 is every second...)

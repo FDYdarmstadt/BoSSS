@@ -5,6 +5,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Tracing;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,10 +37,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             Log.Flush();
         }
 
+        
+        [JsonIgnore]
+        [NonSerialized]
+        List<double[]> contactPointsRef;
+
         /// <summary>
         /// 
         /// </summary>
-        protected override void PerformTimestepPostProcessing(int iTimestep, double PhysTime) {
+        protected override void PerformTimestepPostProcessing(int TimestepNo, double phystime) {
             using(new FuncTrace()) {
 
                 // contact angles at contact points
@@ -62,7 +68,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 if(contactPointsRef == null) {
                     contactPointsRef = contactPoints;
                     contactPointsSorted = contactPoints;
-                    contactVelocitiesSorted = contactVelocities; ;
+                    contactVelocitiesSorted = contactVelocities;
                     contactAnglesSorted = contactAngles;
                 } else {
                     // sort
@@ -112,6 +118,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
+        ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
+            if(base.SolverMain is XNSE_SolverMain oldSolver) {
+                return oldSolver.GetMeanVelocityFromXDGField(EvoVelocity);
+            } else if(base.SolverMain is XNSE newSolver) {
+                throw new NotImplementedException("your turn, Lauritz");
+            } else {
+                throw new NotSupportedException();
+            }
+
+        }
+
         
         public Tuple<List<double[]>, List<double[]>, List<double>> ComputeContactLineQuantities() {
 
@@ -150,7 +167,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
                     //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
 
-                    int D = Grid.SpatialDimension;
+                    int D = base.SolverMain.Grid.SpatialDimension;
                     for (int d = 0; d < D; d++) {
                         EvalResult[0, 0, d] = Vnode_g[0, d];
                     }
