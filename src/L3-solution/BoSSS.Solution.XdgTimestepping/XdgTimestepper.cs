@@ -194,19 +194,25 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// 
+        /// internal storage for operator (<see cref="Operator"/>) parameters
         /// </summary>
         public IList<DGField> Parameters {
             get;
             private set;
         }
 
-
+        /// <summary>
+        /// Level Set Tracker; if a standard DG operator is used, 
+        /// internally a 'dummy tracker' is initiated
+        /// </summary>
         public LevelSetTracker LsTrk {
             get;
             private set;
         }
-             
+        
+        /// <summary>
+        /// grid object
+        /// </summary>
         public IGridData GridDat {
             get {
                 return LsTrk.GridDat;
@@ -226,14 +232,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
             AggregationGridData[] _MultigridSequence = null,
             double _AgglomerationThreshold = 0.1,
-            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null) //
+            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
+            LevelSetTracker _optTracker = null) //
         {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
 
             this.Parameters = op.InvokeParameterFactory(Fields);
-            
 
+            LsTrk = _optTracker;
             foreach(var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
                 if(f != null && f is XDGField xf) {
                     if(LsTrk == null) {
@@ -276,7 +283,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             int bdfOrder;
             DecodeScheme(this.Scheme, out rksch, out bdfOrder);
 
-            SpatialOperatorType _SpatialOperatorType = SpatialOperatorType.Nonlinear;
+            SpatialOperatorType _SpatialOperatorType = op.IsLinear ? SpatialOperatorType.LinearTimeDependent : SpatialOperatorType.Nonlinear;
 
 
             int quadOrder = op.QuadOrderFunction(

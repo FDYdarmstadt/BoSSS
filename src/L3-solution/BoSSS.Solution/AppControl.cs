@@ -126,6 +126,7 @@ namespace BoSSS.Solution.Control {
             private set;
         }
 
+
         /// <summary>
         /// Adds an entry to <see cref="FieldOptions"/>.
         /// </summary>

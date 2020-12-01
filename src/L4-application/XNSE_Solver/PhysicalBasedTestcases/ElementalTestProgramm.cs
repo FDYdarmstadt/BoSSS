@@ -232,7 +232,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
 
-        [Test]
+        //[Test] Deactivated, because empty
         public static void CircleMovementTest_WithSurfaceTension(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity)]  LevelSetEvolution lsEvo,
             [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once, LevelSetHandling.Coupled_Iterative)] LevelSetHandling lsHandl,

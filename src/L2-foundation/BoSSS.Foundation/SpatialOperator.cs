@@ -80,6 +80,23 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class SpatialOperator : ISpatialOperator {
 
+
+        bool m_IsLinear;
+
+        /// <summary>
+        /// true, if the PDE defined by operator can entirely be solved by a linear solver
+        /// </summary>
+        public bool IsLinear {
+            get {
+                return m_IsLinear;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("unable to change this after operator is committed.");
+                m_IsLinear = value;
+            }
+        }
+
         /// <summary>
         /// <see cref="ISpatialOperator.SolverSafeguard"/>
         /// </summary>
@@ -221,6 +238,9 @@ namespace BoSSS.Foundation {
                 r.CellLengthScales = cgdat.Cells.CellLengthScale;
                 r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
 
+            } else if(g is Grid.Aggregation.AggregationGridData agDat) { 
+                r.CellLengthScales =  agDat.AncestorGrid.Cells.CellLengthScale;
+                r.EdgeLengthScales =  agDat.AncestorGrid.Edges.h_min_Edge;
             } else {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }

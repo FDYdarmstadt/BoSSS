@@ -326,6 +326,8 @@ namespace BoSSS.Solution {
                     else
                         Console.WriteLine("Running with " + size + " MPI processes ");
 
+                    Console.WriteLine("User: " + System.Environment.UserName);
+
                     using (var stw = new StringWriter()) {
                         var HostName = ilPSP.Environment.MPIEnv.AllHostNames;
                         int I = HostName.Count;
@@ -1787,17 +1789,22 @@ namespace BoSSS.Solution {
                     }
 
                     if (!found) {
-                        throw new ApplicationException(
+                        Console.WriteLine("Warning: " +
                             "initial value specified for a field named \"" + DesiredFieldName +
                             "\", but no field with that identification exists in context.");
                     }
                 }
 
+                if(LsTrk != null) {
+                    LsTrk.UpdateTracker(0.0);
+                    LsTrk.UpdateTracker(0.0);
+                    LsTrk.PushStacks();
+                }
+
                 // pass 2: XDG fields (after tracker update)
                 // =========================================
                 if (Pass2_Evaluators.Count > 0) {
-                    LsTrk.UpdateTracker(0.0);
-                    LsTrk.PushStacks();
+
 
                     foreach (var val in Pass2_Evaluators) {
                         string DesiredFieldName = val.Key;

@@ -282,13 +282,13 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 60) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 30) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "66b7dd59-bec7-4970-8e84-da3d368be1b5";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
-            C.IsRestart = true;
+            //string ID = "aab57672-ac36-4f82-b9f9-8e5c89cd06eb";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1000);
+            //C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -300,7 +300,7 @@ namespace BoSSS.Application.FSI_Solver {
             double particleDensity = 100;
             double activeStress = 10;
             double nextParticleDistance = 0.2;
-            double domainLength = nextParticleDistance * 9;
+            double domainLength = nextParticleDistance * 12;
             //List<string> boundaryValues = new List<string> {
             //    "Wall"
             //};
@@ -308,11 +308,11 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
-            C.minDistanceThreshold = 0.03;
+            C.minDistanceThreshold = 0.025;
             C.CoefficientOfRestitution = 1;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
-            double leftCorner = -0.9;
+            double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
             Random insertParticle = new Random();
             int j = 0;
@@ -321,9 +321,9 @@ namespace BoSSS.Application.FSI_Solver {
                 while (leftCorner+ i * nextParticleDistance < domainLength / 2) {
                     double temp_insertParticle = insertParticle.Next(0, 6);
                     temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
-                    if (temp_insertParticle != 0) 
+                    //if (temp_insertParticle != 0) 
                     {
-                        double temp_angle = angle.Next(0, 2);
+                        double temp_angle = angle.Next(0, 6);
                         double temp_angle2 = angle.Next(0, 361);
                         temp_angle = temp_angle.MPIBroadcast(0);
                         temp_angle2 = temp_angle2.MPIBroadcast(0);
@@ -337,7 +337,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-3, int.MaxValue, true);
+            C.SetTimesteps(1e-2, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = true;

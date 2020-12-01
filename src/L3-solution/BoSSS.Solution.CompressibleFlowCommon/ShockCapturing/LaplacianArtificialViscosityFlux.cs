@@ -34,11 +34,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// </summary>
         /// <param name="boundaryCondMap">Information about boundary conditions</param>
         /// <param name="penaltySafteyFactor">A user definded factor, typically set to 4.0</param>
-        /// <param name="penaltyFactor">A factor based on the grid type (tetras, quads, etc.)</param>
-        /// <param name="lengthScales">A cell length scale</param>
         /// <param name="argumentName">The variable where the operator acts on</param>
-        public LaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, double penaltySafteyFactor, double penaltyFactor, MultidimensionalArray lengthScales, string argumentName) :
-              base(penaltySafteyFactor * penaltyFactor, lengthScales, argumentName) {
+        public LaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, double penaltySafteyFactor, string argumentName) :
+              base(penaltySafteyFactor, argumentName) {
             this.boundaryCondMap = boundaryCondMap;
         }
 

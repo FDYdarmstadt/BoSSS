@@ -28,12 +28,12 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int angle = 20, double aspectRatio = 3, double activeStress = 10) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int angle = 180, double aspectRatio = 2, double activeStress = -10) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            string ID = "3debf19b-821a-4a76-8b06-e1b945b4393e";
-            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            //string ID = "68e35eda-de8b-46fe-af4d-4bbe94a9f49f";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1100);
             C.IsRestart = true;
             // Domain
             // =============================

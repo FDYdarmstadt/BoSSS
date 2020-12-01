@@ -256,6 +256,22 @@ WorkflowMgm.AllJobs;
  }
 \BoSSSexe
 \BoSSScmd{
+/// We can take a closer inspection of anything that failed (should not be,
+/// anyway).
+foreach(var job in WorkflowMgm.AllJobs.Values) \{\newline 
+\btab if(job.Status != JobStatus.FinishedSuccessful) \{\newline 
+\btab \btab Console.WriteLine("###############################################");\newline 
+\btab \btab Console.WriteLine($"Job \{job\}");\newline 
+\btab \btab Console.WriteLine("###############################################");\newline 
+\btab \btab Console.WriteLine(job.Stdout);   \newline 
+\btab \btab Console.WriteLine("===============================================");\newline 
+\btab \btab Console.WriteLine(job.Stderr);\newline 
+\btab \btab Console.WriteLine("###############################################");\newline 
+\btab \}    \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
 /// % ===========================================
 /// \section{Convergence against exact solution}
 /// \label{sec:ExactConvergence}
