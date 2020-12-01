@@ -13,24 +13,28 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver {    
 
-    static class XHeatOperatorProvider{
+    class XHeatOperator : OperatorFactory
+    {
+        public XHeatOperator()
+        {
 
-        public static void SetOperatorEquations(int D, OperatorFactory opFactory, int quadOrder, ThermalMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control control, XNSFE_OperatorConfiguration config) {            
+        }
+
+        void SetOperatorEquations(int D, OperatorFactory opFactory, int quadOrder, ThermalMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control control, XNSFE_OperatorConfiguration config) {            
 
             // add Heat equation components
             // ============================
-            opFactory.AddEquation(new Heat("A", lsUpdater.Tracker, D, boundaryMap, config));
-            opFactory.AddEquation(new Heat("B", lsUpdater.Tracker, D, boundaryMap, config));
+            AddEquation(new Heat("A", lsUpdater.Tracker, D, boundaryMap, config));
+            AddEquation(new Heat("B", lsUpdater.Tracker, D, boundaryMap, config));
 
             if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 for (int d = 0; d < D; ++d) {
-                    opFactory.AddEquation(new HeatFlux("A", d, lsUpdater.Tracker, D, boundaryMap, config));
-                    opFactory.AddEquation(new HeatFlux("B", d, lsUpdater.Tracker, D, boundaryMap, config));
-                    opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, boundaryMap, lsUpdater.Tracker, config));
+                    AddEquation(new HeatFlux("A", d, lsUpdater.Tracker, D, boundaryMap, config));
+                    AddEquation(new HeatFlux("B", d, lsUpdater.Tracker, D, boundaryMap, config));
+                    AddEquation(new HeatFluxInterface("A", "B", D, d, boundaryMap, lsUpdater.Tracker, config));
                 }
             }
-            opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, lsUpdater.Tracker, config));      
-
+            AddEquation(new HeatInterface("A", "B", D, boundaryMap, lsUpdater.Tracker, config));      
         }
 
         public static void SetOperatorParameter(int D, OperatorFactory opFactory, int quadOrder, ThermalMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control Control, XNSFE_OperatorConfiguration config) {
@@ -48,11 +52,10 @@ namespace BoSSS.Application.XNSE_Solver {
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
             
         }
-
     }
 
-    static class XNSEOperatorProvider {
-
+    class XNSEOperator : OperatorFactory 
+    {
         public static void SetOperatorEquations(int D, OperatorFactory opFactory, int quadOrder, IncompressibleMultiphaseBoundaryCondMap boundaryMap, LevelSetUpdater lsUpdater, XNSE_Control Control, XNSFE_OperatorConfiguration config) {   
 
             ///Build Equations
@@ -91,6 +94,11 @@ namespace BoSSS.Application.XNSE_Solver {
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
         
         }
+
+    }
+
+    class XNSFEOperator : XNSEOperator
+    {
 
     }
 }

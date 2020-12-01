@@ -148,7 +148,6 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
         }
-        
 
         void AddCoefficients(XSpatialOperatorMk2 spatialOperator)
         {

@@ -178,10 +178,11 @@ namespace BoSSS.Application.XNSE_Solver
 
         protected double minvol;
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time,
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
+            LevelSetTracker lsTrkr = levelSet.Tracker;
             SpeciesNames = lsTrkr.SpeciesNames;
             regions = lsTrkr.Regions;
             IList<SpeciesId> speciesIds = lsTrkr.SpeciesIdS;
@@ -332,7 +333,7 @@ namespace BoSSS.Application.XNSE_Solver
 
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time,
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
@@ -411,7 +412,6 @@ namespace BoSSS.Application.XNSE_Solver
 
         public void LevelSetParameterUpdate(
            DualLevelSet phaseInterface,
-           LevelSetTracker lsTrkr,
            double time,
            IReadOnlyDictionary<string, DGField> DomainVarFields,
            IReadOnlyDictionary<string, DGField> ParameterVarFields)
@@ -422,7 +422,7 @@ namespace BoSSS.Application.XNSE_Solver
                 AdvancedDiscretizationOptions.SST_isotropicMode,
                 AdvancedDiscretizationOptions.FilterConfiguration,
                 out filtLevSetGradient,
-                lsTrkr,
+                phaseInterface.Tracker,
                 phaseInterface.DGLevelSet);
             for(int i = 0; i < parameters.Length; ++i)
             {
@@ -511,7 +511,6 @@ namespace BoSSS.Application.XNSE_Solver
 
         public void LevelSetParameterUpdate(
            DualLevelSet phaseInterface,
-           LevelSetTracker lsTrkr,
            double time,
            IReadOnlyDictionary<string, DGField> DomainVarFields,
            IReadOnlyDictionary<string, DGField> ParameterVarFields)
@@ -523,7 +522,7 @@ namespace BoSSS.Application.XNSE_Solver
                 AdvancedDiscretizationOptions.FilterConfiguration,
                 Curvature,
                 out filtLevSetGradient,
-                lsTrkr,
+                phaseInterface.Tracker,
                 m_HMForder,
                 phaseInterface.DGLevelSet);
             for (int i = 0; i < lsParameters.Length - 1; ++i)
@@ -567,10 +566,11 @@ namespace BoSSS.Application.XNSE_Solver
             return new (string ParameterName, DGField ParamField)[] { (name, sigmaField) };
         }
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, LevelSetTracker lsTrkr, double time, 
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, 
             IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             DGField sigmaMax = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MaxSigma];
+            LevelSetTracker lsTrkr = levelSet.Tracker;
 
             IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths =
                 lsTrkr.GetXDGSpaceMetrics(lsTrkr.SpeciesIdS.ToArray(), cutCellQuadOrder).CutCellMetrics.InterfaceArea;
@@ -623,7 +623,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
 
         public void LevelSetParameterUpdate(
-            DualLevelSet levelSet, LevelSetTracker lsTrkr, double time,
+            DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
@@ -641,6 +641,7 @@ namespace BoSSS.Application.XNSE_Solver
 
             double rho_A = physicalParameters.rho_A, rho_B = physicalParameters.rho_B;
             double mu_A = physicalParameters.mu_A, mu_B = physicalParameters.mu_B;
+            LevelSetTracker lsTrkr = levelSet.Tracker;
             CellMask CC = lsTrkr.Regions.GetCutCellMask4LevSet(0);
             CellMask Neg = lsTrkr.Regions.GetLevelSetWing(0, -1).VolumeMask;
             CellMask Pos = lsTrkr.Regions.GetLevelSetWing(0, +1).VolumeMask;

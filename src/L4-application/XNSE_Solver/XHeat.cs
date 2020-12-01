@@ -24,15 +24,19 @@ using System.Threading.Tasks;
 using static BoSSS.Foundation.SpatialOperator;
 
 namespace BoSSS.Application.XNSE_Solver {
-    class XHeat : XCommon<XNSE_Control> {
+    class XHeat : XSolver<XNSE_Control> 
+    {
+        ThermalMultiphaseBoundaryCondMap boundaryMap;
 
-        public override void MultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+        public override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
+        {
 
             int D = this.GridData.SpatialDimension;
 
             int pTemp = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Temperature].Degree;
             // configuration for Temperature
-            var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
+            var confTemp = new MultigridOperator.ChangeOfBasisConfig()
+            {
                 DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
                 mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
                 VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Temperature) }
@@ -40,17 +44,25 @@ namespace BoSSS.Application.XNSE_Solver {
             configsLevel.Add(confTemp);
 
             // configuration for auxiliary heat flux
-            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+            {
                 int pFlux;
-                if (this.Control.FieldOptions.TryGetValue("HeatFlux*", out FieldOpts f)) {
+                if (this.Control.FieldOptions.TryGetValue("HeatFlux*", out FieldOpts f))
+                {
                     pFlux = f.Degree;
-                } else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.HeatFluxX, out FieldOpts f1)) {
+                }
+                else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.HeatFluxX, out FieldOpts f1))
+                {
                     pFlux = f1.Degree;
-                } else {
+                }
+                else
+                {
                     throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of HeatFlux not found");
                 }
-                for (int d = 0; d < D; d++) {
-                    var confHeatFlux = new MultigridOperator.ChangeOfBasisConfig() {
+                for (int d = 0; d < D; d++)
+                {
+                    var confHeatFlux = new MultigridOperator.ChangeOfBasisConfig()
+                    {
                         DegreeS = new int[] { pFlux }, // Math.Max(1, pFlux - iLevel) },
                         mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.HeatFluxVectorComponent(d)) }
@@ -60,7 +72,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        protected override int QuadOrder() {
+        int QuadOrder() {
             //QuadOrder
             int degT;
             if (Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.Temperature, out FieldOpts field)) {
@@ -76,6 +88,24 @@ namespace BoSSS.Application.XNSE_Solver {
             return quadOrder;
         }
 
+        int VelocityDegree()
+        {
+            int pVel;
+            if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))
+            {
+                pVel = v.Degree;
+            }
+            else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1))
+            {
+                pVel = v1.Degree;
+            }
+            else
+            {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            return pVel;
+        }
+
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
             Tecplot.PlotFields(this.m_RegisteredFields, "XHEAT_Solver" + timestepNo, physTime, superSampling);
             if (Timestepping?.Parameters != null) {
@@ -83,21 +113,56 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        public override void SetOperatorEquations(int D, OperatorFactory opFactory) {
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D)
+        {
+            OperatorFactory opFactory = new OperatorFactory();
+            boundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
+            SetOperator(D, opFactory);
 
-            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
-            ThermalMultiphaseBoundaryCondMap boundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
+            //Get Spatial Operator
+            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
-            XHeatOperatorProvider.SetOperatorEquations(D, opFactory, QuadOrder(), boundaryMap, this.lsUpdater, this.Control, config);
+            //final settings
+            XOP.Commit();
+
+            return XOP;
         }
 
-        public override void SetOperatorParameter(int D, OperatorFactory opFactory) {
+        public void SetOperator(int D, OperatorFactory opFactory)
+        {
+            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
 
+            int quadOrder = QuadOrder();
+            // add Heat equation components
+            // ============================
+            opFactory.AddEquation(new Heat("A", lsUpdater.Tracker, D, boundaryMap, config));
+            opFactory.AddEquation(new Heat("B", lsUpdater.Tracker, D, boundaryMap, config));
+
+            if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+            {
+                for (int d = 0; d < D; ++d)
+                {
+                    opFactory.AddEquation(new HeatFlux("A", d, lsUpdater.Tracker, D, boundaryMap, config));
+                    opFactory.AddEquation(new HeatFlux("B", d, lsUpdater.Tracker, D, boundaryMap, config));
+                    opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, boundaryMap, lsUpdater.Tracker, config));
+                }
+            }
+            opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, lsUpdater.Tracker, config));
             opFactory.SetCoefficient(XHeatCoefficients);
 
-            XHeatOperatorProvider.SetOperatorParameter(D, opFactory, QuadOrder(), null, this.lsUpdater, this.Control, null);
+            // Add Velocity parameters as prescribed variables
+            for (int d = 0; d < D; d++)
+                opFactory.AddParameter(Velocity0Prescribed.CreateFrom(lsUpdater.Tracker, d, D, Control));
 
+            Velocity0MeanPrescribed v0Mean = new Velocity0MeanPrescribed(D, lsUpdater.Tracker, quadOrder);
+            opFactory.AddParameter(v0Mean);
+            lsUpdater.AddLevelSetParameter("Phi", v0Mean);
+
+            Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
+            opFactory.AddParameter(normalsParameter);
+            lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
         }
+
         private CoefficientSet XHeatCoefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time){
 
             var r = new CoefficientSet() {
@@ -120,13 +185,26 @@ namespace BoSSS.Application.XNSE_Solver {
             return r;
         }
 
-        public override void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory) {
-            XOP = opFactory.GetSpatialOperator(QuadOrder());
-
-            //final settings
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
-            XOP.Commit();
-        }        
-
+        protected override LevelSetUpdater InstantiateLevelSetUpdater()
+        {
+            int levelSetDegree = Control.FieldOptions["Phi"].Degree;
+            LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
+            levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+            switch (Control.Option_LevelSetEvolution)
+            {
+                case LevelSetEvolution.FastMarching:
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                    var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
+                    lsUpdater.AddEvolver("Phi", fastMarcher);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
+                    break;
+                case LevelSetEvolution.None:
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+            return lsUpdater;
+        }
     }
 }
