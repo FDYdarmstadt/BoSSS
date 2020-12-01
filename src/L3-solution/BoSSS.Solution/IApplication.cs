@@ -22,6 +22,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution {
 
@@ -127,6 +128,14 @@ namespace BoSSS.Solution {
         /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
         /// </returns>
         IDictionary<string, double> OperatorAnalysis();
+
+
+        /// <summary>
+        /// Assess to optional level-set tracker; typically null for pure DG-apps (non-XDG).
+        /// </summary>
+        LevelSetTracker LsTrk {
+            get;
+        }
     }
 
 

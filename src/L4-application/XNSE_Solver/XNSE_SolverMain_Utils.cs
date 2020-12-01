@@ -629,99 +629,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        public double[] ComputeBenchmarkQuantities_RisingBubble() {
-
-            int order = 0;
-            if (LsTrk.GetCachedOrders().Count > 0) {
-                order = LsTrk.GetCachedOrders().Max();
-            } else {
-                order = 1;
-            }
-            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-
-            // area of bubble
-            double area = 0.0;
-            SpeciesId spcId = LsTrk.SpeciesIdS[0];
-            var vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                vqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++)
-                        area += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
-
-            // center of mass/geometric center (for incommpressible fluid)
-            int D = this.Grid.SpatialDimension;
-            MultidimensionalArray center = MultidimensionalArray.Create(1, D);
-            CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-                vqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    NodeSet nodes_global = QR.Nodes.CloneAs();
-                    for (int i = i0; i < i0 + Length; i++) {
-                        LsTrk.GridDat.TransformLocal2Global(QR.Nodes, nodes_global, i);
-                        EvalResult.AccSubArray(1.0, nodes_global, new int[] { i - i0, -1, -1 });
-                    }
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++) {
-                        for (int d = 0; d < D; d++) {
-                            center[0, d] += ResultsOfIntegration[i, d];
-                        }
-                    }
-                }
-            ).Execute();
-
-            center.Scale(1.0 / area);
-
-            // rise velocity
-            MultidimensionalArray VelocityAtCenter = MultidimensionalArray.Create(1, D);
-
-            // integral computation
-            CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-                vqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    for (int d = 0; d < D; d++) {
-                        this.CurrentVel[d].Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
-                    }
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++) {
-                        for (int d = 0; d < D; d++) {
-                            VelocityAtCenter[0, d] += ResultsOfIntegration[i, d];
-                        }
-                    }
-                }
-            ).Execute();
-            VelocityAtCenter.Scale(1.0 / area);
-
-            double v_rise = VelocityAtCenter[0, 1];
-
-            //Console.WriteLine("rise velocity = " + v_rise);
-
-
-            // circularity
-            double diamtr_c = Math.Sqrt(4 * area / Math.PI);
-            double perimtr_b = 0.0;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                cqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for (int i = 0; i < Length; i++)
-                        perimtr_b += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
-
-            double circ = Math.PI * diamtr_c / perimtr_b;
-
-            return new double[] { area, center[0, 0], center[0, 1], circ, VelocityAtCenter[0, 0], VelocityAtCenter[0, 1] };
-        }
+        
 
 
         public double[] ComputeBenchmarkQuantities_LineInterface() {
@@ -943,7 +851,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         TextWriter Log_FourierLS;
 
-
+        /*
         /// <summary>
         /// testcase specific LogFile
         /// </summary>
@@ -953,7 +861,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// saves interface points
         /// </summary>
         TextWriter LogInterfaceP;
-
+        */
 
         /// <summary>
         /// initializes the format of the Log File
@@ -992,18 +900,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 case XNSE_Control.LoggingValues.Dropletlike: {
 
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("SemiAxis", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", "#timestep", "time", "semi axis x", "semi axis y", "area", "perimeter");
-
+                        
                         break;
                     }
-                case XNSE_Control.LoggingValues.RisingBubble: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("BenchmarkQuantities_RisingBubble", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity");
-
-                        break;
-                    }
+                
                 case XNSE_Control.LoggingValues.MovingContactLine: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("ContactAngle", sessionID);
@@ -1041,8 +941,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ArgumentException("No specified LogFormat");
             }
 
-            Log.WriteLine(header);
-            Log.Flush();
+            
         }
 
 
@@ -1115,16 +1014,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         return;
                     }
-                case XNSE_Control.LoggingValues.RisingBubble: {
-
-                        double[] BmQ_RB = this.ComputeBenchmarkQuantities_RisingBubble();
-
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime, BmQ_RB[0], BmQ_RB[1], BmQ_RB[2], BmQ_RB[3], BmQ_RB[5]);
-                        Log.WriteLine(line);
-                        Log.Flush();
-
-                        return;
-                    }
+                
                 case XNSE_Control.LoggingValues.MovingContactLine: {
 
                         // contact angles at contact points
