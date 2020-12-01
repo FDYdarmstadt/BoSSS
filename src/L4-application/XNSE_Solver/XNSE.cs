@@ -117,9 +117,9 @@ namespace BoSSS.Application.XNSE_Solver
                 Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
             }
             return XOP;
-        }               
+        }
 
-        public override void SetOperatorEquations(int D, OperatorFactory opFactory) {
+        protected override void SetOperatorEquations(int D, OperatorFactory opFactory) {
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
@@ -127,7 +127,7 @@ namespace BoSSS.Application.XNSE_Solver
             XNSEOperatorProvider.SetOperatorEquations(D, opFactory, QuadOrder(), boundaryMap, this.lsUpdater, this.Control, config);
         }
 
-        public override void SetOperatorParameter(int D, OperatorFactory opFactory) {
+        protected override void SetOperatorParameter(int D, OperatorFactory opFactory) {
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
 
@@ -135,7 +135,7 @@ namespace BoSSS.Application.XNSE_Solver
 
         }
 
-        public override void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory) {
+        protected override void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory) {
             
             IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
@@ -154,6 +154,10 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 Tecplot.PlotFields(Timestepping.Parameters, "XNSE_Solver_Params" + timestepNo, physTime, superSampling);
             }
-        }        
+        }
+
+        protected override void SetOperatorCoefficients(int D, OperatorFactory opFactory) {
+            // Add additional coefficients            
+        }
     }
 }

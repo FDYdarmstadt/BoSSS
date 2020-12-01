@@ -13,26 +13,26 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.XNSE_Solver {
     class XNSFE : XCommon<XNSE_Control> {
 
-        XNSE xnse = new XNSE();
-        private void GetXNSEOperatorComponents(int D, OperatorFactory opFactory) {
-            xnse.SetOperatorEquations(D, opFactory);
-        }
-        private void XNSEMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-            xnse.MultigridConfigLevel(configsLevel);
-        }
+        //XNSE xnse = new XNSE();
+        //private void GetXNSEOperatorComponents(int D, OperatorFactory opFactory) {
+        //    xnse.SetOperatorEquations(D, opFactory);
+        //}
+        //private void XNSEMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+        //    xnse.MultigridConfigLevel(configsLevel);
+        //}
 
-        XHeat xheat = new XHeat();
-        private void GetXHEATOperatorComponents(int D, OperatorFactory opFactory) {
-            xheat.SetOperatorEquations(D, opFactory);
-        }
-        private void XHEATMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-            xheat.MultigridConfigLevel(configsLevel);
-        }
+        //XHeat xheat = new XHeat();
+        //private void GetXHEATOperatorComponents(int D, OperatorFactory opFactory) {
+        //    xheat.SetOperatorEquations(D, opFactory);
+        //}
+        //private void XHEATMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+        //    xheat.MultigridConfigLevel(configsLevel);
+        //}
         public override void MultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
 
-            XNSEMultigridConfigLevel(configsLevel);
-            XHEATMultigridConfigLevel(configsLevel);
-            
+            //XNSEMultigridConfigLevel(configsLevel);
+            //XHEATMultigridConfigLevel(configsLevel);
+
         }
 
         protected void GetXNSFEOperatorComponents(int D, OperatorFactory opFactory) {
@@ -66,11 +66,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 //    opFactory.AddEquation(new HeatInterfaceContinuityEvaporation("A", "B", d, D, boundaryMap, LsTrk, config));
 
             }
-        }       
+        }
 
-        public override void SetOperatorEquations(int D, OperatorFactory opFactory) {
-            GetXNSEOperatorComponents(D, opFactory);
-            GetXHEATOperatorComponents(D, opFactory);
+        protected override void SetOperatorEquations(int D, OperatorFactory opFactory) {
+            //GetXNSEOperatorComponents(D, opFactory);
+            //GetXHEATOperatorComponents(D, opFactory);
         }
 
         protected override int QuadOrder() {
@@ -81,11 +81,15 @@ namespace BoSSS.Application.XNSE_Solver {
             throw new NotImplementedException();
         }
 
-        public override void SetOperatorParameter(int D, OperatorFactory opFactory) {
+        protected override void SetOperatorParameter(int D, OperatorFactory opFactory) {
             throw new NotImplementedException();
         }
 
-        public override void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory) {
+        protected override void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory) {
+            throw new NotImplementedException();
+        }
+
+        protected override void SetOperatorCoefficients(int D, OperatorFactory opFactory) {
             throw new NotImplementedException();
         }
     }

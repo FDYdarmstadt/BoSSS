@@ -13,13 +13,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Solution.XNSECommon;
+using System.Collections;
 
 namespace BoSSS.Application.XNSE_Solver {
     abstract class XCommon<T> : XdgApplicationWithSolver<T> where T : XNSE_Control, new() {
 
-        public abstract void SetOperatorEquations(int D, OperatorFactory opFactory);
-        public abstract void SetOperatorParameter(int D, OperatorFactory opFactory);
-        public virtual void SetLevelSetParameter(int D, OperatorFactory opFactory) {
+        protected abstract void SetOperatorEquations(int D, OperatorFactory opFactory);
+        protected abstract void SetOperatorParameter(int D, OperatorFactory opFactory);
+        protected virtual void SetLevelSetParameter(int D, OperatorFactory opFactory) {
 
             if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
@@ -55,8 +56,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     break;
             }
         }
+        protected abstract void SetOperatorCoefficients(int D, OperatorFactory opFactory);
 
-        public abstract void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory);
+        protected abstract void SetSpatialOperator(out XSpatialOperatorMk2 XOP, int D, OperatorFactory opFactory);
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
 
@@ -67,7 +69,9 @@ namespace BoSSS.Application.XNSE_Solver {
             SetOperatorParameter(D, opFactory);
 
             SetLevelSetParameter(D, opFactory);
-            
+
+            SetOperatorCoefficients(D, opFactory);
+
             //Get Spatial Operator
             SetSpatialOperator(out XSpatialOperatorMk2 XOP, D, opFactory);
 
