@@ -193,9 +193,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests
 
                 string temperatureName = VariableNames.Temperature;
                 ConventionalDGField temperature = ((XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == temperatureName)).GetSpeciesShadowField(spc);
+                var rule = scheme.Compile(solver.GridData, order);
 
-                L2Error = temperature.L2Error(exactTemperature[spc].Vectorize(time), order, scheme);
-                L2Error_Species.Add(spc, L2Error);
+                double IdV = temperature.LxError(exactTemperature[spc].Vectorize(time), (X, a, b) => (a - b).Pow2(), rule);
+                L2Error += IdV;
+                L2Error_Species.Add(spc, L2Error.Sqrt());
 
                 solver.QueryHandler.ValueQuery("L2err_" + VariableNames.Temperature + "#" + spc, L2Error_Species[spc], true);
             }

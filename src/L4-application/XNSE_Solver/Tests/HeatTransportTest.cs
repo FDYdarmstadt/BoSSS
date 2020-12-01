@@ -43,9 +43,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double c_A => 1.0;
 
-        public double c_B => 2.0;
+        public double c_B => 1.0;
 
-        public double k_A => 1.0;
+        public double k_A => 2.0;
 
         public double k_B => 1.0;
 
@@ -91,6 +91,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             return grd;
         }
 
+        double T_l = 0.0, T_r = 1.0;
         public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
 
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
@@ -100,33 +101,41 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             config.Add("ConstantTemperature_left", new AppControl.BoundaryValueCollection());
             config["ConstantTemperature_left"].Evaluators.Add(
                 VariableNames.Temperature + "#A",
-                (X, t) => 1.0);
+                (X, t) => T_l);
             config["ConstantTemperature_left"].Evaluators.Add(
                 VariableNames.Temperature + "#B",
-                (X, t) => 1.0);
+                (X, t) => T_l);
 
             config.Add("ConstantTemperature_right", new AppControl.BoundaryValueCollection());
             config["ConstantTemperature_right"].Evaluators.Add(
                 VariableNames.Temperature + "#A",
-                (X, t) => 0.0);
+                (X, t) => T_r);
             config["ConstantTemperature_right"].Evaluators.Add(
                 VariableNames.Temperature + "#B",
-                (X, t) => 0.0);
+                (X, t) => T_r);
 
             return config;
         }
 
+        double dx = 0.0;
         public Func<double[], double, double> GetPhi() {
             return delegate (double[] X, double t) {
                 double x = X[0];
                 double y = X[1];
 
-                return x;
+                return x - dx;
             };
         }
 
         public Func<double[], double, double> GetT(string species) {
-            return (X, t) => X[0] + 1.0;
+            double k_A = this.k_A;
+            double k_B = this.k_B;
+            double dx = this.dx;
+            double T_l = this.T_l;
+            double T_r = this.T_r;
+            double q = (T_r - T_l) / ((1 + dx) / k_A + (1 - dx) / k_B);
+
+            return (X, t) => X[0] < dx ? q/k_A * (X[0] + 1.0) : q/k_B * (X[0] - dx) + q / k_A * (dx + 1.0);
         }
     }
 }
