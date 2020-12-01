@@ -381,7 +381,7 @@ namespace BoSSS.Application.XNSE_Solver
             int curvatureDegree;
             if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts))
             {
-                curvatureDegree = opts.Degree;
+                curvatureDegree = opts.Degree * 2;
             }
             else
             {

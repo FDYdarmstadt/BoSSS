@@ -304,6 +304,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             LevelSetGrad.Gradient(1.0, NewLevelSet, NEAR);
             for (int d = 0; d < D; d++) {
                 LevelSetGrad[d].MPIExchange();
+                //if (gdat.MpiSize > 1)
+                //    LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_bR_onProc" + gdat.MpiRank);
             }
 
 
@@ -362,7 +364,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -377,11 +379,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 OldLevSet.Acc(1.0, NewLevelSet, Reinit);
             }
 
-            if (plotMarchingSteps) {
-                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
-            }
-
             //if (NoOfPosReinit.MPISum() > 0)
             //    marcher.Reinitialize(NewLevelSet, ReinitPos, +1, Known, LevelSetGrad, null);
             //if (NoOfNegReinit.MPISum() > 0)
@@ -394,8 +391,20 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //OldLevSet.Acc(1.0, NewLevelSet, ReinitNeg);
 
             // bring gradient up to date
-            marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);    
+            marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);
+            //for (int d = 0; d < D; d++) {
+            //    //LevelSetGrad[d].MPIExchange();
+            //    if (gdat.MpiSize > 1)
+            //        LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_aR_onProc" + gdat.MpiRank);
+            //    else
+            //        LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d);
+            //}
 
+
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
 
             // compute velocity extension
             // --------------------------
@@ -424,7 +433,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 2 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
             // then, on the rest of the domain
@@ -437,7 +446,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 3 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>( ExtVel, NewLevelSet ), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>( ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -480,7 +489,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 4 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -494,7 +503,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 5 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -503,7 +512,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             else 
                 return false;
 
-            // finally, apply the stabilization
+            // finally, apply the stabilization 
             // --------------------------------
             //if (dt > 0) {
 
@@ -1078,6 +1087,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 for (int d = 0; d < D; d++) {
                     meanLevSetGrad[d].MPIExchange();
+                    //if (grdDat.MpiSize > 1)
+                    //    meanLevSetGrad[d].Coordinates.SaveToTextFile("meanLevSetGrad_" + d + "_onProc" + grdDat.MpiRank);
+                    //else
+                    //    meanLevSetGrad[d].Coordinates.SaveToTextFile("meanLevSetGrad_" + d);
                 }
 
                 // quadrature schemes
@@ -1223,6 +1236,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 }
 
             }
+
+            //ExtVelMatrix.SaveToTextFile("ExtVelMatrix");
+
 
             // solving
             // -------

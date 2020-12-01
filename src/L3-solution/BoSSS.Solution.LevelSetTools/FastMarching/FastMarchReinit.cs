@@ -218,9 +218,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                         PhiAvg[jCell] = 1.0e10;
                 }
 
-                //if (this.GridDat.MpiSize > 1)
-                //    throw new NotSupportedException("Currently not MPI parallel.");
-                Console.WriteLine("MPI rank {0}: NoOfNew = {1}", GridDat.MpiRank, NoOfNew);
+                if (this.GridDat.MpiSize > 1)
+                    throw new NotSupportedException("Currently not MPI parallel.");
 
 
                 for (int d = 0; d < this.GridDat.SpatialDimension; d++) {
@@ -554,6 +553,13 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             //Invert Negative Domain that is part of ReinitField
             Phi.Scale(-1, NegativeField.Intersect(ReinitField).Except(Accepted));
+
+            //Update avergae values
+            foreach (Chunk cnk in reinitField) {
+                for (int j = cnk.i0; j < cnk.JE; j++)
+                    m_PhiAvg[j] = Phi.GetMeanValue(j);
+            }
+
         }
 
 
