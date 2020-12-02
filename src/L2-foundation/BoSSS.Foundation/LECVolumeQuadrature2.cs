@@ -94,6 +94,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         EquationComponentArgMapping<IVolumeForm_UxV>[] m_VolumeForm_UxV;
 
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        bool IsNonEmpty {
+            get {
+                return m_VolumeForm_UxV.IsNonEmpty() || 
+                    m_VolumeForm_GradUxV.IsNonEmpty() || 
+                    m_VolumeForm_UxGradV.IsNonEmpty() || 
+                    m_VolumeForm_GradUxGradV.IsNonEmpty() || 
+                    m_VolumeSource_V.IsNonEmpty() || 
+                    m_VolumeSource_GradV.IsNonEmpty() ;
+            }
+        }
+
 
         Stopwatch[][] m_VolumeForm_UxV_Watches;
         Stopwatch[][] m_VolumeForm_GradUxV_Watches;
@@ -122,6 +136,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if(ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
+            if(this.IsNonEmpty == false)
+                return;
 
             m_GridDat = RowMap.GridDat;
 

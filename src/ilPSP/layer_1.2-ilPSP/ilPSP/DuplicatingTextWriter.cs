@@ -26,7 +26,7 @@ namespace ilPSP {
     /// <summary>
     /// Duplicates the output of one text writer to multiple text writers;
     /// This can e.g. be used to create a copy
-    /// of stdout and stderr streams, or to surpress the stdout on processes with MPI rank unequal to 0;
+    /// of stdout and stderr streams, or to suppress the stdout on processes with MPI rank unequal to 0;
     /// see <see cref="ilPSP.Environment.StdOut"/>, <see cref="ilPSP.Environment.StdErr"/>.
     /// </summary>
     public class DuplicatingTextWriter : TextWriter, IDisposable {
@@ -46,19 +46,23 @@ namespace ilPSP {
         TextWriter Writer0;
 
 
-        HashSet<TextWriter> m_WriterS = new HashSet<TextWriter>(new FuncEqualityComparer<TextWriter>((a, b) => object.ReferenceEquals(a, b)));
+        HashSet<TextWriter> m__WriterS = new HashSet<TextWriter>(new FuncEqualityComparer<TextWriter>((a, b) => object.ReferenceEquals(a, b)));
 
         /// <summary>
-        /// the test writes which are used for duplication
+        /// the text writers which are used for duplication of the console out
         /// </summary>
         /// <remarks>
         /// equality is defined by <see cref="Object.ReferenceEquals"/>
         /// </remarks>
         public ISet<TextWriter> WriterS {
             get {
-                return m_WriterS;
+                return m__WriterS;
             }
         }
+
+  
+
+
 
         ///// <summary>
         ///// Adds a <see cref="StreamWriter"/>, writing to <paramref name="s"/>, to <see cref="WriterS"/>.
@@ -72,7 +76,7 @@ namespace ilPSP {
         uint m_flushPeriod;
 
         /// <summary>
-        /// if true, the output to the 0-th stream resp. text-writer is surpressed
+        /// if true, the output to the 0-th stream resp. text-writer is suppressed
         /// </summary>
         public bool surpressStream0 {
             get;
@@ -83,35 +87,44 @@ namespace ilPSP {
 
         private void Flush1(int l) {
             if(!surpressStream0) {
-                Writer0.Flush();
-            }
+                try {
+                    Writer0.Flush();
+                } catch(ObjectDisposedException) {
 
-            //List<TextWriter> WritersToRemove = null;
+                }
+
+            }
 
             cnt += l;
             if(cnt >= m_flushPeriod) {
-                foreach(TextWriter tw in m_WriterS) {
-                    tw.Flush();
-                    //if(tw is StreamWriter) {
-                    //    StreamWriter stw = (StreamWriter)tw;
-
-                    //    if(stw.BaseStream.CanWrite == false) {
-                    //        if(WritersToRemove == null)
-                    //            WritersToRemove = new List<TextWriter>();
-                    //        WritersToRemove.Add(tw);
-                    //    }
-                    //}
-                }
+                ExecuteOnWriter(tw => tw.Flush());
                 cnt = 0;
             }
+        }
 
-            //if(WritersToRemove != null) {
-            //    foreach(var tw in m_WriterS) {
-            //        m_WriterS.Remove(tw);
-            //        tw.Close();
-            //        tw.Dispose();
-            //    }
-            //}
+        private void ExecuteOnWriter(Action<TextWriter> a) {
+            if(!surpressStream0) {
+                try {
+                    a(Writer0);
+                } catch(ObjectDisposedException) {
+
+                }
+            }
+
+            List<TextWriter> WritersToRemove = null;
+            foreach(TextWriter tw in m__WriterS) {
+                try {
+                    a(tw);
+                } catch(ObjectDisposedException) {
+                    if(WritersToRemove == null)
+                        WritersToRemove = new List<TextWriter>();
+                    WritersToRemove.Add(tw);
+                }
+            }
+            if(WritersToRemove != null) {
+                foreach(TextWriter tw in WritersToRemove)
+                    m__WriterS.Remove(tw);
+            }
         }
 
         /// <summary>
@@ -121,12 +134,7 @@ namespace ilPSP {
         public override void WriteLine(string s) {
             if (s == null)
                 s = "";
-            if(!surpressStream0) {
-                Writer0.WriteLine(s);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.WriteLine(s);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.WriteLine(s));
             Flush1(s.Length);
         }
 
@@ -137,12 +145,7 @@ namespace ilPSP {
         public override void Write(string s) {
             if (s == null)
                 s = "";
-            if (!surpressStream0) {
-                Writer0.Write(s);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.Write(s);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.Write(s));
             Flush1(s.Length);
         }
 
@@ -151,12 +154,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void WriteLine(double value) {
-            if(!surpressStream0) {
-                Writer0.WriteLine(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.WriteLine(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.WriteLine(value));
             Flush1(10);
         }
 
@@ -165,12 +163,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void WriteLine(int value) {
-            if(!surpressStream0) {
-                Writer0.WriteLine(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.WriteLine(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.WriteLine(value));
             Flush1(10);
         }
 
@@ -179,12 +172,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void WriteLine(bool value) {
-            if(!surpressStream0) {
-                Writer0.WriteLine(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.WriteLine(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.WriteLine(value));
             Flush1(10);
         }
 
@@ -193,12 +181,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void WriteLine(long value) {
-            if(!surpressStream0) {
-                Writer0.WriteLine(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.WriteLine(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.WriteLine(value));
             Flush1(10);
         }
 
@@ -207,12 +190,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void WriteLine(float value) {
-            if(!surpressStream0) {
-                Writer0.WriteLine(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.WriteLine(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.WriteLine(value));
             Flush1(10);
         }
 
@@ -221,12 +199,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void Write(double value) {
-            if(!surpressStream0) {
-                Writer0.Write(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.Write(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.Write(value));
             Flush1(10);
         }
 
@@ -235,12 +208,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void Write(int value) {
-            if(!surpressStream0) {
-                Writer0.Write(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.Write(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.Write(value));
             Flush1(10);
         }
 
@@ -249,12 +217,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void Write(bool value) {
-            if(!surpressStream0) {
-                Writer0.Write(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.Write(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.Write(value));
             Flush1(10);
         }
 
@@ -263,12 +226,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void Write(long value) {
-            if(!surpressStream0) {
-                Writer0.Write(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.Write(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.Write(value));
             Flush1(10);
         }
 
@@ -277,13 +235,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void Write(float value) {
-            if(!surpressStream0) {
-                Writer0.Write(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.Write(value);
-                
-            }
+            ExecuteOnWriter(Writer1 => Writer1.Write(value));
             Flush1(10);
         }
 
@@ -292,12 +244,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="value"></param>
         public override void Write(char value) {
-            if(!surpressStream0) {
-                Writer0.Write(value);
-            }
-            foreach(TextWriter Writer1 in m_WriterS) {
-                Writer1.Write(value);
-            }
+            ExecuteOnWriter(Writer1 => Writer1.Write(value));
             Flush1(1);
         }
 
@@ -334,10 +281,10 @@ namespace ilPSP {
             }
 
             try {
-                foreach(TextWriter Writer1 in m_WriterS) {
+                ExecuteOnWriter(delegate (TextWriter Writer1) {
                     Writer1.Flush();
                     Writer1.Close();
-                }
+                });
             } catch(Exception) {
             }
 
@@ -351,8 +298,6 @@ namespace ilPSP {
         ~DuplicatingTextWriter() {
             this.Dispose();
         }
-
         #endregion
     }
-
 }

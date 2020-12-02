@@ -65,27 +65,15 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Path to standard output file, if present - otherwise null.
         /// </summary>
-        public override string GetStdoutFile(Job myJob) {
-            var Problem = FilterJobData(myJob);
-
-            if (Problem != null) {
-                return Clint.GetStdoutFile(Problem.ID);
-            } else {
-                return null;
-            }
+        public override string GetStdoutFile(string idToken, string DeployDir) {
+            return Clint.GetStdoutFile(int.Parse(idToken));
         }
 
         /// <summary>
         /// Path to standard error file, if present - otherwise null.
         /// </summary>
-        public override string GetStderrFile(Job myJob) {
-            var Problem = FilterJobData(myJob);
-
-            if (Problem != null) {
-                return Clint.GetStderrFile(Problem.ID);
-            } else {
-                return null;
-            }
+        public override string GetStderrFile(string idToken, string DeployDir) {
+            return Clint.GetStderrFile(int.Parse(idToken));
         }
 
         /// <summary>
@@ -130,39 +118,32 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// See <see cref="BatchProcessorClient.EvaluateStatus"/>.  
         /// </summary>
-        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override (BoSSSpad.JobStatus,int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) { 
+        //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (new FuncTrace()) {
                 
 
                 int ID = int.Parse(idToken);
                 var mbpStatus = Clint.GetStatusFromID(ID);
-                ExitCode = mbpStatus.ExitCode;
+                int ExitCode = mbpStatus.ExitCode;
 
 
                 switch (mbpStatus.stat) {
                     case MiniBatchProcessor.JobStatus.Queued:
                         // we know nothing
-                        isRunning = false;
-                        isTerminated = false;
-                        return;
+                        return (BoSSSpad.JobStatus.PendingInExecutionQueue, null);
 
                     case MiniBatchProcessor.JobStatus.Finished:
                         // we know nothing
-                        isRunning = false;
-                        isTerminated = true;
-                        return;
+                        return (ExitCode == 0 ? BoSSSpad.JobStatus.FinishedSuccessful : BoSSSpad.JobStatus.FailedOrCanceled, ExitCode);
 
                     case MiniBatchProcessor.JobStatus.Working:
                         // we know nothing
-                        isRunning = true;
-                        isTerminated = false;
-                        return;
+                        return (BoSSSpad.JobStatus.InProgress, null);
 
                     case MiniBatchProcessor.JobStatus.Undefined:
                         // we know nothing
-                        isRunning = false;
-                        isTerminated = false;
-                        return;
+                        return (BoSSSpad.JobStatus.Unknown, null);
 
                     default:
                         throw new NotImplementedException();
@@ -172,6 +153,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /*
         private MiniBatchProcessor.JobData FilterJobData(Job myJob) {
             int idSearch;
             try {
@@ -182,12 +164,12 @@ namespace BoSSS.Application.BoSSSpad {
 
             return Clint.AllJobs.FirstOrDefault(jd => jd.ID == idSearch);
         }
-
+        */
 
         /// <summary>
-        /// See <see cref="MiniBatchProcessorClient.Submit(Job)"/>.
+        /// See <see cref="BatchProcessorClient.Submit"/>. 
         /// </summary>
-        public override (string id, object optJobObj) Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             string FullName = GetFullJobName(myJob);
             //var AllProblems = FilterJobData(myJob);
             //if (AllProblems.Length > 0) {
@@ -197,7 +179,7 @@ namespace BoSSS.Application.BoSSSpad {
             var JD = new MiniBatchProcessor.JobData() {
                 Name = FullName,
                 NoOfProcs = myJob.NumberOfMPIProcs,
-                ExeDir = myJob.DeploymentDirectory,
+                ExeDir = DeploymentDirectory,
                 exefile = Path.GetFileName(myJob.EntryAssembly.Location),
                 Arguments = myJob.CommandLineArguments,
                 EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray(),

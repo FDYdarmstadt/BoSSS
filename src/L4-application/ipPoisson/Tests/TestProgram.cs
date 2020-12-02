@@ -99,21 +99,21 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// Cartesian problems with iterative solvers
         /// </summary>
         [Test]
-        public static void TestIterativeSolver_levelpmg(
+        public static void TestIterativeSolver(
 #if DEBUG            
             [Values(2)]int dgDeg,
             [Values(40)]int res,
-            [Values(2)]int dim
-            //[Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] solver
+            [Values(2)]int dim,
+            [Values(SolverCodes.exp_gmres_levelpmg)] SolverCodes solver
 #else
             [Values(3,4)]int dgDeg,
             [Values(8)]int res,
-            [Values(3)]int dim
-            //[Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
+            [Values(3)]int dim,
+            [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
 #endif
             ) {
 
-            SolverCodes solver = SolverCodes.exp_gmres_levelpmg;
+            //SolverCodes solver = SolverCodes.exp_gmres_levelpmg;
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
@@ -144,6 +144,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         }
 
+        /*
         /// <summary>
         /// Cartesian problems with iterative solvers
         /// </summary>
@@ -191,7 +192,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
             }
 
         }
-
+        */
 
 #if !DEBUG
         /// <summary>
