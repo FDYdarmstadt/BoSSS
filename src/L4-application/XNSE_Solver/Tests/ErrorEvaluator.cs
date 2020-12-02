@@ -17,9 +17,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests
 {
     abstract class ErrorEvaluator {
 
-        protected XCommon<XNSE_Control> solver;
+        protected XSolver<XNSE_Control> solver;
 
-        public ErrorEvaluator(XCommon<XNSE_Control> solver) {
+        public ErrorEvaluator(XSolver<XNSE_Control> solver) {
             this.solver = solver;
         }
 

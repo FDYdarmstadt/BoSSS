@@ -20,10 +20,13 @@ namespace BoSSS.Application.XNSE_Solver
 
         DelOperatorCoefficients coefficients;
 
+        DelOperatorCoefficientsProvider cp;
+
         public OperatorFactory()
         {
             eqSystem = new SystemOfEquations();
             parameters = new ParameterList();
+            cp = Coefficients;
         }
 
         public void AddEquation(SpatialEquation equation)
@@ -149,11 +152,14 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
         }
-        
 
         void AddCoefficients(XSpatialOperatorMk2 spatialOperator)
         {
             spatialOperator.OperatorCoefficientsProvider = Coefficients;
+        }
+
+        public void SetCoefficient(DelOperatorCoefficientsProvider cp) {
+            this.cp = cp;
         }
 
         CoefficientSet Coefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time)

@@ -23,8 +23,8 @@ namespace BoSSS.Application.XNSE_Solver
 
         void LevelSetParameterUpdate(
             DualLevelSet levelSet,
-            LevelSetTracker lsTrkr,
             double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields);
     }
 
@@ -36,7 +36,6 @@ namespace BoSSS.Application.XNSE_Solver
 
         void MovePhaseInterface(
             DualLevelSet levelSet,
-            LevelSetTracker lsTrkr,
             double time,
             double dt,
             bool incremental,
@@ -50,51 +49,36 @@ namespace BoSSS.Application.XNSE_Solver
 
         int m_HMForder;
 
-        XNSE_Control Control;
-
-        string[] parameters;
+        IList<string> parameters;
 
         string[] variables;
 
-        public FastMarcher(XNSE_Control control, int hMForder, int D)
+        string levelSetName;
+
+        public FastMarcher(string levelSetName, int hMForder, int D)
         {
-            Control = control;
             this.m_HMForder = hMForder;
             parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Curvature);
-            variables = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
+            parameters = parameters.Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)));
         }
 
-        public IList<string> VariableNames => variables;
+        public IList<string> VariableNames => null;
 
         public IList<string> ParameterNames => parameters;
 
         public void MovePhaseInterface(
             DualLevelSet phaseInterface,
-            LevelSetTracker lsTrkr,
             double time,
             double dt,
             bool incremental,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            //Mean Velocity
-            XDGField[] EvoVelocity;
-            try {
-                EvoVelocity = new XDGField[]
-                {
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
-                };
-            } catch (KeyNotFoundException e) {
-                Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                EvoVelocity = new XDGField[]
-                {                    
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X],
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Y],
-                };
-            }
-
-            ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(EvoVelocity, lsTrkr, Control);
+            SinglePhaseField[] meanVelocity = new SinglePhaseField[]
+            {
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityX)],
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName,BoSSS.Solution.NSECommon.VariableNames.VelocityY)],
+            };
 
             SinglePhaseField[] filtLevSetGradientArrray = new SinglePhaseField[]
             {
@@ -107,26 +91,19 @@ namespace BoSSS.Application.XNSE_Solver
             //Extension Velocity: Was macht man damit?
             if (extensionVelocity == null)
             {
-                int D = lsTrkr.GridDat.SpatialDimension;
+                int D = phaseInterface.Tracker.GridDat.SpatialDimension;
                 extensionVelocity = new SinglePhaseField[D];
-                Basis basis;
-                try {
-                    basis = new Basis(lsTrkr.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
-                } catch (KeyNotFoundException e) {
-                    Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                    basis = new Basis(lsTrkr.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
-                }
+                Basis basis = new Basis(phaseInterface.Tracker.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
                 for (int d = 0; d < D; ++d)
                 {
                     extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity" + d);
                 }
             }
-            
             //Move LevelSet
             SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
 
             NarrowMarchingBand.Evolve_Mk2(
-                dt, lsTrkr, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
+                dt, phaseInterface.Tracker, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
                 meanVelocity, extensionVelocity,
                 m_HMForder);
         }
@@ -216,69 +193,80 @@ namespace BoSSS.Application.XNSE_Solver
         /// </summary>
         FourierLevSetTimestepper Fourier_Timestepper;
 
-        XNSE_Control Control;
-
-        int m_HMForder;
-
         int curvatureDegree;
 
-        public IList<string> VariableNames => new[] { BoSSS.Solution.NSECommon.VariableNames.VelocityX, BoSSS.Solution.NSECommon.VariableNames.VelocityY };
+        string levelSetName;
 
-        public override IList<string> ParameterNames => new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+        IList<string> parameters;
+
+        public IList<string> VariableNames => null;
+
+        public override IList<string> ParameterNames => parameters;
+
+        IList<string> ILevelSetParameter.ParameterNames
+        {
+            get
+            {
+                return new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+            }
+        }
+
+        IList<string> ILevelSetEvolver.ParameterNames
+        {
+            get
+            {
+                return BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(2));
+            }
+        }
 
         public override DelParameterFactory Factory => ParameterFactory;
 
-        public FourierEvolver(XNSE_Control Control, int hMForder, int curvatureDegree)
+        public FourierEvolver(string levelSetName, FourierLevSetControl control, int curvatureDegree)
         {
-            m_HMForder = hMForder;
-            if (Control.FourierLevSetControl == null)
+            parameters = new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+            this.levelSetName = levelSetName;
+
+            if (control == null)
                 throw new ArgumentNullException("LevelSetEvolution needs and instance of FourierLevSetControl!");
 
-            Fourier_LevSet = FourierLevelSetFactory.Build(Control.FourierLevSetControl);
+            Fourier_LevSet = FourierLevelSetFactory.Build(control);
             //create specialized fourier timestepper
-            Fourier_Timestepper = FourierLevelSetFactory.Build_Timestepper(Control.FourierLevSetControl, Fourier_LevSet.GetFLSproperty(),
-                                                        Fourier_LevSet.ComputeChangerate, Fourier_LevSet.EvolveFourierLS);
-            if (Control.EnforceLevelSetConservation)
-            {
-                throw new NotSupportedException("mass conservation correction currently not supported");
-            }
-            this.Control = Control;
+            Fourier_Timestepper = FourierLevelSetFactory.Build_Timestepper(control, Fourier_LevSet.GetFLSproperty(),
+                Fourier_LevSet.ComputeChangerate, Fourier_LevSet.EvolveFourierLS);
+            
             this.curvatureDegree = curvatureDegree;
         }
 
         public void LevelSetParameterUpdate(
             DualLevelSet levelSet,
-            LevelSetTracker lsTrkr,
             double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             Fourier_Timestepper.updateFourierLevSet();
             VectorField<SinglePhaseField> filtLevSetGradient;
             SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
-            Fourier_LevSet.ProjectToDGCurvature(Curvature, out filtLevSetGradient, lsTrkr.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
+            Fourier_LevSet.ProjectToDGCurvature(Curvature, out filtLevSetGradient, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
         }
 
         public void MovePhaseInterface(
             DualLevelSet levelSet,
-            LevelSetTracker lsTrkr,
             double time,
             double dt,
             bool incremental,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            //Mean Velocity
-            XDGField[] EvoVelocity = new XDGField[]
+            SinglePhaseField[] meanVelocity = new SinglePhaseField[]
             {
-                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
-                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityX)],
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName,BoSSS.Solution.NSECommon.VariableNames.VelocityY)],
             };
-            ConventionalDGField[] meanVelocity = FastMarcher.GetMeanVelocityFromXDGField(EvoVelocity, lsTrkr, Control);
 
-            Fourier_Timestepper.moveLevelSet(dt, meanVelocity, lsTrkr.Regions.GetNearFieldMask(1));
+            Fourier_Timestepper.moveLevelSet(dt, meanVelocity, levelSet.Tracker.Regions.GetNearFieldMask(1));
             if (incremental)
                 Fourier_Timestepper.updateFourierLevSet();
-            Fourier_LevSet.ProjectToDGLevelSet(levelSet.DGLevelSet, lsTrkr);
+            Fourier_LevSet.ProjectToDGLevelSet(levelSet.DGLevelSet, levelSet.Tracker);
         }
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
@@ -290,6 +278,60 @@ namespace BoSSS.Application.XNSE_Solver
             string curvatureName = BoSSS.Solution.NSECommon.VariableNames.Curvature;
             fields[0] = (curvatureName, new SinglePhaseField(curvatureBasis, curvatureName));
             return fields;
+        }
+    }
+
+    class SplineLevelSet : LevelSet
+    {
+        public SplineLevelSet(Basis basis, string name) : base(basis, name)
+        {
+
+        }
+    }
+
+    class SplineLevelSetEvolver : ILevelSetEvolver
+    {
+        int curvatureDegree;
+
+        int m_HMForder;
+
+        SplineLevelSetTimeStepper timeStepper;
+
+        string[] parameters;
+
+        string[] variables;
+
+        string levelSetName;
+
+        public SplineLevelSetEvolver(string levelSetName, int D)
+        {
+            this.levelSetName = levelSetName;
+            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Curvature);
+            variables = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
+        }
+
+        public IList<string> ParameterNames => parameters;
+
+        public IList<string> VariableNames => variables;
+
+        public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            SplineLevelSet splineLs = levelSet.DGLevelSet as SplineLevelSet;
+
+            SinglePhaseField[] meanVelocity = new SinglePhaseField[]
+            {
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityX)],
+                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName,BoSSS.Solution.NSECommon.VariableNames.VelocityY)],
+            };
+            timeStepper.MoveSpline(splineLs, meanVelocity);
+        }
+    }
+
+    class SplineLevelSetTimeStepper
+    {
+        public void MoveSpline(SplineLevelSet levelSet, IList<SinglePhaseField> velocity)
+        {
+
         }
     }
 }
