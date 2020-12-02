@@ -155,18 +155,10 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-<<<<<<< HEAD
-            BoSSS.Solution.Application.InitMPI();
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
-=======
             //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
->>>>>>> experimentalGitlab/master
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_Kcycle_schwarz);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
-            Assert.AreEqual(1, 2, "Remove Me!!");
+            //Assert.AreEqual(1, 2, "Remove Me!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
