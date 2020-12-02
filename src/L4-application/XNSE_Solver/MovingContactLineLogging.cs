@@ -21,12 +21,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     [Serializable]
     public class MovingContactLineLogging : XNSEinSituPostProcessingModule {
 
-      
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string LogfileName = "ContactAngle";
 
         /// <summary>
         /// Filename for logging contact angles
         /// </summary>
-        protected override string LogFileName => "ContactAngle";
+        protected override string LogFileName => LogfileName;
 
         /// <summary>
         /// 

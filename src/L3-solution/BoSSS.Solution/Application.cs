@@ -2052,6 +2052,13 @@ namespace BoSSS.Solution {
                         ResetInitial();
                     }
 
+                    // setup of logging
+                    foreach( var l in PostprocessingModules) {
+                        l.Setup(this);
+                        l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
+                    }
+
+
                     bool RunLoop(int i) {
                         return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
                     }
@@ -2060,7 +2067,9 @@ namespace BoSSS.Solution {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
                         this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
+                        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
@@ -2112,11 +2121,7 @@ namespace BoSSS.Solution {
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
 
-                    // setup of logging
-                    foreach( var l in PostprocessingModules) {
-                        l.Setup(this);
-                    }
-
+                   
 
                     // Evaluate queries and write log file (either to session directory
                     // or current directory)

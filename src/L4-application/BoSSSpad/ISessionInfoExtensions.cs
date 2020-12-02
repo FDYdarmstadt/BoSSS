@@ -2041,24 +2041,23 @@ namespace BoSSS.Foundation.IO {
 
             string[] values;
             switch (logName) {
-                case "Amplitude": {
+                case Application.XNSE_Solver.PhysicalBasedTestcases.WaveLikeLogging.LogfileName: {
                         values = new string[] { "#timestep", "time", "magnitude", "real", "imaginary" };
                         break;
                     }
-                case "SemiAxis": {
-                        logName = "SemiAxis.txt";
+                case Application.XNSE_Solver.PhysicalBasedTestcases.Dropletlike.LogfileName: {
                         values = new string[] { "#timestep", "time", "semi axis x", "semi axis y", "area", "perimeter" };
                         break;
                     }
-                case "BenchmarkQuantities_RisingBubble": {
+                case Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities.LogfileName: {
                         values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity" };
                         break;
                     }
-                case "ContactAngle": {
+                case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
                         values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
                         break;
                     }
-                case "Evaporation": {
+                case Application.XNSE_Solver.PhysicalBasedTestcases.EvaporationLogging.LogfileName: {
                         values = new string[] { "#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux" };
                         break;
                     }
@@ -2078,7 +2077,7 @@ namespace BoSSS.Foundation.IO {
 
                 // Read all data
                 for (int j = 0; j < numberSessions; j++) {
-                    string path = Path.Combine(@sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
+                    string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
                     string[] lines = File.ReadAllLines(path);
 
                     if (sess.Pick(j).RestartedFrom == Guid.Empty) { 

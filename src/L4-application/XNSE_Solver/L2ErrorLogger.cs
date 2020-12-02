@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP;
@@ -31,6 +32,9 @@ namespace BoSSS.Application.XNSE_Solver {
             ComputeL2Error(PhysTime);
         }
 
+        public override void Setup(IApplication solverMain) {
+            base.Setup(solverMain);
+        }
 
         /// <summary>
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 

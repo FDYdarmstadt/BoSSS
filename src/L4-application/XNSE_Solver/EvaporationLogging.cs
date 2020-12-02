@@ -44,11 +44,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         [DataMember]
         public Mode mode = Mode.LineInterface;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string LogfileName = "Evaporation";
 
         /// <summary>
         /// Evaporation
         /// </summary>
-        protected override string LogFileName => "Evaporation";
+        protected override string LogFileName => LogfileName;
 
         /// <summary>
         /// CSV first line

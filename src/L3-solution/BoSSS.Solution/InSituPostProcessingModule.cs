@@ -46,10 +46,18 @@ namespace BoSSS.Solution {
 
         }
 
+        [JsonIgnore]
+        [NonSerialized]
+        bool m_Setupdone = false;
+
         /// <summary>
         /// 
         /// </summary>
-        public void Setup(IApplication solverMain) {
+        virtual public void Setup(IApplication solverMain) {
+            if(m_Setupdone)
+                throw new NotSupportedException("Setup Routine may only be called once.");
+            m_Setupdone = true;
+
             this.SolverMain = solverMain;
             if(LogFileName != null) {
                 if(solverMain.CurrentSessionInfo.ID != null && !solverMain.CurrentSessionInfo.ID.Equals(Guid.Empty)) {

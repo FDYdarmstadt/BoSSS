@@ -16,7 +16,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// 
     /// </summary>
     public class WaveLikeLogging : XNSEinSituPostProcessingModule {
-        protected override string LogFileName => "Amplitude";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string LogfileName = "Amplitude";
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected override string LogFileName => LogfileName;
 
 
         protected override void WriteHeader(TextWriter textWriter) {

@@ -22,9 +22,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     public class RisingBubble2DBenchmarkQuantities : XNSEinSituPostProcessingModule {
         
         /// <summary>
+        /// 
+        /// </summary>
+        public const string LogfileName = "BenchmarkQuantities_RisingBubble";
+
+        /// <summary>
         /// hard-coded name for the Rising bubble
         /// </summary>
-        protected override string LogFileName => "BenchmarkQuantities_RisingBubble";
+        protected override string LogFileName => LogfileName;
 
         /// <summary>
         /// Header for the rising bubble log

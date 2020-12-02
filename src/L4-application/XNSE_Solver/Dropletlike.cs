@@ -16,12 +16,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// Benchmark quantities for droplet-testcases, <see cref="Droplet"/>
     /// </summary>
     [Serializable]
-    class Dropletlike : XNSEinSituPostProcessingModule {
-        
+    public class Dropletlike : XNSEinSituPostProcessingModule {
+
+        /// <summary>
+        /// SemiAxis
+        /// </summary>
+        public const string LogfileName = "SemiAxis";
+
+
         /// <summary>
         /// filename
         /// </summary>
-        protected override string LogFileName => "SemiAxis";
+        protected override string LogFileName => LogfileName;
 
         /// <summary>
         /// 
