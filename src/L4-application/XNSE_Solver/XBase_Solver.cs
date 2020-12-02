@@ -558,7 +558,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
 
                     case LevelSetEvolution.Fourier: {
-                            Fourier_Timestepper.moveLevelSet(dt, meanVelocity);
+                            Fourier_Timestepper.moveLevelSet(dt, meanVelocity, this.LsTrk.Regions.GetNearFieldMask(1));
                             if (incremental)
                                 Fourier_Timestepper.updateFourierLevSet();
                             Fourier_LevSet.ProjectToDGLevelSet(this.DGLevSet.Current, this.LsTrk);

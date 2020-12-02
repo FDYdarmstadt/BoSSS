@@ -210,9 +210,6 @@ namespace BoSSS.Solution.NSECommon {
 
         protected double Source(double[] x, double[] parameters, double[] U) {
 
-            //double Temperature = U[0]  > 1.0 ? U[0] : 1.0 ;
-            //double YF = U[1] > 0.0 ? U[1] : 0.0;
-            //double YO = U[2] > 0.0 ? U[2] : 0.0;
 
             double Temperature = U[0];
             double YF = U[1];
@@ -221,7 +218,7 @@ namespace BoSSS.Solution.NSECommon {
             double MM_F = MolarMasses[0];
             double MM_O = MolarMasses[1];
  
-            if (YF * YO > 1e-6 && VariableOneStepParameters) {//  calculate one-Step model parameters
+            if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
                 Ta = EoS.getTa(YF, YO) / TRef;                
             }
 
@@ -229,11 +226,23 @@ namespace BoSSS.Solution.NSECommon {
 
             double ReactionRate = m_Da * Math.Exp( -Ta / Temperature) * (rho * YF / MM_F) * (rho * YO / MM_O);
 
-            //Debug.Assert(!double.IsNaN(ReactionRate));
-            //Debug.Assert(!double.IsInfinity(ReactionRate));
- 
 
- 
+
+            if ( double.IsInfinity(ReactionRate)) {
+                Console.WriteLine("Infinite found");
+                Console.WriteLine("Temperature:", Temperature);
+                Console.WriteLine("rho:", rho);
+                Console.WriteLine("ExponentialTerm:", Math.Exp(-Ta / Temperature));
+
+            }
+
+            if (double.IsNaN(ReactionRate) ) {
+                Console.WriteLine("Nan found");
+                Console.WriteLine("Temperature:", Temperature);
+                Console.WriteLine("rho:", rho);
+                Console.WriteLine("ExponentialTerm:", Math.Exp(-Ta / Temperature));
+            }
+
 
             return -MolarMasses[SpeciesIndex] *  StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
         }

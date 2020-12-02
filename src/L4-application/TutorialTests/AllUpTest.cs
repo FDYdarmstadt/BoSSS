@@ -63,7 +63,12 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         static public bool OneTimeSetUp() {
-            bool r= MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
+            Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
+            bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
+            if(r)
+                Console.WriteLine("started within this process.");
+            else
+                Console.WriteLine("already running.");
             return r;
         }
 
@@ -218,6 +223,7 @@ namespace BoSSS.Application.TutorialTests {
             bool iStartedThisShit = OneTimeSetUp();
 
             BoSSSpad.Job.UndocumentedSuperHack = true;
+            BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:

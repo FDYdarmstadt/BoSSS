@@ -62,8 +62,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.CapillaryHeight;
-            C.LogPeriod = 10;
+            //C.LogValues = XNSE_Control.LoggingValues.CapillaryHeight;
+            //C.LogPeriod = 10;
+
+            C.PostprocessingModules.Add(new CapillaryHeightLogging() { LogPeriod = 10 });
+
 
             #endregion
 
@@ -276,8 +279,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            C.LogPeriod = 100;
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogPeriod = 100;
+            C.PostprocessingModules.Add(new MovingContactLineLogging() { LogPeriod = 100 });
+
 
             #endregion
 
@@ -392,7 +397,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
                         //C.ClearVelocitiesOnRestart = true;
-                        C.ReInitPeriod = 400;
+                        //C.ReInitPeriod = 400;
 
                         break;
                     }
@@ -646,7 +651,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1 * C.PhysicalParameters.Sigma;
             //C.PhysicalParameters.lambda_I = 2 * C.PhysicalParameters.Sigma;
-            C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
+            C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 

@@ -236,7 +236,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             {
                 Cells = cellsGridCommons.ToArray()
             };
-            //PrintEdgeTags(cellsGridCommons);
+            PrintEdgeTags(cellsGridCommons);
             boundaryConverter.RegisterEdgesTo(grid);
             return (grid, aggregation.ToArray());
         }

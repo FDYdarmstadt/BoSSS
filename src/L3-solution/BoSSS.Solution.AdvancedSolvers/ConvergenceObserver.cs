@@ -31,6 +31,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
+using Microsoft.SqlServer.Server;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -42,10 +43,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public class ConvergenceObserver {
 
         /// <summary>
-        /// Performs a mode decay analysis (<see cref="Waterfall(bool, int)"/>) on this solver.
+        /// Performs a mode decay analysis (<see cref="Waterfall(bool, bool, int)"/>) on this solver.
         /// </summary>
         public static Plot2Ddata WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
             int L = mgOperator.BaseGridProblemMapping.LocalLength;
+
+            Console.WriteLine($"Waterfall analysis for {mgOperator.GridData.CellPartitioning.TotalLength} cells, {L} DOFs...");
 
             var RHS = new double[L];
             var exSol = new double[L];
@@ -53,13 +56,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ConvergenceObserver co = new ConvergenceObserver(mgOperator, MassMatrix, exSol);
             var bkup = linearSolver.IterationCallback;
             linearSolver.IterationCallback = co.IterationCallback;
+
+            var pc = linearSolver as IProgrammableTermination;
+            var termBkup = pc?.TerminationCriterion;
+            if(pc != null) {
+                pc.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                        return (R_l2/R0_l2 > 1e-8) && (iter < 1500);
+                    };
+            }
             
             // use a random init for intial guess.
-            Random rnd = new Random();
-            double[] x0 = new double[L];
-            for(int l = 0; l < L; l++) {
-                x0[l] = rnd.NextDouble();
-            }
+            double[] x0 = GenericBlas.RandomVec(L, 0);
 
             // execute solver 
             linearSolver.Init(mgOperator);
@@ -67,8 +74,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // reset and return
             linearSolver.IterationCallback = bkup;
+            if(termBkup != null) {
+                pc.TerminationCriterion = termBkup;
+            }
             //var p = co.PlotIterationTrend(true, false, true, true);
-            var p = co.Waterfall(true, 100);
+
+            double resReduction = Math.Pow(co.LastResidualNorm / co.Iter0ResidualNorm, 1.0 / co.NumberOfIterations);
+            double errReduction = Math.Pow(co.LastSolNorm / co.Iter0SolNorm, 1.0 / co.NumberOfIterations);
+
+            Console.WriteLine("Residual reduction:   " + (co.LastResidualNorm / co.Iter0ResidualNorm));
+            Console.WriteLine("Error    reduction:   " + (co.LastSolNorm / co.Iter0SolNorm));
+            Console.WriteLine("Residual reduction per iteration:   " + resReduction);
+            Console.WriteLine("Error    reduction per iteration:   " + errReduction);
+            
+            
+            var p = co.Waterfall(true, true, 100);
             return p;
         }
 
@@ -198,59 +218,71 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Visualization of data from <see cref="WriteTrendToTable"/> in gnuplot
         /// </summary>
-        public Plot2Ddata Waterfall(bool ErrorOrResidual, int NoOfIter = int.MaxValue) {
+        public Plot2Ddata Waterfall(bool IncludeError, bool IncludeResidual, int NoOfIter = int.MaxValue) {
 
             var Ret = new Plot2Ddata();
-            Ret.Title = (ErrorOrResidual ? "\"Error Waterfall\"" : "\"Residual Waterfall\"");
+            Ret.Title = "Waterfall";
 
 
             //string[] Titels;
             //MultidimensionalArray ConvTrendData;
             //WriteTrendToTable(ErrorOrResidual, SepVars, SepPoly, SepLev, out var Titels, out ConvTrendData);
-            var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
+            //var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
 
-            int DegMax = AllData.Keys.Max(tt => tt.deg);
-            int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
-            int MaxIter = AllData.First().Value.Count - 1;
+            int i = 0;
+            foreach(var AllData in new[] { this.ResNormTrend, this.ErrNormTrend }) {
+                i++;
+               
 
-            var WaterfallData = new List<double[]>();
-            var Row = new List<double>();
-            var xCoords = new List<double>();
-            for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
-                Row.Clear();
-                for(int iLv = MglMax; iLv >= 0; iLv--) {
-                    for(int p = 0; p <= DegMax; p++) {
-                        double Acc = 0;
 
-                        foreach(var kv in AllData) {
-                            if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
-                                Acc += kv.Value[iIter].Pow2();
-                        }
+                int DegMax = AllData.Keys.Max(tt => tt.deg);
+                int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
+                int MaxIter = AllData.First().Value.Count - 1;
 
-                        Acc = Acc.Sqrt();
-                        Row.Add(Acc);
+                var WaterfallData = new List<double[]>();
+                var Row = new List<double>();
+                var xCoords = new List<double>();
+                for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                    Row.Clear();
+                    for(int iLv = MglMax; iLv >= 0; iLv--) {
+                        for(int p = 0; p <= DegMax; p++) {
+                            double Acc = 0;
 
-                        if(iIter == 0) {
-                            double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
-                            xCoords.Add(xCoord);
+                            foreach(var kv in AllData) {
+                                if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
+                                    Acc += kv.Value[iIter].Pow2();
+                            }
+
+                            Acc = Acc.Sqrt();
+                            Row.Add(Acc);
+
+                            if(iIter == 0) {
+                                double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
+                                xCoords.Add(xCoord);
+                            }
                         }
                     }
+
+                    WaterfallData.Add(Row.ToArray());
                 }
 
-                WaterfallData.Add(Row.ToArray());
-            }
+                Ret.LogY = true;
+                Ret.ShowLegend = false;
 
-            Ret.LogY = true;
-            Ret.ShowLegend = false;
+                for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                    var PlotRow = WaterfallData[iIter];
 
-            for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
-                var PlotRow = WaterfallData[iIter];
-                var XAxis = PlotRow.Length.ForLoop(i => i + 1.0);
+                    var g = new Plot2Ddata.XYvalues("iter" + iIter, xCoords, PlotRow);
+                    if(i == 1) {
+                        g.Format.PointType = PointTypes.OpenBox;
+                        g.Format.LineColor = LineColors.Red;
+                    } else {
+                        g.Format.PointType = PointTypes.Circle;
+                        g.Format.LineColor = LineColors.Black;
+                    }
+                    Ret.AddDataGroup(g);
 
-                var g = new Plot2Ddata.XYvalues("iter"  + iIter, XAxis, PlotRow);
-                
-                Ret.AddDataGroup(g);
-                    
+                }
             }
             return Ret;
         }
@@ -476,6 +508,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public string TecplotOut = null;
 
         /// <summary>
+        /// L2 norm of residual in last/most recent iteration
+        /// </summary>
+        public double LastResidualNorm;
+
+        /// <summary>
+        /// L2 norm of solution (= error against 0 RHS) in last/most recent iteration
+        /// </summary>
+        public double LastSolNorm;
+
+
+        /// <summary>
+        /// L2 norm of residual in first iteration
+        /// </summary>
+        public double Iter0ResidualNorm;
+
+        /// <summary>
+        /// L2 norm of solution (= error against 0 RHS) in first recent iteration
+        /// </summary>
+        public double Iter0SolNorm;
+
+
+        private bool firstLog = false;
+
+        /// <summary>
+        /// Highest iteration number
+        /// </summary>
+        public int NumberOfIterations = 0;
+
+        /// <summary>
         /// Callback routine, see <see cref="ISolverWithCallback.IterationCallback"/> or <see cref="NonlinearSolver.IterationCallback"/>.
         /// </summary>
         public void IterationCallback(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
@@ -483,6 +544,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentException();
             if (rI.Length != SolverOperator.Mapping.LocalLength)
                 throw new ArgumentException();
+
+            NumberOfIterations = Math.Max(NumberOfIterations, iter);
 
             int Lorg = SolverOperator.BaseGridProblemMapping.LocalLength;
 
@@ -522,6 +585,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
             double l2_ERR = Err_Org.L2NormPow2().MPISum().Sqrt();
             Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}", iter, l2_RES, l2_ERR);
+
+            LastResidualNorm = l2_RES;
+            LastSolNorm = l2_ERR;
+            if(firstLog == false) {
+                Iter0ResidualNorm = l2_RES;
+                Iter0SolNorm = l2_ERR;
+                firstLog = true;
+            }
 
 
             // decompose error and residual into orthonormal vectors

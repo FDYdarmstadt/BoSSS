@@ -20,7 +20,7 @@ List of 3 instances of BatchProcessorClient {
   2: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: project01217
 }
 ==============
-var ExQueque = ExecutionQueues[2];
+var ExQueque = ExecutionQueues[1];
 **************
 ==============
 var myBatch = (SlurmClient)ExQueque;
@@ -29,23 +29,21 @@ ExQueque.AllowedDatabases;
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-string WFlowName = "Xdg_Stokes_test";
+string WFlowName = "Xdg_Stokes_Schwarz_test2_1";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_test'.
+Project name is set to 'Xdg_Stokes_Schwarz_test2_1'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
-string dirname = "DB_XdgStokes";
+string dirname = "DB_XdgStokes_trans";
 string linpath = @"/work/scratch/jw52xeqa/"+dirname;
 string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes'.
-
 ==============
 **************
 ==============
@@ -87,17 +85,15 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 7 instances of IGridInfo {
-  0: { Guid = f9d71ca4-7f86-4763-ae70-fc9482a30b89; Name = Xdg_Stokes_run0_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = 2321b630-ff43-4371-bd8d-5411b68feee9; Name = Xdg_Stokes_run0_J110592; Cell Count = 110592; Dim = 3 }
-  2: { Guid = 393f2585-baf9-409e-971e-a78c3b29fe96; Name = Xdg_Stokes_run0_J32768; Cell Count = 32768; Dim = 3 }
-  3: { Guid = 724522a4-75b8-406e-908f-c9c6d01d061c; Name = Xdg_Stokes_run0_J13824; Cell Count = 13824; Dim = 3 }
-  4: { Guid = 422cea49-5113-4252-ab7c-aaddc92557fc; Name = Xdg_Stokes_run0_J512; Cell Count = 512; Dim = 3 }
-  5: { Guid = 2435e7cf-5d50-4998-9281-9424d629ada9; Name = Xdg_Stokes_test_J64; Cell Count = 64; Dim = 3 }
-  6: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
+List of 5 instances of IGridInfo {
+  0: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
+  1: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
+  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+  3: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 16 };
+int[] Resolutions_3D = new int[] { 32,48,64 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -158,13 +154,17 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
+Found Grid: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
+List of 3 instances of IGridInfo {
+  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+  1: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -193,8 +193,8 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     
     // ProjectName
     // ============
-    
-    int J  = grid.NumberOfCells;
+    int NoSblocks = 4;
+    int J         = grid.NumberOfCells;
     
     string caseName = string.Format("J{0}_p{1}_{2}", J, p, solver);
     Console.WriteLine("setting up: " + caseName);
@@ -250,7 +250,7 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     // Dont know
     // ============
     
-    double r     = 0.5;
+    double r     = 0.49;
     double nonsp = 0.5;
 
     C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r*nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
@@ -269,11 +269,13 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     
     //C.VelocityBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
     //C.PressureBlockPrecondMode         = MultigridOperator.Mode.IdMass_DropIndefinite;
-    C.UseSchurBlockPrec                = false;
+    C.UseSchurBlockPrec                = true;
     C.LinearSolver.NoOfMultigridLevels = 5;
     C.LinearSolver.MaxSolverIterations = 5000;
+    C.LinearSolver.pMaxOfCoarseSolver  = p;
     
     C.LinearSolver.TargetBlockSize = Math.Min(J*DOF/2,10000); //Make at least two blocks with Schwarz plz...
+    //C.LinearSolver.TargetBlockSize = (int)(J*DOF/(NoSblocks-1));
 
     C.LinearSolver.ConvergenceCriterion = 1e-8;
     C.LevelSet_ConvergenceCriterion     = 1e-6;
@@ -292,12 +294,17 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     C.TimeSteppingScheme           = TimeSteppingScheme.ImplicitEuler;
     C.Timestepper_BDFinit          = TimeStepperInit.SingleInit;
     C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-    C.Option_LevelSetEvolution     = LevelSetEvolution.None;
-    C.TimesteppingMode             = AppControl._TimesteppingMode.Steady;
+    //C.TimesteppingMode             = AppControl._TimesteppingMode.Steady;
+    C.TimesteppingMode             = AppControl._TimesteppingMode.Transient;
+    C.dtFixed                      = 1E-4;
             
+    C.SessionName += "_pLow"+C.LinearSolver.pMaxOfCoarseSolver ;
     return C;
     }
 **************
+(5,9): warning CS0219: The variable `NoSblocks' is assigned but its value is never used
+No. of errors|warnings: 0|1.
+
 ==============
 **************
 ==============
@@ -316,7 +323,7 @@ int[] PolyDegS = new int[] {2};
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso,
+    //LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
     //LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
@@ -334,12 +341,14 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = d667b4f3-dd41-4011-9fa7-1b3fae3935a0; Name = Xdg_Stokes_Saye_J4096; Cell Count = 4096; Dim = 3 }
+List of 3 instances of IGridInfo {
+  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+  1: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
+  2: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
-int MaxDof = 2000000;
+int MaxDof = 10000000;
 **************
 ==============
 using BoSSS.Solution.XNSECommon;
@@ -365,14 +374,15 @@ foreach(IGridInfo grd in t_grids) {
         continue;
     
     var Ctrl = GenerateCObj(solver_name,k,grd,DOF);
-
+    
     controls.Add(Ctrl);
 }
 }
 }
 **************
-setting up: J4096_p2_classic_pardiso
-setting up: J4096_p2_exp_Kcycle_schwarz
+setting up: J32768_p2_exp_Kcycle_schwarz
+setting up: J110592_p2_exp_Kcycle_schwarz
+setting up: J262144_p2_exp_Kcycle_schwarz
 
 ==============
 **************
@@ -412,29 +422,62 @@ foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
     var aJob = new Job(ctrl.SessionName, typeof(XNSE_SolverMain));
     aJob.SetControlObject(ctrl);
-    ((SlurmClient)ExQueque).SlurmAccount = "project01217";  // Jens 
+    ((SlurmClient)ExQueque).SlurmAccount = "project01287";  // Jens 
     aJob.NumberOfMPIProcs         = 1;
-    aJob.ExecutionTime            = "12:00:00";
+    aJob.ExecutionTime            = "4:00:00";
     aJob.MemPerCPU                = "50000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J4096_p2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
+ Submitting: J32768_p2_exp_Kcycle_schwarz_pLow2
+Deploying job J32768_p2_exp_Kcycle_schwarz_pLow2 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_test-XNSE_Solver2020Oct12_144042
-copied 32 files.
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_test2_1-XNSE_Solver2020Nov16_224022
+copied 31 files.
    written file: control.obj
 deployment finished.
 
-Renci.SshNet.Common.SshConnectionException occurred: Failed to negotiate key exchange algorithm.. Type 'LastError' for details.
+
+ Submitting: J110592_p2_exp_Kcycle_schwarz_pLow2
+Deploying job J110592_p2_exp_Kcycle_schwarz_pLow2 ... 
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_test2_1-XNSE_Solver2020Nov16_224030
+copied 31 files.
+   written file: control.obj
+deployment finished.
+
+
+ Submitting: J262144_p2_exp_Kcycle_schwarz_pLow2
+Deploying job J262144_p2_exp_Kcycle_schwarz_pLow2 ... 
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_test2_1-XNSE_Solver2020Nov16_224038
+copied 31 files.
+   written file: control.obj
+deployment finished.
+
+
 
 ==============
-**************
-==============
 LastError
+**************
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at BoSSS.Application.BoSSSpad.Job.Deployment.get_BatchProcessorIdentifierToken() in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 574
+   at BoSSS.Application.BoSSSpad.Job.Deployment.get_Status() in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 623
+   at BoSSS.Application.BoSSSpad.Job.<>c.<GetStatus>b__79_0(Deployment dep) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 1307
+   at System.Linq.Enumerable.WhereArrayIterator`1.MoveNext()
+   at System.Linq.Buffer`1..ctor(IEnumerable`1 source)
+   at System.Linq.Enumerable.ToArray[TSource](IEnumerable`1 source)
+   at BoSSS.Application.BoSSSpad.Job.GetStatus(Boolean WriteHints) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 1307
+   at BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc, Boolean DeleteOldDeploymentsAndSessions) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 1176
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 357
+==============
+L#astError
 **************
 Renci.SshNet.Common.SshConnectionException: Server HMAC algorithm not found
    at Renci.SshNet.Session.WaitOnHandle(WaitHandle waitHandle, TimeSpan timeout)
@@ -812,6 +855,42 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

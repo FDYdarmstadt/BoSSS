@@ -50,7 +50,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
 
-            betaS = _betaS;
+            m_beta = _betaS;
         }
 
    
@@ -58,8 +58,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             get;
             private set;
         }
-
-        double betaS;
 
         double currentMu;
         double complementMu;
@@ -97,7 +95,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
 
-            betaS = _betaS;
+            m_beta = _betaS;
         }
 
         SpeciesId m_spcId;
@@ -106,8 +104,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             get;
             private set;
         }
-
-        double betaS;
 
         double currentMu;
         double complementMu;

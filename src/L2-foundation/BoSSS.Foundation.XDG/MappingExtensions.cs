@@ -16,8 +16,6 @@ namespace BoSSS.Foundation.XDG {
         /// computes a local unique coordinate index ("local" means local on this processor);
         /// this index is unique over all fields (in this mapping), over all cells, over all basis functions, 
         /// but it's only locally (on this processor) valid.
-        /// A local index in the update range (smaller than <see cref="NUpdate"/>) can be converted into 
-        /// a global index by adding <see cref="Partitioning.i0"/>.
         /// </summary>
         /// <param name="find">
         /// the field or basis index (see <see cref="BasisS"/>);
@@ -27,6 +25,12 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="lsTrk"></param>
         /// <param name="map"></param>
         /// <param name="spc">species</param>
+        /// <returns>
+        /// A (MPI-) local index in the update range 
+        /// (between 0 and smaller than <see cref="UnsetteledCoordinateMapping.NUpdate"/>, which equals <see cref="ilPSP.IPartitioning.LocalLength"/>).
+        /// It can be converted into 
+        /// a (MPI-) global index by adding <see cref="ilPSP.IPartitioning.i0"/>.
+        /// </returns>
         public static int LocalUniqueCoordinateIndex(this UnsetteledCoordinateMapping map, LevelSetTracker lsTrk, int find, int j, SpeciesId spc, int n) {
             int spcIdx = lsTrk.Regions.GetSpeciesIndex(spc, j);
             return LocalUniqueCoordinateIndex(map, lsTrk, find, j, spcIdx, n);
@@ -34,11 +38,49 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
+        /// Number of DG modes for a specific variable, cell and species.
+        /// </summary>
+        /// <param name="find">
+        /// the field or basis index (see <see cref="BasisS"/>);
+        /// </param>
+        /// <param name="j">local cell index</param>
+        /// <param name="lsTrk"></param>
+        /// <param name="map"></param>
+        /// <param name="spc">species</param>
+        public static int GetNumberOfModes(this UnsetteledCoordinateMapping map, LevelSetTracker lsTrk, int find, int j, SpeciesId spc) {
+            int spcIdx = lsTrk.Regions.GetSpeciesIndex(spc, j);
+            return GetNumberOfModes(map, lsTrk, find, j, spcIdx);
+        }
+        
+        /// <summary>
+        /// Number of DG modes for a specific variable, cell and species.
+        /// </summary>
+        /// <param name="find">
+        /// the field or basis index (see <see cref="BasisS"/>);
+        /// </param>
+        /// <param name="j">local cell index</param>
+        /// <param name="lsTrk"></param>
+        /// <param name="map"></param>
+        /// <param name="spcIdx">index</param>
+        public static int GetNumberOfModes(this UnsetteledCoordinateMapping map, LevelSetTracker lsTrk, int find, int j, int spcIdx) {
+            int NoOfSpc = lsTrk.Regions.GetNoOfSpecies(j, out var rrc);
+            if(spcIdx < 0 || spcIdx >= NoOfSpc)
+                throw new IndexOutOfRangeException($"Species index out of range (species index is {spcIdx}, Number of species is {NoOfSpc}, cell {j})");
+
+            Basis b = map.BasisS[find];
+            XDGBasis xb = b as XDGBasis;
+
+            if(xb == null)
+                return b.Length;
+            else
+                return xb.DOFperSpeciesPerCell;
+        }
+
+
+        /// <summary>
         /// computes a local unique coordinate index ("local" means local on this processor);
         /// this index is unique over all fields (in this mapping), over all cells, over all basis functions, 
         /// but it's only locally (on this processor) valid.
-        /// A local index in the update range (smaller than <see cref="NUpdate"/>) can be converted into 
-        /// a global index by adding <see cref="Partitioning.i0"/>.
         /// </summary>
         /// <param name="find">
         /// the field or basis index (see <see cref="BasisS"/>);
@@ -48,9 +90,15 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="lsTrk"></param>
         /// <param name="map"></param>
         /// <param name="spcIdx">species index</param>
+        /// <returns>
+        /// A (MPI-) local index in the update range 
+        /// (between 0 and smaller than <see cref="UnsetteledCoordinateMapping.NUpdate"/>, which equals <see cref="ilPSP.IPartitioning.LocalLength"/>).
+        /// It can be converted into 
+        /// a (MPI-) global index by adding <see cref="ilPSP.IPartitioning.i0"/>.
+        /// </returns>
         public static int LocalUniqueCoordinateIndex(this UnsetteledCoordinateMapping map, LevelSetTracker lsTrk, int find, int j, int spcIdx, int n) {
             //;
-
+            
             int NoOfSpc = lsTrk.Regions.GetNoOfSpecies(j, out var rrc);
             if(spcIdx < 0 || spcIdx >= NoOfSpc)
                 throw new IndexOutOfRangeException($"Species index out of range (species index is {spcIdx}, Number of species is {NoOfSpc}, cell {j})");

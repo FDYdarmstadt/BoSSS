@@ -82,17 +82,32 @@ namespace ilPSP.LinSolvers.MUMPS {
         /// <param name="MPI"></param>
         public MUMPSSolver(bool verbose = false) {
             this.verbose = verbose;
-            //if (MPI == true) {
-            //    this.m_MPI_Comm = csMPI.Raw._COMM.WORLD;
-            //} else {
-            //    this.m_MPI_Comm = csMPI.Raw._COMM.SELF;
-            //}
-            SingletonMumps.SetParallelism(this.SolverVersion.ToString());
         }
 
-        public Parallelism SolverVersion = Parallelism.SEQ;
+        Parallelism m_Parallelism = Parallelism.OMP;
+
+        /// <summary>
+        /// Level of parallelism, which should be used for this solver instance 
+        /// </summary>
+        public Parallelism Parallelism {
+            get {
+                return m_Parallelism;
+            }
+            set {
+                if(this.MUMPS_csharp != null) {
+                    throw new NotSupportedException("Cannot be changed after init.");
+                }
+
+                m_Parallelism = value;
+            }
+        }
+
+        MUMPS_csharp MUMPS_csharp;
 
         public void DefineMatrix(IMutableMatrixEx M) {
+            if(m_MumpsMatrix != null)
+                throw new NotSupportedException("solver can only be initialized once");
+            this.MUMPS_csharp = new MUMPS_csharp(Parallelism);
             m_MumpsMatrix = new Matrix(M);
             m_OrgMatrix = M;
             this.m_MPI_Comm = m_OrgMatrix.MPI_Comm;

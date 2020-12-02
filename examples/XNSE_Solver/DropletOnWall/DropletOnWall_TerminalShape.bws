@@ -1,0 +1,297 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 730; Grid Count = 13257; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 169; Grid Count = 295; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Application.XNSE_Solver;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Foundation' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+WorkflowMgm.Init("DropletOnWall")
+**************
+Project name is set to 'DropletOnWall'.
+
+==============
+WorkflowMgm.Sessions
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 27 instances of ISessionInfo {
+  0: DropletOnWall	DropletOnWall_gravity7.2*	06/17/2020 22:50:53	8c55e304...
+  1: DropletOnWall	DropletOnWall_gravity0.36	06/15/2020 22:25:17	edbb872e...
+  2: DropletOnWall	DropletOnWall_gravity0.36*	06/15/2020 22:24:14	82ac9545...
+  3: DropletOnWall	DropletOnWall_gravity7.2*	06/15/2020 22:12:50	6dd712d1...
+  4: DropletOnWall	DropletOnWall_gravity7.2	06/13/2020 22:49:02	47f8b621...
+  5: DropletOnWall	empty-session-name*	05/10/2020 17:24:11	d9ce48ce...
+  6: DropletOnWall	empty-session-name*	05/10/2020 17:10:04	74a0a423...
+  7: DropletOnWall	empty-session-name*	05/10/2020 17:08:38	c035e254...
+  8: DropletOnWall	empty-session-name*	05/09/2020 12:45:58	cfcfc41e...
+  9: DropletOnWall	empty-session-name*	05/09/2020 12:44:51	36caea36...
+  10: DropletOnWall	DropletOnWall_gravity3.6	05/23/2020 22:18:02	db805f34...
+  11: DropletOnWall	DropletOnWall_gravity1.44	05/23/2020 22:18:20	70dbb957...
+  12: DropletOnWall	DropletOnWall_gravity0.0072	05/23/2020 22:17:14	a3cafdf8...
+  13: DropletOnWall	DropletOnWall_gravity0.072	05/23/2020 22:16:53	1ed8289f...
+  14: DropletOnWall	DropletOnWall_gravity0.72	05/23/2020 22:18:38	34e3c0cd...
+  15: DropletOnWall	DropletOnWall_gravity7.2*	05/23/2020 22:17:41	069b1f15...
+  16: DropletOnWall	DropletOnWall_gravity0	05/22/2020 12:42:03	76fd7205...
+  17: DropletOnWall	DropletOnWall_gravity0.72	05/22/2020 12:42:57	3f396536...
+  18: DropletOnWall	DropletOnWall_gravity0.72	05/18/2020 21:18:32	3743bad5...
+  19: DropletOnWall	DropletOnWall_gravity0.72*	05/18/2020 21:40:21	f2ff1de7...
+  20: DropletOnWall	DropletOnWall_gravity0.72*	05/18/2020 21:14:34	edea8dff...
+  21: DropletOnWall	DropletOnWall_gravity144*	05/15/2020 10:19:19	be2e7986...
+  22: DropletOnWall	DropletOnWall_gravity0.72*	05/15/2020 10:17:38	0eeeae50...
+  23: DropletOnWall	DropletOnWall_gravity144*	05/14/2020 21:39:14	466d84ae...
+  24: DropletOnWall	DropletOnWall_gravity144*	05/14/2020 16:17:23	adbf036a...
+  25: DropletOnWall	DropletOnWall_gravity0.72*	05/14/2020 16:16:15	435bbc65...
+  26: DropletOnWall	DropletOnWall_gravity0.72*	05/14/2020 16:12:45	7c855f95...
+}
+==============
+string studyName = "gravity7.2";
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+List<ISessionInfo> evalSessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            evalSess.Add(sess);  
+        else 
+            evalSessNT.Add(sess);
+    }        
+}
+evalSessNT
+**************
+List of 3 instances of ISessionInfo {
+  0: DropletOnWall	DropletOnWall_gravity7.2*	06/17/2020 22:50:53	8c55e304...
+  1: DropletOnWall	DropletOnWall_gravity7.2*	06/15/2020 22:12:50	6dd712d1...
+  2: DropletOnWall	DropletOnWall_gravity7.2*	05/23/2020 22:17:41	069b1f15...
+}
+==============
+evalSessNT.Pick(0).ID
+**************
+8c55e304-831c-4825-a6ac-886c1d4f14a4
+==============
+evalSess
+**************
+List of 1 instances of ISessionInfo {
+  0: DropletOnWall	DropletOnWall_gravity7.2	06/13/2020 22:49:02	47f8b621...
+}
+==============
+//string[] setupName = new string[]{ "mesh1", "mesh0" };
+//int stpInd = 0;
+var sess = WorkflowMgm.Sessions.Pick(0);
+**************
+==============
+//sess.Timesteps.Last().Export().WithSupersampling(2).Do()
+**************
+==============
+var terminalStep = sess.Timesteps.Last();
+terminalStep
+**************
+ { Time-step: 18100; Physical time: 0.18100000000004s; Fields: Phi, Curvature, PhiDG, Pressure, VelocityX, VelocityY, GravityY, DivergenceVelocity; Name:  }
+==============
+DGField phi = terminalStep.Fields.ElementAt(0);
+**************
+==============
+**************
+==============
+**************
+==============
+LevelSet LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+LevSet.Acc(1.0, phi);           
+**************
+==============
+LevelSetTracker LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+LsTrk.UpdateTracker();
+**************
+==============
+MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, quadRuleOrderForNodeSet:10);
+**************
+==============
+double[] x = interP.ExtractSubArrayShallow(new int[] { -1, 0 }).To1DArray();
+double[] y = interP.ExtractSubArrayShallow(new int[] { -1, 1 }).To1DArray();
+**************
+==============
+**************
+==============
+double Theta_E = Math.PI * 5.0 / 18.0;
+double R0      = 0.01*Math.Sqrt(Math.PI/(2*(Theta_E - Math.Sin(Theta_E)*Math.Cos(Theta_E))));
+double s       = 2 * R0 * Math.Sin(Theta_E);
+double h       = Math.Sqrt(R0.Pow2() - (0.25 * s.Pow2()));
+
+double[] center = new double[] { 0, -h };
+Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - R0);
+**************
+==============
+LevSet.ProjectField(PhiFunc);
+LsTrk.UpdateTracker();
+**************
+==============
+MultidimensionalArray interPref = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, quadRuleOrderForNodeSet:10);
+**************
+==============
+double[] xRef = interPref.ExtractSubArrayShallow(new int[] { -1, 0 }).To1DArray();
+double[] yRef = interPref.ExtractSubArrayShallow(new int[] { -1, 1 }).To1DArray();
+**************
+==============
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+PlotFormat pltForm = new PlotFormat();
+pltForm.LineColor  = LineColors.Red;
+pltForm.Style      = Styles.Points;
+pltForm.PointType  = PointTypes.Dot;
+**************
+==============
+PlotFormat pltFormRef = new PlotFormat();
+pltFormRef.LineColor  = LineColors.Black;
+pltFormRef.Style      = Styles.Points;
+pltFormRef.PointType  = PointTypes.Dot;
+**************
+==============
+plt.PlotXY(x, y, format: pltForm);
+plt.PlotXY(xRef, yRef, format: pltFormRef);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+y.Max()/yRef.Max()
+**************
+0.440724011314667
+==============
+/*
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, x, y);
+dat.AddDataGroup(xyVal);
+string name = "RB_convStudy2_tc2_k2_"+setupName[stpInd]+"_terminalShape.txt";
+dat.SaveToTextFile(name);
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+**************
+==============
+**************
+==============
+// =======================
+// check area conservation
+// ======================= 
+**************
+==============
+double areaRef = Math.PI * 0.01 * 0.01 / 2.0;
+areaRef
+**************
+0.00015707963267949
+==============
+int order        = 6;
+var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
+// area of bubble
+double area     = 0.0;
+SpeciesId spcId = LsTrk.SpeciesIdS[0];
+var vqs         = SchemeHelper.GetVolumeQuadScheme(spcId);
+CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+    vqs.Compile(LsTrk.GridDat, order),
+    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+         EvalResult.SetAll(1.0);
+    },
+    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        for (int i = 0; i < Length; i++)
+            area += ResultsOfIntegration[i, 0];
+    }
+).Execute();
+**************
+==============
+area
+**************
+0.00015666300926648
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

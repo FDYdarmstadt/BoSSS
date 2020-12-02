@@ -91,6 +91,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         Stopwatch[][] m_EdgeSourceV_Watches;
         Stopwatch[][] m_EdgeSourceGradV_Watches;
 
+        
+
+
         /// <summary>
         /// true, if this integrator is responsible for any component
         /// </summary>

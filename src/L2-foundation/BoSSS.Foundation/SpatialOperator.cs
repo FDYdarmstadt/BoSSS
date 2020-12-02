@@ -80,6 +80,23 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class SpatialOperator : ISpatialOperator {
 
+
+        bool m_IsLinear;
+
+        /// <summary>
+        /// true, if the PDE defined by operator can entirely be solved by a linear solver
+        /// </summary>
+        public bool IsLinear {
+            get {
+                return m_IsLinear;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("unable to change this after operator is committed.");
+                m_IsLinear = value;
+            }
+        }
+
         /// <summary>
         /// <see cref="ISpatialOperator.SolverSafeguard"/>
         /// </summary>
@@ -221,6 +238,9 @@ namespace BoSSS.Foundation {
                 r.CellLengthScales = cgdat.Cells.CellLengthScale;
                 r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
 
+            } else if(g is Grid.Aggregation.AggregationGridData agDat) { 
+                r.CellLengthScales =  agDat.AncestorGrid.Cells.CellLengthScale;
+                r.EdgeLengthScales =  agDat.AncestorGrid.Edges.h_min_Edge;
             } else {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
@@ -1577,15 +1597,13 @@ namespace BoSSS.Foundation {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
-                            mtxBuilder.Execute(volRule,
-                                CodomainMapping, Parameters, DomainMapping,
-                                OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
 
                             //volRule.ToTextFileVolume(this.GridData as BoSSS.Foundation.Grid.Classic.GridData, "Volume.csv");
                         }
 
                     } else {
-                        tr.Info("volume integration skipped: cell mask is empty");
+                        //tr.Info("volume integration skipped: cell mask is empty");
                     }
 
                     // edge integration
@@ -1594,6 +1612,7 @@ namespace BoSSS.Foundation {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
+                            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!! Reminder: Edge integration skipped");
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
                         }
                     }
@@ -1788,7 +1807,13 @@ namespace BoSSS.Foundation {
                 }
             }
 
-            IEvaluatorNonLin Eval;
+            /// <summary>
+            /// Internally used evaluation for finite differences
+            /// </summary>
+            public IEvaluatorNonLin Eval {
+                get;
+                private set;
+            }
 
             Action<IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
 

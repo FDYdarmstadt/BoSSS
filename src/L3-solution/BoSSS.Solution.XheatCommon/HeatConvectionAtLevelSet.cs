@@ -101,8 +101,8 @@ namespace BoSSS.Solution.XheatCommon {
 
             //Flux for negativ side
             double FlxNeg;
-            if (!evapMicroRegion[cp.jCellIn]) {
-
+            //if (!evapMicroRegion[cp.jCellIn]) {
+            {
                 double r = 0.0;
 
                 // Calculate central part
@@ -130,20 +130,20 @@ namespace BoSSS.Solution.XheatCommon {
 
                 FlxNeg = capA * r;
 
-
-            } else {
-
-                BoSSS.Foundation.CommonParams inp = cp;
-                inp.Parameters_OUT = ParamsNegFict;
-
-                FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
-                //Console.WriteLine("FlxNeg = {0}", FlxNeg);
             }
+            //} else {
+
+            //    BoSSS.Foundation.CommonParams inp = cp;
+            //    inp.Parameters_OUT = ParamsNegFict;
+
+            //    FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
+            //    //Console.WriteLine("FlxNeg = {0}", FlxNeg);
+            //}
 
             // Flux for positive side
             double FlxPos;
-            if (!evapMicroRegion[cp.jCellIn]) {
-
+            //if (!evapMicroRegion[cp.jCellIn]) {
+            {
                 double r = 0.0;
 
                 // Calculate central part
@@ -172,16 +172,17 @@ namespace BoSSS.Solution.XheatCommon {
 
                 FlxPos = capB * r;
 
-            } else {
-
-                BoSSS.Foundation.CommonParams inp = cp;
-                inp.Parameters_IN = ParamsPosFict;
-
-                FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
-                //Console.WriteLine("FlxPos = {0}", FlxPos);
             }
+            //} else {
 
-            if(movingmesh)
+            //    BoSSS.Foundation.CommonParams inp = cp;
+            //    inp.Parameters_IN = ParamsPosFict;
+
+            //    FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
+            //    //Console.WriteLine("FlxPos = {0}", FlxPos);
+            //}
+
+            if (movingmesh)
                 return 0.0;
             else
                 return FlxNeg * v_Neg - FlxPos * v_Pos;
@@ -254,7 +255,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.V; // | TermActivationFlags.V;
             }
         }
 
@@ -278,10 +279,12 @@ namespace BoSSS.Solution.XheatCommon {
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
 
 
-            double s = ComputeInterfaceNormalVelocity(cp.Parameters_IN.GetSubVector(2* m_D, m_D + 3), cp.Parameters_OUT.GetSubVector(2*m_D, m_D + 3), cp.Normal, cp.jCellIn);
+            double s = 1; // ComputeInterfaceNormalVelocity(cp.Parameters_IN.GetSubVector(2* m_D, m_D + 3), cp.Parameters_OUT.GetSubVector(2*m_D, m_D + 3), cp.Normal, cp.jCellIn);
             //Console.WriteLine("interfaceNormalVelocity = {0}", s);
 
+            return -s * m_Tsat * (vA - vB);
 
+            /*
             // Flux for negative side
             // ======================
             double FlxNeg = 0.0;
@@ -345,6 +348,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
             return FlxNeg * vA - FlxPos * vB;
+            */
         }
 
 
@@ -357,12 +361,67 @@ namespace BoSSS.Solution.XheatCommon {
         public override IList<string> ParameterOrdering {
             get {
                 return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D),
-                    VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+                    VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.MassFluxExtension);
             }
         }
 
 
     }
+
+
+
+    public class HeatConvectionAtLevelSet_MassFlux : EvaporationAtLevelSet {
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_d">spatial direction</param>
+        /// <param name="_D">spatial dimension</param>
+        /// <param name="LsTrk"></param>
+        public HeatConvectionAtLevelSet_MassFlux(int _D, LevelSetTracker LsTrk, ThermalParameters thermParams, double _sigma)
+            : base(_D, LsTrk, thermParams, _sigma) {
+
+            m_capA = thermParams.c_A;
+            m_capB = thermParams.c_B;
+        }
+
+        double m_capA;
+        double m_capB;
+
+        public override double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+
+            double M = ComputeEvaporationMass(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
+            if (M == 0.0)
+                return 0.0;
+
+            double massFlux = M * ((1 / m_rhoA) - (1 / m_rhoB)) * m_Tsat;
+
+
+            double FlxNeg = -0.5 * m_rhoA * m_capA * massFlux;
+            double FlxPos = +0.5 * m_rhoB * m_capB * massFlux;
+
+
+            Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
+            Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
+
+            double Ret = FlxNeg * vA - FlxPos * vB;
+
+            return Ret;
+        }
+
+
+
+        //public override IList<string> ParameterOrdering {
+        //    get {
+        //        return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+        //    }
+        //}
+
+
+    }
+
 
 
     public class HeatConvectionAtLevelSet_Upwind : EvaporationAtLevelSet {
@@ -440,7 +499,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.MassFluxExtension);
             }
         }
 

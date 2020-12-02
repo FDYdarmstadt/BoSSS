@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Solution.XdgTimestepping</RootNamespace>
     <AssemblyName>BoSSS.Solution.XdgTimestepping</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="AppControlSolver.cs" />
     <Compile Include="ApplicationWithSolver.cs" />
+    <Compile Include="MiscExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TimeSteppingUtils.cs" />
     <Compile Include="XdgBDFTimestepping.cs" />

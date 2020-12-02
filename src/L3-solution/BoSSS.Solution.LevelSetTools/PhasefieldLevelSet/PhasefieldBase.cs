@@ -314,27 +314,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             // create operator
             // ===============
             {
-                double _D = D;
-                double penalty_base = (phi.Basis.Degree + 1) * (phi.Basis.Degree + _D) / _D;
-
-                // Get this from where?
-                double penalty_factor = this.Control.penalty_poisson * penalty_base;
-
+                
                 //BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
-
-                MultidimensionalArray LengthScales;
-                if (this.GridData is GridData)
-                {
-                    LengthScales = ((GridData)this.GridData).Cells.cj;
-                }
-                else if (this.GridData is AggregationGridData)
-                {
-                    LengthScales = ((AggregationGridData)this.GridData).AncestorGrid.Cells.cj;
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
 
                 m_bcMap = new BoundaryCondMap<BoundaryType>(this.GridData, BoundaryTranslator(ParentControl.BoundaryValues), "phi");
 
@@ -405,7 +386,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
 
                         CHOp.EquationComponents["Res_phi"].Add(
-                            new mu_Diffusion(D, penalty_factor, LengthScales, this.Control.cahn * this.Control.diff.Sqrt(), m_bcMap)
+                            new mu_Diffusion(D, this.Control.penalty_poisson, this.Control.cahn * this.Control.diff.Sqrt(), m_bcMap)
                             );
 
                         switch (this.Control.CurvatureCorrectionType)
@@ -420,7 +401,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                                     );
 
                                 CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                                    new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
+                                    new curvature_Divergence(D, this.Control.penalty_poisson, 0.001 / this.Control.cahn)
                                     );
                                 break;
                             case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
@@ -441,11 +422,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     case PhasefieldControl.ModelType.modelB:
 
                         CHOp.EquationComponents["Res_phi"].Add(
-                            new phi_Diffusion(D, penalty_factor, LengthScales, this.Control.diff, this.Control.lambda, m_bcMap)
+                            new phi_Diffusion(D, this.Control.penalty_poisson, this.Control.diff, this.Control.lambda, m_bcMap)
                             );
 
                         CHOp.EquationComponents["Res_mu"].Add(
-                            new mu_Diffusion(D, penalty_factor, LengthScales, this.Control.cahn, m_bcMap)
+                            new mu_Diffusion(D, this.Control.penalty_poisson, this.Control.cahn, m_bcMap)
                             );
 
                         CHOp.EquationComponents["Res_mu"].Add(
@@ -464,7 +445,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                                     );
 
                                 CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                                    new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
+                                    new curvature_Divergence(D, this.Control.penalty_poisson, 0.001 / this.Control.cahn)
                                     );
                                 break;
                             case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:

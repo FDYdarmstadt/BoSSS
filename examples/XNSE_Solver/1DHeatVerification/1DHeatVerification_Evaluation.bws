@@ -1,0 +1,198 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 418; Grid Count = 8975; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 157; Grid Count = 109; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 19; Grid Count = 19; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
+using BoSSS.Application.XNSE_Solver;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Foundation' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+WorkflowMgm.Init("XNSE/ThermodynamEquilib_steady");
+**************
+Project name is set to 'XNSE/ThermodynamEquilib_steady'.
+
+==============
+WorkflowMgm.Sessions
+**************
+List of 2 instances of ISessionInfo {
+  0: XNSE/ThermodynamEquilib_steady	empty-session-name*	05/12/2020 14:34:53	67730e5f...
+  1: XNSE/ThermodynamEquilib_steady	empty-session-name	05/10/2020 18:25:37	23cb0f79...
+}
+==============
+List<ISessionInfo> evalSess = new List<ISessionInfo>();
+evalSess.Add(WorkflowMgm.Sessions.Pick(0));
+**************
+==============
+evalSess
+**************
+List of 1 instances of ISessionInfo {
+  0: XNSE/ThermodynamEquilib_steady	empty-session-name*	05/12/2020 14:34:53	67730e5f...
+}
+==============
+var data = evalSess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.EvaporationL);
+**************
+Element at 0: time vs interfacePosition
+Element at 1: time vs meanInterfaceVelocity
+Element at 2: time vs meanMassFlux
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "interfacePosition")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(1), "time", "meanInterfaceVelocity")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(2), "time", "meanMassFlux")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+// ================================
+// Temperature and velocity profile
+// ================================
+**************
+==============
+int tsI     = 0;
+double time = evalSess.Pick(0).Timesteps.Pick(tsI).PhysicalTime;
+time
+**************
+0
+==============
+DGField Temperature = evalSess.Pick(0).Timesteps.Pick(tsI).Fields.ElementAt(6);
+Temperature
+**************
+Temperature
+==============
+DGField Velocity = evalSess.Pick(0).Timesteps.Pick(tsI).Fields.ElementAt(5);
+Velocity
+**************
+VelocityY
+==============
+int N = 1000;
+double[] yValues = new double[N-1];
+double[] Tvalues = new double[N-1];
+double[] TvalRef = new double[N-1];
+double[] Vvalues = new double[N-1];
+double[] VvalRef = new double[N-1];
+for(int n = 1; n < N; n++) {
+    double[] probe = new double[] { 0.042, (0.1/(double)N)*n };
+    yValues[n-1] = (0.1/(double)N)*n;
+    try {
+        Tvalues[n-1] = Temperature.ProbeAt(probe);  
+        Vvalues[n-1] = Velocity.ProbeAt(probe);    
+    } catch {
+        Tvalues[n-1] = 0.0;
+        Vvalues[n-1] = 0.0;
+    }
+    double zi = 0.01 + time;
+    if(yValues[n-1] < zi) {
+        TvalRef[n-1] = 100 - 100*(yValues[n-1] - zi);
+        VvalRef[n-1] = 0.0;
+    } else {
+        TvalRef[n-1] = 100; 
+        VvalRef[n-1] = 0.9;   
+    }
+}
+**************
+==============
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+PlotFormat pltForm = new PlotFormat();
+pltForm.LineColor  = LineColors.Red;
+pltForm.Style      = Styles.LinesPoints
+pltForm.PointType  = PointTypes.Circle
+**************
+(4,0): error CS1525: Unexpected symbol `pltForm'
+No. of errors|warnings: 1|0.
+
+==============
+PlotFormat pltFormRef = new PlotFormat();
+pltForm.LineColor     = LineColors.Black;
+pltForm.Style         = Styles.Lines;
+**************
+==============
+//plt.PlotXY(yValues, TvalRef, format:pltFormRef);
+//plt.PlotXY(yValues, Tvalues, format:pltForm);
+//plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Tvalues);
+dat.AddDataGroup(xyVal);
+string name = "1DHeatSteady_TemperatureProfile_time8e-2.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+dat   = new Plot2Ddata();
+xyVal = new Plot2Ddata.XYvalues(null, yValues, TvalRef);
+dat.AddDataGroup(xyVal);
+name = "1DHeatSteady_refTemperatureProfile_time8e-2.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+**************
+==============
+plt.PlotXY(yValues, VvalRef, format:pltFormRef);
+plt.PlotXY(yValues, Vvalues, format:pltForm);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, yValues, Vvalues);
+dat.AddDataGroup(xyVal);
+string name = "1DHeatSteady_VelocityProfile_time0.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+dat   = new Plot2Ddata();
+xyVal = new Plot2Ddata.XYvalues(null, yValues, VvalRef);
+dat.AddDataGroup(xyVal);
+name = "1DHeatSteady_refVelocityProfile_time0.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Application.BoSSSpad.Plot2Ddata+XYvalues
+==============
+**************
+==============

@@ -78,6 +78,8 @@ namespace BoSSS.Solution.XheatCommon {
             return qEvap;
         }
 
+
+
         private double ComputeHeatFlux_Micro(double T_A, double T_B, double curv, double p_disp) {
 
             double pc = m_sigma * curv + p_disp;      // augmented capillary pressure (without nonlinear evaporative masss part)
@@ -105,8 +107,8 @@ namespace BoSSS.Solution.XheatCommon {
             if (m_hVap == 0.0)
                 return 0.0;
 
-            if (MEvapIsPrescribd)
-                return prescrbMEvap * m_hVap;
+            //if (MEvapIsPrescribd)
+            //    return prescrbMEvap * m_hVap;
 
             double qEvap = 0.0;
             if (evapMicroRegion[jCell]) {
@@ -115,7 +117,8 @@ namespace BoSSS.Solution.XheatCommon {
 
                 qEvap = ComputeHeatFlux_Micro(paramsNeg[m_D], paramsPos[m_D], paramsNeg[m_D + 1], paramsNeg[m_D + 2]);
             } else {
-                qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, m_D), paramsPos.GetSubVector(0, m_D), N);
+                //qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, m_D), paramsPos.GetSubVector(0, m_D), N);
+                qEvap = m_hVap * paramsNeg[m_D + 2];
             }
 
             return qEvap;
@@ -130,6 +133,9 @@ namespace BoSSS.Solution.XheatCommon {
                 return 0.0;
 
             double M = qEvap / m_hVap;
+
+            //Console.WriteLine("M = {0}", M);
+            //Console.WriteLine("prescribdM = {0}", prescrbMEvap);
 
             return M;
         }
@@ -188,7 +194,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.MassFluxExtension);
             }
         }
 

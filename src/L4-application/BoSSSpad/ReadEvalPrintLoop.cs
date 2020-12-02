@@ -112,7 +112,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.CompressibleFlowCommon.ShockFinding.InflectionPointFinder).Assembly);
             eval.ReferenceAssembly(typeof(BoSSSpad.BoSSSpadMain).Assembly);
-            eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
+            //eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
             eval.ReferenceAssembly(typeof(MiniBatchProcessor.Client).Assembly);
             eval.ReferenceAssembly(typeof(System.Numerics.Complex).Assembly);
             eval.ReferenceAssembly(typeof(MathNet.Numerics.Complex32).Assembly);
@@ -156,7 +156,7 @@ namespace BoSSS.Application.BoSSSpad {
                 "using BoSSS.Solution.Utils;" + Console.Out.NewLine +
                 "using BoSSS.Solution.Gnuplot;" + Console.Out.NewLine +
                 "using BoSSS.Application.BoSSSpad;" + Console.Out.NewLine +
-                "using Renci.SshNet;" + Console.Out.NewLine +
+                //"using Renci.SshNet;" + Console.Out.NewLine +
                 "using Mono.CSharp;"
             );
             
@@ -176,7 +176,8 @@ namespace BoSSS.Application.BoSSSpad {
                 
                     try {
                         databases = DatabaseController.LoadDatabaseInfosFromXML();
-                    
+                        
+                        ReloadExecutionQueues();
                         string summary = databases.Summary();
                         Console.WriteLine(""Databases loaded:"");
                         Console.WriteLine(summary);
@@ -327,9 +328,13 @@ namespace BoSSS.Application.BoSSSpad {
                     eval = new SafeEvaluator(() => Startup(runcommands));
 #if !DEBUG
                 } catch (Exception e) {
-                    Console.WriteLine(
-                        "DBE initialization failed with message '{0}'. Type 'LastError' for details.",
-                        e.Message);
+                    if(!WriteFullExceptionInfo) {
+                        Console.Error.WriteLine($"DBE initialization threw a {e.GetType()}: {e.Message}. Type 'LastError' for details.",
+                            e.Message);
+                    } else {
+                        Console.Error.WriteLine($"DBE initialization threw a {e.GetType()}: {e.Message}.");
+                        Console.Error.WriteLine(e.StackTrace);                         
+                    }
                     InteractiveShell.LastError = e;
                     eval = new SafeEvaluator(() => Startup(runcommands));
                 }
@@ -398,16 +403,25 @@ namespace BoSSS.Application.BoSSSpad {
             InteractiveShell.LastError = null;
 #if !DEBUG
             } catch (Exception e) {
-                Console.WriteLine(String.Format(
-                    "{0} occurred: {1}. Type 'LastError' for details.",
-                    e.GetType(),
-                    e.Message));
+                if(!WriteFullExceptionInfo) {
+                    Console.Error.WriteLine($"{e.GetType()}: {e.Message}. Type 'LastError' for details.",
+                        e.Message);
+                } else {
+                    Console.Error.WriteLine($"{e.GetType()}: {e.Message}.");
+                    Console.Error.WriteLine(e.StackTrace);
+                }
+
                 InteractiveShell.LastError = e;
                 AssemblyProduced = null;
             }
 #endif
             return result;
         }
+
+        /// <summary>
+        /// Full error log to the Console
+        /// </summary>
+        public static bool WriteFullExceptionInfo = false;
 
         private static CommandLineReader GetCommandLineReader() {
             string historyPath = Utils.GetBoSSSUserSettingsPath();

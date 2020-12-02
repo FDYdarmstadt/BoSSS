@@ -58,8 +58,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         static void Main(string[] args) {
             //InitMPI();
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
-            //throw new Exception("fuck");
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
+            //throw new Exception("remove me");
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
@@ -214,24 +216,15 @@ namespace BoSSS.Application.XdgPoisson3 {
                     this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
                 }
 
-                double D = this.GridData.SpatialDimension;
-                int p = u.Basis.Degree;
-                double penalty_base = (p + 1) * (p + D) / D;
                 double penalty_multiplyer = base.Control.penalty_multiplyer;
-
-                XQuadFactoryHelper.MomentFittingVariants momentFittingVariant;
-                if (D == 3)
-                    momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
-
-                momentFittingVariant = this.Control.CutCellQuadratureType;
 
                 int order = this.u.Basis.Degree * 2;
 
                 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
                 var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
-                var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
+                var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
-                Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, this.Control.ViscosityMode));   // coupling form
+                Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_multiplyer, this.Control.ViscosityMode));   // coupling form
 
                 Op.Commit();
 

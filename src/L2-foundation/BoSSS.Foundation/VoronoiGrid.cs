@@ -55,37 +55,55 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             this.boundary = boundary;
         }
 
-        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal)
+        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal, Vector velocityOut, Vector velocityIn)
         {
-            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
-            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
-            int jCell_in = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellIn];
-            int jCell_ot = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellOut];
+            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
+            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
+            int jLogicalCell_in = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellIn];
+            int jLogicalCell_ot = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellOut];
             MultidimensionalArray positions = Nodes.Positions;
-            MultidimensionalArray velocities = Nodes.Velocity;
 
-            double[] posOt = positions.GetRow(jCell_ot);
-            double[] posIn = positions.GetRow(jCell_in);
-            double[] velOt = velocities.GetRow(jCell_ot);
-            double[] velIn = velocities.GetRow(jCell_in);
+            Vector posOt = positions.GetRow(jLogicalCell_ot);
+            Vector posIn = positions.GetRow(jLogicalCell_in);
 
             //transform if Edge is periodic
-            if (this.iGridData.iGeomEdges.EdgeTags[jEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG) 
+            if (this.iGridData.iGeomEdges.EdgeTags[jEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG)
             {
                 int periodicEdgeTag = this.iGridData.iGeomEdges.EdgeTags[jEdge] - GridCommons.FIRST_PERIODIC_BC_TAG;
                 AffineTrafo PerT = ((GridCommons)ParentGrid).PeriodicTrafo[periodicEdgeTag];
-                posIn = PerT.Transform(posIn);
+                AffineTrafo invPerT = ((GridCommons)ParentGrid).InversePeriodicTrafo[periodicEdgeTag];
+                
+                
+                if((posIn - x).AbsSquare() < (posOt - x).AbsSquare())
+                {
+                    Vector posOt1 = PerT.Transform(posOt);
+                    Vector posOt2 = invPerT.Transform(posOt);
+                    if ((posOt1 - x).AbsSquare() < (posOt2 - x).AbsSquare())
+                    {
+                        posOt = posOt1;
+                    }
+                    else
+                    {
+                        posOt = posOt2;
+                    }
+                }
+                else
+                {
+                    Vector posIn1 = PerT.Transform(posIn);
+                    Vector posIn2 = invPerT.Transform(posIn);
+                    if ((posIn1 - x).AbsSquare() < (posIn2 - x).AbsSquare())
+                    {
+                        posIn = posIn1;
+                    }
+                    else
+                    {
+                        posIn = posIn2;
+                    }
+                }
             };
 
-            double result = VoronoiEdge.NormalVelocity(posOt, velOt, posIn, velIn, x, normal);
+            double result = VoronoiEdge.NormalVelocity(posIn, velocityIn, posOt, velocityOut, x, normal) ;
             return result;
-        }
-
-        public Vector CellVelocity(int jCell)
-        {
-            int jCellIn = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCell];
-            var velocity = new Vector(Nodes.Velocity[jCellIn, 0], Nodes.Velocity[jCellIn, 1]);
-            return velocity;
         }
 
         public Vector DistanceBetweenNodes(int jEdge)

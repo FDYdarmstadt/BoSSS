@@ -1,0 +1,391 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 741; Grid Count = 18805; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 172; Grid Count = 337; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+//WorkflowMgm.Init("Droplet");
+//WorkflowMgm.Init("StaticDroplet");
+WorkflowMgm.Init("OscillatingDroplet");
+**************
+Project name is set to 'OscillatingDroplet'.
+
+==============
+var sess = WorkflowMgm.Sessions;
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+
+==============
+//sess
+**************
+==============
+//string studyName = "Hysing";
+//string studyName = "setupStudy3_k2_mesh0";
+//string studyName = "setup3_";
+string studyName = "Hysing2_mesh";
+//string studyName = "AirWater";
+List<ISessionInfo> studySess = new List<ISessionInfo>();
+List<ISessionInfo> studySessNT = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(studyName)) {
+        if(Convert.ToBoolean(sess.SuccessfulTermination))
+            studySess.Add(sess);  
+        else 
+            studySessNT.Add(sess);
+    }        
+}
+studySessNT
+**************
+List of 5 instances of ISessionInfo {
+  0: OscillatingDroplet	OD_meshStudy_Hysing2_mesh80_AMR1*	06/03/2020 16:59:05	7772257f...
+  1: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40_AMR4*	06/03/2020 16:59:02	401505af...
+  2: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40_AMR3*	06/03/2020 16:58:58	217e6bca...
+  3: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40_AMR2*	06/03/2020 16:58:56	8ed693d0...
+  4: OscillatingDroplet	OD_meshStudy_Hysing2_mesh40*	05/18/2020 20:58:09	0fe0374d...
+}
+==============
+//studySess.Pick(6).OpenSessionDirectory(); //KeysAndQueries
+**************
+==============
+//var destination = databases.Pick(3);
+//databases.Pick(3).Sessions.Pick(45).ID
+**************
+==============
+//studySess.AddRange(studySessNT.Take(2));
+//studySess.Add(studySessNT.Pick(1));
+//studySess.RemoveRange(5,5);
+//studySess.RemoveAt(1);
+studySess
+**************
+List of 5 instances of ISessionInfo {
+  0: OscillatingDroplet OD_meshStudy_Hysing2_mesh80_rerun   06/08/2020 09:56:33 f29869b3...
+  1: OscillatingDroplet OD_meshStudy_Hysing2_mesh60_rerun   06/08/2020 09:56:47 4cd1809e...
+  2: OscillatingDroplet OD_meshStudy_Hysing2_mesh20_rerun   06/08/2020 09:57:11 7c6fe495...
+  3: OscillatingDroplet OD_meshStudy_Hysing2_mesh10_rerun   06/08/2020 09:57:27 1b80d7a7...
+  4: OscillatingDroplet OD_meshStudy_Hysing2_mesh40 06/06/2020 22:43:45 7c07123e...
+}
+==============
+//studySess.CheckForEnergyLogging();
+//studySess.Pick(8).Export().WithSupersampling(2).Do()
+**************
+==============
+**************
+==============
+var data = studySess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.Dropletlike);
+**************
+Element at 0: time vs semi axis x
+Element at 1: time vs semi axis y
+Element at 2: time vs area
+Element at 3: time vs perimeter
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "semi axis x")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(1), "time", "semi axis y")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "perimeter")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(2), "time", "area")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+string[] energyEvalOpt = new string[] { "SurfaceEnergy", "KineticEnergy", "SurfaceDivergence", "KineticDissipationBulk" };
+string[] energyEval = new string[]{energyEvalOpt.Pick(2)};
+**************
+==============
+var energyData = studySess.EvalEnergy(energyEval, false)
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+Plot2Ddata totalEnergy = new Plot2Ddata();
+for(int s = 0; s < studySess.Count(); s++) {    
+    var datGrpS = energyData[0].dataGroups[s];
+    var datGrpK = energyData[1].dataGroups[s];
+    double[] totE = new double[datGrpK.Values.Length];
+    for (int i = 0; i < datGrpS.Values.Length; i++) {
+        totE[i] = datGrpS.Values[i] + datGrpK.Values[i];
+    }
+    totalEnergy.AddDataGroup(datGrpK.Abscissas, totE);
+}
+**************
+==============
+ISessionInfoExtensions.PlotData(totalEnergy, "time", "totalEnergy")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+//sess.Pick(3).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\Droplet__Droplet_setupStudy3_muScl100_k2_mesh0__d327163d-00a5-458c-a200-9ee508799c43
+==============
+**************
+==============
+//studySess.Pick(2).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\StaticDroplet__StaticDroplet_ConvStudyHysing_k2_mesh3__924579fe-9980-45df-88cd-84c6c5bbd506
+==============
+//studySess.Pick(3).OpenSessionDirectory()
+**************
+==============
+**************
+==============
+// ===========
+// export data
+// ===========
+**************
+==============
+**************
+==============
+string val = "semiAxisX"; //0
+//string val = "area"; //2
+int valInd = 0;
+for(int s = 0; s < studySess.Count(); s++) {    
+    Plot2Ddata dat = new Plot2Ddata();
+    dat.AddDataGroup(data.ElementAt(valInd).dataGroups[s]);
+    string name = studySess.Pick(s).Name+"_"+val+".txt";
+    dat.SaveToTextFile(name);
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+for(int e = 0; e < energyEval.Length; e++) {
+for(int s = 0; s < studySess.Count(); s++) {    
+    Plot2Ddata dat = new Plot2Ddata();
+    dat.AddDataGroup(energyData[e].dataGroups[s]);
+    string name = studySess.Pick(s).Name+"_"+energyEval[e]+".txt";
+    dat.SaveToTextFile(name);
+}
+}
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+
+==============
+**************
+==============
+// ===================
+// eval terminal state
+// ===================
+**************
+==============
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
+**************
+==============
+studySess
+**************
+List of 3 instances of ISessionInfo {
+  0: StaticDroplet	CW_meshStudy_Hysing_mesh60	05/17/2020 21:40:06	1591dbb6...
+  1: StaticDroplet	CW_meshStudy_Hysing_mesh40	05/17/2020 21:40:01	3c3518f2...
+  2: StaticDroplet	SD_meshStudy_Hysing_mesh80_restart*	06/06/2020 21:55:26	74912a6d...
+}
+==============
+var terminalStep = studySess.Pick(2).Timesteps.Last();
+terminalStep
+**************
+ { Time-step: 15470; Physical time: 154.700000000004s; Fields: Phi, Curvature, PhiDG, Pressure, VelocityX, VelocityY; Name:  }
+==============
+DGField phi = terminalStep.Fields.ElementAt(0);
+phi
+**************
+Phi
+==============
+LevelSet LevSet = new LevelSet(phi.Basis, "LevelSet"); 
+LevSet.Acc(1.0, phi); 
+**************
+==============
+LevelSetTracker LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+LsTrk.UpdateTracker();
+**************
+==============
+double sigma = 1.0;
+double r     = 0.25;
+**************
+==============
+DGField pressure = terminalStep.Fields.ElementAt(3);
+pressure
+**************
+Pressure
+==============
+// get pressure niveau outside droplet
+var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), 8, 1).XQuadSchemeHelper;
+SpeciesId spcId  = LsTrk.SpeciesIdS[1];
+var vqs          = SchemeHelper.GetVolumeQuadScheme(spcId);
+double p0L2      = ((XDGField)pressure).GetSpeciesShadowField("B").L2Error((ScalarFunction)null, vqs);
+double areaB     = XNSEUtils.GetSpeciesArea(LsTrk, spcId);
+double p0        = 0.0;
+CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+    vqs.Compile(LsTrk.GridDat, 8),
+    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+        for (int i = 0; i < Length; i++) {
+            double p0i = ((XDGField)pressure).GetSpeciesShadowField("B").GetMeanValue(i0+i);
+            for (int k = 0; k < QR.NoOfNodes; k++) {
+                EvalResult[i,k,0] = p0i;
+            }
+        }
+        //((XDGField)pressure).GetSpeciesShadowField("B").Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+    },
+    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        for (int i = 0; i < Length; i++) {
+            p0 += ResultsOfIntegration[i, 0]/areaB;
+        }
+    }
+).Execute();
+p0
+**************
+-8.21460658617223E-19
+==============
+spcId = LsTrk.SpeciesIdS[0];
+vqs   = SchemeHelper.GetVolumeQuadScheme(spcId);
+Func<double[], double> refA = (X => sigma/r);
+var pInN     = ((XDGField)pressure).GetSpeciesShadowField("A");
+pInN.AccConstant(-p0);
+double pInL2 = pInN.L2Error(refA.Vectorize(), vqs);
+//double pInL2     = ((XDGField)pressure).GetSpeciesShadowField("A").L2Error((ScalarFunction)null, vqs);
+//double areaA     = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[0]);
+//double pIn       = ((pInL2.Pow2())/areaA).Sqrt();
+pInL2
+**************
+0.000314179228026057
+==============
+SpeciesId spcId = LsTrk.SpeciesIdS[1];
+var vqs         = SchemeHelper.GetVolumeQuadScheme(spcId);
+var pOutN       = ((XDGField)pressure).GetSpeciesShadowField("B");
+pOutN.AccConstant(-p0);
+double pOutL2 = pOutN.L2Error((ScalarFunction)null, vqs);
+//double areaB    = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[1]);
+//double pOut     = ((pOutL2.Pow2())/areaB).Sqrt();
+pOutL2
+**************
+0.000270594888148735
+==============
+double pL2 = (pInL2.Pow2()+pOutL2.Pow2()).Sqrt();
+pL2
+**************
+0.000414644644020968
+==============
+**************
+==============
+DGField velocityX = terminalStep.Fields.ElementAt(4);
+velocityX
+**************
+VelocityX
+==============
+DGField velocityY = terminalStep.Fields.ElementAt(5);
+velocityY
+**************
+VelocityY
+==============
+double uL2 = velocityX.L2Norm();
+uL2
+**************
+9.5072904416242E-08
+==============
+double vL2 = velocityY.L2Norm();
+vL2
+**************
+9.50729037150997E-08
+==============
+**************
+==============
+double velocL2 = (uL2.Pow2()+vL2.Pow2()).Sqrt();
+velocL2
+**************
+1.34453390343868E-07
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

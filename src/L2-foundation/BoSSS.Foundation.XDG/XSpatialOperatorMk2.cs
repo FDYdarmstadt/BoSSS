@@ -43,6 +43,22 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public partial class XSpatialOperatorMk2 : ISpatialOperator {
 
+        bool m_IsLinear;
+
+        /// <summary>
+        /// true, if the PDE defined by operator can entirely be solved by a linear solver
+        /// </summary>
+        public bool IsLinear {
+            get {
+                return m_IsLinear;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("unable to change this after operator is committed.");
+                m_IsLinear = value;
+            }
+        }
+
         /// <summary>
         /// <see cref="ISpatialOperator.SolverSafeguard"/>
         /// </summary>
@@ -192,13 +208,12 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) {
             if(!IsCommited)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap,
-                1 // based on actual level-set tracker state
-                );
+            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
         }
 
         /// <summary>
@@ -214,13 +229,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) {
             if(!IsCommited)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
-                1);
+                lsTrkHistoryIndex);
         }
 
 
@@ -269,12 +285,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public FDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) //
+
         {
             if(!IsCommited)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
+            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
 
             Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
                 delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {

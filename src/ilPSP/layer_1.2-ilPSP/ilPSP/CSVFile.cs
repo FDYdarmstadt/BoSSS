@@ -40,6 +40,15 @@ namespace ilPSP.Utils {
             }
         }
 
+        //public static void SaveToCSVFile<T, V>(this IDictionary<string, T> table, string filename, FileMode fm = FileMode.Create, char ColSep = '\t', bool writeHeader = true)
+        //    where T : IEnumerable<V> //
+        //{
+        //    using (var txt = new StreamWriter(new FileStream(filename, fm), new UTF8Encoding())) {
+        //        WriteCSVToStream<T, V>(table, txt, ColSep, writeHeader);
+        //        txt.Flush();
+        //    }
+        //}
+
         /*
 
         static void Test() {
@@ -147,6 +156,10 @@ namespace ilPSP.Utils {
         public static void WriteCSVToStream<T>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
             where T : System.Collections.IEnumerable //
         {
+            //public static void WriteCSVToStream<T, V>(this IDictionary<string, T> table, TextWriter txt, char ColSep = '\t', bool writeHeader = true)
+            //    where T : IEnumerable<V> //
+            //{ 
+
             string[] cols = table.Keys.ToArray();
             if(cols.Length <= 0)
                 return;
@@ -201,7 +214,27 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Reads a 'table' in a csv format from a file named <paramref name="filename"/>.
         /// </summary>
-        public static void ReadFromCSVFile(this IDictionary<string, IEnumerable<double>> table, string filename, char ColSep = '\t') {
+        public static IDictionary<string, IEnumerable<double>> ReadFromCSVFile(string filename, char? ColSep = null) {
+            using(var txt = new StreamReader(filename, new UTF8Encoding())) {
+                return ReadCSVFromStream(txt, ColSep);
+            }
+        }
+
+        /// <summary>
+        /// Reads a 'table' in a csv format from <paramref name="txt"/>.
+        /// </summary>
+        public static IDictionary<string, IEnumerable<double>> ReadCSVFromStream(TextReader txt, char? ColSep = null) {
+            var ret = new Dictionary<string, IEnumerable<double>>();
+            ret.ReadCSVFromStream(txt, ColSep);
+            return ret;
+        }
+
+
+
+        /// <summary>
+        /// Reads a 'table' in a csv format from a file named <paramref name="filename"/>.
+        /// </summary>
+        public static void ReadFromCSVFile(this IDictionary<string, IEnumerable<double>> table, string filename, char? ColSep = '\t') {
             using(var txt = new StreamReader(filename, new UTF8Encoding())) {
                 ReadCSVFromStream(table, txt, ColSep);
             }
@@ -210,12 +243,18 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Reads a 'table' in a csv format from <paramref name="txt"/>.
         /// </summary>
-        public static void ReadCSVFromStream(this IDictionary<string, IEnumerable<double>> table, TextReader txt, char ColSep = '\t') {
+        public static void ReadCSVFromStream(this IDictionary<string, IEnumerable<double>> table, TextReader txt, char? ColSep = '\t') {
             if(table.Count > 0)
                 throw new ArgumentException("Expecting an empty table");
             
             
-            char[] _colSep = new char[] { ColSep };
+            char[] _colSep;
+            if(ColSep == null) {
+                _colSep = new char[] { ';', ' ', '\t' };
+            } else {
+                _colSep = new char[] { ColSep.Value };
+            }
+            
             string line;
             line = txt.ReadLine();
             if(line == null)
@@ -223,13 +262,30 @@ namespace ilPSP.Utils {
             string[] ColNames = line.Split(_colSep, StringSplitOptions.RemoveEmptyEntries);
             int I = ColNames.Length;
 
+            bool FirstLineIsHeader = double.TryParse(ColNames[0],
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.NumberFormatInfo.InvariantInfo, out _);
+
+            if(FirstLineIsHeader) {
+                for(int i = 0; i < I; i++) {
+                    ColNames[i] = "Column" + i;
+                }
+            }
+
             List<double>[] ColCont = new List<double>[I];
-            for(int i  =0; i < I; i++) {
+            for(int i = 0; i < I; i++) {
                 ColCont[i] = new List<double>();
             }
 
-            int iLine = 1;
-            for(line = txt.ReadLine(); line != null; line = txt.ReadLine()) {
+            int iLine;
+            if(FirstLineIsHeader) {
+                iLine = 0;
+            } else {
+                iLine = 1;
+                line = txt.ReadLine();
+            }
+
+            for(; line != null; line = txt.ReadLine()) {
                 iLine++;
                 string[] vals = line.Split(_colSep, StringSplitOptions.RemoveEmptyEntries);
                 if(vals.Length != I)
@@ -248,7 +304,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Reads a 'table' in a csv format from a file named <paramref name="filename"/>.
         /// </summary>
-        public static void ReadFromCSVFile(this IDictionary<string, IEnumerable<string>> table, string filename, char ColSep = '\t') {
+        public static void ReadFromCSVFile(this IDictionary<string, IEnumerable<string>> table, string filename, char? ColSep = '\t') {
             using(var txt = new StreamReader(filename, new UTF8Encoding())) {
                 ReadCSVFromStream(table, txt, ColSep);
             }
@@ -258,7 +314,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Reads a 'table' in a csv format from a file named <paramref name="filename"/>.
         /// </summary>
-        public static void ReadFromCSVFile(this IDictionary<string, System.Collections.IEnumerable> table, string filename, char ColSep = '\t', params Func<string, object>[] parsers) {
+        public static void ReadFromCSVFile(this IDictionary<string, System.Collections.IEnumerable> table, string filename, char? ColSep = '\t', params Func<string, object>[] parsers) {
             using(var txt = new StreamReader(filename, new UTF8Encoding())) {
                 ReadCSVFromStream(table, txt, ColSep, parsers);
             }
@@ -267,12 +323,18 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Reads a 'table' in a csv format from <paramref name="txt"/>.
         /// </summary>
-        public static void ReadCSVFromStream(this IDictionary<string, IEnumerable<string>> table, TextReader txt, char ColSep = '\t') {
+        public static void ReadCSVFromStream(this IDictionary<string, IEnumerable<string>> table, TextReader txt, char? ColSep = '\t') {
             if(table.Count > 0)
                 throw new ArgumentException("Expecting an empty table");
 
 
-            char[] _colSep = new char[] { ColSep };
+            char[] _colSep;
+            if(ColSep == null) {
+                _colSep = new char[] { ';', ' ', '\t' };
+            } else {
+                _colSep = new char[] { ColSep.Value };
+            }
+            
             string line;
             line = txt.ReadLine();
             if(line == null)
@@ -362,12 +424,18 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Reads a 'table' in a csv format from <paramref name="txt"/>.
         /// </summary>
-        public static void ReadCSVFromStream(this IDictionary<string, System.Collections.IEnumerable> table, TextReader txt, char ColSep = '\t', params Func<string, object>[] parsers) {
+        public static void ReadCSVFromStream(this IDictionary<string, System.Collections.IEnumerable> table, TextReader txt, char? ColSep = '\t', params Func<string, object>[] parsers) {
             if(table.Count > 0)
                 throw new ArgumentException("Expecting an empty table");
 
 
-            char[] _colSep = new char[] { ColSep };
+            char[] _colSep;
+            if(ColSep == null) {
+                _colSep = new char[] { ';', ' ', '\t' };
+            } else {
+                _colSep = new char[] { ColSep.Value };
+            }
+            
             string line;
             line = txt.ReadLine();
             if(line == null)

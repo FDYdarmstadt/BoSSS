@@ -59,7 +59,28 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         int m_LevSetIdx;
 
+        
+        /// <summary>
+        /// les tracker
+        /// </summary>
         LevelSetTracker m_lsTrk;
+
+        /// <summary>
+        /// index into <see cref="LevelSetTracker.RegionsHistory"/>, etc.
+        /// </summary>
+        int m_LsTrkHistoryIndex;
+
+        /*
+        /// <summary>
+        /// Normals, etc.
+        /// </summary>
+        LevelSetTracker.LevelSetData m_lsData;
+
+        /// <summary>
+        /// cut-cell masks, etc.
+        /// </summary>
+        LevelSetTracker.LevelSetRegions m_lsRegions;
+        */
 
         /// <summary>
         /// Negative and positive (with respect to level-set) species.
@@ -94,7 +115,7 @@ namespace BoSSS.Foundation.XDG {
                                      XSpatialOperatorMk2 DiffOp,
                                      M Matrix, V OffsetVec,
                                      UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
-                                     LevelSetTracker lsTrk, int _iLevSet, 
+                                     LevelSetTracker lsTrk, int _iLevSet, int TrackerHistoryIndex,
                                      Tuple<SpeciesId,SpeciesId> SpeciesPair,
                                      //Tuple<CoefficientSet,CoefficientSet> NegPosCoeff,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
@@ -121,6 +142,7 @@ namespace BoSSS.Foundation.XDG {
 
             int Gamma = m_RowMap.BasisS.Count;
             m_lsTrk = lsTrk;
+            m_LsTrkHistoryIndex = TrackerHistoryIndex;
 
             if (Matrix != null && (Matrix.RowPartitioning.LocalLength != RowMap.LocalLength))
                 throw new ArgumentException("mismatch between matrix number of rows and row mapping.");
@@ -165,7 +187,7 @@ namespace BoSSS.Foundation.XDG {
             //ColXbSw = m_ColMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
 
 
-            TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, SpeciesA, SpeciesB, m_LevSetIdx);
+            TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, m_LsTrkHistoryIndex, SpeciesA, SpeciesB, m_LevSetIdx);
 
             // ------------------------
             // sort equation components
@@ -422,7 +444,7 @@ namespace BoSSS.Foundation.XDG {
             int GAMMA = m_RowMap.BasisS.Count;  // GAMMA: number of codom variables
 
 
-            TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, this.SpeciesA, this.SpeciesB,  this.m_LevSetIdx);
+            TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, m_LsTrkHistoryIndex, this.SpeciesA, this.SpeciesB,  this.m_LevSetIdx);
 
 
 
@@ -452,8 +474,7 @@ namespace BoSSS.Foundation.XDG {
 
             // Evaluate level sets and normals
             // -------------------------------
-            var NoOfLevSets = m_lsTrk.LevelSets.Count;
-            MultidimensionalArray Normals = m_lsTrk.DataHistories[m_LevSetIdx].Current.GetLevelSetNormals(QuadNodes, i0, Len);
+            MultidimensionalArray Normals = m_lsTrk.DataHistories[m_LevSetIdx][m_LsTrkHistoryIndex].GetLevelSetNormals(QuadNodes, i0, Len);
             base.CustomTimers[3].Stop();
 
             // Evaluate basis and test functions
@@ -535,6 +556,7 @@ namespace BoSSS.Foundation.XDG {
                 // set Nodes Global
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
+                _inParams.GridDat = this.GridDat;
 
                 Debug.Assert(i0 == _inParams.e0);
                 Debug.Assert(Len == _inParams.Len);
@@ -724,10 +746,10 @@ namespace BoSSS.Foundation.XDG {
         /// Test for the correct configuration of positive and negative species.
         /// Should be pretty quick, so we can do this also in Release.
         /// </summary>
-        internal static void TestNegativeAndPositiveSpecies(ICompositeQuadRule<QuadRule> rule, LevelSetTracker lsTrk, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
+        internal static void TestNegativeAndPositiveSpecies(ICompositeQuadRule<QuadRule> rule, LevelSetTracker lsTrk, int HistoryIndex, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
             foreach(var crp in rule) {
 
-                TestNegativeAndPositiveSpecies(crp.Chunk.i0, crp.Chunk.Len, lsTrk, spcNeg, spcPos, iLevSet);
+                TestNegativeAndPositiveSpecies(crp.Chunk.i0, crp.Chunk.Len, lsTrk, HistoryIndex, spcNeg, spcPos, iLevSet);
             }
         }
 
@@ -736,17 +758,18 @@ namespace BoSSS.Foundation.XDG {
         /// Test for the correct configuration of positive and negative species.
         /// Should be pretty quick, so we can do this also in Release.
         /// </summary>
-        internal static void TestNegativeAndPositiveSpecies(int i0, int Len, LevelSetTracker lsTrk, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
+        internal static void TestNegativeAndPositiveSpecies(int i0, int Len, LevelSetTracker lsTrk, int HistoryIndex, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
             //var negSignCodes = lsTrk.GetLevelSetSignCodes(spcNeg);
             //var posSignCodes = lsTrk.GetLevelSetSignCodes(spcPos);
 
+            var Regions = lsTrk.RegionsHistory[HistoryIndex];
 
             for(int j = i0; j < (i0 + Len); j++) {
-                lsTrk.Regions.GetSpeciesIndex(spcNeg, j);
-                lsTrk.Regions.GetSpeciesIndex(spcPos, j);
+                Regions.GetSpeciesIndex(spcNeg, j);
+                Regions.GetSpeciesIndex(spcPos, j);
 
                 //ushort RegionCode = m_lsTrk.Regions.m_LevSetRegions[j];
-                LevelsetCellSignCode csc = lsTrk.Regions.GetCellSignCode(j);
+                LevelsetCellSignCode csc = Regions.GetCellSignCode(j);
 
                 if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
                     throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
@@ -939,7 +962,6 @@ namespace BoSSS.Foundation.XDG {
             
 
             SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
-            var _regions = m_lsTrk.Regions;
 
             int[] _i0 = new int[3];// { int.MaxValue, 0, 1 };
             int[] _iE = new int[3];// { -1, Nmax - 1, _i0[2] + Mmax - 1 };
