@@ -1748,7 +1748,7 @@ namespace CNS {
             //string dbPath = @"/work/scratch/jw52xeqa/DB_Cube_2";
             //string dbPath = @"/work/scratch/jw52xeqa/DB_trash";
             //string dbPath = @"V:\testDB";
-            string dbPath = "c:\\Users\\kummer\\bosss_temp_db";
+            string dbPath = "/home/fk69umer/bosss_db_lichtenberg";
             string restart = "False";
             int cores = ilPSP.Environment.MPIEnv.MPI_Size;
 
