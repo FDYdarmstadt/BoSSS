@@ -62,6 +62,9 @@ namespace ilPSP {
         /// See <see cref="BlockSize"/>.
         /// </param>
         public Partitioning(int localsize, MPI.Wrappers.MPI_Comm c) {
+            if (localsize < 0) {
+                throw new ArgumentException("cannot create partitioning with a negative local length.");
+            }
             m_comm = c;
             MPICollectiveWatchDog.Watch(c);
             csMPI.Raw.Comm_Rank(c, out m_rank);
