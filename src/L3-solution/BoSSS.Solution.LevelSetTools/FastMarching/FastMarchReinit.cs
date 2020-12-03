@@ -131,7 +131,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             //GradPhi.Gradient(1, Phi, NEAr.VolumeMask);
         }
 
-        public void AvgInit(SinglePhaseField Phi, CellMask _Accepted) {
+        public void AvgInit(SinglePhaseField Phi, BitArray _Accepted) { //CellMask _Accepted) {
             int J = this.GridDat.Cells.Count;
             double[] PhiAvg;
             if (m_PhiAvg == null) {
@@ -145,7 +145,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             //    PhiAvg[jCell] = Phi.GetMeanValue(jCell);
 
             for (int j = 0; j < J; j++) {
-                if (_Accepted.GetBitMaskWithExternal()[j])
+                if (_Accepted[j])
                     PhiAvg[j] = Phi.GetMeanValue(j);
             }
 
@@ -409,16 +409,16 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     if (ExtProperty.Length != ExtPropertyMax.Length)
                         throw new ArgumentException();
 
-
                     //extVelSlv = new ExtVelSolver(ExtProperty[0].Basis);
                     extVelSlv = new ExtVelSolver_Geometric(ExtProperty[0].Basis);
                 }
 
+
                 BitArray Accepted_Mutuable = cut.GetBitMaskWithExternal().CloneAs();
 
-                int J = this.GridDat.Cells.Count;
-                int D = this.GridDat.SpatialDimension;
-                int N = this.LevelSetBasis.Length;
+                //int J = this.GridDat.Cells.Count;
+                //int D = this.GridDat.SpatialDimension;
+                //int N = this.LevelSetBasis.Length;
 
                 int[] DomainCellIndices = Domain.ItemEnum.ToArray();
                 double[] PhiAvg = new double[DomainCellIndices.Length];

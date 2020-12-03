@@ -43,11 +43,12 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         static ILocalSolver fMSolver;
         static BitArray inUseMask;
         static BitArray reinitField;
-        //static Partitioning reinitPart;
         static int[] queueIDList;
         static SinglePhaseField phi;
         static GridData gridDat;
         static int[][] extCellNeighbours;
+
+        MarchingNodeStatus status;
 
         int jCell;
         MarchingCell[] neighbors = null;
@@ -60,6 +61,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         MarchingCell(int JCell, double Phi_CellAverage) {
             jCell = JCell;
             phi_CellAverage = Phi_CellAverage;
+            //status = status;
         }
 
         //General information
@@ -74,7 +76,6 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             for (int j = gridDat.CellPartitioning.LocalLength; j < J; j++) {
                 reinitField[j] = false;         // reinit only on local cells
             }
-            //reinitPart = new Partitioning(J);
             queueIDList = new int[J];
             extCellNeighbours = _extCellNeighbours;
         }
@@ -156,6 +157,16 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
 
             set {
                 queueIDList[jCell] = value;
+            }
+        }
+
+        public MarchingNodeStatus StatusTag {
+            get {
+                return status;
+            }
+
+            set {
+                status = value;
             }
         }
 

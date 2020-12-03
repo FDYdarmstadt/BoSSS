@@ -306,6 +306,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 LevelSetGrad[d].MPIExchange();
                 //if (gdat.MpiSize > 1)
                 //    LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_bR_onProc" + gdat.MpiRank);
+                //else
+                //    LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_bR");
             }
 
 
@@ -370,11 +372,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             var marcher = new Reinit.FastMarch.FastMarchReinit(NewLevelSet.Basis);
 
-            marcher.AvgInit(NewLevelSet, Known);
+            marcher.AvgInit(NewLevelSet, Known.GetBitMaskWithExternal());
 
             if (reinitialize) {
                 CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
                 marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, Reinit);
+                NewLevelSet.MPIExchange();
                 OldLevSet.Clear(Reinit);
                 OldLevSet.Acc(1.0, NewLevelSet, Reinit);
             }
@@ -392,13 +395,13 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // bring gradient up to date
             marcher.GradientUpdate(NEARgrid, NewLevelSet, LevelSetGrad);
-            //for (int d = 0; d < D; d++) {
-            //    //LevelSetGrad[d].MPIExchange();
-            //    if (gdat.MpiSize > 1)
-            //        LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_aR_onProc" + gdat.MpiRank);
-            //    else
-            //        LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d);
-            //}
+            for (int d = 0; d < D; d++) {
+                LevelSetGrad[d].MPIExchange();
+                //if (gdat.MpiSize > 1)
+                //    LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_aR_onProc" + gdat.MpiRank);
+                //else
+                //    LevelSetGrad[d].Coordinates.SaveToTextFile("LevelSetGrad_" + d + "_aR");
+            }
 
 
             if (plotMarchingSteps) {

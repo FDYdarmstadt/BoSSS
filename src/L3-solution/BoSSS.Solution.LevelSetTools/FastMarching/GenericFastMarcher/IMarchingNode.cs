@@ -41,5 +41,24 @@ namespace BoSSS.Solution.LevelSetTools.FastMarcher {
             set;
         }
 
+        MarchingNodeStatus StatusTag {
+            get;
+            set;
+        }
+
+    }
+
+    public enum MarchingNodeStatus {
+
+        KNOWN_FIX = 0,
+
+        KNOWN_NEW = 1,
+
+        KNOWN_OLD = 2,
+
+        BAND_NEW = 3,
+
+        BAND_OLD = 4
+
     }
 }

@@ -46,7 +46,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 3, int kelem = 4, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 3, int kelem = 8, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -245,7 +245,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
-            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.045, H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
+            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.049, H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
             double radius = 0.2;
 
             if (D == 2) {
@@ -434,7 +434,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 3; // 500;
+            C.NoOfTimesteps = 2; // 500;
             C.saveperiod = 10;
 
             #endregion
