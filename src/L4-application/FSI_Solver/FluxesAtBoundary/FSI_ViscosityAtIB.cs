@@ -23,35 +23,31 @@ using ilPSP.Utils;
 using BoSSS.Platform.LinAlg;
 using FSI_Solver;
 using ilPSP;
+using BoSSS.Application.FSI_Solver;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
     public class FSI_ViscosityAtIB : ILevelSetForm {
-        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity, Func<Vector, FSI_ParameterAtIB> getParticleParams) {
-            m_penalty = penalty;
-            m_PenaltyFunc = penaltyFunction;
-            m_LsTrk = levelSetTracker;
-            muA = fluidViscosity;
-            component = currentDim;
-            m_GetParticleParams = getParticleParams;
-            m_D = spatialDim;
+        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity, Particle[] allParticles, double minGridLength) {
+            Penalty = penalty;
+            PenaltyFunction = penaltyFunction;
+            LsTrk = levelSetTracker;
+            FluidViscosity = fluidViscosity;
+            Component = currentDim;
+            MinGridLength = minGridLength;
+            AllParticles = allParticles;
+            SpatialDim = spatialDim;
         }
 
-        private readonly int component;
-        private readonly int m_D;
-        private readonly LevelSetTracker m_LsTrk;
+        private readonly int Component;
+        private readonly int SpatialDim;
+        private readonly double MinGridLength;
+        private readonly LevelSetTracker LsTrk;
+        private readonly Particle[] AllParticles;
+        private readonly double FluidViscosity;
+        private readonly double Penalty;
+        private readonly Func<double, int, double> PenaltyFunction;
 
-        /// <summary>
-        /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particleradius, 4: active_stress, 5: first scaling parameter, 6: second scaling parameter, 7: current angle
-        /// </summary>
-        private readonly Func<Vector, FSI_ParameterAtIB> m_GetParticleParams;
-
-        /// <summary>
-        /// Viscosity in species A
-        /// </summary>
-        private readonly double muA;
-        private readonly double m_penalty;
-        private readonly Func<double, int, double> m_PenaltyFunc;
         private enum BoundaryConditionType {
             passive = 0,
             active = 1
@@ -62,24 +58,27 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// </summary>
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             int dim = inp.Normal.Dim;
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
+            double penaltyFactor = PenaltyFunction(Penalty, inp.jCellIn);
+            Vector normalVector = inp.Normal;
+            if (inp.X.IsNullOrEmpty())
+                throw new Exception("X is null or empty");
+            if (inp.X.Abs() < 0)
+                throw new ArithmeticException("invalid length of position vector");
 
             // Particle parameters
             // =====================
-            if (inp.X.IsNullOrEmpty())
-                throw new Exception("X is null or empty");
-            if (m_GetParticleParams == null)
-                throw new Exception("m_GetParticleParams is null or empty");
-            if (inp.X.Abs() < 0)
-                throw new ArithmeticException("invalid length of position vector");
-            FSI_ParameterAtIB coupling = m_GetParticleParams(inp.X);
-            if (coupling == null)
-                throw new Exception("coupling is null or empty");
-            Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
-            Vector orientationNormal = new Vector(-Math.Sin(coupling.Angle()), Math.Cos(coupling.Angle()));
-            Vector activeStressVector = orientationNormal * inp.Normal > 0 ? new Vector(-coupling.ActiveStress() * inp.Normal[1], coupling.ActiveStress() * inp.Normal[0]) 
-                                                                  : new Vector(coupling.ActiveStress() * inp.Normal[1], -coupling.ActiveStress() * inp.Normal[0]);
-            BoundaryConditionType bcType = orientation * inp.Normal <= 0 || coupling.ActiveStress() == 0 ? BoundaryConditionType.passive : BoundaryConditionType.active;
+            Particle currentParticle = AllParticles[0];
+            for (int p = 0; p < AllParticles.Length; p++) {
+                if (AllParticles[p].Contains(inp.X, 1.5 * MinGridLength)) {
+                    currentParticle = AllParticles[p];
+                    break;
+                } 
+            }
+            double activeStress = currentParticle.ActiveStress;
+            Vector orientation = currentParticle.Motion.orientationVector;
+            Vector orientationNormal = new Vector(-orientation[1], orientation[0]);
+            Vector activeStressVector = orientationNormal * normalVector > 0 ? new Vector(-activeStress * normalVector[1], activeStress * normalVector[0]) : new Vector(activeStress * normalVector[1], -activeStress * normalVector[0]);
+            BoundaryConditionType bcType = orientation * normalVector <= 0 || activeStress == 0 ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
             Debug.Assert(ArgumentOrdering.Count == dim);
             Debug.Assert(Grad_uA.GetLength(0) == ArgumentOrdering.Count);
@@ -91,7 +90,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // =====================
             double Grad_uA_xN = 0, Grad_vA_xN = 0;
             for (int d = 0; d < dim; d++) {
-                Grad_uA_xN += Grad_uA[component, d] * inp.Normal[d];
+                Grad_uA_xN += Grad_uA[Component, d] * inp.Normal[d];
                 Grad_vA_xN += Grad_vA[d] * inp.Normal[d];
             }
 
@@ -101,23 +100,25 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // =====================
             if (dim == 3) {
                 returnValue -= Grad_uA_xN * (vA);                                                    // consistency term
-                returnValue -= Grad_vA_xN * (uA[component] - 0);                                     // symmetry term
-                returnValue += _penalty * (uA[component] - 0) * (vA);                                // penalty term
+                returnValue -= Grad_vA_xN * (uA[Component] - 0);                                     // symmetry term
+                returnValue += penaltyFactor * (uA[Component] - 0) * (vA);                           // penalty term
                 Debug.Assert(!(double.IsInfinity(returnValue) || double.IsNaN(returnValue)));
-                return returnValue * muA;
+                return returnValue * FluidViscosity;
             }
 
             // 2D
             // =====================
-            Vector uAFict = coupling.VelocityAtPointOnLevelSet(); 
+            Vector radialVector = currentParticle.CalculateRadialVector(inp.X);
+            Vector uAFict = new Vector(currentParticle.Motion.GetTranslationalVelocity(0)[0] - currentParticle.Motion.GetRotationalVelocity(0) * radialVector[1],
+                              currentParticle.Motion.GetTranslationalVelocity(0)[1] + currentParticle.Motion.GetRotationalVelocity(0) * radialVector[0]);
 
             switch (bcType) {
                 case BoundaryConditionType.passive: {
                         for (int d = 0; d < dim; d++) {
-                            returnValue -= muA * Grad_uA[component, d] * vA * inp.Normal[d];
-                            returnValue -= muA * Grad_vA[d] * (uA[component] - uAFict[component]) * inp.Normal[d];
+                            returnValue -= FluidViscosity * Grad_uA[Component, d] * vA * normalVector[d];
+                            returnValue -= FluidViscosity * Grad_vA[d] * (uA[Component] - uAFict[Component]) * normalVector[d];
                         }
-                        returnValue += muA * (uA[component] - uAFict[component]) * vA * _penalty;
+                        returnValue += FluidViscosity * (uA[Component] - uAFict[Component]) * vA * penaltyFactor;
                         break;
                     }
 
@@ -126,28 +127,28 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                         for (int dN = 0; dN < dim; dN++) {
                             for (int dD = 0; dD < dim; dD++) {
                                 // consistency term
-                                returnValue -= muA * (inp.Normal[dN] * Grad_uA[dN, dD] * inp.Normal[dD]) * vA * inp.Normal[component];
+                                returnValue -= FluidViscosity * (normalVector[dN] * Grad_uA[dN, dD] * normalVector[dD]) * vA * normalVector[Component];
                                 // symmetry term
-                                returnValue -= muA * (Grad_vA[dD] * inp.Normal[dD]) * (inp.Normal[dN] * uA[dN] - inp.Normal[dN] * uAFict[dN]) * inp.Normal[component];      
+                                returnValue -= FluidViscosity * (Grad_vA[dD] * normalVector[dD]) * (normalVector[dN] * uA[dN] - normalVector[dN] * uAFict[dN]) * normalVector[Component];      
                             }
                             // penalty term
-                            returnValue += muA * inp.Normal[dN] * (uA[dN] - uAFict[dN]) * inp.Normal[component] * vA * _penalty;                  
+                            returnValue += FluidViscosity * inp.Normal[dN] * (uA[dN] - uAFict[dN]) * normalVector[Component] * vA * penaltyFactor;                  
                         }
                         // tangential direction, active part
                         double[,] P = new double[dim, dim];
                         for (int d1 = 0; d1 < dim; d1++) {
                             for (int d2 = 0; d2 < dim; d2++) {
                                 if (d1 == d2) {
-                                    P[d1, d2] = 1 - inp.Normal[d1] * inp.Normal[d2];
+                                    P[d1, d2] = 1 - normalVector[d1] * normalVector[d2];
                                 }
                                 else {
-                                    P[d1, d2] = inp.Normal[d1] * inp.Normal[d2];
+                                    P[d1, d2] = normalVector[d1] * normalVector[d2];
                                 }
                             }
                         }
                         for (int d1 = 0; d1 < dim; d1++) {
                             for (int d2 = 0; d2 < dim; d2++) {
-                                returnValue -= P[d1, d2] * activeStressVector[d2] * (P[d1, component] * vA); 
+                                returnValue -= P[d1, d2] * activeStressVector[d2] * (P[d1, Component] * vA); 
                             }
                         }
                         break;
@@ -162,16 +163,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         }
 
         public IList<string> ArgumentOrdering {
-            get { return VariableNames.VelocityVector(this.m_D); }
+            get { return VariableNames.VelocityVector(this.SpatialDim); }
         }
 
 
         public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+            get { return LsTrk.GetSpeciesId("B"); }
         }
 
         public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+            get { return LsTrk.GetSpeciesId("A"); }
         }
 
         public TermActivationFlags LevelSetTerms {

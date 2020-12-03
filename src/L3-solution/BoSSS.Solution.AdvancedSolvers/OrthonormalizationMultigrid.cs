@@ -267,7 +267,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 //double NormInitial = Mxx.MPI_L2Norm();
 
-                for(int jj = 0; jj < 2; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
+                for(int jj = 0; jj < 1; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
                     for(int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
                         double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();

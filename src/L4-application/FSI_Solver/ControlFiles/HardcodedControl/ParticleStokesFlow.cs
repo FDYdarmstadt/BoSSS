@@ -73,7 +73,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 20000;
+            C.fullyCoupledSplittingMaxIterations = 20000;
 
 
             // Timestepping
@@ -145,7 +145,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 2000;
+            C.fullyCoupledSplittingMaxIterations = 2000;
 
             
             // Timestepping
@@ -219,7 +219,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 2000;
+            C.fullyCoupledSplittingMaxIterations = 2000;
 
 
             // Timestepping
@@ -292,7 +292,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 2000;
+            C.fullyCoupledSplittingMaxIterations = 2000;
 
 
             // Timestepping
@@ -369,7 +369,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 2000;
+            C.fullyCoupledSplittingMaxIterations = 2000;
 
 
             // Timestepping
@@ -470,7 +470,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 2000;
+            C.fullyCoupledSplittingMaxIterations = 2000;
 
 
             // Timestepping

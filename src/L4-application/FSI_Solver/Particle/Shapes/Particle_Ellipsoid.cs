@@ -118,8 +118,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// tolerance length.
         /// </param>
         public override bool Contains(Vector point, double tolerance = 0) {
-            Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), Math.Sin(Motion.GetAngle(0)));
-            Vector normalOrientation = new Vector(-Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
+            Vector orientation = Motion.orientationVector;
+            Vector normalOrientation = new Vector(-orientation[1], orientation[0]);
             Vector position = Motion.GetPosition(0);
             double a = m_Length + tolerance;
             double b = m_Thickness + tolerance;

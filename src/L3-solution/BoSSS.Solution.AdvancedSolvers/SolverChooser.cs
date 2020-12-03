@@ -845,13 +845,15 @@ namespace BoSSS.Solution {
             int NoOfLevels = MultigridBasis.Count();
             int[] DOFperCell = new int[NoOfLevels];
             int[] LocalDOF = new int[NoOfLevels];
+            var MGBasisAtLevel = MultigridBasis.ToArray();
+            int[] NoOFCellsAtLEvel = MGBasisAtLevel.Length.ForLoop(b => MGBasisAtLevel[b].First().AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
             int counter = 0;
-            
+
 
             for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
                 counter = iLevel;
-                if (iLevel > NoOfLevels - 1)
-                    counter = NoOfLevels - 1;
+                if (iLevel >= MGChangeOfBasis.Length)
+                    counter = MGChangeOfBasis.Length - 1;
                 foreach (var cob in MGChangeOfBasis[counter]) {
                     for (int iVar = 0; iVar < cob.VarIndex.Length; iVar++) {
                         int d = ((AggregationGridBasis)MultigridBasis.First()[iVar]).AggGrid.ParentGrid.SpatialDimension;
@@ -871,7 +873,7 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
-                LocalDOF[iLevel] = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.iLogicalCells.NoOfLocalUpdatedCells* DOFperCell[iLevel];
+                LocalDOF[iLevel] = NoOFCellsAtLEvel[iLevel] * DOFperCell[iLevel];
             }
             return LocalDOF;
         }

@@ -195,7 +195,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 100;
+            C.fullyCoupledSplittingMaxIterations = 100;
 
             return C;
         }
@@ -327,7 +327,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000;
+            C.fullyCoupledSplittingMaxIterations = 1000;
 
 
 
@@ -385,7 +385,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.fullyCoupledSplittingMaxIterations = 1000000;
 
 
             return C;

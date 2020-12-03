@@ -226,7 +226,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
         /// </summary>
         [DataMember]
-        public int maxIterationsFullyCoupled = 100000;
+        public int fullyCoupledSplittingMaxIterations = 100000;
 
         /// <summary>
         /// Set true if the lower wall should be plastic, i.e. the coefficient of restitution is 0.

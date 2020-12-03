@@ -105,7 +105,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.maxIterationsFullyCoupled = 100000;
+            C.fullyCoupledSplittingMaxIterations = 100000;
             C.hydrodynamicsConvergenceCriterion = 1e-1;
 
             // Fluid Properties

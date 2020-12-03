@@ -82,6 +82,8 @@ namespace BoSSS.Application.IBM_Solver {
             this.AddFieldOption("Phi", Math.Max(2, k) + 1);
         }
 
+        public bool UseSchurBlockPrec = false;
+
         /// <summary>
         /// Block-Preconditiond for the velocity-components of the saddel-point system
         /// </summary>

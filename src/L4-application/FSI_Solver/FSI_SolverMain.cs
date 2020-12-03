@@ -49,13 +49,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-
-            //BoSSS.Solution.Application.InitMPI();
-            ////BoSSS.Application.FSI_Solver.TestProgram.PeriodicTest();
-            //BoSSS.Application.FSI_Solver.TestProgram.TestParticleInShearFlow();
-            //BoSSS.Solution.Application.FinalizeMPI();
-            //throw new ApplicationException("remove me");
-
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
                 return p;
@@ -67,6 +60,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// Set the inital state of the simulation.
         /// </summary>
         protected override void SetInitial() {
+            if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
+                throw new NotImplementedException("Currently not implemented for fixed motion");
+            }
             ParticleList = ((FSI_Control)this.Control).Particles;
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
@@ -235,7 +231,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (RefinementLevel == 0)
                 return MaxGridLength;
             else
-                return MaxGridLength / Math.Pow(2, RefinementLevel);
+                return MaxGridLength / (RefinementLevel * 2);
         }
 
         /// <summary>
@@ -356,21 +352,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                         // Immersed boundary
                         // -----------------------------
-                        if(((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
-                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
-                                delegate (Vector X) {
-                                    throw new NotImplementedException("Currently not implemented for fixed motion");
-                                },
-                                UseMovingMesh);
-                            comps.Add(convectionAtIB);
-                        } else {
-                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
-                                    delegate (Vector X) {
-                                        return CreateCouplingAtParticleBoundary(X);
-                                    },
-                                UseMovingMesh);
-                            comps.Add(convectionAtIB);
-                        }
+                        var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap, Particles.ToArray(), UseMovingMesh, GetMinGridLength());
+                        comps.Add(convectionAtIB);
                     }
                 }
             }
@@ -410,21 +393,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // Immersed boundary
                 // -----------------------------
-                if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
-
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
-                        penalty, this.ComputePenaltyIB, FluidViscosity, delegate (Vector X) {
-                            throw new NotImplementedException("Currently not implemented for fixed motion");
-                        });
-                    comps.Add(viscousAtIB);
-                } else {
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity,
-                        delegate (Vector X) {
-                            return CreateCouplingAtParticleBoundary(X);
-                        }
-                     );
-                    comps.Add(viscousAtIB); // immersed boundary component
-                }
+                var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity, Particles.ToArray(), GetMinGridLength());
+                comps.Add(viscousAtIB);
             }
 
             // Continuum equation
@@ -436,21 +406,8 @@ namespace BoSSS.Application.FSI_Solver {
                     IBM_Op.EquationComponents["div"].Add(src);
                     IBM_Op.EquationComponents["div"].Add(flx);
                 }
-
-                if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
-
-                    var divPen = new Solution.NSECommon.Operator.Continuity.DivergenceAtIB(spatialDim, LsTrk, 1,
-                        delegate (double[] X, double time) {
-                            throw new NotImplementedException("Currently not implemented for fixed motion");
-                        });
-                    IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
-                } else {
-                    var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk,
-                       delegate (Vector X) {
-                           return CreateCouplingAtParticleBoundary(X);
-                       });
-                    IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
-                }
+                var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk, Particles.ToArray(), GetMinGridLength());
+                IBM_Op.EquationComponents["div"].Add(divPen);
             }
 
             // temporal operator
@@ -535,20 +492,6 @@ namespace BoSSS.Application.FSI_Solver {
                 Config_LevelSetConvergenceCriterion = ((FSI_Control)Control).hydrodynamicsConvergenceCriterion,
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit
             };
-        }
-
-        /// <summary>
-        /// Returns an array with all coupling parameters. 
-        /// </summary>
-        private FSI_ParameterAtIB CreateCouplingAtParticleBoundary(Vector X) {
-            FSI_ParameterAtIB couplingParameters = new FSI_ParameterAtIB(); 
-            foreach (Particle p in ParticleList) {
-                bool containsParticle = ParticleList.Count == 1 ? true : p.Contains(X, 2 * MaxGridLength);
-                if (containsParticle) {
-                    couplingParameters = new FSI_ParameterAtIB(p, X);
-                }
-            }
-            return couplingParameters;
         }
 
         /// <summary>
@@ -848,14 +791,11 @@ namespace BoSSS.Application.FSI_Solver {
             Vector particlePosition = currentParticle.Motion.GetPosition();
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
-            double additionalWallThreshold = 2*MaxGridLength;
-            if (d2 == 0)
-                additionalWallThreshold *= -1;
             if (Math.Abs(distance) < particleMaxLength) {
                 if (d1 == 0)
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2] - additionalWallThreshold, particlePosition[1]);
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
                 else
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2] - additionalWallThreshold);
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
                 ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
                 periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
@@ -1005,7 +945,7 @@ namespace BoSSS.Application.FSI_Solver {
                     while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minimumNumberOfIterations) {
                         Stopwatch stopWatch = new Stopwatch();
                         stopWatch.Start();
-                        if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)
+                        if (iterationCounter > ((FSI_Control)Control).fullyCoupledSplittingMaxIterations)
                             throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
                         if (iterationCounter < 0)
                             throw new Exception("Iteration counter is negative?!");

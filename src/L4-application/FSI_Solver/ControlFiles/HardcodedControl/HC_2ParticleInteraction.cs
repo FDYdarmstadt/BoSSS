@@ -67,12 +67,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = true;
-            C.NonLinearSolver.MaxSolverIterations = 1000;
-            C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LSunderrelax = 1.0;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.TargetBlockSize = 10000;
 
@@ -80,8 +77,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 100;
+            C.fullyCoupledSplittingMaxIterations = 100;
 
             return C;
         }

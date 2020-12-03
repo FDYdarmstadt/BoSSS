@@ -23,7 +23,7 @@ namespace FSI_Solver {
         private readonly Particle m_CurrentParticle;
         private Vector m_RadialVector;
         private double activeStress;
-        private double angle;
+        private Vector orientation;
         private Vector translationalVelocity;
         private Vector pointVelocity;
 
@@ -44,7 +44,7 @@ namespace FSI_Solver {
                               m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1] + m_CurrentParticle.Motion.GetRotationalVelocity(0) * m_RadialVector[0]);
             translationalVelocity = new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0],
                               m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
-            angle = m_CurrentParticle.Motion.GetAngle(0);
+            orientation = m_CurrentParticle.Motion.orientationVector;
             activeStress = m_CurrentParticle.ActiveStress;
         }
 
@@ -56,7 +56,7 @@ namespace FSI_Solver {
         public FSI_ParameterAtIB() {
             pointVelocity = new Vector(0,0);
             translationalVelocity = new Vector(0,0);
-            angle = 0;
+            orientation = new Vector(0, 0);
             activeStress =0;
         }
 
@@ -78,8 +78,8 @@ namespace FSI_Solver {
         /// <summary>
         /// Current particle angle
         /// </summary>
-        public double Angle() {
-            return angle;
+        public Vector Orientation() {
+            return orientation;
         }
 
         /// <summary>

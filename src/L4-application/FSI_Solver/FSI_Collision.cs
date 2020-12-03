@@ -442,6 +442,8 @@ namespace FSI_Solver {
             positionVectors[0] = new Vector(Particle0.Motion.GetPosition(0));
             positionVectors[1] = new Vector(Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis : Particle1.Motion.GetPosition(0));
             Vector supportVector = positionVectors[0] - positionVectors[1];
+            if (supportVector.Abs() == 0)
+                supportVector = new Vector(1, 0);
             Aux.TestArithmeticException(supportVector, "support vector");
 
             // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
@@ -451,14 +453,14 @@ namespace FSI_Solver {
             closestPoints[0] = new Vector(spatialDim);
             closestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
-            int maxNoOfIterations = 50;
+            int maxNoOfIterations = 1000;
 
             // Step 2
             // Start the iteration
             // =======================================================
             for (int i = 0; i <= maxNoOfIterations; i++) {
-                Vector negativeSupportVector = new Vector(spatialDim);
-                negativeSupportVector.Sub(supportVector);
+                Vector negativeSupportVector = new Vector(-supportVector[0], -supportVector[1]);
+                negativeSupportVector -= supportVector;
 
                 // Calculate the support point of the two particles, 
                 // which are the closest points if the algorithm is finished.

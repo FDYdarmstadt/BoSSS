@@ -259,6 +259,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Aux.TestArithmeticException(Position[i], "initial particle position");
                 Aux.TestArithmeticException(Angle[i], "initial particle angle");
             }
+            orientationVector = new Vector(Math.Cos(Angle[0]), Math.Sin(Angle[0]));
         }
 
         /// <summary>
@@ -449,6 +450,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         public void SetCollisionTimestep(double collisionTimestep) => CollisionTimestep = collisionTimestep;
 
+        public Vector orientationVector = new Vector(2);
+
         /// <summary>
         /// Calls the calculation of the position and angle.
         /// </summary>
@@ -462,6 +465,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
             Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
+            orientationVector = new Vector(Math.Cos(Angle[0]), Math.Sin(Angle[0]));
             CollisionTimestep = 0;
         }
 
