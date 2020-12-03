@@ -371,8 +371,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectDescription = "rising bubble";
             C.Tags.Add("benchmark setup");
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-            C.LogPeriod = 1;
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            //C.LogPeriod = 1;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
 
             #endregion
 
@@ -658,8 +659,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
             #endregion
 
             // DG degrees
@@ -820,8 +821,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
+            
             #endregion
 
 
@@ -860,9 +860,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SessionName = "RisingBubble_pStudy_k3_mesh60_restart";
             C.SessionName = "RisingBubble_tc2_k2_mesh20_newAMR4";
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-            C.LogPeriod = 3;
-
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            //C.LogPeriod = 3;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities() { LogPeriod = 3 });
             #endregion
             
 
@@ -1171,8 +1171,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
             #endregion
 
 
@@ -1300,9 +1300,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
-
+            
             #endregion
 
             return C;

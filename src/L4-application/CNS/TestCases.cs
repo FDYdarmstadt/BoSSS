@@ -1434,6 +1434,12 @@ namespace CNS {
                 case 64:
                     separation = new int[] { 8, 8 };
                     break;
+                case 128:
+                    separation = new int[] { 16, 8 };
+                    break;
+                case 256:
+                    separation = new int[] { 16, 16 };
+                    break;
                 default:
                     c.GridPartType = GridPartType.none;
                     break;
@@ -1739,9 +1745,10 @@ namespace CNS {
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance3";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            string dbPath = @"/work/scratch/jw52xeqa/DB_Cube_2";
+            //string dbPath = @"/work/scratch/jw52xeqa/DB_Cube_2";
             //string dbPath = @"/work/scratch/jw52xeqa/DB_trash";
             //string dbPath = @"V:\testDB";
+            string dbPath = "/home/fk69umer/bosss_db_lichtenberg";
             string restart = "False";
             int cores = ilPSP.Environment.MPIEnv.MPI_Size;
 

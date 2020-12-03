@@ -1001,6 +1001,15 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public bool ContinueOnIoError = true;
 
+
+        /// <summary>
+        /// Computation-specific post-processing (e.g. drag computation or error against an exact solution)
+        /// which should be computed during the simulation
+        /// </summary>
+        [DataMember]
+        public List<InSituPostProcessingModule> PostprocessingModules = new List<InSituPostProcessingModule>();
+
+
         /// <summary>
         /// Used for control objects in work-flow management, 
         /// Converts object to a serializable text.

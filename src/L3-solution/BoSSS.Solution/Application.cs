@@ -445,8 +445,12 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+
+            int MPIrank = int.MinValue;
 #if DEBUG
             {
+
+                
 #else
             try {
 #endif
@@ -456,6 +460,7 @@ namespace BoSSS.Solution {
                 bool _MustFinalizeMPI = InitMPI(args);
                 ReadBatchModeConnectorConfig();
 
+                MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
@@ -514,7 +519,7 @@ namespace BoSSS.Solution {
                 Console.Error.WriteLine();
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine(e.GetType().Name + ":");
+                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
                 Console.Error.WriteLine(e.Message);
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");
@@ -1279,13 +1284,15 @@ namespace BoSSS.Solution {
                 m_Database.Controller.AddGridInitializationContext(GridData);
 
                 // create fields
-                //=============
+                // =============
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
+
+                
 
                 // load queries from control file
                 //========================
@@ -1298,14 +1305,34 @@ namespace BoSSS.Solution {
                 }
                 //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
-                //save session information
-                //========================
+                // logging
+                // ==================================
+                m_PostprocessingModules.Clear();
+                if(this.Control != null && this.Control.PostprocessingModules != null) {
+                    m_PostprocessingModules.AddRange(this.Control.PostprocessingModules);
+                }
+
+                // save session information
+                // ========================
                 if (DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
                 }
             }
         }
+
+        List<InSituPostProcessingModule> m_PostprocessingModules = new List<InSituPostProcessingModule>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.PostprocessingModules"/>
+        /// </summary>
+        public IList<InSituPostProcessingModule> PostprocessingModules {
+            get {
+                return m_PostprocessingModules;
+            }
+        }
+
+
 
         /// <summary>
         /// Information about the currently active session.
@@ -1935,7 +1962,7 @@ namespace BoSSS.Solution {
         protected Boolean TerminationKey = false;
 
         /// <summary>
-        /// If the current simualation has been restarted, <see cref="TimeStepNoRestart"/>
+        /// If the current simulation has been restarted, <see cref="TimeStepNoRestart"/>
         /// is set by the method <see cref="LoadRestart(out double, out TimestepNumber)"/>.
         /// </summary>
         protected TimestepNumber TimeStepNoRestart = null;
@@ -2030,6 +2057,13 @@ namespace BoSSS.Solution {
                         ResetInitial();
                     }
 
+                    // setup of logging
+                    foreach( var l in PostprocessingModules) {
+                        l.Setup(this);
+                        l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
+                    }
+
+
                     bool RunLoop(int i) {
                         return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
                     }
@@ -2038,10 +2072,17 @@ namespace BoSSS.Solution {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
                         this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
+                        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
+
+                        
+                        foreach(var l in PostprocessingModules) {
+                            l.DriverTimestepPostProcessing(i, physTime);
+                        }
 
                         ITimestepInfo tsi = null;
 
@@ -2085,6 +2126,7 @@ namespace BoSSS.Solution {
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
 
+                   
 
                     // Evaluate queries and write log file (either to session directory
                     // or current directory)
@@ -2630,6 +2672,8 @@ namespace BoSSS.Solution {
                 m_ResLogger.Close();
                 m_ResLogger = null;
             }
+
+
         }
 
         /// <summary>
@@ -3108,6 +3152,10 @@ namespace BoSSS.Solution {
                     ByeInt();
                     Bye();
                     ProfilingLog();
+
+                    foreach( var l in PostprocessingModules) {
+                        l.Dispose();
+                    }
 
                     if (this.CurrentSessionInfo != null)
                         this.CurrentSessionInfo.Dispose();

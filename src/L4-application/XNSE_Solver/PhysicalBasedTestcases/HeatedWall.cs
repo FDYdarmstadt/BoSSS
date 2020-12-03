@@ -146,8 +146,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            C.LogPeriod = 100;
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogPeriod = 100;
+            C.PostprocessingModules.Add(new MovingContactLineLogging() { LogPeriod = 100 });
 
             #endregion
 
@@ -1957,9 +1958,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdditionalParameters = param;
 
-            C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
-            C.LogPeriod = 2;
-
+            //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
+            //C.LogPeriod = 2;
+            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 2, mode = EvaporationLogging.Mode.LineInterface });
 
             return C;
         }
@@ -1995,8 +1996,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ProjectDescription = "Leikonfiguration for SFB 1194";
             C.SessionName = "1Dheat_unsteadyTest_noHeatConv";
 
-            C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
-            C.LogPeriod = 10;
+            //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
+            //C.LogPeriod = 10;
+            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
+
             C.ContinueOnIoError = false;
 
             #endregion
@@ -2461,8 +2464,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/OneDimensionalVerification_Sato";
             //C.ProjectDescription = "Leikonfiguration for SFB 1194";
 
-            C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
-            C.LogPeriod = 10;
+            //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
+            //C.LogPeriod = 10;
+            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
+
             C.ContinueOnIoError = false;
 
             // additional parameters
@@ -2736,8 +2741,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/OneDimensionalVerification_Sato";
             //C.ProjectDescription = "Leikonfiguration for SFB 1194";
 
-            C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
-            C.LogPeriod = 10;
+            //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
+            //C.LogPeriod = 10;
+            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
+
             C.ContinueOnIoError = false;
 
             // additional parameters
@@ -3586,7 +3593,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = false; // C.DbPath != null;
             C.ProjectName = "XNSE/DropVaporization";
 
-            C.LogValues = XNSE_Control.LoggingValues.EvaporationC;
+            //C.LogValues = XNSE_Control.LoggingValues.EvaporationC;
+            C.PostprocessingModules.Add(new EvaporationLogging() { mode = EvaporationLogging.Mode.CircleInterface });
             C.ContinueOnIoError = false;
 
             #endregion
@@ -4407,8 +4415,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            C.LogPeriod = 100;
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogPeriod = 100;
+            C.PostprocessingModules.Add(new MovingContactLineLogging() { LogPeriod = 100 });
 
             #endregion
 

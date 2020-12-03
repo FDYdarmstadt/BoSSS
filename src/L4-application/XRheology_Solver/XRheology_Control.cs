@@ -188,7 +188,6 @@ namespace BoSSS.Application.XRheology_Solver {
         //}
 
 
-        public bool WriteInterfaceP = false;
 
         public bool TestMode = false;
 

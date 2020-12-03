@@ -95,7 +95,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// kinetic energy computed via <see cref="KineticEnergyBalanceOperator"/>
         /// </summary>
-        XDGField KineticEnergy;
+        internal XDGField KineticEnergy {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Residual of the kinetic energy balance
