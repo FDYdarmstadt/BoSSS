@@ -285,8 +285,8 @@ namespace BoSSS.Application.FSI_Solver {
         public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 25, double noOfParticles = 2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
-            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
             //string ID = "62bbb746-c171-4123-b08b-bd6ae36570c1";
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             //C.IsRestart = true;
@@ -343,11 +343,11 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = true;
-            C.LinearSolver.NoOfMultigridLevels = 10;
+            C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.verbose = false;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.UseSchurBlockPrec = false;
             C.LinearSolver.pMaxOfCoarseSolver = k;
             C.LinearSolver.TargetBlockSize = 14000;

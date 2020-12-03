@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -46,45 +47,51 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="fluidDensity"></param>
         /// <param name="underrelax"></param>
         internal void CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool underrelax) {
-            double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
-            for (int p = 0; p < AllParticles.Count(); p++) {
-                Particle currentParticle = AllParticles[p];
-                CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
-                int offset = p * (m_Dim + 1);
-                double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
-                double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
-                for (int d = 0; d < m_Dim; d++) {
-                    hydrodynamics[offset + d] = tempForces[d];
+            using (new FuncTrace()) {
+                double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
+                for (int p = 0; p < AllParticles.Count(); p++) {
+                    Particle currentParticle = AllParticles[p];
+                    CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
+                    int offset = p * (m_Dim + 1);
+                    double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, cutCells);
+                    double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
+                    for (int d = 0; d < m_Dim; d++) {
+                        hydrodynamics[offset + d] = tempForces[d];
+                    }
+                    hydrodynamics[offset + m_Dim] = tempTorque;
                 }
-                hydrodynamics[offset + m_Dim] = tempTorque;
-            }
-            for (int p = 0; p < AllParticles.Count(); p++) {
-                Particle currentParticle = AllParticles[p];
-                int offset = p * (m_Dim + 1);
-                if (!currentParticle.IsMaster)
-                    continue;
-                if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
-                    for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
-                        int ghostOffset = (currentParticle.MasterGhostIDs[g] - 1) * (m_Dim + 1);
-                        if (currentParticle.MasterGhostIDs[g] < 1)
-                            continue;
-                        for (int d = 0; d < m_Dim; d++) {
-                            hydrodynamics[offset + d] += hydrodynamics[ghostOffset + d];
-                            hydrodynamics[ghostOffset + d] = 0;
+
+                hydrodynamics = hydrodynamics.MPISum();
+
+                for (int p = 0; p < AllParticles.Count(); p++) {
+                    Particle currentParticle = AllParticles[p];
+                    int offset = p * (m_Dim + 1);
+                    if (!currentParticle.IsMaster)
+                        continue;
+                    if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
+                        for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
+                            int ghostOffset = (currentParticle.MasterGhostIDs[g] - 1) * (m_Dim + 1);
+                            if (currentParticle.MasterGhostIDs[g] < 1)
+                                continue;
+                            for (int d = 0; d < m_Dim; d++) {
+                                hydrodynamics[offset + d] += hydrodynamics[ghostOffset + d];
+                                hydrodynamics[ghostOffset + d] = 0;
+                            }
+                            hydrodynamics[offset + m_Dim] += hydrodynamics[ghostOffset + m_Dim];
+                            hydrodynamics[ghostOffset + m_Dim] = 0;
                         }
-                        hydrodynamics[offset + m_Dim] += hydrodynamics[ghostOffset + m_Dim];
-                        hydrodynamics[ghostOffset + m_Dim] = 0;
                     }
                 }
-            }
-            double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
-            double omega = AllParticles[0].Motion.omega;
-            if (underrelax)
-                relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics, ref omega);
-            AllParticles[0].Motion.omega = omega;
-            for (int p = 0; p < AllParticles.Count(); p++) {
-                Particle currentParticle = AllParticles[p];
-                currentParticle.Motion.UpdateForcesAndTorque(p, relaxatedHydrodynamics);
+
+                double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
+                double omega = AllParticles[0].Motion.omega;
+                if (underrelax)
+                    relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics, ref omega);
+                AllParticles[0].Motion.omega = omega;
+                for (int p = 0; p < AllParticles.Count(); p++) {
+                    Particle currentParticle = AllParticles[p];
+                    currentParticle.Motion.UpdateForcesAndTorque(p, relaxatedHydrodynamics, fluidDensity);
+                }
             }
         }
 
@@ -93,12 +100,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega) {
+            using (new FuncTrace()) { 
             double[] relaxatedHydrodynamics;
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
             relaxatedHydrodynamics = m_ForcesAndTorquePreviousIteration.Count > 2
                 ? AitkenUnderrelaxation(hydrodynamics, ref omega)
                 : StaticUnderrelaxation(hydrodynamics);
             return relaxatedHydrodynamics;
+        }
         }
 
         /// <summary>

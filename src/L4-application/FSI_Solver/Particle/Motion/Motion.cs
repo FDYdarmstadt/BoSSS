@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using FSI_Solver;
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -500,15 +501,14 @@ namespace BoSSS.Application.FSI_Solver {
             RotationalVelocity[0] = rotational;
         }
 
-        internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
-            double[] tempForces = new double[SpatialDim];
+        internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics, double fluidDensity) {
+            Vector forces = new Vector(SpatialDim);
             for (int d = 0; d < SpatialDim; d++) {
                 if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-12)
-                    tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
+                    forces[d] = fullListHydrodynamics[particleID * 3 + d];
                 
             }
-            //tempForces[1] = 0;
-            HydrodynamicForces[0] = new Vector(tempForces);
+            HydrodynamicForces[0] = CalculateGravitationalForces(fluidDensity, forces);
             if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
                 HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
             Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
@@ -625,34 +625,6 @@ namespace BoSSS.Application.FSI_Solver {
             return l_Acceleration;
         }
 
-        protected double[][] TransformStressToPrint(List<double[]>[] stressToPrintOut) {
-            if (stressToPrintOut[0].Count() != stressToPrintOut[1].Count())
-                throw new Exception("Something strange happend!");
-            double[][] output = new double[stressToPrintOut[0].Count()][];
-            for (int d = 0; d < SpatialDim; d++) {
-                for (int i = stressToPrintOut[d].Count() - 1; i > 0; i--) {
-                    for (int j = 0; j < i - 1; j++) {
-                        if (stressToPrintOut[d][j][0] > stressToPrintOut[d][j + 1][0]) {
-                            double[] temp = stressToPrintOut[d][j].CloneAs();
-                            stressToPrintOut[d][j] = stressToPrintOut[d][j + 1].CloneAs();
-                            stressToPrintOut[d][j + 1] = temp;
-                        }
-                    }
-                }
-            }
-            for (int i = 0; i < output.Length; i++) {
-                if (Math.Abs(stressToPrintOut[0][i][0] - stressToPrintOut[1][i][0]) > 1e-15)
-                    throw new Exception("Something strange happend!");
-                double surfaceParam = stressToPrintOut[0][i][0];
-                double normalStress = Math.Cos(surfaceParam) * stressToPrintOut[0][i][1] + Math.Sin(stressToPrintOut[0][i][0]) * stressToPrintOut[1][i][1];
-                double tangentialStress = -Math.Sin(surfaceParam) * stressToPrintOut[0][i][1] + Math.Cos(stressToPrintOut[0][i][0]) * stressToPrintOut[1][i][1];
-                surfaceParam = Math.PI * (1 - Math.Sign(-Math.Sin(Angle[0]) * Math.Cos(surfaceParam) + Math.Cos(Angle[0]) * Math.Sin(surfaceParam))) / 2 + Math.Acos(Math.Cos(Angle[0]) * Math.Cos(surfaceParam) + Math.Sin(Angle[0]) * Math.Sin(surfaceParam));
-                double[] insert = new double[] { surfaceParam, normalStress, tangentialStress };
-                output[i] = insert;
-            }
-            return output;
-        }
-
         /// <summary>
         /// Calculate the new rotational acceleration.
         /// </summary>
@@ -695,13 +667,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public virtual Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt = 0) {
-            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
-            currentStress = TransformStressToPrint(stressToPrintOut);
-            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            tempForces = ForcesMPISum(tempForces);
-            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
-            return tempForces;
+        public virtual Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt = 0) {
+            using (new FuncTrace()) {
+                Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(cutCells));
+                Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+                return tempForces;
+            }
         }
 
         protected double[][] currentStress;
@@ -711,49 +682,21 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        protected Vector CalculateGravitationalForces(double fluidDensity, Vector tempForces) {
+        private Vector CalculateGravitationalForces(double fluidDensity, Vector tempForces) {
             tempForces += (Density - fluidDensity) * ParticleArea * Gravity;
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics after adding gravity");
             return tempForces;
         }
 
         /// <summary>
-        /// Summation of the hydrodynamic forces over all MPI-processes
-        /// </summary>
-        /// <param name="forces"></param>
-        protected Vector ForcesMPISum(Vector forces) {
-            double[] stateBuffer = ((double[])forces).CloneAs();
-            double[] globalStateBuffer = stateBuffer.MPISum();
-            forces = new Vector(globalStateBuffer);
-            Aux.TestArithmeticException(forces, "temporal forces during calculation of hydrodynamics after mpi-summation");
-            return forces;
-        }
-
-        /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="fluidViscosity"></param>
         /// <param name="cutCells"></param>
         /// <param name="dt"></param>
         public virtual double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt = 0) {
             double tempTorque = hydrodynamicsIntegration.Torque(Position[0], cutCells);
             Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
-            TorqueMPISum(ref tempTorque);
             return tempTorque;
-        }
-
-        /// <summary>
-        /// Summation of the hydrodynamic torque over all MPI-processes
-        /// </summary>
-        /// <param name="torque"></param>
-        protected void TorqueMPISum(ref double torque) {
-            double stateBuffer = torque;
-            double globalStateBuffer = stateBuffer.MPISum();
-            torque = globalStateBuffer;
-            Aux.TestArithmeticException(torque, "temporal torque during calculation of hydrodynamics after mpi-summation");
         }
 
         /// <summary>

@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using FSI_Solver;
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -187,14 +188,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
-            currentStress = TransformStressToPrint(stressToPrintOut);
-            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            tempForces = ForcesMPISum(tempForces);
-            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
-            tempForces = ForceAddedDamping(tempForces, dt);
-            return tempForces;
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
+            using (new FuncTrace()) {
+                Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(cutCells));
+                Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+                tempForces = ForceAddedDamping(tempForces, dt);
+                return tempForces;
+            }
         }
 
         /// <summary>
@@ -207,11 +207,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="cutCells"></param>
         /// <param name="dt"></param>
         public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
-            double tempTorque = hydrodynamicsIntegration.Torque(GetPosition(0), cutCells);
-            Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
-            TorqueMPISum(ref tempTorque);
-            TorqueAddedDamping(ref tempTorque, dt);
-            return tempTorque;
+            using (new FuncTrace()) {
+                double tempTorque = hydrodynamicsIntegration.Torque(GetPosition(0), cutCells);
+                Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
+                TorqueAddedDamping(ref tempTorque, dt);
+                return tempTorque;
+            }
         }
 
         /// <summary>

@@ -21,6 +21,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -56,78 +57,76 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double[] Forces(out List<double[]>[] stressToPrintOut, CellMask cutCells) {
-            double[] tempForces = new double[m_SpatialDim];
-            double[] IntegrationForces = tempForces.CloneAs();
-            List<double[]>[] stressToPrint = new List<double[]>[m_SpatialDim];
-            stressToPrint[0] = new List<double[]>();
-            stressToPrint[1] = new List<double[]>();
-            for (int d = 0; d < m_SpatialDim; d++) {
-                void ErrFunc(int CurrentCellID, int Length, NodeSet Ns, MultidimensionalArray result) {
-                    int K = result.GetLength(1);
-                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, m_SpatialDim, m_SpatialDim);
-                    MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
-                    MultidimensionalArray Normals = m_LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
-                    for (int i = 0; i < m_SpatialDim; i++) {
-                        m_U[i].EvaluateGradient(CurrentCellID, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
-                    }
-                    m_P.Evaluate(CurrentCellID, Length, Ns, pARes);
-                    for (int j = 0; j < Length; j++) {
-                        for (int k = 0; k < K; k++) {
-                            result[j, k] = StressTensor(Grad_UARes, pARes, Normals, m_FluidViscosity, k, j, m_SpatialDim, d);
-                            double t = Math.PI * (1 - Math.Sign(Normals[j, k, 1])) / 2 + Math.Acos(Normals[j, k, 0]);
-                            stressToPrint[d].Add(new double[] { t, result[j, k] });
+        internal double[] Forces(CellMask cutCells) {
+            using (new FuncTrace()) {
+                double[] tempForces = new double[m_SpatialDim];
+                double[] IntegrationForces = tempForces.CloneAs();
+                for (int d = 0; d < m_SpatialDim; d++) {
+                    void ErrFunc(int CurrentCellID, int Length, NodeSet Ns, MultidimensionalArray result) {
+                        int K = result.GetLength(1);
+                        MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, m_SpatialDim, m_SpatialDim);
+                        MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
+                        MultidimensionalArray Normals = m_LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
+                        for (int i = 0; i < m_SpatialDim; i++) {
+                            m_U[i].EvaluateGradient(CurrentCellID, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                        }
+                        m_P.Evaluate(CurrentCellID, Length, Ns, pARes);
+                        for (int j = 0; j < Length; j++) {
+                            for (int k = 0; k < K; k++) {
+                                result[j, k] = StressTensor(Grad_UARes, pARes, Normals, m_FluidViscosity, k, j, m_SpatialDim, d);
+                            }
                         }
                     }
+
+                    int[] noOfIntegrals = new int[] { 1 };
+                    XQuadSchemeHelper SchemeHelper = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
+                    CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, cutCells);
+                    ICompositeQuadRule<QuadRule> surfaceRule = cqs.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder);
+
+                    CellQuadrature.GetQuadrature(noOfIntegrals, m_GridData, surfaceRule,
+                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0)); },
+                        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { IntegrationForces[d] = ForceTorqueSummationWithNeumaierArray(IntegrationForces[d], ResultsOfIntegration, Length); }
+                    ).Execute();
                 }
-
-                int[] noOfIntegrals = new int[] { 1 };
-                XQuadSchemeHelper SchemeHelper = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, cutCells);
-                ICompositeQuadRule<QuadRule> surfaceRule = cqs.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder);
-
-                CellQuadrature.GetQuadrature(noOfIntegrals, m_GridData, surfaceRule,
-                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0)); },
-                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { IntegrationForces[d] = ForceTorqueSummationWithNeumaierArray(IntegrationForces[d], ResultsOfIntegration, Length); }
-                ).Execute();
+                return tempForces = IntegrationForces.CloneAs();
             }
-            stressToPrintOut = stressToPrint.CloneAs();
-            return tempForces = IntegrationForces.CloneAs();
         }
 
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
         internal double Torque(double[] position, CellMask cutCells) {
-            double tempTorque = new double();
-            void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
-                int K = result.GetLength(1);
-                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, m_SpatialDim, m_SpatialDim); ;
-                MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
-                MultidimensionalArray Normals = m_LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-                for (int i = 0; i < m_SpatialDim; i++) {
-                    m_U[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
-                }
-                m_P.Evaluate(j0, Len, Ns, pARes);
-                for (int j = 0; j < Len; j++) {
-                    MultidimensionalArray Ns_Global = Ns.CloneAs();
-                    m_LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = TorqueStressTensor(Grad_UARes, pARes, Normals, Ns_Global, m_FluidViscosity, k, j, position);
+            using (new FuncTrace()) {
+                double tempTorque = new double();
+                void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
+                    int K = result.GetLength(1);
+                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, m_SpatialDim, m_SpatialDim); ;
+                    MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray Normals = m_LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
+                    for (int i = 0; i < m_SpatialDim; i++) {
+                        m_U[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                    }
+                    m_P.Evaluate(j0, Len, Ns, pARes);
+                    for (int j = 0; j < Len; j++) {
+                        MultidimensionalArray Ns_Global = Ns.CloneAs();
+                        m_LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = TorqueStressTensor(Grad_UARes, pARes, Normals, Ns_Global, m_FluidViscosity, k, j, position);
+                        }
                     }
                 }
+                var SchemeHelper2 = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
+                CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, cutCells);
+                CellQuadrature.GetQuadrature(new int[] { 1 }, m_LevelSetTracker.GridDat, cqs2.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        tempTorque = ForceTorqueSummationWithNeumaierArray(tempTorque, ResultsOfIntegration, Length);
+                    }
+                ).Execute();
+                return tempTorque;
             }
-            var SchemeHelper2 = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, cutCells);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, m_LevelSetTracker.GridDat, cqs2.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    tempTorque = ForceTorqueSummationWithNeumaierArray(tempTorque, ResultsOfIntegration, Length);
-                }
-            ).Execute();
-            return tempTorque;
         }
 
         /// <summary>
