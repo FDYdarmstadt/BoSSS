@@ -687,6 +687,7 @@ namespace BoSSS.Application.XNSE_Solver
             if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
+            AddCoefficient("EvapMicroRegion");
         }
 
         public override string FirstSpeciesName => phaseA;
@@ -760,6 +761,7 @@ namespace BoSSS.Application.XNSE_Solver
             codomainName = EquationNames.AuxHeatFlux(dimension)[d];
             AddInterfaceHeatEq(dimension, d, boundaryMap, LsTrk, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            AddCoefficient("EvapMicroRegion");
         }
 
         public override string FirstSpeciesName => phaseA;

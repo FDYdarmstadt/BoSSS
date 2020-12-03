@@ -18,15 +18,13 @@ namespace BoSSS.Application.XNSE_Solver
 
         ParameterList parameters;
 
-        DelOperatorCoefficients coefficients;
-
-        DelOperatorCoefficientsProvider cp;
+        CoefficientsList coefficients;
 
         public OperatorFactory()
         {
             eqSystem = new SystemOfEquations();
             parameters = new ParameterList();
-            cp = Coefficients;
+            coefficients = new CoefficientsList();
         }
 
         public void AddEquation(SpatialEquation equation)
@@ -47,13 +45,11 @@ namespace BoSSS.Application.XNSE_Solver
         public void AddParameter(Parameter parameter)
         {
             parameters.AddParameter(parameter);
-        }
+        }        
 
-        public delegate void DelOperatorCoefficients(CoefficientSet r, LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time);
-
-        public void AddCoefficient(DelOperatorCoefficients Coeff)
+        public void AddCoefficient(Coefficient coefficient)
         {
-            coefficients += Coeff;
+            coefficients.AddCoefficient(coefficient);
         }
 
         public XSpatialOperatorMk2 GetSpatialOperator(int quadOrder)
@@ -158,10 +154,6 @@ namespace BoSSS.Application.XNSE_Solver
             spatialOperator.OperatorCoefficientsProvider = Coefficients;
         }
 
-        public void SetCoefficient(DelOperatorCoefficientsProvider cp) {
-            this.cp = cp;
-        }
-
         CoefficientSet Coefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time)
         {
             var r = new CoefficientSet()
@@ -180,7 +172,20 @@ namespace BoSSS.Application.XNSE_Solver
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
 
-            coefficients?.Invoke(r, lstrk, spc, quadOrder, TrackerHistoryIdx, time);
+            string[] coeffs = eqSystem.Coefficients();
+
+            ICollection<DelCoefficientFactory> factories = coefficients.Factories(coeffs);            
+            foreach (DelCoefficientFactory factory in factories) {
+                var ttt = factory(lstrk, spc, quadOrder, TrackerHistoryIdx, time);
+                foreach(var tt in ttt)
+                    r.UserDefinedValues[tt.CoefficientName] = tt.CoefficientValue;
+            }
+
+            string[] actualcoeffs = r.UserDefinedValues.Keys.ToArray();
+            foreach(string coeff in coeffs)
+                if(Array.IndexOf(actualcoeffs, coeff) < 0) throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on coefficient  \""
+                                    + coeff
+                                    + "\", but this name is not a member of the UserDefinedValues list.");
 
             return r;
         }

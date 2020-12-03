@@ -628,11 +628,22 @@ namespace BoSSS.Application.XNSE_Solver
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
             //Mean Velocity
-            XDGField[] EvoVelocity = new XDGField[]
-            {
-                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
-                (XDGField) DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
-            };
+            XDGField[] EvoVelocity; // = new XDGField[]
+            try {
+                EvoVelocity = new XDGField[]
+                {
+                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
+                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
+                };
+            } catch (KeyNotFoundException e) {
+                Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                EvoVelocity = new XDGField[]
+                {
+                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X],
+                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Y],
+                };
+            }
+
 
             int D = EvoVelocity.Length;
             DGField[] meanVelocity;

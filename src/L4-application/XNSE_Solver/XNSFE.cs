@@ -95,34 +95,8 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
             opFactory.AddEquation(new HeatInterface("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
-            opFactory.SetCoefficient(XHeatCoefficients);
+            opFactory.AddCoefficient(new EvapMicroRegion());
         }
-
-        private CoefficientSet XHeatCoefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time)
-        {
-
-            var r = new CoefficientSet()
-            {
-                GrdDat = lstrk.GridDat
-            };
-            var g = lstrk.GridDat;
-            if (g is Foundation.Grid.Classic.GridData cgdat)
-            {
-                r.CellLengthScales = cgdat.Cells.CellLengthScale;
-                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
-
-            }
-            else
-            {
-                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
-            }
-
-            //Console.WriteLine("Heat configured without Evaporation and no fixed Interface Temperature");
-            BitArray EvapMicroRegion = lstrk.GridDat.GetBoundaryCells().GetBitMask();
-            EvapMicroRegion.SetAll(true);
-            r.UserDefinedValues["EvapMicroRegion"] = EvapMicroRegion;
-
-            return r;
-        }
+        
     }
 }

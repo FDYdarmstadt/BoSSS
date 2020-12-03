@@ -78,12 +78,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Coefficients.cs" />
     <Compile Include="Equations.cs" />
     <Compile Include="Operators.cs" />
     <Compile Include="LevelSetEvolver.cs" />
     <Compile Include="LevelSetUpdater.cs" />
     <Compile Include="NewXNSE_SimpleTests\BasicControls.cs" />
     <Compile Include="OperatorFactory.cs" />
+    <Compile Include="CoefficientsList.cs" />
     <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
