@@ -482,7 +482,7 @@ namespace BoSSS.Foundation.XDG {
         /// cells which are eliminated by the agglomeration are excluded from the sub-vector-indices-list
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        static public int[] GetSubvectorIndices(this UnsetteledCoordinateMapping mapping, LevelSetTracker.LevelSetRegions regions, int[] Fields,
+        static public long[] GetSubvectorIndices(this UnsetteledCoordinateMapping mapping, LevelSetTracker.LevelSetRegions regions, int[] Fields,
             ICollection<SpeciesId> _SpcIds = null, CellMask cm = null, bool presenceTest = true, MultiphaseCellAgglomerator drk = null) {
 
             #region Check Arguments

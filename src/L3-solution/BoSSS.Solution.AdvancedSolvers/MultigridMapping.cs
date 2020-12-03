@@ -679,7 +679,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Fields">
         /// Indices into <see cref="BasisS"/>
         /// </param>
-        public int[] GetSubvectorIndices(params int[] Fields) {
+        public long[] GetSubvectorIndices(params int[] Fields) {
             ilPSP.MPICollectiveWatchDog.Watch();
             var map = this.ProblemMapping;
 
@@ -811,7 +811,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="Fields"></param>
         /// <returns></returns>
-        public int[] GetSubvectorIndices_Ext(params int[] Fields) {
+        public long[] GetSubvectorIndices_Ext(params int[] Fields) {
             int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i=>i + Locoffset);
             List<int> R = new List<int>();
@@ -836,7 +836,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="map">
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        public int[] GetSubvectorIndices(Foundation.XDG.SpeciesId Species, params int[] Fields) {
+        public long[] GetSubvectorIndices(Foundation.XDG.SpeciesId Species, params int[] Fields) {
             var map = this.ProblemMapping;
 
             var _BasisS = map.BasisS.ToArray();

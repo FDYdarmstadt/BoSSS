@@ -33,10 +33,10 @@ namespace ilPSP {
         /// Throws an exception, if <see cref="IsInLocalRange(int)"/>(<paramref name="i"/>) evaluates to false;
         /// </summary>
         /// <param name="i"></param>
-        static public void TestIfInLocalRange(this IPartitioning p, int i) {
+        static public void TestIfInLocalRange(this IPartitioning p, long i) {
             if (!p.IsInLocalRange(i)) {
-                int i0 = p.i0;
-                int iE = p.iE;
+                long i0 = p.i0;
+                long iE = p.iE;
                 throw new ArgumentOutOfRangeException("i", "index is not within local range of partition: expecting " + i0 + " <= i < " + iE + ", but got i = " + i + ";");
             }
         }
@@ -53,17 +53,17 @@ namespace ilPSP {
         /// <summary>
         /// Subtracts <see cref="IPartitioning.i0"/> from <paramref name="iGlob"/>.
         /// </summary>
-        static public int TransformIndexToLocal(this IPartitioning p, int iGlob) {
-            return iGlob - p.i0;
+        static public int TransformIndexToLocal(this IPartitioning p, long iGlob) {
+            return p.Global2Local(iGlob);
         }
         
         /// <summary>
         /// first indices for each process; size is equal to number of processors (<see cref="IPartitioning.MpiSize"/> plus 1;
         /// first entry is always 0, last entry is equal to <see cref="m_TotalLength"/>;
         /// </summary>
-        static public int[] GetI0s(this IPartitioning p) {
+        static public long[] GetI0s(this IPartitioning p) {
             int sz = p.MpiSize;
-            int[] R = new int[sz + 1];
+            long[] R = new long[sz + 1];
             for (int i = 0; i < sz; i++) {
                 R[i] = p.GetI0Offest(i);
             }

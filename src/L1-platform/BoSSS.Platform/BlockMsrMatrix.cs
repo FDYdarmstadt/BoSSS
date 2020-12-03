@@ -2967,10 +2967,10 @@ namespace ilPSP.LinSolvers {
         public void WriteSubMatrixTo<V1, V2, V3, V4>(IMutableMatrixEx target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
             V3 ColumnIndicesSource, V4 ColumnInidcesTarget)
-            where V1 : IList<int>
-            where V2 : IList<int>
-            where V3 : IList<int>
-            where V4 : IList<int> {
+            where V1 : IList<long>
+            where V2 : IList<long>
+            where V3 : IList<long>
+            where V4 : IList<long> {
 
             target.Clear();
             this.AccSubMatrixTo(
@@ -2980,7 +2980,7 @@ namespace ilPSP.LinSolvers {
                 RowIndicesTarget,
                 ColumnIndicesSource,
                 ColumnInidcesTarget,
-                default(int[]), default(int[]));
+                default(long[]), default(long[]));
         }
 
         /// <summary>
@@ -2990,12 +2990,12 @@ namespace ilPSP.LinSolvers {
             double alpha, IMutableMatrixEx Target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
             V3 ColumnIndicesSource, V4 ColIndicesTarget)
-            where V1 : IEnumerable<int>
-            where V2 : IEnumerable<int>
-            where V3 : IEnumerable<int>
-            where V4 : IEnumerable<int>//
+            where V1 : IEnumerable<long>
+            where V2 : IEnumerable<long>
+            where V3 : IEnumerable<long>
+            where V4 : IEnumerable<long>//
         {
-            AccSubMatrixTo<V1, V2, V3, V4, int[], int[]>(alpha, Target, RowIndicesSource, RowIndicesTarget, ColumnIndicesSource, ColIndicesTarget, null, null);
+            AccSubMatrixTo<V1, V2, V3, V4, long[], long[]>(alpha, Target, RowIndicesSource, RowIndicesTarget, ColumnIndicesSource, ColIndicesTarget, null, null);
         }
 
         /// <summary>
@@ -3038,12 +3038,12 @@ namespace ilPSP.LinSolvers {
             V1 RowIndicesSource, V2 RowIndicesTarget,
             V3 ColumnIndicesSource, V4 ColIndicesTarget,
             V5 ExternalColumnIndicesSource, V6 ExternalColIndicesTarget)
-            where V1 : IEnumerable<int>
-            where V2 : IEnumerable<int>
-            where V3 : IEnumerable<int>
-            where V4 : IEnumerable<int> 
-            where V5 : IEnumerable<int>
-            where V6 : IEnumerable<int> //
+            where V1 : IEnumerable<long>
+            where V2 : IEnumerable<long>
+            where V3 : IEnumerable<long>
+            where V4 : IEnumerable<long> 
+            where V5 : IEnumerable<long>
+            where V6 : IEnumerable<long> //
         {
             using (new FuncTrace()) {
 

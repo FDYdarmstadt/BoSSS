@@ -387,6 +387,28 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// equal to <see cref="MPISum(long,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public long MPISum(this long i) {
+            return MPISum(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the sum of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public long MPISum(this long i, MPI_Comm comm) {
+            long loc = i;
+            unsafe {
+                long glob = long.MinValue;
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.LONG_LONG_INT, csMPI.Raw._OP.SUM, comm);
+                return glob;
+            }
+        }
+
+
+        /// <summary>
         /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the
         /// WORLD-communicator
         /// </summary>

@@ -32,11 +32,11 @@ namespace ilPSP {
         /// <summary>
         /// Gets a list of all occupied indices in the blocking.
         /// </summary>
-        public static int[] GetOccupiedIndicesList(this IBlockPartitioning B) {
-            List<int> R = new List<int>();
+        public static long[] GetOccupiedIndicesList(this IBlockPartitioning B) {
+            List<long> R = new List<long>();
 
-            for(int iBlk = B.FirstBlock; iBlk < B.LocalNoOfBlocks + B.FirstBlock; iBlk++) {
-                int i0 = B.GetBlockI0(iBlk);
+            for(long iBlk = B.FirstBlock; iBlk < B.LocalNoOfBlocks + B.FirstBlock; iBlk++) {
+                long i0 = B.GetBlockI0(iBlk);
 
                 int bt = B.GetBlockType(iBlk);
                 int[] S_i0 = B.GetSubblk_i0(bt);
@@ -83,7 +83,8 @@ namespace ilPSP {
 
             int iCheck = -1;
 
-            int iCurrentBlock = -1,  CurrentBlockType = -12, B_i0 = -1, BLen = -1;
+            long iCurrentBlock = -1, B_i0 = -1;
+            int CurrentBlockType = -12, BLen = -1;
             int[] B_sblk_i0 = null;
             int[] B_sblkLen = null;
             bool[] SblkMarker = null;
@@ -98,7 +99,7 @@ namespace ilPSP {
                     throw new ArgumentException("Sub-vector indices must be sorted.");
                 iCheck = i;
 
-                int iBlock = B.GetBlockIndex(i);
+                long iBlock = B.GetBlockIndex(i);
                 if(iBlock != iCurrentBlock) {
                     // block change - need to do something
 
@@ -120,7 +121,7 @@ namespace ilPSP {
                         Array.Clear(SblkMarker, 0, SblkMarker.Length);
                 }
 
-                int iWithin = i - B_i0;
+                long iWithin = i - B_i0;
                 Debug.Assert(iWithin >= 0);
                 Debug.Assert(iWithin < BLen);
 

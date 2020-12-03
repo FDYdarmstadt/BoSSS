@@ -592,73 +592,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-        /*
-        public MPI_Comm MPI_Comm {
-            get {
-                return this.GridDat.;
-            }
-        }
-
-        public int MpiSize {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int MpiRank {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int i0 {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int iE {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int LocalLength {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int TotalLength {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int GetI0Offest(int proc) {
-            throw new NotImplementedException();
-        }
-
-        public IPartitioning GetImmutablePartition() {
-            throw new NotImplementedException();
-        }
-
-        public int FindProcess(int index) {
-            throw new NotImplementedException();
-        }
-
-        public int FindProcess(long index) {
-            throw new NotImplementedException();
-        }
-
-        public bool IsInLocalRange(int i) {
-            throw new NotImplementedException();
-        }
-
-        public int GetLocalLength(int proc) {
-            throw new NotImplementedException();
-        }
-        */
+        
 
         /// <summary>
         /// converts a local unique coordinate index into a global unique coordinate index
@@ -666,7 +600,7 @@ namespace BoSSS.Foundation {
         /// <param name="iLocal"></param>
         /// <returns></returns>
         /// <see cref="Global2LocalIndex"/>
-        public int Local2GlobalIndex(int iLocal) {
+        public long Local2GlobalIndex(int iLocal) {
             if (iLocal < 0 || iLocal >= Ntotal)
                 throw new IndexOutOfRangeException();
 
@@ -776,7 +710,7 @@ namespace BoSSS.Foundation {
         /// over all cells, over all basis functions, over all MPI processes in the current
         /// communicator.
         /// </remarks>
-        public int GlobalUniqueCoordinateIndex(int find, int j, int n) {
+        public long GlobalUniqueCoordinateIndex(int find, int j, int n) {
             int iloc = LocalUniqueCoordinateIndex(find, j, n);
             return Local2GlobalIndex(iloc);
         }
@@ -901,7 +835,7 @@ namespace BoSSS.Foundation {
         ///  - false: only occupied entries, up to <see cref="Basis.GetLength"/>
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        public int[] GetSubvectorIndices(bool lo, params int[] Fields) {
+        public long[] GetSubvectorIndices(bool lo, params int[] Fields) {
 
             // <param name="includeExternal">
             // true, if indices which correlate to external cells should be included; false if not.
@@ -961,7 +895,7 @@ namespace BoSSS.Foundation {
         ///  - false: only occupied entries, up to <see cref="Basis.GetLength"/>
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        public int[] GetSubvectorIndices(SubGrid sgrd, bool lo, int[] Fields) {
+        public long[] GetSubvectorIndices(SubGrid sgrd, bool lo, int[] Fields) {
 
             // <param name="includeExternal">
             // true, if indices which correlate to external cells (i.e. ghost cells) should be included; false if not.
