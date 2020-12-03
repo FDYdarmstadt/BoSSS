@@ -283,7 +283,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             int bdfOrder;
             DecodeScheme(this.Scheme, out rksch, out bdfOrder);
 
-            SpatialOperatorType _SpatialOperatorType = SpatialOperatorType.Nonlinear;
+            SpatialOperatorType _SpatialOperatorType = op.IsLinear ? SpatialOperatorType.LinearTimeDependent : SpatialOperatorType.Nonlinear;
 
 
             int quadOrder = op.QuadOrderFunction(

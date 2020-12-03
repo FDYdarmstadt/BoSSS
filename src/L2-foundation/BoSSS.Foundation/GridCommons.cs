@@ -1063,10 +1063,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                         throw new ApplicationException("Illegal node indexing: minimal node index is " + NodeIdMin + "(must be non-negative).");
                     }
 
-                    int iNode_0 = (NodeIdMax + 1) * MyRank / Size;
-                    int iNode_E = (NodeIdMax + 1) * (MyRank + 1) / Size;
+                    long iNode_0 = (((long)NodeIdMax + 1) * MyRank) / Size;
+                    long iNode_E = (((long)NodeIdMax + 1) * (MyRank + 1)) / Size;
+                    long LocalLength = iNode_E - iNode_0;
+                    if (LocalLength > int.MaxValue)
+                        throw new OverflowException("Integer overflow.");
 
-                    m_NodePartitioning = new Partitioning(iNode_E - iNode_0);
+                    m_NodePartitioning = new Partitioning((int)LocalLength);
                 }
                 return m_NodePartitioning;
             }

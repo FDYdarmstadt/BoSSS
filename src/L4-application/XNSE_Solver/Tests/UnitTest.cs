@@ -637,7 +637,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //}
             }
 
+
             using(var solver = new XNSE_SolverMain()) {
+
+                var ErrorPoPo = new L2ErrorLogger();
+                C.PostprocessingModules.Add(ErrorPoPo);
+                
 
                 //Console.WriteLine("Warning! - enabled immediate plotting");
                 //C.ImmediatePlotPeriod = 1;
@@ -654,7 +659,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 // check residuals and errors
                 // ==========================
 
-                double[] LastErrors = solver.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt);
+                double[] LastErrors = ErrorPoPo.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt);
                 double[] ErrThresh = Tst.AcceptableL2Error;
                 if(LastErrors.Length != ErrThresh.Length)
                     throw new ApplicationException();
