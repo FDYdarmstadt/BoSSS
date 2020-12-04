@@ -1,6 +1,8 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
@@ -114,6 +116,34 @@ namespace BoSSS.Application.XNSE_Solver
                     opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, lsUpdater.Tracker, config));
             }
         }
-        
+
+        protected override LevelSetUpdater InstantiateLevelSetUpdater() {
+            int levelSetDegree = Control.FieldOptions["Phi"].Degree;
+            LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
+            levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+
+            switch (Control.Option_LevelSetEvolution) {
+                case LevelSetEvolution.Fourier:
+                    if (Control.EnforceLevelSetConservation) {
+                        throw new NotSupportedException("mass conservation correction currently not supported");
+                    }
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, Control.LSContiProjectionMethod);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control)));
+                    break;
+                case LevelSetEvolution.FastMarching:
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                    var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
+                    lsUpdater.AddEvolver("Phi", fastMarcher);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control)));
+                    break;
+                case LevelSetEvolution.None:
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+            return lsUpdater;
+        }
+
     }
 }

@@ -204,11 +204,19 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override LevelSetUpdater InstantiateLevelSetUpdater()
         {
+            
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
             switch (Control.Option_LevelSetEvolution)
             {
+                case LevelSetEvolution.Fourier:
+                    if (Control.EnforceLevelSetConservation) {
+                        throw new NotSupportedException("mass conservation correction currently not supported");
+                    }
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, Control.LSContiProjectionMethod);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
+                    break;
                 case LevelSetEvolution.FastMarching:
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
                     var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
