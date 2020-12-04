@@ -770,7 +770,7 @@ namespace BoSSS.Application.XNSE_Solver
                 DGField evapVelocity = ParameterVarFields[ParameterNames[d]];
 
                 int order = evapVelocity.Basis.Degree * evapVelocity.Basis.Degree + 2;
-
+                evapVelocity.Clear();
                 evapVelocity.ProjectField(1.0,
                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
                        int K = result.GetLength(1); // No nof Nodes
@@ -800,12 +800,12 @@ namespace BoSSS.Application.XNSE_Solver
 
                        MultidimensionalArray TempA_Res = MultidimensionalArray.Create(Len, K);
                        MultidimensionalArray TempB_Res = MultidimensionalArray.Create(Len, K);
-                       MultidimensionalArray Curv_Res = MultidimensionalArray.Create(Len, K);
-                       MultidimensionalArray Pdisp_Res = MultidimensionalArray.Create(Len, K);
+                       //MultidimensionalArray Curv_Res = MultidimensionalArray.Create(Len, K);
+                       //MultidimensionalArray Pdisp_Res = MultidimensionalArray.Create(Len, K);
 
                        temperature.GetSpeciesShadowField("A").Evaluate(j0, Len, NS, TempA_Res);
                        temperature.GetSpeciesShadowField("B").Evaluate(j0, Len, NS, TempB_Res);
-                       ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature].Evaluate(j0, Len, NS, Curv_Res);
+                       //ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature].Evaluate(j0, Len, NS, Curv_Res);
                        //this.DisjoiningPressure.Evaluate(j0, Len, NS, Pdisp_Res);
 
                        var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
@@ -887,7 +887,8 @@ namespace BoSSS.Application.XNSE_Solver
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var massfluxext = new (string, DGField)[1];
             string paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
-            DGField MassFluxExtension = new SinglePhaseField(DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis, paramName);
+            Basis b = new Basis(DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
+            DGField MassFluxExtension = new SinglePhaseField(b, paramName);
             massfluxext[0] = (paramName, MassFluxExtension);
             return massfluxext;
         }       
@@ -905,7 +906,7 @@ namespace BoSSS.Application.XNSE_Solver
             }
             var paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
             SinglePhaseField MassFluxExtensionField = (SinglePhaseField)ParameterVarFields[paramName];
-            SinglePhaseField MassFluxField = new SinglePhaseField(DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis);
+            SinglePhaseField MassFluxField = new SinglePhaseField(MassFluxExtensionField.Basis);
             int order = MassFluxField.Basis.Degree * MassFluxField.Basis.Degree + 2;
 
             XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
@@ -927,8 +928,8 @@ namespace BoSSS.Application.XNSE_Solver
                     MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
                     
                     for (int dd = 0; dd < D; dd++) {
-                        ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFluxVectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                        ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFluxVectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                     }
                     
 
@@ -1020,7 +1021,7 @@ namespace BoSSS.Application.XNSE_Solver
             this.D = D;
             this.lstrk = lstrk;
             parameters = BoSSS.Solution.NSECommon.VariableNames.HeatFlux0Vector(D);
-            
+            k_spc = new Dictionary<string, double>();
             var thermParams = config.getThermParams;
             foreach(var spc in lstrk.SpeciesNames) {
                 switch (spc) {
@@ -1028,7 +1029,9 @@ namespace BoSSS.Application.XNSE_Solver
                     case "B": { k_spc.Add(spc, thermParams.k_B); break; }
                     default: { throw new ArgumentException("Unknown species.");}                    
                 }
-            }            
+            }     
+            if(config.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                Update = HeatFlux0Update;
         }
 
         (string, DGField)[] HeatFlux0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -1045,7 +1048,6 @@ namespace BoSSS.Application.XNSE_Solver
                     heatflux = (XDGField)DomainVarFields[heatfluxname];
                 } else {
                     heatflux = new XDGField((XDGBasis)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature].Basis, paramName);
-                    Update = HeatFlux0Update;
                 }
                 heatflux0[d] = (paramName, heatflux);
             }          
@@ -1053,7 +1055,6 @@ namespace BoSSS.Application.XNSE_Solver
             return heatflux0;
         }
         private void HeatFlux0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-
             var varname = BoSSS.Solution.NSECommon.VariableNames.Temperature;
             DGField temperaure = DomainVarFields[varname];
 
@@ -1068,6 +1069,7 @@ namespace BoSSS.Application.XNSE_Solver
 
                     var paramname = BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(d);
                     DGField heatflux = ParameterVarFields[paramname];
+                    heatflux.Clear();
                     // q=-k*grad(T)
                     (heatflux as XDGField).GetSpeciesShadowField(spc).DerivativeByFlux(-aSpc, temperaure_Spc, d, Sgrd);
                 }

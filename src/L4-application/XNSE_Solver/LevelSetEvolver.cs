@@ -81,13 +81,14 @@ namespace BoSSS.Application.XNSE_Solver
                 (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName,BoSSS.Solution.NSECommon.VariableNames.VelocityY)],
             };
 
-            SinglePhaseField[] filtLevSetGradientArrray = new SinglePhaseField[]
-            {
-                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient0],
-                (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient1],
-            };
+            //SinglePhaseField[] filtLevSetGradientArrray = new SinglePhaseField[]
+            //{
+            //    (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient0],
+            //    (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient1],
+            //};
 
-            VectorField<SinglePhaseField> filtLevSetGradient = new VectorField<SinglePhaseField>(filtLevSetGradientArrray);
+            //VectorField<SinglePhaseField> filtLevSetGradient = new VectorField<SinglePhaseField>(filtLevSetGradientArrray);
+            VectorField<SinglePhaseField> filtLevSetGradient = new VectorField<SinglePhaseField>(phaseInterface.DGLevelSet.GridDat.SpatialDimension.ForLoop(d => new SinglePhaseField(phaseInterface.DGLevelSet.Basis)));
 
             //Extension Velocity: Was macht man damit?
             if (extensionVelocity == null)
@@ -109,6 +110,7 @@ namespace BoSSS.Application.XNSE_Solver
             }
             //Move LevelSet
             SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
+
 
             NarrowMarchingBand.Evolve_Mk2(
                 dt, phaseInterface.Tracker, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,

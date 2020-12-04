@@ -237,7 +237,8 @@ namespace BoSSS.Application.XNSE_Solver
         {
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
-            foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) 
+            UpdateParameters(DomainVarFields, InnerParameterFields, time);
+            foreach (SingleLevelSetUpdater updater in lsUpdaters.Values) 
             {
                 residual += updater.UpdateLevelSet(
                     DomainVarFields,
@@ -247,8 +248,8 @@ namespace BoSSS.Application.XNSE_Solver
                     underRelax,
                     incremental);
             }
-            UpdateParameters(DomainVarFields, InnerParameterFields, time + dt);
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
+            UpdateParameters(DomainVarFields, InnerParameterFields, time + dt);            
             return residual;
         }
 

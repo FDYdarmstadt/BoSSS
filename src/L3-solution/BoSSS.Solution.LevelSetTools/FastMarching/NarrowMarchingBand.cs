@@ -1150,7 +1150,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                         } else {
                             Debug.Assert(ExtVelMatrix.GetNoOfNonZerosPerRow(iG) == 0);
-                            for(int d = 0; d < D; d++) {
+                            for(int d = 0; d < ExtVelRHS.Length; d++) {
                                 Debug.Assert(ExtVelRHS[d][iL] == 0);
                             }
                         }
