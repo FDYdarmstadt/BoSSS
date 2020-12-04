@@ -655,6 +655,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
         /// <summary>
+        /// Exact solution, temperature, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
+
+        /// <summary>
         /// Control Options for ReInit
         /// </summary>
         [DataMember]
