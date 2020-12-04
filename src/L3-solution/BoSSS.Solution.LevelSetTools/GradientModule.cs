@@ -162,7 +162,6 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                 if(signIn != signOt || (signIn * signOt == 0)) {
                     // central difference
-
                     Flux = 0.5 * (PhiIn[0] + PhiOt[0]) * (inp.Normal[this.m_Direction]);
                 } else {
                     Debug.Assert(Math.Abs(signIn) == 1);

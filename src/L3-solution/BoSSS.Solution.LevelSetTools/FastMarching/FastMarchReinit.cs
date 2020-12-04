@@ -30,6 +30,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using ilPSP;
+using MPI.Wrappers;
 using BoSSS.Solution.Timestepping;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -130,7 +131,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             //GradPhi.Gradient(1, Phi, NEAr.VolumeMask);
         }
 
-        public void AvgInit(SinglePhaseField Phi, CellMask _Accepted) {
+        public void AvgInit(SinglePhaseField Phi, BitArray _Accepted) { //CellMask _Accepted) {
             int J = this.GridDat.Cells.Count;
             double[] PhiAvg;
             if (m_PhiAvg == null) {
@@ -140,8 +141,14 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 PhiAvg = m_PhiAvg;
             }
 
-            foreach (int jCell in _Accepted.ItemEnum)
-                PhiAvg[jCell] = Phi.GetMeanValue(jCell);
+            //foreach (int jCell in _Accepted)
+            //    PhiAvg[jCell] = Phi.GetMeanValue(jCell);
+
+            for (int j = 0; j < J; j++) {
+                if (_Accepted[j])
+                    PhiAvg[j] = Phi.GetMeanValue(j);
+            }
+
         }
 
 
@@ -186,6 +193,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 BitArray Trial_Mutuable = ((_Accepted.AllNeighbourCells().Intersect(ReInitSpecies)).Except(_Accepted)).GetBitMask().CloneAs();
                 BitArray Recalc_Mutuable = Trial_Mutuable.CloneAs();
                 BitArray PosSpecies_Bitmask = ReInitSpecies.GetBitMask();
+         
 
                 int J = this.GridDat.Cells.Count;
                 int D = this.GridDat.SpatialDimension;
@@ -232,8 +240,6 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 int cnt = 0;
                 while (true) {
                     cnt++;
-
-
 
                     CellMask Recalc = new CellMask(this.GridDat, Recalc_Mutuable);
                     CellMask Accepted = new CellMask(this.GridDat, Acceped_Mutuable);
@@ -395,7 +401,6 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 // check args and init
                 // ===================
 
-
                 //ExtVelSolver extVelSlv = null;
                 ExtVelSolver_Geometric extVelSlv = null;
                 if (ExtProperty != null) {
@@ -404,16 +409,16 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     if (ExtProperty.Length != ExtPropertyMax.Length)
                         throw new ArgumentException();
 
-
                     //extVelSlv = new ExtVelSolver(ExtProperty[0].Basis);
                     extVelSlv = new ExtVelSolver_Geometric(ExtProperty[0].Basis);
                 }
 
-                BitArray Accepted_Mutuable = cut.GetBitMask().CloneAs();
 
-                int J = this.GridDat.Cells.Count;
-                int D = this.GridDat.SpatialDimension;
-                int N = this.LevelSetBasis.Length;
+                BitArray Accepted_Mutuable = cut.GetBitMaskWithExternal().CloneAs();
+
+                //int J = this.GridDat.Cells.Count;
+                //int D = this.GridDat.SpatialDimension;
+                //int N = this.LevelSetBasis.Length;
 
                 int[] DomainCellIndices = Domain.ItemEnum.ToArray();
                 double[] PhiAvg = new double[DomainCellIndices.Length];
@@ -427,9 +432,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     Array.Sort(PhiAvg, DomainCellIndices);
                 }
 
-                if (this.GridDat.MpiSize > 1)
-                    throw new NotSupportedException("Currently not MPI parallel.");
-
+                //if (this.GridDat.MpiSize > 1)
+                //    throw new NotSupportedException("Currently not MPI parallel.");
 
                 int[] PosDomain, NegDomain;
                 {
@@ -458,6 +462,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 // perform marching...
                 // ===================
 
+
                 // marching loop..
                 for (int iMinusPlus = -1; iMinusPlus <= 1; iMinusPlus += 2) {
                     double _sign = iMinusPlus;
@@ -473,9 +478,10 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                             throw new Exception();
                     }
 
+
                     for (int iSub = 0; iSub < _Domain.Length; iSub++) {
 
-                        CellMask Accepted = new CellMask(this.GridDat, Accepted_Mutuable);
+                        //CellMask Accepted = new CellMask(this.GridDat, Accepted_Mutuable);
 
                         int jCellAccpt = _Domain[iSub];
                         //this.Stpw_gradientEval.Start();
@@ -493,15 +499,15 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                             // solve for each component seperately
                             for (int iComp = 0; iComp < ExtProperty.Length; iComp++) {
 
-                                ExtPropertyMax[iComp][jCellAccpt] = -double.MaxValue;
-                                ExtPropertyMin[iComp][jCellAccpt] = double.MaxValue;
+                                //ExtPropertyMax[iComp][jCellAccpt] = -double.MaxValue;
+                                //ExtPropertyMin[iComp][jCellAccpt] = double.MaxValue;
 
-                                foreach (int jNeig in Neighb) {
-                                    if (Accepted_Mutuable[jNeig]) {
-                                        ExtPropertyMax[iComp][jCellAccpt] = Math.Max(ExtPropertyMax[iComp][jCellAccpt], ExtPropertyMax[iComp][jNeig]);
-                                        ExtPropertyMin[iComp][jCellAccpt] = Math.Min(ExtPropertyMin[iComp][jCellAccpt], ExtPropertyMin[iComp][jNeig]);
-                                    }
-                                }
+                                //foreach (int jNeig in Neighb) {
+                                //    if (Accepted_Mutuable[jNeig]) {
+                                //        ExtPropertyMax[iComp][jCellAccpt] = Math.Max(ExtPropertyMax[iComp][jCellAccpt], ExtPropertyMax[iComp][jNeig]);
+                                //        ExtPropertyMin[iComp][jCellAccpt] = Math.Min(ExtPropertyMin[iComp][jCellAccpt], ExtPropertyMin[iComp][jNeig]);
+                                //    }
+                                //}
 
                                 this.Stpw_extVelSolver.Start();
                                 //extVelSlv.ExtVelSolve_Far(Phi, GradPhi, ExtProperty[iComp], ref ExtPropertyMin[iComp][jCellAccpt], ref ExtPropertyMax[iComp][jCellAccpt], jCellAccpt, Accepted, _sign);
@@ -541,15 +547,22 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             //Build Global Solver that marches through all cells
             FastMarching.GlobalMarcher.CellMarcher fastMarcher = new FastMarching.GlobalMarcher.CellMarcher(Phi.Basis, localSolver);
-            
+
             //Solve
             fastMarcher.Reinit(Phi, Accepted, ReinitField);
 
             //Invert Negative Domain that is part of ReinitField
             Phi.Scale(-1, NegativeField.Intersect(ReinitField).Except(Accepted));
+
+            //Update avergae values
+            foreach (Chunk cnk in reinitField) {
+                for (int j = cnk.i0; j < cnk.JE; j++)
+                    m_PhiAvg[j] = Phi.GetMeanValue(j);
+            }
+
         }
 
-        
+
         /// <summary>
         /// Reinitializes levelset in <paramref name="_LevelSetTracker"/> on a near field with width <paramref name="nearFieldWidth"/>
         /// </summary>

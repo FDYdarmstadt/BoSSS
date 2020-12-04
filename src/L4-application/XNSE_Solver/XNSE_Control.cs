@@ -669,7 +669,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// three-step reinitialization with preconditioning fast-marching
         /// </summary>
         [DataMember]
-        public bool fullReInit = true;
+        public bool fullReInit = false;
 
         /// <summary>
         /// switch for the computation of the coupled heat solver
