@@ -44,7 +44,7 @@ namespace ilPSP {
         /// <summary>
         /// True, if a block index is local.
         /// </summary>
-        public static bool IsLocalBlock(this IBlockPartitioning p, int iBlock) {
+        public static bool IsLocalBlock(this IBlockPartitioning p, long iBlock) {
             Debug.Assert(iBlock >= 0, "Block index out of range");
             Debug.Assert(iBlock < p.TotalNoOfBlocks, "Block index out of range");
             return (p.FirstBlock <= iBlock) && (iBlock < p.FirstBlock + p.LocalNoOfBlocks);

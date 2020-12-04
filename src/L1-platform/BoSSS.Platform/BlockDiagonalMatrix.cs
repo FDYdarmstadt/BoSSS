@@ -135,8 +135,8 @@ namespace BoSSS.Platform {
         public BlockDiagonalMatrix(MsrMatrix Src, int RowBlkSz, int ColBlkSz)
             : this(Src.RowPartitioning, Src.ColPartition, RowBlkSz, ColBlkSz) //
         {
-            int i0Row = Src.RowPartitioning.i0;
-            int i0Col = Src.ColPartition.i0;
+            long i0Row = Src.RowPartitioning.i0;
+            long i0Col = Src.ColPartition.i0;
 
             for (int BlockNo = 0; BlockNo < NoOfBlocks; BlockNo++) {
                 for (int RowBlock = 0; RowBlock < this.NoOfRowsPerBlock; RowBlock++) {
@@ -177,33 +177,33 @@ namespace BoSSS.Platform {
 
         #region IMutableMatrixEx Members
 
-        public int GetOccupiedColumnIndices(int RowIndex, ref int[] ColumnIndices) {
+        public int GetOccupiedColumnIndices(long RowIndex, ref long[] ColumnIndices) {
         //public int[] GetOccupiedColumnIndices(int RowIndex) {
             int _NoOfColsPerBlock = NoOfRowsPerBlock;
 
             if (ColumnIndices == null || ColumnIndices.Length < _NoOfColsPerBlock)
-                ColumnIndices = new int[_NoOfColsPerBlock];
+                ColumnIndices = new long[_NoOfColsPerBlock];
 
             TransformRow(RowIndex); // tests the range of 'RowIndex'
-            int iRowGlob = RowIndex / NoOfRowsPerBlock;
+            long iRowGlob = RowIndex / NoOfRowsPerBlock;
 
-            int j0 = iRowGlob * _NoOfColsPerBlock;
+            long j0 = iRowGlob * _NoOfColsPerBlock;
             for (int j = 0; j < _NoOfColsPerBlock; j++)
                 ColumnIndices[j] = j0 + j;
 
             return _NoOfColsPerBlock;
         }
 
-        public int GetRow(int RowIndex, ref int[] ColumnIndices, ref double[] Values) {
+        public int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values) {
             //public MsrMatrix.MatrixEntry[] GetRow(int RowIndex) {
             //MsrMatrix.MatrixEntry[] ret = new MsrMatrix.MatrixEntry[NoOfColsPerBlock];
 
             TransformRow(RowIndex); // tests the range of 'RowIndex'
-            int iRowGlob = RowIndex / NoOfRowsPerBlock;
-            int j0 = iRowGlob * NoOfColsPerBlock;
+            long iRowGlob = RowIndex / NoOfRowsPerBlock;
+            long j0 = iRowGlob * NoOfColsPerBlock;
 
             if (ColumnIndices == null || ColumnIndices.Length < NoOfColsPerBlock)
-                ColumnIndices = new int[NoOfColsPerBlock];
+                ColumnIndices = new long[NoOfColsPerBlock];
             if (Values == null || Values.Length < NoOfColsPerBlock)
                 Values = new double[NoOfColsPerBlock];
 
@@ -222,33 +222,33 @@ namespace BoSSS.Platform {
 
         #region IMutableMatrix Members
 
-        public double[] GetValues(int RowIndex, int[] ColumnIndices) {
+        public double[] GetValues(long RowIndex, long[] ColumnIndices) {
             double[] ret = new double[ColumnIndices.Length];
             for (int i = 0; i < ret.Length; i++)
                 ret[i] = this[RowIndex, ColumnIndices[i]];
             return ret;
         }
 
-        public void SetValues(int RowIndex, int[] ColumnIndices, double[] newValues) {
+        public void SetValues(long RowIndex, long[] ColumnIndices, double[] newValues) {
             if (ColumnIndices.Length != newValues.Length)
                 throw new ArgumentException();
             for (int i = 0; i < ColumnIndices.Length; i++)
                 this[RowIndex, ColumnIndices[i]] = newValues[i];
         }
 
-        private int TransformRow(int i) {
-            int r = i;
-            r -= (int)m_RowPart.i0;
+        private int TransformRow(long i) {
+            int r = m_RowPart.TransformIndexToLocal(i);
+            
             if (r < 0 || r >= m_RowPart.LocalLength)
                 throw new ArgumentException("row index is out of range of current mpi process.");
             return r;
         }
 
-        private bool TransformIndexToBlockIndex(int i, int j, out int BlockInd, out int RowWithinBlk, out int ColWithinBlk) {
+        private bool TransformIndexToBlockIndex(long i, long j, out int BlockInd, out int RowWithinBlk, out int ColWithinBlk) {
             int iLoc = TransformRow(i);
 
-            int BlockRowGlob = i / NoOfRowsPerBlock;
-            int BlockColGlob = j / NoOfRowsPerBlock;
+            long BlockRowGlob = i / NoOfRowsPerBlock;
+            long BlockColGlob = j / NoOfRowsPerBlock;
             if (BlockColGlob != BlockRowGlob) {
                 // (i,j) - pair OUTSIDE of a diagonal block
                 // ++++++++++++++++++++++++++++++++++++++++
@@ -263,12 +263,12 @@ namespace BoSSS.Platform {
 
                 BlockInd = iLoc / NoOfRowsPerBlock;
                 RowWithinBlk = iLoc % NoOfRowsPerBlock;
-                ColWithinBlk = j % NoOfRowsPerBlock;
+                ColWithinBlk = (int)(j % NoOfRowsPerBlock);
                 return true;
             }
         }
 
-        public double this[int i, int j] {
+        public double this[long i, long j] {
             get {
                 int a, b, c;
                 bool res = TransformIndexToBlockIndex(i, j, out a, out b, out c);
@@ -294,7 +294,7 @@ namespace BoSSS.Platform {
         /// <param name="j0">Column offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block) {
             this.AccBlock(i0, j0, alpha, Block, 1.0);
         }
         
@@ -306,7 +306,7 @@ namespace BoSSS.Platform {
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
         /// <param param name="beta">pre-scaling</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException();
             int I = Block.NoOfRows;
@@ -353,11 +353,11 @@ namespace BoSSS.Platform {
 
         #region ISparseMatrix Members
 
-        public double GetDiagonalElement(int row) {
+        public double GetDiagonalElement(long row) {
             return this[row, row];
         }
 
-        public void SetDiagonalElement(int row, double val) {
+        public void SetDiagonalElement(long row, double val) {
             this[row, row] = val;
         }
 
@@ -474,7 +474,7 @@ namespace BoSSS.Platform {
                         var BlockRow = right.GetRowShallow(j0 + m);
                         foreach (var e in BlockRow) {
                             if (e.m_ColIndex >= 0) {
-                                int rBlkCol = e.m_ColIndex / _L;
+                                int rBlkCol = checked((int)(e.m_ColIndex / _L));
 
                                 if (rBlkCol != Last_rBlkCol) {
 
@@ -490,7 +490,7 @@ namespace BoSSS.Platform {
                                     Last_rBlkCol = rBlkCol;
                                 }
 
-                                int jj = e.m_ColIndex % _L;
+                                int jj = (int)(e.m_ColIndex % _L);
 
                                 Block[m, jj] = e.Value;
                             }
@@ -605,18 +605,18 @@ namespace BoSSS.Platform {
         /// <summary>
         /// number of matrix rows
         /// </summary>
-        public int NoOfRows {
+        public long NoOfRows {
             get {
-                return (int)m_RowPart.TotalLength;
+                return m_RowPart.TotalLength;
             }
         }
 
         /// <summary>
         /// number of matrix columns
         /// </summary>
-        public int NoOfCols {
+        public long NoOfCols {
             get {
-                return (int)ColPartition.TotalLength;
+                return ColPartition.TotalLength;
             }
         }
 
@@ -724,7 +724,7 @@ namespace BoSSS.Platform {
         /// <param name="fileName"></param>
         /// <param name="fm"></param>
         public void SaveToTextFile(string fileName, FileMode fm = FileMode.Create) {
-            MultidimensionalArray temp = MultidimensionalArray.Create(NoOfRows, NoOfCols);
+            MultidimensionalArray temp = MultidimensionalArray.Create(checked((int)NoOfRows), checked((int)NoOfCols));
             for (int block = 0; block < NoOfBlocks; block++) {
                 for (int i = 0; i < NoOfRowsPerBlock; i++) {
                     for (int j = 0; j < NoOfColsPerBlock; j++) {

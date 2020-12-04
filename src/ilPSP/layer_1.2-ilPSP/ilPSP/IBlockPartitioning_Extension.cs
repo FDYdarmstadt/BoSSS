@@ -74,7 +74,7 @@ namespace ilPSP {
         /// </param>
         /// <returns></returns>
         public static BlockPartitioning GetSubBlocking<T>(this IBlockPartitioning B, T SubvectorIdx, MPI_Comm comm, int FrameBlockSize = -1) 
-            where T : IEnumerable<int>
+            where T : IEnumerable<long>
         {
             List<int[]> Subblk_i0 = new List<int[]>();
             List<int[]> SubblkLen = new List<int[]>();
