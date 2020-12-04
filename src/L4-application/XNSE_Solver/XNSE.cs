@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSE_Solver
             return quadOrder;
         }
 
-        int VelocityDegree()
+        protected int VelocityDegree()
         {
             int pVel;
             if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))

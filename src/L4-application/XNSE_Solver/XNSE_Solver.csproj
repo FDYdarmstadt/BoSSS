@@ -78,12 +78,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Coefficients.cs" />
     <Compile Include="Equations.cs" />
     <Compile Include="Operators.cs" />
     <Compile Include="LevelSetEvolver.cs" />
     <Compile Include="LevelSetUpdater.cs" />
     <Compile Include="NewXNSE_SimpleTests\BasicControls.cs" />
     <Compile Include="OperatorFactory.cs" />
+    <Compile Include="CoefficientsList.cs" />
     <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="SplineLevelSet.cs" />
@@ -102,6 +104,7 @@
     <Compile Include="PhysicalBasedTestcases\PhysicalTestProgram.cs" />
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
+    <Compile Include="Tests\HeatTransportTest.cs" />
     <Compile Include="Tests\SinglePhaseChannel.cs" />
     <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\StaticDropletTest.cs" />

@@ -58,8 +58,9 @@ namespace BoSSS.Application.XNSE_Solver
         public FastMarcher(string levelSetName, int hMForder, int D)
         {
             this.m_HMForder = hMForder;
+            this.levelSetName = levelSetName;
             parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Curvature);
-            parameters = parameters.Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)));
+            parameters = parameters.Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)));
         }
 
         public IList<string> VariableNames => null;
@@ -93,7 +94,14 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 int D = phaseInterface.Tracker.GridDat.SpatialDimension;
                 extensionVelocity = new SinglePhaseField[D];
-                Basis basis = new Basis(phaseInterface.Tracker.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
+                Basis basis;
+                try {
+                    basis = new Basis(phaseInterface.Tracker.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
+                } catch (KeyNotFoundException e) {
+                    Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                    basis = new Basis(phaseInterface.Tracker.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
+                }
+
                 for (int d = 0; d < D; ++d)
                 {
                     extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity" + d);

@@ -1,10 +1,13 @@
-﻿using BoSSS.Foundation.XDG;
+﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -52,6 +55,15 @@ namespace BoSSS.Application.XNSE_Solver {
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
             
         }
+
+        public static void SetCoefficients(CoefficientSet r, LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time)
+        {
+            //Console.WriteLine("Heat configured without Evaporation and no fixed Interface Temperature");
+            BitArray EvapMicroRegion = lstrk.GridDat.GetBoundaryCells().GetBitMask();
+            EvapMicroRegion.SetAll(false);
+            r.UserDefinedValues["EvapMicroRegion"] = EvapMicroRegion;
+        }
+
     }
 
     class XNSEOperator : OperatorFactory 

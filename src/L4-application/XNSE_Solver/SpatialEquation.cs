@@ -30,6 +30,8 @@ namespace BoSSS.Application.XNSE_Solver
 
         public string[] Parameters { get; private set; }
 
+        public string[] Coefficients { get; private set; }
+
         public void AddVariableNames(params string[] names)
         {
             if(VariableNames == null)
@@ -61,6 +63,18 @@ namespace BoSSS.Application.XNSE_Solver
                     if (!Parameters.Contains(name))
                     {
                         Parameters = Parameters.Cat(name);
+                    }
+                }
+            }
+        }
+
+        public void AddCoefficient(params string[] names) {
+            if (Coefficients == null) {
+                Coefficients = names;
+            } else {
+                foreach (string name in names) {
+                    if (!Coefficients.Contains(name)) {
+                        Coefficients = Coefficients.Cat(name);
                     }
                 }
             }
@@ -184,6 +198,20 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
             return parameterNames.ToArray();
+        }
+
+        public string[] Coefficients() {
+            LinkedList<string> coefficientsNames = new LinkedList<string>();
+            foreach (SpatialEquation equation in SpatialEquations) {
+                if (equation.Coefficients != null) {
+                    foreach (string coefficient in equation.Coefficients) {
+                        if (!coefficientsNames.Contains(coefficient)) {
+                            coefficientsNames.AddLast(coefficient);
+                        }
+                    }
+                }
+            }
+            return coefficientsNames.ToArray();
         }
 
         public string[] Species() {

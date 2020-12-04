@@ -100,78 +100,141 @@ namespace BoSSS.Solution.XheatCommon {
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
 
             //Flux for negativ side
-            double FlxNeg;
-            //if (!evapMicroRegion[cp.jCellIn]) {
-            {
-                double r = 0.0;
+            double FlxNeg, FlxPos;
+            if (Tsat != Double.MaxValue) {
+                //if (!evapMicroRegion[cp.jCellIn]) {
+                {
+                    double r = 0.0;
 
-                // Calculate central part
-                // ======================
+                    // Calculate central part
+                    // ======================
+                    double Tavg = Tsat; // 0.5 * (U_Neg[0] + Tsat);
+                    r += Tavg * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
+                    if (m_D == 3) {
+                        r += Tavg * ParamsNeg[2] * cp.Normal[2];
+                    }
 
-                double Tavg = Tsat; // 0.5 * (U_Neg[0] + Tsat);
-                r += Tavg * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
-                if (m_D == 3) {
-                    r += Tavg * ParamsNeg[2] * cp.Normal[2];
+                    // Calculate dissipative part
+                    // ==========================
+
+                    double[] VelocityMeanIn = new double[m_D];
+                    for (int d = 0; d < m_D; d++) {
+                        VelocityMeanIn[d] = ParamsNeg[m_D + d];
+                    }
+
+                    double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+
+                    double uJump = U_Neg[0] - Tavg;
+
+                    r += LambdaIn * uJump * LFFA;
+
+                    FlxNeg = capA * r;
+
                 }
+                //} else {
 
-                // Calculate dissipative part
-                // ==========================
+                //    BoSSS.Foundation.CommonParams inp = cp;
+                //    inp.Parameters_OUT = ParamsNegFict;
 
-                double[] VelocityMeanIn = new double[m_D];
-                for (int d = 0; d < m_D; d++) {
-                    VelocityMeanIn[d] = ParamsNeg[m_D + d];
+                //    FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
+                //    //Console.WriteLine("FlxNeg = {0}", FlxNeg);
+                //}
+
+                // Flux for positive side
+
+                //if (!evapMicroRegion[cp.jCellIn]) {
+                {
+                    double r = 0.0;
+
+                    // Calculate central part
+                    // ======================
+                    double Tavg = Tsat; // 0.5 * (Tsat +  U_Pos[0]);
+
+                    r += Tavg * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
+                    if (m_D == 3) {
+                        r += Tavg * ParamsPos[2] * cp.Normal[2];
+                    }
+
+                    // Calculate dissipative part
+                    // ==========================
+
+                    double[] VelocityMeanOut = new double[m_D];
+                    for (int d = 0; d < m_D; d++) {
+                        VelocityMeanOut[d] = ParamsPos[m_D + d];
+                    }
+
+
+                    double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
+                    double uJump = Tavg - U_Pos[0];
+
+                    r += LambdaOut * uJump * LFFB;
+
+                    FlxPos = capB * r;
+
                 }
+            } else {                
+                {
+                    double r = 0.0;
 
-                double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+                    // Calculate central part
+                    // ======================
+                    double Tavg = 0.5 * (U_Neg[0] + U_Pos[0]);
+                    r += Tavg * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
+                    if (m_D == 3) {
+                        r += Tavg * ParamsNeg[2] * cp.Normal[2];
+                    }
 
-                double uJump = U_Neg[0] - Tsat;
+                    // Calculate dissipative part
+                    // ==========================
 
-                r += LambdaIn * uJump * LFFA;
+                    double[] VelocityMeanIn = new double[m_D];
+                    for (int d = 0; d < m_D; d++) {
+                        VelocityMeanIn[d] = ParamsNeg[m_D + d];
+                    }
 
-                FlxNeg = capA * r;
+                    double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
 
-            }
-            //} else {
+                    double uJump = U_Neg[0] - Tavg;
 
-            //    BoSSS.Foundation.CommonParams inp = cp;
-            //    inp.Parameters_OUT = ParamsNegFict;
+                    r += LambdaIn * uJump * LFFA;
 
-            //    FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
-            //    //Console.WriteLine("FlxNeg = {0}", FlxNeg);
-            //}
+                    FlxNeg = capA * r;
 
-            // Flux for positive side
-            double FlxPos;
-            //if (!evapMicroRegion[cp.jCellIn]) {
-            {
-                double r = 0.0;
+                }                
+                // Flux for positive side
 
-                // Calculate central part
-                // ======================
+                
+                {
+                    double r = 0.0;
 
-                double Tavg = Tsat; // 0.5 * (Tsat +  U_Pos[0]);
-                r += Tavg * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
-                if (m_D == 3) {
-                    r += Tavg * ParamsPos[2] * cp.Normal[2];
+                    // Calculate central part
+                    // ======================
+                    double Tavg = 0.5 * (U_Neg[0] + U_Pos[0]);
+
+                    r += Tavg * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
+                    if (m_D == 3) {
+                        r += Tavg * ParamsPos[2] * cp.Normal[2];
+                    }
+
+                    // Calculate dissipative part
+                    // ==========================
+
+                    double[] VelocityMeanOut = new double[m_D];
+                    for (int d = 0; d < m_D; d++) {
+                        VelocityMeanOut[d] = ParamsPos[m_D + d];
+                    }
+
+
+                    double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
+                    double uJump = Tavg - U_Pos[0];
+
+                    r += LambdaOut * uJump * LFFB;
+
+                    FlxPos = capB * r;
+
                 }
-
-                // Calculate dissipative part
-                // ==========================
-
-                double[] VelocityMeanOut = new double[m_D];
-                for (int d = 0; d < m_D; d++) {
-                    VelocityMeanOut[d] = ParamsPos[m_D + d];
-                }
-
-
-                double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
-
-                double uJump = Tsat - U_Pos[0];
-
-                r += LambdaOut * uJump * LFFB;
-
-                FlxPos = capB * r;
-
             }
             //} else {
 

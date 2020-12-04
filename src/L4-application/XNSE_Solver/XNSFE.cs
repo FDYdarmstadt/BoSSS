@@ -1,6 +1,8 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
@@ -95,34 +97,53 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
             opFactory.AddEquation(new HeatInterface("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
-            opFactory.SetCoefficient(XHeatCoefficients);
+            opFactory.AddCoefficient(new EvapMicroRegion());
+
+            // add Evaporation at Interface components, heads-up depends only on parameters
+            // ============================
+            if (config.isEvaporation) {
+
+                opFactory.AddParameter(new Temperature0());
+                opFactory.AddParameter(new HeatFlux0(D, lsUpdater.Tracker, config));
+                var MassFluxExt = new MassFluxExtension(config);
+                opFactory.AddParameter(MassFluxExt);
+                lsUpdater.AddLevelSetParameter("Phi", MassFluxExt);
+
+                for (int d = 0; d < D; ++d)
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, lsUpdater.Tracker, config));
+                
+                if (config.isContinuity)
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, lsUpdater.Tracker, config));
+            }
         }
 
-        private CoefficientSet XHeatCoefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time)
-        {
+        protected override LevelSetUpdater InstantiateLevelSetUpdater() {
+            int levelSetDegree = Control.FieldOptions["Phi"].Degree;
+            LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
+            levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
 
-            var r = new CoefficientSet()
-            {
-                GrdDat = lstrk.GridDat
-            };
-            var g = lstrk.GridDat;
-            if (g is Foundation.Grid.Classic.GridData cgdat)
-            {
-                r.CellLengthScales = cgdat.Cells.CellLengthScale;
-                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
-
+            switch (Control.Option_LevelSetEvolution) {
+                case LevelSetEvolution.Fourier:
+                    if (Control.EnforceLevelSetConservation) {
+                        throw new NotSupportedException("mass conservation correction currently not supported");
+                    }
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, Control.LSContiProjectionMethod);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control)));
+                    break;
+                case LevelSetEvolution.FastMarching:
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                    var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
+                    lsUpdater.AddEvolver("Phi", fastMarcher);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control)));
+                    break;
+                case LevelSetEvolution.None:
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
-            else
-            {
-                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
-            }
-
-            //Console.WriteLine("Heat configured without Evaporation and no fixed Interface Temperature");
-            BitArray EvapMicroRegion = lstrk.GridDat.GetBoundaryCells().GetBitMask();
-            EvapMicroRegion.SetAll(true);
-            r.UserDefinedValues["EvapMicroRegion"] = EvapMicroRegion;
-
-            return r;
+            return lsUpdater;
         }
+
     }
 }

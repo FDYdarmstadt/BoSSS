@@ -40,7 +40,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// \f]
     /// which is not the case in many other test-cases.
     /// </summary>
-    class ViscosityJumpTest : ITest {
+    class ViscosityJumpTest : IXNSETest {
 
         /// <summary>
         /// 2

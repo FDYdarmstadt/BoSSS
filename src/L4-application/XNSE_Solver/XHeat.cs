@@ -99,6 +99,11 @@ namespace BoSSS.Application.XNSE_Solver {
             {
                 pVel = v1.Degree;
             }
+            else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.Temperature, out FieldOpts t1))
+            {
+                Console.WriteLine("Degree of Velocity not found, using Temperature Degree");
+                pVel = t1.Degree;
+            }
             else
             {
                 throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
@@ -148,7 +153,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
             }
             opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, lsUpdater.Tracker, config));
-            opFactory.SetCoefficient(XHeatCoefficients);
+            opFactory.AddCoefficient(new EvapMicroRegion());
 
             // Add Velocity parameters as prescribed variables
             for (int d = 0; d < D; d++)
@@ -161,37 +166,57 @@ namespace BoSSS.Application.XNSE_Solver {
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
-        }
-
-        private CoefficientSet XHeatCoefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time){
-
-            var r = new CoefficientSet() {
-                GrdDat = lstrk.GridDat
-            };
-            var g = lstrk.GridDat;
-            if (g is Foundation.Grid.Classic.GridData cgdat) {
-                r.CellLengthScales = cgdat.Cells.CellLengthScale;
-                r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
-
-            } else {
-                Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
+            // even though we have no surface tension here, we still need this
+            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
+                    MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
+                    opFactory.AddParameter(maxSigmaParameter);
+                    lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
+                    BeltramiGradient lsBGradient = BeltramiGradient.CreateFrom(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter("Phi", lsBGradient);
+                    break;
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
+                    BeltramiGradient lsGradient = BeltramiGradient.CreateFrom(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter("Phi", lsGradient);
+                    break;
+                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
+                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
+                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
+                    BeltramiGradientAndCurvature lsGradientAndCurvature =
+                        BeltramiGradientAndCurvature.CreateFrom(Control, "Phi", quadOrder, D);
+                    opFactory.AddParameter(lsGradientAndCurvature);
+                    lsUpdater.AddLevelSetParameter("Phi", lsGradientAndCurvature);
+                    break;
+                case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
+                    var fourrier = new FourierEvolver(
+                        "Phi",
+                        Control.FourierLevSetControl,
+                        Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
+                    lsUpdater.AddLevelSetParameter("Phi", fourrier);
+                    lsUpdater.AddEvolver("Phi", fourrier);
+                    opFactory.AddParameter(fourrier);
+                    break;
+                default:
+                    break;
             }
-
-            //Console.WriteLine("Heat configured without Evaporation and no fixed Interface Temperature");
-            BitArray EvapMicroRegion = lstrk.GridDat.GetBoundaryCells().GetBitMask();
-            EvapMicroRegion.SetAll(true);
-            r.UserDefinedValues["EvapMicroRegion"] = EvapMicroRegion;
-
-            return r;
         }
 
         protected override LevelSetUpdater InstantiateLevelSetUpdater()
         {
+            
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
             switch (Control.Option_LevelSetEvolution)
             {
+                case LevelSetEvolution.Fourier:
+                    if (Control.EnforceLevelSetConservation) {
+                        throw new NotSupportedException("mass conservation correction currently not supported");
+                    }
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, Control.LSContiProjectionMethod);
+                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
+                    break;
                 case LevelSetEvolution.FastMarching:
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
                     var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);

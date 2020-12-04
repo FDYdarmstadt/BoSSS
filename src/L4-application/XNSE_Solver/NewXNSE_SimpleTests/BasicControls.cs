@@ -1,6 +1,7 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
@@ -268,6 +269,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             #region solver
 
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -510,7 +512,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     return et;
                 });
 
-                return grd;
+                AffineTrafo ROT = AffineTrafo.Some2DRotation(Math.PI/6.0);
+
+                var grdT = grd.Transform(ROT);
+                return grdT;
             };
 
             #endregion
@@ -526,8 +531,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.InitialValues_Evaluators.Add("Temperature#A", X => 0.0);
             //C.InitialValues_Evaluators.Add("VelocityX#A", X => Math.Sin(2 * Math.PI * X[1]));
             //C.InitialValues_Evaluators.Add("VelocityY#A", X => Math.Cos(2 * Math.PI * X[0]));
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => 1.0);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => 1.0);
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => -0.0);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => -0.0);
 
             #endregion
 
@@ -551,6 +556,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.ThermalParameters.IncludeConvection = true;
             C.ThermalParameters.hVap = 0.0;
+            C.ThermalParameters.T_sat = Double.MaxValue;
             #endregion
 
             #endregion
@@ -587,6 +593,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #endregion
 
             #region solver
+            C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.SIP;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;

@@ -42,7 +42,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// Since the terms of the boundary condition do not cancel out individually, but only in sum,
     /// this example is very suitable to verify the correctness of the <see cref="IncompressibleBcType.Pressure_Outlet"/>-implementation.
     /// </summary>
-    class BcTest_PressureOutlet : ITest {
+    class BcTest_PressureOutlet : IXNSETest {
 
 
         public Func<double[], double, double> GetPhi() {

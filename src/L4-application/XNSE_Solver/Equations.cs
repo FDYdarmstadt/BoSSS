@@ -687,6 +687,7 @@ namespace BoSSS.Application.XNSE_Solver
             if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
+            AddCoefficient("EvapMicroRegion");
         }
 
         public override string FirstSpeciesName => phaseA;
@@ -760,6 +761,7 @@ namespace BoSSS.Application.XNSE_Solver
             codomainName = EquationNames.AuxHeatFlux(dimension)[d];
             AddInterfaceHeatEq(dimension, d, boundaryMap, LsTrk, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            AddCoefficient("EvapMicroRegion");
         }
 
         public override string FirstSpeciesName => phaseA;
@@ -790,30 +792,103 @@ namespace BoSSS.Application.XNSE_Solver
         }        
     }
 
-    class HeatInterfaceEvaporation : SurfaceEquation {
+    class InterfaceNSE_Evaporation : SurfaceEquation {
 
-        HeatInterfaceEvaporation() {
+        string codomainName;
+        string phaseA, phaseB;
+        public InterfaceNSE_Evaporation(string phaseA,
+            string phaseB,
+            int dimension,
+            int d,
+            LevelSetTracker LsTrk,
+            XNSFE_OperatorConfiguration config) : base() {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.MomentumEquationComponent(d);
+            AddInterfaceNSE_Evaporation(dimension, d, LsTrk, config);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.HeatFlux0Vector(dimension));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Temperature0);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Curvature);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension);
+            AddCoefficient("EvapMicroRegion");
+            if (config.prescribedMassflux != null)
+                AddCoefficient("PrescribedMassFlux");
 
         }
 
-        public override string FirstSpeciesName => throw new NotImplementedException();
+        private void AddInterfaceNSE_Evaporation(int D, int d, LevelSetTracker lsTrk, XNSFE_OperatorConfiguration config) {
 
-        public override string SecondSpeciesName => throw new NotImplementedException();
+            PhysicalParameters physParams = config.getPhysParams;
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
-        public override string CodomainName => throw new NotImplementedException();
+            double sigma = physParams.Sigma;
+
+            // from XNSFE_OperatorComponents
+            //if (config.isTransport) {
+            //    //comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
+            //    //comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+            //}
+
+            //if (config.isMovingMesh) {
+            //    //comps.Add(new ConvectionAtLevelSet_MovingMesh(d, D, LsTrk, thermParams, sigma));
+            //}
+
+            if (config.isViscous) {
+                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withEvap(lsTrk, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
+            }
+
+            AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma));
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
     }
 
-    class HeatInterfaceContinuityEvaporation : SurfaceEquation {
+    class InterfaceContinuity_Evaporation : SurfaceEquation {
 
-        HeatInterfaceContinuityEvaporation() {
+        string codomainName;
+        string phaseA, phaseB;
+        public InterfaceContinuity_Evaporation(string phaseA,
+            string phaseB,
+            int dimension,
+            LevelSetTracker LsTrk,
+            XNSFE_OperatorConfiguration config) : base() {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.ContinuityEquation;
+            AddInterfaceContinuity_Evaporation(dimension, LsTrk, config);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.HeatFlux0Vector(dimension));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Temperature0);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Curvature);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension);
+            AddCoefficient("EvapMicroRegion");
+            if (config.prescribedMassflux != null)
+                AddCoefficient("PrescribedMassFlux");
 
         }
 
-        public override string FirstSpeciesName => throw new NotImplementedException();
+        private void AddInterfaceContinuity_Evaporation(int D, LevelSetTracker lsTrk, XNSFE_OperatorConfiguration config) {
 
-        public override string SecondSpeciesName => throw new NotImplementedException();
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
-        public override string CodomainName => throw new NotImplementedException();
+            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, config.getPhysParams.Sigma);
+            AddComponent(divEvap);
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
     }
     
 }
