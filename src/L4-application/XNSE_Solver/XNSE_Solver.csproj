@@ -86,6 +86,7 @@
     <Compile Include="OperatorFactory.cs" />
     <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />
+    <Compile Include="SplineLevelSet.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="SpatialEquation.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />

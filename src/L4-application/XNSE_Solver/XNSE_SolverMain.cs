@@ -96,7 +96,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.SimpleScalingViscosityJumpTest(3, ViscosityMode.FullySymmetric);
             
             _Main(args, false, delegate () {
-                var p = new XNSFE();
+                var p = new XNSE();
                 return p;
             });
         }
