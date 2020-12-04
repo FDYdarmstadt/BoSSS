@@ -802,11 +802,11 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl StationaryShockWave_Perturbation(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Ms = 1.5, int numOfCellsX = 100 * 2, int numOfCellsY = 5 * 2, double endTime = 1.0, string restart = "False") {
+        public static CNSControl StationaryShockWave_Perturbation(string dbPath = null, int savePeriod = 10000, int dgDegree = 3, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Ms = 1.5, int numOfCellsX = 300, int numOfCellsY = 30, double endTime = 2.0, string restart = "False") {
             CNSControl c = new CNSControl();
 
             // ### Database ###
-            //dbPath = @"c:\bosss_db";           
+            dbPath = @"c:\bosss_db";
 
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
@@ -886,7 +886,7 @@ namespace CNS {
 
             // ### Grid ###
             double xMin = 0;
-            double xMax = 2;
+            double xMax = 1.0;
             double yMin = 0;
             double yMax = 0.1;
 
@@ -950,7 +950,7 @@ namespace CNS {
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
 
-            double shockPosition = 0.5;
+            double shockPosition = 0.2;
 
             double DensityShock(double[] X) {
                 return densityLeft - SmoothJump(X[0] - shockPosition) * (densityLeft - densityRight);
@@ -968,7 +968,6 @@ namespace CNS {
             // #########################
             // Initial conditions
             // #########################
-
             // Stationary shock wave
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => DensityShock(X));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => VelocityXShock(X));
@@ -976,12 +975,15 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => PressureShock(X));
 
             // ### Boundary condtions ###
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => DensityShock(X));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => VelocityXShock(X));
+            double A = 1e-2;
+            double f = 10;
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => DensityShock(X) + A * densityLeft * Math.Sin(2 * Math.PI * f * t));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => VelocityXShock(X) + A * velocityXLeft * Math.Sin(2 * Math.PI * f * t));
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => VelocityYShock(X));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => PressureShock(X));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => PressureShock(X) + A * pressureLeft * Math.Sin(2 * Math.PI * f * t));
             c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => PressureShock(X));
             c.AddBoundaryValue("AdiabaticSlipWall");
+
 
             // ### Time configuration ###
             c.dtMin = 0.0;
@@ -997,7 +999,7 @@ namespace CNS {
             if (c.ExplicitScheme == ExplicitSchemes.LTS) {
                 tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
             } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
+                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_sin_A=_f=", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, A, f);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
             } else {
