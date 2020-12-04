@@ -778,7 +778,7 @@ namespace BoSSS.Foundation {
             MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
 
             int count = 0;
-            nodeCount = A.RowPartitioning.i0; // start at global index
+            long _nodeCount = A.RowPartitioning.i0; // start at global index
             foreach (int j in AcceptedEdges) {
 
                 int cell1 = m_grd.Edges.CellIndices[j, 0];
@@ -793,15 +793,15 @@ namespace BoSSS.Foundation {
                 for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
                     // Cell1       
                     for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
-                        A[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+                        A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
                     }
                     // Cell2
                     for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
-                        A[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+                        A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
                     }
                 }
                 count++;
-                nodeCount += qNodes.NoOfNodes;
+                _nodeCount += qNodes.NoOfNodes;
                     
 
          

@@ -243,7 +243,7 @@ namespace BoSSS.Foundation {
         /// Equal to total number of cells, i.e. each cell corresponds to one block, see also
         /// <see cref="IBlockPartitioning.TotalNoOfBlocks"/>.
         /// </summary>
-        public int TotalNoOfBlocks {
+        public long TotalNoOfBlocks {
             get {
                 return m_Context.CellPartitioning.TotalLength;
             }
@@ -263,7 +263,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// <see cref="IBlockPartitioning.FirstBlock"/>
         /// </summary>
-        public int FirstBlock {
+        public long FirstBlock {
             get {
                 return m_Context.CellPartitioning.i0;
             }
@@ -272,7 +272,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// <see cref="IBlockPartitioning.GetFirstBlock"/>
         /// </summary>
-        public int GetFirstBlock(int proc) {
+        public long GetFirstBlock(int proc) {
             return m_Context.CellPartitioning.GetI0Offest(proc);
         }
 
@@ -286,7 +286,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// <see cref="IBlockPartitioning.FindProcessForBlock"/>
         /// </summary>
-        public int FindProcessForBlock(int iBlk) {
+        public int FindProcessForBlock(long iBlk) {
             return m_Context.CellPartitioning.FindProcess(iBlk);
         }
 
@@ -299,7 +299,10 @@ namespace BoSSS.Foundation {
             }
         }
 
-        public int GetBlockType(int iBlock) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockType"/>
+        /// </summary>
+        public int GetBlockType(long iBlock) {
             this.GridDat.CellPartitioning.TestIfInLocalRange(iBlock);
             if(!CellDepLength) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -323,7 +326,7 @@ namespace BoSSS.Foundation {
                 // if the no. of DOFs per cell is *not*, we have to find the blocking
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                int j = iBlock - this.GridDat.CellPartitioning.i0; // local cell index
+                int j = checked((int)(iBlock - this.GridDat.CellPartitioning.i0)); // local cell index
                 Basis[] Bs = m_BasisS;
                 int NoOfBs = Bs.Length;
                 int blockType;
@@ -366,16 +369,25 @@ namespace BoSSS.Foundation {
 
         }
 
-        public int GetBlockI0(int iBlock) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockI0"/>
+        /// </summary>
+        public long GetBlockI0(long iBlock) {
             this.GridDat.CellPartitioning.TestIfInLocalRange(iBlock);
             return this.m_MaxTotalNoOfCoordinatesPerCell * iBlock;
         }
 
-        public int GetBlockLen(int iBlock) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockLen"/>
+        /// </summary>
+        public int GetBlockLen(long iBlock) {
             return m_MaxTotalNoOfCoordinatesPerCell;
         }
 
-        public int GetBlockIndex(int i) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockIndex"/>
+        /// </summary>
+        public long GetBlockIndex(long i) {
             return i / m_MaxTotalNoOfCoordinatesPerCell;
         }
 
@@ -857,7 +869,7 @@ namespace BoSSS.Foundation {
                 J = this.m_Context.iLogicalCells.Count;
             else
                 J = this.m_Context.iLogicalCells.NoOfLocalUpdatedCells;
-            List<int> R = new List<int>(L*J);
+            List<long> R = new List<long>(L*J);
 
             for (int j = 0; j < J; j++) {
 
@@ -869,7 +881,7 @@ namespace BoSSS.Foundation {
                     else
                         N = m_BasisS[iField].GetLength(j); 
 
-                    int i0 = (int) this.GlobalUniqueCoordinateIndex(iField, j, 0);
+                    long i0 = this.GlobalUniqueCoordinateIndex(iField, j, 0);
 
 
                     for (int n = 0; n < N; n++) {
@@ -914,7 +926,7 @@ namespace BoSSS.Foundation {
             }
 
             var jSub2Full = sgrd.SubgridIndex2LocalCellIndex;
-            var R = new List<int>();
+            var R = new List<long>();
 
             int JSUB;
             if(includeExternal)
@@ -933,7 +945,7 @@ namespace BoSSS.Foundation {
                     else
                         N = m_BasisS[iField].GetLength(jCell);
 
-                    int i0 = (int)this.GlobalUniqueCoordinateIndex(iField, jCell, 0);
+                    long i0 = this.GlobalUniqueCoordinateIndex(iField, jCell, 0);
 
 
                     for (int n = 0; n < N; n++) {

@@ -884,6 +884,34 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// equal to <see cref="MPIMax(int,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public long MPIMax(this long i) {
+            return MPIMax(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the maximum of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public long MPIMax(this long i, MPI_Comm comm) {
+            long loc = i;
+            unsafe {
+                long glob = long.MinValue;
+                csMPI.Raw.Allreduce(
+                    (IntPtr)(&loc),
+                    (IntPtr)(&glob),
+                    1,
+                    csMPI.Raw._DATATYPE.LONG_LONG,
+                    csMPI.Raw._OP.MAX,
+                    comm);
+                return glob;
+            }
+        }
+
+
+        /// <summary>
         /// Gathers single numbers form each MPI rank in an array
         /// </summary>
         static public int[] MPIAllGather(this int i) {

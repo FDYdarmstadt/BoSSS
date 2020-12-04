@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             CellPartitioning = new Partitioning(AggregationCells.Length, pGrid.CellPartitioning.MPI_Comm);
 
-            int j0Coarse = CellPartitioning.i0;
+            long j0Coarse = CellPartitioning.i0;
 
             BuildNeighborship(AggregationCells);
             DefineCellParts();
@@ -415,7 +415,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         private void BuildNeighborship(int[][] AggregationCells) {
             IGridData pGrid = ParentGrid;
-            int j0Coarse = CellPartitioning.i0;
+            long j0Coarse = CellPartitioning.i0;
             int JlocCoarse = CellPartitioning.LocalLength;
             int JElocFine = pGrid.iLogicalCells.Count;
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
@@ -423,9 +423,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             // compute fine-to-coarse mapping
             // ==============================
 
-            int[] Fine2CoarseGlobal = new int[JElocFine]; // index: local cell index on fine grid; maps to _global_ cell index on coarse grid.
+            long[] Fine2CoarseGlobal = new long[JElocFine]; // index: local cell index on fine grid; maps to _global_ cell index on coarse grid.
             {
-                ArrayTools.SetAll(Fine2CoarseGlobal, -111);
+                ArrayTools.SetAll(Fine2CoarseGlobal, -111l);
                 for (int jCellCoarse = 0; jCellCoarse < JlocCoarse; jCellCoarse++) {
                     foreach (int jCellFine in AggregationCells[jCellCoarse]) {
                         if (jCellFine < 0 || jCellFine >= JlocFine)
@@ -435,7 +435,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
 
 
-                Fine2CoarseGlobal.MPIExchange<int[], int>(pGrid);
+                Fine2CoarseGlobal.MPIExchange<long[], long>(pGrid);
             }
 
             // define external coarse cells
@@ -472,7 +472,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 for (int jF = 0; jF < JElocFine; jF++) { // loop over fine cells...
                     int jCoarse;
                     if (jF < JlocFine) {
-                        jCoarse = Fine2CoarseGlobal[jF] - j0Coarse;
+                        jCoarse = checked((int)(Fine2CoarseGlobal[jF] - j0Coarse));
                         Debug.Assert(jCoarse >= 0);
                         Debug.Assert(jCoarse < JlocCoarse);
                     } else {
@@ -512,13 +512,13 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     foreach (int jCellFine in AggregationCells[jCellCoarse]) {
                         int[] FineNeighs = FineClNeigh[jCellFine];
                         foreach (int jCellFineNeigh in FineNeighs) { // loop over all neighbor cells in the fine grid...
-                            int jCellCoarseNeighGlob = Fine2CoarseGlobal[jCellFineNeigh]; // map index of fine grid neighbor to coarse cell index
+                            long jCellCoarseNeighGlob = Fine2CoarseGlobal[jCellFineNeigh]; // map index of fine grid neighbor to coarse cell index
 
                             // convert global cell index to local 
                             int jCellCoarseNeighLoc;
                             if (jCellCoarseNeighGlob >= j0Coarse && jCellCoarseNeighGlob <= (j0Coarse + JlocCoarse)) {
                                 // Neighbor is a locally updated cell
-                                jCellCoarseNeighLoc = jCellCoarseNeighGlob - j0Coarse;
+                                jCellCoarseNeighLoc = checked((int)(jCellCoarseNeighGlob - j0Coarse));
 
                             } else {
                                 // Neighbor is an external cell
@@ -630,17 +630,17 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             // =========
 #if DEBUG
             {
-                int[] TestData = new int[JElocCoarse];
+                long[] TestData = new long[JElocCoarse];
                 for (int jC = 0; jC < JlocCoarse; jC++) {
-                    int GlobalIdx;
+                    long GlobalIdx;
                     GlobalIdx = jC + j0Coarse;
                     TestData[jC] = GlobalIdx;
                 }
 
-                TestData.MPIExchange<int[], int>(this);
+                TestData.MPIExchange<long[], long>(this);
 
                 for (int jC = 0; jC < JElocCoarse; jC++) {
-                    int GlobalIdx;
+                    long GlobalIdx;
                     if(jC < JlocCoarse)
                         GlobalIdx = jC + j0Coarse;
                     else 
