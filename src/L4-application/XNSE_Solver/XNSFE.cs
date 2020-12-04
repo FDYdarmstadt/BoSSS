@@ -96,6 +96,23 @@ namespace BoSSS.Application.XNSE_Solver
             }
             opFactory.AddEquation(new HeatInterface("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
             opFactory.AddCoefficient(new EvapMicroRegion());
+
+            // add Evaporation at Interface components, heads-up depends only on parameters
+            // ============================
+            if (config.isEvaporation) {
+
+                opFactory.AddParameter(new Temperature0());
+                opFactory.AddParameter(new HeatFlux0(D, lsUpdater.Tracker, config));
+                var MassFluxExt = new MassFluxExtension(config);
+                opFactory.AddParameter(MassFluxExt);
+                lsUpdater.AddLevelSetParameter("Phi", MassFluxExt);
+
+                for (int d = 0; d < D; ++d)
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, lsUpdater.Tracker, config));
+                
+                if (config.isContinuity)
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, lsUpdater.Tracker, config));
+            }
         }
         
     }

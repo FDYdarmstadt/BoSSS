@@ -4,7 +4,10 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.Advection;
+using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Solution.Utils;
+using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Tracing;
@@ -731,5 +734,211 @@ namespace BoSSS.Application.XNSE_Solver
             return velocties;
         }
     }
+
+    class MassFluxExtension : Parameter, ILevelSetParameter {
+
+        XNSFE_OperatorConfiguration config;
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension };
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public MassFluxExtension(XNSFE_OperatorConfiguration config) {
+            this.config = config;
+        }
+
+        public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var massfluxext = new (string, DGField)[1];
+            string paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
+            DGField MassFluxExtension = new SinglePhaseField(DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis, paramName);
+            massfluxext[0] = (paramName, MassFluxExtension);
+            return massfluxext;
+        }       
+
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            var thermalParams = config.getThermParams;
+            double kA, kB;
+            foreach (var spc in levelSet.Tracker.SpeciesNames) {
+                switch (spc) {
+                    case "A": { kA = thermalParams.k_A; break; }
+                    case "B": { kB = thermalParams.k_B; break; }
+                    default: { throw new ArgumentException("unknown species"); }
+                }
+            }
+            var paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
+            SinglePhaseField MassFluxExtensionField = (SinglePhaseField)ParameterVarFields[paramName];
+            SinglePhaseField MassFluxField = new SinglePhaseField(DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis);
+            int order = MassFluxField.Basis.Degree * MassFluxField.Basis.Degree + 2;
+
+            XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
+
+            int D = levelSet.Tracker.GridDat.SpatialDimension;
+            MassFluxField.Clear();
+            MassFluxField.ProjectField(1.0,
+                delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    
+
+                    MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
+
+                    temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
+                    temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
+
+                    MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
+                    
+                    for (int dd = 0; dd < D; dd++) {
+                        ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFluxVectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFluxVectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                    }
+                    
+
+                    var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
+
+                    for (int j = 0; j < Len; j++) {
+
+                        MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
+                        levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
+
+                        for (int k = 0; k < K; k++) {
+
+                        double qEvap = 0.0;
+                        //macro region
+                        for (int dd = 0; dd < D; dd++) {                                
+                                qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];                                
+                        }
+
+                        //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
+                        double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                        double mEvap = (config.prescribedMassflux != null) ? config.prescribedMassflux(globX, time) : qEvap /thermalParams.hVap; // mass flux
+
+                        //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
+                        result[j, k] = mEvap;
+                        }
+                    }
+                }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));     
+
+
+            
+
+            SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
+            CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
+            CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
+            int J = levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
+            double[][] MassFluxMin = new double[1][];
+            double[][] MassFluxMax = new double[1][];
+            MassFluxMin[0] = new double[J];
+            MassFluxMax[0] = new double[J];
+
+            VectorField<SinglePhaseField> DGLevSetGradient =  new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(levelSet.DGLevelSet.Basis)));
+            DGLevSetGradient.Clear();
+            DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+            NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { MassFluxExtensionField }, new SinglePhaseField[] { MassFluxField },
+                levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
+
+            var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
+            //timestepnumber??
+            marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { MassFluxExtensionField },
+                MassFluxMin, MassFluxMax, DGLevSetGradient, (int)time);
+
+            MassFluxExtensionField.CheckForNanOrInf(true, true, true);
+
+            
+        }
+    }
+
+    class Temperature0 : Parameter {
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Temperature0 };
+
+        public override DelParameterFactory Factory => Temperature0Factory;
+
+        public Temperature0() {
+        }
+
+        (string, DGField)[] Temperature0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var temperature0 = new (string, DGField)[1];
+            
+            string temperaturename = BoSSS.Solution.NSECommon.VariableNames.Temperature;
+            DGField temperature = DomainVarFields[temperaturename];
+            string paramName = BoSSS.Solution.NSECommon.VariableNames.Temperature0;
+            temperature0[0] = (paramName, temperature);
+            
+            return temperature0;
+        }
+    }
+
+    class HeatFlux0 : Parameter {
+
+        int D;
+        string[] parameters;
+        LevelSetTracker lstrk;
+        Dictionary<string, double> k_spc;
+        public override IList<string> ParameterNames => parameters;
+
+        public override DelParameterFactory Factory => HeatFlux0Factory;
+
+        public HeatFlux0(int D, LevelSetTracker lstrk, XNSFE_OperatorConfiguration config) {
+            this.D = D;
+            this.lstrk = lstrk;
+            parameters = BoSSS.Solution.NSECommon.VariableNames.HeatFlux0Vector(D);
+            
+            var thermParams = config.getThermParams;
+            foreach(var spc in lstrk.SpeciesNames) {
+                switch (spc) {
+                    case "A": { k_spc.Add(spc, thermParams.k_A); break; }
+                    case "B": { k_spc.Add(spc, thermParams.k_B); break; }
+                    default: { throw new ArgumentException("Unknown species.");}                    
+                }
+            }            
+        }
+
+        (string, DGField)[] HeatFlux0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var heatflux0 = new (string, DGField)[D];
+
+            for (int d = 0; d < D; d++) {
+
+                string heatfluxname = BoSSS.Solution.NSECommon.VariableNames.HeatFluxVectorComponent(d);
+                string paramName = BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(d);
+
+                XDGField heatflux;
+                if (DomainVarFields.ContainsKey(heatfluxname)) {
+                    // if the heatflux is a domainvariable, we can directly use him, no special update necessary
+                    heatflux = (XDGField)DomainVarFields[heatfluxname];
+                } else {
+                    heatflux = new XDGField((XDGBasis)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature].Basis, paramName);
+                    Update = HeatFlux0Update;
+                }
+                heatflux0[d] = (paramName, heatflux);
+            }          
+
+            return heatflux0;
+        }
+        private void HeatFlux0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            var varname = BoSSS.Solution.NSECommon.VariableNames.Temperature;
+            DGField temperaure = DomainVarFields[varname];
+
+            SubGrid Sgrd = lstrk.Regions.GetCutCellSubGrid();
+
+            for (int d = 0; d < D; d++) {
+                foreach(var spc in lstrk.SpeciesNames) {
+                    
+                    DGField temperaure_Spc = ((temperaure as XDGField).GetSpeciesShadowField(spc));
+
+                    double aSpc = (k_spc != null && k_spc.ContainsKey(spc)) ? k_spc[spc] : 1.0;
+
+                    var paramname = BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(d);
+                    DGField heatflux = ParameterVarFields[paramname];
+                    // q=-k*grad(T)
+                    (heatflux as XDGField).GetSpeciesShadowField(spc).DerivativeByFlux(-aSpc, temperaure_Spc, d, Sgrd);
+                }
+            }            
+        }
+
+    }
+
+
+
 }
 
