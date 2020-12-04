@@ -75,7 +75,8 @@
   <ItemGroup>
     <Compile Include="CNSControl.cs" />
     <Compile Include="CNSQueries.cs" />
-    <Compile Include="ControlExamples.cs" />
+    <Compile Include="ControlExamples_Subsonic.cs" />
+    <Compile Include="ControlExamples_LoadBal.cs" />
     <Compile Include="Convection\ConvectiveCFLConstraint.cs" />
     <Compile Include="Convection\ConvectiveFluxTypes.cs" />
     <Compile Include="Convection\EulerDummy.cs" />
@@ -113,7 +114,7 @@
     <Compile Include="ShockCapturing\PrimitiveFVMLimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
     <Compile Include="Source\SpongeLayerConfig.cs" />
-    <Compile Include="TestCases.cs" />
+    <Compile Include="ControlExamples_Supersonic.cs" />
     <Compile Include="Tests\ArtificialViscosity\ArtificialViscosityShockTubeTests.cs" />
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
     <Compile Include="Tests\IBMTests\IBMArtificialViscosityTest.cs" />
