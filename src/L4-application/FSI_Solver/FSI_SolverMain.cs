@@ -1462,7 +1462,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
-                int oldJ = GridData.CellPartitioning.TotalLength;
+                long oldJ = GridData.CellPartitioning.TotalLength;
                 Console.WriteLine("Refining " + consoleRefineCoarse[0] + " of " + oldJ + " cells");
                 Console.WriteLine("Coarsening " + consoleRefineCoarse[1] + " of " + oldJ + " cells");
                 Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());

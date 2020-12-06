@@ -30,9 +30,9 @@ namespace NSE_SIMPLE {
 
         SIMPLEOperator Swip2;
         SIMPLEOperator Swip3;
-        int[] RowIndicesSource;
-        int[] ColumnIndicesSource;
-        int[] ColumnIndicesTarget;
+        long[] RowIndicesSource;
+        long[] ColumnIndicesSource;
+        long[] ColumnIndicesTarget;
 
         /// <summary>
         /// Ctor.
@@ -49,8 +49,8 @@ namespace NSE_SIMPLE {
             this.Swip2 = Swip2;
             this.Swip3 = Swip3;
 
-            RowIndicesSource = new int[Swip2.LocalLength];
-            int i0 = Swip2.RowPartition.i0;
+            RowIndicesSource = new long[Swip2.LocalLength];
+            long i0 = Swip2.RowPartition.i0;
             for (int i = 0; i < Swip2.LocalLength; i++) {
                 RowIndicesSource[i] = i + i0;
             }
@@ -64,14 +64,14 @@ namespace NSE_SIMPLE {
         protected override MsrMatrix ComputeMatrix() {
             MsrMatrix Matrix = new MsrMatrix(Swip2.RowPartition);
 
-            Swip2.OperatorMatrix.WriteSubMatrixTo<IList<int>, IList<int>, IList<int>, IList<int>>(Matrix,
+            Swip2.OperatorMatrix.WriteSubMatrixTo<IList<long>, IList<long>, IList<long>, IList<long>>(Matrix,
                 RowIndicesSource,
                 null,
                 ColumnIndicesSource,
                 ColumnIndicesTarget);
 
             if (Swip3 != null) {
-                Swip3.OperatorMatrix.AccSubMatrixTo<IList<int>, IList<int>, IList<int>, IList<int>>(1.0,
+                Swip3.OperatorMatrix.AccSubMatrixTo<IList<long>, IList<long>, IList<long>, IList<long>>(1.0,
                     Matrix,
                     RowIndicesSource,
                     null,

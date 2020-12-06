@@ -602,13 +602,14 @@ namespace BoSSS.Application.IBM_Solver {
                         break;
                     }
                 default:
-                    {
-                        Prec = new SchurPrecond()
-                        {
-                            SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-                        };
-                        break;
-                    }
+                //{
+                //    Prec = new SchurPrecond()
+                //    {
+                //        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+                //    };
+                //    break;
+                //}
+                throw new NotImplementedException();
             }
 
 

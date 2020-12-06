@@ -268,8 +268,8 @@ namespace HilbertTest {
                     //Comparing checkLTS to Distribution along HilbertCurve of Testcase
                     int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
                     //result = ItemsAreEqual(solver.Grid.GetHilbertSortedRanks(),checkLTS);
-                    int J0 = solver.GridData.CellPartitioning.i0;
-                    int JE = solver.GridData.CellPartitioning.iE;
+                    long J0 = solver.GridData.CellPartitioning.i0;
+                    long JE = solver.GridData.CellPartitioning.iE;
 
                     ulong[] discreteCenter = new ulong[D];
                     ulong[] local_HilbertIndex = new ulong[JE - J0];
@@ -277,7 +277,7 @@ namespace HilbertTest {
 
                     var _Grid = (GridCommons)(solver.Grid);
 
-                    for (int j = J0; j < JE; j++) {
+                    for (long j = J0; j < JE; j++) {
                         Cell Cj = _Grid.Cells[j - J0];
                         int NoOfNodes = Cj.TransformationParams.NoOfRows;
                         for (int d = 0; d < D; d++) {

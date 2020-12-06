@@ -211,10 +211,10 @@ namespace BoSSS.Application.Matrix_MPItest {
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
 
-            int nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
            
-            int nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
             Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
            

@@ -96,9 +96,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Rhs"></param>
         /// <param name="IndexRefPtPressure"></param>
         /// <param name="i0"></param>        
-        public static void SetRefPtPressure_Rhs(double[] Rhs, int IndexRefPtPressure, int i0) {
+        public static void SetRefPtPressure_Rhs(double[] Rhs, long IndexRefPtPressure, long i0) {
             if((IndexRefPtPressure >= i0) && (IndexRefPtPressure < i0 + Rhs.Length)) {
-                int LocalIndexRefPtPressure = IndexRefPtPressure - i0;
+                int LocalIndexRefPtPressure = checked((int)(IndexRefPtPressure - i0));
                 Rhs[LocalIndexRefPtPressure] = 0.0;
             }
         }

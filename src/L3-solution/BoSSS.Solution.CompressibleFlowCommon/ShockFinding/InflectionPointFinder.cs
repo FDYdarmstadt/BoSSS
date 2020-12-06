@@ -435,7 +435,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             NodeSet nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
 
             // Get local cell index of current point
-            int j0Grd = gridData.CellPartitioning.i0;
+            long j0Grd = gridData.CellPartitioning.i0;
             jLocal = (int)(GlobalIndex - j0Grd);
 
             // Evaluate the second derivative
@@ -486,8 +486,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                     foreach (int neighbour in cellNeighbours) {
                         if (gridData.Cells.IsInCell(currentPoint, neighbour, newLocalCoord)) {
                             // If neighbour has been found, update
-                            jLocal = neighbour + j0Grd;
-                            nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, jLocal);
+                            //jLocal = neighbour + j0Grd;
+                            nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, neighbour + j0Grd);
                             found = true;
                             break;
                         }

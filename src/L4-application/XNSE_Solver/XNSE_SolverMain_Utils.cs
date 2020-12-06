@@ -729,7 +729,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         int RepairZeroRows(MsrMatrix Mtx) {
             int NoOfZeroRows = 0;
-            for (int iRow = Mtx.RowPartitioning.i0; iRow < Mtx.RowPartitioning.iE; iRow++) {
+            for (long iRow = Mtx.RowPartitioning.i0; iRow < Mtx.RowPartitioning.iE; iRow++) {
                 if (Mtx.GetNoOfNonZerosPerRow(iRow) == 0) {
                     Mtx[iRow, iRow] = +1.0;
                     NoOfZeroRows++;
@@ -855,12 +855,12 @@ namespace BoSSS.Application.XNSE_Solver {
                     {
                         int[] VelVarIdx = D.ForLoop(d => d);
 
-                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                        long[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                        long[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
                         int L = USubMatrixIdx_Row.Length;
 
                         DiffMatrix = new MsrMatrix(L, L, 1, 1);
-                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
+                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(long[]), USubMatrixIdx_Col, default(long[]));
                     }
 
                     int Zeros_FullMatrix = RepairZeroRows(FullMatrix);
