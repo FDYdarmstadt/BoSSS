@@ -417,7 +417,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.automatic:
                     precond[0] = null;
                     break;
-
+                /*
                 case LinearSolverCode.exp_gmres_Schur:
                     precond[0] = new SchurPrecond() {
                         SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
@@ -429,7 +429,7 @@ namespace BoSSS.Solution {
                         SchurOpt = SchurPrecond.SchurOptions.SIMPLE
                     };
                     break;
-
+                */
 
                 case LinearSolverCode.exp_gmres_AS_MG:
                     precond[0] = new Schwarz() {
@@ -445,13 +445,14 @@ namespace BoSSS.Solution {
                     };
                     break;
 
-
+                /*
                 case LinearSolverCode.exp_gmres_localPrec:
                     precond[0] = new LocalizedOperatorPrec() {
                         m_dt = lc.exp_localPrec_Min_dt,
                         m_muA = lc.exp_localPrec_muA,
                     };
                     break;
+                */
                 case LinearSolverCode.exp_gmres_AS:
 
                     precond[0] = new Schwarz() {

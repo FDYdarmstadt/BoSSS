@@ -610,6 +610,19 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// clear all entries.
+        /// </summary>
+        static public void ClearEntries<T,R>(this T a, R index, long index_offset = 0) 
+            where T : IList<double>
+            where R : IList<long>
+        {
+            int L = index.Count;
+            for (int i = 0; i < L; i++) {
+                a[checked((int)(index[i] + index_offset))] = 0.0;
+            }
+        }
+
+        /// <summary>
         /// <paramref name="a"/> = <paramref name="a"/> + <paramref name="alpha"/>*<paramref name="B"/>
         /// </summary>
         static public void AccV<T, V>(this T a, double alpha, V B)
@@ -803,6 +816,59 @@ namespace ilPSP.Utils {
 
 
         }
+
+         /// <summary>
+        /// accumulation of subvectors
+        /// this[<paramref name="acc_index"/>[i]] = this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] + <paramref name="alpha"/>*<paramref name="b"/>[<paramref name="b_index"/>[i] + <paramref name="acc_index_shift"/>]
+        /// </summary>
+        static public void AccV<T, V, R, S>(this T acc, double alpha, V b, R acc_index, S b_index, long acc_index_shift = 0, long b_index_shift = 0)
+            where T : IList<double>
+            where V : IList<double> 
+            where R : IList<long>
+            where S : IList<long>
+        {
+            if(object.ReferenceEquals(acc, b))
+                // while formally there is no problem that this should work, it seems much more likely
+                // that it's a bug.
+                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
+           
+
+            if(acc_index != null && b_index != null) {
+                if (acc_index.Count != b_index.Count)
+                    throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
+
+                int N = acc_index.Count;
+                for (int i = 0; i < N; i++) {
+                    acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
+                }
+
+            } else if( acc_index != null && b_index == null) {
+
+                int N = acc_index.Count;
+                for (int i = 0; i < N; i++) {
+                    acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(i + b_index_shift))];
+                }
+            } else if (acc_index == null && b_index != null) {
+
+                int N = b_index.Count;
+                for (int i = 0; i < N; i++) {
+                    acc[checked((int)(i + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
+                }
+            } else if (acc_index == null && b_index == null) {
+                int N = acc.Count;
+                if (acc.Count != b.Count)
+                    throw new ArgumentOutOfRangeException("length of 'acc' and 'b' must match.");
+
+                for (int i = 0; i < N; i++) {
+                    acc[checked((int)(i + acc_index_shift))] += alpha * b[checked((int)(i + b_index_shift))];
+                }
+            } else {
+                throw new Exception("should never be reached");
+            }
+
+
+        }
+
 
         /// <summary>
         /// accumulation of subvectors

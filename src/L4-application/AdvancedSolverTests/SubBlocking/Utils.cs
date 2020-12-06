@@ -278,7 +278,7 @@ namespace AdvancedSolverTests.SubBlocking
             SpeciesId A = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[0];
             SpeciesId B = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[1];
 
-            sbs.CellSelector(iCell,false);
+            sbs.CellSelector(iCell, false);
             //do not change this, selection corresponds to hardcoded masking
             //see GetSubIndices
             switch (SType) {

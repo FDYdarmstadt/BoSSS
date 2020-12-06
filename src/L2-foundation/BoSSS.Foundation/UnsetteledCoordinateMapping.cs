@@ -554,7 +554,7 @@ namespace BoSSS.Foundation {
         /// <param name="iglobal"></param>
         /// <returns></returns>
         /// <see cref="Local2GlobalIndex"/>
-        public int Global2LocalIndex(int iglobal) {
+        public int Global2LocalIndex(long iglobal) {
             long iLocal = iglobal - i0;
 
             if (this.IsInLocalRange(iglobal)) {
@@ -564,8 +564,8 @@ namespace BoSSS.Foundation {
                     throw new NotSupportedException();
                 int BlockLen = this.GetBlockLen(0);
 
-                int jCellGlobal = iglobal / BlockLen;
-                int IndexWithinBlock = iglobal - jCellGlobal * BlockLen;
+                long jCellGlobal = iglobal / BlockLen;
+                int IndexWithinBlock = checked((int)(iglobal - jCellGlobal * BlockLen));
                 
                 if(!this.GridDat.iParallel.Global2LocalIdx.TryGetValue(jCellGlobal, out int jCellLocal)) {
                     throw new ArgumentException("Unknown external cell index.");

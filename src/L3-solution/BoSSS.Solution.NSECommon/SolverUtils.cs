@@ -39,7 +39,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="map">the mapping which defines how cell indices translate.</param>
         /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
         /// <param name="Point">position vector</param>
-        static public int GetIndexOfPressureReferencePoint(double[] Point, UnsetteledCoordinateMapping map, int iVar) {
+        static public long GetIndexOfPressureReferencePoint(double[] Point, UnsetteledCoordinateMapping map, int iVar) {
             using(new FuncTrace()) {
                 var GridDat = map.GridDat;
                 
@@ -50,10 +50,10 @@ namespace BoSSS.Solution.NSECommon {
                 bool IsInside, onthisProc;
                 GridDat.LocatePoint(Point, out GlobalID, out GlobalIndex, out IsInside, out onthisProc);
                 
-                int iRowGl = -111;
+                long iRowGl = -111;
                 if(onthisProc) {
-                    int jCell = (int)GlobalIndex - GridDat.CellPartitioning.i0;
-                    iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalIndex, 0);
+                    //int jCell = (int)(GlobalIndex - GridDat.CellPartitioning.i0);
+                    iRowGl = map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalIndex, 0);
                 }
                 iRowGl = iRowGl.MPIMax();
 
@@ -68,14 +68,14 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="Matrix"></param>
         /// <param name="IndexRefPtPressure"></param>
-        public static void SetRefPtPressure_Matrix(IMutableMatrixEx Matrix, int IndexRefPtPressure) {
-            int i0 = Matrix.RowPartitioning.i0;
+        public static void SetRefPtPressure_Matrix(IMutableMatrixEx Matrix, long IndexRefPtPressure) {
+            long i0 = Matrix.RowPartitioning.i0;
             int LocalLength = Matrix.RowPartitioning.LocalLength;
 
             if((IndexRefPtPressure >= i0) && (IndexRefPtPressure < i0 + LocalLength)) {
                 Matrix[IndexRefPtPressure, IndexRefPtPressure] = 1.0;
                 
-                int[] colIdx = Matrix.GetOccupiedColumnIndices(IndexRefPtPressure);
+                long[] colIdx = Matrix.GetOccupiedColumnIndices(IndexRefPtPressure);
                 foreach (int col in colIdx) {
                     if (col != IndexRefPtPressure)
                         Matrix[IndexRefPtPressure, col] = 0.0;

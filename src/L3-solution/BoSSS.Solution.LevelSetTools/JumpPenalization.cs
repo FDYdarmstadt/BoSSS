@@ -381,26 +381,26 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
             MsrMatrix Pmtx = PenaltyMatrix(EdgMsk, inout_Levset.Basis, inout_Levset.Basis);
             Pmtx.Scale(-1.0);
 
-            int[] SubVecIdx = Map.GetSubvectorIndices(S, true, new int[] { 0 });
+            long[] SubVecIdx = Map.GetSubvectorIndices(S, true, new int[] { 0 });
             int L = SubVecIdx.Length;
 
             MsrMatrix SubMtx = new MsrMatrix(L, L);
-            Pmtx.AccSubMatrixTo(1.0, SubMtx, SubVecIdx, default(int[]), SubVecIdx, default(int[]));
+            Pmtx.AccSubMatrixTo(1.0, SubMtx, SubVecIdx, default(long[]), SubVecIdx, default(long[]));
 
             SubMtx.AccEyeSp(1.0 / dt);
 
             double[] RHS = new double[L];
             double[] SOL = new double[L];
-
-            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, default(int[]), SubVecIdx);
+            if(SubMtx.RowPartitioning.MpiSize > 1) throw new Exception("check indices next line!");
+            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, default(long[]), SubVecIdx);
             
             using (var solver = new PARDISOSolver()) {
                 solver.DefineMatrix(SubMtx);
                 solver.Solve(SOL, RHS);
             }
-            
-            inout_Levset.CoordinateVector.ClearEntries(SubVecIdx);
-            inout_Levset.CoordinateVector.AccV(1.0, SOL, SubVecIdx, default(int[]));
+
+            inout_Levset.CoordinateVector.ClearEntries(SubVecIdx, index_offset: -Map.i0);
+            inout_Levset.CoordinateVector.AccV(1.0, SOL, SubVecIdx, default(long[]), acc_index_shift: -Map.i0);
         }
 
 

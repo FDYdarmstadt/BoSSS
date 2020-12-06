@@ -122,7 +122,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         MsrMatrix SubMatrix;
         double[] SubRHS;
         double[] SubSolution;
-        int[] SubVecIdx;
+        long[] SubVecIdx;
 
         ISparseSolver slv;
 
@@ -334,7 +334,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 OpAffine.AccV(1.0, OpAffine_interface);
 
 
-#if Debug
+#if DEBUG
                 ilPSP.Connectors.Matlab.BatchmodeConnector matlabConnector;
                 matlabConnector = new BatchmodeConnector();
 #endif
@@ -346,16 +346,16 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                     SubRHS = new double[L];
                     SubSolution = new double[L];
 
-                    OpMatrix.AccSubMatrixTo(1.0, SubMatrix, SubVecIdx, default(int[]), SubVecIdx, default(int[]));
+                    OpMatrix.AccSubMatrixTo(1.0, SubMatrix, SubVecIdx, default(long[]), SubVecIdx, default(long[]));
 
                     slv.DefineMatrix(SubMatrix);
-#if Debug
+#if DEBUG
                     Console.WriteLine("ConditionNumber of ReInit-Matrix is " + SubMatrix.condest().ToString("E"));
 #endif
                 }
                 else {
                     slv.DefineMatrix(OpMatrix);
-#if Debug
+#if DEBUG
                     Console.WriteLine("ConditionNumber of ReInit-Matrix is " + OpMatrix.condest().ToString("E"));
 #endif
                 }
@@ -466,13 +466,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                     SubRHS.Clear();
                     SubSolution.Clear();
 
-                    SubRHS.AccV(1.0, RHS, default(int[]), SubVecIdx);
-                    SubSolution.AccV(1.0, NewPhi.CoordinateVector, default(int[]), SubVecIdx);
+                    SubRHS.AccV(1.0, RHS, default(long[]), SubVecIdx);
+                    SubSolution.AccV(1.0, NewPhi.CoordinateVector, default(long[]), SubVecIdx);
 
                     Result = slv.Solve(SubSolution, SubRHS);
 
                     NewPhi.Clear(RestrictionMask);
-                    NewPhi.CoordinateVector.AccV(1.0, SubSolution, SubVecIdx, default(int[]) );
+                    NewPhi.CoordinateVector.AccV(1.0, SubSolution, SubVecIdx, default(long[]) );
 
                 }
                 else {

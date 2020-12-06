@@ -508,17 +508,17 @@ namespace ilPSP.LinSolvers {
         /// <see cref="AccSubMatrixTo{V1,V2,V3,V4}"/>.
         /// </summary>
         public MsrMatrix GetSubMatrix<V1, V3>(V1 RowIndicesSource, V3 ColumnIndiceSource)
-            where V1 : IList<int>
-            where V3 : IList<int> //
+            where V1 : IList<long>
+            where V3 : IList<long> //
         {
             MsrMatrix res = new MsrMatrix(RowIndicesSource.Count, ColumnIndiceSource.Count, 1, 1);
             this.AccSubMatrixTo(
                 1.0,
                 res,
                 RowIndicesSource,
-                default(int[]),
+                default(long[]),
                 ColumnIndiceSource,
-                default(int[]));
+                default(long[]));
             return res;
         }
 
@@ -530,10 +530,10 @@ namespace ilPSP.LinSolvers {
         public void WriteSubMatrixTo<V1, V2, V3, V4>(MsrMatrix target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
             V3 ColumnIndicesSource, V4 ColumnInidcesTarget)
-            where V1 : IList<int>
-            where V2 : IList<int>
-            where V3 : IList<int>
-            where V4 : IList<int> {
+            where V1 : IList<long>
+            where V2 : IList<long>
+            where V3 : IList<long>
+            where V4 : IList<long> {
 
             target.Clear();
             this.AccSubMatrixTo(
@@ -575,10 +575,10 @@ namespace ilPSP.LinSolvers {
             double alpha, MsrMatrix Target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
             V3 ColumnIndicesSource, V4 ColIndicesTarget)
-            where V1 : IList<int>
-            where V2 : IList<int>
-            where V3 : IList<int>
-            where V4 : IList<int> {
+            where V1 : IList<long>
+            where V2 : IList<long>
+            where V3 : IList<long>
+            where V4 : IList<long> {
             using(new FuncTrace()) {
 
                 //if (RowIndicesTarget != null)

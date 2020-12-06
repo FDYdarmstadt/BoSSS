@@ -278,7 +278,7 @@ namespace ilPSP.LinSolvers {
         /// therefore it is difficult to implement this method in some other place.
         /// </remarks>
         public BlockMsrMatrix RecyclePermute(IBlockPartitioning newRowPart, IBlockPartitioning newColPart,
-            int[,] OldRowIndices2New, int[,] OldColIndices2New
+            long[,] OldRowIndices2New, long[,] OldColIndices2New
             ) {
             using (new FuncTrace()) {
                 if (newRowPart.LocalNoOfBlocks != this._RowPartitioning.LocalNoOfBlocks)
@@ -349,8 +349,8 @@ namespace ilPSP.LinSolvers {
                 HashSet<long> ExtColBlockMarker = new HashSet<long>();
 
                 for (int l = 0; l < LR; l++) { // row indices loop
-                    int iOld = OldRowIndices2New[l, 0];
-                    int iNew = OldRowIndices2New[l, 1];
+                    long iOld = OldRowIndices2New[l, 0];
+                    long iNew = OldRowIndices2New[l, 1];
                     _RowPartitioning.TestIfInLocalRange(iOld);
                     newRowPart.TestIfInLocalRange(iNew);
 
@@ -363,8 +363,8 @@ namespace ilPSP.LinSolvers {
 
 
                 for (int l = 0; l < LC; l++) { // column indices loop
-                    int jOld = OldColIndices2New[l, 0];
-                    int jNew = OldColIndices2New[l, 1];
+                    long jOld = OldColIndices2New[l, 0];
+                    long jNew = OldColIndices2New[l, 1];
                     if (_ColPartitioning.IsInLocalRange(jOld)) {
                         newColPart.TestIfInLocalRange(jNew);
                         long iBlock = _ColPartitioning.GetBlockIndex(jOld);
@@ -572,7 +572,7 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-        static int Scan(int l, int[,] old2new, IBlockPartitioning part, bool ExtOk, long iBlock, out int l0, out int le) {
+        static int Scan(int l, long[,] old2new, IBlockPartitioning part, bool ExtOk, long iBlock, out int l0, out int le) {
             int Inc = 0;
             l0 = l;
             le = l - 1;
