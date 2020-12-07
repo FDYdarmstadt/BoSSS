@@ -103,17 +103,17 @@ namespace BoSSS.Application.XNSE_Solver
             // ============================
             if (config.isEvaporation) {
 
-                opFactory.AddParameter(new Temperature0());
-                opFactory.AddParameter(new HeatFlux0(D, lsUpdater.Tracker, config));
-                var MassFluxExt = new MassFluxExtension(config);
+                //opFactory.AddParameter(new Temperature0());
+                //opFactory.AddParameter(new HeatFlux0(D, lsUpdater.Tracker, config));
+                var MassFluxExt = new MassFluxExtension_Evaporation(config);
                 opFactory.AddParameter(MassFluxExt);
                 lsUpdater.AddLevelSetParameter("Phi", MassFluxExt);
 
                 for (int d = 0; d < D; ++d)
-                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, lsUpdater.Tracker, config));
+                    opFactory.AddEquation(new InterfaceNSE_MassFlux("A", "B", D, d, lsUpdater.Tracker, config));
                 
                 if (config.isContinuity)
-                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, lsUpdater.Tracker, config));
+                    opFactory.AddEquation(new InterfaceContinuity_MassFlux("A", "B", D, lsUpdater.Tracker, config));
             }
         }
 
@@ -122,19 +122,22 @@ namespace BoSSS.Application.XNSE_Solver
             LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
 
+            //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
+            var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+
             switch (Control.Option_LevelSetEvolution) {
                 case LevelSetEvolution.Fourier:
                     if (Control.EnforceLevelSetConservation) {
                         throw new NotSupportedException("mass conservation correction currently not supported");
                     }
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, Control.LSContiProjectionMethod);
-                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control)));
+                    lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
                     break;
                 case LevelSetEvolution.FastMarching:
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
                     var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
                     lsUpdater.AddEvolver("Phi", fastMarcher);
-                    lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control)));
+                    lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
                     break;
                 case LevelSetEvolution.None:
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
