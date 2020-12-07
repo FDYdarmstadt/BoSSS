@@ -466,13 +466,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                     SubRHS.Clear();
                     SubSolution.Clear();
 
-                    SubRHS.AccV(1.0, RHS, default(long[]), SubVecIdx);
-                    SubSolution.AccV(1.0, NewPhi.CoordinateVector, default(long[]), SubVecIdx);
+                    SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx);
+                    SubSolution.AccVi64(1.0, NewPhi.CoordinateVector, default(long[]), SubVecIdx);
 
                     Result = slv.Solve(SubSolution, SubRHS);
 
                     NewPhi.Clear(RestrictionMask);
-                    NewPhi.CoordinateVector.AccV(1.0, SubSolution, SubVecIdx, default(long[]) );
+                    NewPhi.CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]) );
 
                 }
                 else {

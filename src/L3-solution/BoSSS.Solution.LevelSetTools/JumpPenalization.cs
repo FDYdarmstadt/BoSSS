@@ -392,7 +392,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
             double[] RHS = new double[L];
             double[] SOL = new double[L];
             if(SubMtx.RowPartitioning.MpiSize > 1) throw new Exception("check indices next line!");
-            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, default(long[]), SubVecIdx);
+            RHS.AccVi64(1.0 / dt, inout_Levset.CoordinateVector, default(long[]), SubVecIdx);
             
             using (var solver = new PARDISOSolver()) {
                 solver.DefineMatrix(SubMtx);
@@ -400,7 +400,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
             }
 
             inout_Levset.CoordinateVector.ClearEntries(SubVecIdx, index_offset: -Map.i0);
-            inout_Levset.CoordinateVector.AccV(1.0, SOL, SubVecIdx, default(long[]), acc_index_shift: -Map.i0);
+            inout_Levset.CoordinateVector.AccVi64(1.0, SOL, SubVecIdx, default(long[]), acc_index_shift: -Map.i0);
         }
 
 

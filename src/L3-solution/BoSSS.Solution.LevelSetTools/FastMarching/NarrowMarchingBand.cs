@@ -1197,7 +1197,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     // extract rhs
                     double[] rhs = new double[UsedRows.Count];
                     double[] x = new double[UsedRows.Count];
-                    rhs.AccV(1.0, ExtVelRHS[d], default(long[]), UsedRows);
+                    rhs.AccVi64(1.0, ExtVelRHS[d], default(long[]), UsedRows);
 
                     double[] Resi_d = rhs.CloneAs();
                     double NORM_rhs = rhs.L2NormPow2().MPISum().Sqrt();
@@ -1216,7 +1216,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                     // write back solution
                     ExtVel[d].Clear();
-                    ExtVel[d].CoordinateVector.AccV(1.0, x, UsedRows, default(long[]));
+                    ExtVel[d].CoordinateVector.AccVi64(1.0, x, UsedRows, default(long[]));
                 }
             }
             

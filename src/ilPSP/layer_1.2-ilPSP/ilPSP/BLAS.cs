@@ -821,7 +821,7 @@ namespace ilPSP.Utils {
         /// accumulation of subvectors
         /// this[<paramref name="acc_index"/>[i]] = this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] + <paramref name="alpha"/>*<paramref name="b"/>[<paramref name="b_index"/>[i] + <paramref name="acc_index_shift"/>]
         /// </summary>
-        static public void AccV<T, V, R, S>(this T acc, double alpha, V b, R acc_index, S b_index, long acc_index_shift = 0, long b_index_shift = 0)
+        static public void AccVi64<T, V, R, S>(this T acc, double alpha, V b, R acc_index, S b_index, long acc_index_shift = 0, long b_index_shift = 0)
             where T : IList<double>
             where V : IList<double> 
             where R : IList<long>

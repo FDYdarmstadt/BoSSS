@@ -453,7 +453,7 @@ namespace BoSSS.Foundation.SpecFEM {
 
                     var b_sub = new double[OccupiedRows_Global.Count];
                     //try {
-                    b_sub.AccV(1.0, b.To1DArray(), default(long[]), OccupiedRows_Global, b_index_shift: -i0);
+                    b_sub.AccVi64(1.0, b.To1DArray(), default(long[]), OccupiedRows_Global, b_index_shift: -i0);
                     //} catch(Exception e) {
                     //    Debugger.Launch();
                     //}
@@ -483,7 +483,7 @@ namespace BoSSS.Foundation.SpecFEM {
                     }
 
                     double[] x = new double[this.Basis.NoOfLocalOwnedNodes];
-                    x.AccV(1.0, x_sub, OccupiedRows_Global, default(long[]), acc_index_shift: -i0);
+                    x.AccVi64(1.0, x_sub, OccupiedRows_Global, default(long[]), acc_index_shift: -i0);
                     m_Coordinates.ExtractSubArrayShallow(new int[] { 0 }, new int[] { this.Basis.NoOfLocalOwnedNodes - 1 }).AccVector(alpha, x);
                 }
 

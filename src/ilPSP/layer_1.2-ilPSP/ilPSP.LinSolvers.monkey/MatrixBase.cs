@@ -409,38 +409,40 @@ namespace ilPSP.LinSolvers.monkey {
             // send/receive & transform  Comm lists
             // ====================================
             {
-                SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
                 SortedDictionary<int, int[]> CommListsTo = new SortedDictionary<int, int[]>();
+                using(SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD)) {
 
-                foreach (int proc in CommLists.Keys)
-                    sms.SetCommPath(proc);
-                sms.CommitCommPaths();
+                    foreach(int proc in CommLists.Keys)
+                        sms.SetCommPath(proc);
+                    sms.CommitCommPaths();
 
-                foreach (int proc in CommLists.Keys)
-                    sms.Transmit(proc, CommLists[proc].ToArray());
+                    foreach(int proc in CommLists.Keys)
+                        sms.Transmit(proc, CommLists[proc].ToArray());
 
-                int _proc;
-                int[] CommListReceived;
-                sms.GetNext(out _proc, out CommListReceived);
-                int Lcol = m_ColPart.LocalLength;
-                int i0col = (int)m_ColPart.i0;
-                while (CommListReceived != null) {
+                    int _proc;
+                    long[] gCommListReceived;
+                    int[] CommListReceived;
+                    sms.GetNext(out _proc, out gCommListReceived);
+                    int Lcol = m_ColPart.LocalLength;
+                    int i0col = (int)m_ColPart.i0;
+                    while(gCommListReceived != null) {
 
-                    // convert indices to local coordinates
-                    for (int i = 0; i < CommListReceived.Length; i++) {
-                        CommListReceived[i] -= i0col;
+                        // convert indices to local coordinates
+                        CommListReceived = new int[gCommListReceived.Length];
+                        for(int i = 0; i < CommListReceived.Length; i++) {
+                            CommListReceived[i] = (int)(gCommListReceived[i] - i0col);
 
-                        // check:
-                        if (CommListReceived[i] < 0 || CommListReceived[i] >= Lcol)
-                            throw new ApplicationException("internal error: something wrong with received Comm List.");
+                            // check:
+                            if(CommListReceived[i] < 0 || CommListReceived[i] >= Lcol)
+                                throw new IndexOutOfRangeException("internal error: something wrong with received Comm List.");
+                        }
+
+                        CommListsTo.Add(_proc, CommListReceived);
+
+                        sms.GetNext(out _proc, out gCommListReceived);
                     }
 
-                    CommListsTo.Add(_proc, CommListReceived);
-
-                    sms.GetNext(out _proc, out CommListReceived);
                 }
-
-                sms.Dispose();
 
                 m_SpmvCommPattern = new SpmvCommPattern();
                 m_SpmvCommPattern.ComLists = CommListsTo;
@@ -488,7 +490,7 @@ namespace ilPSP.LinSolvers.monkey {
             /// <remarks>
             /// <list type="bullet">
             ///   <item>keys <em>p</em>: ranks of processors to send data to</item>
-            ///   <item>values: the comm list for the processor <em>p</em></item>
+            ///   <item>values: the comm list for the processor <em>p</em>: local indices of entries which must be sent to processor <em>p</em></item>
             /// </list>
             /// If a distributed MSR matrix is multiplied by a distributed vector <em>v</em>
             /// (the matrix rows are distributed according to its row partition

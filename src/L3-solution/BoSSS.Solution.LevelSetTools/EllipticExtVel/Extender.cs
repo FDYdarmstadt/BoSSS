@@ -114,14 +114,14 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                     SubRHS.Clear();
                     SubSolution.Clear();
 
-                    SubRHS.AccV(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
-                    SubSolution.AccV(1.0, Extension.CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
+                    SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
+                    SubSolution.AccVi64(1.0, Extension.CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
 
                     slv.DefineMatrix(SubMatrix);
                     slv.Solve(SubSolution, SubRHS);
 
                     Extension.Clear(subGrid.VolumeMask);
-                    Extension.CoordinateVector.AccV(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Extension.Mapping.i0);
+                    Extension.CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Extension.Mapping.i0);
 
                 }
                 else {
@@ -170,12 +170,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                     if (subGrid != null) {
                         SubRHS.Clear();
                         SubSolution.Clear();
-                        SubRHS.AccV(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
-                        SubSolution.AccV(1.0, NewExtension[d].CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
+                        SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
+                        SubSolution.AccVi64(1.0, NewExtension[d].CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
                         slv.Solve(SubSolution, SubRHS);
 
                         NewExtension[d].Clear(subGrid.VolumeMask);
-                        NewExtension[d].CoordinateVector.AccV(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Extension.Mapping.i0);
+                        NewExtension[d].CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Extension.Mapping.i0);
                     }
                     else {
                         slv.Solve(NewExtension[d].CoordinateVector, RHS);

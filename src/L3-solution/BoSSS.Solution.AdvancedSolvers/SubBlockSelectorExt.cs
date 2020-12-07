@@ -749,6 +749,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             return BlockMsrMatrix.Multiply(Perm, M);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public static int GetLocalAndExternalDOF(MultigridMapping map) {
             int eCell = map.LocalNoOfBlocks + map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
             int eVar = map.AggBasis.Length - 1;
