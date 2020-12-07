@@ -1198,12 +1198,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     int N = map.BasisS[0].GetLength(j);
                     for(int n = 0; n < N; n++) {
                         int iL = map.LocalUniqueCoordinateIndex(0, j, n);
-<<<<<<< HEAD
                         long iG = map.GlobalUniqueCoordinateIndex(0, j, n);
-
-=======
-                        int iG = map.GlobalUniqueCoordinateIndex(0, j, n);
->>>>>>> experimentalGitlab/master
                         if(CCbitmask[j]) {
                             //var Row = ExtVelMatrix.GetRow(iG);
                             //foreach (var entry in Row) {
