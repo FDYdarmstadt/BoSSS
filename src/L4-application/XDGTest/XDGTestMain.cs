@@ -59,6 +59,10 @@ namespace BoSSS.Application.XDGTest {
             DeleteOldPlotFiles();
             //UnitTest.AllUp();
             UnitTest.RestartTest();
+            //LevelSetEdgeTests.LevelSetEdgeTest(BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //LevelSetEdgeTests.LevelSetEdgeTest(BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye);
+            //LevelSetEdgeTests.LevelSetCornerTest(BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 0.573);
+            //LevelSetEdgeTests.LevelSetCornerTest(BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye, 0.573);
             FinalizeMPI();
         }
 
