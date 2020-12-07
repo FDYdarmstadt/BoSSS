@@ -54,11 +54,19 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
         public void plotstep(BitArray Accepted_Mutable) {
             //Create Subgridmask and save to textfile. This can be portrayed in VisIt via a scatter plot. 
+            //int J = this.GridData.CellPartitioning.LocalLength;
+            //BitArray step = new BitArray(J);
+            //if (Accepted_Mutable.Length > J) {
+            //    for (int j = 0; j < J; j++)
+            //        step[j] = Accepted_Mutable[j];
+            //} else {
+            //    step = Accepted_Mutable;
+            //}
             CellMask subgridMask = new CellMask(this.GridData, Accepted_Mutable);
             mapStepNumber(Accepted_Mutable);
-            subgridMask.SaveToTextFile("reinit - " + timestepNo + "." + counter_Plotstep + ".txt", true, infoStepNumber);
+            subgridMask.SaveToTextFile("fastmarchExtVel - " + timestepNo + "." + counter_Plotstep + ".txt", true, infoStepNumber);
             //Plot all fields 
-            Tecplot.Tecplot.PlotFields(this.Fields, "reinit-" + timestepNo + "." + counter_Plotstep, counter_Plotstep + totalSteps, 3);
+            Tecplot.Tecplot.PlotFields(this.Fields, "fastmarchExtVel-" + timestepNo + "." + counter_Plotstep, counter_Plotstep + totalSteps, 3);
             ++counter_Plotstep;
 
         }

@@ -480,6 +480,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 // true, if the separate evolution steps should be plotted
                 bool plotUpdateSteps = false;
+                //Console.WriteLine("Warning! - plot update levelset steps");
 
 
                 int D = base.Grid.SpatialDimension;
@@ -519,7 +520,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #endregion
 
-
+                 
                 if (plotUpdateSteps)
                     Tecplot.PlotFields(new DGField[] { meanVelocity[0], meanVelocity[1], this.DGLevSet.Current }, "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
 
@@ -604,12 +605,13 @@ namespace BoSSS.Application.XNSE_Solver {
                             bool _reInit = NarrowMarchingBand.Evolve_Mk2(
                              dt, this.LsTrk, DGLevSet_old, this.DGLevSet.Current, this.DGLevSetGradient,
                              meanVelocity, this.ExtensionVelocity.Current.ToArray(),
-                             this.m_HMForder, iTimestep, penalization: this.Control.FastMarchingPenaltyTerms);
+                             this.m_HMForder, iTimestep, plotMarchingSteps: false,
+                             penalization: this.Control.FastMarchingPenaltyTerms);
 
-                            if (_reInit) {
-                                Console.WriteLine("Performing ReInit");
-                                performReInit(true);
-                            }
+                            //if (_reInit) {
+                            //Console.WriteLine("Performing ReInit");
+                            //performReInit(false);
+                            //}
 
                             break;
                         }
@@ -762,6 +764,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region ensure continuity
 
+                //Console.WriteLine("MPI rank {0}: ensure continuity", this.GridData.MpiRank);
+
                 // make level set continuous
                 CellMask CC = LsTrk.Regions.GetCutCellMask4LevSet(0);
                 CellMask Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
@@ -770,7 +774,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #endregion
 
+                if (plotUpdateSteps)
+                    PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 3 }), 2);
+
                 #region update regions
+
+                //Console.WriteLine("MPI rank {0}: update regions", this.GridData.MpiRank);
 
                 for (int d = 0; d < D; d++)
                     this.XDGvelocity.Velocity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
@@ -787,12 +796,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region tracker update
 
+                //Console.WriteLine("MPI rank {0}: update tracker", this.GridData.MpiRank);
+
                 this.LsTrk.UpdateTracker(Phystime + dt, incremental: true);
 
                 #endregion
-
-                if (plotUpdateSteps)
-                    PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 3 }), 2);
 
 
                 // ===========================================================
@@ -837,6 +845,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 var newCC = LsTrk.Regions.GetCutCellMask();
                 LsBkUp.Acc(-1.0, this.LevSet);
                 double LevSetResidual = LsBkUp.L2Norm(newCC.Union(oldCC));
+
+                //Console.WriteLine("MPI rank {0}: return DelUpdateLevelSet", this.GridData.MpiRank);
 
                 return LevSetResidual;
 
@@ -1084,10 +1094,10 @@ namespace BoSSS.Application.XNSE_Solver {
             } else {
                 Console.WriteLine("customized fullReInit");
 
-                // first elliptic Reint on cut-cells
-                this.Control.ReInitControl.Potential = ReInitPotential.BastingSingleWell;
-                ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
-                ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
+                //// first elliptic Reint on cut-cells
+                //this.Control.ReInitControl.Potential = ReInitPotential.BastingSingleWell;
+                //ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
+                //ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
 
                 if (plotUpdateSteps)
                     PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 10 }), 2);
@@ -1136,11 +1146,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (plotUpdateSteps)
                     PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 11 }), 2);
 
-                // elliptic Reinit on whole narrow band
-                this.Control.ReInitControl.Potential = ReInitPotential.BastingDoubleWell;
-                //this.Control.ReInitControl.Upwinding = true;
-                ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
-                ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetNearFieldSubgrid(1));
+                //// elliptic Reinit on whole narrow band
+                //this.Control.ReInitControl.Potential = ReInitPotential.BastingDoubleWell;
+                ////this.Control.ReInitControl.Upwinding = true;
+                //ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
+                //ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetNearFieldSubgrid(1));
 
             }
 

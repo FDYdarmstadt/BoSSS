@@ -215,7 +215,7 @@ namespace BoSSS.Application.XNSE_Solver
         {
             m_HMForder = hMForder;
             if (Control.FourierLevSetControl == null)
-                throw new ArgumentNullException("LevelSetEvolution needs and instance of FourierLevSetControl!");
+                throw new ArgumentNullException("LevelSetEvolution needs an instance of FourierLevSetControl!");
 
             Fourier_LevSet = FourierLevelSetFactory.Build(Control.FourierLevSetControl);
             //create specialized fourier timestepper

@@ -309,14 +309,13 @@ namespace BoSSS.Foundation {
                                 }
                                 if (CondIncidenceMatrix[m_loc, n_loc, 0] == 4) {
                                     numECond++;
-                                    if (m_grd.Vertices.Coordinates[m, 0] == m_grd.Vertices.Coordinates[n, 0]) {
+                                    if ((m_grd.Vertices.Coordinates[m, 0] - m_grd.Vertices.Coordinates[n, 0]) < 1.0e-15) {
                                         edgeOrientation[0] = 1;
-                                    } else if (m_grd.Vertices.Coordinates[m, 1] == m_grd.Vertices.Coordinates[n, 1]) {
+                                    } else if ((m_grd.Vertices.Coordinates[m, 1] - m_grd.Vertices.Coordinates[n, 1]) < 1.0e-15) {
                                         edgeOrientation[1] = 1;
                                     } else {
                                         throw new ApplicationException("should not occur");
                                     }
-
                                 }
                             }
                         }

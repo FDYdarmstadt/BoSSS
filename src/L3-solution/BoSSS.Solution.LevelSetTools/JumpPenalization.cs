@@ -29,6 +29,7 @@ using ilPSP;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.LevelSetTools.Smoothing {
     /// <summary>
@@ -391,16 +392,20 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
 
             double[] RHS = new double[L];
             double[] SOL = new double[L];
-            if(SubMtx.RowPartitioning.MpiSize > 1) throw new Exception("check indices next line!");
-            RHS.AccVi64(1.0 / dt, inout_Levset.CoordinateVector, default(long[]), SubVecIdx);
+
+            int[] SubVecIdxLoc = new int[SubVecIdx.Length];
+            for (int idx = 0; idx < SubVecIdxLoc.Length; idx++) {
+                SubVecIdxLoc[idx] = Map.TransformIndexToLocal(SubVecIdx[idx]);
+            }
+            RHS.AccV(1.0 / dt, inout_Levset.CoordinateVector, default(int[]), SubVecIdxLoc);
             
             using (var solver = new PARDISOSolver()) {
                 solver.DefineMatrix(SubMtx);
                 solver.Solve(SOL, RHS);
             }
 
-            inout_Levset.CoordinateVector.ClearEntries(SubVecIdx, index_offset: -Map.i0);
-            inout_Levset.CoordinateVector.AccVi64(1.0, SOL, SubVecIdx, default(long[]), acc_index_shift: -Map.i0);
+            inout_Levset.CoordinateVector.ClearEntries(SubVecIdxLoc);
+            inout_Levset.CoordinateVector.AccV(1.0, SOL, SubVecIdxLoc, default(int[]));
         }
 
 

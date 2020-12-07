@@ -44,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver
         public LevelSetUpdater(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet)
         {
             LevelSet levelSet = ContinuityProjection.CreateField(
-                    dgLevelSet, BackgroundGrid, ContinuityProjectionOption.SpecFEM);
+                    dgLevelSet, BackgroundGrid, ContinuityProjectionOption.ConstrainedDG);
             levelSet.AccLaidBack(1.0, dgLevelSet);
             currentInterfaces = new DualLevelSet[]
             {
@@ -59,7 +59,7 @@ namespace BoSSS.Application.XNSE_Solver
                 levelSet.Basis,
                 dgLevelSet.Basis,
                 BackgroundGrid,
-                ContinuityProjectionOption.SpecFEM);
+                ContinuityProjectionOption.ConstrainedDG);
             enforcers = new ContinuityProjection[]
             {
                 enforcer

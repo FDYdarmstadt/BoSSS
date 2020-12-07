@@ -560,8 +560,8 @@ namespace BoSSS.Foundation {
             if (this.IsInLocalRange(iglobal)) {
                 return this.TransformIndexToLocal(iglobal);
             } else {
-                if(!this.AllBlockSizesEqual)
-                    throw new NotSupportedException();
+                Debug.Assert(this.AllBlockSizesEqual);
+
                 int BlockLen = this.GetBlockLen(0);
 
                 long jCellGlobal = iglobal / BlockLen;

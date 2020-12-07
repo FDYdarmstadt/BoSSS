@@ -276,7 +276,7 @@ namespace CNS {
 
             clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
             clone.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(this.DynamicLoadBalancing_CellCostEstimatorFactories);
-
+            
             return clone;
         }
 
