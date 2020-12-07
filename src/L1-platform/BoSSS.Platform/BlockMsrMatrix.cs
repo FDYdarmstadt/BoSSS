@@ -5089,11 +5089,11 @@ namespace ilPSP.LinSolvers {
                                 pH1[0] = H.i0;
                                 pH1[1] = H.j0;
                                 pH1 += 2;
-                                int* pH2 = (int*)pH1;
-                                pH1[0] = I;
-                                pH1[1] = J;
+                                int* pH2 = (int*)pH1; pH1 = null;
+                                pH2[0] = I;
+                                pH2[1] = J;
 
-                                double* pB = (double*)(pH2 + 2);
+                                double* pB = (double*)(pH2 + 2); pH2 = null;
 
                                 double[] buf;
                                 int offset, Ci, Cj;
@@ -5322,14 +5322,14 @@ namespace ilPSP.LinSolvers {
                                 long* pH1 = (long*)pBuffer;
                                 long i0 = pH1[0];
                                 long j0 = pH1[1];
-                                int* pH2 = (int*)(pH1 + 2);
+                                int* pH2 = (int*)(pH1 + 2); pH1 = null;
                                 int I = pH2[0];
                                 int J = pH2[1];
                                 Debug.Assert(B._RowPartitioning.IsInLocalRange(j0), "2nd wave: first index not in local range");
                                 Debug.Assert(J <= 0 || B._RowPartitioning.IsInLocalRange(j0 + J - 1), "2nd wave: last index not in local range");
                                 Debug.Assert(A._RowPartitioning.FindProcess(i0) == OriginRank, "2nd wave: receive index mismatch (1)");
                                 Debug.Assert(I <= 0 || A._RowPartitioning.FindProcess(i0 + I - 1) == OriginRank, "2nd wave: receive index mismatch (2)");
-                                double* pBlock = (double*)(pH2 + 2);
+                                double* pBlock = (double*)(pH2 + 2); pH2 = null;
 
                                 double* _pAij = pBlock;
                                 double AijSum = 0;
