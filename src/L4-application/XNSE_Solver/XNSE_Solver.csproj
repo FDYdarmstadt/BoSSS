@@ -6,9 +6,9 @@
     <ProjectGuid>{3D867374-BF9A-475E-8F5C-E1C067605B9C}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>XNSE_Solver</RootNamespace>
+    <RootNamespace>BoSSS.Application.XNSE_Solver</RootNamespace>
     <AssemblyName>XNSE_Solver</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -57,7 +57,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MathNet.Numerics">
+    <Reference Include="MathNet.Numerics, Version=4.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
@@ -78,16 +79,23 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CapillaryHeightLogging.cs" />
+    <Compile Include="ChannelFlowLogging.cs" />
     <Compile Include="Coefficients.cs" />
+    <Compile Include="Dropletlike.cs" />
     <Compile Include="Equations.cs" />
-    <Compile Include="Operators.cs" />
+    <Compile Include="EvaporationLogging.cs" />
+    <Compile Include="FourierLevelSetLogger.cs" />
+    <Compile Include="InterfacePointsLogger.cs" />
+    <Compile Include="L2ErrorLogger.cs" />
     <Compile Include="LevelSetEvolver.cs" />
     <Compile Include="LevelSetUpdater.cs" />
-    <Compile Include="NewXNSE_SimpleTests\BasicControls.cs" />
+    <Compile Include="MovingContactLineLogging.cs" />
     <Compile Include="OperatorFactory.cs" />
     <Compile Include="CoefficientsList.cs" />
     <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />
+    <Compile Include="RisingBubble2DBenchmarkQuantities.cs" />
     <Compile Include="SplineLevelSet.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="SpatialEquation.cs" />
@@ -108,11 +116,13 @@
     <Compile Include="Tests\SinglePhaseChannel.cs" />
     <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\StaticDropletTest.cs" />
+    <Compile Include="WaveLikeLogging.cs" />
     <Compile Include="XBase_Solver.cs" />
     <Compile Include="XBase_Control.cs" />
     <Compile Include="XSolver.cs" />
     <Compile Include="XHeat.cs" />
     <Compile Include="XNSE.cs" />
+    <Compile Include="XNSEinSituPostProcessingModule.cs" />
     <Compile Include="XNSE_Control.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="Tests\ITest.cs" />

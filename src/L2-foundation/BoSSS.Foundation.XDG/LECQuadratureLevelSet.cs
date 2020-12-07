@@ -556,6 +556,7 @@ namespace BoSSS.Foundation.XDG {
                 // set Nodes Global
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
+                _inParams.GridDat = this.GridDat;
 
                 Debug.Assert(i0 == _inParams.e0);
                 Debug.Assert(Len == _inParams.Len);

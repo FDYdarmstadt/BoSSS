@@ -28,7 +28,7 @@ namespace BoSSS.Application.XNSE_Solver
     {
         protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
-        protected int QuadOrder()
+        internal int QuadOrder()
         {
             //QuadOrder
             int degU;
@@ -129,7 +129,7 @@ namespace BoSSS.Application.XNSE_Solver
             LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
 
-            levelSet = new SplineLevelSet(x => (0.01 * Math.Sin(x * 2 * Math.PI)), new Basis(GridData, levelSetDegree), "Phi", 200);
+            //levelSet = new SplineLevelSet(x => (0.01 * Math.Sin(x * 2 * Math.PI)), new Basis(GridData, levelSetDegree), "Phi", 200);
             //Tecplot.PlotFields(new DGField[] { levelSet }, "levelSet", 0, 3);
             switch (Control.Option_LevelSetEvolution)
             {
@@ -143,11 +143,11 @@ namespace BoSSS.Application.XNSE_Solver
                     break;
                 case LevelSetEvolution.FastMarching:
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
-                    var spliner = new SplineLevelSetEvolver("Phi", (GridData)levelSet.GridDat);
-                    lsUpdater.AddEvolver("Phi", spliner);
+                    //var spliner = new SplineLevelSetEvolver("Phi", (GridData)levelSet.GridDat);
+                    //lsUpdater.AddEvolver("Phi", spliner);
 
-                    //var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
-                    //lsUpdater.AddEvolver("Phi", fastMarcher);
+                    var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
+                    lsUpdater.AddEvolver("Phi", fastMarcher);
                     lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
                     break;
                 case LevelSetEvolution.None:

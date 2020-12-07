@@ -391,7 +391,8 @@ namespace BoSSS.Application.XNSE_Solver
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
             {
-                levelSetDegree = lsOpts.Degree + 1;
+                var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
+                levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             }
             else
             {
@@ -491,7 +492,8 @@ namespace BoSSS.Application.XNSE_Solver
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts))
             {
-                levelSetDegree = lsOpts.Degree + 1;
+                var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
+                levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             }
             else
             {
@@ -506,10 +508,16 @@ namespace BoSSS.Application.XNSE_Solver
             int paramCount = lsParameters.Length;
             (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[lsParameters.Length];
             IGridData gridData = DomainVarFields.First().Value.GridDat;
-            Basis basis = new Basis(gridData, gradientDegree);
+            //Basis basis = new Basis(gridData, gradientDegree);
             for (int i = 0; i < paramCount; ++i)
             {
-                fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
+                if (i == 2) {
+                    Basis basis = new Basis(gridData, curvatureDegree);
+                    fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
+                } else {
+                    Basis basis = new Basis(gridData, gradientDegree);
+                    fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
+                }
             }
             return fields;
         }

@@ -55,7 +55,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\dc1\userspace\yotov\bosss-db\RisingBubble"";
 
 
@@ -359,7 +359,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            _DbPath = @"D:\rieckmann\BoSSS_DB";
+            //_DbPath = @"D:\rieckmann\BoSSS_DB";
 
             // basic database options
             // ======================
@@ -371,8 +371,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectDescription = "rising bubble";
             C.Tags.Add("benchmark setup");
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-            C.LogPeriod = 1;
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            //C.LogPeriod = 1;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
 
             #endregion
 
@@ -658,8 +659,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
             #endregion
 
             // DG degrees
@@ -820,8 +821,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
+            
             #endregion
 
 
@@ -835,7 +835,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_Test(int p = 2, int kelem = 20, int method = 0) {
+        public static XNSE_Control RB_Test(int p = 2, int kelem = 20, int method = 2) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -844,7 +844,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //string _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //string _DbPath = null; // @"D:\local\local_XNSE_StudyDB";
-            string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
+            string _DbPath = null; // "\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
             //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
 
             // basic database options
@@ -854,14 +854,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = false; //C.DbPath != null;
             C.ProjectName = "RisingBubble";
-            //C.SessionName = "RisingBubble_ConvStudy2_k2_mesh2_AMR1_restart";
-            //C.SessionName = "RisingBubble_ConvStudy_k3_mesh02_rerunWithReInit";
-            //C.SessionName = "RisingBubble_methodStudy_k2_method"+method;
-            //C.SessionName = "RisingBubble_pStudy_k3_mesh60_restart";
-            C.SessionName = "RisingBubble_tc2_k2_mesh20_newAMR4";
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-            C.LogPeriod = 3;
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            //C.LogPeriod = 3;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities() { LogPeriod = 3 });
 
             #endregion
             
@@ -957,6 +953,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
+
             // grid generation
             // ===============
             #region grid
@@ -967,60 +964,60 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //int kelem = 160;
 
-            //C.GridFunc = delegate () {
-            //    double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
-            //    double[] Ynodes = GenericBlas.Linspace(0, ySize, 2 * kelem + 1);
-            //    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, ySize, 2 * kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
 
-            //    grd.EdgeTagNames.Add(1, "wall_lower");
-            //    grd.EdgeTagNames.Add(2, "wall_upper");
-            //    grd.EdgeTagNames.Add(3, "freeslip_left");
-            //    grd.EdgeTagNames.Add(4, "freeslip_right");
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "wall_upper");
+                grd.EdgeTagNames.Add(3, "freeslip_left");
+                grd.EdgeTagNames.Add(4, "freeslip_right");
 
-            //    grd.DefineEdgeTags(delegate (double[] X) {
-            //        byte et = 0;
-            //        if (Math.Abs(X[1]) <= 1.0e-8)
-            //            et = 1;
-            //        if (Math.Abs(X[1] - ySize) <= 1.0e-8)
-            //            et = 2;
-            //        if (Math.Abs(X[0]) <= 1.0e-8)
-            //            et = 3;
-            //        if (Math.Abs(X[0] - xSize) <= 1.0e-8)
-            //            et = 4;
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[1]) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        et = 2;
+                    if (Math.Abs(X[0]) <= 1.0e-8)
+                        et = 3;
+                    if (Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        et = 4;
 
-            //        return et;
-            //    });
+                    return et;
+                });
 
-            //    //grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
-            //    //    int rank;
-            //    //    double x = X[0];
-            //    //    if (x < 0.5)
-            //    //        rank = 0;
-            //    //    else
-            //    //        rank = 1;
+                //grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
+                //    int rank;
+                //    double x = X[0];
+                //    if (x < 0.5)
+                //        rank = 0;
+                //    else
+                //        rank = 1;
 
-            //    //    return rank;
-            //    //});
+                //    return rank;
+                //});
 
-            //    //grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
-            //    //    int rank;
-            //    //    double x = X[0];
-            //    //    if (x < 0.35)
-            //    //        rank = 0;
-            //    //    else if (x < 0.5)
-            //    //        rank = 1;
-            //    //    else if (x < 0.75)
-            //    //        rank = 2;
-            //    //    else
-            //    //        rank = 3;
+                //grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
+                //    int rank;
+                //    double x = X[0];
+                //    if (x < 0.35)
+                //        rank = 0;
+                //    else if (x < 0.5)
+                //        rank = 1;
+                //    else if (x < 0.75)
+                //        rank = 2;
+                //    else
+                //        rank = 3;
 
-            //    //    return rank;
-            //    //});
+                //    return rank;
+                //});
 
 
-            //    return grd;
-            //};
+                return grd;
+            };
 
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "VierProcSplit";
@@ -1039,22 +1036,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
             Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
 
-            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             Func<double, double> PeriodicFunc = x => radius;
 
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
 
-            //C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
-            //C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
+            C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
+            C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
 
 
-            //var database = new DatabaseInfo(_DbPath);
-            Guid restartID = new Guid("28adc7a7-a336-435b-b560-d3c02f46c43d");
-            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            ////var database = new DatabaseInfo(_DbPath);
+            //Guid restartID = new Guid("28adc7a7-a336-435b-b560-d3c02f46c43d");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
 
             #endregion
+
 
             // boundary conditions
             // ===================
@@ -1068,6 +1066,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AddBoundaryCondition("wall_lower", VariableNames.LevelSet, PhiFunc);
 
             #endregion
+
 
             // Level-Set
             // =================
@@ -1104,6 +1103,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -1117,9 +1117,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 4;
+            C.BaseRefinementLevel = 1;
             C.AMR_startUpSweeps = 1;
 
             //C.ReInitOnRestart = true;
@@ -1138,8 +1138,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
-            double dt = 0.001; // (1.0 / (double)kelem) / 16.0;
+
+            double dt = (1.0 / (double)kelem) / 16.0;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 3;
@@ -1171,8 +1171,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
             #endregion
 
 
@@ -1300,9 +1300,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
-
+            
             #endregion
 
             return C;

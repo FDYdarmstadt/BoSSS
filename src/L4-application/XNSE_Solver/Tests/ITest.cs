@@ -177,10 +177,4 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         double Sigma { get; }
     }
-
-
-
-
-    
-    
 }

@@ -2033,43 +2033,38 @@ namespace BoSSS.Foundation.IO {
         /// imports the specified log file data 
         /// </summary>
         /// <param name="sess"> List of sessions to be evaluated </param>
-        /// <param name="logVal"> which log values to be evaluated </param>
+        /// <param name="logName"> which log values to be evaluated </param>
         /// <returns></returns>
-        public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, XNSE_Control.LoggingValues logVal, 
+        public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, string logName, 
             string evalName = null, string keyName = null) {
 
-            string logName;
+
             string[] values;
-            switch (logVal) {
-                case XNSE_Control.LoggingValues.Wavelike: {
-                        logName = "\\Amplitude.txt";
+            switch (logName) {
+                case Application.XNSE_Solver.PhysicalBasedTestcases.WaveLikeLogging.LogfileName: {
                         values = new string[] { "#timestep", "time", "magnitude", "real", "imaginary" };
                         break;
                     }
-                case XNSE_Control.LoggingValues.Dropletlike: {
-                        logName = "\\SemiAxis.txt";
+                case Application.XNSE_Solver.PhysicalBasedTestcases.Dropletlike.LogfileName: {
                         values = new string[] { "#timestep", "time", "semi axis x", "semi axis y", "area", "perimeter" };
                         break;
                     }
-                case XNSE_Control.LoggingValues.RisingBubble: {
-                        logName = "\\BenchmarkQuantities_RisingBubble.txt";
+                case Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities.LogfileName: {
                         values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity" };
                         break;
                     }
-                case XNSE_Control.LoggingValues.MovingContactLine: {
-                        logName = "\\ContactAngle.txt";
+                case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
                         values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
                         break;
                     }
-                case XNSE_Control.LoggingValues.EvaporationC:
-                case XNSE_Control.LoggingValues.EvaporationL: {
-                        logName = "\\Evaporation.txt";
+                case Application.XNSE_Solver.PhysicalBasedTestcases.EvaporationLogging.LogfileName: {
                         values = new string[] { "#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux" };
                         break;
                     }
                 default:
                     throw new ArgumentException("No specified LogFormat");
             }
+
 
             List<Plot2Ddata> plotData = new List<Plot2Ddata>();
 
@@ -2082,7 +2077,7 @@ namespace BoSSS.Foundation.IO {
 
                 // Read all data
                 for (int j = 0; j < numberSessions; j++) {
-                    string path = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).ID + logName;
+                    string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
                     string[] lines = File.ReadAllLines(path);
 
                     if (sess.Pick(j).RestartedFrom == Guid.Empty) { 

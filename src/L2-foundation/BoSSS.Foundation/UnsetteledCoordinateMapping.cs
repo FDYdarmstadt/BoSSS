@@ -543,19 +543,18 @@ namespace BoSSS.Foundation {
         /// <returns></returns>
         /// <see cref="Local2GlobalIndex"/>
         public int Global2LocalIndex(int iglobal) {
-            long iLocal = iglobal - i0;
 
             if (this.IsInLocalRange(iglobal)) {
                 return this.TransformIndexToLocal(iglobal);
             } else {
-                if(!this.AllBlockSizesEqual)
-                    throw new NotSupportedException();
+                Debug.Assert(this.AllBlockSizesEqual);
+
                 int BlockLen = this.GetBlockLen(0);
 
                 int jCellGlobal = iglobal / BlockLen;
                 int IndexWithinBlock = iglobal - jCellGlobal * BlockLen;
-                
-                if(!this.GridDat.iParallel.Global2LocalIdx.TryGetValue(jCellGlobal, out int jCellLocal)) {
+
+                if (!this.GridDat.iParallel.Global2LocalIdx.TryGetValue(jCellGlobal, out int jCellLocal)) {
                     throw new ArgumentException("Unknown external cell index.");
                 }
 

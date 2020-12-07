@@ -130,6 +130,11 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
         public void Accept() {
         }
 
+        public MarchingNodeStatus StatusTag {
+            get;
+            set;
+        }
+
         #endregion
     }
 }

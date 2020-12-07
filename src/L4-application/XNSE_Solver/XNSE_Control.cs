@@ -350,6 +350,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool SkipSolveAndEvaluateResidual = false;
 
+        /*
         /// <summary>
         /// Data to be written in LogFile
         /// </summary>
@@ -421,9 +422,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
         [DataMember]
         public int LogPeriod = 1;
+        */
 
-        public bool WriteInterfaceP = false;
 
+        //public bool WriteInterfaceP = false;
+
+        /// <summary>
+        /// Seems to be unused...
+        /// </summary>
+        [DataMember]
         public bool TestMode = false;
 
 
@@ -669,7 +676,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// three-step reinitialization with preconditioning fast-marching
         /// </summary>
         [DataMember]
-        public bool fullReInit = true;
+        public bool fullReInit = false;
 
         /// <summary>
         /// switch for the computation of the coupled heat solver

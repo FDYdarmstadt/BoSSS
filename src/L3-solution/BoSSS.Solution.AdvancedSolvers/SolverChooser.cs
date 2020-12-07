@@ -850,8 +850,8 @@ namespace BoSSS.Solution {
 
             for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
                 counter = iLevel;
-                if (iLevel > NoOfLevels - 1)
-                    counter = NoOfLevels - 1;
+                if (iLevel > MGChangeOfBasis.Length - 1)
+                    counter = MGChangeOfBasis.Length - 1;
                 foreach (var cob in MGChangeOfBasis[counter]) {
                     for (int iVar = 0; iVar < cob.VarIndex.Length; iVar++) {
                         int d = ((AggregationGridBasis)MultigridBasis.First()[iVar]).AggGrid.ParentGrid.SpatialDimension;
