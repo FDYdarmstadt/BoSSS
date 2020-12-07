@@ -542,14 +542,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             {
                 Console.WriteLine($"Reminder: skipping test of {C.CutCellQuadratureType} wor now...");
                 return;
-                //if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
-                //    Console.WriteLine($"Reminder: skipping 3D test of {C.CutCellQuadratureType} for now...");
-                //    return;
-                //}
-                //if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                //    Console.WriteLine($"Reminder: {C.CutCellQuadratureType} changed to classic for 3D test.");
-                //    C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
-                //}
+            }
+            if (Tst.SpatialDimension == 3)
+            {
+                Console.WriteLine($"Reminder: skipping 3D test for now...");
+                return;
             }
 
             using (var solver = new XNSE()) {
