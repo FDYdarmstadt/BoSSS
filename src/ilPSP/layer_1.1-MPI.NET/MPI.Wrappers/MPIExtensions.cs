@@ -1369,6 +1369,7 @@ namespace MPI.Wrappers {
                 root: 0,
                 comm: csMPI.Raw._COMM.WORLD);
         }
+
         /// <summary>
         /// MPI-process with rank <paramref name="root"/> gathers this ulong[] of all MPI-processes in the
         /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
@@ -1418,6 +1419,73 @@ namespace MPI.Wrappers {
 
             return result;
         }
+
+        /// <summary>
+        /// MPI-process with rank 0 gathers this ulong[] of all MPI-processes in the
+        /// </summary>
+        /// <param name="recvcount">
+        /// number of items to receive from each sender
+        /// </param>
+        /// <param name="send">
+        /// data to send
+        /// </param>
+        static public long[] MPIGatherv(this long[] send, int[] recvcount) {
+            return send.MPIGatherv(
+                recvcount,
+                root: 0,
+                comm: csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// MPI-process with rank <paramref name="root"/> gathers this ulong[] of all MPI-processes in the
+        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
+        /// </summary>
+        /// <param name="recvcount">
+        /// number of items to receive from each sender
+        /// </param>
+        /// <param name="send">
+        /// data to send
+        /// </param>
+        /// <param name="comm"></param>
+        /// <param name="root">rank of receiver process</param>
+        static public long[] MPIGatherv(this long[] send, int[] recvcount, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            int rcs = rank == root ? recvcount.Sum() : 0;
+            long[] result = rank == root ? new long[Math.Max(1, rcs)] : null;
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                if(rank == root)
+                    for (int i = 1; i < size; i++) {
+                        displs[i] = displs[i - 1] + recvcount[i - 1];
+                    }
+                //LONG_LONG for long of 64 bits in size
+                fixed (long* pSend = send, pResult = result) {
+                    fixed (int* pRcvcounts = recvcount) {
+                        csMPI.Raw.Gatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            root,
+                            comm);
+                    }
+                }
+            }
+
+            if (result != null && result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new long[0];
+            }
+
+            return result;
+        }
+
 
         /// <summary>
         /// Wrapper around <see cref="IMPIdriver.Gatherv"/>

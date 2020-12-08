@@ -84,12 +84,13 @@ namespace HilbertTest {
         }
 
         static private bool TestingGridDistributionEven() {
-            //string dbPath = @"D:\Weber\BoSSS\test_db";
             string dbPath = @"Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
+            
             using (var solver = new HilbertTest()) {
+
                 solver.Init(control);
                 solver.RunSolverMode();
                 bool result = true;

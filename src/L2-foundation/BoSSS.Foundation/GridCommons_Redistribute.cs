@@ -918,7 +918,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 
                 ulong[] discreteCenter = new ulong[D];
                 ulong[] local_HilbertIndex = new ulong[J];
-                int[] local_CellIndex = new int[J];
+                long[] local_CellIndex = new long[J];
 
                 for (int j = 0; j < J; j++) {
                     Cell Cj = this.Cells[j];
@@ -944,7 +944,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //Derive Hilbertindex from Barycenter
                     ulong iH = HilbertCurve.hilbert_c2i(64 / D, discreteCenter);
                     local_HilbertIndex[j] = iH;
-                    local_CellIndex[j] = j;
+                    local_CellIndex[j] = j + this.CellPartitioning.i0;
                 }
 
                 //Gather all stuff for computation on rank==0
@@ -954,7 +954,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
                 }
                 
-                int[] CellIndex = local_CellIndex.MPIGatherv(CellsPerRank);
+                long[] CellIndex = local_CellIndex.MPIGatherv(CellsPerRank);
                 ulong[] HilbertIndex = local_HilbertIndex.MPIGatherv(CellsPerRank);
                 List<int[]> cellCosts = new List<int[]>();
                 if (localcellCosts != null) {
