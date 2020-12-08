@@ -28,7 +28,7 @@ namespace BoSSS.Application.XNSE_Solver
             this.numberOfNodes = numberOfNodes;
             x = new double[numberOfNodes];
             y = new double[numberOfNodes];
-            Nodes = MultidimensionalArray.Create(2, numberOfNodes);
+            Nodes = MultidimensionalArray.Create(numberOfNodes, 2);
             if (basis.GridDat is GridData grid) 
             {
                 BoundingBox bbox = grid.LocalBoundingBox;
@@ -39,7 +39,7 @@ namespace BoSSS.Application.XNSE_Solver
                 left += increment / 2;
                 for(int i = 0; i < numberOfNodes; ++i)
                 {
-                    Nodes[0, i] = left + i * increment;
+                    Nodes[i, 0] = left + i * increment;
                 }
             }
             else
@@ -61,7 +61,7 @@ namespace BoSSS.Application.XNSE_Solver
         {
             for(int i = 0; i < numberOfNodes; ++i)
             {
-                Nodes[1, i] = initial(Nodes[0, i]); 
+                Nodes[i, 1] = initial(Nodes[i, 0]); 
             }
             Interpolate(region);
         }
@@ -74,7 +74,7 @@ namespace BoSSS.Application.XNSE_Solver
             }
             for(int i = 0; i < numberOfNodes; ++i)
             {
-                Nodes[1,i] = yValues[i];
+                Nodes[i, 1] = yValues[i];
             }
             Interpolate(region);
         }
@@ -83,8 +83,8 @@ namespace BoSSS.Application.XNSE_Solver
         {
             for (int i = 0; i < numberOfNodes; ++i)
             {
-                x[i] = Nodes[0, i];
-                y[i] = Nodes[1, i];
+                x[i] = Nodes[i, 0];
+                y[i] = Nodes[i, 1];
             }
             Spline = CubicSpline.InterpolateNaturalSorted(x, y);
             EmbeddInLevelSet(Spline, this, region);
@@ -112,6 +112,7 @@ namespace BoSSS.Application.XNSE_Solver
                     //phi(x,y) = position(x) - y
                     results[i] = spline.Interpolate(nodes[i, 0]);
                     results[i] -= nodes[i, 1];
+                    results[i] *= -1; // negative y is <0
                 };
             };
         }
@@ -172,18 +173,19 @@ namespace BoSSS.Application.XNSE_Solver
         }
 
         public void MoveLevelSet(
-            double dt, SplineLevelSet levelSet, 
+            double dt, SplineLevelSet levelSet,
             IList<SinglePhaseField> velocity,
-            CellMask near)
-        {
-            evaluator.Evaluate(1.0, velocity, levelSet.Nodes, 1.0, splineVelocity);
+            CellMask near) {
+
+            splineVelocity = MultidimensionalArray.Create(levelSet.Nodes.GetLength(0), velocity.Count);
+            evaluator.Evaluate(1.0, velocity, levelSet.Nodes, 0.0, splineVelocity);
 
             CubicSpline spline = levelSet.Spline;
-            for (int i = 0; i < levelSet.Nodes.GetLength(1); ++i)
+            for (int i = 0; i < levelSet.Nodes.GetLength(0); ++i)
             {
-                double x = levelSet.Nodes[0, i];
-                double f = - splineVelocity[0, i] * spline.Differentiate(x) + splineVelocity[1, i];
-                levelSet.Nodes[1, i] += dt * f;
+                double x = levelSet.Nodes[i, 0];
+                double f = - splineVelocity[i, 0] * spline.Differentiate(x) + splineVelocity[i, 1];
+                levelSet.Nodes[i, 1] += dt * f;
             }
             levelSet.Interpolate(near);
         }

@@ -79,6 +79,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PhysicalBasedTestcases\BasicControls.cs" />
     <Compile Include="CapillaryHeightLogging.cs" />
     <Compile Include="ChannelFlowLogging.cs" />
     <Compile Include="Coefficients.cs" />

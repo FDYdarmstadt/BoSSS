@@ -108,7 +108,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //return;
             
             _Main(args, false, delegate () {
-                var p = new XNSE_SolverMain();
+                var p = new XNSFE();
                 return p;
             });
         }
