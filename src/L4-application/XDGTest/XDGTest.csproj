@@ -51,7 +51,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LevelSetEdgeTests.cs" />
     <Compile Include="UnitTest.cs" />
     <Compile Include="XDGTestMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -27,6 +27,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
     public interface ISayeGaussComboRule
         : ISayeGaussRule
     {
+        /// <summary>
+        /// 0: Volume Rule, 1: Surface Rule
+        /// Should be a struct anyways.
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <returns></returns>
         QuadRule[] ComboEvaluate(int cell);
     }
 
@@ -62,8 +68,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 var rule = specialRule.ComboQuadRule( intOrder, cell);
                 return new QuadRule[]
                 {
+                    rule.volumeRule.Rule,
                     rule.surfaceRule.Rule,
-                    rule.volumeRule.Rule
                 };
             }
             else
@@ -86,10 +92,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         int intOrder;
 
-        public VolumeOnEdgeIntercepter(ISayeGaussRule rule, LevelSetTracker.LevelSetData data)
+        int speciesSign;
+
+        public VolumeOnEdgeIntercepter(ISayeGaussRule rule, LevelSetTracker.LevelSetData data, int speciesSign = 1)
         {
             specialRule = new LevelSetOnEdgeRule(data);
             sayeRule = rule;
+            this.speciesSign = speciesSign;
         }
 
         public RefElement RefElement => sayeRule.RefElement;
@@ -107,7 +116,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             if (specialRule.IsSpecialCell(cell))
             {
-                var rule = specialRule.VolumeQuadRule(intOrder, cell);
+                var rule = specialRule.VolumeQuadRule(intOrder, cell, speciesSign);
                 return rule.Rule;
             }
             else
@@ -235,7 +244,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 _lsData,
                 RootFinder,
                 SayeFactory_Cube.QuadratureMode.NegativeVolume);
-            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData);
+            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData, -1);
             return new SayeGaussRuleFactory(wrappedRule);
         }
 
@@ -284,7 +293,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Square.QuadratureMode.NegativeVolume
                 );
-            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData);
+            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData, -1);
             return new SayeGaussRuleFactory(wrappedRule);
         }
 

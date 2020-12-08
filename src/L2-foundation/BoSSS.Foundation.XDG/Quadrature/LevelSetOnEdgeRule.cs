@@ -66,10 +66,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <param name="intOrder"></param>
         /// <param name="jCell"></param>
         /// <returns></returns>
-        public (ChunkRulePair<QuadRule> surfaceRule, ChunkRulePair<QuadRule> volumeRule) ComboQuadRule(int intOrder, int jCell)
+        public (ChunkRulePair<QuadRule> surfaceRule, ChunkRulePair<QuadRule> volumeRule) ComboQuadRule(int intOrder, int jCell, int speciesSign = 1)
         {
             ChunkRulePair<QuadRule> surfaceRule = SurfaceQuadRule(intOrder, jCell);
-            ChunkRulePair<QuadRule> volumeRule = VolumeQuadRule(intOrder, jCell);
+            ChunkRulePair<QuadRule> volumeRule = VolumeQuadRule(intOrder, jCell, speciesSign);
             return (surfaceRule, volumeRule);
         }
 
@@ -179,7 +179,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <param name="intOrder"></param>
         /// <param name="jCell"></param>
         /// <returns></returns>
-        public ChunkRulePair<QuadRule> VolumeQuadRule(int intOrder, int jCell)
+        public ChunkRulePair<QuadRule> VolumeQuadRule(int intOrder, int jCell, int speciesSign)
         {
             RefElement refElement = grddat.Cells.GetRefElement(jCell);
             
@@ -192,7 +192,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             bool EmptyOrFoolVol; // true: full rule; false: empty rule
             {
                 var LsVals = levelSetData.GetLevSetValues(refElement.Center, jCell, 1);
-                EmptyOrFoolVol = LsVals[0, 0] > 0;
+                EmptyOrFoolVol = LsVals[0, 0] * speciesSign > 0;
             }
 
             if (EmptyOrFoolVol)
