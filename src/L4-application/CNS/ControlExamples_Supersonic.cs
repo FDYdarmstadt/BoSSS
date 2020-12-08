@@ -975,8 +975,8 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => PressureShock(X));
 
             // ### Boundary condtions ###
-            double A = 1e-2;
-            double f = 10;
+            double A = 1e-5;
+            double f = 2;
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => DensityShock(X) + A * densityLeft * Math.Sin(2 * Math.PI * f * t));
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => VelocityXShock(X) + A * velocityXLeft * Math.Sin(2 * Math.PI * f * t));
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => VelocityYShock(X));
@@ -999,7 +999,7 @@ namespace CNS {
             if (c.ExplicitScheme == ExplicitSchemes.LTS) {
                 tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
             } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_sin_A=_f=", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, A, f);
+                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_sin_A={6}_f={7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, A, f);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
             } else {
