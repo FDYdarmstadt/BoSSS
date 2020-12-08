@@ -975,12 +975,29 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => PressureShock(X));
 
             // ### Boundary condtions ###
-            double A = 1e-5;
-            double f = 2;
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => DensityShock(X) + A * densityLeft * Math.Sin(2 * Math.PI * f * t));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => VelocityXShock(X) + A * velocityXLeft * Math.Sin(2 * Math.PI * f * t));
+            // See PDF by Yi Zhang (Meeting Geisenhofer/Kummer/Oberlack/Zhang 12/08/2020)
+            double u_hat_minus = 1e-5;
+            double alpha_minus = 1.0;
+            double U0_minus = velocityXLeft;
+            double rho0_minus = densityLeft;
+            double c_minus = Math.Sqrt(gamma * pressureLeft / densityLeft);    // constant free-stream speed of sound
+
+            double u_minus(double[] X, double t) {
+                return u_hat_minus * Math.Cos(alpha_minus * X[0] - (U0_minus + c_minus) * alpha_minus * t);
+            }
+
+            double p_minus(double[] X, double t) {
+                return c_minus * rho0_minus * u_hat_minus * Math.Cos(alpha_minus * X[0] - (U0_minus + c_minus) * alpha_minus * t);
+            }
+
+            double rho_minus(double[] X, double t) {
+                return p_minus(X, t) / c_minus / c_minus;
+            }
+
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => DensityShock(X) + rho_minus(X, t));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => VelocityXShock(X) + u_minus(X, t));
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => VelocityYShock(X));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => PressureShock(X) + A * pressureLeft * Math.Sin(2 * Math.PI * f * t));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => PressureShock(X) + p_minus(X, t));
             c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => PressureShock(X));
             c.AddBoundaryValue("AdiabaticSlipWall");
 
@@ -999,7 +1016,7 @@ namespace CNS {
             if (c.ExplicitScheme == ExplicitSchemes.LTS) {
                 tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
             } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_sin_A={6}_f={7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, A, f);
+                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
             } else {
