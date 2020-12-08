@@ -434,12 +434,12 @@ namespace BoSSS.Foundation.SpecFEM {
                     // restricted domain projection branch
                     // +++++++++++++++++++++++++++++++++++
 
-                    List<int> OccupiedRows_Global = new List<int>();
+                    List<long> OccupiedRows_Global = new List<long>();
                     //List<int> OccupiedRows_Local = new List<int>();
 
                     var MM = Basis.ComputeMassMatrix(cm);
-                    int i0 = MM.RowPartitioning.i0, iE = MM.RowPartitioning.iE;
-                    for (int i = i0; i < iE; i++) {
+                    long i0 = MM.RowPartitioning.i0, iE = MM.RowPartitioning.iE;
+                    for (long i = i0; i < iE; i++) {
                         if (MM.GetNoOfNonZerosPerRow(i) > 0) {
                             OccupiedRows_Global.Add(i);
                             //OccupiedRows_Local.Add(i - i0);
@@ -449,11 +449,11 @@ namespace BoSSS.Foundation.SpecFEM {
                     var CompressedPart = new Partitioning(OccupiedRows_Global.Count);
                     var CompressedMM = new MsrMatrix(CompressedPart);
 
-                    MM.WriteSubMatrixTo(CompressedMM, OccupiedRows_Global, default(int[]), OccupiedRows_Global, default(int[]));
+                    MM.WriteSubMatrixTo(CompressedMM, OccupiedRows_Global, default(long[]), OccupiedRows_Global, default(long[]));
 
                     var b_sub = new double[OccupiedRows_Global.Count];
                     //try {
-                    b_sub.AccV(1.0, b.To1DArray(), default(int[]), OccupiedRows_Global, b_index_shift: -i0);
+                    b_sub.AccVi64(1.0, b.To1DArray(), default(long[]), OccupiedRows_Global, b_index_shift: -i0);
                     //} catch(Exception e) {
                     //    Debugger.Launch();
                     //}
@@ -483,7 +483,7 @@ namespace BoSSS.Foundation.SpecFEM {
                     }
 
                     double[] x = new double[this.Basis.NoOfLocalOwnedNodes];
-                    x.AccV(1.0, x_sub, OccupiedRows_Global, default(int[]), acc_index_shift: -i0);
+                    x.AccVi64(1.0, x_sub, OccupiedRows_Global, default(long[]), acc_index_shift: -i0);
                     m_Coordinates.ExtractSubArrayShallow(new int[] { 0 }, new int[] { this.Basis.NoOfLocalOwnedNodes - 1 }).AccVector(alpha, x);
                 }
 

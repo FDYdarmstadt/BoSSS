@@ -250,7 +250,7 @@ namespace FSI_Solver {
 
         private int[] FindCellsToRecolor(int[] coloredCells, GridData currentGrid) {
             int[] globalCellColor = GetGlobalCellColor(coloredCells, currentGrid);
-            int[][] globalCellNeighbourship = GetGlobalCellNeigbourship(currentGrid);
+            long[][] globalCellNeighbourship = GetGlobalCellNeigbourship(currentGrid);
             int maxColor = globalCellColor.Max().MPIMax();
             int[] newColor = new int[maxColor + 1];
             for (int i = 0; i < globalCellColor.Length; i++) {
@@ -299,45 +299,45 @@ namespace FSI_Solver {
 
         private int[] GetGlobalCellColor(int[] localCellColor, GridData currentGrid) {
             Partitioning cellPartitioning = currentGrid.CellPartitioning;
-            int globalJ = cellPartitioning.TotalLength;
-            int[] i0 = cellPartitioning.GetI0s();
+            long globalJ = cellPartitioning.TotalLength;
+            long[] i0 = cellPartitioning.GetI0s();
             int[] globalCellColor = new int[globalJ];
 
             int[][] exchangeCellColor = localCellColor.MPIGatherO(0);
             exchangeCellColor = exchangeCellColor.MPIBroadcast(0);
 
             for (int m = 0; m < currentGrid.MpiSize; m++) {
-                for (int j = i0[m]; j < i0[m+1]; j++) {
+                for (long j = i0[m]; j < i0[m+1]; j++) {
                     globalCellColor[j] = exchangeCellColor[m][j - i0[m]];
                 }
             }
             return globalCellColor;
         }
 
-        private int[][] GetGlobalCellNeigbourship(GridData currentGrid) {
+        private long[][] GetGlobalCellNeigbourship(GridData currentGrid) {
             Partitioning cellPartitioning = currentGrid.CellPartitioning;
-            int globalJ = cellPartitioning.TotalLength;
+            long globalJ = cellPartitioning.TotalLength;
             int localJ = currentGrid.Cells.NoOfLocalUpdatedCells;
-            int[] i0 = cellPartitioning.GetI0s();
-            int local_i0 = cellPartitioning.i0;
+            long[] i0 = cellPartitioning.GetI0s();
+            long local_i0 = cellPartitioning.i0;
 
             long[] externalCellsGlobalIndices = currentGrid.iParallel.GlobalIndicesExternalCells;
-            int[][] localCellNeighbourship = new int[localJ][];
+            long[][] localCellNeighbourship = new long[localJ][];
             for (int j = 0; j < localCellNeighbourship.Length; j++) {
                 currentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] CellNeighbours, out _);
-                localCellNeighbourship[j] = CellNeighbours;
+                localCellNeighbourship[j] = new long[CellNeighbours.Length];
                 for (int i = 0; i < localCellNeighbourship[j].Length; i++) {
                     if (localCellNeighbourship[j][i] < localJ)
-                        localCellNeighbourship[j][i] = localCellNeighbourship[j][i] + local_i0;
+                        localCellNeighbourship[j][i] = CellNeighbours[i] + local_i0;
                     else
                         localCellNeighbourship[j][i] = (int)externalCellsGlobalIndices[localCellNeighbourship[j][i] - localJ];
                 }
             }
 
-            int[][][] exchangeCellNeighbourship = localCellNeighbourship.MPIGatherO(0);
+            long[][][] exchangeCellNeighbourship = localCellNeighbourship.MPIGatherO(0);
             exchangeCellNeighbourship = exchangeCellNeighbourship.MPIBroadcast(0);
 
-            int[][] globalCellNeigbourship = new int[globalJ][];
+            long[][] globalCellNeigbourship = new long[globalJ][];
             for (int m = 0; m < currentGrid.MpiSize; m++) {
                 for (int j = 0; j < exchangeCellNeighbourship[m].Length; j++) {
                     globalCellNeigbourship[j + i0[m]] = exchangeCellNeighbourship[m][j];

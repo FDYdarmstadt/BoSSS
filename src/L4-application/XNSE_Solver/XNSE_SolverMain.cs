@@ -2122,7 +2122,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
-                    int oldJ = this.GridData.CellPartitioning.TotalLength;
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                     // Update Grid
                     // ===========

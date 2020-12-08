@@ -105,8 +105,8 @@ namespace BoSSS.Application.Matrix_MPItest {
 
                 BlockMsrMatrix M = solver.OperatorMatrix;
                 
-                int[] Ilist1 = solver.ProblemMapping.GetSubvectorIndices(false, 0);
-                int[] Ilist2 = solver.ProblemMapping.GetSubvectorIndices(false, 1);
+                long[] Ilist1 = solver.ProblemMapping.GetSubvectorIndices(false, 0);
+                long[] Ilist2 = solver.ProblemMapping.GetSubvectorIndices(false, 1);
 
                 foreach(int i in Ilist1) {
                     Assert.IsTrue(solver.ProblemMapping.IsInLocalRange(i));
@@ -120,17 +120,17 @@ namespace BoSSS.Application.Matrix_MPItest {
 
 
 
-                int[] Tlist1 = compressL1 ? default(int[]) : Blk1.GetOccupiedIndicesList();
-                int[] Tlist2 = compressL2 ? default(int[]) : Blk2.GetOccupiedIndicesList();
+                long[] Tlist1 = compressL1 ? default(long[]) : Blk1.GetOccupiedIndicesList();
+                long[] Tlist2 = compressL2 ? default(long[]) : Blk2.GetOccupiedIndicesList();
                 if (Tlist1 != null) {
                     Assert.AreEqual(Tlist1.Length, Ilist1.Length);
-                    foreach (int i in Tlist1) {
+                    foreach (long i in Tlist1) {
                         Assert.IsTrue(Blk1.IsInLocalRange(i));
                     }
                 }
                 if (Tlist2 != null) {
                     Assert.AreEqual(Tlist2.Length, Ilist2.Length);
-                    foreach (int i in Tlist2) {
+                    foreach (long i in Tlist2) {
                         Assert.IsTrue(Blk2.IsInLocalRange(i));
                     }
                 }
@@ -323,13 +323,13 @@ namespace BoSSS.Application.Matrix_MPItest {
 
                 BlockMsrMatrix M = solver.OperatorMatrix;
                 
-                int[] Ilist1 = solver.ProblemMapping.GetSubvectorIndices(false, 0);
-                int[] Ilist2 = solver.ProblemMapping.GetSubvectorIndices(false, 1);
+                long[] Ilist1 = solver.ProblemMapping.GetSubvectorIndices(false, 0);
+                long[] Ilist2 = solver.ProblemMapping.GetSubvectorIndices(false, 1);
 
-                foreach(int i in Ilist1) {
+                foreach(long i in Ilist1) {
                     Assert.IsTrue(solver.ProblemMapping.IsInLocalRange(i));
                 }
-                foreach(int i in Ilist2) {
+                foreach(long i in Ilist2) {
                     Assert.IsTrue(solver.ProblemMapping.IsInLocalRange(i));
                 }
 
@@ -338,8 +338,8 @@ namespace BoSSS.Application.Matrix_MPItest {
 
 
 
-                int[] Tlist1 = compressL1 ? default(int[]) : Blk1.GetOccupiedIndicesList();
-                int[] Tlist2 = compressL2 ? default(int[]) : Blk2.GetOccupiedIndicesList();
+                long[] Tlist1 = compressL1 ? default(long[]) : Blk1.GetOccupiedIndicesList();
+                long[] Tlist2 = compressL2 ? default(long[]) : Blk2.GetOccupiedIndicesList();
                 if (Tlist1 != null) {
                     Assert.AreEqual(Tlist1.Length, Ilist1.Length);
                     foreach (int i in Tlist1) {
@@ -363,8 +363,8 @@ namespace BoSSS.Application.Matrix_MPItest {
                 M.AccSubMatrixTo(1.0, M22, Ilist2, Tlist2, Ilist2, Tlist2);
 
                 BlockMsrMatrix restored_M = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
-                int[] Idx1 = compressL1 ? Blk1.LocalLength.ForLoop(i => i + Blk1.i0) : Tlist1;
-                int[] Idx2 = compressL2 ? Blk2.LocalLength.ForLoop(i => i + Blk2.i0) : Tlist2;
+                long[] Idx1 = compressL1 ? Blk1.LocalLength.ForLoop(i => i + Blk1.i0) : Tlist1;
+                long[] Idx2 = compressL2 ? Blk2.LocalLength.ForLoop(i => i + Blk2.i0) : Tlist2;
                 M11.AccSubMatrixTo(1.0, restored_M, Idx1, Ilist1, Idx1, Ilist1);
                 M12.AccSubMatrixTo(1.0, restored_M, Idx1, Ilist1, Idx2, Ilist2);
                 M21.AccSubMatrixTo(1.0, restored_M, Idx2, Ilist2, Idx1, Ilist1);

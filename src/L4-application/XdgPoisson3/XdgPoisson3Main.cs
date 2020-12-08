@@ -330,7 +330,8 @@ namespace BoSSS.Application.XdgPoisson3 {
            
             double mintime, maxtime;
             bool converged;
-            int NoOfIterations, DOFs;
+            int NoOfIterations;
+            long DOFs;
             MultigridOperator mgo;
 
             // direct solver 
@@ -342,7 +343,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             // new solver framework: multigrid, blablablah ...
 
-            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs,out mgo);           
+            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs, out mgo);           
             this.Op_Agglomeration.Extrapolate(this.u.Mapping);
 
             //Stats:
@@ -499,7 +500,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
-        private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out int DOFs, out MultigridOperator MultigridOp) {
+        private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out long DOFs, out MultigridOperator MultigridOp) {
             using (var tr = new FuncTrace()) {
                 mintime = double.MaxValue;
                 maxtime = 0;
@@ -606,7 +607,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ReferenceSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
 
                 var EqSys = this.Op_Matrix.ToMsrMatrix();
-                for (int iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
+                for (long iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
                     if (EqSys.GetNoOfNonZerosPerRow(iRow) <= 0)
                         EqSys[iRow, iRow] = 1.0;
                 }
@@ -724,7 +725,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             mgOp.OperatorMatrix.SpMV(1.0, mgSolVec, -1.0, mgResidual);
             double scale = 1.0 / (mgRhsVec.L2Norm() + mgSolVec.L2Norm());
 
-            int DOFs = mgOp.Mapping.TotalLength;
+            long DOFs = mgOp.Mapping.TotalLength;
             Debug.Assert(DOFs == mgOp.OperatorMatrix.NoOfRows);
             Debug.Assert(DOFs == mgOp.OperatorMatrix.NoOfCols);
 

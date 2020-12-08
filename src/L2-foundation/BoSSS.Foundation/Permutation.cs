@@ -559,8 +559,8 @@ namespace BoSSS.Foundation.Comm {
                 Dictionary<int, ApplyToVector_Helper<I>> sendData =
                     new Dictionary<int, ApplyToVector_Helper<I>>();
 
-                int out_myI0 = outputPartitioning.i0;
-                int out_nextI0 = out_myI0 + outputPartitioning.LocalLength;
+                long out_myI0 = outputPartitioning.i0;
+                long out_nextI0 = out_myI0 + outputPartitioning.LocalLength;
                 int J = this.Partitioning.LocalLength;
 
                 for(int j = 0; j < J; j++) {
@@ -591,7 +591,7 @@ namespace BoSSS.Foundation.Comm {
                     Debug.Assert(rcvPkt.Items.Count == rcvPkt.TargetIndices.Count);
 
                     for(int k = 0; k < K; k++) {
-                        int locIdx = (int)(rcvPkt.TargetIndices[k]) - out_myI0;
+                        int locIdx = checked((int)(rcvPkt.TargetIndices[k] - out_myI0));
                         output[locIdx] = rcvPkt.Items[k];
                     }
                 }

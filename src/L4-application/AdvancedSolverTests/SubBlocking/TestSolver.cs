@@ -364,7 +364,7 @@ namespace AdvancedSolverTests {
         private double[] GetRHS(double[] OpAffine, BlockMsrMatrix M) {
             List<int> Rows2Keep = new List<int>();
             for (int iRow=0; iRow < M.RowPartitioning.LocalLength; iRow++) {
-                int Row = iRow + M.RowPartitioning.i0;
+                long Row = iRow + M.RowPartitioning.i0;
                 Debug.Assert(M.RowPartitioning.IsInLocalRange(Row));
                 if (M.GetNoOfNonZerosPerRow(Row) != 0) {
                     Rows2Keep.Add(iRow);
@@ -423,10 +423,10 @@ namespace AdvancedSolverTests {
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[1]);
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[0]);
 
-            int nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
 
-            int nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
             Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
 

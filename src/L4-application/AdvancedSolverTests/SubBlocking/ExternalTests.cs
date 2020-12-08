@@ -52,7 +52,7 @@ namespace AdvancedSolverTests.SubBlocking
             var mask = new BlockMask(selector, dummy);
 
             //Arrange --- get stuff to put into matlab
-            int[] GlobalIdx_ext = Utils.GetAllExtCellIdc(map);
+            long[] GlobalIdx_ext = Utils.GetAllExtCellIdc(map);
             double[] GlobIdx = GlobalIdx_ext.Length.ForLoop(i => (double)GlobalIdx_ext[i]+1.0);
 
             //Arrange --- get external rows by mask
@@ -101,7 +101,7 @@ namespace AdvancedSolverTests.SubBlocking
             var mask = new BlockMask(sbs, M_ext);
 
             //Arrange --- get index list of all external cells
-            int[] idc = Utils.GetAllExtCellIdc(map);
+            long[] idc = Utils.GetAllExtCellIdc(map);
             double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i] + 1.0);
 
             //Arrange --- stopwatch
@@ -162,7 +162,7 @@ namespace AdvancedSolverTests.SubBlocking
 
 
             //Arrange --- get index list of all external cells
-            int[] idc = Utils.GetAllExtCellIdc(map);
+            long[] idc = Utils.GetAllExtCellIdc(map);
             double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i]+1.0);
 
             //Arrange --- stopwatch
@@ -223,7 +223,7 @@ namespace AdvancedSolverTests.SubBlocking
             //bool[] coup = Utils.SetCoupling(MShape);
 
             //Arrange --- get index dictonary of all external cell indices
-            Dictionary<int,int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
+            Dictionary<int, long[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
 
             //Arrange --- stopwatch
             var stw = new Stopwatch();
@@ -246,7 +246,7 @@ namespace AdvancedSolverTests.SubBlocking
                 var infNorm = MultidimensionalArray.Create(4, 1);
                 int rank = map.MpiRank;
                 int ExtBlockIdx = iBlock + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                Didc.TryGetValue(ExtBlockIdx, out int[] idc);
+                Didc.TryGetValue(ExtBlockIdx, out long[] idc);
 
                 using (BatchmodeConnector matlab = new BatchmodeConnector()) {
 
@@ -336,7 +336,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- project Res_i onto Res_g and Res_g=M_ext*vec_ext-Res_g
             double[] Res_g = mask.GetSubVec(Res_ext);
-            var qM_ext=M_ext.ConvertToQuadraticBMsr(mask.GlobalIList_External.ToArray(),false);
+            var qM_ext = M_ext.ConvertToQuadraticBMsr(mask.GlobalIList_External.ToArray(), false);
             qM_ext.SpMV(1.0, vec_ex.Vector_Ext, -1.0, Res_g);
 
             if (map.MpiRank == 0) {
@@ -374,7 +374,7 @@ namespace AdvancedSolverTests.SubBlocking
             var mask = new BlockMask(sbs, M_ext);
 
             //Arrange --- get GlobalIdxList
-            int[] idc = Utils.GetIdcOfSubBlock(map,cells);
+            long[] idc = Utils.GetIdcOfSubBlock(map, cells);
             bool[] coup = Utils.SetCoupling(MShape);
 
             var M_sub = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
@@ -588,7 +588,7 @@ namespace AdvancedSolverTests.SubBlocking
             //Arrange --- Get global index by mapping
             MultigridOperator MGOp = Utils.CreateTestMGOperator(UseXdg, DGOrder,MatrixShape.laplace, Res);
             var map = MGOp.Mapping;
-            int[] GlobalIdxMap_ext = Utils.GetAllExtCellIdc(map);
+            long[] GlobalIdxMap_ext = Utils.GetAllExtCellIdc(map);
 
             //Arrange --- Prepare stuff for mask
             var selector = new SubBlockSelector(map);
@@ -600,7 +600,7 @@ namespace AdvancedSolverTests.SubBlocking
             stw.Start();
             var mask = new BlockMask(selector, dummy);
             stw.Stop();
-            int[] GlobalIdxMask_ext = mask.GlobalIList_External.ToArray();
+            long[] GlobalIdxMask_ext = mask.GlobalIList_External.ToArray();
 
             //Assert --- Idx lists are of same length
             Assert.IsTrue(GlobalIdxMap_ext.Length == GlobalIdxMask_ext.Length);

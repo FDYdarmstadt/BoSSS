@@ -208,7 +208,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns>
         /// List of indefinite row indices.
         /// </returns>
-        int[] ComputeChangeOfBasis(BlockMsrMatrix OpMatrix, BlockMsrMatrix MassMatrix, out BlockMsrMatrix LeftPreCond, out BlockMsrMatrix RightPreCond, out BlockMsrMatrix LeftPreCondInv, out BlockMsrMatrix RightPreCondInv) {
+        long[] ComputeChangeOfBasis(BlockMsrMatrix OpMatrix, BlockMsrMatrix MassMatrix, out BlockMsrMatrix LeftPreCond, out BlockMsrMatrix RightPreCond, out BlockMsrMatrix LeftPreCondInv, out BlockMsrMatrix RightPreCondInv) {
             using (var tr = new FuncTrace()) {
                 // test arguments
                 // ==============
@@ -221,7 +221,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 AggregationGridBasis[] basisS = this.Mapping.AggBasis;
                 int[] Degrees = this.Mapping.DgDegree;
 
-                List<int> IndefRows = new List<int>();
+                List<long> IndefRows = new List<long>();
 
 
                 // compute preconditioner matrices
@@ -249,17 +249,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray[] PCrightBlock_inv = new MultidimensionalArray[LL];
                     MultidimensionalArray[] PCleftBlock_inv = new MultidimensionalArray[LL];
                     MultidimensionalArray[] PCrightBlock = new MultidimensionalArray[LL];
-                    int[][] __i0s = new int[LL][];
+                    long[][] __i0s = new long[LL][];
                     int[][] __Lns = new int[LL][];
 
                     for (int i = 0; i < LL; i++) {
                         var conf = m_Config[i];
-                        __i0s[i] = new int[conf.VarIndex.Length];
+                        __i0s[i] = new long[conf.VarIndex.Length];
                         __Lns[i] = new int[conf.VarIndex.Length];
                     }
 
                     int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                    int i0 = this.Mapping.Partitioning.i0;
+                    long i0 = this.Mapping.Partitioning.i0;
                     for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
                         //ReducedRegionCode rrc;
                         //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
@@ -272,7 +272,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             var conf = m_Config[i];
 
                             int E = conf.VarIndex.Length;
-                            int[] _i0s = __i0s[i];
+                            long[] _i0s = __i0s[i];
                             int[] _Lns = __Lns[i];
                             //AggregationGridBasis basis = null;
 
@@ -394,7 +394,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         private static void ExtractBlock(
-            int[] _i0s, 
+            long[] _i0s, 
             int[] _Lns,
             bool Sp2Full,
             BlockMsrMatrix MtxSp, ref MultidimensionalArray MtxFl) //
@@ -419,12 +419,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int i0Rowloc = 0;
             for (int eRow = 0; eRow < E; eRow++) { // loop over variables in configuration
-                int i0Row = _i0s[eRow];
+                long i0Row = _i0s[eRow];
                 int NRow = _Lns[eRow];
 
                 int i0Colloc = 0;
                 for (int eCol = 0; eCol < E; eCol++) { // loop over variables in configuration
-                    int i0Col = _i0s[eCol];
+                    long i0Col = _i0s[eCol];
                     int NCol = _Lns[eCol]; 
 
                     MultidimensionalArray MtxFl_blk;
@@ -457,19 +457,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        private static int[] ConvertRowIndices(
+        private static long[] ConvertRowIndices(
             int jCell,
             AggregationGridBasis[] basisS, int[] Degrees,
             ChangeOfBasisConfig conf,
-            int E, int[] _i0s,
+            int E, long[] _i0s,
             int[] LocIdx) {
 
             int NN = conf.VarIndex.Sum(iVar => basisS[iVar].GetLength(jCell, Degrees[iVar]));
-            int[] Loc2glob = new int[NN];
+            long[] Loc2glob = new long[NN];
 
             int i0Rowloc = 0;
             for (int eRow = 0; eRow < E; eRow++) { // loop over variables in configuration
-                int i0Row = _i0s[eRow];
+                long i0Row = _i0s[eRow];
                 int iVarRow = conf.VarIndex[eRow];
 
                 int NRow = basisS[iVarRow].GetLength(jCell, Degrees[iVarRow]);
@@ -478,7 +478,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //n_row = LocIdx[k];
 
                     int iRowLoc = n_row + i0Rowloc;
-                    int iRowGlb = n_row + i0Row;
+                    long iRowGlb = n_row + i0Row;
 
                     Loc2glob[iRowLoc] = iRowGlb;
 

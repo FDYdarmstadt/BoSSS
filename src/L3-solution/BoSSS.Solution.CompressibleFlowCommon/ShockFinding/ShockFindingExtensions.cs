@@ -136,14 +136,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
-        public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalCellIndex) {
+        public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, long globalCellIndex) {
             int D = 2;
+            int localCellIndex = gridData.CellPartitioning.Global2Local(globalCellIndex);
             MultidimensionalArray GlobalVerticesIn = MultidimensionalArray.CreateWrapper(globalPoint, 1, D);
             MultidimensionalArray LocalVerticesOut = MultidimensionalArray.CreateWrapper(new double[D], 1, D);
 
-            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, globalCellIndex, NewtonConvergence: null);
+            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, localCellIndex, NewtonConvergence: null);
 
-            return new NodeSet(gridData.Cells.GetRefElement(globalCellIndex), LocalVerticesOut);
+            return new NodeSet(gridData.Cells.GetRefElement(localCellIndex), LocalVerticesOut);
         }
 
         public static double[] NormalizedGradient(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {

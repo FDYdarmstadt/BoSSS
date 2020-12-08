@@ -350,7 +350,7 @@ namespace BoSSS.Solution.TimeStepping {
             Debug.Assert(SystemAffine.L2Norm() > 0);
 
             if (subGrid != null) {
-                int[] SubVecIdx = Mapping.GetSubvectorIndices(subGrid, true, new int[] { 0 });
+                long[] SubVecIdx = Mapping.GetSubvectorIndices(subGrid, true, new int[] { 0 });
                 int L = SubVecIdx.Length;
 
                 for (int i=0; i < L; i++) {

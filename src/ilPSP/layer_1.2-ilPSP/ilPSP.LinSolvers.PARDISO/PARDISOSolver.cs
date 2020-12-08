@@ -515,7 +515,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 int[] Displ = new int[size];
                 for(int r = 0; r < size; r++) {
                     SendCounts[r] = m_OrgMatrix.RowPartitioning.GetLocalLength(r);
-                    Displ[r] = m_OrgMatrix.RowPartitioning.GetI0Offest(r);
+                    Displ[r] = checked((int)(m_OrgMatrix.RowPartitioning.GetI0Offest(r)));
                 }
 
 
