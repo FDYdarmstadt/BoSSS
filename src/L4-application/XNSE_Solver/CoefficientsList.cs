@@ -15,24 +15,15 @@ namespace BoSSS.Application.XNSE_Solver
     /// </summary>
     /// <returns>
     /// a pair, containing:
-    /// - coefficient name: must match one name in <see cref="ISpatialOperator.CoefficientVar"/>
+    /// - coefficient name
     /// - an object to store the respective coefficient value(s)
     /// </returns>
     public delegate (string CoefficientName, object CoefficientValue)[] DelCoefficientFactory(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time);
 
     /// <summary>
-    /// Update of coefficients, e.g. Prescribed Massfluxes
-    /// event used in <see cref="ISpatialOperator.CoefficientUpdates"/>.
-    /// same idea as <see cref="DelPartialParameterUpdate"/>
+    /// For now <see cref="DelCoefficientFactory"/> is called repeatedly,
+    /// maybe this will be changed in the future to align coefficient handling to Parameterhandling
     /// </summary>
-    /// <param name="Coefficients">
-    /// Ccoefficient to be updated.
-    /// - key: coefficient name as defined by the operator (<see cref="ISpatialOperator.CoefficientVar"/>)
-    /// - value: object to store the respective state
-    /// </param>
-    /// <param name="time">
-    /// timestamp used internally to update the coefficients
-    /// </param>
     //public delegate void DelCoefficientUpdate(IReadOnlyDictionary<string, object> Coefficients, double time);
 
     abstract class Coefficient

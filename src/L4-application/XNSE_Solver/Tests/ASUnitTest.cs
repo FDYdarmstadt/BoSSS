@@ -503,13 +503,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// 
+        /// Simple pure Heatconductivity Test with Temperature kink at the Interface
         /// </summary>
         [Test]
         public static void HeatConductivityTest(
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
-            [Values(false)] bool SolverMode_performsolve,
+            [Values(true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
@@ -521,7 +521,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// 
+        /// Simple Heatconductivity and convection Test 
         /// </summary>
         [Test]
         public static void HeatTransportTest() {
@@ -529,7 +529,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// 
+        /// Simple pure Heatconductivity Test to ensure Maximumprinciple of Heat equation
         /// </summary>
         [Test]
         public static void HeatDecayTest() {

@@ -98,6 +98,8 @@ namespace BoSSS.Application.XNSE_Solver
             }
             opFactory.AddEquation(new HeatInterface("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
             opFactory.AddCoefficient(new EvapMicroRegion());
+            if (config.prescribedMassflux != null)
+                opFactory.AddCoefficient(new PrescribedMassFlux(config));
 
             // add Evaporation at Interface components, heads-up depends only on parameters
             // ============================

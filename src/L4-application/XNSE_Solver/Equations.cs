@@ -83,6 +83,7 @@ namespace BoSSS.Application.XNSE_Solver
             // ================
             if (config.isViscous && !(muSpc == 0.0))
             {
+                AddCoefficient("SlipLengths");
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode)
                 {

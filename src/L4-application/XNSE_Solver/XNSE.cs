@@ -190,6 +190,7 @@ namespace BoSSS.Application.XNSE_Solver
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config));
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
+            opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             opFactory.AddParameter(new Velocity0(D));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
             opFactory.AddParameter(v0Mean);

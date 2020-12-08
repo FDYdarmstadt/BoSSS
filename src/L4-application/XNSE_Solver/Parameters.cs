@@ -648,7 +648,7 @@ namespace BoSSS.Application.XNSE_Solver
                     (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
                     (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
                 };
-            } catch (KeyNotFoundException e) {
+            } catch {
                 Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
                 EvoVelocity = new XDGField[]
                 {
@@ -1206,8 +1206,6 @@ namespace BoSSS.Application.XNSE_Solver
         }
 
     }
-
-
 
 }
 

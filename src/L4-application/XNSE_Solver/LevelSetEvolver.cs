@@ -4,7 +4,6 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -98,7 +97,7 @@ namespace BoSSS.Application.XNSE_Solver
                 Basis basis;
                 try {
                     basis = new Basis(phaseInterface.Tracker.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
-                } catch (KeyNotFoundException e) {
+                } catch {
                     Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
                     basis = new Basis(phaseInterface.Tracker.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
                 }
@@ -115,8 +114,8 @@ namespace BoSSS.Application.XNSE_Solver
             NarrowMarchingBand.Evolve_Mk2(
                 dt, phaseInterface.Tracker, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
                 meanVelocity, extensionVelocity,
-                m_HMForder);
-        }
+                m_HMForder); 
+        }        
 
         public static ConventionalDGField[] GetMeanVelocityFromXDGField(XDGField[] EvoVelocity, LevelSetTracker lsTrkr, XNSE_Control control)
         {
