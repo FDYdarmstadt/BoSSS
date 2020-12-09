@@ -137,10 +137,6 @@
     <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\BoSSS.Solution.XSolver\BoSSS.Solution.XSolver.csproj">
-      <Project>{1a8f7d9e-ed3c-4a6c-b647-dd6c8485df70}</Project>
-      <Name>BoSSS.Solution.XSolver</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>

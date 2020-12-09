@@ -1,29 +1,28 @@
 ﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BoSSS.Solution.LevelSetTools {
-    public abstract class XSolver<T> : XdgApplicationWithSolver<T> where T : AppControlSolver, new() {
 
-        protected LevelSetUpdater lsUpdater;
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+    public abstract class SolverWithLevelSetUpdater<T> : XdgApplicationWithSolver<T> where T : AppControlSolver, new() {
+        
+        LevelSetUpdater lsUpdater;
 
-        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
-            get {
+        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
+        {
+            get
+            {
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
+                for (int iLevel = 0; iLevel < configs.Length; iLevel++)
+                {
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
                     AddMultigridConfigLevel(configsLevel);
@@ -34,9 +33,15 @@ namespace BoSSS.Solution.LevelSetTools {
             }
         }
 
-        public abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
+        protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
 
         protected abstract LevelSetUpdater InstantiateLevelSetUpdater();
+
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+            return GetOperatorInstance(D, lsUpdater);
+        }
+
+        protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         protected override LevelSetTracker InstantiateTracker() {
             if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
@@ -82,6 +87,6 @@ namespace BoSSS.Solution.LevelSetTools {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-        }
+        }                    
     }
 }

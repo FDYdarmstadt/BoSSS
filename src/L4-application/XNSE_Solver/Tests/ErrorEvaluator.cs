@@ -12,15 +12,15 @@ using ilPSP;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.XSolver;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver.Tests
 {
     abstract class ErrorEvaluator {
 
-        protected XSolver<XNSE_Control> solver;
+        protected SolverWithLevelSetUpdater<XNSE_Control> solver;
 
-        public ErrorEvaluator(XSolver<XNSE_Control> solver) {
+        public ErrorEvaluator(SolverWithLevelSetUpdater<XNSE_Control> solver) {
             this.solver = solver;
         }
 

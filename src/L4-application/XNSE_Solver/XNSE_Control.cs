@@ -36,7 +36,6 @@ using BoSSS.Solution.Timestepping;
 using Newtonsoft.Json;
 using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
-using BoSSS.Solution.XSolver;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -46,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class XNSE_Control : XSolverControl {
+    public class XNSE_Control : AppControlSolver {
 
         /// <summary>
         /// Ctor.
@@ -445,6 +444,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// defines the number of incremental timesteps in one gloabl timestep (for incrementInit)
         /// </summary>
         public int incrementTimesteps = 1;
+
+        /// <summary>
+        /// See <see cref="LevelSetHandling"/>
+        /// </summary>
+        [DataMember]
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative
