@@ -382,18 +382,18 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
             MsrMatrix Pmtx = PenaltyMatrix(EdgMsk, inout_Levset.Basis, inout_Levset.Basis);
             Pmtx.Scale(-1.0);
 
-            int[] SubVecIdx = Map.GetSubvectorIndices(S, true, new int[] { 0 });
-            //BlockPartitioning SubvecPart = Map.GetSubBlocking(SubVecIdx, csMPI.Raw._COMM.WORLD);
+            long[] SubVecIdx = Map.GetSubvectorIndices(S, true, new int[] { 0 });
             int L = SubVecIdx.Length;
 
             MsrMatrix SubMtx = new MsrMatrix(L, L);
-            Pmtx.AccSubMatrixTo(1.0, SubMtx, SubVecIdx, default(int[]), SubVecIdx, default(int[]));
+            Pmtx.AccSubMatrixTo(1.0, SubMtx, SubVecIdx, default(long[]), SubVecIdx, default(long[]));
+
             SubMtx.AccEyeSp(1.0 / dt);
 
             double[] RHS = new double[L];
             double[] SOL = new double[L];
 
-            int[] SubVecIdxLoc = SubVecIdx.CloneAs();
+            int[] SubVecIdxLoc = new int[SubVecIdx.Length];
             for (int idx = 0; idx < SubVecIdxLoc.Length; idx++) {
                 SubVecIdxLoc[idx] = Map.TransformIndexToLocal(SubVecIdx[idx]);
             }

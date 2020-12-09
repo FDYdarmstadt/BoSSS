@@ -71,11 +71,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 if(isXrow[iEq]) {
                                     int N = RowMapping.GetNumberOfModes(LsTrk, iEq, j, SpcId);
                                     for(int n = 0; n < N; n++) {
-                                        int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n) + RowMapping.i0;
+                                        long iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n) + RowMapping.i0;
                                         int NoOfNonZeros = OpMatrix.GetNoOfNonZerosPerRow(iRow);
                                         if(NoOfNonZeros > 0) {
 
-                                            int[] colIdx = null;
+                                            long[] colIdx = null;
                                             double[] entries = null;
                                             OpMatrix.GetRow(iRow, ref colIdx, ref entries);
                                             double err = entries.Max();

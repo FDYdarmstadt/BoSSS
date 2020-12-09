@@ -642,7 +642,7 @@ namespace BoSSS.Foundation {
         /// <param name="G"></param>
         static public double[][] ScatterSortedData(IGridData G, double[][] SortedDataColumns) {
             //Debugger.Launch();
-            int Jglob = G.CellPartitioning.TotalLength;
+            long Jglob = G.CellPartitioning.TotalLength;
             int Jloc = G.CellPartitioning.LocalLength;
             int MPIrank = G.MpiRank;
             MPI_Comm comm = G.CellPartitioning.MPI_Comm;
@@ -671,7 +671,7 @@ namespace BoSSS.Foundation {
                 Permutation sigma = G.CurrentGlobalIdPermutation;
                 Permutation id;// new Permutation(DataVec.Select(cd => cd.GlobalID).ToArray(), csMPI.Raw._COMM.WORLD);
                 if(MPIrank == 0) {
-                    id = new Permutation(Jglob.ForLoop((int i) => (long)i), comm);
+                    id = new Permutation(Jglob.ForLoop((long i) => (long)i), comm);
                 } else {
                     id = new Permutation(new long[0], comm);
                 }
@@ -687,7 +687,7 @@ namespace BoSSS.Foundation {
             {
                 long[] Check;
                 if(MPIrank == 0)
-                    Check = Jglob.ForLoop((int i) => (long)i);
+                    Check = Jglob.ForLoop((long i) => (long)i);
                 else
                     Check = new long[0];
 

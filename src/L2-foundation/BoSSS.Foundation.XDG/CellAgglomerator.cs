@@ -276,14 +276,14 @@ namespace BoSSS.Foundation.XDG {
 
                 Partitioning CellPart = g.CellPartitioning;
                 int mpiRank = CellPart.MpiRank;
-                int j0 = CellPart.i0;
+                long j0 = CellPart.i0;
 
                 long[] GidxExt = g.Parallel.GlobalIndicesExternalCells;
 
                 List<int> TargetCellMpiRank = new List<int>(Math.Max(1, (int)Math.Round(((double)(AggPairs.Count)) * 1.03)));
                 List<int> SourceCellMpiRank = new List<int>(TargetCellMpiRank.Capacity);
 
-                Dictionary<int, List<Tuple<int, int>>> _SendData = new Dictionary<int, List<Tuple<int, int>>>();
+                Dictionary<int, List<(long jGlbSrc, long jGlbTarg)>> _SendData = new Dictionary<int, List<(long, long)>>();
                 foreach (var AggPair in AggPairs) {
                     // determine all agglomeration pairs which have their target cell on an other processor
 
@@ -293,18 +293,18 @@ namespace BoSSS.Foundation.XDG {
                     if (jAggTarget >= J) {
                         InterProcessAgglomeration = 1;
 
-                        int jGlbTarg = (int)(GidxExt[jAggTarget - J]);
+                        long jGlbTarg = (GidxExt[jAggTarget - J]);
                         int targRank = CellPart.FindProcess(jGlbTarg);
 
                         TargetCellMpiRank.Add(targRank);
 
-                        List<Tuple<int, int>> SendTo;
+                        List<(long,long)> SendTo;
                         if (!_SendData.TryGetValue(targRank, out SendTo)) {
-                            SendTo = new List<Tuple<int, int>>();
+                            SendTo = new List<(long,long)>();
                             _SendData.Add(targRank, SendTo);
                         }
 
-                        SendTo.Add(new Tuple<int, int>(j0 + jAggSource, jGlbTarg));
+                        SendTo.Add((j0 + jAggSource, jGlbTarg));
 
                     } else {
                         TargetCellMpiRank.Add(mpiRank);
@@ -313,7 +313,7 @@ namespace BoSSS.Foundation.XDG {
                     SourceCellMpiRank.Add(mpiRank);
                 }
 
-                Dictionary<int, Tuple<int, int>[]> SendData = new Dictionary<int, Tuple<int, int>[]>();
+                Dictionary<int, (long jGlbSrc, long jGlbTarg)[]> SendData = new Dictionary<int, (long, long)[]>();
                 foreach (var kv in _SendData) {
                     SendData.Add(kv.Key, kv.Value.ToArray());
                 }
@@ -327,11 +327,11 @@ namespace BoSSS.Foundation.XDG {
                     var ReceivedAggPairs = kv.Value;
 
                     foreach (var rap in ReceivedAggPairs) {
-                        int jGlbAggTarget = rap.Item2;
-                        int jGlbAggSource = rap.Item1;
+                        long jGlbAggTarget = rap.jGlbTarg;
+                        long jGlbAggSource = rap.jGlbSrc;
 
                         Debug.Assert(CellPart.IsInLocalRange(jGlbAggTarget), "Agglomeration target is expected to be in local cell range.");
-                        int jAggTarget = jGlbAggTarget - j0;
+                        int jAggTarget = checked((int)(jGlbAggTarget - j0));
                         Debug.Assert(jAggTarget >= 0 && jAggTarget < J);
 
                         Debug.Assert(!CellPart.IsInLocalRange(jGlbAggSource), "Agglomeration source is expected to be outside of the local cell range.");
@@ -598,9 +598,29 @@ namespace BoSSS.Foundation.XDG {
         MultidimensionalArray CouplingMtx;
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="map"></param>
+        /// <param name="MaxDegree"></param>
+        /// <param name="NoOfVars"></param>
+        /// <param name="i0Func">
+        /// Start indices for blocks
+        /// - 1st argument: local cell index
+        /// - 2nd argument: variable index
+        /// - return: global index of first DOF
+        /// </param>
+        /// <param name="NjFunc">
+        /// Length of blocks
+        /// - 1st argument: local cell index
+        /// - 2nd argument: variable index
+        /// - return: number of DOFs in cell for respective variable
+        /// </param>
+        /// <param name="MakeInPlace"></param>
+        /// <param name="cm"></param>
+        /// <returns></returns>
         public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
-            int MaxDegree, int NoOfVars, Func<int, int, int> i0Func, Func<int, int, int> NjFunc,
+            int MaxDegree, int NoOfVars, Func<int, int, long> i0Func, Func<int, int, int> NjFunc,
             bool MakeInPlace, CellMask cm) {
 
             int J = this.GridDat.Cells.NoOfLocalUpdatedCells;
@@ -626,7 +646,7 @@ namespace BoSSS.Foundation.XDG {
                     foreach (int j in cm.ItemEnum) { // loop over cells...
                         for (int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
                             int N = NjFunc(j, gamma);
-                            int i0 = i0Func(j, gamma);
+                            long i0 = i0Func(j, gamma);
 
                             for (int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
                                 LevelMtx[i0 + n, i0 + n] = 1.0;
@@ -655,8 +675,8 @@ namespace BoSSS.Foundation.XDG {
                                 throw new NotSupportedException("Different number of DOF in source and target is not supported.");
                             }
 
-                            int i0_Row = i0Func(pair.jCellTarget, gamma);
-                            int i0_Col = i0Func(pair.jCellSource, gamma);
+                            long i0_Row = i0Func(pair.jCellTarget, gamma);
+                            long i0_Col = i0Func(pair.jCellSource, gamma);
 
                             for (int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
                                 for (int m = 0; m < N; m++) {
@@ -672,7 +692,7 @@ namespace BoSSS.Foundation.XDG {
 
                         for (int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
                             int N = NjFunc(pair.jCellSource, gamma);
-                            int i0 = i0Func(pair.jCellSource, gamma);
+                            long i0 = i0Func(pair.jCellSource, gamma);
 
                             for (int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
                                 if (MakeInPlace)
@@ -973,7 +993,7 @@ namespace BoSSS.Foundation.XDG {
             var CellPairs = this.AggInfo.AgglomerationPairs;
             int NoOfAgg = CellPairs.Length;
 
-            int i0 = this.GridDat.CellPartitioning.i0;
+            long i0 = this.GridDat.CellPartitioning.i0;
             int MpiSize = this.GridDat.MpiSize;
             int MpiRank = this.GridDat.MpiRank;
             int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
@@ -1104,7 +1124,7 @@ namespace BoSSS.Foundation.XDG {
             public int NoOfVars;
             public int MaxDeg;
 
-            public int i0Func(int jCell, int iVar) {
+            public long i0Func(int jCell, int iVar) {
                 return m_cm.GlobalUniqueCoordinateIndex(iVar, jCell, 0);
             }
 

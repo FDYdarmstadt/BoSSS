@@ -515,7 +515,7 @@ namespace BoSSS.Application.SipPoisson {
                     //Error.AccLaidBack(-1.0, Tex);
                 }
 
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                 double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
                 double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors

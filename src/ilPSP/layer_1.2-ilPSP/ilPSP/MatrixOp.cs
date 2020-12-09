@@ -36,11 +36,11 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// <param name="M">matrix to manipulate</param>
         /// <param name="ExtCol">
-        /// key: processor rank 'p' <br/>
-        /// value: a list of column indices (within the local range of columns of <paramref name="M"/>),
-        /// which should be editable at rank 'p'.
+        /// - key: processor rank 'p' <br/>
+        /// - value: a list of column indices (within the local range of columns of <paramref name="M"/>),
+        ///          which should be editable at rank 'p'.
         /// </param>
-        public MatrixOp(IMutableMatrixEx M, IDictionary<int,int[]> ExtCol = null) {
+        public MatrixOp(IMutableMatrixEx M, IDictionary<int,long[]> ExtCol = null) {
             m_Matrix = new MsrExtMatrix(M, ExtCol);
         }
         
@@ -77,37 +77,37 @@ namespace ilPSP.LinSolvers {
             /// </summary>
             /// <param name="M"></param>
             /// <param name="ExtCol">
-            /// key: processor rank 'p' <br/>
-            /// value: a list of column indices (within the local range of columns of <paramref name="M"/>),
-            /// which should be editable at rank 'p'.
+            /// - key: processor rank 'p' <br/>
+            /// - value: a list of column indices (within the local range of columns of <paramref name="M"/>),
+            ///   which should be editable at rank 'p'.
             /// </param>
-            public MsrExtMatrix(IMutableMatrixEx M, IDictionary<int,int[]> ExtCol) {
+            public MsrExtMatrix(IMutableMatrixEx M, IDictionary<int,long[]> ExtCol) {
 
                 this.ColPart = M.ColPartition;
-                int i0Row = (int)M.RowPartitioning.i0, I = M.RowPartitioning.LocalLength,
-                    i0Col = (int) this.ColPart.i0, J = this.ColPart.LocalLength;
+                long i0Row = M.RowPartitioning.i0, i0Col = this.ColPart.i0;
+                int I = M.RowPartitioning.LocalLength, J = this.ColPart.LocalLength;
                 Mtx = M;
 
 
                 // init
                 // ====
-                ColToRowLocal = new List<int>[ColPart.LocalLength];
+                ColToRowLocal = new List<long>[ColPart.LocalLength];
                 for (int j = 0; j < ColToRowLocal.Length; j++)
-                    ColToRowLocal[j] = new List<int>();
+                    ColToRowLocal[j] = new List<long>();
                 
                 // build Column to row - mapping
                 // =============================
-                ColToRowExternal = new Dictionary<int, List<int>>();
+                ColToRowExternal = new Dictionary<long, List<long>>();
                 // key: global column index j, within the range of processor 'p'
                 // values: global row indices 
 
 
-                SortedDictionary<int, List<int>> ColForProc = new SortedDictionary<int, List<int>>();
+                SortedDictionary<int, List<long>> ColForProc = new SortedDictionary<int, List<long>>();
                 // key: MPI processor index 'p'
                 // values: a set of global column indices, within the range of processor 'p',
                 //         that contain nonzero entries on this processor
 
-                int[] col = null;
+                long[] col = null;
                 int L;
 
                 // loop over all rows...
@@ -117,9 +117,9 @@ namespace ilPSP.LinSolvers {
 
                     // loop over all nonzero entries in the row...
                     for(int l = 0; l < L; l++) {
-                        int ColIndex = col[l];
+                        long ColIndex = col[l];
 
-                        int localColInd = ColIndex - i0Col;
+                        int localColInd = checked((int)(ColIndex - i0Col));
                         if (localColInd >= 0 && localColInd < J) {
                             // column of 'entry' is within the local range of this processor
                             // + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
@@ -139,11 +139,11 @@ namespace ilPSP.LinSolvers {
                                 //    ColToRowExt_proc = ColToRowExternal[proc];
                                 //}
 
-                                int j = ColIndex;
+                                long j = ColIndex;
 
-                                List<int> Rows4Col;
+                                List<long> Rows4Col;
                                 if (!ColToRowExternal.ContainsKey(j)) {
-                                    Rows4Col = new List<int>();
+                                    Rows4Col = new List<long>();
                                     ColToRowExternal.Add(j, Rows4Col);
                                 } else {
                                     Rows4Col = ColToRowExternal[j];
@@ -153,9 +153,9 @@ namespace ilPSP.LinSolvers {
                             }
 
                             {
-                                List<int> ColForProc_proc;
+                                List<long> ColForProc_proc;
                                 if (!ColForProc.ContainsKey(proc)) {
-                                    ColForProc_proc = new List<int>();
+                                    ColForProc_proc = new List<long>();
                                     ColForProc.Add(proc, ColForProc_proc);
                                 } else {
                                     ColForProc_proc = ColForProc[proc];
@@ -270,7 +270,7 @@ namespace ilPSP.LinSolvers {
 
                     foreach(var kv in ExtCol) {
                         int rank = kv.Key;
-                        int[] ColIdx = kv.Value;
+                        long[] ColIdx = kv.Value;
 
                         var sendToRank = new List<Tuple<int, List<int>>>();
 
@@ -286,7 +286,7 @@ namespace ilPSP.LinSolvers {
 
                     var receive = SerialisationMessenger.ExchangeData(send,csMPI.Raw._COMM.WORLD);
 
-                    ColProcessorsExternal = new Dictionary<int,List<int>>();
+                    ColProcessorsExternal = new Dictionary<long,List<int>>();
                     foreach (var kv in receive) {
                         var val = kv.Value;
 
@@ -333,15 +333,15 @@ namespace ilPSP.LinSolvers {
             ///   <item>2nd index: only enumeration</item>
             /// </list>
             /// </remarks>
-            public List<int>[] ColToRowLocal;
+            public List<long>[] ColToRowLocal;
 
             /// <summary>
             /// for each column (NOT within the local range of column partition <see cref="ColPart"/>),
-            /// the indices of those locally stored rows that contain non-zero entries;<br/>
-            /// key: global column index j, within the range of processor 'p'<br/>
-            /// values: enumeration of global row indices 
+            /// the indices of those locally stored rows that contain non-zero entries;
+            /// - key: global column index j, within the range of processor 'p'
+            /// - values: enumeration of global row indices 
             /// </summary>
-            public Dictionary<int,List<int>> ColToRowExternal = new Dictionary<int, List<int>>();
+            public Dictionary<long,List<long>> ColToRowExternal = new Dictionary<long, List<long>>();
             
             /// <summary>
             /// for each column, the 
@@ -353,11 +353,12 @@ namespace ilPSP.LinSolvers {
 
             /// <summary>
             /// for each certain extern columns, the 
-            /// list of MPI processor ranks, that hold nonzero entries of this column.<br/>
-            /// index: local column index (as defined by column partition <see cref="ColPart"/>);<br/>
-            /// the current processor ('my rank') is not included.
+            /// list of MPI processor ranks, that hold nonzero entries of this column.
+            /// - key: external column index
+            /// - index: local column index (as defined by column partition <see cref="ColPart"/>)
+            ///          the current processor ('my rank') is not included.
             /// </summary>
-            public Dictionary<int,List<int>> ColProcessorsExternal;
+            public Dictionary<long,List<int>> ColProcessorsExternal;
 
 
             /// <summary>
@@ -369,13 +370,13 @@ namespace ilPSP.LinSolvers {
             /// <param name="row">row index</param>
             /// <param name="col">column index</param>
             /// <returns></returns>
-            public double this[int row, int col] {
+            public double this[long row, long col] {
                 get {
                     return Mtx[row, col];
                 }
                 set {
-                    int jLocal = col - (int)ColPart.i0;
-                    List<int> _col;
+                    int jLocal = ColPart.Global2Local(col);
+                    List<long> _col;
                     if (jLocal >= 0 && jLocal < ColPart.LocalLength) {
                         _col = ColToRowLocal[col - ColPart.i0];
                     } else {
@@ -383,7 +384,7 @@ namespace ilPSP.LinSolvers {
 
                         if (!ColToRowExternal.TryGetValue(col, out _col)) {
                             if (value != 0.0) {
-                                _col = new List<int>();
+                                _col = new List<long>();
                                 _col.Add(row);
                                 ColToRowExternal.Add(col, _col);
                             }
@@ -411,7 +412,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// <param name="i"></param>
         /// <param name="p"></param>
-        void TestIndex( int i, IPartitioning p) {
+        void TestIndex(long i, IPartitioning p) {
             i -= (int)p.i0;
             if(i < 0 || i >= p.LocalLength)
                 throw new IndexOutOfRangeException("row/col index out of range.");
@@ -429,13 +430,13 @@ namespace ilPSP.LinSolvers {
 
             //MsrMatrix.MatrixEntry[] row = m_Matrix.Mtx.GetRow(iSrc);
             double[] val = null;
-            int[] col = null;
+            long[] col = null;
             int L;
             L = m_Matrix.Mtx.GetRow(iSrc, ref col, ref val);
 
             //double rowSum = 0;
             for (int j = 0; j < L; j++) {
-                int ColIdx = col[L];
+                long ColIdx = col[L];
                 m_Matrix[iDst, ColIdx] += alpha * val[j];
                 //rowSum += row[j].val;
             }
@@ -454,7 +455,7 @@ namespace ilPSP.LinSolvers {
             /// <summary>
             /// global column index of the altered row
             /// </summary>
-            public int jCol;
+            public long jCol;
         }
 
         /// <summary>
@@ -486,7 +487,7 @@ namespace ilPSP.LinSolvers {
             /// <summary>
             /// global index of the row to add
             /// </summary>
-            public int iSrc;
+            public long iSrc;
 
             /// <summary>
             /// scaling for row <see cref="iSrc"/>
@@ -501,7 +502,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="iSrc"></param>
         /// <param name="iDst"></param>
         /// <param name="alpha"></param>
-        public void ColAdditionDeferred(int iSrc, int iDst, double alpha) {
+        public void ColAdditionDeferred(long iSrc, long iDst, double alpha) {
             TestIndex(iDst, m_Matrix.Mtx.ColPartition);
 #if DEBUG
             if (!m_Matrix.ColPart.IsInLocalRange(iSrc)) {
@@ -525,14 +526,14 @@ namespace ilPSP.LinSolvers {
         /// Row operations (unlike column operation) can be always executed
         /// on the local MPI processor.
         /// </remarks>
-        public void RowMul(int iRow, double alpha) {
+        public void RowMul(long iRow, double alpha) {
             if (alpha == 0.0) {
                 RowClear(iRow);
             } else {
 
                 TestIndex(iRow, m_Matrix.Mtx.RowPartitioning);
 
-                int[] icol = null;
+                long[] icol = null;
                 int L = m_Matrix.Mtx.GetOccupiedColumnIndices(iRow, ref icol);
                 for (int j = 0; j < L; j++)
                     m_Matrix.Mtx[iRow, icol[j]] *= alpha;
@@ -545,9 +546,9 @@ namespace ilPSP.LinSolvers {
         /// <param name="iRow">
         /// global row index
         /// </param>
-        public void RowClear(int iRow) {
+        public void RowClear(long iRow) {
             TestIndex(iRow, m_Matrix.Mtx.RowPartitioning);
-            int[] icol = null;
+            long[] icol = null;
             int L = m_Matrix.Mtx.GetOccupiedColumnIndices(iRow, ref icol);
 
             for (int j = 0; j < L; j++)
@@ -560,7 +561,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="iCol">
         /// global column index
         /// </param>        
-        public void ColClearDeferred(int iCol) {
+        public void ColClearDeferred(long iCol) {
 #if DEBUG
             if (!m_Matrix.ColPart.IsInLocalRange(iCol)) {
                 if (!m_Matrix.ColProcessorsExternal.ContainsKey(iCol))
@@ -733,23 +734,23 @@ namespace ilPSP.LinSolvers {
             for (int l = 0; l < L; l++) {
                 ColOp op = DeferredColOpList[l];
 
-                int jlocal = op.jCol - j0Loc;
+                int jlocal = checked((int)(op.jCol - j0Loc));
 
                 if (op is ColAddition) {
                     double alpha = ((ColAddition)op).alpha;
-                    int iSrc = ((ColAddition)op).iSrc;
+                    long iSrc = ((ColAddition)op).iSrc;
 
-                    int[] col;
+                    long[] col;
                     if (iSrc >= j0Loc && iSrc < (j0Loc + LenLoc))
                         // operation in local column range
                         col = m_Matrix.ColToRowLocal[iSrc - j0Loc].ToArray();
                     else {
                         // operation comes from other processor
-                        List<int> _col;
+                        List<long> _col;
                         if (m_Matrix.ColToRowExternal.TryGetValue(iSrc, out _col)) {
                             col = _col.ToArray();
                         } else {
-                            col = new int[0];
+                            col = new long[0];
                         }
                         //col = m_Matrix.ColToRowExternal[iSrc].ToArray();
                     }
@@ -758,17 +759,17 @@ namespace ilPSP.LinSolvers {
                         m_Matrix[irow, op.jCol] += m_Matrix[irow, iSrc] * alpha;
                     }
                 } else {
-                    int[] col;
+                    long[] col;
                     if (jlocal >= 0 && jlocal < LenLoc)
                         // operation in local column range
                         col = m_Matrix.ColToRowLocal[jlocal].ToArray();
                     else {
                         // operation comes from other processor
-                        List<int> _col;
+                        List<long> _col;
                         if (m_Matrix.ColToRowExternal.TryGetValue(op.jCol, out _col)) {
                             col = _col.ToArray();
                         } else {
-                            col = new int[0];
+                            col = new long[0];
                         }
                         //col = m_Matrix.ColToRowExternal[op.jCol].ToArray();
                     }

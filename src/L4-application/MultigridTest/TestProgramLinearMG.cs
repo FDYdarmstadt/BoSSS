@@ -337,21 +337,21 @@ namespace BoSSS.Application.MultigridTest {
             var Lev1 = new MultigridMapping(Map, aB[1], new int[] { B1.Degree, B2.Degree });
 
 
-            int[] I0col = Lev0.GetSubvectorIndices(new int[] { 0 });
-            int[] I1col = Lev0.GetSubvectorIndices(new int[] { 1 });
-            int[] I0row = Lev1.GetSubvectorIndices(new int[] { 0 });
-            int[] I1row = Lev1.GetSubvectorIndices(new int[] { 1 });
+            long[] I0col = Lev0.GetSubvectorIndices(new int[] { 0 });
+            long[] I1col = Lev0.GetSubvectorIndices(new int[] { 1 });
+            long[] I0row = Lev1.GetSubvectorIndices(new int[] { 0 });
+            long[] I1row = Lev1.GetSubvectorIndices(new int[] { 1 });
 
             var RestMtx = Lev1.FromOtherLevelMatrix(Lev0);
 
             MsrMatrix Rest00 = new MsrMatrix(I0row.Length, I0col.Length, 1, 1);
-            RestMtx.WriteSubMatrixTo(Rest00, I0row, default(int[]), I0col, default(int[]));
+            RestMtx.WriteSubMatrixTo(Rest00, I0row, default(long[]), I0col, default(long[]));
             MsrMatrix Rest01 = new MsrMatrix(I0row.Length, I1col.Length, 1, 1);
-            RestMtx.WriteSubMatrixTo(Rest01, I0row, default(int[]), I1col, default(int[]));
+            RestMtx.WriteSubMatrixTo(Rest01, I0row, default(long[]), I1col, default(long[]));
             MsrMatrix Rest10 = new MsrMatrix(I1row.Length, I0col.Length, 1, 1);
-            RestMtx.WriteSubMatrixTo(Rest10, I1row, default(int[]), I0col, default(int[]));
+            RestMtx.WriteSubMatrixTo(Rest10, I1row, default(long[]), I0col, default(long[]));
             MsrMatrix Rest11 = new MsrMatrix(I1row.Length, I1col.Length, 1, 1);
-            RestMtx.WriteSubMatrixTo(Rest11, I1row, default(int[]), I1col, default(int[]));
+            RestMtx.WriteSubMatrixTo(Rest11, I1row, default(long[]), I1col, default(long[]));
 
             Assert.IsTrue(Rest10.InfNorm() == 0.0);
             Assert.IsTrue(Rest01.InfNorm() == 0.0);

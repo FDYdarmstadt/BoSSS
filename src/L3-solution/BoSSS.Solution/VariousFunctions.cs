@@ -35,7 +35,7 @@ namespace BoSSS.Solution.Utils
                         int Np = map.BasisS[f].GetLength(j);
 
                         for(int n = 0; n < Np; n++) {
-                            int idx = map.GlobalUniqueCoordinateIndex(f, j, n);
+                            long idx = map.GlobalUniqueCoordinateIndex(f, j, n);
 
                             M.SetDiagonalElement(idx, M.GetDiagonalElement(idx) + factor);
                         }

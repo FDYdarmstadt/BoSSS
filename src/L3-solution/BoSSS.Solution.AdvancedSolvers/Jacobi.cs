@@ -45,7 +45,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int L = M.RowPartitioning.LocalLength;
 
             diag = new double[L];
-            int i0 = Mtx.RowPartitioning.i0;
+            long i0 = Mtx.RowPartitioning.i0;
 
             for(int i = 0; i < L; i++) {
                 diag[i] = Mtx[i0 + i, i0 + i];

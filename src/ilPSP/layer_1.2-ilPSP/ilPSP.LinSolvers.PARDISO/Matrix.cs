@@ -92,7 +92,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 m_comm = M.MPI_Comm;
 
                 int LR;
-                int[] col = null;
+                long[] col = null;
                 double[] val = null;
 
                 if (size == 1)
@@ -110,11 +110,11 @@ namespace ilPSP.LinSolvers.PARDISO {
                             // upper triangle + diagonal (diagonal entries are 
                             // always required, even if 0.0, for symmetric matrices in PARDISO)
 
-                            len = M.GetGlobalNoOfUpperTriangularNonZeros() + n;
+                            len = checked((int)(M.GetGlobalNoOfUpperTriangularNonZeros() + n));
                         }
                         else
                         {
-                            len = M.GetTotalNoOfNonZerosPerProcess();
+                            len = checked((int)(M.GetTotalNoOfNonZerosPerProcess()));
                         }
                         int Nrows = M.RowPartitioning.LocalLength;
 
@@ -137,7 +137,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                             for (int i = 0; i < Nrows; i++)
                             {
                                 ia[i] = cnt + 1; // fortran indexing
-                                int iRow = M.RowPartitioning.i0 + i;
+                                int iRow = checked((int)(M.RowPartitioning.i0 + i));
 
                                 LR = M.GetRow(iRow, ref col, ref val);
 
@@ -169,7 +169,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         }
                                         else
                                         {
-                                            ja[cnt] = col[j] + 1; // fortran indexing
+                                            ja[cnt] = (int)(col[j] + 1); // fortran indexing
                                             if (UseDoublePrecision)
                                                 //a_D[cnt] = val[j];
                                                 *a_D = val[j];
@@ -208,9 +208,9 @@ namespace ilPSP.LinSolvers.PARDISO {
                             // number of entries is:
                             // upper triangle + diagonal (diagonal entries are 
                             // always required, even if 0.0, for symmetric matrices in PARDISO)
-                            len_loc = M.GetLocalNoOfUpperTriangularNonZeros() + M.RowPartitioning.LocalLength;
+                            len_loc = checked((int)(M.GetLocalNoOfUpperTriangularNonZeros() + M.RowPartitioning.LocalLength));
                         else
-                            len_loc = M.GetTotalNoOfNonZerosPerProcess();
+                            len_loc = checked((int)M.GetTotalNoOfNonZerosPerProcess());
 
 
                         Partitioning part = new Partitioning(len_loc, m_comm);
@@ -271,7 +271,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                             }
                                             else
                                             {
-                                                ja_loc[cnt] = col[j] + 1; // fortran indexing
+                                                ja_loc[cnt] = (int)(col[j] + 1); // fortran indexing
                                                 if (UseDoublePrecision)
                                                     a_loc_D[cnt] = val[j];
                                                 else
@@ -292,13 +292,13 @@ namespace ilPSP.LinSolvers.PARDISO {
                         // ===================================
                         if (rank == 0)
                         {
-                            n = M.RowPartitioning.TotalLength;
+                            n = checked((int)(M.RowPartitioning.TotalLength));
 
                             // process 0: collect data from other processors
                             // +++++++++++++++++++++++++++++++++++++++++++++
                             this.ia = new int[M.RowPartitioning.TotalLength + 1];
                             this.ja = new int[part.TotalLength];
-                            int partLeng = part.TotalLength;
+                            int partLeng = checked((int)(part.TotalLength));
                             //long partLeng2 = (long)part.TotalLength;
                             //Console.WriteLine("Partitioning total length is as int: "+ partLeng + "and in 64-bit: "+ partLeng2);
 
@@ -342,7 +342,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 for (int i = 0; i < size; i++)
                                 {
                                     recvcounts[i] = part.GetLocalLength(i);
-                                    displs[i] = part.GetI0Offest(i);
+                                    displs[i] = checked((int)(part.GetI0Offest(i)));
                                 }
 
 
@@ -392,7 +392,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                 for (int i = 0; i < size; i++)
                                 {
-                                    displs[i] = M.RowPartitioning.GetI0Offest(i);
+                                    displs[i] = checked((int)(M.RowPartitioning.GetI0Offest(i)));
                                     recvcounts[i] = M.RowPartitioning.GetLocalLength(i);
                                 }
 

@@ -363,6 +363,13 @@ namespace BoSSS.Foundation.Comm {
         /// <summary>
         /// most elegant way of MPI vector exchange....
         /// </summary>
+        static public void MPIExchange(this long[] vector, IGridData master) {
+            MPIExchange<long[], long>(vector, master);
+        }
+
+        /// <summary>
+        /// most elegant way of MPI vector exchange....
+        /// </summary>
         /// <typeparam name="Tlst"></typeparam>
         /// <typeparam name="Titm"></typeparam>
         /// <param name="vector"></param>

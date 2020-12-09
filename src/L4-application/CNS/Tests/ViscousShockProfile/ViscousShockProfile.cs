@@ -49,7 +49,7 @@ namespace CNS.Tests.ViscousShockProfile {
             CellQuadratureScheme scheme = new CellQuadratureScheme(true);
             int order = WorkingSet.Momentum[0].Basis.Degree * 2 + 2;
             int noOfNodesPerCell = scheme.Compile(GridData, order).First().Rule.NoOfNodes;
-            int offset = Grid.CellPartitioning.i0 * noOfNodesPerCell;
+            long offset = Grid.CellPartitioning.i0 * noOfNodesPerCell;
             long K = Grid.NumberOfCells;
 
             string pathToData;
@@ -71,7 +71,7 @@ namespace CNS.Tests.ViscousShockProfile {
                         output = sr.ReadToEnd().
                             Split(',').
                             Select((str) => double.Parse(str, System.Globalization.CultureInfo.InvariantCulture.NumberFormat)).
-                            Skip(offset).
+                            Skip(checked((int)offset)).
                             Take(Grid.CellPartitioning.LocalLength * noOfNodesPerCell).
                             ToArray();
                     };
@@ -95,7 +95,7 @@ namespace CNS.Tests.ViscousShockProfile {
                         output = sr.ReadToEnd().
                             Split(',').
                             Select((str) => double.Parse(str, System.Globalization.CultureInfo.InvariantCulture.NumberFormat)).
-                            Skip(offset).
+                            Skip(checked((int)offset)).
                             Take(Grid.CellPartitioning.LocalLength * noOfNodesPerCell).
                             ToArray();
                     };
@@ -120,7 +120,7 @@ namespace CNS.Tests.ViscousShockProfile {
                         output = sr.ReadToEnd().
                             Split(',').
                             Select((str) => double.Parse(str, System.Globalization.CultureInfo.InvariantCulture.NumberFormat)).
-                            Skip(offset).
+                            Skip(checked((int)offset)).
                             Take(Grid.CellPartitioning.LocalLength * noOfNodesPerCell).
                             ToArray();
                     };

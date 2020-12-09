@@ -40,7 +40,7 @@ namespace ilPSP {
         /// Length of sub-blocks.
         /// </summary>
         /// <param name="blockType">
-        /// The block type index, e.g. the return value of <see cref="GetBlockType(int)"/>.
+        /// The block type index, e.g. the return value of <see cref="GetBlockType(long)"/>.
         /// </param>
         /// <returns>
         /// Lengths of sub-blocks, for the respective block type.
@@ -72,7 +72,7 @@ namespace ilPSP {
         /// The block type, 
         /// an index into <see cref="BlockLen"/>, <see cref="Subblk_i0"/>, <see cref="SubblkLen"/>.
         /// </returns>
-        int GetBlockType(int iBlock);
+        int GetBlockType(long iBlock);
 
         /// <summary>
         /// Index offset for some block.
@@ -83,7 +83,7 @@ namespace ilPSP {
         /// <returns>
         /// A global index of the first element in the block.
         /// </returns>
-        int GetBlockI0(int iBlock);
+        long GetBlockI0(long iBlock);
 
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace ilPSP {
         /// <returns>
         /// The length of the respective block.
         /// </returns>
-        int GetBlockLen(int iBlock);
+        int GetBlockLen(long iBlock);
 
         /// <summary>
         /// Converts an index into a global index.
@@ -106,13 +106,13 @@ namespace ilPSP {
         /// <returns>
         /// Global block index.
         /// </returns>
-        int GetBlockIndex(int i);
+        long GetBlockIndex(long i);
 
 
         /// <summary>
         /// Total number of blocks (over all MPI processors).
         /// </summary>
-        int TotalNoOfBlocks {
+        long TotalNoOfBlocks {
             get;
         }
 
@@ -126,7 +126,7 @@ namespace ilPSP {
         /// <summary>
         /// Global block index of first block on this MPI process.
         /// </summary>
-        int FirstBlock  {
+        long FirstBlock  {
             get;
         }
 
@@ -137,7 +137,7 @@ namespace ilPSP {
         /// process index; 
         /// </param>
         /// <returns>index of the first permutation entry stored by processor <paramref name="proc"/></returns>
-        int GetFirstBlock(int proc);
+        long GetFirstBlock(int proc);
 
         /// <summary>
         /// Returns the number of blocks which are stored by
@@ -150,7 +150,7 @@ namespace ilPSP {
         /// <summary>
         /// MPI rank for a block.
         /// </summary>
-        int FindProcessForBlock(int iBlk);
+        int FindProcessForBlock(long iBlk);
         
         /// <summary>
         /// Well, true if all blocks are the same; otherwise, maybe something different. 

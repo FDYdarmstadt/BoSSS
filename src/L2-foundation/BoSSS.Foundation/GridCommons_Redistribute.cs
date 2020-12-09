@@ -240,7 +240,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 {
                     IEnumerable<Neighbour>[] neighboursLocal = GetCellNeighbourship(IncludeBcCells: false).Take(NoOfUpdateCells).ToArray();
                     if (rank == 0) {
-                        int localOffset = m_CellPartitioning.GetI0Offest(rank);
+                        long localOffset = m_CellPartitioning.GetI0Offest(rank);
                         int localLength = m_CellPartitioning.GetLocalLength(rank);
 
                         for (int i = 0; i < localLength; i++) {
@@ -251,7 +251,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                     while (sms.GetNext(out int senderRank, out IEnumerable<Neighbour>[] neighbours)) {
-                        int localOffset = m_CellPartitioning.GetI0Offest(senderRank);
+                        long localOffset = m_CellPartitioning.GetI0Offest(senderRank);
                         int localLength = m_CellPartitioning.GetLocalLength(senderRank);
 
                         if (neighbours.Length != localLength) {
@@ -269,7 +269,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (cellWeightsLocal != null) {
                     cellWeightsGlobal = new int[J];
                     if (rank == 0) {
-                        int localOffset = m_CellPartitioning.GetI0Offest(rank);
+                        long localOffset = m_CellPartitioning.GetI0Offest(rank);
                         int localLength = m_CellPartitioning.GetLocalLength(rank);
 
                         for (int i = 0; i < localLength; i++) {
@@ -280,7 +280,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                     while (sms.GetNext(out int senderRank, out int[] cellWeights)) {
-                        int localOffset = m_CellPartitioning.GetI0Offest(senderRank);
+                        long localOffset = m_CellPartitioning.GetI0Offest(senderRank);
                         int localLength = m_CellPartitioning.GetLocalLength(senderRank);
 
                         if (cellWeights.Length != localLength) {
@@ -857,8 +857,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 foreach (Neighbour nb in enumNb) {
                     //Loop over Neighbours
-                    int NIndex=nb.Neighbour_GlobalIndex;
-                    Cell C_N = this.Cells[NIndex];
+                    long NIndex = nb.Neighbour_GlobalIndex;
+                    Cell C_N = this.Cells[NIndex - this.CellPartitioning.i0];
                     double[] CenterC_N = new double[D];
 
                     //Barycentre of Neighbour
@@ -884,10 +884,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             int D = this.SpatialDimension;
             var BB = new BoundingBox(D);
 
-            int J0 = this.CellPartitioning.i0;
-            int JE = this.CellPartitioning.iE;
-            for (int j = J0; j < JE; j++) {
-                Cell Cj = this.Cells[j - J0];
+            long J = this.CellPartitioning.LocalLength;
+            for (int j = 0; j < J; j++) {
+                Cell Cj = this.Cells[j];
                 BB.AddPoints(Cj.TransformationParams);
             }
 
@@ -915,15 +914,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int D = this.SpatialDimension;
                 var GlobalBB = this.GetGridBoundingBox();
 
-                int J0 = this.CellPartitioning.i0;
-                int JE = this.CellPartitioning.iE;
-
+                int J = this.CellPartitioning.LocalLength;
+                
                 ulong[] discreteCenter = new ulong[D];
-                ulong[] local_HilbertIndex = new ulong[JE - J0];
-                int[] local_CellIndex = new int[JE - J0];
+                ulong[] local_HilbertIndex = new ulong[J];
+                long[] local_CellIndex = new long[J];
 
-                for (int j = J0; j < JE; j++) {
-                    Cell Cj = this.Cells[j - J0];
+                for (int j = 0; j < J; j++) {
+                    Cell Cj = this.Cells[j];
                     int NoOfNodes = Cj.TransformationParams.NoOfRows;
                     //Compute Barycenter
                     for (int d = 0; d < D; d++) {
@@ -945,8 +943,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     //Derive Hilbertindex from Barycenter
                     ulong iH = HilbertCurve.hilbert_c2i(64 / D, discreteCenter);
-                    local_HilbertIndex[j - J0] = iH;
-                    local_CellIndex[j - J0] = j;
+                    local_HilbertIndex[j] = iH;
+                    local_CellIndex[j] = j + this.CellPartitioning.i0;
                 }
 
                 //Gather all stuff for computation on rank==0
@@ -956,7 +954,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
                 }
                 
-                int[] CellIndex = local_CellIndex.MPIGatherv(CellsPerRank);
+                long[] CellIndex = local_CellIndex.MPIGatherv(CellsPerRank);
                 ulong[] HilbertIndex = local_HilbertIndex.MPIGatherv(CellsPerRank);
                 List<int[]> cellCosts = new List<int[]>();
                 if (localcellCosts != null) {

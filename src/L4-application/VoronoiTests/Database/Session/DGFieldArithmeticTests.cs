@@ -14,14 +14,14 @@ namespace VoronoiTests.Database.Session
         delegate void DGFieldComparisonNonEmb_ComputeError(IEnumerable<string> fieldNames,
                 ITimestepInfo[] timesteps,
                 out double[] gridResolutions,
-                out Dictionary<string, int[]> DOFs,
+                out Dictionary<string, long[]> DOFs,
                 out Dictionary<string, double[]> errors,
                 out Guid[] guids);
 
         class ErrorInfo
         {
             public double[] gridResolution;
-            public Dictionary<string, int[]> DOFs;
+            public Dictionary<string, long[]> DOFs;
             public Dictionary<string, double[]> Error;
             public Guid[] guids;
         }
@@ -34,7 +34,7 @@ namespace VoronoiTests.Database.Session
             errorEvaluator(new[] { fieldName },
                 timesteps,
                 out double[] gridResolution,
-                out Dictionary<string, int[]> DOFs,
+                out Dictionary<string, long[]> DOFs,
                 out Dictionary<string, double[]> Error,
                 out Guid[] guids);
             ErrorInfo FieldComparisonError = new ErrorInfo{

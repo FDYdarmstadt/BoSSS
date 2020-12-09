@@ -67,12 +67,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
             invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
             int Jloc = MgMap.LocalNoOfBlocks;
-            int j0 = MgMap.FirstBlock;
+            long j0 = MgMap.FirstBlock;
             MultidimensionalArray temp = null;
             for (int j = 0; j < Jloc; j++) {
-                int jBlock = j + j0;
+                long jBlock = j + j0;
                 int Nblk = MgMap.GetBlockLen(jBlock);
-                int i0 = MgMap.GetBlockI0(jBlock);
+                long i0 = MgMap.GetBlockI0(jBlock);
 
                 if (temp == null || temp.NoOfCols != Nblk)
                     temp = MultidimensionalArray.Create(Nblk, Nblk);
