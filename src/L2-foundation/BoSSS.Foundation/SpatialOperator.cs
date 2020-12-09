@@ -80,6 +80,23 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class SpatialOperator : ISpatialOperator {
 
+
+        bool m_IsLinear;
+
+        /// <summary>
+        /// true, if the PDE defined by operator can entirely be solved by a linear solver
+        /// </summary>
+        public bool IsLinear {
+            get {
+                return m_IsLinear;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("unable to change this after operator is committed.");
+                m_IsLinear = value;
+            }
+        }
+
         /// <summary>
         /// <see cref="ISpatialOperator.SolverSafeguard"/>
         /// </summary>
@@ -221,6 +238,9 @@ namespace BoSSS.Foundation {
                 r.CellLengthScales = cgdat.Cells.CellLengthScale;
                 r.EdgeLengthScales = cgdat.Edges.h_min_Edge;
 
+            } else if(g is Grid.Aggregation.AggregationGridData agDat) { 
+                r.CellLengthScales =  agDat.AncestorGrid.Cells.CellLengthScale;
+                r.EdgeLengthScales =  agDat.AncestorGrid.Edges.h_min_Edge;
             } else {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
@@ -1995,23 +2015,23 @@ namespace BoSSS.Foundation {
 
                         //Debugger.Launch();
 
-                        var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
+                        var ExchData = new Dictionary<int, List<Tuple<long, long>>>();
 
                         foreach(int j in CellList) {
                             int[] Neighs_j = Neighs[j];
                             foreach(int jN in Neighs_j) {
                                 if(jN >= J) {
 
-                                    int Gl_jN = (int)GlidxExt[jN - J];
+                                    long Gl_jN = GlidxExt[jN - J];
                                     int iProc = CellPart.FindProcess(Gl_jN);
-                                    int Gl_j = j + CellPart.i0;
+                                    long Gl_j = j + CellPart.i0;
 
                                     if(!ExchData.TryGetValue(iProc, out var ExchData_iProc)) {
-                                        ExchData_iProc = new List<Tuple<int, int>>();
+                                        ExchData_iProc = new List<Tuple<long, long>>();
                                         ExchData.Add(iProc, ExchData_iProc);
                                     }
 
-                                    ExchData_iProc.Add(new Tuple<int, int>(Gl_j, Gl_jN));
+                                    ExchData_iProc.Add(new Tuple<long, long>(Gl_j, Gl_jN));
                                 }
                             }
                         }
@@ -2025,12 +2045,12 @@ namespace BoSSS.Foundation {
                             var list = kv.Value;
 
                             foreach(var t in list) {
-                                int Gl_j = t.Item1;
-                                int Gl_jN = t.Item2;
+                                long Gl_j = t.Item1;
+                                long Gl_jN = t.Item2;
                                 Debug.Assert(CellPart.FindProcess(Gl_j) == iProc);
                                 Debug.Assert(CellPart.IsInLocalRange(Gl_jN));
 
-                                int Loc_jN = Gl_jN - CellPart.i0;
+                                int Loc_jN = checked((int)(Gl_jN - CellPart.i0));
                                 Debug.Assert(Loc_jN >= 0 && Loc_jN < J);
                                 int Loc_j = Gl2LocExt[Gl_j];
                                 Debug.Assert(Loc_j >= J && Loc_j < JE);
@@ -2142,7 +2162,7 @@ namespace BoSSS.Foundation {
                 long[] GlidxExt = gDat.iParallel.GlobalIndicesExternalCells;
                 var Gl2LocExt = gDat.iParallel.Global2LocalIdx;
                 var CellPart = gDat.CellPartitioning;
-                int Jglob = CellPart.TotalLength;
+                long Jglob = CellPart.TotalLength;
 
 
                 //int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
@@ -2210,7 +2230,7 @@ namespace BoSSS.Foundation {
                                 Debug.Assert(CellPart.FindProcess(Gl_j) == iProc);
                                 Debug.Assert(CellPart.IsInLocalRange(Gl_jN));
 
-                                int Loc_jN = Gl_jN - CellPart.i0;
+                                int Loc_jN = checked((int)(Gl_jN - CellPart.i0));
                                 Debug.Assert(Loc_jN >= 0 && Loc_jN < J);
                                 int Loc_j = Gl2LocExt[Gl_j];
                                 Debug.Assert(Loc_j >= J && Loc_j < JE);
@@ -2329,7 +2349,7 @@ namespace BoSSS.Foundation {
                 DGField[] domFields = Eval.DomainFields.Fields.ToArray();
                 var U0 = new CoordinateVector(Eval.DomainFields);
 
-                int j0 = Eval.GridData.CellPartitioning.i0;
+                long j0 = Eval.GridData.CellPartitioning.i0;
                 int J = Eval.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int JE = Eval.GridData.iLogicalCells.Count;
                 int NoOfDomFields = domMap.BasisS.Count;

@@ -9,7 +9,7 @@
     <RootNamespace>BoSSS.Foundation.XDG</RootNamespace>
     <AssemblyName>BoSSS.Foundation.XDG</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -64,6 +64,7 @@
     <Compile Include="Quadrature\LevelSetEdgeSurfaceQuadRuleFactory.cs" />
     <Compile Include="Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs" />
     <Compile Include="Quadrature\LevelSetIntegrator.cs" />
+    <Compile Include="Quadrature\LevelSetOnEdgeRule.cs" />
     <Compile Include="Quadrature\LevelSetQuadRuleFactory2.cs" />
     <Compile Include="Quadrature\LevelSetVolumeQuadRuleFactory.cs" />
     <Compile Include="Quadrature\LineAndPointQuadratureFactory.cs" />

@@ -1,0 +1,1 @@
+This folders contains two exemplary worksheets for the automatic submission of CNS/XDGShock computations to the HPC Cluster at our institute

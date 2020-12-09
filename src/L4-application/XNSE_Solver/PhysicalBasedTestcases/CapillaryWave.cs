@@ -383,7 +383,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Tags.Add("Popinet");
             C.Tags.Add("Testcase1");
 
-            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            C.PostprocessingModules.Add(new WaveLikeLogging());
 
             #endregion
 
@@ -629,7 +630,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            C.PostprocessingModules.Add(new WaveLikeLogging());
 
             #endregion
 
@@ -732,7 +734,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
+           
 
             #endregion
 
@@ -760,9 +762,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ======================
             #region db
 
+            string _DbPath = null;
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CWp3_spatialConv";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
-            string _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB";
             //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
 
             C.DbPath = _DbPath;
@@ -774,8 +777,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SessionName = "CapillaryWave_Setup0_convStudy_k3_mesh2_restart"; //"7f9130d3-eaab-4ac2-9844-fd91be6f1edf"
             //Guid restart = new Guid("7f9130d3-eaab-4ac2-9844-fd91be6f1edf");      
 
-            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
-            C.LogPeriod = 10;
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            //C.LogPeriod = 10;
+            C.PostprocessingModules.Add(new WaveLikeLogging() { LogPeriod = 10 });
 
             #endregion
 
@@ -1456,7 +1460,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            C.PostprocessingModules.Add(new WaveLikeLogging());
 
             #endregion
 
@@ -1559,8 +1564,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
+            
             #endregion
 
 

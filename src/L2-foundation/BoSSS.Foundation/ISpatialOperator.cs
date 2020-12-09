@@ -250,6 +250,14 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
+
+        /// <summary>
+        /// true, if the PDE defined by operator can entirely be solved by a linear solver
+        /// </summary>
+        bool IsLinear {
+            get;
+            set;
+        }
        
     }
 

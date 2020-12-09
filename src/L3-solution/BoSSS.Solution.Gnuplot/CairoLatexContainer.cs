@@ -154,55 +154,56 @@ namespace BoSSS.Solution.Gnuplot {
                 stw.Flush();
             }
 
-            string LatexExe = this.PdfLatex ? "pdflatex" : "latex", DvipsExe = "dvips";
-            if(Path.DirectorySeparatorChar == '\\') {
-                LatexExe += ".exe";
-            }
-
-
-            // compile LaTeX
-            //////////////////////
-            {
-                ProcessStartInfo psi = new ProcessStartInfo();
-                psi.WorkingDirectory = outDir;
-                psi.Arguments = fileName + ".tex";
-                psi.FileName = LatexExe;
-
-
-                var p = new Process();
-                p.StartInfo = psi;
-                p.Start();
-                p.WaitForExit();
-
-                if(p.ExitCode != 0) {
-                    Console.WriteLine("Unable to compile, exiting.");
-                    Console.WriteLine("'" + LatexExe + "' exited with: " + p.ExitCode);
-                    return;
+            if(PerformLatexCompilation) {
+                string LatexExe = this.PdfLatex ? "pdflatex" : "latex", DvipsExe = "dvips";
+                if(Path.DirectorySeparatorChar == '\\') {
+                    LatexExe += ".exe";
                 }
-            }
-
-            // use dvips
-            ////////////////////////
-            if(!this.PdfLatex) {
-                ProcessStartInfo psi = new ProcessStartInfo();
-                psi.WorkingDirectory = outDir;
-                psi.Arguments = fileName + ".dvi";
-                psi.FileName = DvipsExe;
 
 
-                var p = new Process();
-                p.StartInfo = psi;
-                p.Start();
-                p.WaitForExit();
+                // compile LaTeX
+                //////////////////////
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.WorkingDirectory = outDir;
+                    psi.Arguments = fileName + ".tex";
+                    psi.FileName = LatexExe;
 
-                if(p.ExitCode != 0) {
-                    Console.WriteLine("Unable to compile, exiting.");
-                    Console.WriteLine("'" + DvipsExe + "' exited with: " + p.ExitCode);
-                    return;
+
+                    var p = new Process();
+                    p.StartInfo = psi;
+                    p.Start();
+                    p.WaitForExit();
+
+                    if(p.ExitCode != 0) {
+                        Console.WriteLine("Unable to compile, exiting.");
+                        Console.WriteLine("'" + LatexExe + "' exited with: " + p.ExitCode);
+                        return;
+                    }
+                }
+
+                // use dvips
+                ////////////////////////
+                if(!this.PdfLatex) {
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.WorkingDirectory = outDir;
+                    psi.Arguments = fileName + ".dvi";
+                    psi.FileName = DvipsExe;
+
+
+                    var p = new Process();
+                    p.StartInfo = psi;
+                    p.Start();
+                    p.WaitForExit();
+
+                    if(p.ExitCode != 0) {
+                        Console.WriteLine("Unable to compile, exiting.");
+                        Console.WriteLine("'" + DvipsExe + "' exited with: " + p.ExitCode);
+                        return;
+                    }
                 }
             }
         }
-
 
         /// <summary>
         /// Compiles the Latex document (to pdf or eps, depending on <see cref="CairolatexContainer.PdfLatex"/>),

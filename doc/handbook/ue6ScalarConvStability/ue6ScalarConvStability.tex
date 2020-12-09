@@ -286,7 +286,7 @@ BatchmodeConnector connector = new BatchmodeConnector();
 /// corresponds to the flux, the second index to the eigenvalue and the third index to the part of
 /// the eigenvalue (0: real part; 1: imaginary part).
 MultidimensionalArray eigenvalues = MultidimensionalArray.Create(       \newline 
-\btab fluxes.Count, matrices[0].NoOfCols, 2);
+\btab fluxes.Count, (int)matrices[0].NoOfCols, 2);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -500,7 +500,7 @@ for (int j = 0; j < orders.Length; j++) \{       \newline
 \btab \btab    "imag(eigenvalues\{0\}\{1\})]", i, j);       \newline 
  \newline 
 \btab \btab eigenvalueStudy[j, i] = MultidimensionalArray.Create(       \newline 
-\btab \btab    matrix.NoOfCols, 2);       \newline 
+\btab \btab    (int)matrix.NoOfCols, 2);       \newline 
 \btab \btab connector.GetMatrix(eigenvalueStudy[j, i], "result" + i + j);       \newline 
 \btab \}       \newline 
 \}       \newline 

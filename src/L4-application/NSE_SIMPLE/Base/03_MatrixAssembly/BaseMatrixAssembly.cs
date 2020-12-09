@@ -170,7 +170,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// <see cref="Partition.i0"/>
         /// </summary>
-        public int i0 {
+        public long i0 {
             get {
                 return m_Matrix.RowPartitioning.i0;
             }

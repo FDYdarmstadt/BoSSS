@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int J = AggregationCells.Length;
             if (AggregationCellGids == null) {
                 AggregationCellGids = new long[J];
-                int i0 = m_CellPartitioning.i0;
+                long i0 = m_CellPartitioning.i0;
                 for (int j = 0; j < J; j++)
                     AggregationCellGids[j] = j + i0;
             }
@@ -361,7 +361,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 long[] EvalBuffer = new long[L];
                 ParentIdx.EvaluatePermutation(InputBuffer, EvalBuffer);
 
-                int i0_Parent = ParentGrid.CellPartitioning.i0;
+                long i0_Parent = ParentGrid.CellPartitioning.i0;
                 int J_Parent = ParentGrid.iGridData.iLogicalCells.NoOfLocalUpdatedCells;
 
                 l = 0;
@@ -373,7 +373,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     for (int k = 0; k < AG; k++) { // loop over parts of aggregation cell
                         Debug.Assert(EvalBuffer[l] >= 0);
                         Debug.Assert(EvalBuffer[l] < ParentGrid.NumberOfCells);
-                        AggIdx_j[k] = (int)EvalBuffer[l] - i0_Parent;
+                        AggIdx_j[k] = checked((int)(EvalBuffer[l] - i0_Parent));
                         Debug.Assert(AggIdx_j[k] >= 0);
                         Debug.Assert(AggIdx_j[k] < J_Parent);
 
@@ -490,6 +490,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             throw new NotImplementedException();
         }
 
+        //
         public void RedistributeGrid(int[] part) {
             throw new NotImplementedException();
         }

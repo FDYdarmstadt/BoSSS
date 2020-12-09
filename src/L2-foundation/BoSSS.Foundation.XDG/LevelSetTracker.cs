@@ -1887,7 +1887,7 @@ namespace BoSSS.Foundation.XDG {
                 //
 
 
-                if(throwCFL) {
+                if (throwCFL) {
                     LevelSetCFLException exception = new LevelSetCFLException(fail);
                     foreach(var reference in m_Observers) {
                         IObserver<LevelSetRegions> observer = reference.Target;

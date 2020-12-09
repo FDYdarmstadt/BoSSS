@@ -570,7 +570,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MaxKrylovDim = 1000;
-            C.LinearSolver.pMaxOfCoarseSolver = 2;
+            C.LinearSolver.pMaxOfCoarseSolver = 1;
             //C.LinearSolver.TargetBlockSize = 79;
            C.ExcactSolSupported = false;
             double radius = 0.7;
@@ -589,7 +589,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             // ... but stuff is not serializable, therefore this workaround.
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
 
-            //C.ImmediatePlotPeriod = 1;
             C.AgglomerationThreshold = 0.1;
 
             return C;

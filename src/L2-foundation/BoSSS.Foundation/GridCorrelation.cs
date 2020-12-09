@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if(output.Count != outputPartitioning.LocalLength)
                     throw new ArgumentException("Length mismatch of output list and output partition.");
 
-                int j0Dest = outputPartitioning.i0;
+                long j0Dest = outputPartitioning.i0;
 
                 // keys: processors which should receive data from this processor
                 Dictionary<int, ApplyToVector_Helper<I>> AllSendData = new Dictionary<int, ApplyToVector_Helper<I>>();
@@ -164,9 +164,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     foreach(int jDest in TargetIdx[j]) {
                         if(outputPartitioning.IsInLocalRange(jDest)) {
-                            I[] destCollection = output[jDest - j0Dest];
+                            I[] destCollection = output[checked((int)(jDest - j0Dest))];
                             ArrayTools.AddToArray(data_j, ref destCollection);
-                            output[jDest - j0Dest] = destCollection;
+                            output[checked((int)(jDest - j0Dest))] = destCollection;
                         } else {
                             int targProc = outputPartitioning.FindProcess(jDest);
 
@@ -198,7 +198,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int L = TIdxs.Count;
 
                     for(int l = 0; l < L; l++) {
-                        int idx = TIdxs[l] - j0Dest;
+                        int idx = checked((int)(TIdxs[l] - j0Dest));
                         Debug.Assert(outputPartitioning.IsInLocalRange(idx));
 
                         I[] destCollection = output[idx];
@@ -260,7 +260,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 m_TargetMappingIndex = new int[outputPartitioning.LocalLength][];
 
-                int j0Dest = outputPartitioning.i0;
+                long j0Dest = outputPartitioning.i0;
 
                 // keys: processors which should receive data from this processor
                 Dictionary<int, GetTargetMapping_Helper> AllSendData = new Dictionary<int, GetTargetMapping_Helper>();
@@ -314,7 +314,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int L = TIdxs.Count;
 
                     for(int l = 0; l < L; l++) {
-                        int idx = TIdxs[l] - j0Dest;
+                        int idx = checked((int)(TIdxs[l] - j0Dest));
                         Debug.Assert(outputPartitioning.IsInLocalRange(idx));
 
                         int[] destCollection = m_TargetMappingIndex[idx];

@@ -243,7 +243,7 @@ namespace BoSSS.Foundation {
         /// Equal to total number of cells, i.e. each cell corresponds to one block, see also
         /// <see cref="IBlockPartitioning.TotalNoOfBlocks"/>.
         /// </summary>
-        public int TotalNoOfBlocks {
+        public long TotalNoOfBlocks {
             get {
                 return m_Context.CellPartitioning.TotalLength;
             }
@@ -263,7 +263,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// <see cref="IBlockPartitioning.FirstBlock"/>
         /// </summary>
-        public int FirstBlock {
+        public long FirstBlock {
             get {
                 return m_Context.CellPartitioning.i0;
             }
@@ -272,7 +272,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// <see cref="IBlockPartitioning.GetFirstBlock"/>
         /// </summary>
-        public int GetFirstBlock(int proc) {
+        public long GetFirstBlock(int proc) {
             return m_Context.CellPartitioning.GetI0Offest(proc);
         }
 
@@ -286,7 +286,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// <see cref="IBlockPartitioning.FindProcessForBlock"/>
         /// </summary>
-        public int FindProcessForBlock(int iBlk) {
+        public int FindProcessForBlock(long iBlk) {
             return m_Context.CellPartitioning.FindProcess(iBlk);
         }
 
@@ -299,7 +299,10 @@ namespace BoSSS.Foundation {
             }
         }
 
-        public int GetBlockType(int iBlock) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockType"/>
+        /// </summary>
+        public int GetBlockType(long iBlock) {
             this.GridDat.CellPartitioning.TestIfInLocalRange(iBlock);
             if(!CellDepLength) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -323,7 +326,7 @@ namespace BoSSS.Foundation {
                 // if the no. of DOFs per cell is *not*, we have to find the blocking
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                int j = iBlock - this.GridDat.CellPartitioning.i0; // local cell index
+                int j = checked((int)(iBlock - this.GridDat.CellPartitioning.i0)); // local cell index
                 Basis[] Bs = m_BasisS;
                 int NoOfBs = Bs.Length;
                 int blockType;
@@ -366,16 +369,25 @@ namespace BoSSS.Foundation {
 
         }
 
-        public int GetBlockI0(int iBlock) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockI0"/>
+        /// </summary>
+        public long GetBlockI0(long iBlock) {
             this.GridDat.CellPartitioning.TestIfInLocalRange(iBlock);
             return this.m_MaxTotalNoOfCoordinatesPerCell * iBlock;
         }
 
-        public int GetBlockLen(int iBlock) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockLen"/>
+        /// </summary>
+        public int GetBlockLen(long iBlock) {
             return m_MaxTotalNoOfCoordinatesPerCell;
         }
 
-        public int GetBlockIndex(int i) {
+        /// <summary>
+        /// <see cref="IBlockPartitioning.GetBlockIndex"/>
+        /// </summary>
+        public long GetBlockIndex(long i) {
             return i / m_MaxTotalNoOfCoordinatesPerCell;
         }
 
@@ -545,13 +557,22 @@ namespace BoSSS.Foundation {
         public int Global2LocalIndex(long iglobal) {
             long iLocal = iglobal - i0;
 
-            if (iLocal >= 0 && iLocal < Ntotal) {
-                return (int)iLocal;
+            if (this.IsInLocalRange(iglobal)) {
+                return this.TransformIndexToLocal(iglobal);
             } else {
-                throw new ApplicationException("unable to get local index from global index which does not belong to the local update range");
+                Debug.Assert(this.AllBlockSizesEqual);
+
+                int BlockLen = this.GetBlockLen(0);
+
+                long jCellGlobal = iglobal / BlockLen;
+                int IndexWithinBlock = checked((int)(iglobal - jCellGlobal * BlockLen));
+                
+                if(!this.GridDat.iParallel.Global2LocalIdx.TryGetValue(jCellGlobal, out int jCellLocal)) {
+                    throw new ArgumentException("Unknown external cell index.");
+                }
+
+                return jCellLocal * BlockLen + IndexWithinBlock;
             }
-
-
         }
 
         /// <summary>
@@ -583,73 +604,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-        /*
-        public MPI_Comm MPI_Comm {
-            get {
-                return this.GridDat.;
-            }
-        }
-
-        public int MpiSize {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int MpiRank {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int i0 {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int iE {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int LocalLength {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int TotalLength {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int GetI0Offest(int proc) {
-            throw new NotImplementedException();
-        }
-
-        public IPartitioning GetImmutablePartition() {
-            throw new NotImplementedException();
-        }
-
-        public int FindProcess(int index) {
-            throw new NotImplementedException();
-        }
-
-        public int FindProcess(long index) {
-            throw new NotImplementedException();
-        }
-
-        public bool IsInLocalRange(int i) {
-            throw new NotImplementedException();
-        }
-
-        public int GetLocalLength(int proc) {
-            throw new NotImplementedException();
-        }
-        */
+        
 
         /// <summary>
         /// converts a local unique coordinate index into a global unique coordinate index
@@ -657,7 +612,7 @@ namespace BoSSS.Foundation {
         /// <param name="iLocal"></param>
         /// <returns></returns>
         /// <see cref="Global2LocalIndex"/>
-        public int Local2GlobalIndex(int iLocal) {
+        public long Local2GlobalIndex(int iLocal) {
             if (iLocal < 0 || iLocal >= Ntotal)
                 throw new IndexOutOfRangeException();
 
@@ -767,7 +722,7 @@ namespace BoSSS.Foundation {
         /// over all cells, over all basis functions, over all MPI processes in the current
         /// communicator.
         /// </remarks>
-        public int GlobalUniqueCoordinateIndex(int find, int j, int n) {
+        public long GlobalUniqueCoordinateIndex(int find, int j, int n) {
             int iloc = LocalUniqueCoordinateIndex(find, j, n);
             return Local2GlobalIndex(iloc);
         }
@@ -892,7 +847,7 @@ namespace BoSSS.Foundation {
         ///  - false: only occupied entries, up to <see cref="Basis.GetLength"/>
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        public int[] GetSubvectorIndices(bool lo, params int[] Fields) {
+        public long[] GetSubvectorIndices(bool lo, params int[] Fields) {
 
             // <param name="includeExternal">
             // true, if indices which correlate to external cells should be included; false if not.
@@ -914,7 +869,7 @@ namespace BoSSS.Foundation {
                 J = this.m_Context.iLogicalCells.Count;
             else
                 J = this.m_Context.iLogicalCells.NoOfLocalUpdatedCells;
-            List<int> R = new List<int>(L*J);
+            List<long> R = new List<long>(L*J);
 
             for (int j = 0; j < J; j++) {
 
@@ -926,7 +881,7 @@ namespace BoSSS.Foundation {
                     else
                         N = m_BasisS[iField].GetLength(j); 
 
-                    int i0 = (int) this.GlobalUniqueCoordinateIndex(iField, j, 0);
+                    long i0 = this.GlobalUniqueCoordinateIndex(iField, j, 0);
 
 
                     for (int n = 0; n < N; n++) {
@@ -952,7 +907,7 @@ namespace BoSSS.Foundation {
         ///  - false: only occupied entries, up to <see cref="Basis.GetLength"/>
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        public int[] GetSubvectorIndices(SubGrid sgrd, bool lo, int[] Fields) {
+        public long[] GetSubvectorIndices(SubGrid sgrd, bool lo, int[] Fields) {
 
             // <param name="includeExternal">
             // true, if indices which correlate to external cells (i.e. ghost cells) should be included; false if not.
@@ -971,7 +926,7 @@ namespace BoSSS.Foundation {
             }
 
             var jSub2Full = sgrd.SubgridIndex2LocalCellIndex;
-            var R = new List<int>();
+            var R = new List<long>();
 
             int JSUB;
             if(includeExternal)
@@ -990,7 +945,7 @@ namespace BoSSS.Foundation {
                     else
                         N = m_BasisS[iField].GetLength(jCell);
 
-                    int i0 = (int)this.GlobalUniqueCoordinateIndex(iField, jCell, 0);
+                    long i0 = this.GlobalUniqueCoordinateIndex(iField, jCell, 0);
 
 
                     for (int n = 0; n < N; n++) {

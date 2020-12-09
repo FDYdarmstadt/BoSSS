@@ -312,7 +312,7 @@ namespace BoSSS.Solution {
                             ApproxJac = Newton.ApproxInvJacobianOptions.MatrixFreeGMRES,
                             Precond = precondonly,
                             ConvCrit = nc.ConvergenceCriterion,
-                            printLambda = nc.verbose,
+                            printLambda = false,
                             Globalization = nc.Globalization,
                         };
                         linsolver = precondonly; // put out the solver, which is actually used!
@@ -417,20 +417,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.automatic:
                     precond[0] = null;
                     break;
-
-                case LinearSolverCode.exp_gmres_Schur:
-                    precond[0] = new SchurPrecond() {
-                        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-                    };
-                    break;
-
-                case LinearSolverCode.exp_gmres_Simple:
-                    precond[0] = new SchurPrecond() {
-                        SchurOpt = SchurPrecond.SchurOptions.SIMPLE
-                    };
-                    break;
-
-
+               
                 case LinearSolverCode.exp_gmres_AS_MG:
                     precond[0] = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.MultigridBlocks() {
@@ -445,13 +432,14 @@ namespace BoSSS.Solution {
                     };
                     break;
 
-
+                /*
                 case LinearSolverCode.exp_gmres_localPrec:
                     precond[0] = new LocalizedOperatorPrec() {
                         m_dt = lc.exp_localPrec_Min_dt,
                         m_muA = lc.exp_localPrec_muA,
                     };
                     break;
+                */
                 case LinearSolverCode.exp_gmres_AS:
 
                     precond[0] = new Schwarz() {
@@ -570,7 +558,7 @@ namespace BoSSS.Solution {
 
 
                 default:
-                    throw new NotImplementedException("Preconditioner not available");
+                    throw new NotImplementedException($"Preconditioner for solver code {lc.SolverCode} not available.");
             }
 
 
@@ -609,103 +597,100 @@ namespace BoSSS.Solution {
 
             switch (lc.SolverCode) {
                 case LinearSolverCode.automatic:
-                    if (m_nc != null) {
-                       templinearSolve = AutomaticSolver(lc, LocalDOF, SpaceDim, NoCellsLoc,
-                           precond);
-                    }
-                    break;
+                if(m_nc != null) {
+                    templinearSolve = AutomaticSolver(lc, LocalDOF, SpaceDim, NoCellsLoc,
+                        precond);
+                }
+                break;
 
                 case LinearSolverCode.classic_mumps:
-                    templinearSolve = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.MUMPS,
-                        LinConfig = lc
-                    };
-                    break;
+                templinearSolve = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.MUMPS,
+                    LinConfig = lc
+                };
+                break;
 
                 case LinearSolverCode.classic_pardiso:
-                    templinearSolve = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.PARDISO,
-                        SolverVersion = Parallelism.OMP,
-                        LinConfig = lc
-                    };
-                    break;
+                templinearSolve = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.PARDISO,
+                    SolverVersion = Parallelism.OMP,
+                    LinConfig = lc
+                };
+                break;
 
                 case LinearSolverCode.exp_AS:
-                    
-                    templinearSolve = new Schwarz() {
-                        FixedNoOfIterations = m_lc.MaxSolverIterations,
-                        CoarseSolver = null,
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsOnCurrentProcess = NoOfBlocks,
-                        },
-                        Overlap = 1, // overlap seems to help; more overlap seems to help more
-                        EnableOverlapScaling = true,
-                        UsePMGinBlocks = false,
-                        CoarseSolveOfCutcells = true,
-                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver
-                    };
-                    break;
+
+                templinearSolve = new Schwarz() {
+                    FixedNoOfIterations = m_lc.MaxSolverIterations,
+                    CoarseSolver = null,
+                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                        NoOfPartsOnCurrentProcess = NoOfBlocks,
+                    },
+                    Overlap = 1, // overlap seems to help; more overlap seems to help more
+                    EnableOverlapScaling = true,
+                    UsePMGinBlocks = false,
+                    CoarseSolveOfCutcells = true,
+                    CoarseLowOrder = m_lc.pMaxOfCoarseSolver
+                };
+                break;
 
                 case LinearSolverCode.exp_AS_MG:
 
-                    if (lc.NoOfMultigridLevels < 2)
-                        throw new ApplicationException("At least 2 Multigridlevels are required");
+                if(lc.NoOfMultigridLevels < 2)
+                    throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                    templinearSolve = new Schwarz() {
-                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            Depth = lc.NoOfMultigridLevels - 1
-                        },
-                        Overlap = 1,
-                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
-                    };
-                    break;
+                templinearSolve = new Schwarz() {
+                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                        Depth = lc.NoOfMultigridLevels - 1
+                    },
+                    Overlap = 1,
+                    CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
+                };
+                break;
 
                 case LinearSolverCode.classic_cg:
-                    templinearSolve = new MonkeySolver() {
-                        WhichSolver = MonkeySolver._whichSolver.CG,
-                        LinConfig = lc
-                    };
-                    break;
+                templinearSolve = new MonkeySolver() {
+                    WhichSolver = MonkeySolver._whichSolver.CG,
+                    LinConfig = lc
+                };
+                break;
 
                 case LinearSolverCode.exp_softpcg_schwarz:
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
                 case LinearSolverCode.exp_softpcg_jacobi_mg:
 
-                    templinearSolve = new SoftPCG() {
-                        //m_MaxIterations = lc.MaxSolverIterations,
-                        //m_Tolerance = lc.ConvergenceCriterion,
-                        Precond = precond[0]
-                    };
-                    break;
+                templinearSolve = new SoftPCG() {
+                    //m_MaxIterations = lc.MaxSolverIterations,
+                    //m_Tolerance = lc.ConvergenceCriterion,
+                    Precond = precond[0]
+                };
+                break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
                 case LinearSolverCode.exp_softgmres:
                 case LinearSolverCode.exp_gmres_AS:
                 case LinearSolverCode.exp_gmres_AS_MG:
-                case LinearSolverCode.exp_gmres_localPrec:
-                case LinearSolverCode.exp_gmres_Schur:
-                case LinearSolverCode.exp_gmres_Simple:
-                    templinearSolve = new SoftGMRES() {
-                        //m_Tolerance = lc.ConvergenceCriterion,
-                        //m_MaxIterations = lc.MaxSolverIterations,
-                        MaxKrylovDim = lc.MaxKrylovDim,
-                        Precond = precond[0]
-                    };
-                    break;
+                templinearSolve = new SoftGMRES() {
+                    //m_Tolerance = lc.ConvergenceCriterion,
+                    //m_MaxIterations = lc.MaxSolverIterations,
+                    MaxKrylovDim = lc.MaxKrylovDim,
+                    Precond = precond[0]
+                };
+                break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                    Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize;  };
-                    templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
-                    break;
+                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
+                templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
+                break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
-                    templinearSolve = KcycleMultiSchwarz_4Rheology(lc, LocalDOF);
-                    break;
+                templinearSolve = KcycleMultiSchwarz_4Rheology(lc, LocalDOF);
+                break;
 
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
 
-                    ISolverSmootherTemplate[] subsmoother = new ISolverSmootherTemplate[]{
+                ISolverSmootherTemplate[] subsmoother = new ISolverSmootherTemplate[]{
                         new SoftPCG() {
                              NoOfIterations=5
                              //m_MaxIterations = 5,
@@ -713,7 +698,7 @@ namespace BoSSS.Solution {
                         }
                     };
 
-                    ISolverSmootherTemplate[] topsmoother = new ISolverSmootherTemplate[]{
+                ISolverSmootherTemplate[] topsmoother = new ISolverSmootherTemplate[]{
                         new BlockJacobi()
                         {
                             NoOfIterations = 5,
@@ -721,33 +706,33 @@ namespace BoSSS.Solution {
                         }
                     };
 
-                    templinearSolve = MakeOrthoNormMGDecomp(lc,LocalDOF, MaxMGDepth, new SolverSquence() {SolverChain= subsmoother}, new SolverSquence() { SolverChain = topsmoother });
-                    break;
+                templinearSolve = MakeOrthoNormMGDecomp(lc, LocalDOF, MaxMGDepth, new SolverSquence() { SolverChain = subsmoother }, new SolverSquence() { SolverChain = topsmoother });
+                break;
 
                 case LinearSolverCode.exp_OrthoS_pMG:
 
-                    templinearSolve = new OrthonormalizationScheme() {
-                        PrecondS = precond,
-                        MaxKrylovDim = lc.MaxKrylovDim,
-                        MaxIter = lc.MaxSolverIterations,
-                        Tolerance = lc.ConvergenceCriterion,
-                        Restarted = false
-                    };
-                    break;
+                templinearSolve = new OrthonormalizationScheme() {
+                    PrecondS = precond,
+                    MaxKrylovDim = lc.MaxKrylovDim,
+                    MaxIter = lc.MaxSolverIterations,
+                    Tolerance = lc.ConvergenceCriterion,
+                    Restarted = false
+                };
+                break;
                 case LinearSolverCode.exp_another_Kcycle:
-                    //templinearSolve = new SoftGMRES() {
-                    //    Precond = precond[0],
-                    //    MaxKrylovDim = m_lc.MaxKrylovDim,
-                    //};
-                    templinearSolve = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize);
-                    break;
+                //templinearSolve = new SoftGMRES() {
+                //    Precond = precond[0],
+                //    MaxKrylovDim = m_lc.MaxKrylovDim,
+                //};
+                templinearSolve = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize);
+                break;
                 case LinearSolverCode.selfmade:
-                    Console.WriteLine("INFO: Selfmade LinearSolver is used!");
-                    templinearSolve = m_linsolver;
-                    break;
+                Console.WriteLine("INFO: Selfmade LinearSolver is used!");
+                templinearSolve = m_linsolver;
+                break;
 
                 default:
-                    throw new NotImplementedException("Linear solver option not available");
+                throw new NotImplementedException($"Linear solver for code {lc.SolverCode} not available.");
             }
             Debug.Assert(templinearSolve != null);
             SetLinItCallback(templinearSolve,false);

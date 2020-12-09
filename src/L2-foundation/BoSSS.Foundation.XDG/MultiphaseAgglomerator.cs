@@ -275,7 +275,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            public int i0Func(int jCell, int iVar) {
+            public long i0Func(int jCell, int iVar) {
                 if (VarIsXdg[iVar]) {
                     int iSpc = m_LsRegion.GetSpeciesIndex(this.m_spId, jCell);
                     return m_Map.GlobalUniqueCoordinateIndex(iVar, jCell, iSpc * NS[iVar]);
@@ -780,7 +780,7 @@ namespace BoSSS.Foundation.XDG {
                 int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
                 int Jtot = grdDat.Cells.Count;
                 Partitioning CellPart = Tracker.GridDat.CellPartitioning;
-                int i0 = CellPart.i0;
+                long i0 = CellPart.i0;
                 var GidxExt = Tracker.GridDat.Parallel.GlobalIndicesExternalCells;
                 var GidxExt2Lidx = Tracker.GridDat.Parallel.Global2LocalIdx;
                 //double[] RefVolumes = grdDat.Grid.RefElements.Select(Kref => Kref.Volume).ToArray();
@@ -1110,8 +1110,75 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         if (jCellNeigh_max < 0) {
-                            //Debugger.Launch();
-                            failCells.Add(jCell);
+                            for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
+                                int iEdge = Cell2Edge_jCell[e];
+                                int OtherCell, ThisCell;
+                                if (iEdge < 0) {
+                                    // cell 'jCell' is the OUT-cell of edge 'iEdge'
+                                    OtherCell = 0;
+                                    ThisCell = 1;
+                                    iEdge *= -1;
+                                }
+                                else {
+                                    OtherCell = 1;
+                                    ThisCell = 0;
+                                }
+                                iEdge--;
+
+                                double EdgeArea_iEdge = edgeArea[iEdge];
+
+                                _AgglomCellsEdges[iEdge] = true;
+
+                                Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
+
+                                int jCellNeigh = Edge2Cell[iEdge, OtherCell];
+                                //jNeigh[e] = jCellNeigh;
+                                if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
+                                    // boundary edge, no neighbour for agglomeration
+                                    Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
+                                    //continue;
+                                }
+                                //passed1[e] = true;
+                                //isAggCandidate[e] = AggCandidates[jCellNeigh];
+                                if (!AggCandidates[jCellNeigh])
+                                    // not suitable for agglomeration
+                                    continue;
+
+                                // volume fraction of neighbour cell
+                                double spcVol_neigh = CellVolumes[jCellNeigh];
+                                //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
+                                double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
+                                double frac_neigh = spcVol_neigh / totVol_neigh;
+
+                                // max?
+                                if (frac_neigh > frac_neigh_max) {
+                                    frac_neigh_max = frac_neigh;
+                                    e_max = e;
+                                    jCellNeigh_max = jCellNeigh;
+                                    jEdge_max = iEdge;
+                                }
+                            }
+                            if (jCellNeigh_max < 0) {
+                                failCells.Add(jCell);
+                            }
+                            else {
+                                _AccEdgesMask[jEdge_max] = true;
+
+                                int jCellNeighRank;
+                                if (jCellNeigh_max < Jup) {
+                                    jCellNeighRank = myMpiRank;
+                                }
+                                else {
+                                    jCellNeighRank = CellPart.FindProcess(GidxExt[jCellNeigh_max - Jup]);
+                                }
+
+                                AgglomerationPairs.Add(new CellAgglomerator.AgglomerationPair() {
+                                    jCellTarget = jCellNeigh_max,
+                                    jCellSource = jCell,
+                                    OwnerRank4Target = jCellNeighRank,
+                                    OwnerRank4Source = myMpiRank
+                                });
+                            }
                         } else {
                             _AccEdgesMask[jEdge_max] = true;
 
