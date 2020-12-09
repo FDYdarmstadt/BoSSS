@@ -67,7 +67,6 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
             Assert.IsTrue(p.IsPassed);
         }
-
     }
 }
 
