@@ -1396,17 +1396,8 @@ namespace CNS {
 
 
 
-        public static CNSControl DMR_Cube(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int NoCellsX_percore = 800, int NoCellsY_percore = 200, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
+        public static CNSControl DMR_Cube(int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int NoCellsX_percore = 800, int NoCellsY_percore = 200, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
-
-            //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
-            //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
-            //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
-
-            c.DbPath = dbPath;
-            c.savetodb = dbPath != null;
-            c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
@@ -1433,6 +1424,12 @@ namespace CNS {
                     break;
                 case 64:
                     separation = new int[] { 8, 8 };
+                    break;
+                case 128:
+                    separation = new int[] { 16, 8 };
+                    break;
+                case 256:
+                    separation = new int[] { 16, 16 };
                     break;
                 default:
                     c.GridPartType = GridPartType.none;
@@ -1735,17 +1732,22 @@ namespace CNS {
             //--control "cs:CNS.TestCases.DoubleMachReflectionHHLR(2147483647, 2, 4, 1, 1280, 320, 0.001, 0.1, 1, 1, 3, 1, 0, 0.7, 100)"
 
             // Lichtenberg
-            //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            //string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance3";
-            //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
-            //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            string dbPath = @"/work/scratch/jw52xeqa/DB_Cube_2";
-            //string dbPath = @"/work/scratch/jw52xeqa/DB_trash";
-            //string dbPath = @"V:\testDB";
+
             string restart = "False";
             int cores = ilPSP.Environment.MPIEnv.MPI_Size;
 
-            CNSControl c = DMR_Cube(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
+            CNSControl c = DMR_Cube(savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
+
+            string dirname = "trash";
+            string linpath = @"/work/scratch/jw52xeqa/" + dirname;
+            string winpath = @"W:\work\scratch\jw52xeqa\" + dirname;
+            c.AlternateDbPaths = new[]{
+                    new ValueTuple<string,string>(linpath, ""),
+                    new ValueTuple<string,string>(winpath, "pcmit32")
+            };
+            c.savetodb = true;
+            c.saveperiod = savePeriod;
+            c.PrintInterval = 1;
 
             c.ProjectName = "dmr_cube_run3";
             c.NoOfTimesteps = timeSteps;

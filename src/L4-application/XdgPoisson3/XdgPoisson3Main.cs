@@ -451,10 +451,10 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Console.WriteLine("Error norm (HMF, Species B): " + L2_ERR_HMF_B);
                 Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
             }
+
 #if TEST
             OperatorAnalysis();
 #endif
-
 
             return dt;
         }
@@ -557,7 +557,15 @@ namespace BoSSS.Application.XdgPoisson3 {
 #endif
                 SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
 
-
+                //var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.LsTrk,
+                //this.Op_Matrix, this.Op_Affine,
+                //this.u.Mapping, Op_Agglomeration,
+                //this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()),
+                //this.OpConfig, this.Op);
+                ////double condnum = ana.CondNumMUMPS();
+                //double condnum = MultigridOp.OperatorMatrix.ToFullMatrixOnProc0().Cond();
+                //base.QueryHandler.ValueQuery("OpAnalysis:" + "CondNum", condnum, false);
+                //Console.WriteLine("Condnum: " + condnum);
 
                 using (new BlockTrace("Solver_Init", tr)) {
                     exsolver.Init(MultigridOp);
@@ -599,6 +607,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double ERR = ErrField.L2Norm();
                 double RelERR = ERR / u.L2Norm();
 #if TEST
+                u = u2;
                 Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
                 WriteTrendToDatabase(CO);
 #endif

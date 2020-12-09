@@ -101,12 +101,12 @@ namespace BoSSS.Application.BoSSSpad
         public string SubmitJob(string remotepath) {
 
             Connect();
-
-            string sbatchCmd = "sbatch " + remotepath + "/batch.sh";
-            RunCommand(sbatchCmd);
-
             string resultString, err;
-            ReadLines(out resultString, out err);
+            string sbatchCmd = "sbatch " + remotepath + "/batch.sh";
+            resultString=RunCommand(sbatchCmd);
+
+            
+            //ReadLines(out resultString, out err);
             String SearchString = "Submitted batch job ";
             String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
                 .ToString() // convert to string

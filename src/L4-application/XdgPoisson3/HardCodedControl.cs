@@ -513,7 +513,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 1, int blocksize = 10000, string myDB = null)
+        public static XdgPoisson3Control TestOrTreat(int solver = 1)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -526,7 +526,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
                     break;
                 case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_AS;
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres;
                     break;
                 case 3:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
@@ -539,9 +539,12 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
 
             C.savetodb = false;
+            //C.savetodb = true;
             //C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\Xdg_Poisson_CondNum";
 
-            int Res = 16;
+            int Res = 8;
+            int blocksize = 10;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -560,14 +563,14 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.SessionName = String.Format("XDGPoison_solver{0}_blsz{1}_Xdg2lowB", solver, blocksize);
             C.ProjectName = "PoisonTest";
             C.GridPartType = GridPartType.Hilbert;
-            C.LinearSolver.TargetBlockSize = blocksize/2;
+            C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
 
-            C.LinearSolver.NoOfMultigridLevels = 2;
+            C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MaxKrylovDim = 1000;
-            C.LinearSolver.pMaxOfCoarseSolver = 1;
+            C.LinearSolver.pMaxOfCoarseSolver = 2;
             //C.LinearSolver.TargetBlockSize = 79;
            C.ExcactSolSupported = false;
             double radius = 0.7;
@@ -586,6 +589,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             // ... but stuff is not serializable, therefore this workaround.
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
 
+            //C.ImmediatePlotPeriod = 1;
             C.AgglomerationThreshold = 0.1;
 
             return C;
