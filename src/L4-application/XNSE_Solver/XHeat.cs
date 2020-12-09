@@ -32,7 +32,7 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
 
 
-        public override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
         {
 
             int D = this.GridData.SpatialDimension;
@@ -122,11 +122,11 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D)
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater)
         {
             OperatorFactory opFactory = new OperatorFactory();
             boundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-            SetOperator(D, opFactory);
+            SetOperator(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
@@ -137,7 +137,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return XOP;
         }
 
-        public void SetOperator(int D, OperatorFactory opFactory)
+        public void SetOperator(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater)
         {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
 
@@ -212,6 +212,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+            LevelSetUpdater lsUpdater;
             switch (Control.Option_LevelSetEvolution)
             {
                 case LevelSetEvolution.Fourier:

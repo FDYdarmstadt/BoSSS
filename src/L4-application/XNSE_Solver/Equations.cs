@@ -39,7 +39,7 @@ namespace BoSSS.Application.XNSE_Solver
             LevelSetTracker LsTrk,
             int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            IXNSE_Configuration config)
+            INSE_Configuration config)
         {
             speciesName = spcName;
             codomainName = EquationNames.MomentumEquationComponent(d);
@@ -239,7 +239,7 @@ namespace BoSSS.Application.XNSE_Solver
         string codomainName;
 
         //Methode aus der XNSF_OperatorFactory
-        public InterfaceContinuity(IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
+        public InterfaceContinuity(INSE_Configuration config, int D, LevelSetTracker LsTrk, bool isMaterialInterface) {
             codomainName = EquationNames.ContinuityEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
 
@@ -251,7 +251,7 @@ namespace BoSSS.Application.XNSE_Solver
             double rhoB = physParams.rho_B;
 
             // set components
-            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.isMatInt, dntParams.ContiSign, dntParams.RescaleConti);
+            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, isMaterialInterface, dntParams.ContiSign, dntParams.RescaleConti);
             AddComponent(divPen);
         }
 
@@ -277,9 +277,10 @@ namespace BoSSS.Application.XNSE_Solver
             int dimension,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
-            IXNSE_Configuration config) : base() {
+            INSE_Configuration config,
+            bool isMovingMesh) : base() {
             codomainName = EquationNames.MomentumEquationComponent(d);
-            AddInterfaceNSE(dimension, d, boundaryMap, LsTrk, config);
+            AddInterfaceNSE(dimension, d, boundaryMap, LsTrk, config, isMovingMesh);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
         }
 
@@ -289,14 +290,14 @@ namespace BoSSS.Application.XNSE_Solver
 
         public override string CodomainName => codomainName;
 
-
         //Methode aus der XNSF_OperatorFactory
         void AddInterfaceNSE(
             int dimension,
             int d,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
-            IXNSE_Configuration config)
+            INSE_Configuration config,
+            bool isMovingMesh)
         {
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -321,7 +322,7 @@ namespace BoSSS.Application.XNSE_Solver
             // ===================
             if (physParams.IncludeConvection && config.isTransport)
             {
-                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, config.isMovingMesh);
+                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);
                 AddComponent(conv);
             }
 
@@ -387,7 +388,7 @@ namespace BoSSS.Application.XNSE_Solver
             int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
-            IXNSE_Configuration config)
+            INSE_Configuration config)
         {
             codomainName = EquationNames.MomentumEquationComponent(d);
             AddVariableNames( BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
