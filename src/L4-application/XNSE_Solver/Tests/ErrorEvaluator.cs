@@ -12,6 +12,7 @@ using ilPSP;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
+using BoSSS.Solution.XSolver;
 
 namespace BoSSS.Application.XNSE_Solver.Tests
 {

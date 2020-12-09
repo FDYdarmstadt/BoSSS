@@ -22,11 +22,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static BoSSS.Foundation.SpatialOperator;
+using BoSSS.Solution.XSolver;
 
 namespace BoSSS.Application.XNSE_Solver {
     class XHeat : XSolver<XNSE_Control> 
     {
         ThermalMultiphaseBoundaryCondMap boundaryMap;
+
+        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
+
 
         public override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
         {
@@ -237,6 +241,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new NotImplementedException();
             }
             return lsUpdater;
+        }
+
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //Update Calls
+            dt = GetFixedTimestep();
+            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+            Console.WriteLine($"done with timestep {TimestepNo}");
+            return dt;
         }
     }
 }

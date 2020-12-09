@@ -21,6 +21,7 @@ using NUnit.Framework.Constraints;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.XSolver;
 
 namespace BoSSS.Application.XNSE_Solver
 {
@@ -252,6 +253,14 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 Tecplot.PlotFields(Timestepping.Parameters, "XNSE_Solver_Params" + timestepNo, physTime, superSampling);
             }
-        }        
+        }
+
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //Update Calls
+            dt = GetFixedTimestep();
+            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+            Console.WriteLine($"done with timestep {TimestepNo}");
+            return dt;
+        }
     }
 }

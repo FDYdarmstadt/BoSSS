@@ -89,17 +89,11 @@
     <Compile Include="FourierLevelSetLogger.cs" />
     <Compile Include="InterfacePointsLogger.cs" />
     <Compile Include="L2ErrorLogger.cs" />
-    <Compile Include="LevelSetEvolver.cs" />
-    <Compile Include="LevelSetUpdater.cs" />
     <Compile Include="MovingContactLineLogging.cs" />
-    <Compile Include="OperatorFactory.cs" />
-    <Compile Include="CoefficientsList.cs" />
-    <Compile Include="ParameterList.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="RisingBubble2DBenchmarkQuantities.cs" />
     <Compile Include="SplineLevelSet.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
-    <Compile Include="SpatialEquation.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ContactLine.cs" />
     <Compile Include="PhysicalBasedTestcases\ElementalTestProgramm.cs" />
@@ -120,7 +114,6 @@
     <Compile Include="WaveLikeLogging.cs" />
     <Compile Include="XBase_Solver.cs" />
     <Compile Include="XBase_Control.cs" />
-    <Compile Include="XSolver.cs" />
     <Compile Include="XHeat.cs" />
     <Compile Include="XNSE.cs" />
     <Compile Include="XNSEinSituPostProcessingModule.cs" />
@@ -145,6 +138,10 @@
     <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\BoSSS.Solution.XSolver\BoSSS.Solution.XSolver.csproj">
+      <Project>{1a8f7d9e-ed3c-4a6c-b647-dd6c8485df70}</Project>
+      <Name>BoSSS.Solution.XSolver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>

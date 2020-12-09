@@ -12,6 +12,7 @@ using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
 using ilPSP;
 using MathNet.Numerics.Interpolation;
+using BoSSS.Solution.XSolver;
 
 namespace BoSSS.Application.XNSE_Solver
 {

@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Caching;
 using BoSSS.Solution.XheatCommon;
+using BoSSS.Solution.XSolver;
 
 namespace BoSSS.Application.XNSE_Solver
 {

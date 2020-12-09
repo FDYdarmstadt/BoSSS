@@ -6,29 +6,24 @@ using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.XheatCommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BoSSS.Solution.XNSECommon;
 
-namespace BoSSS.Application.XNSE_Solver {
-    abstract class XSolver<T> : XdgApplicationWithSolver<T> where T : XNSE_Control, new() {
-        
+namespace BoSSS.Solution.LevelSetTools {
+    public abstract class XSolver<T> : XdgApplicationWithSolver<T> where T : AppControlSolver, new() {
+
         protected LevelSetUpdater lsUpdater;
 
-        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
-        {
-            get
-            {
+        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
+            get {
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++)
-                {
+                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
                     AddMultigridConfigLevel(configsLevel);
@@ -40,8 +35,6 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
-
-        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
 
         protected abstract LevelSetUpdater InstantiateLevelSetUpdater();
 
@@ -89,14 +82,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-        }                    
-
-        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            //Update Calls
-            dt = GetFixedTimestep();
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with timestep {TimestepNo}");
-            return dt;
         }
     }
 }

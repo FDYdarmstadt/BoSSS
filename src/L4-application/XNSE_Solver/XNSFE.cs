@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Solution.XSolver;
 
 namespace BoSSS.Application.XNSE_Solver 
 {
