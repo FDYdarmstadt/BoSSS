@@ -105,7 +105,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Hack for introducing the value of p0 as a double. has to be changed
         /// </param>
         /// <param name="ThermodynamicPressureValue"></param>
-        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure, ref double ThermodynamicPressureValue) {
+        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure,  double ThermodynamicPressureValue) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
                 this.ThermodynamicPressureValue = ThermodynamicPressureValue;
