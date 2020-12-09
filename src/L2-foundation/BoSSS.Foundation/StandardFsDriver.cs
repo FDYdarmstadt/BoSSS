@@ -318,7 +318,7 @@ namespace BoSSS.Foundation.IO {
                     int i = 0;
                     while(fs == null) {
                         try {
-                            fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         } catch(FileNotFoundException fnf) {
                             exc = fnf;
                             throw exc;
