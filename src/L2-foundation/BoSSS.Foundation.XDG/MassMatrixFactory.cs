@@ -343,7 +343,7 @@ namespace BoSSS.Foundation.XDG {
                                         iSpc = regions.GetSpeciesIndex(species, jCell);
                                     }
 
-                                    int n0 = mapping.GlobalUniqueCoordinateIndex(fld, jCell, N * iSpc);
+                                    long n0 = mapping.GlobalUniqueCoordinateIndex(fld, jCell, N * iSpc);
 
                                     for (int n = 0; n < N; n++) {
                                         M[n0 + n, n0 + n] += alpha;
@@ -372,7 +372,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var MassSub = Mass.ExtractSubArrayShallow(new int[] { jsub, 0, 0 }, new int[] { jsub - 1, N - 1, N - 1 });
 
-                                    int i0 = mapping.GlobalUniqueCoordinateIndex(fld, jCell, N * iSpc);
+                                    long i0 = mapping.GlobalUniqueCoordinateIndex(fld, jCell, N * iSpc);
 
                                     for (int n = 0; n < N; n++) { // loop over rows (within block)
                                         for (int m = 0; m < N; m++) { // loop over columns (within block)

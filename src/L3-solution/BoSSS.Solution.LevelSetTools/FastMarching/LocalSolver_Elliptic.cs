@@ -318,7 +318,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             Stpw_tot.Start();
 
             int N = this.LevelSetBasis.GetLength(jCell);
-            int i0G = this.LevelSetMapping.GlobalUniqueCoordinateIndex(0, jCell, 0);
+            long i0G = this.LevelSetMapping.GlobalUniqueCoordinateIndex(0, jCell, 0);
             int i0L = this.LevelSetMapping.LocalUniqueCoordinateIndex(0, jCell, 0);
             double penaltyBase = ((double)(this.LevelSetBasis.Degree + 2)).Pow2();
             double CellVolume = this.GridDat.Cells.GetCellVolume(jCell);
@@ -387,11 +387,11 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     for(int n = 0; n < N; n++) {
 #if DEBUG
                         int Lr;
-                        int[] row_cols = null;
+                        long[] row_cols = null;
                         double[] row_vals = null;
                         Lr = this.m_LaplaceMatrix.GetRow(i0G + n, ref row_cols, ref row_vals);
                         for (int lr = 0; lr < Lr; lr++) {
-                            int ColIndex = row_cols[lr];
+                            long ColIndex = row_cols[lr];
                             double Value = row_vals[lr];
                             Debug.Assert((ColIndex >= i0G && ColIndex < i0G + N) || (Value == 0.0), "Matrix is expected to be block-diagonal.");
                         }

@@ -77,7 +77,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int L = M.RowPartitioning.LocalLength;
 
             diag = new double[L];
-            int i0 = Mtx.RowPartitioning.i0;
         }
 
         BlockMsrMatrix Mtx;
@@ -87,7 +86,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where P : IList<double>
             where Q : IList<double> {
 
-            int n = Mtx.NoOfCols;
+            long n = Mtx.NoOfCols;
             double sum = 0;
 
             var tempMtx = Mtx;
@@ -100,12 +99,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             // ILU decomposition of matrix
-            for (int k = 0; k < n - 1; k++) {
-                for (int i = k; i < n; i++) {
+            for (long k = 0; k < n - 1; k++) {
+                for (long i = k; i < n; i++) {
                     if (tempMtx[i, k] == 0) { i = n; }
                     else {
                         Mtx[i, k] = Mtx[i, k] / Mtx[k, k];
-                        for (int j = k + 1; j < n; j++) {
+                        for (long j = k + 1; j < n; j++) {
                             if (tempMtx[i, j] == 0) {
                                 j = n;
                             }
@@ -134,6 +133,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //    }
             //}
 
+            if(this.Mtx.RowPartitioning.MpiSize != 1)
+                throw new NotSupportedException();
+
             // find solution of Ly = b
             double[] y = new double[n];
             for (int i = 0; i < n; i++) {
@@ -143,11 +145,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 y[i] = B[i] - sum;
             }
             // find solution of Ux = y
-            for (int i = n - 1; i >= 0; i--) {
+            for (long i = n - 1; i >= 0; i--) {
                 sum = 0;
-                for (int k = i + 1; k < n; k++)
-                    sum += Mtx[i, k] * X[k];
-                X[i] = (1 / Mtx[i, i]) * (y[i] - sum);
+                for (long k = i + 1; k < n; k++)
+                    sum += Mtx[i, k] * X[(int)k]; // index into Mtx and X must be different for more than 1 MPI process.
+                X[(int)i] = (1 / Mtx[i, i]) * (y[i] - sum);
             }
 
         }

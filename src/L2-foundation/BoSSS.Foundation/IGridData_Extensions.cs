@@ -603,7 +603,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         static void LocatPointHelper(IGridData gdat, int RootRank, int jL_MinDistCel, out long GlobalId, out long GlobalIndex, out bool OnThisProcess) {
-            int j0 = gdat.CellPartitioning.i0;
+            long j0 = gdat.CellPartitioning.i0;
             int MpiSize = gdat.CellPartitioning.MpiSize;
             int MpiRank = gdat.CellPartitioning.MpiRank;
 

@@ -204,7 +204,7 @@ namespace BoSSS.Foundation {
                         }
 
                         for(int n = 0; n < Nrow; n++) {
-                            int idx = DomainMapping.GlobalUniqueCoordinateIndex(iVar, j, n);
+                            long idx = DomainMapping.GlobalUniqueCoordinateIndex(iVar, j, n);
                             Matrix[idx, idx] += oodt * VarDiag[iVar];
                         }
                     }

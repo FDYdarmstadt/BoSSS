@@ -901,7 +901,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             //Partitioning RowMap = new Partitioning(JAGG * NR);
-            int MpiOffset_row = rest.RowPartitioning.i0;
+            long MpiOffset_row = rest.RowPartitioning.i0;
             
             for(int jagg = 0; jagg < JAGG; jagg++) {
                 int[] agCl = agCls[jagg];
@@ -916,8 +916,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //for(int f = 0; f < NoFld; f++) { // loop over DG fields in mapping...
 
-                    int i0Col = fullmap.GlobalUniqueCoordinateIndex(iFld, jCell, 0);
-                    int i0Row = jagg * NR + RestOffset[iFld] + MpiOffset_row;
+                    long i0Col = fullmap.GlobalUniqueCoordinateIndex(iFld, jCell, 0);
+                    long i0Row = jagg * NR + RestOffset[iFld] + MpiOffset_row;
 
                     //rest.AccBlock(i0Row, i0Col, 1.0, Block);
                     for (int m = 0; m < M; m++) {

@@ -102,7 +102,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Global unique index for reference point of the pressure.
         /// </summary>
-        public readonly int PressureReferencePointIndex = -1;
+        public readonly long PressureReferencePointIndex = -1;
 
          
         /// <summary>

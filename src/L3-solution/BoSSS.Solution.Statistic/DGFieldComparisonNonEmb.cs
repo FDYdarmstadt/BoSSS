@@ -42,7 +42,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors_L2(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, int[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
 
             double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
                 return coarse.L2Distance(fine);
@@ -79,7 +79,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors_L2noMean(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, int[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
 
             double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
                 return coarse.L2Distance(fine, IgnoreMeanValue:true);
@@ -116,7 +116,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors_H1(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, int[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
 
             double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
                 return coarse.H1Distance(fine);
@@ -131,7 +131,7 @@ namespace BoSSS.Solution.Statistic {
           IEnumerable<string> FieldsToCompare, 
           IEnumerable<ITimestepInfo> timestepS,
           out double[] GridRes, 
-          out Dictionary<string, int[]> __DOFs, 
+          out Dictionary<string, long[]> __DOFs, 
           out Dictionary<string, double[]> Errors, 
           out Guid[] timestepIds) {
             using (var tr = new FuncTrace()) {
@@ -181,11 +181,11 @@ namespace BoSSS.Solution.Statistic {
 
                 // compute the errors
                 Errors = new Dictionary<string, double[]>();
-                __DOFs = new Dictionary<string, int[]>();
+                __DOFs = new Dictionary<string, long[]>();
                 foreach (string Identification in FieldsToCompare) {
 
                     double[] L2Error = new double[gDataS.Length - 1];
-                    int[] dof = new int[gDataS.Length - 1];
+                    long[] dof = new long[gDataS.Length - 1];
 
                     for (int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
                         //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);

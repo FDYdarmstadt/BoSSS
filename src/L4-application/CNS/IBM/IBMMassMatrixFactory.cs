@@ -97,7 +97,7 @@ namespace CNS.IBM {
                                 for (int i = 0; i < Mapping.BasisS[fieldIndex].MaximalLength; i++) {
                                     //int localIndex = Mapping.LocalUniqueCoordinateIndex(fieldIndex, 0, i);
                                     //massMatrix[cell, localIndex, localIndex] = 0.0;
-                                    int globalIndex = Mapping.GlobalUniqueCoordinateIndex(fieldIndex, cell, i);
+                                    long globalIndex = Mapping.GlobalUniqueCoordinateIndex(fieldIndex, cell, i);
                                     massMatrix[globalIndex, globalIndex] = 0.0;
                                 }
                             }
@@ -147,7 +147,7 @@ namespace CNS.IBM {
                                 for (int i = 0; i < Mapping.BasisS[fieldIndex].MaximalLength; i++) {
                                     //int localIndex = Mapping.LocalUniqueCoordinateIndex(fieldIndex, 0, i);
                                     //nonAgglomeratedMassMatrix[cell, localIndex, localIndex] = 0.0;
-                                    int globalIndex = Mapping.GlobalUniqueCoordinateIndex(fieldIndex, cell, i);
+                                    long globalIndex = Mapping.GlobalUniqueCoordinateIndex(fieldIndex, cell, i);
                                     nonAgglomeratedMassMatrix[globalIndex, globalIndex] = 0.0;
                                 }
                             }

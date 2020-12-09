@@ -81,13 +81,13 @@ namespace ilPSP {
                 }
             }
 
-            m_i0Offset = new int[m_size + 1];
+            m_i0Offset = new long[m_size + 1];
             m_i0Offset[0] = 0;
             for (int i = 1; i <= m_size; i++)
             {
-                long _i0oL = (long)(m_i0Offset[i - 1]) + (long)(m_LocalLengths[i - 1]);
-                if (_i0oL > int.MaxValue)
-                    throw new OverflowException("Partition exceeds the range of 32-bit integer.");
+                //long _i0oL = (long)(m_i0Offset[i - 1]) + (long)(m_LocalLengths[i - 1]);
+                //if (_i0oL > int.MaxValue)
+                //    throw new OverflowException("Partition exceeds the range of 32-bit integer.");
                 m_i0Offset[i] = m_i0Offset[i - 1] + m_LocalLengths[i - 1];
             }
         }
@@ -141,8 +141,11 @@ namespace ilPSP {
         /// <summary>
         /// subtracts <see cref="i0"/> from <paramref name="iGlob"/>;
         /// </summary>
-        public int TransformIndexToLocal(int iGlob) {
-            return (iGlob - (int)m_i0Offset[m_rank]);
+        public int Global2Local(long iGlob) {
+            long iLoc = (iGlob - m_i0Offset[m_rank]);
+            if(iLoc < int.MinValue || iLoc > int.MaxValue)
+                throw new OverflowException();
+            return (int)iLoc;
         }
 
         
@@ -176,7 +179,7 @@ namespace ilPSP {
         /// <summary>
         /// the first global index that is stored on the actual MPI process
         /// </summary>
-        public int i0 {
+        public long i0 {
             get {
                 return (int)m_i0Offset[m_rank];
             }
@@ -185,7 +188,7 @@ namespace ilPSP {
         /// <summary>
         /// the first global index that is stored on the NEXT MPI process
         /// </summary>
-        public int iE {
+        public long iE {
             get {
                 return i0 + LocalLength;
             }
@@ -210,7 +213,7 @@ namespace ilPSP {
         /// rank +1); In this case, the <see cref="TotalLength"/> is returned.
         /// </param>
         /// <returns>index of the first permutation entry stored by processor <paramref name="proc"/></returns>
-        public int GetI0Offest(int proc) {
+        public long GetI0Offest(int proc) {
             return m_i0Offset[proc];
         }
 
@@ -228,7 +231,7 @@ namespace ilPSP {
         /// <summary>
         /// Total length of the partition over all processes, i.e. sum of <see cref="LocalLength"/> over all MPI processors.
         /// </summary>
-        public int TotalLength {
+        public long TotalLength {
             get {
                 Debug.Assert(m_i0Offset.Length == m_LocalLengths.Length + 1);
                 return m_i0Offset[m_LocalLengths.Length];
@@ -248,12 +251,14 @@ namespace ilPSP {
         /// offsets for each process; size is equal to number of processors plus 1;
         /// first entry is always 0, last entry is equal to <see cref="m_TotalLength"/>;
         /// </summary>
-        int[] m_i0Offset;
+        long[] m_i0Offset;
 
         /// <summary>
         /// number of elements stored in each process
         /// </summary>
         int[] m_LocalLengths;
+
+        
 
         /// <summary>
         /// returns the process rank which stores the <paramref name="index"/>-th entry;
@@ -261,15 +266,6 @@ namespace ilPSP {
         /// <param name="index"></param>
         /// <returns></returns>
         public int FindProcess(long index) {
-            return FindProcess((int)index);
-        }
-
-        /// <summary>
-        /// returns the process rank which stores the <paramref name="index"/>-th entry;
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public int FindProcess(int index) {
             Debug.Assert(index >= 0);
             Debug.Assert(index < this.TotalLength);
 
@@ -277,7 +273,7 @@ namespace ilPSP {
             if (index >= this.i0 && index < this.iE)
                 return m_rank;
 
-            var p = Array.BinarySearch<int>(m_i0Offset, index);
+            var p = Array.BinarySearch<long>(m_i0Offset, index);
             if (p < 0) {
                 p = (~p) - 1;
             }
@@ -308,7 +304,7 @@ namespace ilPSP {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
             Partitioning ret = new Partitioning();
-            ret.m_i0Offset = (int[])this.m_i0Offset.Clone();
+            ret.m_i0Offset = (long[])this.m_i0Offset.Clone();
             ret.m_LocalLengths = (int[])this.m_LocalLengths.Clone();
             ret.m_rank = this.m_rank;
             ret.m_size = this.m_size;

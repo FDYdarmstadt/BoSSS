@@ -279,12 +279,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (UseDiagonalPmg) {
                     var Map = m_op.Mapping;
                     int NoVars = Map.AggBasis.Length;
-                    int j0 = Map.FirstBlock;
+                    long j0 = Map.FirstBlock;
                     int J = HighOrderBlocks_LU.Length;
                     int[] degs = m_op.Degrees;
                     var BS = Map.AggBasis;
 
-                    int Mapi0 = Map.i0;
+                    long Mapi0 = Map.i0;
                     double[] x_hi = null;
                     for (int j = 0; j < J; j++) {
 

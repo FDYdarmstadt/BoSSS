@@ -28,6 +28,7 @@ using ilPSP;
 using ilPSP.Connectors.Matlab;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+    /*
     public class LocalizedOperatorPrec : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {
@@ -68,7 +69,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double m_dt = 1;
         public double m_muA;
 
-        int[] Uidx, Pidx;
+        long[] Uidx, Pidx;
 
         SpatialOperator LocalOp;
 
@@ -119,19 +120,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             BlockMsrMatrix leftChangeBasesVel = null;// new BlockMsrMatrix(Upart, Upart, 1, 1);
             BlockMsrMatrix rightChangeBasesVel = null;// new BlockMsrMatrix(Upart, Upart, 1, 1);
 
-            op.MassMatrix.AccSubMatrixTo(1.0, VelocityMass, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            op.MassMatrix.AccSubMatrixTo(1.0, VelocityMass, Uidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
 
-            op.LeftChangeOfBasis.AccSubMatrixTo(1.0, leftChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
-            op.RightChangeOfBasis.AccSubMatrixTo(1.0, rightChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            op.LeftChangeOfBasis.AccSubMatrixTo(1.0, leftChangeBasesVel, Uidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
+            op.RightChangeOfBasis.AccSubMatrixTo(1.0, rightChangeBasesVel, Uidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
 
             var temp = BlockMsrMatrix.Multiply(leftChangeBasesVel, LocalMatrix);
             LocalMatrix = BlockMsrMatrix.Multiply(temp, rightChangeBasesVel);
 
             var M = op.OperatorMatrix;
 
-            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]), default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
+            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(long[]), Pidx, default(long[]), default(long[]), default(long[]));
+            M.AccSubMatrixTo(1.0, divVel, Pidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
 
             //LocalMatrix.SaveToTextFileSparse("LocalConvDiffMatrix");
             //ConvDiff.SaveToTextFileSparse("ConvDiff");
@@ -311,4 +312,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
 
     }
+
+    */
 }

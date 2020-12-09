@@ -77,7 +77,7 @@ namespace NSE_SIMPLE {
             MsrMatrix Src = m_Src.AssemblyMatrix;
             MsrMatrix Approx = new MsrMatrix(Src.RowPartitioning, Src.ColPartition);
             
-            int i0 = Src.RowPartitioning.i0;
+            long i0 = Src.RowPartitioning.i0;
             int LocalLength = Src.RowPartitioning.LocalLength;
 
             double BDFfactor;

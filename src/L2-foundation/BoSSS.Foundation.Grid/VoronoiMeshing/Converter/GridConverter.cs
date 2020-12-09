@@ -222,7 +222,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                         }
                         boundaryConverter.RegisterBoundaries(Cj, tags);
                     }
-                    Cj.NodeIndices = new int[]
+                    Cj.NodeIndices = new long[]
                     {
                         cell.Vertices[iV0].ID,
                         cell.Vertices[iV1].ID,
