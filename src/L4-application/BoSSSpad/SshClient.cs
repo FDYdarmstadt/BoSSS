@@ -6,26 +6,27 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace BoSSS.Application.BoSSSpad
-{
-    public class SshClient
-    {
+namespace BoSSS.Application.BoSSSpad {
+    class SshClient {
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public SshClient(string ServerName, string Username, PrivateKeyFile pkf) {
             m_pkf = pkf;
             m_srvrname = ServerName;
             m_usrname = Username;
             PlatformID CurrentSys = System.Environment.OSVersion.Platform;
             string shell = "";
-            switch (CurrentSys) {
+            switch(CurrentSys) {
                 case PlatformID.Unix:
-                    shell = "bash";
-                    break;
+                shell = "bash";
+                break;
                 case PlatformID.Win32NT:
-                    shell = "cmd";
-                    break;
+                shell = "cmd";
+                break;
                 default:
-                    throw new NotImplementedException("Unkonwn OS!");
+                throw new NotImplementedException("Unkonwn OS!");
             }
 
             Process cmd = new Process() {
@@ -46,7 +47,7 @@ namespace BoSSS.Application.BoSSSpad
         }
 
         public void Connect() {
-            if (!TestConnection()) {
+            if(!TestConnection()) {
                 string std, err;
                 ReadLines(out std, out err);
                 Console.WriteLine(err);
@@ -56,12 +57,12 @@ namespace BoSSS.Application.BoSSSpad
 
         private void ReadLines(out string std, out string err) {
             var stdout = new List<string>();
-            while (m_cmd.StandardOutput.Peek() > -1) {
+            while(m_cmd.StandardOutput.Peek() > -1) {
                 stdout.Add(m_cmd.StandardOutput.ReadLine());
             }
 
             var stderr = new List<string>();
-            while (m_cmd.StandardError.Peek() > -1) {
+            while(m_cmd.StandardError.Peek() > -1) {
                 stderr.Add(m_cmd.StandardError.ReadLine());
             }
             std = String.Join("\n", stdout);
@@ -71,7 +72,7 @@ namespace BoSSS.Application.BoSSSpad
         }
 
         private bool TestConnection() {
-            string search = RunCommand("ls");
+            string search = RunCommand("ls").stdout;
             bool connected = search.Contains(m_usrname);
             return connected;
         }
@@ -103,10 +104,8 @@ namespace BoSSS.Application.BoSSSpad
             Connect();
 
             string sbatchCmd = "sbatch " + remotepath + "/batch.sh";
-            RunCommand(sbatchCmd);
-
-            string resultString, err;
-            ReadLines(out resultString, out err);
+            var (resultString, err) = RunCommand(sbatchCmd);
+            
             String SearchString = "Submitted batch job ";
             String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
                 .ToString() // convert to string
@@ -115,7 +114,7 @@ namespace BoSSS.Application.BoSSSpad
             return jobId;
         }
 
-        public string RunCommand(string command) {
+        public (string stdout, string stderr) RunCommand(string command) {
             m_cmd.Start();
             m_cmd.StandardInput.WriteLine("ssh " + m_usrname + "@" + m_srvrname + " \"" + command + "\"");
             //m_cmd.StandardInput.WriteLine(command);
@@ -124,14 +123,13 @@ namespace BoSSS.Application.BoSSSpad
             m_cmd.WaitForExit();
             string std, err;
             ReadLines(out std, out err);
-            return std;
+            return (std, err);
         }
 
 
 
     }
-    public class PrivateKeyFile
-    {
+    public class PrivateKeyFile {
         public PrivateKeyFile(string keypath) {
             m_path = keypath;
         }

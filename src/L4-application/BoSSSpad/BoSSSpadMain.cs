@@ -69,73 +69,7 @@ namespace BoSSS.Application.BoSSSpad {
             TexBatch
         }
 
-        /*
-        static private Stream OpenFileExclusiveBlocking(bool create, string RelPath, bool ForceOverride) {
-            string BasePath = "";
-            {
-
-                string fullpath = Path.Combine(BasePath, RelPath);
-               
-                if(create) {
-                    // ++++++++++++++++++++++++++++++++++
-                    // create new/overwrite existing file
-                    // ++++++++++++++++++++++++++++++++++
-
-                    if(ForceOverride == false && File.Exists(fullpath))
-                        throw new IOException($"Unable to open file for writing: not allowed to overwrite, but file '{fullpath}' already exists;");
-
-                    FileStream fs = null;
-                    int i = 0;
-                    while(fs == null) {
-                        try {
-                            fs = new FileStream(fullpath,
-                                ForceOverride ? FileMode.Create : FileMode.CreateNew,
-                                FileAccess.ReadWrite, FileShare.None);
-                        } catch(IOException ioe) {
-                            fs = null;
-                            i++;
-                            if(i > 1000) {
-                                throw new IOException("File write open failed more than 1000 times. ", ioe);
-                            }
-                            System.Threading.Thread.Sleep(System.DateTime.Now.Millisecond + 501);
-                        }
-                    }
-                    //if(i > 0)
-                    //    Console.WriteLine();
-                    return fs;
-
-                } else {
-                    // ++++++++++++++++++++++++++++
-                    // try to open file for reading
-                    // ++++++++++++++++++++++++++++
-
-                    FileNotFoundException exc = null;
-
-                    FileStream fs = null;
-                    int i = 0;
-                    while(fs == null) {
-                        try {
-                            fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                        } catch(FileNotFoundException fnf) {
-                            exc = fnf;
-                            throw exc;
-                        } catch(IOException ioe) {
-                            fs = null;
-                            i++;
-                            if(i > 1000) {
-                                throw new IOException("File read open failed more than 1000 times. ", ioe);
-                            }
-                            System.Threading.Thread.Sleep(System.DateTime.Now.Millisecond * 3 + 27);
-                        }
-                    }
-                    //if(i > 0)
-                    //    Console.WriteLine();
-                    return fs;
-
-                }
-            }
-        }
-        */
+   
 
 
         /// <summary>
@@ -143,68 +77,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [STAThread]
         public static int Main(string[] args) {
-            /*
-            JsonSerializer serializer = new JsonSerializer() {
-                NullValueHandling = NullValueHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.Objects,
-                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
 
-            };
+            //SshClient ssh = new SshClient("lcluster3.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
 
+            //ssh.RunCommand("ls");
 
-            int sz = 1024;
-            for(int i = 0; i < 1000; i++) {
-                sz *= 2;
-
-                Console.WriteLine($"Testing size {(double)sz / (1024.0*1024.0)} Meg ...");
-
-                double[] TestData = new double[sz];
-                Random rnd = new Random();
-                for(int k = 0; k < sz; k++)
-                    TestData[k] = rnd.NextDouble();
-
-
-
-                using(Stream s = OpenFileExclusiveBlocking(true, "futinger.bin", true)) {
-                    var s2 = s;
-                    { 
-                    //using(var s2 = new GZipStream(s, CompressionMode.Compress)) {
-                        using(var writer = new BsonWriter(s2)) {
-
-
-                            // Use a tuple since the Json format expects one object per
-                            // file (with some tricks, we could avoid this, but it's
-                            // not really worth the effort)
-                            var tuple = new Tuple<string, IList<double>>("fut", TestData);
-
-                            serializer.Serialize(writer, tuple, typeof(Tuple<string, IList<double>>));
-
-                            s2.Close();
-                            s.Close();
-                        }
-                    }
-                }
-
-
-                using(Stream s = OpenFileExclusiveBlocking(false, "futinger.bin", false)) {
-                    var s2 = s;
-                    {
-                    //using(var s2 = new GZipStream(s, CompressionMode.Decompress)) {
-                        using(var reader = new BsonReader(s2)) {
-                            var header = serializer.Deserialize(reader, typeof(Tuple<string, IList<double>>));
-                            reader.Close();
-                            s.Close();
-                        }
-                    }
-                }
-
-                Console.WriteLine("done.");
-
-            }
-            return 0;
-
-            */
+            //return 0;
             
             int errCount = 0;
 

@@ -250,7 +250,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 using (new BlockTrace("SSH_SLURM_CHECK", tr)) {
                     //using (var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
-                        string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T");
+                        string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T").stdout;
                         //int startindex = output.Result.IndexOf("\n");
                         //int endindex = output.Result.IndexOf("\n", startindex + 1);
                         int startindex = output.IndexOf("\n");
@@ -330,9 +330,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // load users .bashrc with all dependencies
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
-                
-                string jobId=SSHConnection.SubmitJob( DeploymentDirectoryAtRemote(myJob, DeploymentDirectory));
 
+                string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(myJob, DeploymentDirectory));
+                if(jobId.IsEmptyOrWhite())
+                    throw new ApplicationException("missing job id return value from slurm command.");
 
                 ////string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
                 //// Converting script to unix format
@@ -373,17 +374,6 @@ namespace BoSSS.Application.BoSSSpad {
                 //        }
                 //}
 
-                ////// Otherwise it didn't work because uploading speed at some clusters is too slow
-                ////if (result1.Error == "" || result2.Result == "") {
-                ////    Console.Write("Waiting for file transfer to finish");
-                ////    while (result1.Error == "" || result2.Result == "") {
-                ////        Console.Write(".");
-                ////        System.Threading.Thread.Sleep(10000);
-                ////        result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
-                ////        result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
-                ////    }
-                ////    Console.WriteLine();
-                ////}
 
                 //// extract JobID
                 //String SearchString = "Submitted batch job ";
