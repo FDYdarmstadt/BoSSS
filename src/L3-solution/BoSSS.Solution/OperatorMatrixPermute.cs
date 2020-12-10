@@ -85,7 +85,7 @@ namespace BoSSS.Solution.Utils {
 
             // Copy values of Affine to diagonal matrix
             MsrMatrix Matrix = new MsrMatrix(RowMap, RowMap);
-            int i0 = RowMap.i0;
+            long i0 = RowMap.i0;
 
             for (int row = 0; row < RowMap.LocalLength; row++)
                 Matrix[i0 + row, i0 + row] = Affine[row];
@@ -106,16 +106,16 @@ namespace BoSSS.Solution.Utils {
             MsrMatrix M2;
             M2 = new MsrMatrix(M.RowPartitioning, M.ColPartition);
 
-            int[] ColIdx = null;
+            long[] ColIdx = null;
             double[] MtxVals = null;
             int LR;
 
-            for (int i = M2.RowPartitioning.i0; i < M2.RowPartitioning.iE; i++) {
+            for (long i = M2.RowPartitioning.i0; i < M2.RowPartitioning.iE; i++) {
                 //var row = M.GetRow(i);
                 LR = M.GetRow(i, ref ColIdx, ref MtxVals);
 
                 for(int lr = 0; lr < LR; lr++) {
-                    int iCol = ColIdx[lr];
+                    long iCol = ColIdx[lr];
                     int icol_Targ = ColPerm[iCol];
                     M2[i, icol_Targ] = MtxVals[lr];
                 }

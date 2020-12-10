@@ -101,31 +101,38 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Ret = 0.0;
 
-            if (!evapMicroRegion[inp.jCellIn]) {
-                Ret -= (kA * Grad_uA_xN) * (vA - 0);                           // consistency term
-                Ret -= (kB * Grad_uB_xN) * (0 - vB);                           // consistency term
-                Ret -= (kA * Grad_vA_xN) * (uA[0] - Tsat);                     // symmetry term
-                Ret -= (kB * Grad_vB_xN) * (Tsat - uB[0]);                     // symmetry term
+            if (Tsat != Double.MaxValue) {
+                if (!evapMicroRegion[inp.jCellIn]) {
+                    Ret -= (kA * Grad_uA_xN) * (vA - 0);                           // consistency term
+                    Ret -= (kB * Grad_uB_xN) * (0 - vB);                           // consistency term
+                    Ret -= (kA * Grad_vA_xN) * (uA[0] - Tsat);                     // symmetry term
+                    Ret -= (kB * Grad_vB_xN) * (Tsat - uB[0]);                     // symmetry term
 
-                //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);
-                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - Tsat);
-                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (Tsat - uB[0]);
+                    //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);
+                    //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - Tsat);
+                    //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (Tsat - uB[0]);
 
-                Ret += (uA[0] - Tsat) * (vA - 0) * 2.0 * pnlty * kA; // penalty term
-                Ret += (Tsat - uB[0]) * (0 - vB) * 2.0 * pnlty * kB; // penalty term
+                    Ret += (uA[0] - Tsat) * (vA - 0) * 2.0 * pnlty * kA; // penalty term
+                    Ret += (Tsat - uB[0]) * (0 - vB) * 2.0 * pnlty * kB; // penalty term
 
-                //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
-                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
-                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * Tsat;
+                    //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                    //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+                    //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * Tsat;
 
-                //Ret += (uA[0] - uB[0]) * (vA - vB) * pnlty * wPenalty; // penalty term
-                //Ret -= Tsat * (vA - vB) * pnlty * wPenalty;
+                    //Ret += (uA[0] - uB[0]) * (vA - vB) * pnlty * wPenalty; // penalty term
+                    //Ret -= Tsat * (vA - vB) * pnlty * wPenalty;
 
+                } else {
+                    //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                    //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+
+                    //Ret += (penalty / hCutCellMin) * (uA[0] - uB[0]) * (vA - vB) * (Math.Abs(kA) > Math.Abs(kB) ? kA : kB); // penalty term
+                }
             } else {
-                //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
-                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+                Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
 
-                //Ret += (penalty / hCutCellMin) * (uA[0] - uB[0]) * (vA - vB) * (Math.Abs(kA) > Math.Abs(kB) ? kA : kB); // penalty term
+                Ret += 2.0 * pnlty * wPenalty * (uA[0] - uB[0]) * (vA - vB); // penalty term
             }
 
 
@@ -482,7 +489,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             double FlxNeg = 0.0;
             double FlxPos = 0.0;
-            if (!evapMicroRegion[inp.jCellIn]) {
+            if (!evapMicroRegion[inp.jCellIn] && Tsat != Double.MaxValue) {
                 double Avg = Tsat;
                 FlxNeg += kA * Avg; // + 0.5 * uB[0] * (kA - kB);
                 FlxPos += kB * Avg; // + 0.5 * uA[0] * (kA - kB);

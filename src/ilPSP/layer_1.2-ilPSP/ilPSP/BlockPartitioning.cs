@@ -30,7 +30,19 @@ namespace ilPSP {
     /// </summary>
     public class BlockPartitioning : Partitioning, IBlockPartitioning {
 
-        public BlockPartitioning(int LocalLength, IEnumerable<int> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) : base(LocalLength, MpiComm) {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="LocalLength"></param>
+        /// <param name="BlockI0"></param>
+        /// <param name="BlockLen"></param>
+        /// <param name="MpiComm"></param>
+        /// <param name="i0isLocal">
+        /// - If true, the indices in <paramref name="BlockI0"/> are assumed to be local indices
+        /// - otherwise, they are assumed to be global
+        /// </param>
+        public BlockPartitioning(int LocalLength, IEnumerable<long> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) : base(LocalLength, MpiComm) {
 
             //var enu_I0 = BlockI0.GetEnumerator();
             //var enuLen = BlockLen.GetEnumerator();
@@ -63,7 +75,7 @@ namespace ilPSP {
             //    throw new ArgumentException("Both enumerations must contain the same number of elements.");
 
 
-            int[] _BlockI0 = BlockI0.ToArray();
+            long[] _BlockI0 = BlockI0.ToArray();
             int[] _BlockLen = BlockLen.ToArray();
 
             if(_BlockI0.Length != _BlockLen.Length)
@@ -75,7 +87,7 @@ namespace ilPSP {
             int FrameBlockSize = -1;
 
             for(int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
-                int i0Block = _BlockI0[iBlock];
+                long i0Block = _BlockI0[iBlock];
                 if (i0isLocal)
                     i0Block += base.i0;
 
@@ -86,7 +98,7 @@ namespace ilPSP {
                 if (!base.IsInLocalRange(Math.Max(i0Block, i0Block + N - 1)))
                     throw new ArgumentException("Block end out of local range");
 
-                int iEBlock;
+                long iEBlock;
                 if( iBlock < NoOfBlocks - 1) {
                     iEBlock = _BlockI0[iBlock + 1];
                     if (i0isLocal)
@@ -98,7 +110,7 @@ namespace ilPSP {
                 if (i0Block + N > iEBlock)
                     throw new ArgumentException("Block Length exceeds i0 of next block.");
 
-                int NE = iEBlock - i0Block;
+                int NE = checked((int)(iEBlock - i0Block));
 
                 if (iBlock == 0) {
                     FrameBlockSize = NE;
@@ -150,13 +162,13 @@ namespace ilPSP {
         /// - if positive, a frame of constant size is assumed around each block, i.e. the index range of the i-th block starts at index i*<paramref name="FrameBlockSize"/>; then <see cref="AllBlockSizesEqual"/> is true. However, the sub-blocking can still differ from block to block.
         /// </param>
         /// <param name="_Subblk_i0">
-        /// see <see cref="GetSubblk_i0(int)"/>.
+        /// see <see cref="GetSubblk_i0"/>.
         /// </param>
         /// <param name="_SubblkLen">
-        /// see <see cref="GetSubblkLen(int)"/>.
+        /// see <see cref="GetSubblkLen"/>.
         /// </param>
         /// <param name="_BlockType">
-        /// see <see cref="GetBlockType(int)"/>
+        /// see <see cref="GetBlockType"/>
         /// </param>
         /// <param name="MpiComm"></param>
         public BlockPartitioning(
@@ -264,7 +276,7 @@ namespace ilPSP {
             if (FrameBlockSize == 0) {
                 throw new ArgumentException();
             } else if (FrameBlockSize < 0) {
-                int[] BlockI0 = new int[J + 1];
+                long[] BlockI0 = new long[J + 1];
                 BlockI0[0] = base.i0;
 
                 int FrameBlockSizeMaybe = -1;
@@ -356,7 +368,7 @@ namespace ilPSP {
  
 
         int[] m_BlockType;
-        int[] m_Block_i0;
+        long[] m_Block_i0;
 
         /// <summary>
         /// Block type.
@@ -368,7 +380,7 @@ namespace ilPSP {
         /// The block type, 
         /// an index into <see cref="BlockLen"/>, <see cref="Subblk_i0"/>, <see cref="SubblkLen"/>.
         /// </returns>
-        public int GetBlockType(int iBlock) {
+        public int GetBlockType(long iBlock) {
             m_BlocksPartition.TestIfInLocalRange(iBlock);
             if(m_BlockType == null) {
                 return 0;
@@ -389,7 +401,7 @@ namespace ilPSP {
         /// <returns>
         /// A global index of the first element in the block.
         /// </returns>
-        public int GetBlockI0(int iBlock) {
+        public long GetBlockI0(long iBlock) {
             m_BlocksPartition.TestIfInLocalRange(iBlock);
             Debug.Assert(m_FrameBlockSize != 0);
             if (m_FrameBlockSize > 0) {
@@ -411,15 +423,15 @@ namespace ilPSP {
         /// <returns>
         /// A global index of the last element in the block, *plus one*.
         /// </returns>
-        public int GetBlockLen(int iBlock) {
+        public int GetBlockLen(long iBlock) {
             m_BlocksPartition.TestIfInLocalRange(iBlock);
             Debug.Assert(m_FrameBlockSize != 0);
             if (m_FrameBlockSize > 0) {
                 Debug.Assert(m_Block_i0 == null);
                 return m_FrameBlockSize;
             } else {
-                int iBlockLoc = iBlock - m_BlocksPartition.i0;
-                return m_Block_i0[iBlockLoc + 1] - m_Block_i0[iBlockLoc];
+                int iBlockLoc = m_BlocksPartition.Global2Local(iBlock);
+                return checked((int)(m_Block_i0[iBlockLoc + 1] - m_Block_i0[iBlockLoc]));
             }
         }
 
@@ -432,7 +444,7 @@ namespace ilPSP {
         /// <returns>
         /// Global block index.
         /// </returns>
-        public int GetBlockIndex(int i) {
+        public long GetBlockIndex(long i) {
             this.TestIfInLocalRange(i);
             Debug.Assert(m_FrameBlockSize != 0);
             if (m_FrameBlockSize > 0) {
@@ -442,7 +454,7 @@ namespace ilPSP {
                 return i / m_FrameBlockSize;
             } else {
 
-                int iBlockLoc = Array.BinarySearch<int>(m_Block_i0, i);
+                int iBlockLoc = Array.BinarySearch<long>(m_Block_i0, i);
                 if (iBlockLoc < 0) {
                     iBlockLoc = (~iBlockLoc) - 1;
                 }
@@ -456,30 +468,44 @@ namespace ilPSP {
                 Debug.Assert(iBlockLoc < m_BlocksPartition.LocalLength);
                 Debug.Assert(i >= m_Block_i0[iBlockLoc]);
                 Debug.Assert(i < m_Block_i0[iBlockLoc + 1]);
-                return iBlockLoc + m_BlocksPartition.i0;
+                return ( iBlockLoc + m_BlocksPartition.i0);
             }
         }
 
+        /// <summary>
+        /// returns an immutable copy
+        /// </summary>
+        /// <returns></returns>
         virtual public IBlockPartitioning GetImmutableBlockPartitioning() {
             if (this.IsMutable) {
                 return new BlockPartitioning(this.LocalLength, m_FrameBlockSize,
-                    this.m_Subblk_i0.Select(a => (int[])a.Clone()).ToArray(), this.m_SubblkLen.Select(a => (int[])a.Clone()).ToArray(),
-                    (int[])this.m_Block_i0.Clone(),
+                    this.m_Subblk_i0.Select(a => (int[])a.Clone()).ToArray(), 
+                    this.m_SubblkLen.Select(a => (int[])a.Clone()).ToArray(),
+                    (int[])this.m_BlockType.Clone(),
                     this.MPI_Comm);
             } else {
                 return this;
             }
         }
 
-        public int GetFirstBlock(int proc) {
+        /// <summary>
+        /// Block-Index of first block on processor <paramref name="proc"/>.
+        /// </summary>
+        public long GetFirstBlock(int proc) {
             return m_BlocksPartition.GetI0Offest(proc);
         }
 
+        /// <summary>
+        /// Number of blocks on processor <paramref name="proc"/>.
+        /// </summary>
         public int GetLocalNoOfBlocks(int proc) {
             return m_BlocksPartition.GetLocalLength(proc);
         }
 
-        public int FindProcessForBlock(int iBlk) {
+        /// <summary>
+        /// Process which stores <paramref name="iBlk"/>
+        /// </summary>
+        public int FindProcessForBlock(long iBlk) {
             return m_BlocksPartition.FindProcess(iBlk);
         }
 
@@ -487,7 +513,7 @@ namespace ilPSP {
         /// <summary>
         /// Total number of blocks (over all MPI processors).
         /// </summary>
-        public int TotalNoOfBlocks {
+        public long TotalNoOfBlocks {
             get {
                 return m_BlocksPartition.TotalLength;
             }
@@ -506,7 +532,7 @@ namespace ilPSP {
         /// <summary>
         /// Global block index of first block on this MPI process.
         /// </summary>
-        public int FirstBlock  {
+        public long FirstBlock  {
             get {
                 return this.m_BlocksPartition.i0;
             }

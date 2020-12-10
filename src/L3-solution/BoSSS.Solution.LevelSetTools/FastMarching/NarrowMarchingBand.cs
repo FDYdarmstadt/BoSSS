@@ -1083,7 +1083,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             MsrMatrix ExtVelMatrix;
             double[][] ExtVelRHS = new double[ComponentMode ? ExtVel.Length : 1][];
-            List<int> UsedRows = new List<int>();
+            List<long> UsedRows = new List<long>();
             {
                 var map = ExtVel[0].Mapping;
 
@@ -1219,16 +1219,16 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     int N = map.BasisS[0].GetLength(j);
                     for(int n = 0; n < N; n++) {
                         int iL = map.LocalUniqueCoordinateIndex(0, j, n);
-                        int iG = map.GlobalUniqueCoordinateIndex(0, j, n);
+                        long iG = map.GlobalUniqueCoordinateIndex(0, j, n);
                         if(CCbitmask[j]) {
                             //var Row = ExtVelMatrix.GetRow(iG);
                             //foreach (var entry in Row) {
                             int Lr;
-                            int[] row_cols = null;
+                            long[] row_cols = null;
                             double[] row_vals = null;
                             Lr = ExtVelMatrix.GetRow(iG, ref row_cols, ref row_vals);
                             for (int lr = 0; lr < Lr; lr++) {
-                                int ColIndex = row_cols[lr];
+                                long ColIndex = row_cols[lr];
                                 double Value = row_vals[lr];
                                 if (Value != 0.0) {
                                     int jL = map.Global2LocalIndex(ColIndex);
@@ -1241,7 +1241,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                         } else {
                             Debug.Assert(ExtVelMatrix.GetNoOfNonZerosPerRow(iG) == 0);
-                            for(int d = 0; d < D; d++) {
+                            for(int d = 0; d < ExtVelRHS.Length; d++) {
                                 Debug.Assert(ExtVelRHS[d][iL] == 0);
                             }
                         }
@@ -1249,9 +1249,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 }
 #endif
 
-                int i0 = map.i0;
-                int iE = map.iE;
-                for(int i = i0; i < iE; i++) {
+                long i0 = map.i0;
+                long iE = map.iE;
+                for(long i = i0; i < iE; i++) {
                     if(ExtVelMatrix.GetNoOfNonZerosPerRow(i) == 0) {
                         ExtVelMatrix[i, i] = 1.0;
                     } else {
@@ -1274,7 +1274,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             MsrMatrix essExtVelMatrix;
             {
                 essExtVelMatrix = new MsrMatrix(usedRowsPart);
-                ExtVelMatrix.WriteSubMatrixTo(essExtVelMatrix, UsedRows, default(int[]), UsedRows, default(int[]));
+                ExtVelMatrix.WriteSubMatrixTo(essExtVelMatrix, UsedRows, default(long[]), UsedRows, default(long[]));
             }
 
 

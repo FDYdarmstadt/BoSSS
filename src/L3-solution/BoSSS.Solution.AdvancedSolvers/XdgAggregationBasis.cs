@@ -645,7 +645,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
           
-            int mgMap_Offset = mgMap.Partitioning.i0;
+            long mgMap_Offset = mgMap.Partitioning.i0;
 
             for(int jAgg = 0; jAgg < JAGG; jAgg++) {
                 int[] AgCell = this.AggGrid.iLogicalCells.AggregateCellToParts[jAgg];
@@ -659,7 +659,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         int NCOL = N_full;
                         Debug.Assert(mgMap.AggBasis[iF].GetLength(jAgg, degrees[iF]) == N_rest * NoSpc_Agg);
                         int i0Agg_Loc = mgMap.LocalUniqueIndex(iF, jAgg, N_rest * iSpc_Agg);
-                        int i0Agg = i0Agg_Loc + mgMap_Offset;
+                        long i0Agg = i0Agg_Loc + mgMap_Offset;
                         Debug.Assert(i0Agg >= mgMap.Partitioning.i0);
                         Debug.Assert(i0Agg < mgMap.Partitioning.iE);
                         
@@ -676,7 +676,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             
                             for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                                 int jCell = AgCell[k];
-                                int i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, 0);
+                                long i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, 0);
                                 var Block = Trf.ExtractSubArrayShallow(k, -1, -1);
 
 
@@ -706,7 +706,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     //for(int n = 0; n < N; n++)
                                     //    FulCoords[k, n] = 0;
                                 } else {
-                                    int i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, iSpcBase * N_full);
+                                    long i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, iSpcBase * N_full);
                                     var Block = Trf.ExtractSubArrayShallow(k, -1, -1);
 
                                     for(int nRow = 0; nRow < NROW; nRow++) {

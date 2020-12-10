@@ -80,13 +80,13 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             int[][] neighbours = new int[NoExternal][];
 
             long[] externalCellsGlobalIndices = gridDat.iParallel.GlobalIndicesExternalCells;
-            int[][] globNeigh = GetGlobalCellNeigbourship(gridDat);
+            long[][] globNeigh = GetGlobalCellNeigbourship(gridDat);
             for (int j = LocalLength; j < LocalLengthExt; j++) {
                 int jGlob = (int)gridDat.iParallel.GlobalIndicesExternalCells[j - LocalLength];
-                int[] globNeighExt = globNeigh[jGlob];
+                long[] globNeighExt = globNeigh[jGlob];
                 List<int> neighboursList = new List<int>();
                 for (int i = 0; i < globNeighExt.Length; i++) {
-                    int neighIndGlob = globNeighExt[i];
+                    long neighIndGlob = globNeighExt[i];
                     if (gridDat.CellPartitioning.IsInLocalRange(neighIndGlob))
                         neighboursList.Add(gridDat.CellPartitioning.TransformIndexToLocal(neighIndGlob));
                     else {
@@ -103,20 +103,20 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         }
 
 
-        private int[][] GetGlobalCellNeigbourship(GridData CurrentGrid) {
+        private long[][] GetGlobalCellNeigbourship(GridData CurrentGrid) {
 
             // intermediate solution  
 
             long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
-            int GlobalNumberOfCells = CurrentGrid.CellPartitioning.TotalLength;
-            int[][] globalCellNeigbourship = new int[GlobalNumberOfCells][];
+            long GlobalNumberOfCells = CurrentGrid.CellPartitioning.TotalLength;
+            long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
             int LocalNumberOfCells = CurrentGrid.CellPartitioning.LocalLength;
 
             for (int j = 0; j < LocalNumberOfCells; j++) {
-                int globalIndex = j + CurrentGrid.CellPartitioning.i0;
+                long globalIndex = j + CurrentGrid.CellPartitioning.i0;
                 // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
                 Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(j);
-                globalCellNeigbourship[globalIndex] = new int[cellNeighbours.Length];
+                globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
                 for (int i = 0; i < cellNeighbours.Length; i++) {
                     int neighIndLoc = cellNeighbours[i].Item1;
                     if (neighIndLoc < LocalNumberOfCells)

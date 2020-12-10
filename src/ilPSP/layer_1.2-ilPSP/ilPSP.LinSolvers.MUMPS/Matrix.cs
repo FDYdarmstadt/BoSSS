@@ -94,7 +94,7 @@ namespace ilPSP.LinSolvers.MUMPS {
             var comm = M.MPI_Comm;
 
             int LR;
-            int[] col = null;
+            long[] col = null;
             double[] val = null;
 
             if (size == 0) {
@@ -108,9 +108,9 @@ namespace ilPSP.LinSolvers.MUMPS {
                     // upper triangle + diagonal (diagonal entries are 
                     // always required, even if 0.0, for symmetric matrices in PARDISO)
 
-                    len = M.GetGlobalNoOfUpperTriangularNonZeros() + n;
+                    len = checked((int)(M.GetGlobalNoOfUpperTriangularNonZeros() + n));
                 } else {
-                    len = M.GetTotalNoOfNonZerosPerProcess();
+                    len = checked((int)(M.GetTotalNoOfNonZerosPerProcess()));
                 }
                 int Nrows = M.RowPartitioning.LocalLength;
                 nz = len;
@@ -120,7 +120,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                 a = new double[len];
                 for (int i = 0; i < Nrows; i++) {
                     //irn[i] = cnt;
-                    int iRow = M.RowPartitioning.i0 + i;
+                    int iRow = checked((int)(M.RowPartitioning.i0 + i));
 
                     LR = M.GetRow(iRow, ref col, ref val);
 
@@ -140,7 +140,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                                 continue;
                             } else {
                                 irn[cnt] = iRow +1;
-                                jrn[cnt] = col[j] +1; 
+                                jrn[cnt] = (int)(col[j] + 1); 
                                 a[cnt] = val[j]; 
                                 cnt++;
                             }
@@ -166,9 +166,9 @@ namespace ilPSP.LinSolvers.MUMPS {
                     // number of entries is:
                     // upper triangle + diagonal (diagonal entries are 
                     // always required, even if 0.0, for symmetric matrices in PARDISO)
-                    len_loc = M.GetLocalNoOfUpperTriangularNonZeros() + M.RowPartitioning.LocalLength;
+                    len_loc = checked((int)(M.GetLocalNoOfUpperTriangularNonZeros() + M.RowPartitioning.LocalLength));
                 else
-                    len_loc = M.GetTotalNoOfNonZerosPerProcess();
+                    len_loc = checked((int)(M.GetTotalNoOfNonZerosPerProcess()));
 
                 Partitioning part = new Partitioning(len_loc, comm);
                 if (part.TotalLength > int.MaxValue)
@@ -209,7 +209,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                                     continue;
                                 } else {
                                     ia_loc[cnt] = iRow + 1;
-                                    ja_loc[cnt] = col[j] + 1; // fortran indexing
+                                    ja_loc[cnt] = (int)(col[j] + 1); // fortran indexing
                                     a_loc[cnt] = val[j];
                                     cnt++;
                                 }
@@ -223,7 +223,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                         throw new ApplicationException("internal error.");
                 }
 
-                nz = part.TotalLength;
+                nz = checked((int)(part.TotalLength));
 
                 n = (int)M.RowPartitioning.TotalLength;
 

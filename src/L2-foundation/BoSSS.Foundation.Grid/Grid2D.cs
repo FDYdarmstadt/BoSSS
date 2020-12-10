@@ -560,7 +560,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // cell neighbourship
                             // ==================
-                            C_cnt.NodeIndices = new int[4];
+                            C_cnt.NodeIndices = new long[4];
                             C_cnt.NodeIndices[0] = i + j * xNodes.Length;
                             C_cnt.NodeIndices[1] = (i + 1) + j * xNodes.Length;
                             C_cnt.NodeIndices[2] = i + (j + 1) * xNodes.Length;
@@ -840,7 +840,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // cell neighbourship
                             // ==================
-                            C_cnt.NodeIndices = new int[4];
+                            C_cnt.NodeIndices = new long[4];
                             C_cnt.NodeIndices[0] = i + j * NoOfNodesX;
                             C_cnt.NodeIndices[1] = (i + 1) + j * NoOfNodesX;
                             C_cnt.NodeIndices[2] = i + (j + 1) * NoOfNodesX;
@@ -931,7 +931,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Bild0[3, 1] = 4;
 
                         grid.Cells[0] = Cj0;
-                        grid.Cells[0].NodeIndices = new int[] { 0, 1, 2, 3 };
+                        grid.Cells[0].NodeIndices = new long[] { 0, 1, 2, 3 };
 
                     } else {
 
@@ -986,7 +986,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (pf != null)
                                     pf(Bild0);
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*xNodes.Length + i,          // unten, links
                                     k*xNodes.Length + (i + 1),    // unten, rechts
                                     (k + 1)*xNodes.Length + i,    // oben, links
@@ -1165,7 +1165,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // ------------------ //
 
                             if (fullcircle == false || k != nS - 1) {
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*rNodes.Length + i,          // unten, links
                                     k*rNodes.Length + (i + 1),    // unten, rechts
                                     (k + 1)*rNodes.Length + i,    // oben, links
@@ -1173,7 +1173,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                };
                             }
                             else {
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         k*rNodes.Length + i,          // unten, links
                                         k*rNodes.Length + (i + 1),    // unten, rechts
                                         i,    // oben, links //  Periodic BC
@@ -1358,7 +1358,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // ------------------ //
 
                             if (i != nR) {
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*rNodes.Length + i,          // unten, links
                                     k*rNodes.Length + (i + 1),    // unten, rechts
                                     (k + 1)*rNodes.Length + i,    // oben, links
@@ -1490,7 +1490,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes[i + 1] + xDelta[i + 1, k + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[k + 1] + yDelta[i + 1, k + 1];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*xNodes.Length + i,
                                     k*xNodes.Length + i + 1,
                                     (k + 1)*xNodes.Length + i + 1
@@ -1514,7 +1514,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj1.TransformationParams[2, 0] = xNodes[i] + xDelta[i, k + 1];
                                 Cj1.TransformationParams[2, 1] = yNodes[k + 1] + yDelta[i, k + 1];
 
-                                Cj1.NodeIndices = new int[] {
+                                Cj1.NodeIndices = new long[] {
                                     k*xNodes.Length + i,
                                     (k + 1)*xNodes.Length + i + 1,
                                     (k + 1)*xNodes.Length + i
@@ -1599,7 +1599,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s + 1];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx,
                                         nIdx2 + sjIdx + 1 };
@@ -1613,7 +1613,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx + 1,
                                         nIdx1 + sjIdx + 1 };
@@ -1697,7 +1697,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s + 1];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx,
                                         nIdx2 + sjIdx + 1 };
@@ -1711,7 +1711,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx + 1,
                                         nIdx1 + sjIdx + 1 };
@@ -2010,7 +2010,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             // node indices (neighborship via cell face tags
-                            Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                            Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
                             PtCount += 4;
 
                             // neigborship
@@ -2211,7 +2211,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 }
 
                                 // node indices (neighborship via cell face tags
-                                Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                                Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
                                 PtCount += 4;
 
                                 // neigborship
@@ -2473,7 +2473,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                         // node indices (neighborship via cell face tags
-                        Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                        Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
                         PtCount += 4;
 
                         // cell neighborship

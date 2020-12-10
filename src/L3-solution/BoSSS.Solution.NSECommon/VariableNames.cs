@@ -737,6 +737,20 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string LevelSet = "LevelSet";
 
+        public static string AsLevelSetVariable(string levelSetName, string variable)
+        {
+            return variable + "#" + levelSetName;
+        }
+
+        public static IList<string> AsLevelSetVariable(string levelSetName, IList<string> variables)
+        {
+            for (int i = 0; i < variables.Count; ++i)
+            {
+                variables[i] += "#" + levelSetName;
+            }
+            return variables;
+        }
+
         /// <summary>
         /// x - component of the Level-Set gradient
         /// </summary>

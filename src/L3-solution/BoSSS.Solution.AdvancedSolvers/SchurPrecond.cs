@@ -30,6 +30,7 @@ using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.AdvancedSolvers
 {
+    /*
     public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback
     {
         public int IterationsInNested {
@@ -67,7 +68,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         MsrMatrix P;
         MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix;
-        int[] Uidx, Pidx;
+        long[] Uidx, Pidx;
 
         public enum SchurOptions { exact = 1, decoupledApprox = 2, SIMPLE = 3 }
 
@@ -105,16 +106,16 @@ namespace BoSSS.Solution.AdvancedSolvers
             var PxP = new MsrMatrix(Ppart, Ppart, 1, 1);
 
 
-            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]));//, default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));//, default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));//, default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, PxP, Pidx, default(int[]), Pidx, default(int[]));//, default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(long[]), Uidx, default(long[]));//, default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(long[]), Pidx, default(long[]));//, default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, divVel, Pidx, default(long[]), Uidx, default(long[]));//, default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, PxP, Pidx, default(long[]), Pidx, default(long[]));//, default(int[]), default(int[]));
 
             Mtx = M;
 
             int L = M.RowPartitioning.LocalLength;
 
-            int i0 = Mtx.RowPartitioning.i0;
+            long i0 = Mtx.RowPartitioning.i0;
 
             P = new MsrMatrix(Mtx);
             P.Clear();
@@ -125,7 +126,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
 
             velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
-            op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
 
             switch (SchurOpt)
             {
@@ -162,9 +163,9 @@ namespace BoSSS.Solution.AdvancedSolvers
                         SchurMtx = Schur.ToMsrMatrix();
                         SchurMtx.Acc(PxP, 1);
 
-                        ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
-                        pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
-                        SchurMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
+                        ConvDiff.AccSubMatrixTo(1.0, P, default(long[]), Uidx, default(long[]), Uidx);
+                        pGrad.AccSubMatrixTo(1.0, P, default(long[]), Uidx, default(long[]), Pidx);
+                        SchurMtx.AccSubMatrixTo(1.0, P, default(long[]), Pidx, default(long[]), Pidx);
                         return;
                     }
                 case SchurOptions.decoupledApprox:
@@ -173,7 +174,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         invVelMassMatrix = velMassMatrix.CloneAs();
                         invVelMassMatrix.Clear();
                         invVelMassMatrixSqrt = invVelMassMatrix.CloneAs();
-                        for (int i = velMassMatrix.RowPartitioning.i0; i < velMassMatrix.RowPartitioning.iE; i++)
+                        for (long i = velMassMatrix.RowPartitioning.i0; i < velMassMatrix.RowPartitioning.iE; i++)
                         {
                             if (ApproxScaling)
                             {
@@ -232,7 +233,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         var invdiag_ConvDiff = ConvDiff.CloneAs();
                         invdiag_ConvDiff.Clear();
-                        for (int i = ConvDiff.RowPartitioning.i0; i < ConvDiff.RowPartitioning.iE; i++)
+                        for (long i = ConvDiff.RowPartitioning.i0; i < ConvDiff.RowPartitioning.iE; i++)
                         {
                             invdiag_ConvDiff[i, i] = 1 / ConvDiff[i, i];
                         }
@@ -471,4 +472,5 @@ namespace BoSSS.Solution.AdvancedSolvers
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }
+    */
 }

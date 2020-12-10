@@ -1,21 +1,11 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.RheologyCommon;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
-using ilPSP;
+﻿using ilPSP;
 using ilPSP.Utils;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver 
-{
-    abstract class SpatialEquation {
+namespace BoSSS.Foundation.XDG.OperatorFactory {
+    public abstract class SpatialEquation {
 
         public SpatialEquation() 
         {
@@ -29,6 +19,8 @@ namespace BoSSS.Application.XNSE_Solver
         public string[] VariableNames { get; private set; }
 
         public string[] Parameters { get; private set; }
+
+        public string[] Coefficients { get; private set; }
 
         public void AddVariableNames(params string[] names)
         {
@@ -66,13 +58,25 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
+        public void AddCoefficient(params string[] names) {
+            if (Coefficients == null) {
+                Coefficients = names;
+            } else {
+                foreach (string name in names) {
+                    if (!Coefficients.Contains(name)) {
+                        Coefficients = Coefficients.Cat(name);
+                    }
+                }
+            }
+        }
+
         public void AddComponent(IEquationComponent component) 
         {
             Components.AddLast(component);
         }
     }
 
-    abstract class SurfaceEquation : SpatialEquation 
+    public abstract class SurfaceEquation : SpatialEquation 
     {
         public abstract string FirstSpeciesName { get; }
 
@@ -89,7 +93,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    abstract class BulkEquation : SpatialEquation 
+    public abstract class BulkEquation : SpatialEquation 
     {
         public abstract string SpeciesName { get; }
 
@@ -184,6 +188,20 @@ namespace BoSSS.Application.XNSE_Solver
                 }
             }
             return parameterNames.ToArray();
+        }
+
+        public string[] Coefficients() {
+            LinkedList<string> coefficientsNames = new LinkedList<string>();
+            foreach (SpatialEquation equation in SpatialEquations) {
+                if (equation.Coefficients != null) {
+                    foreach (string coefficient in equation.Coefficients) {
+                        if (!coefficientsNames.Contains(coefficient)) {
+                            coefficientsNames.AddLast(coefficient);
+                        }
+                    }
+                }
+            }
+            return coefficientsNames.ToArray();
         }
 
         public string[] Species() {

@@ -713,18 +713,18 @@ namespace BoSSS.Solution {
             MultidimensionalArray TempBlock = MultidimensionalArray.Create(IBlock, IBlock);
 
             for(int jSrc_Loc = 0; jSrc_Loc < J; jSrc_Loc++) { // loop over cells resp. local block-indices
-                int jSrcGlob = jSrc_Loc + RowPart.FirstBlock; // block-row index
-                int jDstGlob = (int)TargetBlockIdxS[jSrc_Loc]; // block-column index
+                long jSrcGlob = jSrc_Loc + RowPart.FirstBlock; // block-row index
+                long jDstGlob = TargetBlockIdxS[jSrc_Loc]; // block-column index
 
                 Debug.Assert(RowPart.IsLocalBlock(jSrcGlob));
-                int i0 = RowPart.GetBlockI0(jSrcGlob);
+                long i0 = RowPart.GetBlockI0(jSrcGlob);
                 int BT = RowPart.GetBlockType(jSrcGlob);
                 int[] _i0 = RowPart.GetSubblk_i0(BT);
                 int[] Len = RowPart.GetSubblkLen(BT);
                 Debug.Assert(IBlock == RowPart.GetBlockLen(jSrcGlob));
 
 
-                int j0 = IBlock * jDstGlob; // this would not work for variable size blocking
+                long j0 = IBlock * jDstGlob; // this would not work for variable size blocking
 #if DEBUG
                 if(ColPart.IsLocalBlock(jDstGlob)) {
                     // column block corresponds to some cell 
@@ -774,11 +774,11 @@ namespace BoSSS.Solution {
 
         static BlockPartitioning CloneBlockPartitioning(IBlockPartitioning part) {
             int J = part.LocalNoOfBlocks;
-            int j0 = part.FirstBlock;
+            long j0 = part.FirstBlock;
             if(!part.AllBlockSizesEqual)
                 throw new NotSupportedException();
 
-            int Sz = part.GetBlockI0(j0 + 1) - part.GetBlockI0(j0);
+            int Sz = (int)(part.GetBlockI0(j0 + 1) - part.GetBlockI0(j0));
             int[] BlockType = new int[J];
 
             int maxBT = 0;
@@ -831,7 +831,7 @@ namespace BoSSS.Solution {
                 m_OldBlockings.Add(colHash, CloneBlockPartitioning(M._ColPartitioning));
 
 
-            BlockMsrMatrix Msave = M.RecyclePermute(m_OldBlockings[rowHash], m_OldBlockings[colHash], new int[0, 2], new int[0, 2]);
+            BlockMsrMatrix Msave = M.RecyclePermute(m_OldBlockings[rowHash], m_OldBlockings[colHash], new long[0, 2], new long[0, 2]);
 
             m_Matrices.Add(Reference, new Tuple<int[], int[], BlockMsrMatrix>(rowHash, colHash, Msave));
         }

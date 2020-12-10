@@ -27,7 +27,7 @@ namespace ilPSP.LinSolvers.monkey {
 
 
         /// <summary>
-        /// used to collect all info from the <see cref="MsrMatrix"/> into a temporary CRS structure
+        /// used to collect all info from the <see cref="IMutableMatrixEx"/> into a temporary CRS structure
         /// </summary>
         public class TempCSR {
             /// <summary>
@@ -38,28 +38,29 @@ namespace ilPSP.LinSolvers.monkey {
             }
             
             /// <summary>
-            /// matrix values
+            /// - index: enumeration of non-zero entries
+            /// - content: matrix values
             /// </summary>
             public List<double> Vals = new List<double>();
             
             /// <summary>
-            /// (local, i.e. within the current MPI process) column indices of matrix
-            /// columns
+            /// - index: correlated with <see cref="Vals"/>
+            /// - content: (local, i.e. within the current MPI process) column indices of matrix columns
             /// </summary>
             public List<int> ColInd = new List<int>();
             
             /// <summary>
-            /// index: (local, i.e. within the current MPI process) row index <em>r</em> <br/>
-            /// content: index into <see cref="Vals"/> and <see cref="ColInd"/>,
-            /// at which row <em>r</em> starts.
+            /// - index: (local, i.e. within the current MPI process) row index <em>r</em> 
+            /// - content: index into <see cref="Vals"/> and <see cref="ColInd"/>,
+            ///   at which row <em>r</em> starts.
             /// </summary>
             public List<int> RowStart = new List<int>();
             
             /// <summary>
-            /// index: (local, i.e. within the current MPI process) row index <br/>
-            /// content: an index into <see cref="Vals"/>, denoting the position of the 
-            /// diagonal element; if negative, the diagonal element is not contained in the internal
-            /// part of the matrix (but maybe in the external one).
+            /// - index: (local, i.e. within the current MPI process) row index 
+            /// - content: an index into <see cref="Vals"/>, denoting the position of the 
+            ///   diagonal element; if negative, the diagonal element is not contained in the internal
+            ///   part of the matrix (but maybe in the external one).
             /// </summary>
             public List<int> DiagIndex = new List<int>();
 
@@ -71,15 +72,16 @@ namespace ilPSP.LinSolvers.monkey {
             bool diagAssigned = false;
 
             /// <summary>
-            /// total number of locally (i.e. within the current MPI process)
-            /// stored rows.
+            /// total number of locally (i.e. within the current MPI process) stored rows.
             /// </summary>
             public int NoOfRows { get { return RowStart.Count - 1; } }
 
             /// <summary>
             /// adds the next nonzero entry to the CSR structure
             /// </summary>
-            /// <param name="__ColInd"></param>
+            /// <param name="__ColInd">
+            /// local column index
+            /// </param>
             /// <param name="val"></param>
             /// <param name="bIsDiag">
             /// true, if this entry is a diagonal entry;
@@ -117,7 +119,7 @@ namespace ilPSP.LinSolvers.monkey {
         }
         
         /// <summary>
-        /// Common baseclass for all sparse matix data formats
+        /// Common base-class for all sparse matrix data formats
         /// </summary>
         abstract public class FormatBase {
 
@@ -143,8 +145,8 @@ namespace ilPSP.LinSolvers.monkey {
             /// computes the storage position (i.e. index into <see cref="Val"/>)
             /// for the matrix entry (<paramref name="row"/>,<paramref name="col"/>);
             /// </summary>
-            /// <param name="row"></param>
-            /// <param name="col"></param>
+            /// <param name="row">row index on this MPI process</param>
+            /// <param name="col">column index on this MPI process</param>
             /// <returns>
             /// An index into <see cref="Val"/>, that corresponds with matrix entry (<paramref name="row"/>,<paramref name="col"/>);
             /// If this entry is not set (i.e. it is zero), a negative value is returned;
@@ -162,7 +164,7 @@ namespace ilPSP.LinSolvers.monkey {
             /// <param name="Out_PointersIntoVal"></param>
             /// <param name="Out_Values"></param>
             /// <param name="UsedLen"></param>
-            abstract public void GetAllOccupiedColumns(int row, ref int[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen);
+            abstract public void GetAllOccupiedColumns(int row, ref long[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen);
 
             /// <summary>
             /// performs, for reference and testing purposes, the operation <br/>
@@ -248,17 +250,17 @@ namespace ilPSP.LinSolvers.monkey {
             /// <summary>
             /// see <see cref="FormatBase.GetAllOccupiedColumns"/>;
             /// </summary>
-            public override void GetAllOccupiedColumns(int row, ref int[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
+            public override void GetAllOccupiedColumns(int row, ref long[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
                 int stRow = this.RowStart[row];
                 int enRow = this.RowStart[row + 1];
                 int L = enRow-stRow;
                 UsedLen = L;
 
-                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) { Out_MtxColIndices = new int[L]; }
+                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) { Out_MtxColIndices = new long[L]; }
                 if (Out_PointersIntoVal == null || Out_PointersIntoVal.Length < L) { Out_PointersIntoVal = new int[L]; }
                 if (Out_Values == null || Out_Values.Length < L) { Out_Values = new double[L]; };
                 double[] Values = Out_Values;
-                int[] MtxColIndices = Out_MtxColIndices;
+                long[] MtxColIndices = Out_MtxColIndices;
                 int[] PointersIntoVal = Out_PointersIntoVal;
                 
 
@@ -294,7 +296,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// Baseclass for cell-based formats; By a cell, we refer to a 
         /// <see cref="CellSize"/>x<see cref="CellSize"/> - submatrix (of the complete matrix);
-        /// these 'blocks' are refered to as cells to avoid confusion with CUDA-(thread)-blocks.
+        /// these 'blocks' are referred to as cells to avoid confusion with CUDA-(thread)-blocks.
         /// </summary>
         /// <remarks>
         /// Index computation: the (i,j)-th entry of the k-th cell
@@ -307,8 +309,8 @@ namespace ilPSP.LinSolvers.monkey {
             /// </summary>
             /// <param name="_csr"></param>
             /// <param name="AlignmentInBytes">
-            /// memory aligmnet; the first entry of each cell will lie on an address (relative tor the address of the first entry)
-            /// that is divideable by this value;
+            /// memory alignment; the first entry of each cell will lie on an address (relative tor the address of the first entry)
+            /// that is dividable by this value;
             /// </param>
             /// <param name="_CellSize"></param>
             protected CelledFormats(TempCSR _csr, int AlignmentInBytes, int _CellSize)
@@ -394,17 +396,17 @@ namespace ilPSP.LinSolvers.monkey {
             /// <summary>
             /// defines the indexing of the cells.
             /// </summary>
-            /// <param name="GlobalCellIndex">global cell index (cells are counted row-wise)</param>
+            /// <param name="CellIndex">cell index (cells are counted row-wise)</param>
             /// <param name="ColWithinCell">column index, locally within cell</param>
             /// <param name="RowWithinCell">row index, locally within cell</param>
             /// <returns>an index into <see cref="FormatBase.Val"/></returns>
-            protected int GetIndexIntoVal(int GlobalCellIndex, int RowWithinCell, int ColWithinCell) {
+            protected int GetIndexIntoVal(int CellIndex, int RowWithinCell, int ColWithinCell) {
                 if( ColWithinCell < 0 || ColWithinCell > CellSize)
                     throw new IndexOutOfRangeException();
                 if( RowWithinCell < 0 || RowWithinCell > CellSize)
                     throw new IndexOutOfRangeException();
 
-                return GlobalCellIndex * CellStride + ColWithinCell * ColStride + RowWithinCell;
+                return CellIndex * CellStride + ColWithinCell * ColStride + RowWithinCell;
             }
 
             /// <summary>
@@ -413,9 +415,9 @@ namespace ilPSP.LinSolvers.monkey {
             /// </summary>
             /// <param name="CellRow"></param>
             /// <param name="CellCol"></param>
-            /// <param name="GlobalCellIdx"></param>
-            protected void LoadCell(int CellRow, int CellCol, int GlobalCellIdx) {
-                if ((GlobalCellIdx + 1) * CellStride > Val.Length)
+            /// <param name="CellIdx"></param>
+            protected void LoadCell(int CellRow, int CellCol, int CellIdx) {
+                if ((CellIdx + 1) * CellStride > Val.Length)
                     throw new IndexOutOfRangeException("global block index");
                 if (CellRow < 0 || CellRow >= csr.NoOfRows / CellSize)
                     throw new IndexOutOfRangeException("CellRow out of range");
@@ -441,7 +443,7 @@ namespace ilPSP.LinSolvers.monkey {
                             int iCell = i % CellSize;
                             int jCell = csr.ColInd[j] % CellSize;
 
-                            int iii = GetIndexIntoVal(GlobalCellIdx, iCell, jCell);
+                            int iii = GetIndexIntoVal(CellIdx, iCell, jCell);
 
                             Val[iii] = csr.Vals[j];
 
@@ -453,7 +455,7 @@ namespace ilPSP.LinSolvers.monkey {
             }
 
             /// <summary>
-            /// defines the global cell index for the firs cell in cell-row <paramref name="CellRowInd"/>
+            /// defines the global cell index for the first cell in cell-row <paramref name="CellRowInd"/>
             /// </summary>
             abstract protected int GetCellRowStart(int CellRowInd);
 
@@ -550,8 +552,8 @@ namespace ilPSP.LinSolvers.monkey {
                         // Sagt man das so, 'das ist ein Bingo'?
 
                         // row&col indices within cell:
-                        int ii = row - cellRow * CellSize;
-                        int jj = col - j0;
+                        int ii = checked((int)(row - cellRow * CellSize));
+                        int jj = checked((int)(col - j0));
 
                         return GetIndexIntoVal(jCell,ii,jj);
                     }
@@ -564,18 +566,18 @@ namespace ilPSP.LinSolvers.monkey {
             /// <summary>
             /// see <see cref="FormatBase.GetAllOccupiedColumns"/>;
             /// </summary>
-            public override void GetAllOccupiedColumns(int row, ref int[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
+            public override void GetAllOccupiedColumns(int row, ref long[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
                 int cellRow = row / CellSize;
                 int cellSt = GetCellRowStart(cellRow);     // first cell in cellRow
                 int cellEn = GetCellRowStart(cellRow + 1); // first cell in next cell-Row
 
-                int L = (cellEn - cellSt) * CellSize;
+                int L = checked((int)((cellEn - cellSt) * CellSize));
                 UsedLen = L;
 
-                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) Out_MtxColIndices = new int[L];
+                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) Out_MtxColIndices = new long[L];
                 if (Out_PointersIntoVal == null || Out_PointersIntoVal.Length < L) Out_PointersIntoVal = new int[L]; 
                 if (Out_Values == null || Out_Values.Length < L) { Out_Values = new double[L]; };
-                int[] MtxColIndices = Out_MtxColIndices;
+                long[] MtxColIndices = Out_MtxColIndices;
                 int[] PointersIntoVal = Out_PointersIntoVal;
 
                 // loop over cells columns
@@ -590,7 +592,7 @@ namespace ilPSP.LinSolvers.monkey {
                     
                     for( int j = j0; j < jE; j++) { // loop over columns within cell
                         // row&col indices within cell:
-                        int ii = row - cellRow * CellSize;
+                        int ii = checked((int)(row - cellRow * CellSize));
                         int jj = j - j0;
 
                         PointersIntoVal[i] = GetIndexIntoVal(jCell, ii, jj);
@@ -900,7 +902,7 @@ namespace ilPSP.LinSolvers.monkey {
                 /// computes an index into the linear memory <see cref="Values"/>.
                 /// </summary>
                 /// <param name="iRow">local matrix row index</param>
-                /// <param name="iPackedCol">packed column index ( smaller thatn <see cref="ELLPACKlike.NoOfPackedCols"/></param>
+                /// <param name="iPackedCol">packed column index (smaller than <see cref="ELLPACKlike.NoOfPackedCols"/></param>
                 /// <returns>an index into <see cref="Values"/></returns>
                 public int ComputeIndex(int iRow, int iPackedCol) {
                     if (iRow < 0 || iRow >= owner.NoOfRows)
@@ -1009,14 +1011,14 @@ namespace ilPSP.LinSolvers.monkey {
             /// <summary>
             /// see <see cref="FormatBase.GetAllOccupiedColumns"/>;
             /// </summary>
-            public override void GetAllOccupiedColumns(int row, ref int[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
+            public override void GetAllOccupiedColumns(int row, ref long[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
                 int L = NoOfPackedCols;
 
-                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) { Out_MtxColIndices = new int[L];  }
+                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) { Out_MtxColIndices = new long[L];  }
                 if (Out_PointersIntoVal == null || Out_PointersIntoVal.Length < L) { Out_PointersIntoVal = new int[L];  }
                 if (Out_Values == null || Out_Values.Length < L) { Out_Values = new double[L]; };
                 double[] Values = Out_Values;
-                int[] MtxColIndices = Out_MtxColIndices;
+                long[] MtxColIndices = Out_MtxColIndices;
                 int[] PointersIntoVal = Out_PointersIntoVal;
 
 
@@ -1276,7 +1278,7 @@ namespace ilPSP.LinSolvers.monkey {
             /// </summary>
             public override int GetEntryIndex(int row, int col) {
                 
-                int iBlock = row / base.RowsPerBlock;
+                long iBlock = row / base.RowsPerBlock;
 
                 for (int j = 0; j < NoOfPackedCols; j++) {
                     //double MtxVal = Val[base.MtxEntries.ComputeIndex(i, j)];
@@ -1299,17 +1301,17 @@ namespace ilPSP.LinSolvers.monkey {
             /// <summary>
             /// see <see cref="FormatBase.GetAllOccupiedColumns"/>;
             /// </summary>
-            public override void GetAllOccupiedColumns(int row, ref int[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
+            public override void GetAllOccupiedColumns(int row, ref long[] Out_MtxColIndices, ref int[] Out_PointersIntoVal, ref double[] Out_Values, out int UsedLen) {
                 int L = NoOfPackedCols;
                 
-                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) { Out_MtxColIndices = new int[L]; }
+                if (Out_MtxColIndices == null || Out_MtxColIndices.Length < L) { Out_MtxColIndices = new long[L]; }
                 if (Out_PointersIntoVal == null || Out_PointersIntoVal.Length < L) { Out_PointersIntoVal = new int[L]; }
                 if (Out_Values == null || Out_Values.Length < L) Out_Values = new double[L];
                 double[] Values = Out_Values;
-                int[] MtxColIndices = Out_MtxColIndices;
+                long[] MtxColIndices = Out_MtxColIndices;
                 int[] PointersIntoVal = Out_PointersIntoVal;
                 
-                int iBlock = row / base.RowsPerBlock;
+                long iBlock = row / base.RowsPerBlock;
                 
                 int i = 0;
                 for (int j = 0; j < NoOfPackedCols; j++) {

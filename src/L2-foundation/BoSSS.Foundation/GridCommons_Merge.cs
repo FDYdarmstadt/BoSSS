@@ -141,7 +141,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             // merge cells (logically)
             //////////////////////////
             {
-                int NodeOffset = A.NodePartitioning.TotalLength;
+                long NodeOffset = A.NodePartitioning.TotalLength;
                 long JAglb = A.NumberOfCells_l;
                 long JBglb = B.NumberOfCells_l;
                 long KAglb = A.NoOfBcCells.MPISum();

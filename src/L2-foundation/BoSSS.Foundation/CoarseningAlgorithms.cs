@@ -70,7 +70,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 aggGrids.Add(ZeroAggregation(GridDat));
 
                 var localNoOfCells = new List<int>();
-                var globalNoOfCells = new List<int>();
+                var globalNoOfCells = new List<long>();
                 localNoOfCells.Add(aggGrids[0].iLogicalCells.NoOfLocalUpdatedCells);
                 globalNoOfCells.Add(aggGrids[0].CellPartitioning.TotalLength);
 
@@ -83,7 +83,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     //AggregationGridData grid = Coarsen_hardcoded(aggGrids.Last(), (int)(Math.Pow(2, D)));
 
                     int Jloc = grid.CellPartitioning.LocalLength;
-                    int Jtot = grid.CellPartitioning.TotalLength;
+                    long Jtot = grid.CellPartitioning.TotalLength;
 
                     bool localReduction = (Jloc < localNoOfCells.Last()).MPIOr();
                     bool globalReduction = Jtot < globalNoOfCells.Last();

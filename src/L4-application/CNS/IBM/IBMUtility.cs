@@ -61,15 +61,15 @@ namespace CNS.IBM {
             double[] aBuf = null;// new double[M1];
             MultidimensionalArray Mbuf = null;
 
-            int Glob_cell0 = mask.GridData.CellPartitioning.i0;
+            long Glob_cell0 = mask.GridData.CellPartitioning.i0;
 
             foreach (int cell in mask.ItemEnum) {
                 //int i0 = cell * N1; // row
                 //int j0 = cell * M1; // col
-                int i0Glob = M._RowPartitioning.GetBlockI0(cell + Glob_cell0);
-                int j0Glob = M._ColPartitioning.GetBlockI0(cell + Glob_cell0);
-                int i0 = i0Glob - M._RowPartitioning.i0;
-                int j0 = j0Glob - M._ColPartitioning.i0;
+                long i0Glob = M._RowPartitioning.GetBlockI0(cell + Glob_cell0);
+                long j0Glob = M._ColPartitioning.GetBlockI0(cell + Glob_cell0);
+                int i0 = (int)(i0Glob - M._RowPartitioning.i0);
+                int j0 = (int)(j0Glob - M._ColPartitioning.i0);
                 int M1 = M._RowPartitioning.GetBlockLen(cell + Glob_cell0);
                 int N1 = M._ColPartitioning.GetBlockLen(cell + Glob_cell0);
 
@@ -100,9 +100,9 @@ namespace CNS.IBM {
 
         internal static MultidimensionalArray GetBlock(BlockMsrMatrix Mtx, int jCell) {
             Debug.Assert(Mtx._RowPartitioning.FirstBlock + jCell == Mtx._ColPartitioning.FirstBlock + jCell);
-            int jCellGlb = Mtx._RowPartitioning.FirstBlock + jCell;
-            int i0Glb = Mtx._RowPartitioning.GetBlockI0(jCellGlb);
-            int j0Glb = Mtx._ColPartitioning.GetBlockI0(jCellGlb);
+            long jCellGlb = Mtx._RowPartitioning.FirstBlock + jCell;
+            long i0Glb = Mtx._RowPartitioning.GetBlockI0(jCellGlb);
+            long j0Glb = Mtx._ColPartitioning.GetBlockI0(jCellGlb);
             int Mblk = Mtx._RowPartitioning.GetBlockLen(jCellGlb);
             int Nblk = Mtx._ColPartitioning.GetBlockLen(jCellGlb);
             MultidimensionalArray ret = MultidimensionalArray.Create(Mblk, Nblk);

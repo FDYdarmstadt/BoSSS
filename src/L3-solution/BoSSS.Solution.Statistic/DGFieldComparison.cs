@@ -62,7 +62,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string,int[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<double[], bool> SelectionFunc = null) {  
+          out double[] GridRes, out Dictionary<string,long[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<double[], bool> SelectionFunc = null) {  
             using (var tr = new FuncTrace()) {
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
                     throw new ArgumentException("empty list of field names.");
@@ -178,9 +178,9 @@ namespace BoSSS.Solution.Statistic {
                     injectedFields.Add(Identification, fields_Identification);
                     DOFs.Add(Identification, dofs_Idenitification);
                 }
-                __DOFs = new Dictionary<string, int[]>();
+                __DOFs = new Dictionary<string, long[]>();
                 foreach (var kv in DOFs) {
-                    __DOFs.Add(kv.Key, kv.Value.ToArray());
+                    __DOFs.Add(kv.Key, kv.Value.Select((int iii) => (long)iii).ToArray());
                 }
 
 

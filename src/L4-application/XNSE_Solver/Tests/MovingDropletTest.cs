@@ -35,7 +35,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// 'moving' in a constant velocity field, i.e.
     /// \f$ \vec{u}(t,\vec{x}) = (1,0)^T\f$ .
     /// </summary>
-    class MovingDropletTest : ITest {
+    class MovingDropletTest : IXNSETest {
 
 
         public MovingDropletTest(double R = 0.8, bool bConvection = true, bool bSteady = true, int spatDim = 2) {
