@@ -157,7 +157,7 @@ namespace BoSSS.Foundation.IO
                 }
 #endif
                 Exception e = null;
-                //try {
+                try {
                     // split up the vector to avoid files which are to big for the JSON/BSON format:
                     IList<T>[] vectorRepart = RepartitionVector<T>(vector);
                     if(vectorRepart.Length < 1)
@@ -208,11 +208,11 @@ namespace BoSSS.Foundation.IO
                     }
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                //} catch(Exception ee) {
-                //    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MyRank + " saving vector " + id + ": " + ee.Message);
-                //    Console.Error.WriteLine(ee.StackTrace);
-                //    e = ee;
-                //}
+                } catch(Exception ee) {
+                    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MyRank + " saving vector " + id + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.StackTrace);
+                    e = ee;
+                }
 
                 //e.ExceptionBcast();
             }
