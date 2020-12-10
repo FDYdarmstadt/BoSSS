@@ -180,9 +180,6 @@ namespace CNS {
             }
         }
 
-
-
-
         /// <summary>
         /// Projects the given <paramref name="initialValues"/> onto the
         /// conservative variable fields <see cref="Density"/>,
@@ -251,17 +248,8 @@ namespace CNS {
 
                 program.Control.CNSShockSensor?.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
                 foreach (var pair in DerivedFields) {
-                    //using (new BlockTrace("UpdateDerivedVariables:" + pair.Value.Identification + "-" + pair.Key.Name, tr)) {
                     pair.Key.UpdateFunction(pair.Value, cellMask, program);
-                    //}
                 }
-
-                // Test
-                //double sensorNorm = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor].L2Norm();
-                //double AVNorm = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity].L2Norm();
-                //Console.WriteLine("\r\nThis is UpdateDerivedVariables");
-                //Console.WriteLine("SensorNeu: {0}", sensorNorm);
-                //Console.WriteLine("AVNeu: {0}", AVNorm);
             }
         }
 
@@ -275,9 +263,7 @@ namespace CNS {
         public void UpdateShockCapturingVariables(IProgram<CNSControl> program, CellMask cellMask) {
             using (var tr = new FuncTrace()) {
                 // Update sensor
-                //using (new BlockTrace("UpdateShockCapturingVariables.Sensor", tr)) {
                 program.Control.CNSShockSensor.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
-                //}
 
                 // Update sensor variable (not necessary as only needed for IO)
                 using (new BlockTrace("UpdateShockCapturingVariables.Sensor_Plot", tr)) {
@@ -286,17 +272,8 @@ namespace CNS {
                 }
 
                 // Update artificial viscosity variable
-                //using (new BlockTrace("UpdateShockCapturingVariables.ArtificialViscosity", tr)) {
                 var avField = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity];
                 CNSVariables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
-                //}
-
-                // Test
-                //double sensorNorm = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor].L2Norm();
-                //double AVNorm = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity].L2Norm();
-                //Console.WriteLine("\r\nThis is UpdateShockCapturingVariables");
-                //Console.WriteLine("SensorNeu: {0}", sensorNorm);
-                //Console.WriteLine("AVNeu: {0}", AVNorm);
             }
         }
 
