@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
-    class XNSFE : XNSE {
+    public class XNSFE : XNSE {
         void AddXHeatMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
         {
 

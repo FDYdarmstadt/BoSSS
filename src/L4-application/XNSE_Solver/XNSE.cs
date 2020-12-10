@@ -26,7 +26,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver
 {
-    class XNSE : SolverWithLevelSetUpdater<XNSE_Control>
+    public class XNSE : SolverWithLevelSetUpdater<XNSE_Control>
     {
         protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 

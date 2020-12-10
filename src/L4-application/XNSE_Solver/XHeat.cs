@@ -17,7 +17,7 @@ using System.Linq;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver {
-    class XHeat : SolverWithLevelSetUpdater<XNSE_Control> 
+    public class XHeat : SolverWithLevelSetUpdater<XNSE_Control> 
     {
         ThermalMultiphaseBoundaryCondMap boundaryMap;
 
