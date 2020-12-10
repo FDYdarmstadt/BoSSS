@@ -92,5 +92,21 @@ namespace ilPSP {
             }
             return ret;
         }
+
+        /// <summary>
+        /// executes the <paramref name="LoopResult"/> for all values from 0
+        /// (including) to <paramref name="L"/> (excluding);
+        /// </summary>
+        /// <returns>
+        /// Array of length <paramref name="L"/>,
+        /// the i-th entry is equal to <paramref name="LoopResult"/>(i).
+        /// </returns>
+        public static T[] ForLoop<T>(this long L, Func<long, T> LoopResult) {
+            T[] ret = new T[L];
+            for (long i = 0; i < L; i++) {
+                ret[i] = LoopResult(i);
+            }
+            return ret;
+        }
     }
 }

@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// is derived from this information. Alternatively, cell connectivity
         /// may be specified by <see cref="Cell.CellFaceTags"/>.
         /// </summary>
-        public int[] NodeIndices;
+        public long[] NodeIndices;
 
         /// <summary>
         /// Element/Cell type;

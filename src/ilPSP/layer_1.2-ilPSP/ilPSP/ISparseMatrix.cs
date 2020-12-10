@@ -40,7 +40,7 @@ namespace ilPSP.LinSolvers {
         /// <remarks>
         /// this method may have better performance than e.g. <see cref="IMutableMatrix.GetValues"/>, ...
         /// </remarks>
-        double GetDiagonalElement(int row);
+        double GetDiagonalElement(long row);
 
         /// <summary>
         /// sets the diagonal element in the <paramref name="row"/>-th row
@@ -51,7 +51,7 @@ namespace ilPSP.LinSolvers {
         /// <remarks>
         /// this method may have better performance than e.g. <see cref="IMutableMatrix.SetValues"/>, ...
         /// </remarks>
-        void SetDiagonalElement(int row, double val);
+        void SetDiagonalElement(long row, double val);
 
         /// <summary>
         /// row partition; this defines how the lines of the matrix are distributed over 
@@ -71,12 +71,12 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// Number of rows over all MPI processes.
         /// </summary>
-        int NoOfRows { get; }
+        long NoOfRows { get; }
 
         /// <summary>
         /// Number of columns over all MPI processes.
         /// </summary>
-        int NoOfCols { get; }
+        long NoOfCols { get; }
 
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="RowIndex"></param>
         /// <param name="ColumnIndices"></param>
         /// <returns></returns>
-        double[] GetValues(int RowIndex, int[] ColumnIndices);
+        double[] GetValues(long RowIndex, long[] ColumnIndices);
 
         /// <summary>
         /// sets multiple values in one row at once
@@ -140,7 +140,7 @@ namespace ilPSP.LinSolvers {
         /// new values for row number <paramref name="RowIndex"/>;
         /// must have the same length as <paramref name="ColumnIndices"/>
         /// </param>
-        void SetValues(int RowIndex, int[] ColumnIndices, double[] newValues);
+        void SetValues(long RowIndex, long[] ColumnIndices, double[] newValues);
 
         /// <summary>
         /// gets/sets a specific entry of the matrix;
@@ -152,7 +152,7 @@ namespace ilPSP.LinSolvers {
         /// for setting/getting the diagonal element, the methods <see cref="ISparseMatrix.GetDiagonalElement"/> and <see cref="ISparseMatrix.SetDiagonalElement"/>
         /// may have better performance
         /// </remarks>
-        double this[int i, int j] {
+        double this[long i, long j] {
             get;
             set;
         }
@@ -174,7 +174,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="j0">Column index offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
-        void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block);
+        void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block);
 
         /// <summary>
         /// Accumulates a block of entries to this matrix.
@@ -184,7 +184,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
         /// <param name="beta">Scaling applied to this matrix before accumulation</param>
-        void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta);
+        void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta);
     }
 
     /// <summary>
@@ -208,7 +208,7 @@ namespace ilPSP.LinSolvers {
         /// <returns>
         /// Number of entries used in <paramref name="ColumnIndices"/>.
         /// </returns>
-        int GetOccupiedColumnIndices(int RowIndex, ref int[] ColumnIndices);
+        int GetOccupiedColumnIndices(long RowIndex, ref long[] ColumnIndices);
 
         /// <summary>
         /// Returns a non-shallow copy of the row <paramref name="RowIndex"/>.
@@ -227,7 +227,7 @@ namespace ilPSP.LinSolvers {
         /// <returns>
         /// Number of entries used in <paramref name="ColumnIndices"/> and <paramref name="Values"/>.
         /// </returns>
-        int GetRow(int RowIndex, ref int[] ColumnIndices, ref double[] Values);
+        int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values);
 
         /// <summary>
         /// Sets all entries to 0.0; 

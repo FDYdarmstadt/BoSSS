@@ -1412,10 +1412,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         for (int cc = 0; cc < CC; cc++) {
                             int jCell_cc = Edge2Cell[jEdge, cc];
 
-                            int _i0 = this.m_RowMap.i0, _iE = this.m_RowMap.iE;
-                            int M_i0 = m_Matrix.RowPartitioning.i0, m_iE = m_Matrix.RowPartitioning.iE;
-                            int m0 = (int)this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell_cr, 0);
-                            int n0 = (int)this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell_cc, 0);
+
+                            long m0 = this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell_cr, 0);
+                            long n0 = this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell_cc, 0);
 
 
                             Debug.Assert(ResultsOfIntegration.GetLength(3) == M);
@@ -1436,7 +1435,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     // Affine offset part
                     if (bAffineRequired && jCell_cr < Jup) {
-                        int m0 = (int)this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell_cr, 0);
+                        int m0 = this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell_cr, 0);
 
                         
                         var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(

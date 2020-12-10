@@ -105,7 +105,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Hack for introducing the value of p0 as a double. has to be changed
         /// </param>
         /// <param name="ThermodynamicPressureValue"></param>
-        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure, ref double ThermodynamicPressureValue) {
+        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure,  double ThermodynamicPressureValue) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
                 this.ThermodynamicPressureValue = ThermodynamicPressureValue;
@@ -196,7 +196,6 @@ namespace BoSSS.Solution.NSECommon {
 
             phi = Math.Max(0.01, phi);
             double visc = 0; // nondimensional viscosity
-           // phi = phi < 0.1 ? 0.1 : phi; //////////////////
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
                         visc = 1.0;

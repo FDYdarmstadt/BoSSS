@@ -153,30 +153,30 @@ namespace NSE_SIMPLE {
             ViscSplit[1, 0].AssemblyMatrix.SaveToTextFileSparse("C:\\tmp\\ViscSplit10.txt");
             ViscSplit[1, 1].AssemblyMatrix.SaveToTextFileSparse("C:\\tmp\\ViscSplit11.txt");
 
-            int[] IndicesVelocity = VelocityMapping.GetSubvectorIndices(true, 0);
-            int[] IndicesVelocityVector0 = VelocityVectorMapping.GetSubvectorIndices(true, 0);
-            int[] IndicesVelocityVector1 = VelocityVectorMapping.GetSubvectorIndices(true, 1);
+            long[] IndicesVelocity = VelocityMapping.GetSubvectorIndices(true, 0);
+            long[] IndicesVelocityVector0 = VelocityVectorMapping.GetSubvectorIndices(true, 0);
+            long[] IndicesVelocityVector1 = VelocityVectorMapping.GetSubvectorIndices(true, 1);
 
             MsrMatrix Swip2Mtx = new MsrMatrix(VelocityVectorMapping);
 
-            OperatorsFlowField.Swip2[0].OperatorMatrix.WriteSubMatrixTo<IList<int>, IList<int>, IList<int>, IList<int>>(Swip2Mtx,
+            OperatorsFlowField.Swip2[0].OperatorMatrix.WriteSubMatrixTo<IList<long>, IList<long>, IList<long>, IList<long>>(Swip2Mtx,
                 IndicesVelocity,
                 IndicesVelocityVector0,
                 IndicesVelocityVector0,
                 IndicesVelocityVector0);
-            OperatorsFlowField.Swip2[0].OperatorMatrix.AccSubMatrixTo<IList<int>, IList<int>, IList<int>, IList<int>>(1.0,
+            OperatorsFlowField.Swip2[0].OperatorMatrix.AccSubMatrixTo<IList<long>, IList<long>, IList<long>, IList<long>>(1.0,
                 Swip2Mtx,
                 IndicesVelocity,
                 IndicesVelocityVector0,
                 IndicesVelocityVector1,
                 IndicesVelocityVector1);
-            OperatorsFlowField.Swip2[1].OperatorMatrix.AccSubMatrixTo<IList<int>, IList<int>, IList<int>, IList<int>>(1.0,
+            OperatorsFlowField.Swip2[1].OperatorMatrix.AccSubMatrixTo<IList<long>, IList<long>, IList<long>, IList<long>>(1.0,
                 Swip2Mtx,
                 IndicesVelocity,
                 IndicesVelocityVector1,
                 IndicesVelocityVector0,
                 IndicesVelocityVector0);
-            OperatorsFlowField.Swip2[1].OperatorMatrix.AccSubMatrixTo<IList<int>, IList<int>, IList<int>, IList<int>>(1.0,
+            OperatorsFlowField.Swip2[1].OperatorMatrix.AccSubMatrixTo<IList<long>, IList<long>, IList<long>, IList<long>>(1.0,
                 Swip2Mtx,
                 IndicesVelocity,
                 IndicesVelocityVector1,

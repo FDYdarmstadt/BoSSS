@@ -1470,22 +1470,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             List<BlockMsrMatrix> Blocks = new List<BlockMsrMatrix>();
-            var BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
-            var BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
+            var BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(b => new List<long>());
+            var BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(b => new List<long>());
             int[][] BlockIndices_Local = new int[NoOfSchwzBlocks][];
             int[][] BlockIndices_External = new int[NoOfSchwzBlocks][];
 
-            int LocalI0 = MopMap.i0;
+            long LocalI0 = MopMap.i0;
             for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
                 BlkIdx_gI_lR[iPart] = BMs[iPart].GlobalIList_Internal;
                 BlkIdx_gI_eR[iPart] = BMs[iPart].GlobalIList_External;
                 var locallist = new List<int>();
                 var extlist = new List<int>();
                 foreach (int lIdx in BlkIdx_gI_lR[iPart]) {
-                    locallist.Add(lIdx - LocalI0);
+                    locallist.Add((int)(lIdx - LocalI0));
                 }
                 foreach (int eIdx in BlkIdx_gI_eR[iPart]) {
-                    extlist.Add(eIdx - LocalI0);
+                    extlist.Add((int)(eIdx - LocalI0));
                 }
                 BlockIndices_Local[iPart] = locallist.ToArray();
                 BlockIndices_External[iPart] = extlist.ToArray();

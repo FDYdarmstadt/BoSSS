@@ -429,14 +429,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             double[] currentPoint = new double[] { results[0, 0], results[0, 1] };
 
             // Compute global cell index of current point
-            gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+            gridData.LocatePoint(currentPoint, out long _, out long GlobalIndex, out bool _, out bool _);
 
             // Compute local node set
-            NodeSet nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
+            NodeSet nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, GlobalIndex);
 
             // Get local cell index of current point
-            int j0Grd = gridData.CellPartitioning.i0;
-            jLocal = (int)(GlobalIndex - j0Grd);
+            long j0Grd = gridData.CellPartitioning.i0;
+            jLocal = checked((int)(GlobalIndex - j0Grd));
 
             // Evaluate the second derivative
             try {
@@ -457,6 +457,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             // Set initial step size to 0.5 * h_minGlobal
             results[0, 4] = 0.5 * gridData.Cells.h_minGlobal;
+
+            //Tecplot.Tecplot.PlotFields(new DGField[] { this.densityField, this.gradientX, this.gradientY, this.hessianXX, this.hessianXY, this.hessianYX, this.hessianYY }, "FickDichFrachthafen", 0.0, 4);
 
             int n = 1;
             while (n < results.Lengths[0]) {
@@ -486,8 +488,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
                     foreach (int neighbour in cellNeighbours) {
                         if (gridData.Cells.IsInCell(currentPoint, neighbour, newLocalCoord)) {
                             // If neighbour has been found, update
-                            jLocal = neighbour + j0Grd;
-                            nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, jLocal);
+                            jLocal = neighbour;
+                            nodeSet = ShockFindingExtensions.GetLocalNodeSet(gridData, currentPoint, jLocal + j0Grd);
                             found = true;
                             break;
                         }

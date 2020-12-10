@@ -383,7 +383,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     int Je = m_owner.Cells.Count;
                     int J = m_owner.Cells.NoOfLocalUpdatedCells;
-                    int j0 = m_owner.CellPartitioning.i0;
+                    long j0 = m_owner.CellPartitioning.i0;
                     long[] GlidxExternal = m_owner.Parallel.GlobalIndicesExternalCells;
 
                     if (m_EdgesTmp != null)
@@ -422,14 +422,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // we use the most significant bit to mark processed edges
 
                             int jNeig = CellNeigh[e];
-                            int jNeigGlob;
+                            long jNeigGlob;
                             if(jNeig < J) {
                                 Debug.Assert(jNeig >= 0);
                                 jNeigGlob = jNeig + j0;
                             } else {
                                 Debug.Assert(jNeig >= J);
                                 Debug.Assert(jNeig < Je);
-                                jNeigGlob = (int)(GlidxExternal[jNeig - J]);
+                                jNeigGlob = (GlidxExternal[jNeig - J]);
                             }
 
                             //Single(dnsjdkvnskj)

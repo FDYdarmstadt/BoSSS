@@ -219,21 +219,17 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
 
             R.GridFunc = delegate () {
-                //double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
                 double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
-                //double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
+                double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
-                //var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    byte ret;
+                    string ret;
                     if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
-                        ret = 1;
+                        ret = BoundaryType.Dirichlet.ToString();
                     else
-                        ret = 2;
+                        ret = BoundaryType.Neumann.ToString();
                     return ret;
                 });
 
