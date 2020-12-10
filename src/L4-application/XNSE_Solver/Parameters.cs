@@ -349,7 +349,7 @@ namespace BoSSS.Application.XNSE_Solver
                 Normals[i] = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[i]];
             }
             VectorField<DGField> normalVector = new VectorField<DGField>(Normals);
-            Normals.Clear();
+            normalVector.Clear();
             normalVector.Gradient(1.0, Phi);
         }
 
@@ -357,7 +357,7 @@ namespace BoSSS.Application.XNSE_Solver
         {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, "Normal", SinglePhaseField.Factory);
 
             (string, DGField)[] normals = new (string, DGField)[D];
             for(int d = 0; d <D; ++d)
@@ -544,7 +544,7 @@ namespace BoSSS.Application.XNSE_Solver
                 ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
             }
         }
-    }
+    }    
 
     class MaxSigma : Parameter, ILevelSetParameter
     {

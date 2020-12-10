@@ -670,7 +670,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="p"></param>
         /// <param name="kelem"></param>
         /// <returns></returns>
-        public static XNSE_Control BoxEvapDualPhase(int p = 2, int kelem = 1) {
+        public static XNSE_Control BoxEvapDualPhase(int p = 3, int kelem = 1) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -715,6 +715,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #endregion
 
             #region grid
+            double angle = Math.PI * 0.0 / 180.0;
+            AffineTrafo ROT = AffineTrafo.Some2DRotation(angle);
             double H = 4;
             double L = 1;
             C.GridFunc = delegate () {
@@ -743,7 +745,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     return et;
                 });
 
-                AffineTrafo ROT = AffineTrafo.Some2DRotation(0.0);
+                
 
                 var grdT = grd.Transform(ROT);
                 return grdT;
@@ -756,19 +758,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#A", X => 0.0);
             C.AddBoundaryValue("freeslip_ZeroGradient_left");
             C.AddBoundaryValue("freeslip_ZeroGradient_right");
-            C.AddBoundaryValue("pressure_outlet_ConstantHeatFlux_upper", "HeatFluxY#B", X => q);
+            C.AddBoundaryValue("pressure_outlet_ConstantHeatFlux_upper", "HeatFluxY#B", X => Math.Cos(angle) * q);
+            C.AddBoundaryValue("pressure_outlet_ConstantHeatFlux_upper", "HeatFluxX#B", X => -Math.Sin(angle) * q);
 
             #endregion
 
-            #region initial condition
+            #region initial condition            
+            double x0 = 2.5;          
 
-            double x0 = 2.5;
-            Func<double[], double> PhiFunc = (X => X[1] - x0);
-
+            
+            C.Phi0Initial = X => 1.0 / Math.Cos(angle) * (x0 + (0.1 + Math.Sin(angle)) * X);
+            Func<double[], double> PhiFunc = (X => Math.Cos(angle) * (X[1] -  C.Phi0Initial(X[0])));
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
-            C.Phi0Initial = Y => x0;
 
-            C.InitialValues_Evaluators.Add("Temperature#B", X => (X[1] - x0) * q/C.ThermalParameters.k_B);
+            C.InitialValues_Evaluators.Add("Temperature#B", X => (Math.Cos(angle) * X[1] - Math.Sin(angle) * X[0] - x0) * q/C.ThermalParameters.k_B);
             //C.InitialValues_Evaluators.Add("VelocityX#A", X => Math.Sin(2 * Math.PI * X[1]));
             //C.InitialValues_Evaluators.Add("VelocityY#A", X => Math.Cos(2 * Math.PI * X[0]));
             C.InitialValues_Evaluators.Add("VelocityX#A", X => -0.0);
@@ -822,7 +825,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.SIP;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.LinearSolver.NoOfMultigridLevels = 1;
