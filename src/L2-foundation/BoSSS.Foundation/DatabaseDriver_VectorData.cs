@@ -204,10 +204,10 @@ namespace BoSSS.Foundation.IO
                 // define partition, if necessary
                 if (part == null)
                 {
-                    int L = (int)header.Partitioning.Last();
-                    int i0 = (L * this.MyRank) / this.Size;
-                    int ie = (L * (this.MyRank + 1)) / this.Size;
-                    part = new Partitioning(ie - i0);
+                    long L = header.Partitioning.Last();
+                    long i0 = (L * this.MyRank) / this.Size;
+                    long ie = (L * (this.MyRank + 1)) / this.Size;
+                    part = new Partitioning(checked((int)(ie - i0)));
                 }
 
 
@@ -248,12 +248,12 @@ namespace BoSSS.Foundation.IO
                             s.Close();
                         }
 
-                        int srdInd = (int)((myI0 + d) - header.Partitioning[p]);
-                        int CopyLen = Math.Min(vecP.Count - srdInd, myLen - d);
+                        long srdInd = ((myI0 + d) - header.Partitioning[p]);
+                        long CopyLen = Math.Min(vecP.Count - srdInd, myLen - d);
 
                         for (int i = 0; i < CopyLen; i++)
                         {
-                            ret.Add(vecP[srdInd + i]);
+                            ret.Add(vecP[checked((int)(srdInd + i))]);
                             d++;
                         }
 
