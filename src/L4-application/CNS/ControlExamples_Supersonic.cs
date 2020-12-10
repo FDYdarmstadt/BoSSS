@@ -995,13 +995,13 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "shockWavePerturbation";       
+            c.ProjectName = "shockWavePerturbation";
             c.SessionName = String.Format("SWP_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
 
             return c;
         }
 
-        public static CNSControl AcousticWave(string dbPath = null, int savePeriod = 10000, int dgDegree = 2, double CFLFraction = 0.1, double Ms = 1.5, int numOfCellsX = 100, int numOfCellsY = 10, double endTime = 2.0) {
+        public static CNSControl AcousticWaveProjection(string dbPath = null, int savePeriod = 10000, int dgDegree = 2, double CFLFraction = 0.1, double Ms = 1.5, int numOfCellsX = 100, int numOfCellsY = 10, double endTime = 2.13) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -1050,11 +1050,11 @@ namespace CNS {
 
             // ### Grid ###
             double xMin = 0;
-            double xMax = 2.13;
+            double xMax = 628;
             double yMin = 0;
             double yMax = 0.1;
 
-            numOfCellsX = 213;
+            numOfCellsX = 628;
             numOfCellsY = 10;
 
             c.GridFunc = delegate {
@@ -1062,19 +1062,19 @@ namespace CNS {
                 double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
 
-                grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                //grid.EdgeTagNames.Add(2, "SubsonicOutlet");
-                //grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+                grid.EdgeTagNames.Add(1, "SubsonicInlet");
+                grid.EdgeTagNames.Add(2, "SubsonicOutlet");
+                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
                 grid.DefineEdgeTags(delegate (double[] X) {
                     if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                        return 1;
+                        return 3;
                     } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                        return 1;
+                        return 3;
                     } else if (Math.Abs(X[0]) < 1e-14) {                    // left
                         return 1;
                     } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
-                        return 1;
+                        return 2;
                     } else {
                         throw new System.Exception("Boundary condition not specified");
                     }
@@ -1124,18 +1124,181 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p_minus(X, 0.0));
 
             // ### Boundary condtions ###
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => rho_minus(X, t));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => u_minus(X, t));
+            //c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => rho_minus(X, t));
+            //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => u_minus(X, t));
+            //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
+            //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => p_minus(X, t));
+            //c.AddBoundaryValue("AdiabaticSlipWall");
+
+            c.AddBoundaryValue("SubsonicInlet", CompressibleVariables.Density, (X, t) => rho_minus(X, t));
+            c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.xComponent, (X, t) => u_minus(X, t));
+            c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
+            c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => p_minus(X, t));
+            c.AddBoundaryValue("AdiabaticSlipWall");
+
+            // ### Time configuration ###
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            //c.dtFixed = 1e-4;
+            c.CFLFraction = CFLFraction;
+            c.Endtime = endTime;
+            c.NoOfTimesteps = 0;
+
+            // ### Project and sessions name ###
+            c.ProjectName = "AcousticWave";
+            c.SessionName = String.Format("AW_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder);
+
+            return c;
+        }
+
+        public static CNSControl AcousticWave(string dbPath = null, int savePeriod = 10000, int dgDegree = 2, double CFLFraction = 0.1, double Ms = 1.5, int numOfCellsX = 100, int numOfCellsY = 10, double endTime = 2.13) {
+            CNSControl c = new CNSControl();
+
+            // ### Database ###
+            //dbPath = @"c:\bosss_db";
+
+            c.DbPath = dbPath;
+            c.savetodb = dbPath != null;
+            c.saveperiod = savePeriod;
+            c.PrintInterval = 1;
+
+            // ### Partitioning and load balancing ###
+            c.GridPartType = GridPartType.METIS;
+
+            // ### Time-Stepping ###
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
+
+            // ### Physics ###
+            c.EquationOfState = IdealGas.Air;
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            // ### Output variables ###
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
+
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+
+            //c.AddVariable(CNSVariables.Entropy, dgDegree);
+            //c.AddVariable(CNSVariables.Temperature, dgDegree);
+            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            //c.AddVariable(CNSVariables.CFL, 0);
+            //c.AddVariable(CNSVariables.CFLConvective, 0);
+            //c.AddVariable(CNSVariables.Schlieren, dgDegree);
+
+            //if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
+            //    c.AddVariable(CNSVariables.LTSClusters, 0);
+            //}
+
+            //c.AddVariable(CNSVariables.Rank, 0);
+
+            // ### Grid ###
+            double xMin = 0;
+            double xMax = 6.28;
+            double yMin = 0;
+            double yMax = 0.1;
+
+            numOfCellsX = 628;
+            numOfCellsY = 10;
+
+            c.GridFunc = delegate {
+                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+
+                grid.DefineEdgeTags(delegate (double[] X) {
+                    if (Math.Abs(X[1]) < 1e-14) {   // bottom
+                        return 3;
+                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
+                        return 3;
+                    } else if (Math.Abs(X[0]) < 1e-14) {                    // left
+                        return 1;
+                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
+                        return 2;
+                    } else {
+                        throw new System.Exception("Boundary condition not specified");
+                    }
+                });
+
+                return grid;
+            };
+
+            // ### Shock conditions###
+            double gamma = IdealGas.Air.HeatCapacityRatio;
+            double densityLeft = 1;
+            double densityRight = (gamma + 1) * Ms * Ms / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
+            double pressureLeft = 1;
+            double pressureRight = (1 + 2 * gamma / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
+            double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
+            double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityXLeft;    // (1)
+            //double velocityXRight2 = velocityXLeft * densityLeft / densityRight; // equivalent to (1)
+            //double MsPostShock = Math.Sqrt((1 + ((gamma - 1) / 2) * Ms * Ms) / (gamma * Ms * Ms - (gamma - 1) / 2));
+            //double velocityXRight3 = MsPostShock * Math.Sqrt(gamma * pressureRight / densityRight);     // equivalent to (1)
+
+            // ### Acoustic wave (perturbation) ###
+            // See PDF by Yi Zhang (Meeting Geisenhofer/Kummer/Oberlack/Zhang 12/08/2020)
+            double u_hat_minus = 1e-5;
+            double alpha_minus = 1.0;
+            double U0_minus = velocityXLeft;
+            double rho0_minus = densityLeft;
+            double c_minus = Math.Sqrt(gamma * pressureLeft / densityLeft);    // constant free-stream speed of sound
+            double omega = (U0_minus + c_minus) * alpha_minus;
+            double wave_length = 2 * Math.PI / omega;
+
+            double u_minus(double[] X, double t) {
+                return u_hat_minus * Math.Cos(alpha_minus * X[0] - (U0_minus + c_minus) * alpha_minus * t);
+            }
+
+            double p_minus(double[] X, double t) {
+                return c_minus * rho0_minus * u_hat_minus * Math.Cos(alpha_minus * X[0] - (U0_minus + c_minus) * alpha_minus * t);
+            }
+
+            double rho_minus(double[] X, double t) {
+                return p_minus(X, t) / c_minus / c_minus;
+            }
+
+            // ### Initial condtions ###
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => densityLeft + rho_minus(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => velocityXLeft + u_minus(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft + p_minus(X, 0.0));
+
+            //c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => 1.0);
+            //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
+            //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 1.0);
+
+            // ### Boundary condtions ###
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => densityLeft + rho_minus(X, t));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => velocityXLeft + u_minus(X, t));
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => p_minus(X, t));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => pressureLeft + p_minus(X, t));
+            c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => p_minus(X, t));
+            c.AddBoundaryValue("AdiabaticSlipWall");
+
+            //c.AddBoundaryValue("SubsonicInlet", CompressibleVariables.Density, (X, t) => 1.0 + rho_minus(X, t));
+            //c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.xComponent, (X, t) => u_minus(X, t));
+            //c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
+            //c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => 1.0 + p_minus(X, t));
             //c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Time configuration ###
             c.dtMin = 0.0;
             c.dtMax = 1.0;
+            //c.dtFixed = 1e-4;
             c.CFLFraction = CFLFraction;
             c.Endtime = endTime;
-            c.NoOfTimesteps = 0;
+            c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
             c.ProjectName = "AcousticWave";
