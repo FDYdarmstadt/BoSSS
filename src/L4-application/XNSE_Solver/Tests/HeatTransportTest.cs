@@ -134,8 +134,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             double T_l = this.T_l;
             double T_r = this.T_r;
             double q = (T_r - T_l) / ((1 + dx) / k_A + (1 - dx) / k_B);
-
-            return (X, t) => X[0] < dx ? q/k_A * (X[0] + 1.0) : q/k_B * (X[0] - dx) + q / k_A * (dx + 1.0);
+            switch (species) {
+                case "A":
+                    return (X, t) => q / k_A * (X[0] + 1.0) ;                    
+                case "B":
+                    return (X, t) => q / k_B * (X[0] - dx) + q / k_A * (dx + 1.0);                    
+                default:
+                    throw new ArgumentException();
+                    
+            }
+           
         }
     }
 }

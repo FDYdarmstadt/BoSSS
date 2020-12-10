@@ -308,14 +308,14 @@ namespace BoSSS.Solution.XNSECommon {
                 Normals[i] = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[i]];
             }
             VectorField<DGField> normalVector = new VectorField<DGField>(Normals);
-            Normals.Clear();
+            normalVector.Clear();
             normalVector.Gradient(1.0, Phi);
         }
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, "Normal", SinglePhaseField.Factory);
 
             (string, DGField)[] normals = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
