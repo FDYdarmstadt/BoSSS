@@ -802,19 +802,16 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl StationaryShockWave_Perturbation(string dbPath = null, int savePeriod = 10000, int dgDegree = 3, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Ms = 1.5, int numOfCellsX = 300, int numOfCellsY = 30, double endTime = 2.0, string restart = "False") {
+        public static CNSControl StationaryShockWave_Perturbation(string dbPath = null, int savePeriod = 10000, int dgDegree = 3, double sensorLimit = 1e-3, double CFLFraction = 0.1, double Ms = 1.5, int numOfCellsX = 300, int numOfCellsY = 30, double endTime = 2.0) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
-            dbPath = @"c:\bosss_db";
+            //dbPath = @"c:\bosss_db";
 
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
-
-            c.WriteLTSLog = false;
-            c.WriteLTSConsoleOutput = false;
 
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
@@ -833,22 +830,16 @@ namespace CNS {
 
             double epsilon0 = 1.0;
             double kappa = 0.5;
-            //double lambdaMax = 2.0;
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
                 c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);    // dynamic lambdaMax
             }
 
             // ### Time-Stepping ###
-            c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
-            c.ExplicitOrder = explicitOrder;
-            c.NumberOfSubGrids = numberOfSubGrids;
-            c.ReclusteringInterval = reclusteringInterval;
-            c.maxNumOfSubSteps = maxNumOfSubSteps;
-            c.FluxCorrection = false;
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
 
             // ### Physics ###
             c.EquationOfState = IdealGas.Air;
@@ -866,21 +857,21 @@ namespace CNS {
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
 
-            //c.AddVariable(CNSVariables.Entropy, dgDegree);
-            //c.AddVariable(CNSVariables.Temperature, dgDegree);
-            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
-            //c.AddVariable(CNSVariables.CFL, 0);
-            //c.AddVariable(CNSVariables.CFLConvective, 0);
-            c.AddVariable(CNSVariables.Schlieren, dgDegree);
-
             if (AV) {
                 //c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
                 c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(CNSVariables.LTSClusters, 0);
-            }
+            //c.AddVariable(CNSVariables.Entropy, dgDegree);
+            //c.AddVariable(CNSVariables.Temperature, dgDegree);
+            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            //c.AddVariable(CNSVariables.CFL, 0);
+            //c.AddVariable(CNSVariables.CFLConvective, 0);
+            //c.AddVariable(CNSVariables.Schlieren, dgDegree);
+
+            //if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
+            //    c.AddVariable(CNSVariables.LTSClusters, 0);
+            //}
 
             //c.AddVariable(CNSVariables.Rank, 0);
 
@@ -890,37 +881,31 @@ namespace CNS {
             double yMin = 0;
             double yMax = 0.1;
 
-            if (restart == "True") {
-                // Restart Lichtenberg "paper_ibmdmr"
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("03785964-854e-4c7f-8cc3-352629732b55"), -1);
-                c.GridGuid = new Guid("2169a3f6-9254-4df9-8e77-0565c3f15422");
-            } else {
-                c.GridFunc = delegate {
-                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+            c.GridFunc = delegate {
+                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
 
-                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                    grid.EdgeTagNames.Add(2, "SubsonicOutlet");
-                    grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+                grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                grid.EdgeTagNames.Add(2, "SubsonicOutlet");
+                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
-                    grid.DefineEdgeTags(delegate (double[] X) {
-                        if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                            return 3;
-                        } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                            return 3;
-                        } else if (Math.Abs(X[0]) < 1e-14) {                    // left
-                            return 1;
-                        } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
-                            return 2;
-                        } else {
-                            throw new System.Exception("Boundary condition not specified");
-                        }
-                    });
+                grid.DefineEdgeTags(delegate (double[] X) {
+                    if (Math.Abs(X[1]) < 1e-14) {   // bottom
+                        return 3;
+                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
+                        return 3;
+                    } else if (Math.Abs(X[0]) < 1e-14) {                    // left
+                        return 1;
+                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
+                        return 2;
+                    } else {
+                        throw new System.Exception("Boundary condition not specified");
+                    }
+                });
 
-                    return grid;
-                };
-            }
+                return grid;
+            };
 
             // ### Initial condtions ###
             // Parameters
@@ -1010,20 +995,8 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "shockWavePerturbation";
-
-            string tempSessionName;
-            if (c.ExplicitScheme == ExplicitSchemes.LTS) {
-                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
-            } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
-            } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
-                tempSessionName = String.Format("SW_Perturb_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
-            } else {
-                throw new NotImplementedException("Session name is not available for this type of time stepper");
-            }
-
-            c.SessionName = tempSessionName;
+            c.ProjectName = "shockWavePerturbation";       
+            c.SessionName = String.Format("SWP_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
 
             return c;
         }
