@@ -410,16 +410,13 @@ namespace BoSSS.Solution.XNSECommon {
             int paramCount = lsParameters.Length;
             (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[lsParameters.Length];
             IGridData gridData = DomainVarFields.First().Value.GridDat;
-            //Basis basis = new Basis(gridData, gradientDegree);
-            for (int i = 0; i < paramCount; ++i) {
-                if (i == 2) {
-                    Basis basis = new Basis(gridData, curvatureDegree);
-                    fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
-                } else {
-                    Basis basis = new Basis(gridData, gradientDegree);
-                    fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
-                }
+            
+            Basis basis = new Basis(gridData, gradientDegree);
+            for (int i = 0; i < paramCount - 1; ++i) {
+                fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
             }
+            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
+            fields[2] = (lsParameters[2], new SinglePhaseField(curvatureBasis, lsParameters[2]));
             return fields;
         }
 

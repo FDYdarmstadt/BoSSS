@@ -415,7 +415,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new MovingDropletTest(Radius, includeConvection, bSteady);
 
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: 2);
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             XNSESolverTest(Tst, C);

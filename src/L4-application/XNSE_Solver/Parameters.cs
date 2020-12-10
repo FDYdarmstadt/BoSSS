@@ -39,6 +39,7 @@ namespace BoSSS.Application.XNSE_Solver {
             } else {
                 curvatureDegree = 1;
             }
+            
             string levelSet = levelSetName;
             int levelSetDegree;
             if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts)) {
