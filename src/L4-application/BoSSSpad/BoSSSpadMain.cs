@@ -69,6 +69,7 @@ namespace BoSSS.Application.BoSSSpad {
             TexBatch
         }
 
+        /*
         static private Stream OpenFileExclusiveBlocking(bool create, string RelPath, bool ForceOverride) {
             string BasePath = "";
             {
@@ -134,7 +135,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
         }
-
+        */
 
 
         /// <summary>
@@ -142,7 +143,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [STAThread]
         public static int Main(string[] args) {
-
+            /*
             JsonSerializer serializer = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Objects,
@@ -203,7 +204,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
             return 0;
 
-            
+            */
             
             int errCount = 0;
 

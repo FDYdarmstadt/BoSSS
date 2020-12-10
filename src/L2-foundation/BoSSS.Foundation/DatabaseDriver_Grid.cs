@@ -143,22 +143,15 @@ namespace BoSSS.Foundation.IO
                 object[] vector = vectorData[i];
                 if(vector != null)
                 {
-                    //Guid check;
                     if (guid != Guid.Empty)
                     {
                         dynamicDriver.SaveVector(vectorData[i], vectorType, guid);
-                        //check = guid;
                     }
                     else
                     {
                         vectorGuids[i] = dynamicDriver.SaveVector(vectorData[i], vectorType);
-                        //check = vectorGuids[i];
                     }
 
-                    //Partitioning p = null;
-                    //var Test = dynamicDriver.LoadVector(check, vectorType, ref p);
-
-                    //Console.WriteLine("Grid test: " + Test.Count);
                 }
             }
             grid.SetVectorGuids(vectorGuids);
