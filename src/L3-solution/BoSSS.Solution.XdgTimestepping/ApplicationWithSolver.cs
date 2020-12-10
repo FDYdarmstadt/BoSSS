@@ -269,8 +269,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot-" + timestepNo, physTime, superSampling);
         }
 
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //Update Calls
+            dt = GetFixedTimestep();
+            Timestepping.Solve(phystime, dt);
+            return dt;
+        }
 
-        
+
         //protected override void SetInitial() {
         //    base.SetInitial();
         //}

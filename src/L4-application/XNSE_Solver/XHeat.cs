@@ -1,10 +1,8 @@
-﻿using BoSSS.Application.XNSE_Solver;
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution;
+using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
@@ -13,22 +11,19 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using ilPSP.Utils;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static BoSSS.Foundation.SpatialOperator;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver {
-    class XHeat : XSolver<XNSE_Control> 
+    class XHeat : SolverWithLevelSetUpdater<XNSE_Control> 
     {
         ThermalMultiphaseBoundaryCondMap boundaryMap;
 
-        public override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
+        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
+
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
         {
 
             int D = this.GridData.SpatialDimension;
@@ -118,11 +113,11 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D)
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater)
         {
             OperatorFactory opFactory = new OperatorFactory();
             boundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-            SetOperator(D, opFactory);
+            DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
@@ -133,7 +128,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return XOP;
         }
 
-        public void SetOperator(int D, OperatorFactory opFactory)
+        public void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater)
         {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
 
@@ -172,19 +167,19 @@ namespace BoSSS.Application.XNSE_Solver {
                     MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                     opFactory.AddParameter(maxSigmaParameter);
                     lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
-                    BeltramiGradient lsBGradient = BeltramiGradient.CreateFrom(Control, "Phi", D);
+                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
                     lsUpdater.AddLevelSetParameter("Phi", lsBGradient);
                     break;
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                    BeltramiGradient lsGradient = BeltramiGradient.CreateFrom(Control, "Phi", D);
+                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
                     lsUpdater.AddLevelSetParameter("Phi", lsGradient);
                     break;
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
                     BeltramiGradientAndCurvature lsGradientAndCurvature =
-                        BeltramiGradientAndCurvature.CreateFrom(Control, "Phi", quadOrder, D);
+                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
                     opFactory.AddParameter(lsGradientAndCurvature);
                     lsUpdater.AddLevelSetParameter("Phi", lsGradientAndCurvature);
                     break;
@@ -208,6 +203,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+            LevelSetUpdater lsUpdater;
             switch (Control.Option_LevelSetEvolution)
             {
                 case LevelSetEvolution.Fourier:
@@ -219,7 +215,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     break;
                 case LevelSetEvolution.FastMarching:
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
-                    var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
+                    var fastMarcher = new FastMarchingEvolver("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
                     lsUpdater.AddEvolver("Phi", fastMarcher);
                     lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
                     break;
@@ -237,6 +233,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new NotImplementedException();
             }
             return lsUpdater;
+        }
+
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //Update Calls
+            dt = GetFixedTimestep();
+            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+            Console.WriteLine($"done with timestep {TimestepNo}");
+            return dt;
         }
     }
 }

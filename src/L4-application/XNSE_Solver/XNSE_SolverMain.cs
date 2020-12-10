@@ -74,17 +74,18 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
 
         static void Main(string[] args) {
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, true);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest(3, 0.3, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.85084, ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            /*
+            InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, true);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest(3, 0.3, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.85084, ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             //*/
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;

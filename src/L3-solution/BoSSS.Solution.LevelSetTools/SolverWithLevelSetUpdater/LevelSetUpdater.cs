@@ -1,24 +1,12 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools;
-using BoSSS.Solution.Utils;
-using BoSSS.Solution.XdgTimestepping;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 
-namespace BoSSS.Application.XNSE_Solver
-{
-    struct DualLevelSet
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+    public struct DualLevelSet
     {
         public int LevelSetIndex;
 
@@ -27,6 +15,32 @@ namespace BoSSS.Application.XNSE_Solver
         public LevelSet DGLevelSet;
 
         public LevelSetTracker Tracker;
+    }
+
+    public interface ILevelSetParameter {
+        IList<string> ParameterNames { get; }
+
+        (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields);
+
+        void LevelSetParameterUpdate(
+            DualLevelSet levelSet,
+            double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields);
+    }
+
+    public interface ILevelSetEvolver {
+        IList<string> ParameterNames { get; }
+
+        IList<string> VariableNames { get; }
+
+        void MovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields);
     }
 
     class SingleLevelSetUpdater
@@ -171,7 +185,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class LevelSetUpdater
+    public class LevelSetUpdater
     {
         public LevelSetTracker Tracker;
 

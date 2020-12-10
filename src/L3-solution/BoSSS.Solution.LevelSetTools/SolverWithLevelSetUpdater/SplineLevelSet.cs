@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Application.XNSE_Solver;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -12,10 +6,12 @@ using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
 using ilPSP;
 using MathNet.Numerics.Interpolation;
+using System;
+using System.Collections.Generic;
 
-namespace BoSSS.Application.XNSE_Solver
-{
-    class SplineLevelSet : LevelSet
+
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+    public class SplineLevelSet : LevelSet
     {
         double[] x;
 
@@ -118,7 +114,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    class SplineLevelSetEvolver : ILevelSetEvolver
+    public class SplineLevelSetEvolver : ILevelSetEvolver
     {
         SplineLevelSetTimeStepper timeStepper;
 

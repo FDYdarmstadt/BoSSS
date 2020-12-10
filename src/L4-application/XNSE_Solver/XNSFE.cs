@@ -1,25 +1,19 @@
 ﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.Utils;
+using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
-using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver 
-{
-    class XNSFE : XNSE 
-    {
+namespace BoSSS.Application.XNSE_Solver {
+    class XNSFE : XNSE {
         void AddXHeatMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
         {
 
@@ -64,19 +58,19 @@ namespace BoSSS.Application.XNSE_Solver
             }
         }
 
-        public override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) 
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) 
         {
             base.AddMultigridConfigLevel(configsLevel);
             AddXHeatMultigridConfigLevel(configsLevel);
         }
 
-        protected override void SetOperator(int D, OperatorFactory opFactory)
+        protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater)
         {
-            base.SetOperator(D, opFactory);
-            AddXHeat(D, opFactory);
+            base.DefineSystem(D, opFactory, lsUpdater);
+            AddXHeat(D, opFactory, lsUpdater);
         }
 
-        void AddXHeat(int D, OperatorFactory opFactory)
+        void AddXHeat(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater)
         {
             int quadOrder = QuadOrder();
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
@@ -123,39 +117,37 @@ namespace BoSSS.Application.XNSE_Solver
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-
+            LevelSetUpdater lsUpdater;
             //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
             var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
-
             switch (Control.Option_LevelSetEvolution) {
                 case LevelSetEvolution.Fourier:
-                    if (Control.EnforceLevelSetConservation) {
-                        throw new NotSupportedException("mass conservation correction currently not supported");
-                    }
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, Control.LSContiProjectionMethod);
-                    lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
-                    break;
+                if (Control.EnforceLevelSetConservation) {
+                    throw new NotSupportedException("mass conservation correction currently not supported");
+                }
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
+                break;
                 case LevelSetEvolution.FastMarching:
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
-                    var fastMarcher = new FastMarcher("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
-                    lsUpdater.AddEvolver("Phi", fastMarcher);
-                    lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
-                    break;
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                var fastMarcher = new FastMarchingEvolver("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
+                lsUpdater.AddEvolver("Phi", fastMarcher);
+                lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
+                break;
                 case LevelSetEvolution.SplineLS:
-                    SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, levelSet.Basis, "Phi", (int)Math.Sqrt(levelSet.DOFLocal));
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet);
-                    var SplineEvolver = new SplineLevelSetEvolver("Phi", (GridData)SplineLevelSet.GridDat);
-                    lsUpdater.AddEvolver("Phi", SplineEvolver);
-                    lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
-                    break;
+                SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, levelSet.Basis, "Phi", (int)Math.Sqrt(levelSet.DOFLocal));
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet);
+                var SplineEvolver = new SplineLevelSetEvolver("Phi", (GridData)SplineLevelSet.GridDat);
+                lsUpdater.AddEvolver("Phi", SplineEvolver);
+                lsUpdater.AddLevelSetParameter("Phi", levelSetVelocity);
+                break;
                 case LevelSetEvolution.None:
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
-                    break;
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                break;
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
             return lsUpdater;
         }
-
     }
 }

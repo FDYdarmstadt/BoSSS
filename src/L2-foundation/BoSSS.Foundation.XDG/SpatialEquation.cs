@@ -1,21 +1,11 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.RheologyCommon;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
-using ilPSP;
+﻿using ilPSP;
 using ilPSP.Utils;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver 
-{
-    abstract class SpatialEquation {
+namespace BoSSS.Foundation.XDG.OperatorFactory {
+    public abstract class SpatialEquation {
 
         public SpatialEquation() 
         {
@@ -86,7 +76,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    abstract class SurfaceEquation : SpatialEquation 
+    public abstract class SurfaceEquation : SpatialEquation 
     {
         public abstract string FirstSpeciesName { get; }
 
@@ -103,7 +93,7 @@ namespace BoSSS.Application.XNSE_Solver
         }
     }
 
-    abstract class BulkEquation : SpatialEquation 
+    public abstract class BulkEquation : SpatialEquation 
     {
         public abstract string SpeciesName { get; }
 

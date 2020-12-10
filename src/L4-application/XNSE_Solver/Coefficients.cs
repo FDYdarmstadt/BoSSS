@@ -1,14 +1,11 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
+﻿using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver {
 

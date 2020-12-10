@@ -1,23 +1,17 @@
 ﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.XheatCommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Solution.XNSECommon;
 
-namespace BoSSS.Application.XNSE_Solver {
-    abstract class XSolver<T> : XdgApplicationWithSolver<T> where T : XNSE_Control, new() {
+
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+    public abstract class SolverWithLevelSetUpdater<T> : XdgApplicationWithSolver<T> where T : AppControlSolver, new() {
         
-        protected LevelSetUpdater lsUpdater;
+        LevelSetUpdater lsUpdater;
 
         protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
         {
@@ -39,11 +33,15 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        public abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
-
-        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
+        protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
 
         protected abstract LevelSetUpdater InstantiateLevelSetUpdater();
+
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+            return GetOperatorInstance(D, lsUpdater);
+        }
+
+        protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         protected override LevelSetTracker InstantiateTracker() {
             if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
@@ -90,13 +88,5 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
         }                    
-
-        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            //Update Calls
-            dt = GetFixedTimestep();
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with timestep {TimestepNo}");
-            return dt;
-        }
     }
 }

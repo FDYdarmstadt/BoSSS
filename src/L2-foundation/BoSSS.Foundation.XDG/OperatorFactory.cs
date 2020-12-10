@@ -1,18 +1,10 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
-using BoSSS.Solution.XNSECommon.Operator;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static BoSSS.Foundation.XDG.XSpatialOperatorMk2;
 
-namespace BoSSS.Application.XNSE_Solver
-{
-    class OperatorFactory
+namespace BoSSS.Foundation.XDG.OperatorFactory {
+
+    public class OperatorFactory
     {
         SystemOfEquations eqSystem;
 

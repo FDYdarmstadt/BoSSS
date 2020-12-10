@@ -1,15 +1,7 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.XDG;
-using Microsoft.SqlServer.Server;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace BoSSS.Application.XNSE_Solver
-{
+namespace BoSSS.Foundation.XDG.OperatorFactory {
+
     /// <summary>
     /// Factory for the allocation of storage for storing the coefficients for this component
     /// </summary>
@@ -26,7 +18,7 @@ namespace BoSSS.Application.XNSE_Solver
     /// </summary>
     //public delegate void DelCoefficientUpdate(IReadOnlyDictionary<string, object> Coefficients, double time);
 
-    abstract class Coefficient
+    public abstract class Coefficient
     {
         public abstract IList<string> CoefficientsNames { get;}
 
