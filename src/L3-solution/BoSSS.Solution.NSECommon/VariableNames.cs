@@ -924,6 +924,48 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string Phi0Mean = "Phi0Mean";
 
+
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityX = "ExtensionVelocityX";
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityY = "ExtensionVelocityY";
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityZ = "ExtensionVelocityZ";
+
+        /// <summary>
+        /// variable name of the extension velocity
+        /// </summary>
+        static public string[] ExtensionVelocity(int D) {
+            switch (D) {
+                case 1: return new string[] { ExtensionVelocityX };
+                case 2: return new string[] { ExtensionVelocityX, ExtensionVelocityY };
+                case 3: return new string[] { ExtensionVelocityX, ExtensionVelocityY, ExtensionVelocityZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the extension velocity 
+        /// </summary>
+        static public string ExtensionVelocityComponent(int d) {
+            switch (d) {
+                case 0: return ExtensionVelocityX;
+                case 1: return ExtensionVelocityY;
+                case 2: return ExtensionVelocityZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+
         /// <summary>
         /// variable name for the MassFraction of component 0
         /// </summary>

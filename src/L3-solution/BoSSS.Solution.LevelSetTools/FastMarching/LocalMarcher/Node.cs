@@ -28,6 +28,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
         public LinkedList<Node> neighbors;
         double x_global;
         double y_global;
+        double[] pos_global;
         double phi;
 
         public Node(double X, double Y, double Phi) {
@@ -61,6 +62,28 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
                 return y_global;
             }
         }
+
+
+        public Node(double[] Pos, double Phi) {
+            Pos_local = Pos;
+            phi = Phi;
+            neighbors = new LinkedList<Node>();
+        }
+
+        public void SetGlobalPosition(double[] Pos) {
+            pos_global = Pos;
+        }
+
+        public double[] Pos_local {
+            get;
+        }
+
+        public double[] Pos_global {
+            get {
+                return pos_global;
+            }
+        }
+
 
         public double Phi {
             set {

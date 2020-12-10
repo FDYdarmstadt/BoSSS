@@ -252,13 +252,16 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
         /// </summary>
         public void GradientUpdate(SubGrid Sgrd, double[] PhiMean, SinglePhaseField Phi, VectorField<SinglePhaseField> gradPhi) {
             var GridDat = Phi.GridDat;
-            
+            int D = gradPhi.Count();
             
             gradPhi.Clear(Sgrd.VolumeMask);
 
-            SpatialOperator op = new SpatialOperator(1, 2, QuadOrderFunc.Linear(), "Phi", "g0", "g1");
-            op.EquationComponents["g0"].Add(new Gradient2(0, PhiMean));
-            op.EquationComponents["g1"].Add(new Gradient2(1, PhiMean));
+            string[] varNames = new string[] { "Phi", "g0", "g1", "g2" };
+
+            SpatialOperator op = new SpatialOperator(1, D, QuadOrderFunc.Linear(), varNames.GetSubVector(0, 1 + D));
+            for (int d = 0; d < D; d++) 
+                op.EquationComponents[varNames.ElementAt(d+1)].Add(new Gradient2(d, PhiMean));
+
             op.EdgeQuadraturSchemeProvider = g => (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask));
             op.VolumeQuadraturSchemeProvider = g => (new CellQuadratureScheme(domain: Sgrd.VolumeMask));
             op.Commit();

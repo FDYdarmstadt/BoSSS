@@ -84,6 +84,7 @@
     <Compile Include="FastMarching\LocalMarcher\ILocalSolver.cs" />
     <Compile Include="FastMarching\LocalMarcher\Eikonal.cs" />
     <Compile Include="FastMarching\LocalMarcher\LocalMarcher_2DStructured.cs" />
+    <Compile Include="FastMarching\LocalMarcher\LocalMarcher_Structured.cs" />
     <Compile Include="FastMarching\LocalMarcher\Node.cs" />
     <Compile Include="FastMarching\LocalMarcher\Position.cs" />
     <Compile Include="FastMarching\PlotTools.cs" />
