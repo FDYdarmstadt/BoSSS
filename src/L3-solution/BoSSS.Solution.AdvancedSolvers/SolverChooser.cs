@@ -592,7 +592,10 @@ namespace BoSSS.Solution {
             int SpaceDim = MultigridBasis.First()[0].AggGrid.ParentGrid.SpatialDimension;
             int MaxMGDepth = MultigridBasis.Count();
 
-            switch(lc.SolverCode) {
+            if (MaxMGDepth < 1)
+                throw new ArgumentException("ERROR: At least one multigrid levels is required.");
+
+            switch (lc.SolverCode) {
                 case LinearSolverCode.automatic:
                 if(m_nc != null) {
                     templinearSolve = AutomaticSolver(lc, LocalDOF, SpaceDim, NoCellsLoc,
@@ -757,7 +760,7 @@ namespace BoSSS.Solution {
                 pt.TerminationCriterion = LinearConvergence;
             }
 
-            Check_linsolver(templinearSolve);
+            Check_linsolver(templinearSolve,LocalDOF);
 
             return templinearSolve;
         }
@@ -830,12 +833,14 @@ namespace BoSSS.Solution {
             int NoOfLevels = MultigridBasis.Count();
             int[] DOFperCell = new int[NoOfLevels];
             int[] LocalDOF = new int[NoOfLevels];
+            var MGBasisAtLevel = MultigridBasis.ToArray();
+            int[] NoOFCellsAtLEvel = MGBasisAtLevel.Length.ForLoop(b=> MGBasisAtLevel[b].First().AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
             int counter = 0;
             
 
             for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
                 counter = iLevel;
-                if (iLevel > MGChangeOfBasis.Length - 1)
+                if (iLevel >= MGChangeOfBasis.Length)
                     counter = MGChangeOfBasis.Length - 1;
                 foreach (var cob in MGChangeOfBasis[counter]) {
                     for (int iVar = 0; iVar < cob.VarIndex.Length; iVar++) {
@@ -856,7 +861,7 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
-                LocalDOF[iLevel] = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.iLogicalCells.NoOfLocalUpdatedCells* DOFperCell[iLevel];
+                LocalDOF[iLevel] = NoOFCellsAtLEvel[iLevel] * DOFperCell[iLevel];
             }
             return LocalDOF;
         }
@@ -1434,21 +1439,17 @@ namespace BoSSS.Solution {
 
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
+            int maxDG = getMaxDG(0, 0);
 
             var LocalDOF4directSolver = _LocalDOF;
-            // if we use lvlpmg in Sblocks, we can have less blocks ...
-            if (m_lc.pMaxOfCoarseSolver < getMaxDG(0, 0)) {
+            // if we use lvlpmg in Sblocks, we can have less and larger blocks ...
+            if (m_lc.pMaxOfCoarseSolver < maxDG) {
                 LocalDOF4directSolver = GetLocalDOF(m_lc.pMaxOfCoarseSolver);
             }
 
             int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
             int LocSysSizeZeroLvl = _LocalDOF[0];
-            if (DirectKickIn < _LocalDOF.Last()) {
-                Console.WriteLine("WARNING: target blocksize ({0}) < smallest blocksize of MG ({1}).", DirectKickIn, _LocalDOF.Last());
-                DirectKickIn = _LocalDOF.Last();
-            }
-            if (MaxMGDepth < 1)
-                throw new ArgumentException("ERROR: At least two multigrid levels are required.");
+            
 
             for (int iLevel = 0; iLevel < MaxMGDepth; iLevel++) {
                 MaxMGLevel = iLevel;
@@ -1471,9 +1472,6 @@ namespace BoSSS.Solution {
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
                 useDirect = useDirect.MPIOr();
-
-                //if (useDirect && iLevel == 0)
-                //    Console.WriteLine("WARNING: You are using the direct solver. Recommendations: \n\tRaise the Number of Multigridlevels\n\tLower the target blocksize");
 
                 if(useDirect)
                     Console.WriteLine("KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
@@ -1498,7 +1496,9 @@ namespace BoSSS.Solution {
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true,
                         CoarseSolveOfCutcells = true,
-                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver
+                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
+                        //CoarseLowOrder = Math.Min(maxDG, 1 + iLevel*2),
+                        //CoarseLowOrder = Math.Max(1,maxDG - iLevel)
                     };
 
                     //var solve1 = new Schwarz() {
@@ -1867,7 +1867,18 @@ namespace BoSSS.Solution {
         /// Checks overgiven selfmade linear solver
         /// </summary>
         /// <returns></returns>
-        private void Check_linsolver(ISolverSmootherTemplate solver) {
+        private void Check_linsolver(ISolverSmootherTemplate solver, int[] LocalDOF) {
+            int DirectKickIn = m_lc.TargetBlockSize;
+
+            if (MaxMGLevel >= 2) { //indicates that a mutligrid solver was build ...
+                if (DirectKickIn < LocalDOF.Last()) {
+                    Console.WriteLine("WARNING: target blocksize ({0}) < smallest blocksize of MG ({1}).", DirectKickIn, LocalDOF.Last());
+                    Console.WriteLine("\tYour Choice of LinearSolverConfig.TargetBlockSize will not influence the MG depth. ");
+                    Console.WriteLine("\t Choose LinearSolverConfig.TargetBlockSize > {0} or Raise LinearSolverConfig.NoOfMultigridLevels", LocalDOF.Last());
+                    DirectKickIn = LocalDOF.Last();
+                }
+            }
+
             switch (m_lc.SolverCode) {
                 //case LinearSolverCode.exp_Kcycle_schwarz:
 
