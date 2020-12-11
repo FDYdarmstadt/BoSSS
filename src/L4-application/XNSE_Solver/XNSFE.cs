@@ -107,7 +107,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 for (int d = 0; d < D; ++d)
                     opFactory.AddEquation(new InterfaceNSE_MassFlux("A", "B", D, d, lsUpdater.Tracker, config));
-                
+
                 if (config.isContinuity)
                     opFactory.AddEquation(new InterfaceContinuity_MassFlux("A", "B", D, lsUpdater.Tracker, config));
             }

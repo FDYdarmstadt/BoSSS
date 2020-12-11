@@ -13,6 +13,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Application.XNSE_Solver.Tests
 {
@@ -171,6 +172,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         public XHeatErrorEvaluator(XHeat solver) : base(solver) {
 
         }
+        public XHeatErrorEvaluator(XNSFE solver) : base(solver) {
+
+        }
 
         public double ComputeTemperatureError(IDictionary<string, Func<double[], double, double>> exactTemperature, double time) {
             int D = solver.GridData.SpatialDimension;
@@ -207,6 +211,52 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             L2Error = L2Error.Sqrt();
             solver.QueryHandler.ValueQuery("L2err_" + VariableNames.Temperature, L2Error, true);
             return L2Error;            
+        }
+
+        public double ComputeEnergyError(Func<double, double> exactEnergy, double time) {
+            int D = solver.GridData.SpatialDimension;
+
+            int order = 0;
+            if (solver.LsTrk.GetCachedOrders().Count > 0) {
+                order = solver.LsTrk.GetCachedOrders().Max();
+            } else {
+                order = 1;
+            }
+
+            var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
+            double TotalEnergy = 0;
+
+            foreach (var spc in solver.LsTrk.SpeciesNames) {
+
+                double c, rho;
+                switch (spc) {
+                    case "A": { c = solver.Control.ThermalParameters.c_A; rho = solver.Control.ThermalParameters.rho_A; break; }
+                    case "B": { c = solver.Control.ThermalParameters.c_B; rho = solver.Control.ThermalParameters.rho_B; break; }
+                    default: { throw new ArgumentException(); }
+                }
+
+                SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
+                var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
+
+                string temperatureName = VariableNames.Temperature;
+                ConventionalDGField temperature = ((XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == temperatureName)).GetSpeciesShadowField(spc);
+                var rule = scheme.Compile(solver.GridData, order);
+
+                double E = 0.0;
+                CellQuadrature.GetQuadrature(new int[] { 1 }, solver.LsTrk.GridDat, rule,
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                    temperature.Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1,-1,0));
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < Length; i++)
+                        E += c * rho * ResultsOfIntegration[i, 0];
+                }).Execute();
+                TotalEnergy += E;
+            }
+
+            double EnergyError = (exactEnergy(time) - TotalEnergy).Abs() / exactEnergy(time).Abs(); // relative Error in Energy, scaled by some factor
+            return EnergyError;
         }
 
         /// <summary>
