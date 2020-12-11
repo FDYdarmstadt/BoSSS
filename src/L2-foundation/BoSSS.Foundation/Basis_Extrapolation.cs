@@ -25,14 +25,6 @@ namespace BoSSS.Foundation {
 
     public partial class Basis {
 
-
-        static public int ExtrapolationCounter = 0;
-        static public Stopwatch Quadrature = new Stopwatch();
-        static public Stopwatch Inversion = new Stopwatch();
-        static public Stopwatch QuadRuleCompile = new Stopwatch();
-
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -91,8 +83,7 @@ namespace BoSSS.Foundation {
             MultidimensionalArray Minv_tmp = MultidimensionalArray.Create(N, N);
             MultidimensionalArray M_tmp = MultidimensionalArray.Create(N, N);
 
-            ExtrapolationCounter += Esub;
-
+       
 
             QuadRule basicQr = null;
             for (int esub = 0; esub < Esub; esub++) { // loop over the cell pairs...
@@ -123,7 +114,7 @@ namespace BoSSS.Foundation {
 
                 Debug.Assert(jCell0 < J);
 
-                QuadRuleCompile.Start();
+                //Scales very badly:
                 //var cellMask = new CellMask(m_Context, new[] { new Chunk() { i0 = jCell0, Len = 1 } }, MaskType.Geometrical);
                 //var QuadRule = (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2);
 
@@ -139,10 +130,8 @@ namespace BoSSS.Foundation {
                 quadRule.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(
                     Chunk.GetSingleElementChunk(jCell0),
                     basicQr));
-                QuadRuleCompile.Stop();
 
                 // we project the basis function from 'jCell1' onto 'jCell0'
-                Quadrature.Start();
                 CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
                     quadRule, // integrate over target cell
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
@@ -171,12 +160,9 @@ namespace BoSSS.Foundation {
                         Minv_tmp.Clear();
                         Minv_tmp.Acc(1.0, res);
                     }).Execute();
-                Quadrature.Stop();
 
                 // compute the inverse
-                Inversion.Start();
                 Minv_tmp.InvertTo(M_tmp);
-                Inversion.Stop();
 
                 // store
                 if (!swap) {

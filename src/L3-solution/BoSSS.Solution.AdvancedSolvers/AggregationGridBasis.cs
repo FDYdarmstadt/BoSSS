@@ -507,11 +507,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        static public Stopwatch Extrapol = new Stopwatch();
-        static public Stopwatch _MMtemp = new Stopwatch();
-        static public Stopwatch LDL = new Stopwatch();
-        static public Stopwatch OrthoMul = new Stopwatch();
-
 
         /// <summary>
         /// computes the injector for multigrid level 2 and higher 
@@ -541,27 +536,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             CellPairs[i, 0] = compCell[0];
                             CellPairs[i, 1] = compCell[i + 1];
                         }
-                        Extrapol.Start();
                         var ExpolMtx = MultidimensionalArray.Create(I, Np, Np);
                         maxDgBasis.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I - 1, Np - 1, Np - 1 }));
                         for(int n = 0; n < Np; n++) {
                             ExpolMtx[0, n, n] = 1.0;
                         }
-                        Extrapol.Stop();
 
                         // Compute intermediate mass matrix
-                        _MMtemp.Start();
                         var MMtemp = MultidimensionalArray.Create(Np, Np);
                         MMtemp.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "nm", "iln", "ilm");
-                        _MMtemp.Stop();
 
                         // orthonormalize
-                        LDL.Start();
                         MMtemp.SymmetricLDLInversion(ortho, null);
-                        LDL.Stop();
-                        OrthoMul.Start();
                         Injectors_iLevel[j].Multiply(1.0, ExpolMtx, ortho, 0.0, "inm", "ink", "km");
-                        OrthoMul.Stop();
                     } else {
                         Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1).AccEye(1.0);
                     }

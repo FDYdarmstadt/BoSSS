@@ -804,18 +804,7 @@ namespace BoSSS.Application.SipPoisson {
                 mgBasis.Start();
                 AggregationGridBasis[][] AggBasis;
                 using (new BlockTrace("Aggregation_basis_init", tr)) {
-                    Basis.ExtrapolationCounter = 0;
                     AggBasis = AggregationGridBasis.CreateSequence(MgSeq, new Basis[] { this.T.Basis });
-                    Console.WriteLine("Number of basis extrapolations: " + Basis.ExtrapolationCounter);
-
-                    Console.WriteLine("     extrapolation           : " + AggregationGridBasis.Extrapol.Elapsed.TotalSeconds);
-                    Console.WriteLine("     temp Mass Matrix comp   : " + AggregationGridBasis._MMtemp.Elapsed.TotalSeconds);
-                    Console.WriteLine("     symmetrical invert      : " + AggregationGridBasis.LDL.Elapsed.TotalSeconds);
-                    Console.WriteLine("     final orthonormalization: " + AggregationGridBasis.OrthoMul.Elapsed.TotalSeconds);
-                    Console.WriteLine();
-                    Console.WriteLine("       quad rule compilation    : " + Basis.QuadRuleCompile.Elapsed.TotalSeconds);
-                    Console.WriteLine("       quadrature               : " + Basis.Quadrature.Elapsed.TotalSeconds);
-                    Console.WriteLine("       inner inversion          : " + Basis.Inversion.Elapsed.TotalSeconds);
                 }
                 mgBasis.Stop();
                 Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");
