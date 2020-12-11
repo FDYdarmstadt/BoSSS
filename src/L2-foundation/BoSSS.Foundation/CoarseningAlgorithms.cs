@@ -182,9 +182,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </param>
         public static AggregationGridData Coarsen(IGridData ag, int AggCellCount) {
             using (new FuncTrace()) {
-                AggregationKernelStpw.Start();
                 int[][] Coarsened_ComositeCells = AggregationKernel(ag, AggCellCount);
-                AggregationKernelStpw.Start();
                 return new AggregationGridData(ag, Coarsened_ComositeCells);
             }
         }
@@ -281,7 +279,6 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
         */
 
-        static public Stopwatch AggregationKernelStpw = new Stopwatch();
 
         /// <summary>
         /// coarsens level <paramref name="ag"/> (aggregation of grid objects)
@@ -296,9 +293,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             using(new FuncTrace()) {
 
                 IGridData pGridData = ag.iGridData;
-                AggregationKernelStpw.Start();
                 int[][] Coarsened_ComositeCells = AggregationKernel(pGridData, AggCellCount);
-                AggregationKernelStpw.Stop();
                 return new AggregationGrid(ag, Coarsened_ComositeCells);
             }
         }

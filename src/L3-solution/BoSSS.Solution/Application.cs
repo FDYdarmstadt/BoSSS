@@ -1254,7 +1254,6 @@ namespace BoSSS.Solution {
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
-                    Console.WriteLine($"COARSENING: Time for {this.GridData.CellPartitioning.TotalLength} cells, {this.MultigridSequence.Length} levels: {CoarseningAlgorithms.AggregationKernelStpw.Elapsed}");
                 }
 
 
