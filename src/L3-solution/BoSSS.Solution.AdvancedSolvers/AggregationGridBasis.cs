@@ -1052,9 +1052,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int thisMgLevel = ag.MgLevel;
             int Np = this.DGBasis.Length;
 
-            throw new Exception("öha");
-
-
+           
             var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
             for(int i = 0; i < compCell.Length; i++) {
                 for(int n = 0; n < Np; n++) {

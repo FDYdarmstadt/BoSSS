@@ -55,6 +55,7 @@
     <Compile Include="ConvectionAtLevelSet_withEvaporation.cs" />
     <Compile Include="DivergenceAtLevelSet_withEvaporation.cs" />
     <Compile Include="DynamicInterfaceConditions.cs" />
+    <Compile Include="Equations.cs" />
     <Compile Include="EvaporationAtLevelSet.cs" />
     <Compile Include="HeatConvectionAtLevelSet.cs" />
     <Compile Include="HeatConvectionInBulk.cs" />

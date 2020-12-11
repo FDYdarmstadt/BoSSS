@@ -89,7 +89,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Level Set is moved by advected particles.
         /// This Evloution features three subtypes <see cref="BoSSS.Application.SemiLagrangianLevelSetTestSuite.LagrangianMode"/>
         /// </summary>
-        SemiLagrangianLevelSet
+        SemiLagrangianLevelSet,
+
+        /// <summary>
+        /// Spline Level Set
+        /// </summary>
+        SplineLS
     }
 
     public class LevelSetMover {

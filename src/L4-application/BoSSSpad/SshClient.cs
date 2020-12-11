@@ -102,7 +102,6 @@ namespace BoSSS.Application.BoSSSpad {
         public string SubmitJob(string remotepath) {
 
             Connect();
-
             string sbatchCmd = "sbatch " + remotepath + "/batch.sh";
             var (resultString, err) = RunCommand(sbatchCmd);
 

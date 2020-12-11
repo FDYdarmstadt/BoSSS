@@ -403,6 +403,8 @@ namespace BoSSS.Foundation.IO {
         [DataMember]
         private string m_deploypath;
 
+
+
         /// <summary>
         /// Names of compute nodes on which the session is running; Index: MPI
         /// rank index in the MPI_COMM_WORLD communicator;
