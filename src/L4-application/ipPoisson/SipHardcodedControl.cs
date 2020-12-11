@@ -382,6 +382,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
+            R.GridPartType = GridPartType.Hilbert;
             // exp_Kcycle_schwarz
             // exp_gmres_levelpmg
 
@@ -452,6 +453,8 @@ namespace BoSSS.Application.SipPoisson {
 
                      //throw new ArgumentOutOfRangeException();
                  });
+
+
             return R;
         }
 
