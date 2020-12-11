@@ -139,7 +139,7 @@ namespace BoSSS.Application.BoSSSpad {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
                     }
 
-                    m_SSHConnection.Connect();
+                    //m_SSHConnection.Connect();
                 }
 
                 return m_SSHConnection;
@@ -334,53 +334,6 @@ namespace BoSSS.Application.BoSSSpad {
                 string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(myJob, DeploymentDirectory));
                 if(jobId.IsEmptyOrWhite())
                     throw new ApplicationException("missing job id return value from slurm command.");
-
-                ////string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
-                //// Converting script to unix format
-                ////string convertCmd = " dos2unix " + path + "\\batch.sh";
-
-                //// Submitting script to sbatch system
-                //string sbatchCmd = "sbatch " + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/batch.sh";
-
-
-                //// Convert from Windows to Unix and submit job
-                //Console.WriteLine();
-                //String resultString;
-                //PlatformID CurrentSys = System.Environment.OSVersion.Platform;
-                //switch (CurrentSys) {
-                //    case PlatformID.Unix: {
-                //            Process cmd = new Process();
-                //            // cmd.StartInfo.FileName = "/bin/bash";
-                //            cmd.StartInfo.FileName = "bash";
-                //            cmd.StartInfo.RedirectStandardInput = true;
-                //            cmd.StartInfo.RedirectStandardOutput = true;
-                //            cmd.StartInfo.CreateNoWindow = true;
-                //            cmd.StartInfo.UseShellExecute = false;
-                //            cmd.Start();
-                //            cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
-                //            cmd.StandardInput.Flush();
-                //            cmd.StandardInput.Close();
-                //            cmd.WaitForExit();
-                //            resultString = cmd.StandardOutput.ReadToEnd();
-                //            break;
-                //        }
-                //    case PlatformID.Win32S:
-                //    case PlatformID.Win32Windows:
-                //    default: {
-                //            var result2 = SSHConnection.RunCommand(sbatchCmd);
-                //            resultString = result2.Result;
-                //            break;
-
-                //        }
-                //}
-
-
-                //// extract JobID
-                //String SearchString = "Submitted batch job ";
-                //String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
-                //    .ToString() // convert to string
-                //    .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
-                //Console.WriteLine(jobId);
 
                 return (jobId, null);
             }

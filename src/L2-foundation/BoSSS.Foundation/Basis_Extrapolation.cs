@@ -136,13 +136,14 @@ namespace BoSSS.Foundation {
 
                         EvalResult.Multiply(1.0, phi_1, phi_0, 0.0, "kmn", "kn", "km");
                     },
-                    /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                                                     Debug.Assert(Length == 1);
+                    /*_SaveIntegrationResults:*/ 
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        Debug.Assert(Length == 1);
 
-                                                     var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
-                                                     Minv_tmp.Clear();
-                                                     Minv_tmp.Acc(1.0, res);
-                                                 }).Execute();
+                        var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                        Minv_tmp.Clear();
+                        Minv_tmp.Acc(1.0, res);
+                    }).Execute();
 
                 // compute the inverse
                 Minv_tmp.InvertTo(M_tmp);

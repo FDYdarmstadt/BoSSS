@@ -77,13 +77,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [STAThread]
         public static int Main(string[] args) {
-
-            //SshClient ssh = new SshClient("lcluster3.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
-
-            //ssh.RunCommand("ls");
-
-            //return 0;
             
+            /*
+            SshClient_exp ssh = new SshClient_exp("lcluster3.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
+
+            var rr1 = ssh.RunCommand("ls");
+            Console.WriteLine(rr1.stdout);
+            var rr2 = ssh.RunCommand("ls -l");
+            Console.WriteLine(rr2.stdout);
+            ssh.Final();
+            return 0;
+            //*/
             int errCount = 0;
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

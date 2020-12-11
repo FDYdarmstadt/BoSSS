@@ -350,7 +350,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
         /// <summary>
-        /// Test on a Cartesian grid, with a sinusodial solution.
+        /// 2D and 3D test on a Cartesian grid, with a sinusodial solution, on a domain of (0,10)x(-1,1)x(-1,1)
         /// </summary>
         /// <param name="Res">
         /// Grid resolution

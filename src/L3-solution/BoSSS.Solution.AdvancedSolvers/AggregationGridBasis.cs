@@ -385,6 +385,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // check if aggregation is performed on a curved or affine linear grid
             if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
             {
+                // ++++++++++++++++++
+                // curved cell branch
+                // ++++++++++++++++++
+                
+                
                 if (agSeq.Length >= 2)
                 {
                     // directly compute the Injector for the coarsest level
@@ -416,7 +421,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
             else
-            {       
+            {   
+                // ++++++++++++++++++
+                // linear cell branch
+                // ++++++++++++++++++
+                
+                
+
+
                 // level 1
                 if (agSeq.Length >= 2)
                 {
