@@ -664,7 +664,7 @@ namespace ilPSP.LinSolvers {
                                     csMPI.Raw._DATATYPE.LONG_LONG_INT, // sendtype
                                     (IntPtr)pColTrf, // recvbuf
                                     (IntPtr)pLL, (IntPtr)pi0s, // recvcounts, displs
-                                    csMPI.Raw._DATATYPE.INT,
+                                    csMPI.Raw._DATATYPE.LONG_LONG_INT,
                                     this.m_ColPartitioning.MPI_Comm);
                             }
                         }

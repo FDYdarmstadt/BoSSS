@@ -21,94 +21,16 @@ using NUnit.Framework.Constraints;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver
 {
-    class XNSE : XdgApplicationWithSolver<XNSE_Control>
+    public class XNSE : SolverWithLevelSetUpdater<XNSE_Control>
     {
-        LevelSetUpdater lsUpdater;
+        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
-        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
-
-        /// <summary>
-        /// configuration options for <see cref="MultigridOperator"/>.
-        /// </summary>
-        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
-        {
-            get
-            {
-                int pVel;
-                if(this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))
-                {
-                    pVel = v.Degree;
-                }
-                else if(this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1))
-                {
-                    pVel = v1.Degree;
-                }
-                else
-                {
-                    throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
-                }
-                int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
-                int D = this.GridData.SpatialDimension;
-
-                // set the MultigridOperator configuration for each level:
-                // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++)
-                {
-                    var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
-                    if (this.Control.UseSchurBlockPrec)
-                    {
-                        // using a Schur complement for velocity & pressure
-                        var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
-                        for (int d = 0; d < D; d++)
-                        {
-                            d.AddToArray(ref confMomConti.VarIndex);
-                            //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                            pVel.AddToArray(ref confMomConti.DegreeS);
-                        }
-                        D.AddToArray(ref confMomConti.VarIndex);
-                        //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                        pPrs.AddToArray(ref confMomConti.DegreeS);
-
-                        confMomConti.mode = MultigridOperator.Mode.SchurComplement;
-
-                        configsLevel.Add(confMomConti);
-                    }
-                    else
-                    {
-                        // configurations for velocity
-                        for (int d = 0; d < D; d++)
-                        {
-                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig()
-                            {
-                                DegreeS = new int[] { pVel },
-                                //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                                VarIndex = new int[] { d }
-                            };
-                            configsLevel.Add(configVel_d);
-                        }
-                        // configuration for pressure
-                        var configPres = new MultigridOperator.ChangeOfBasisConfig()
-                        {
-                            DegreeS = new int[] { pPrs },
-                            //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
-                            VarIndex = new int[] { D }
-                        };
-                        configsLevel.Add(configPres);
-                    }
-                    configs[iLevel] = configsLevel.ToArray();
-                }
-                return configs;
-            }
-        }
-
-        internal int QuadOrder()
+        public int QuadOrder()
         {
             //QuadOrder
             int degU;
@@ -125,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver
                 throw new Exception("Velocity not found!");
             }
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) 
+            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye)
             {
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -133,135 +55,184 @@ namespace BoSSS.Application.XNSE_Solver
             return quadOrder;
         }
 
-        protected override LevelSetTracker InstantiateTracker() 
+        protected int VelocityDegree()
         {
-            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
+            int pVel;
+            if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v))
             {
-                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
-                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
-                    $"If you do not know how to remove this exception, you should better return now!");
+                pVel = v.Degree;
             }
-            LevelSet levelSet = new LevelSet(new Basis(GridData, Control.FieldOptions["Phi"].Degree), "Phi");
+            else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1))
+            {
+                pVel = v1.Degree;
+            }
+            else
+            {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            return pVel;
+        }
+
+        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
+
+        protected override LevelSetUpdater InstantiateLevelSetUpdater() {
+            int levelSetDegree = Control.FieldOptions["Phi"].Degree;
+            LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
             levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-            lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
-            switch (Control.Option_LevelSetEvolution)
-            {
+            LevelSetUpdater lsUpdater;
+            switch (Control.Option_LevelSetEvolution) {
                 case LevelSetEvolution.Fourier:
-                    //Add this stuff later on
-                    break;
+                if (Control.EnforceLevelSetConservation) {
+                    throw new NotSupportedException("mass conservation correction currently not supported");
+                }
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
+                break;
                 case LevelSetEvolution.FastMarching:
-                    var fastMarcher = new FastMarcher(Control, QuadOrder(), levelSet.GridDat.SpatialDimension);
-                    lsUpdater.AddEvolver("Phi", fastMarcher);
-                    break;
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                var fastMarcher = new FastMarchingEvolver("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
+                lsUpdater.AddEvolver("Phi", fastMarcher);
+                lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
+                break;
+                case LevelSetEvolution.SplineLS:
+                SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, levelSet.Basis, "Phi", (int)Math.Sqrt(levelSet.DOFLocal));
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet);
+                var SplineEvolver = new SplineLevelSetEvolver("Phi", (GridData)SplineLevelSet.GridDat);
+                lsUpdater.AddEvolver("Phi", SplineEvolver);
+                lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
+                break;
                 case LevelSetEvolution.None:
-                    break;
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                break;
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
-
-            return lsUpdater.Tracker;
+            return lsUpdater;
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L)
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel)
         {
-            base.CreateEquationsAndSolvers(L);
+            int pVel = VelocityDegree();
+            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+            int D = this.GridData.SpatialDimension;
 
-            var domainFields = CurrentState.Fields;
-            var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Count);
-            for (int iVar = 0; iVar < domainFields.Count; iVar++)
+            if (this.Control.UseSchurBlockPrec)
             {
-                DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
-            }
+                // using a Schur complement for velocity & pressure
+                var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                for (int d = 0; d < D; d++)
+                {
+                    d.AddToArray(ref confMomConti.VarIndex);
+                    //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                    pVel.AddToArray(ref confMomConti.DegreeS);
+                }
+                D.AddToArray(ref confMomConti.VarIndex);
+                //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                pPrs.AddToArray(ref confMomConti.DegreeS);
 
-            var parameterFields = Timestepping.Parameters;
-            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-            for (int iVar = 0; iVar < parameterFields.Count(); iVar++)
-            {
-                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
+                confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                configsLevel.Add(confMomConti);
             }
-            lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-            lsUpdater.UpdateParameters(ParameterVarsDict, 0.0);
+            else
+            {
+                // configurations for velocity
+                for (int d = 0; d < D; d++)
+                {
+                    var configVel_d = new MultigridOperator.ChangeOfBasisConfig()
+                    {
+                        DegreeS = new int[] { pVel },
+                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                    };
+                    configsLevel.Add(configVel_d);
+                }
+                // configuration for pressure
+                var configPres = new MultigridOperator.ChangeOfBasisConfig()
+                {
+                    DegreeS = new int[] { pPrs },
+                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                    VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
+                };
+                configsLevel.Add(configPres);
+            }
         }
 
-        public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental)
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+            OperatorFactory opFactory = new OperatorFactory();
+            boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
+
+            DefineSystem(D, opFactory, levelSetUpdater);
+
+            //Get Spatial Operator
+            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+
+            //final settings
+            XOP.FreeMeanValue[BoSSS.Solution.NSECommon.VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
+            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.Commit();
+
+            return XOP;
+        }
+
+        protected virtual void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) 
         {
-            var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
-            for (int iVar = 0; iVar < domainFields.Length; iVar++)
-            {
-                DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
-            }
-
-            var parameterFields = Timestepping.Parameters;
-            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-            for (int iVar = 0; iVar < parameterFields.Count(); iVar++)
-            {
-                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
-            }
-            double residual = lsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
-            Console.WriteLine(residual);
-            return 0.0;
-        }
-
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-
             int quadOrder = QuadOrder();
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-
-            //Build Equations
-            OperatorFactory opFactory = new OperatorFactory();
-            for (int d = 0; d < D; ++d) {
+            for (int d = 0; d < D; ++d)
+            {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
                 opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
                 opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
                 opFactory.AddParameter(Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B));
-                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config));
+                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
+            opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             opFactory.AddParameter(new Velocity0(D));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
             opFactory.AddParameter(v0Mean);
-            lsUpdater.AddLevelSetParameter("Phi", v0Mean);
 
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
-            lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
-            
+
             if (config.isContinuity)
             {
                 opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
                 opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-                opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk));
+                opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
             }
 
-            if (Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)
-            {
-                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
-                opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
-            }
+            lsUpdater.AddLevelSetParameter("Phi", v0Mean);
+            lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
             switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode)
             {
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
+                    MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
+                    opFactory.AddParameter(maxSigmaParameter);
+                    lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
+                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter("Phi", lsBGradient);
+                    break;
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                    BeltramiGradient lsGradient = BeltramiGradient.CreateFrom(Control, "Phi", D);
+                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
                     lsUpdater.AddLevelSetParameter("Phi", lsGradient);
                     break;
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    BeltramiGradientAndCurvature lsGradientAndCurvature = 
-                        BeltramiGradientAndCurvature.CreateFrom(Control, "Phi", quadOrder, D);
+                    BeltramiGradientAndCurvature lsGradientAndCurvature =
+                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
                     opFactory.AddParameter(lsGradientAndCurvature);
                     lsUpdater.AddLevelSetParameter("Phi", lsGradientAndCurvature);
                     break;
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
                     var fourrier = new FourierEvolver(
-                        Control, 
-                        QuadOrder(), 
+                        "Phi",
+                        Control.FourierLevSetControl,
                         Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
                     lsUpdater.AddLevelSetParameter("Phi", fourrier);
                     lsUpdater.AddEvolver("Phi", fourrier);
@@ -270,34 +241,6 @@ namespace BoSSS.Application.XNSE_Solver
                 default:
                     break;
             }
-            //Get Spatial Operator
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(quadOrder);
-            
-            //final settings
-            XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
-            XOP.Commit();
-
-            // test the ordering: Should not make a difference anyways!
-            Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityX) < XOP.DomainVar.IndexOf(VariableNames.VelocityY));
-            Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
-            Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationX) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY));
-            Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
-            if(D > 2) {
-                Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityY) < XOP.DomainVar.IndexOf(VariableNames.VelocityZ));
-                Debug.Assert(XOP.DomainVar.IndexOf(VariableNames.VelocityZ) < XOP.DomainVar.IndexOf(VariableNames.Pressure));
-                Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationY) < XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ));
-                Debug.Assert(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationZ) < XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation));
-            }
-            return XOP;
-        }
-
-        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt)
-        {
-            //Update Calls
-            dt = GetFixedTimestep();
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            return dt;
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1)
@@ -307,6 +250,15 @@ namespace BoSSS.Application.XNSE_Solver
             {
                 Tecplot.PlotFields(Timestepping.Parameters, "XNSE_Solver_Params" + timestepNo, physTime, superSampling);
             }
+        }
+
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //Update Calls
+            dt = GetFixedTimestep();
+            Console.WriteLine($"Starting timesetp {TimestepNo}, dt={dt}");
+            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+            Console.WriteLine($"done with timestep {TimestepNo}");
+            return dt;
         }
     }
 }

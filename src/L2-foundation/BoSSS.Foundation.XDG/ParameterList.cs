@@ -1,15 +1,7 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.XDG;
-using Microsoft.SqlServer.Server;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace BoSSS.Application.XNSE_Solver
-{
-    abstract class Parameter
+namespace BoSSS.Foundation.XDG.OperatorFactory {
+    public abstract class Parameter
     {
         public abstract IList<string> ParameterNames { get;}
 

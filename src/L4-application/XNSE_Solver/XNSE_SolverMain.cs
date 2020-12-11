@@ -74,19 +74,32 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
 
         static void Main(string[] args) {
+            
+            InitMPI();
+            DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(2, 0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
 
+            /*
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, true);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest(3, 0.3, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.85084, ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //*/
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
-
-            //InitMPI();
-            //DeleteOldPlotFiles();
 
             ////Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0, true, 3);
             ////Tests.UnitTest.MovingDropletTest(2, 1, 0.1d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8d,
             ////    ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             ////Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d); // 1.0471975511966d);
-            ////Tests.UnitTest.TranspiratingChannelTest(3, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //Tests.UnitTest.TranspiratingChannelTest(2, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             ////Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false, 3);
             ////Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
             ////Tests.UnitTest.TestRayleighTaylorInstability();
@@ -98,10 +111,9 @@ namespace BoSSS.Application.XNSE_Solver {
             //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
 
             //return;
-
-
+            
             _Main(args, false, delegate () {
-                var p = new XNSE_SolverMain();
+                var p = new XNSFE();
                 return p;
             });
         }

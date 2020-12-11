@@ -48,16 +48,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         Func<double[], double, double> GetPhi();
 
         /// <summary>
-        /// Exact solution/Initial value for velocity, for species <paramref name="species"/>, vector component <paramref name="d"/>.
-        /// </summary>
-        Func<double[],double,double> GetU(string species, int d);
-       
-        /// <summary>
-        /// Exact solution/Initial value for pressure, for species <paramref name="species"/>.
-        /// </summary>
-        Func<double[], double, double> GetPress(string species);
-
-        /// <summary>
         /// if known the exact solution will be set
         /// </summary>
         //bool setExtSol { get; }
@@ -88,27 +78,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         double rho_B { get; }
 
-        /// <summary> dynamic viscosity fluid A </summary>
-        double mu_A { get; }
-
-        /// <summary> dynamic viscosity fluid B </summary>
-        double mu_B { get; }
-
         ///// <summary> interface speed in normal direction at time <paramref name="t"/>. </summary>
         //BoSSS.Foundation.ScalarFunction GetS(double time);
 
-        /// <summary> 
-        /// Some external volume force, e.g. gravity.
-        /// </summary>
-        Func<double[],double> GetF(string species, int d);
         
         ///// <summary> some external surface force (usually, only of use for manufactured solutions)</summary>
         //ScalarFunction GetSF(double time, int d);
-
-        /// <summary>
-        /// surface tension
-        /// </summary>
-        double Sigma { get; }
 
         /// <summary>
         /// is the interface a material one or is it non-material?
@@ -145,6 +120,61 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
     }
 
-    
-    
+    interface IXHeatTest : ITest {
+        /// <summary>
+        /// heat capacity of fluid A
+        /// </summary>
+        double c_A { get; }
+
+        /// <summary>
+        /// heat capacity of fluid A
+        /// </summary>
+        double c_B { get; }
+
+        /// <summary> heat conductivity fluid A </summary>
+        double k_A { get; }
+
+        /// <summary> heat conductivity fluid B </summary>
+        double k_B { get; }
+
+        /// <summary> saturation temperature </summary>
+        double T_sat { get; }
+
+        /// <summary> latent heat of evaporation </summary>
+        double h_vap { get; }
+
+        /// <summary>
+        /// Exact solution/Initial value for Temperature, for species <paramref name="species"/>.
+        /// </summary>
+        Func<double[], double, double> GetT(string species);
+    }
+
+    interface IXNSETest : ITest {
+
+        /// <summary> 
+        /// Some external volume force, e.g. gravity.
+        /// </summary>
+        Func<double[], double> GetF(string species, int d);
+
+        /// <summary>
+        /// Exact solution/Initial value for velocity, for species <paramref name="species"/>, vector component <paramref name="d"/>.
+        /// </summary>
+        Func<double[], double, double> GetU(string species, int d);
+
+        /// <summary>
+        /// Exact solution/Initial value for pressure, for species <paramref name="species"/>.
+        /// </summary>
+        Func<double[], double, double> GetPress(string species);
+
+        /// <summary> dynamic viscosity fluid A </summary>
+        double mu_A { get; }
+
+        /// <summary> dynamic viscosity fluid B </summary>
+        double mu_B { get; }
+
+        /// <summary>
+        /// surface tension
+        /// </summary>
+        double Sigma { get; }
+    }
 }

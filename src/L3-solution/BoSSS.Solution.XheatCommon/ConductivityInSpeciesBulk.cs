@@ -132,6 +132,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_D = D;
 
             this.m_spcId = spcId;
+            ValidSpecies = spcName;
             //this.ksqrt = Math.Sqrt(_k);
 
             fluxFunction = D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
