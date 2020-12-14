@@ -88,6 +88,7 @@ namespace BoSSS.Application.FSI_Solver {
                 if (underrelax)
                     relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics, ref omega);
                 AllParticles[0].Motion.omega = omega;
+
                 for (int p = 0; p < AllParticles.Count(); p++) {
                     Particle currentParticle = AllParticles[p];
                     currentParticle.Motion.UpdateForcesAndTorque(p, relaxatedHydrodynamics, fluidDensity);
@@ -100,14 +101,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega) {
-            using (new FuncTrace()) { 
-            double[] relaxatedHydrodynamics;
-            m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            relaxatedHydrodynamics = m_ForcesAndTorquePreviousIteration.Count > 2
-                ? AitkenUnderrelaxation(hydrodynamics, ref omega)
-                : StaticUnderrelaxation(hydrodynamics);
-            return relaxatedHydrodynamics;
-        }
+            using (new FuncTrace()) {
+                double[] relaxatedHydrodynamics;
+                m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
+                relaxatedHydrodynamics = m_ForcesAndTorqueWithoutRelaxation.Count > 2
+                    ? AitkenUnderrelaxation(hydrodynamics, ref omega)
+                    : StaticUnderrelaxation(hydrodynamics);
+                return relaxatedHydrodynamics;
+            }
         }
 
         /// <summary>
@@ -115,20 +116,22 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="AllParticles"></param>
         internal void SaveHydrodynamicOfPreviousIteration(List<Particle> AllParticles) {
-            double[] hydrodynamics = new double[(m_Dim + 1) * AllParticles.Count()];
-            if(m_ForcesAndTorquePreviousIteration.Count() > 2)
-                m_ForcesAndTorquePreviousIteration.RemoveAt(2);
-            for (int p = 0; p < AllParticles.Count(); p++) {
-                Particle currentParticle = AllParticles[p];
-                int offset = p * (m_Dim + 1);
-                double[] tempForces = currentParticle.Motion.GetHydrodynamicForces(0);
-                double tempTorque = currentParticle.Motion.GetHydrodynamicTorque(0);
-                for (int d = 0; d < m_Dim; d++) {
-                    hydrodynamics[offset + d] = tempForces[d];
+            using (new FuncTrace()) {
+                double[] hydrodynamics = new double[(m_Dim + 1) * AllParticles.Count()];
+                if (m_ForcesAndTorquePreviousIteration.Count() > 2)
+                    m_ForcesAndTorquePreviousIteration.RemoveAt(2);
+                for (int p = 0; p < AllParticles.Count(); p++) {
+                    Particle currentParticle = AllParticles[p];
+                    int offset = p * (m_Dim + 1);
+                    double[] tempForces = currentParticle.Motion.GetHydrodynamicForces(0);
+                    double tempTorque = currentParticle.Motion.GetHydrodynamicTorque(0);
+                    for (int d = 0; d < m_Dim; d++) {
+                        hydrodynamics[offset + d] = tempForces[d];
+                    }
+                    hydrodynamics[offset + m_Dim] = tempTorque;
                 }
-                hydrodynamics[offset + m_Dim] = tempTorque;
+                m_ForcesAndTorquePreviousIteration.Insert(0, hydrodynamics.CloneAs());
             }
-            m_ForcesAndTorquePreviousIteration.Insert(0, hydrodynamics.CloneAs());
         }
 
         /// <summary>
@@ -136,54 +139,60 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="iterationCounter"></param>
         internal double CalculateParticleResidual(ref int iterationCounter) {
-            double residual = 0;
-            double denom = 0;
-            if (iterationCounter <= 2)
-                residual = double.MaxValue;
-            else {
+            using (new FuncTrace()) {
+                double residual = 0;
+                double denom = 0;
+                if (iterationCounter < 2) {
+                    iterationCounter += 1;
+                    return double.MaxValue;
+                }
                 for (int i = 0; i < m_ForcesAndTorquePreviousIteration[1].Length; i++) {
                     if (m_ForcesAndTorquePreviousIteration[0].Length >= i) {
                         residual += (m_ForcesAndTorquePreviousIteration[0][i] - m_ForcesAndTorquePreviousIteration[1][i]).Pow2();
                         denom += m_ForcesAndTorquePreviousIteration[0][i].Pow2();
                     }
                 }
+                residual = Math.Sqrt(residual / denom);
+                iterationCounter += 1;
+                return residual;
             }
-            residual = Math.Sqrt(residual / denom);
-            iterationCounter += 1;
-            return residual;
         }
 
         private double[] StaticUnderrelaxation(double[] variable) {
-            double[] returnVariable = variable.CloneAs();
-            for (int d = 0; d < variable.Length; d++) {
-                if (variable[d] == 0)//ghost Particle
-                    continue;
-                returnVariable[d] = 0.1 * variable[d] + (1 - 0.1) * m_ForcesAndTorquePreviousIteration[1][d];
+            using (new FuncTrace()) {
+                double[] returnVariable = variable.CloneAs();
+                for (int d = 0; d < variable.Length; d++) {
+                    if (variable[d] == 0)//ghost Particle
+                        continue;
+                    returnVariable[d] = 0.9 * variable[d] + (1 - 0.9) * m_ForcesAndTorquePreviousIteration[1][d];
+                }
+                return returnVariable;
             }
-            return returnVariable;
         }
 
         private double[] AitkenUnderrelaxation(double[] variable, ref double Omega) {
-            double[][] residual = new double[variable.Length][];
-            double[] residualDiff = new double[variable.Length];
-            double residualScalar = 0;
-            for (int i = 0; i < variable.Length; i++) {
-                if (variable[i] == 0) {// ghost particle
-                    residualDiff[i] = 0;
-                    continue;
+            using (new FuncTrace()) {
+                double[][] residual = new double[variable.Length][];
+                double[] residualDiff = new double[variable.Length];
+                double residualScalar = 0;
+                for (int i = 0; i < variable.Length; i++) {
+                    if (variable[i] == 0) {// ghost particle
+                        residualDiff[i] = 0;
+                        continue;
+                    }
+                    residual[i] = new double[] { (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]), (m_ForcesAndTorqueWithoutRelaxation[1][i] - m_ForcesAndTorquePreviousIteration[1][i]) };
+                    residualDiff[i] = residual[i][0] - residual[i][1];
+                    residualScalar += residual[i][1] * residualDiff[i];
                 }
-                residual[i] = new double[] { (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]), (m_ForcesAndTorqueWithoutRelaxation[1][i] - m_ForcesAndTorquePreviousIteration[1][i]) };
-                residualDiff[i] = residual[i][0] - residual[i][1];
-                residualScalar += residual[i][1] * residualDiff[i];
+                Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
+                double[] outVar = variable.CloneAs();
+                for (int i = 0; i < variable.Length; i++) {
+                    if (variable[i] == 0)// ghost particle
+                        continue;
+                    outVar[i] = Omega * (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]) + m_ForcesAndTorquePreviousIteration[0][i];
+                }
+                return outVar;
             }
-            Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
-            double[] outVar = variable.CloneAs();
-            for (int i = 0; i < variable.Length; i++) {
-                if (variable[i] == 0)// ghost particle
-                    continue;
-                outVar[i] = Omega * (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]) + m_ForcesAndTorquePreviousIteration[0][i];
-            }
-            return outVar;
         }
     }
 }

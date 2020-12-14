@@ -54,20 +54,6 @@ namespace FSI_Solver {
             return coloredCells;
         }
 
-        internal int[] UpdateColoring(LevelSetTracker LsTrk, Particle[] Particles, double MaxGridLength) {
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            int[] coloredCells = new int[J];
-            for (int p = 0; p < Particles.Length; p++) {
-                for (int j = 0; j < J; j++) {
-                    if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength / 2))
-                        coloredCells[j] = p + 1;
-                }
-            }
-            RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
-            return coloredCells;
-        }
-
         /// <summary>
         /// Update of all coloured cells.
         /// </summary>
@@ -232,20 +218,17 @@ namespace FSI_Solver {
         }
 
         private void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
-            int neighbourSearchDepth = 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int k = 0; k < neighbourSearchDepth; k++) {
-                for (int j = 0; j < noOfLocalCells; j++) {
-                    GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
-                    for (int i = 0; i < CellNeighbors.Length; i++) {
-                        if (coloredCellsExchange[CellNeighbors[i]] != 0 && coloredCellsExchange[j] == 0) {
-                            coloredCells[j] = coloredCellsExchange[CellNeighbors[i]];
-                        }
+            for (int j = 0; j < noOfLocalCells; j++) {
+                Tuple<int, int, int>[] cellNeigbours = GridData.GetCellNeighboursViaEdges(j);
+                for (int i = 0; i < cellNeigbours.Length; i++) {
+                    if (coloredCellsExchange[cellNeigbours[i].Item1] != 0 && coloredCellsExchange[j] == 0) {
+                        coloredCells[j] = coloredCellsExchange[cellNeigbours[i].Item1];
                     }
                 }
-                coloredCellsExchange = coloredCells.CloneAs();
-                coloredCellsExchange.MPIExchange(GridData);
             }
+            coloredCellsExchange = coloredCells.CloneAs();
+            coloredCellsExchange.MPIExchange(GridData);
         }
 
         private int[] FindCellsToRecolor(int[] coloredCells, GridData currentGrid) {

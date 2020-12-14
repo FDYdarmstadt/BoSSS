@@ -204,9 +204,6 @@ namespace FSI_Solver {
                             }
                         }
                     }
-                    if (saveTimestep <= double.MaxValue && globalMinimalDistance != double.MaxValue) {
-                        Console.WriteLine("Minimal distance " + globalMinimalDistance + ", threshold " + distanceThreshold + ", current save time+step " + saveTimestep + " accumulated timestep " + AccumulatedCollisionTimestep);
-                    }
                     if (saveTimestep >= 0)
                         AccumulatedCollisionTimestep += saveTimestep;
                     if (AccumulatedCollisionTimestep >= TimestepSize)
@@ -228,8 +225,6 @@ namespace FSI_Solver {
                                 TransferResultsToGhostParticles(currentParticleID);
                                 if(IsParticle(secondObjectID))
                                     TransferResultsToGhostParticles(secondObjectID);
-                                if (Particles[currentParticleID].IsCollided)
-                                    Console.WriteLine("Particle " + currentParticleID + " and particle / wall " + secondObjectID + " collided");
                             }
                         }
                     }
@@ -433,7 +428,6 @@ namespace FSI_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         private void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
-
             // Step 1
             // Initialize the algorithm with the particle position
             // =======================================================

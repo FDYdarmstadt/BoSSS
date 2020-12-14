@@ -29,7 +29,6 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using FSI_Solver;
 using ilPSP;
-using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using Newtonsoft.Json;
@@ -938,6 +937,7 @@ namespace BoSSS.Application.FSI_Solver {
                 double hydroDynForceTorqueResidual = double.MaxValue;
                 int minimumNumberOfIterations = 4;
                 ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
+                Auxillary.ParticleState_MPICheck(ParticleList, GridData, MPISize);
                 while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minimumNumberOfIterations) {
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
@@ -947,17 +947,13 @@ namespace BoSSS.Application.FSI_Solver {
                         throw new Exception("Iteration counter is negative?!");
                     if (iterationCounter > 0 && !IsFullyCoupled)
                         throw new Exception("FSI iteration in a non-coupled system, something went wrong");
-                    Auxillary.ParticleState_MPICheck(ParticleList, GridData, MPISize);
                     AllParticleHydrodynamics.SaveHydrodynamicOfPreviousIteration(ParticleList);
 
                     if (IsFullyCoupled && iterationCounter == 0) {
                         InitializeParticlePerIteration(ParticleList, TimestepInt);
                     } else {
-                        using (new FuncTrace()) {
-                            m_BDF_Timestepper.Solve(phystime, dt, false);
-
-                            CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
-                        }
+                        m_BDF_Timestepper.Solve(phystime, dt, false);
+                        CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                     }
                     CalculateParticleVelocity(ParticleList, dt, iterationCounter);
 
@@ -1015,10 +1011,8 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private void CalculateParticleForcesAndTorque(ParticleHydrodynamics AllParticleHydrodynamics) {
-            using (new FuncTrace()) {
-                ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
-                AllParticleHydrodynamics.CalculateHydrodynamics(ParticleList, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
-            }
+            ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
+            AllParticleHydrodynamics.CalculateHydrodynamics(ParticleList, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
         }
 
         /// <summary>

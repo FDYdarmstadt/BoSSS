@@ -816,29 +816,29 @@ namespace BoSSS.Solution {
             int[] LocalDOF = new int[MGDepth];
             int D = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.ParentGrid.SpatialDimension;
 
-            for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
-                LocalDOF[iLevel] = 0;
-                int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            //for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
+            //    LocalDOF[iLevel] = 0;
+            //    int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
-                for(int iCell = 0; iCell < NoOfCells; iCell++) {
-                    for(int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
-                        int pmax = -1;
-                        if(p <= -1) {
-                            pmax = getMaxDG(iLevel, iVar);
-                        } else {
-                            pmax = iVar == D? p-1 : p;
-                        }
-                        try {
-                            LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
-                        } catch(Exception) {
-                            Console.WriteLine("WARNING: internal error occurred during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
-                            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-                        }
-                    }
-                }
-            }
-
-            return LocalDOF;
+            //    for(int iCell = 0; iCell < NoOfCells; iCell++) {
+            //        for(int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
+            //            int pmax = -1;
+            //            if(p <= -1) {
+            //                pmax = getMaxDG(iLevel, iVar);
+            //            } else {
+            //                pmax = iVar == D? p-1 : p;
+            //            }
+            //            try {
+            //                LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
+            //            } catch(Exception) {
+            //                Console.WriteLine("WARNING: internal error occurred during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
+            //                return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
+            //            }
+            //        }
+            //    }
+            //}
+            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
+            //return LocalDOF;
         }
 
         private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {

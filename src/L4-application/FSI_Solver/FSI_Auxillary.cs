@@ -137,7 +137,9 @@ namespace FSI_Solver {
         /// <param name="phystime"></param>
         /// <param name="IterationCounter"> </param>
         internal void PrintResultToConsole(double residual, int IterationCounter) {
-            Console.WriteLine("Iteration: {1}, Residual:  {0}", residual, IterationCounter);
+            if (IterationCounter == 1)
+                return;
+            Console.WriteLine("Iteration: {1}, Residual:  {0}", residual, IterationCounter - 1);
         }
 
         /// <summary>
@@ -191,7 +193,7 @@ namespace FSI_Solver {
             OutputBuilder.AppendLine("Fluid properties");
             OutputBuilder.AppendLine("Density: " + FluidDensity + ", viscosity: " + FluidViscosity);
 
-            if (Particles.Count() > 3) {
+            if (Particles.Count() > 5) {
                 OutputBuilder.AppendLine();
                 OutputBuilder.AppendLine("Solving system with " + Particles.Count() + " particles. Time: " + phystime);
                 OutputBuilder.AppendLine("Particle type of first particle: " + Particles[0]);
@@ -200,10 +202,6 @@ namespace FSI_Solver {
                 OutputBuilder.AppendLine("Particle Reynolds number of fastest particle: " + highestReNumber);
                 OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
                 OutputBuilder.AppendLine();
-                for (int p = 0; p < Particles.Count(); p++) {
-                    if (Particles[p].IsCollided)
-                        OutputBuilder.AppendLine("Particle " + p + " is collided. Position X: " + Particles[p].Motion.GetPosition(0)[0] + ", Position X: " + Particles[p].Motion.GetPosition(0)[1]);
-                }
                 }
             else {
                 for (int p = 0; p < Particles.Count(); p++) {
@@ -218,7 +216,7 @@ namespace FSI_Solver {
                         OutputBuilder.AppendLine("Maximum length: " + CurrentParticle.GetLengthScales().Max() + ", minimum length: " + CurrentParticle.GetLengthScales().Min());
                         OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
                         if (CurrentParticle.IsCollided)
-                            OutputBuilder.AppendLine("The particle is collided");
+                            OutputBuilder.AppendLine("Particle " + p + " is collided. Position X: " + Particles[p].Motion.GetPosition(0)[0] + ", Position X: " + Particles[p].Motion.GetPosition(0)[1]);
                         OutputBuilder.AppendLine("-------------------------------------------------------");
                         OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[0]);
                         OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[1]);

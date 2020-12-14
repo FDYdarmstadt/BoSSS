@@ -282,10 +282,10 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 25, double noOfParticles = 2) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 30, double noOfParticles = 1) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
-            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
             //string ID = "62bbb746-c171-4123-b08b-bd6ae36570c1";
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
@@ -310,7 +310,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetGrid(domainLength + 0.1, domainLength + 0.1, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
-            C.minDistanceThreshold = 0.025;
+            C.minDistanceThreshold = 0.03;
             C.CoefficientOfRestitution = 1;
             
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
