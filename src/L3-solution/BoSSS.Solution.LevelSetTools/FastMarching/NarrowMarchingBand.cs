@@ -260,13 +260,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             SubGrid CCgrid = Tracker.Regions.GetCutCellSubgrid4LevSet(iLevSet);
             CellMask CC = CCgrid.VolumeMask;
             BitArray CCBitMask = CC.GetBitMask();
-            //BitArray CCBitMask = CC.GetBitMaskWithExternal();
             CellMask Pos = Tracker.Regions.GetLevelSetWing(iLevSet, +1.0).VolumeMask.Except(CC);
             CellMask Neg = Tracker.Regions.GetLevelSetWing(iLevSet, -1.0).VolumeMask.Except(CC);
             BitArray PosBitMask = Pos.GetBitMask();
             BitArray NegBitMask = Neg.GetBitMask();
-            //BitArray PosBitMask = Pos.GetBitMaskWithExternal();
-            //BitArray NegBitMask = Neg.GetBitMaskWithExternal();
 
             SubGrid PosGrid = new SubGrid(Pos);
             SubGrid NegGrid = new SubGrid(Neg);
@@ -315,9 +312,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // identify cells for Reinit
             // -------------------------
 
-
-            //BitArray ReinitPosBitmask = new BitArray(J);
-            //BitArray ReinitNegBitmask = new BitArray(J);
             BitArray ReinitBitmask = new BitArray(J);
             BitArray KnownBitmask = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
@@ -356,12 +350,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
             bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
 
-            //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmaskLocal);
-            //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmaskLocal);
             CellMask Reinit = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);
 
-            //BitArray ReinitWithExt = Reinit.GetBitMaskWithExternal();
             BitArray KnownWithExt = Known.GetBitMaskWithExternal();
             BitArray NEARwithExt = NEAR.GetBitMaskWithExternal();
 

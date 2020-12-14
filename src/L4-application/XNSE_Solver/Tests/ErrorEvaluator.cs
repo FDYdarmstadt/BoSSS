@@ -16,6 +16,10 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver.Tests
 {
+
+    /// <summary>
+    /// base class for error evaluation within tests
+    /// </summary>
     abstract class ErrorEvaluator {
 
         protected SolverWithLevelSetUpdater<XNSE_Control> solver;
@@ -30,7 +34,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         public abstract double[] ComputeL2Error(double time, XNSE_Control control);
     }
 
-    class XNSEErrorEvaluator : ErrorEvaluator{
+    /// <summary>
+    /// error evaluator for XNSE-based tests 
+    /// computes error for: velocity, pressure 
+    /// </summary>
+    class XNSEErrorEvaluator : ErrorEvaluator {
 
         public XNSEErrorEvaluator(XNSE solver) : base(solver){
 
@@ -90,12 +98,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             int D = solver.GridData.SpatialDimension;
 
             int order = 0;
-            if (solver.LsTrk.GetCachedOrders().Count > 0)
-            {
+            if (solver.LsTrk.GetCachedOrders().Count > 0) {
                 order = solver.LsTrk.GetCachedOrders().Max();
-            }
-            else
-            {
+            } else {
                 order = 1;
             }
 
@@ -143,6 +148,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             return L2Error;
         }
 
+
         /// <summary>
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
         /// (<see cref="XNSE_Control.ExactSolutionVelocity"/> and <see cref="XNSE_Control.ExactSolutionPressure"/>).
@@ -165,6 +171,102 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             return Ret;
         }
     }
+
+    /// <summary>
+    /// error evaluator for LevelSet-based tests 
+    /// computes error fields for: Phi, PhiDG, gradient of PhiDG 
+    /// integral values: area, length
+    /// </summary>
+    class LevelSetErrorEvaluator : ErrorEvaluator {
+
+        public LevelSetErrorEvaluator(XNSE solver) : base(solver) {
+
+        }
+
+        /// <summary>
+        /// computes the error against the continuous level set field "Phi"
+        /// </summary>
+        /// <param name="exactLevelSetFunc"></param>
+        /// <param name="time"></param>
+        /// <param name="cm"></param>
+        /// <returns></returns>
+        public double ComputeLevelSetError(Func<double[], double, double> exactLevelSetFunc, double time, CellMask cm) {
+
+            SinglePhaseField PhiDG = (SinglePhaseField)solver.IOFields.Single(field => field.Identification == "Phi");
+            SinglePhaseField exactLevelSet = PhiDG.CloneAs();
+            exactLevelSet.Clear();
+            exactLevelSet.ProjectField(NonVectorizedScalarFunction.Vectorize(exactLevelSetFunc, time));
+
+            double L2Error = PhiDG.L2Error(exactLevelSet, cm);
+
+            solver.QueryHandler.ValueQuery("L2err_Phi", L2Error, true);
+
+            return L2Error;
+        }
+
+        /// <summary>
+        /// computes the error against the discontinuous level set field "PhiDG"
+        /// </summary>
+        /// <param name="exactLevelSetFunc"></param>
+        /// <param name="time"></param>
+        /// <param name="cm"></param>
+        /// <returns></returns>
+        public double ComputeDGLevelSetError(Func<double[], double, double> exactLevelSetFunc, double time, CellMask cm) {
+
+            SinglePhaseField PhiDG = (SinglePhaseField)solver.IOFields.Single(field => field.Identification == "PhiDG");
+            SinglePhaseField exactLevelSet = PhiDG.CloneAs();
+            exactLevelSet.Clear();
+            exactLevelSet.ProjectField(NonVectorizedScalarFunction.Vectorize(exactLevelSetFunc, time));
+
+            double L2Error = PhiDG.L2Error(exactLevelSet, cm);
+
+            solver.QueryHandler.ValueQuery("L2err_PhiDG", L2Error, true);
+
+            return L2Error;
+        }
+
+        /// <summary>
+        /// computes the error of the signed distance property
+        /// </summary>
+        /// <param name="cm"></param>
+        /// <returns></returns>
+        public double ComputeDGLevelSetGradientError(CellMask cm) {
+
+            SinglePhaseField PhiDG = (SinglePhaseField)solver.IOFields.Single(field => field.Identification == "PhiDG");
+
+            int D = solver.GridData.SpatialDimension;
+            var GradientPhiDG = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(PhiDG.Basis, "dPhiDG_dx[" + d + "]")));
+            GradientPhiDG.Gradient(1.0, PhiDG, cm);
+
+            double L2Norm = GradientPhiDG.L2Norm();
+            double L2error = L2Norm - 1.0;
+
+            return L2error;
+        }
+
+
+        /// <summary>
+        /// Computes the L2 Error of the actual solution against the exact solution in the control object 
+        /// (<see cref="XNSE_Control.ExactSolutionVelocity"/> and <see cref="XNSE_Control.ExactSolutionPressure"/>).
+        /// </summary>
+        public override double[] ComputeL2Error(double time, XNSE_Control control) {
+
+            //CellMask cm = solver.LsTrk.Regions.GetCutCellMask();
+            CellMask cm = solver.LsTrk.Regions.GetNearFieldMask(1);
+
+            double[] Ret = new double[3];
+
+            if (control.Phi != null) {
+                Ret[0] = ComputeLevelSetError(control.Phi, time, cm);
+                Ret[1] = ComputeDGLevelSetError(control.Phi, time, cm);
+            }
+            Ret[2] = ComputeDGLevelSetGradientError(cm);
+
+            return Ret;
+        }
+
+    }
+
 
     class XHeatErrorEvaluator : ErrorEvaluator {
 

@@ -348,7 +348,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
 
-            double T = 10;
+            //double T = 10;
 
             if (D == 3) {
                 //C.AddBoundaryValue("wall_mantle");
@@ -929,48 +929,40 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ======================
             #region Fourier level-set
 
-            switch (lsEvo)
-            {
-                case LevelSetEvolution.Fourier:
-                    {
-                        switch (boundarySetup)
-                        {
-                            case 1:
-                                {
-                                    throw new ArgumentException("Fourier Level-Set not implemented in Line Movement Test");
-                                    break;
-                                }
-                            case 2:
-                                {
-                                    int numSp = 640;
-                                    double[] FourierP = new double[numSp];
-                                    double[] samplP = new double[numSp];
-                                    double[] center = new double[] { L / 4.0, H / 2.0 };
-                                    double radius = cLength;
-                                    for (int sp = 0; sp < numSp; sp++)
-                                    {
-                                        FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
-                                        samplP[sp] = radius;
-                                    }
-
-                                    C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelem)
-                                    {
-                                        center = center,
-                                        FourierEvolve = Fourier_Evolution.MaterialPoints,
-                                        centerMove = CenterMovement.Reconstructed,
-                                    };
-
-                                    C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
-                                    break;
-                                }                               
-                            default:
-                                break;
-                               
+            switch (lsEvo) {
+                case LevelSetEvolution.Fourier: {
+                    switch (boundarySetup) {
+                        case 1: {
+                            throw new ArgumentException("Fourier Level-Set not implemented in Line Movement Test");
                         }
+                        case 2: {
+                            int numSp = 640;
+                            double[] FourierP = new double[numSp];
+                            double[] samplP = new double[numSp];
+                            double[] center = new double[] { L / 4.0, H / 2.0 };
+                            double radius = cLength;
+                            for (int sp = 0; sp < numSp; sp++) {
+                                FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
+                                samplP[sp] = radius;
+                            }
+
+                            C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelem) {
+                                center = center,
+                                FourierEvolve = Fourier_Evolution.MaterialPoints,
+                                centerMove = CenterMovement.Reconstructed,
+                            };
+
+                            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+                            break;
+                        }
+                        default:
                         break;
+
                     }
-                default:
                     break;
+                }
+                default:
+                break;
             }
 
             #endregion

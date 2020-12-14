@@ -475,7 +475,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// options for additional penalization terms for fast marching
         /// </summary>
         [DataMember]
-        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
+        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
         /// <summary>
         /// Options for the initialization of the Fourier Level-set
