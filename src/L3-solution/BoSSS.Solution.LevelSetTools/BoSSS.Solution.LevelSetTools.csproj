@@ -105,6 +105,7 @@
     <Compile Include="Advection\ScalarVelocityAdvection.cs" />
     <Compile Include="FastMarching\FastMarchReinit.cs" />
     <Compile Include="Advection\NonconservativeAdvection.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\FourrierLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\LevelSetEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\LevelSetUpdater.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBase.cs" />
