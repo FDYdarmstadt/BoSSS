@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// </summary>
     class LevelSetAdvectiontTest : IXNSETest {
 
-        public double Radius = 0.2;
+        public double Radius = 0.4;
         double Ux = 1;
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double dt {
             get {
-                return 0.01;
+                return 0.001;
             }
         }
 

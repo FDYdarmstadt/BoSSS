@@ -733,6 +733,23 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
+        /// for XNSE - continuous level set field (used level set tracker and quadrature) 
+        /// The polynomial basis is one order higher than <see cref="LevelSetDG"/>
+        /// </summary>
+        public const string LevelSetCG = "LevelSetCG";
+
+        /// <summary>
+        /// for XNSE - discontinuous level set field (used for level set evolution)
+        /// </summary>
+        public const string LevelSetDG = "LevelSetDG";
+
+        /// <summary>
+        /// variable name for the phase dividing interface
+        /// </summary>
+        public const string Interface = "Interface";
+
+
+        /// <summary>
         /// variable name for a single Level Set
         /// </summary>
         public const string LevelSet = "LevelSet";

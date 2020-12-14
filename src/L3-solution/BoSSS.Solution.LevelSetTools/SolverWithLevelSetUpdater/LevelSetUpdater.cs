@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.NSECommon;
 using System;
 using System.Collections.Generic;
 
@@ -172,6 +173,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     }
 
     public class LevelSetUpdater {
+
         public LevelSetTracker Tracker;
 
         Dictionary<string, SingleLevelSetUpdater> lsUpdaters;
@@ -179,25 +181,27 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         Dictionary<string, DGField> lsParameterFields;
 
         public LevelSetUpdater(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
-            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG) {
-            LevelSet levelSet = ContinuityProjection.CreateField(
+            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, 
+            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG) {
+
+            LevelSet cgLevelSet = ContinuityProjection.CreateField(
                     dgLevelSet, BackgroundGrid, continuityMode);
-            levelSet.AccLaidBack(1.0, dgLevelSet);
+            cgLevelSet.AccLaidBack(1.0, dgLevelSet);
 
             ContinuityProjection enforcer = new ContinuityProjection(
-                levelSet.Basis,
+                cgLevelSet.Basis,
                 dgLevelSet.Basis,
                 BackgroundGrid,
                 continuityMode);
-            Tracker = new LevelSetTracker(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levelSet);
+            Tracker = new LevelSetTracker(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSet);
             DualLevelSet currentInterface = new DualLevelSet {
                 LevelSetIndex = 0,
-                CGLevelSet = levelSet,
+                CGLevelSet = cgLevelSet,
                 DGLevelSet = dgLevelSet,
                 Tracker = Tracker,
             };
             lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(4);
-            lsUpdaters.Add(dgLevelSet.Identification, new SingleLevelSetUpdater(currentInterface, enforcer));
+            lsUpdaters.Add(VariableNames.Interface, new SingleLevelSetUpdater(currentInterface, enforcer));
             Tracker.UpdateTracker(0.0);
         }
 

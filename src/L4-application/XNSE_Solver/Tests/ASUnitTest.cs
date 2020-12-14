@@ -551,6 +551,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             using (var solver = new XNSE()) {
 
+                //Console.WriteLine("Warning! - enabled immediate plotting");
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
+
                 solver.Init(C);
                 solver.RunSolverMode();
                 solver.OperatorAnalysis();

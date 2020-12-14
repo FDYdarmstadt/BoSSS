@@ -152,8 +152,9 @@ namespace BoSSS.Application.XNSE_Solver {
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
-            XOP.FreeMeanValue[BoSSS.Solution.NSECommon.VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
+            XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
             XOP.Commit();
 
             return XOP;
@@ -232,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Tecplot.PlotFields(Timestepping.Parameters, "XNSE_Solver_Time_Params" + timestepNo, physTime, superSampling);
             }
             if (LsUpdater?.Parameters != null) {
-                Tecplot.PlotFields(Timestepping.Parameters, "XNSE_Solver_LevelSet_Params" + timestepNo, physTime, superSampling);
+                Tecplot.PlotFields(LsUpdater.Parameters.Values, "XNSE_Solver_LevelSet_Params" + timestepNo, physTime, superSampling);
             }
         }
 

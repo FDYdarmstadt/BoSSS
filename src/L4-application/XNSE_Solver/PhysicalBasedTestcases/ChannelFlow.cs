@@ -46,13 +46,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 4, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
-            int D = 3;
+            int D = 2;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             if (D == 3)
@@ -150,7 +150,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, 1 * kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
@@ -437,7 +437,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 5e-2; // 5e-2;
+            double dt = 1e-2; // 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;

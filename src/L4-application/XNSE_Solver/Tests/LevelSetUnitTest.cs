@@ -48,13 +48,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(2)] int spatialDimension,
             [Values(2,3,4)] int LSdegree,
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.Fourier)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once, LevelSetHandling.Coupled_Iterative)] LevelSetHandling levelSetHandling,
-            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once, LevelSetHandling.Coupled_Iterative)] LevelSetHandling levelSetHandling)
+            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
             {
                 // Todo: singleInit/multiInit, 
 
             var Tst = new LevelSetAdvectiontTest(spatialDimension, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, levelSetEvolution, levelSetHandling, timeSteppingScheme);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, levelSetEvolution, levelSetHandling);
 
             LevelSetTest(Tst, C);
 
@@ -64,6 +64,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         private static void LevelSetTest(IXNSETest Tst, XNSE_Control C) {
 
             using (var solver = new XNSE()) {
+
+                Console.WriteLine("Warning! - enabled immediate plotting");
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 3;
 
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -97,7 +101,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         static AS_XNSE_Control LSTstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, 
-            LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling, TimeSteppingScheme timeSteppingScheme,
+            LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling,
             int GridResolution = 1) {
 
             AS_XNSE_Control C = new AS_XNSE_Control();
@@ -196,7 +200,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             C.Timestepper_LevelSetHandling = levelSetHandling;
-            C.TimeSteppingScheme = timeSteppingScheme;
+            //C.TimeSteppingScheme = timeSteppingScheme;
 
 
             C.NoOfTimesteps = 5;
