@@ -92,9 +92,9 @@ namespace BoSSS.Foundation.IO {
                         di = di.GetDirectories()[0]; // brutal hack.
                     }
 
-                    databasePath = ilPSP.MPIEnviroment.Broadcast(di.FullName, 0, csMPI.Raw._COMM.WORLD);
+                    databasePath = MPIExtensions.MPIBroadcast(di.FullName, 0, csMPI.Raw._COMM.WORLD);
                 } else {
-                    databasePath = ilPSP.MPIEnviroment.Broadcast(default(string), 0, csMPI.Raw._COMM.WORLD);
+                    databasePath = MPIExtensions.MPIBroadcast(default(string), 0, csMPI.Raw._COMM.WORLD);
                 }
             }
 
