@@ -695,7 +695,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 ReinitField = reinitField;
             }
             //Build Local Solver that solves the Eikonal in each cell.
-            FastMarching.ILocalSolver localSolver = new FastMarching.LocalMarcher.LocalMarcher_Structured(Phi.Basis);
+            FastMarching.ILocalSolver localSolver = new FastMarching.LocalMarcher.LocalMarcher_2DStructured(Phi.Basis);
 
             //Build Global Solver that marches through all cells
             FastMarching.GlobalMarcher.CellMarcher fastMarcher = new FastMarching.GlobalMarcher.CellMarcher(Phi.Basis, localSolver);

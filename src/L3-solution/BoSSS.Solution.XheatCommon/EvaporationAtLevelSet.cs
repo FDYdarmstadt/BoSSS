@@ -107,8 +107,8 @@ namespace BoSSS.Solution.XheatCommon {
             if (m_hVap == 0.0)
                 return 0.0;
 
-            //if (MEvapIsPrescribd)
-            //    return prescrbMEvap * m_hVap;
+            if (MEvapIsPrescribd)
+                return prescrbMEvap * m_hVap;
 
             double qEvap = 0.0;
             if (evapMicroRegion[jCell]) {

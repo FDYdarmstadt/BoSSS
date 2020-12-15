@@ -1676,7 +1676,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            bool steady = false;
+            bool steady = true;
             bool separated = false;
 
             //_DbPath = @"D:\local\local_XNSE_StudyDB";
@@ -1774,9 +1774,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.p_sat = pSat;
 
 
-            bool includeConv = true;
+            bool includeConv = false;
             C.PhysicalParameters.IncludeConvection = includeConv; 
-            C.ThermalParameters.IncludeConvection = true;
+            C.ThermalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -1937,7 +1937,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
