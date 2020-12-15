@@ -318,6 +318,23 @@ namespace BoSSS.Platform {
         }
 
         /// <summary>
+        /// Extracts a block of entries from this matrix and stores it in <paramref name="Block"/>
+        /// </summary>
+        /// <param name="i0">Row index offset.</param>
+        /// <param name="j0">Column index offset.</param>
+        /// <param name="Block"></param>
+        public void ReadBlock(long i0, long j0, MultidimensionalArray Block) {
+             if (Block.Dimension != 2)
+                throw new ArgumentException();
+            int I = Block.NoOfRows;
+            int J = Block.NoOfCols;
+
+            for(int i = 0; i < I; i++)
+                for(int j = 0; j < J; j++)
+                    Block[i, j] = this[i0 + i, j0 + j];
+        }
+
+        /// <summary>
         /// Provides direct access to the matrix using the block index
         /// <paramref name="block"/> and the row and column index <b>within</b>
         /// this block.

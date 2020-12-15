@@ -1429,6 +1429,7 @@ namespace ilPSP.LinSolvers {
 
         }
 
+      
         /// <summary>
         /// Extracts a block from this matrix and stores it into <paramref name="Block"/>.
         /// </summary>
