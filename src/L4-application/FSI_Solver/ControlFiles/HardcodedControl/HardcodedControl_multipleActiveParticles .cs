@@ -282,10 +282,10 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 30, double noOfParticles = 1) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 30, double noOfParticles = 6) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
-            C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
-            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
             //string ID = "62bbb746-c171-4123-b08b-bd6ae36570c1";
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
@@ -321,9 +321,9 @@ namespace BoSSS.Application.FSI_Solver {
             while(leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
                 while (leftCorner + i * nextParticleDistance < domainLength / 2) {
-                    double temp_insertParticle = insertParticle.Next(0, 6);
+                    double temp_insertParticle = insertParticle.Next(0, 3);
                     temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
-                    //if (temp_insertParticle != 0) 
+                    if (temp_insertParticle != 0) 
                     {
                         double temp_angle = angle.Next(0, 6);
                         double temp_angle2 = angle.Next(0, 361);

@@ -38,10 +38,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
-        /// <param name="length">
+        /// <param name="halfAxisA">
         /// The length of the horizontal halfaxis.
         /// </param>
-        /// <param name="thickness">
+        /// <param name="halfAxisB">
         /// The length of the vertical halfaxis.
         /// </param>
         /// <param name="startPos">
@@ -59,11 +59,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Ellipsoid(InitializeMotion motionInit, double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
-            m_Length = length;
-            m_Thickness = thickness;
-            Aux.TestArithmeticException(length, "Particle length");
-            Aux.TestArithmeticException(thickness, "Particle thickness");
+        public Particle_Ellipsoid(InitializeMotion motionInit, double halfAxisA = 4, double halfAxisB = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            m_Length = halfAxisA;
+            m_Thickness = halfAxisB;
+            Aux.TestArithmeticException(halfAxisA, "Particle length");
+            Aux.TestArithmeticException(halfAxisB, "Particle thickness");
 
             Motion.SetParticleMaxLengthscale(GetLengthScales().Max());
             Motion.SetParticleArea(Area);
@@ -115,13 +115,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// tolerance length.
         /// </param>
         public override bool Contains(Vector point, double tolerance = 0) {
-                Vector orientation = Motion.orientationVector;
-                Vector normalOrientation = new Vector(-orientation[1], orientation[0]);
-                Vector position = Motion.GetPosition(0);
-                double a = m_Length + tolerance;
-                double b = m_Thickness + tolerance;
-                double Ellipse = ((point - position) * orientation).Pow2() / a.Pow2() + ((point - position) * normalOrientation).Pow2() / b.Pow2();
-                return Ellipse < 1;
+            Vector orientation = new Vector(Motion.orientationVector);
+            Vector position = Motion.GetPosition(0);
+            double a = m_Length + tolerance;
+            double b = m_Thickness + tolerance;
+            double Ellipse = ((point[0] - position[0]) * orientation[0] - (point[1] - position[1]) * orientation[1]).Pow2() / a.Pow2() + ((point[0] - position[0]) * orientation[1] + (point[1] - position[1]) * orientation[0]).Pow2() / b.Pow2();
+            return Ellipse < 1;
         }
 
         /// <summary>

@@ -111,7 +111,7 @@ namespace FSI_Solver {
         /// <param name="particles">
         /// List of all particles
         /// </param>
-        public void CalculateCollision(Particle[] particles) {
+        public void Calculate(Particle[] particles) {
             Particles = particles;
             // Step 1
             // Some var definintion

@@ -134,20 +134,6 @@ namespace FSI_Solver {
         /// <param name="Particles">
         /// A list of all particles
         /// </param>
-        /// <param name="phystime"></param>
-        /// <param name="IterationCounter"> </param>
-        internal void PrintResultToConsole(double residual, int IterationCounter) {
-            if (IterationCounter == 1)
-                return;
-            Console.WriteLine("Iteration: {1}, Residual:  {0}", residual, IterationCounter - 1);
-        }
-
-        /// <summary>
-        /// Residual for fully coupled system
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
         /// <param name="FluidViscosity"></param>
         /// <param name="phystime"></param>
         /// <param name="TimestepInt"></param>
@@ -155,7 +141,7 @@ namespace FSI_Solver {
         /// /// <param name="Finalresult"></param>
         /// <param name="MPIangularVelocity"></param>
         /// <param name="Force"></param>
-        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, double FluidDomainVolume) {
+        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, double FluidDomainVolume, bool FullOutputToConsole) {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
@@ -186,24 +172,16 @@ namespace FSI_Solver {
             StringBuilder OutputBuilder = new StringBuilder();
 
             OutputBuilder.AppendLine("=======================================================");
-            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-            OutputBuilder.AppendLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-            OutputBuilder.AppendLine("-------------------------------------------------------");
-            OutputBuilder.AppendLine("Fluid properties");
-            OutputBuilder.AppendLine("Density: " + FluidDensity + ", viscosity: " + FluidViscosity);
+            OutputBuilder.AppendLine("Solving system with " + Particles.Count() + " particles. Time: " + phystime);
+            if (!FullOutputToConsole) {
+                OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+                OutputBuilder.AppendLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+                OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+                OutputBuilder.AppendLine("-------------------------------------------------------");
+            }
+            OutputBuilder.AppendLine("Fluid density: " + FluidDensity + ", viscosity: " + FluidViscosity);
 
-            if (Particles.Count() > 5) {
-                OutputBuilder.AppendLine();
-                OutputBuilder.AppendLine("Solving system with " + Particles.Count() + " particles. Time: " + phystime);
-                OutputBuilder.AppendLine("Particle type of first particle: " + Particles[0]);
-                OutputBuilder.AppendLine("Particle density of first particle: " + Particles[0].Motion.Density);
-                OutputBuilder.AppendLine("Maximum length of first particle: " + Particles[0].GetLengthScales().Max() + ", minimum length: " + Particles[0].GetLengthScales().Min());
-                OutputBuilder.AppendLine("Particle Reynolds number of fastest particle: " + highestReNumber);
-                OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
-                OutputBuilder.AppendLine();
-                }
-            else {
+            if (FullOutputToConsole) {
                 for (int p = 0; p < Particles.Count(); p++) {
                     Particle CurrentParticle = Particles[p];
                     // only print particles with some action
@@ -234,6 +212,14 @@ namespace FSI_Solver {
                         OutputBuilder.AppendLine();
                     }
                 }
+            } else {
+                OutputBuilder.AppendLine("Particle type of first particle: " + Particles[0]);
+                OutputBuilder.AppendLine("Particle density of first particle: " + Particles[0].Motion.Density);
+                OutputBuilder.AppendLine("Maximum length of first particle: " + Particles[0].GetLengthScales().Max() + ", minimum length: " + Particles[0].GetLengthScales().Min());
+                OutputBuilder.AppendLine("Particle Reynolds number of fastest particle: " + highestReNumber);
+                OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
+                OutputBuilder.AppendLine("=======================================================");
+                OutputBuilder.AppendLine();
             }
             Console.WriteLine(OutputBuilder.ToString());
         }

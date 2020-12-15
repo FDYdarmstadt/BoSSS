@@ -68,7 +68,6 @@ namespace BoSSS.Application.FSI_Solver {
             UpdateLevelSetParticles(phystime: 0.0);
             MarkEachMPIProcess();
             CreatePhysicalDataLogger();
-            CreateResidualLogger();
             base.SetInitial();
         }
 
@@ -281,11 +280,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         private double[][] BoundaryCoordinates => ((FSI_Control)Control).BoundaryPositionPerDimension;
-
-        /// <summary>
-        /// Saves the residual of the hydrodynamic forces and torque of all particles.
-        /// </summary>
-        private TextWriter logHydrodynamicsResidual;
 
         /// <summary>
         /// Saves the physical data of all particles
@@ -526,8 +520,8 @@ namespace BoSSS.Application.FSI_Solver {
             double forces_PResidual;
             if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                 int iterationCounter = 0;
-                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
-                forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter); ;
+                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk, spatialDim);
+                forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter, ((FSI_Control)Control).fullyCoupledSplittingMaxIterations); ;
                 Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
             }
             // no iterative solver, no residual
@@ -557,10 +551,6 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
                 CellColor = CellColor == null ? levelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(LsTrk);
-                for (int i = 0; i < CellColor.Length; i++) {
-                    if (CellColor[i] != 0)
-                        CellColor[i] = 1;
-                }
                 SetColorDGField(CellColor);
 
                 DGLevSet.Current.Clear();
@@ -836,8 +826,7 @@ namespace BoSSS.Application.FSI_Solver {
             return true;
         }
 
-
-        private double CalculateTimestep(double phystime, int TimestepInt) {
+        private double CalculateTimeStepSize(double phystime, int TimestepInt) {
             double dt = DtMax;
             if (oldTimestep == 0)
                 oldTimestep = StartDt;
@@ -877,7 +866,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        //int postCollisionCounter = 0;
         /// <summary>
         /// runs solver one step?!
         /// </summary>
@@ -895,7 +883,7 @@ namespace BoSSS.Application.FSI_Solver {
             ResLogger.TimeStep = TimestepInt;
             BDFSchemeCoeffs[] m_TSCchain = BDFCommon.GetChain(bdforder);
             int S = m_TSCchain[0].S;
-            dt = CalculateTimestep(phystime, TimestepInt);
+            dt = CalculateTimeStepSize(phystime, TimestepInt);
             if (initAddedDamping) {
                 foreach (Particle p in ParticleList) {
                     if (p.Motion.UseAddedDamping) {
@@ -917,7 +905,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // physics
                 // -------------------------------------------------
-                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
+                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk, spatialDim);
                 CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                 CalculateParticleVelocity(ParticleList, dt, 0);
                 CalculateCollision(ParticleList, dt);
@@ -926,7 +914,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // print
                 // -------------------------------------------------
-                Auxillary.PrintResultToConsole(ParticleList, 0, 0, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume);
+                Auxillary.PrintResultToConsole(ParticleList, 0, 0, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, ((FSI_Control)Control).FullOutputToConsole);
                 LogPhysicalData(phystime, TimestepInt);
 
             }
@@ -936,65 +924,46 @@ namespace BoSSS.Application.FSI_Solver {
                 iterationCounter = 0;
                 double hydroDynForceTorqueResidual = double.MaxValue;
                 int minimumNumberOfIterations = 4;
-                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk);
+                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk, spatialDim);
+
                 Auxillary.ParticleState_MPICheck(ParticleList, GridData, MPISize);
+
+                AllParticleHydrodynamics.SaveHydrodynamicOfPreviousIteration(ParticleList);
+                if (IsFullyCoupled) 
+                    InitializeParticlePerIteration(ParticleList, TimestepInt);
+
                 while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minimumNumberOfIterations) {
                     Stopwatch stopWatch = new Stopwatch();
-                    stopWatch.Start();
-                    if (iterationCounter > ((FSI_Control)Control).fullyCoupledSplittingMaxIterations)
-                        throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
-                    if (iterationCounter < 0)
-                        throw new Exception("Iteration counter is negative?!");
-                    if (iterationCounter > 0 && !IsFullyCoupled)
-                        throw new Exception("FSI iteration in a non-coupled system, something went wrong");
+                    if (((FSI_Control)Control).FullOutputToConsole) 
+                        stopWatch.Start();
+                    
                     AllParticleHydrodynamics.SaveHydrodynamicOfPreviousIteration(ParticleList);
 
-                    if (IsFullyCoupled && iterationCounter == 0) {
-                        InitializeParticlePerIteration(ParticleList, TimestepInt);
-                    } else {
-                        m_BDF_Timestepper.Solve(phystime, dt, false);
-                        CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
-                    }
+                    m_BDF_Timestepper.Solve(phystime, dt, false);
+
+                    CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                     CalculateParticleVelocity(ParticleList, dt, iterationCounter);
 
-                    // not a fully coupled system? -> no iteration
-                    // -------------------------------------------------
                     if (!IsFullyCoupled)
                         break;
 
-                    // residual
-                    // -------------------------------------------------
-                    hydroDynForceTorqueResidual = AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter);
-                    // print iteration status
-                    // -------------------------------------------------
-                    Auxillary.PrintResultToConsole(hydroDynForceTorqueResidual, iterationCounter);
-                    //LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
-                    TimeSpan ts = stopWatch.Elapsed;
+                    hydroDynForceTorqueResidual = AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter, ((FSI_Control)Control).fullyCoupledSplittingMaxIterations);
 
-                    // Format and display the TimeSpan value.
-                    string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                        ts.Hours, ts.Minutes, ts.Seconds,
-                        ts.Milliseconds / 10);
-                    Console.WriteLine("RunTime per Iteration" + elapsedTime);
+                    if (((FSI_Control)Control).FullOutputToConsole) {
+                        Console.WriteLine("Iteration: {1}, Residual:  {0}", hydroDynForceTorqueResidual, iterationCounter - 1);
+                        TimeSpan ts = stopWatch.Elapsed;
+                        string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+                        Console.WriteLine("RunTime per Iteration" + elapsedTime);
+                    }
+                }
+                if (!FixPosition) {
+                    CalculateCollision(ParticleList, dt);
+                    CalculateParticlePosition(dt);
                 }
 
-
-                // collision
-                // -------------------------------------------------
-                CalculateCollision(ParticleList, dt);
-
-                // particle position
-                // -------------------------------------------------
-                if (!FixPosition)
-                    CalculateParticlePosition(dt);
-
-                // print
-                // -------------------------------------------------
-                Auxillary.PrintResultToConsole(ParticleList, FluidViscosity, FluidDensity, phystime, TimestepInt, FluidDomainVolume);
+                Auxillary.PrintResultToConsole(ParticleList, FluidViscosity, FluidDensity, phystime, TimestepInt, FluidDomainVolume, ((FSI_Control)Control).FullOutputToConsole);
                 LogPhysicalData(phystime, TimestepInt);
 
-                // level set tracker 
-                // -------------------------------------------------
                 if (IsFullyCoupled) {// in other branches, called by the BDF timestepper
                     LsTrk.IncreaseHistoryLength(S + 1);
                     LsTrk.PushStacks();
@@ -1049,23 +1018,21 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         internal void CalculateParticleVelocity(List<Particle> Particles, double dt, int IterationCounter) {
             foreach (Particle p in Particles) {
-                if (!p.IsMaster) {
-                    continue;
-                }
                 if (IterationCounter == 0) {
                     p.Motion.SaveVelocityOfPreviousTimestep();
                 }
-                p.Motion.UpdateParticleVelocity(dt);
-                for (int g = 1; g < p.MasterGhostIDs.Length; g++) {
-                    if (p.MasterGhostIDs[g] < 1)
-                        continue;
-                    Particle ghost = Particles[p.MasterGhostIDs[g] - 1];
-                    if (ghost.IsMaster)
-                        throw new Exception("A ghost particle is considered to be a master, that can't be!");
-                    if (IterationCounter == 0) {
-                        ghost.Motion.SaveVelocityOfPreviousTimestep();
+
+                if (p.IsMaster) {
+                    p.Motion.UpdateParticleVelocity(dt);
+
+                    for (int g = 1; g < p.MasterGhostIDs.Length; g++) {
+                        if (p.MasterGhostIDs[g] >= 1) {
+                            Particle ghost = Particles[p.MasterGhostIDs[g] - 1];
+                            if (ghost.IsMaster)
+                                throw new Exception("A ghost particle is considered to be a master, that can't be!");
+                            ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
+                        }
                     }
-                    ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
                 }
             }
         }
@@ -1082,27 +1049,7 @@ namespace BoSSS.Application.FSI_Solver {
                 particle.Motion.UpdateParticlePositionAndAngle(dt);
             }
         }
-
-        /// <summary>
-        /// Creates a log file for the residum of the hydrodynamic forces.
-        /// </summary>
-        private void CreateResidualLogger() {
-            if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                logHydrodynamicsResidual = DatabaseDriver.FsDriver.GetNewLog("HydrodynamicResidual", CurrentSessionInfo.ID);
-                logHydrodynamicsResidual.WriteLine(string.Format("{0},{1},{2}", "Time", "Iteration", "Residual"));
-            }
-        }
-
-        /// <summary>
-        /// Creates a log file for the residum of the hydrodynamic forces.
-        /// </summary>
-        private void LogResidual(double phystime, int iterationCounter, double residual) {
-            if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
-                logHydrodynamicsResidual.WriteLine(string.Format("{0},{1},{2}", phystime, iterationCounter, residual));
-                logHydrodynamicsResidual.Flush();
-            }
-        }
-
+                
         /// <summary>
         /// Creates a log file for the physical data of the particles. Only active if a database is specified.
         /// </summary>
@@ -1126,6 +1073,165 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
+
+        /// <summary>
+        /// Triggers the collision detection, which triggers the calculation of the collisions. Note on parallelization: All particle operations are carried out on all processes, hence no communication is necessary.
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="CellColor">
+        /// All cells on the current process with their specific colour
+        /// </param>
+        /// <param name="dt">
+        /// Timestep
+        /// </param>
+        private void CalculateCollision(List<Particle> Particles, double dt) {
+            foreach (Particle p in Particles) {
+                p.IsCollided = false;
+            }
+            // Only particles with the same colour a close to each other, thus, we only test for collisions within those particles.
+            // Determine colour.
+            // =================================================
+            int[] _GlobalParticleColor = GlobalParticleColor.CloneAs();
+            for (int i = 0; i < _GlobalParticleColor.Length; i++) {
+                int CurrentColor = _GlobalParticleColor[i];
+                if (CurrentColor == 0)
+                    continue;
+                int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(_GlobalParticleColor, CurrentColor);
+                // Multiple particles with the same colour, trigger collision detection
+                // =================================================
+                if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
+                    Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
+                    for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
+                        currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
+                    }
+                    ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
+                    Collision.Calculate(currentParticles);
+                }
+                // Remove already examined particles/colours from array
+                // =================================================
+                for (int j = 0; j < _GlobalParticleColor.Length; j++) {
+                    if (_GlobalParticleColor[j] == CurrentColor)
+                        _GlobalParticleColor[j] = 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adaptive mesh refinement
+        /// </summary>
+        /// <param name="TimestepNo">
+        /// Currently unused.
+        /// </param>
+        /// <param name="newGrid">
+        /// The adapted grid.
+        /// </param>
+        /// <param name="old2NewGrid">
+        /// The correlation between old and new grid.
+        /// </param>
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            GridData gridData = (GridData)GridData;
+            bool AnyChangeInGrid = false;
+            List<int> CellsToRefineList = new List<int>();
+            List<int[]> Coarsening = new List<int[]>();
+            if (((FSI_Control)Control).AdaptiveMeshRefinement) {
+                CellMask cutCells = LsTrk.Regions.GetCutCellMask();
+                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null);
+                if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
+                else
+                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
+            }
+            if (AnyChangeInGrid) {
+                int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                int oldJ = GridData.CellPartitioning.TotalLength;
+                Console.WriteLine("Refining " + consoleRefineCoarse[0] + " of " + oldJ + " cells");
+                Console.WriteLine("Coarsening " + consoleRefineCoarse[1] + " of " + oldJ + " cells");
+                Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
+                newGrid = gridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+            } else {
+                newGrid = null;
+                old2NewGrid = null;
+            }
+        }
+
+        private int[] GetCellsToRefine() {
+            int refinementLevel = ((FSI_Control)Control).RefinementLevel;
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] cellsToRefine = new int[noOfLocalCells];
+            for (int p = 0; p < ParticleList.Count(); p++) {
+                for (int j = 0; j < noOfLocalCells; j++) {
+                    if (cellsToRefine[j] < refinementLevel) {
+                        Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
+                        cellsToRefine[j] = (ParticleList[p].Contains(cellCenter) && !ParticleList[p].Contains(cellCenter, -MaxGridLength)) ? refinementLevel : 0;
+                    }
+                }
+            }
+            return cellsToRefine;
+        }
+
+
+
+        /// <summary>
+        /// For restarting calculations, its important to reload old solutions if one uses a higher order method in time
+        /// </summary>
+        /// <param name="time"></param>
+        /// <param name="timestep"></param>
+        public override void PostRestart(double time, TimestepNumber timestep) {
+            if (!((FSI_Control)Control).IsRestart)
+                return;
+
+            IFileSystemDriver fsDriver = this.DatabaseDriver.FsDriver;
+            string pathToOldSessionDir = Path.Combine(fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+            string pathToPhysicalData = MPIRank == 0 ? Path.Combine(pathToOldSessionDir, "PhysicalData.txt") : "";
+            pathToPhysicalData = pathToPhysicalData.MPIBroadcast(0);
+
+            string[] records = File.ReadAllLines(pathToPhysicalData);
+            int timestepIndexOffset = 0;
+            for (int r = 1; r < records.Length; r++) {// 0th line does not contain data
+                string currentLine = records[r];
+                string[] currentLineFields = currentLine.Split(',');
+                if (timestep.MajorNumber == Convert.ToInt32(currentLineFields[0])) {
+                    timestepIndexOffset = r;
+                    break;
+                }
+            }
+
+            int historyLength = 3;
+            for (int t = historyLength; t > 0; t--) {
+                for (int p = 0; p < ParticleList.Count(); p++) {
+                    Particle currentParticle = ParticleList[p];
+                    int index = timestepIndexOffset - ParticleList.Count() * (t - 1) + p;
+                    string currentLine = records[index];
+                    string[] currentLineFields = currentLine.Split(',');
+                    double[] position = new double[2];
+                    double[] translationalVelocity = new double[2];
+                    double[] force = new double[2];
+                    double[] physicalData = currentLineFields.Select(eachElement => Convert.ToDouble(eachElement)).ToArray();
+                    position[0] = Convert.ToDouble(currentLineFields[3]);
+                    position[1] = Convert.ToDouble(currentLineFields[4]);
+                    force[0] = Convert.ToDouble(currentLineFields[9]);
+                    force[1] = Convert.ToDouble(currentLineFields[10]);
+                    double angle = Convert.ToDouble(currentLineFields[5]) * 360 / (2 * Math.PI);
+                    translationalVelocity[0] = Convert.ToDouble(currentLineFields[6]);
+                    translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
+                    double angularVelocity = Convert.ToDouble(currentLineFields[8]);
+                    double torque = Convert.ToDouble(currentLineFields[11]);
+                    currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), t);
+                    currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], t);
+                    currentParticle.Motion.InitializeParticleForceAndTorque(new double[] { physicalData[9], physicalData[10] }, physicalData[11], t, RestartDt);
+                }
+            }
+            CellColor = null;
+            UpdateLevelSetParticles(time);
+            CreatePhysicalDataLogger();
+            MarkEachMPIProcess();
+            CountFromRestart = 50;
+            ((FSI_Control)Control).IsRestart = false;
+        }
+
+
 
         /// <summary>
         /// over-ridden in oder to save the particles (<see cref="ParticleList"/>) to the database
@@ -1192,230 +1298,6 @@ namespace BoSSS.Application.FSI_Solver {
             // init particles
             ParticleList = fTsi.Particles.ToList();
             UpdateLevelSetParticles(fTsi.PhysicalTime);
-        }
-
-
-        /// <summary>
-        /// For restarting calculations, its important to reload old solutions if one uses a higher order method in time
-        /// </summary>
-        /// <param name="time"></param>
-        /// <param name="timestep"></param>
-        public override void PostRestart(double time, TimestepNumber timestep) {
-            if (!((FSI_Control)Control).IsRestart)
-                return;
-
-            IFileSystemDriver fsDriver = this.DatabaseDriver.FsDriver;
-            string pathToOldSessionDir = Path.Combine(fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            string pathToPhysicalData = MPIRank == 0 ? Path.Combine(pathToOldSessionDir, "PhysicalData.txt") : "";
-            pathToPhysicalData = pathToPhysicalData.MPIBroadcast(0);
-
-            string[] records = File.ReadAllLines(pathToPhysicalData);
-            int timestepIndexOffset = 0;
-            for (int r = 1; r < records.Length; r++) {// 0th line does not contain data
-                string currentLine = records[r];
-                string[] currentLineFields = currentLine.Split(',');
-                if (timestep.MajorNumber == Convert.ToInt32(currentLineFields[0])) {
-                    timestepIndexOffset = r;
-                    break;
-                }
-            }
-
-            int historyLength = 3;
-            for (int t = historyLength; t > 0; t--) {
-                for (int p = 0; p < ParticleList.Count(); p++) {
-                    Particle currentParticle = ParticleList[p];
-                    int index = timestepIndexOffset - ParticleList.Count() * (t - 1) + p;
-                    string currentLine = records[index];
-                    string[] currentLineFields = currentLine.Split(',');
-                    double[] position = new double[2];
-                    double[] translationalVelocity = new double[2];
-                    double[] force = new double[2];
-                    double[] physicalData = currentLineFields.Select(eachElement => Convert.ToDouble(eachElement)).ToArray();
-                    position[0] = Convert.ToDouble(currentLineFields[3]);
-                    position[1] = Convert.ToDouble(currentLineFields[4]);
-                    force[0] = Convert.ToDouble(currentLineFields[9]);
-                    force[1] = Convert.ToDouble(currentLineFields[10]);
-                    double angle = Convert.ToDouble(currentLineFields[5]) * 360 / (2 * Math.PI);
-                    translationalVelocity[0] = Convert.ToDouble(currentLineFields[6]);
-                    translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
-                    double angularVelocity = Convert.ToDouble(currentLineFields[8]);
-                    double torque = Convert.ToDouble(currentLineFields[11]);
-                    currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), t);
-                    currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], t);
-                    currentParticle.Motion.InitializeParticleForceAndTorque(new double[] { physicalData[9], physicalData[10] }, physicalData[11], t, RestartDt);
-                }
-            }
-            CellColor = null;
-            UpdateLevelSetParticles(time);
-            CreatePhysicalDataLogger();
-            CreateResidualLogger();
-            MarkEachMPIProcess();
-            CountFromRestart = 50;
-            ((FSI_Control)Control).IsRestart = false;
-        }
-
-        /// <summary>
-        /// Triggers the collision detection, which triggers the calculation of the collisions
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
-        /// <param name="CellColor">
-        /// All cells on the current process with their specific colour
-        /// </param>
-        /// <param name="dt">
-        /// Timestep
-        /// </param>
-        private void CalculateCollision(List<Particle> Particles, double dt) {
-            if (((FSI_Control)Control).collisionModel == FSI_Control.CollisionModel.NoCollisionModel)
-                return;
-            if (((FSI_Control)Control).collisionModel == FSI_Control.CollisionModel.RepulsiveForce)
-                throw new NotImplementedException("Repulsive force model is no longer supported, please use the momentum conservation model.");
-            foreach (Particle p in Particles) {
-                p.IsCollided = false;
-            }
-            // Only particles with the same colour a close to each other, thus, we only test for collisions within those particles.
-            // Determine colour.
-            // =================================================
-            int[] _GlobalParticleColor = GlobalParticleColor.CloneAs();
-            for (int i = 0; i < _GlobalParticleColor.Length; i++) {
-                int CurrentColor = _GlobalParticleColor[i];
-                if (CurrentColor == 0)
-                    continue;
-                int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(_GlobalParticleColor, CurrentColor);
-                // Multiple particles with the same colour, trigger collision detection
-                // =================================================
-                if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
-                    Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
-                    for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
-                        currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
-                    }
-                    ParticleCollision _Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
-
-                    _Collision.CalculateCollision(currentParticles);
-                }
-                // Remove already investigated particles/colours from array
-                // =================================================
-                for (int j = 0; j < _GlobalParticleColor.Length; j++) {
-                    if (_GlobalParticleColor[j] == CurrentColor)
-                        _GlobalParticleColor[j] = 0;
-                }
-            }
-            // Communicate
-            // =================================================
-            foreach (Particle p in ParticleList) {
-                Collision_MPICommunication(p, MPISize);
-            }
-        }
-
-        /// <summary>
-        /// Ensures the communication between the processes after a collision. As collisions are triggered based on the (local) colouring of the cells only the owning process knows about them.
-        /// Thus, it is necessary to inform the other processes about the collisions.
-        /// </summary>
-        /// <param name="currentParticle">
-        /// The current particle.
-        /// </param>
-        /// <param name="MPISize">
-        /// Number of mpi processes
-        /// </param>
-        private void Collision_MPICommunication(Particle currentParticle, int MPISize) {
-            // Did a collision take place on one of the processes?
-            // ===================================================
-            double[] isCollidedSend = new double[1];
-            isCollidedSend[0] = currentParticle.IsCollided ? 1 : 0;
-            double[] isCollidedReceive = new double[MPISize];
-            MPISendAndReceive(isCollidedSend, ref isCollidedReceive);
-
-            bool noCurrentCollision = true;
-            for (int i = 0; i < isCollidedReceive.Length; i++) {
-                // The particle is collided, thus, copy the data from
-                // the owning process.
-                // ===================================================
-                if (isCollidedReceive[i] != 0) {
-                    double[] dataSend = currentParticle.Motion.BuildSendArray();
-                    int noOfVars = dataSend.Length;
-                    double[] dataReceive = new double[noOfVars * MPISize];
-                    MPISendAndReceive(dataSend, ref dataReceive);
-                    currentParticle.Motion.WriteReceiveArray(dataReceive, offset: i * noOfVars);
-                    currentParticle.IsCollided = true;
-                    noCurrentCollision = false;
-                }
-            }
-            // nothing happend
-            // ===================================================
-            if (noCurrentCollision) {
-                currentParticle.IsCollided = false;
-            }
-        }
-
-        /// <summary>
-        /// MPI communication of an array.
-        /// </summary>
-        /// <param name="variableSend">
-        /// The array to send.
-        /// </param>
-        /// <param name="variableReceive">
-        /// An array of the data of all processes.
-        /// </param>
-        private void MPISendAndReceive(double[] variableSend, ref double[] variableReceive) {
-            unsafe {
-                fixed (double* pVariableSend = variableSend, pVariableReceive = variableReceive) {
-                    csMPI.Raw.Allgather((IntPtr)pVariableSend, variableSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pVariableReceive, variableSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Adaptive mesh refinement
-        /// </summary>
-        /// <param name="TimestepNo">
-        /// Currently unused.
-        /// </param>
-        /// <param name="newGrid">
-        /// The adapted grid.
-        /// </param>
-        /// <param name="old2NewGrid">
-        /// The correlation between old and new grid.
-        /// </param>
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            GridData gridData = (GridData)GridData;
-            bool AnyChangeInGrid = false;
-            List<int> CellsToRefineList = new List<int>();
-            List<int[]> Coarsening = new List<int[]>();
-            if (((FSI_Control)Control).AdaptiveMeshRefinement) {
-                CellMask cutCells = LsTrk.Regions.GetCutCellMask();
-                GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null);
-                if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
-                else
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
-            }
-            if (AnyChangeInGrid) {
-                int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
-                int oldJ = GridData.CellPartitioning.TotalLength;
-                Console.WriteLine("Refining " + consoleRefineCoarse[0] + " of " + oldJ + " cells");
-                Console.WriteLine("Coarsening " + consoleRefineCoarse[1] + " of " + oldJ + " cells");
-                Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
-                newGrid = gridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-            } else {
-                newGrid = null;
-                old2NewGrid = null;
-            }
-        }
-
-        private int[] GetCellsToRefine() {
-            int refinementLevel = ((FSI_Control)Control).RefinementLevel;
-            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            int[] cellsToRefine = new int[noOfLocalCells];
-            for (int p = 0; p < ParticleList.Count(); p++) {
-                for (int j = 0; j < noOfLocalCells; j++) {
-                    if (cellsToRefine[j] < refinementLevel) {
-                        Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        cellsToRefine[j] = (ParticleList[p].Contains(cellCenter) && !ParticleList[p].Contains(cellCenter, -MaxGridLength)) ? refinementLevel : 0;
-                    }
-                }
-            }
-            return cellsToRefine;
         }
     }
 }

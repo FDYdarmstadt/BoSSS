@@ -111,7 +111,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
 
                         var SchemeHelper = levelSetTracker.GetXDGSpaceMetrics(new[] { levelSetTracker.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.CutCells_P(levelSetTracker));
+                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.ParticleCutCells(levelSetTracker, levelSetTracker.Regions.GetCutCellMask()));
                         CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat,
                             cqs.Compile(levelSetTracker.GridDat, RequiredOrder),
                             delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

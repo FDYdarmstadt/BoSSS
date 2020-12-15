@@ -235,6 +235,12 @@ namespace BoSSS.Application.FSI_Solver {
         public bool LowerWallFullyPlastic = false;
 
         /// <summary>
+        /// Set true if the complete output should be printed to the console.
+        /// </summary>
+        [DataMember]
+        public bool FullOutputToConsole = false;
+
+        /// <summary>
         /// Function describing the fixed level-set movement
         /// </summary>
         [DataMember]

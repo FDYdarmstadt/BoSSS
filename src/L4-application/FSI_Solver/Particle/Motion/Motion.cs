@@ -497,7 +497,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calls the calculation of the position and angle.
+        /// Calls the calculation of the position and angle during the calculation of the collisions.
         /// </summary>
         /// <param name="dt"></param>
         internal void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
@@ -535,7 +535,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics, double fluidDensity) {
+        internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             using (new FuncTrace()) {
                 Vector forces = new Vector(SpatialDim);
                 for (int d = 0; d < SpatialDim; d++) {
@@ -543,7 +543,7 @@ namespace BoSSS.Application.FSI_Solver {
                         forces[d] = fullListHydrodynamics[particleID * 3 + d];
 
                 }
-                HydrodynamicForces[0] = CalculateGravitationalForces(fluidDensity, forces);
+                HydrodynamicForces[0] = forces;
                 if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
                     HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
                 Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
@@ -702,19 +702,13 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        protected double[][] currentStress;
-
         /// <summary>
         /// Calculates the gravitational forces.
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        private Vector CalculateGravitationalForces(double fluidDensity, Vector tempForces) {
-            using (new FuncTrace()) {
-                tempForces += (Density - fluidDensity) * ParticleArea * Gravity;
-                Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics after adding gravity");
-                return tempForces;
-            }
+        public Vector GetGravityForces(double fluidDensity) {
+            return (Density - fluidDensity) * ParticleArea * Gravity;
         }
 
         /// <summary>

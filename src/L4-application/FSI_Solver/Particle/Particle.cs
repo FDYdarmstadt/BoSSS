@@ -172,7 +172,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        public CellMask CutCells_P(LevelSetTracker LsTrk) {
+        public CellMask ParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells) {
             BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             var h_min = LsTrk.Regions.GetCutCellSubGrid().h_minSubGrd;
@@ -180,7 +180,7 @@ namespace BoSSS.Application.FSI_Solver {
                 CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), 2 * h_min);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
-            CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
+            CutCells = CutCells.Intersect(AllCutCells);
             return CutCells;
         }
 
