@@ -181,7 +181,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         Dictionary<string, DGField> lsParameterFields;
 
         public LevelSetUpdater(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
-            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, 
+            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, string LevelSetName,
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG) {
 
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
@@ -201,7 +201,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 Tracker = Tracker,
             };
             lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(4);
-            lsUpdaters.Add(VariableNames.Interface, new SingleLevelSetUpdater(currentInterface, enforcer));
+            lsUpdaters.Add(LevelSetName, new SingleLevelSetUpdater(currentInterface, enforcer));
             Tracker.UpdateTracker(0.0);
         }
 

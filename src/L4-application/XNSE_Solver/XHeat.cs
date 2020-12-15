@@ -210,14 +210,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 FourrierLevelSet fourrierLevelSet = new FourrierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), "Phi");
                 fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, "Phi");
                 lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
                 break;
 
                 case LevelSetEvolution.FastMarching:
                 LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
                 levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, "Phi");
                 var fastMarcher = new FastMarchingEvolver("Phi", QuadOrder(), levelSet.GridDat.SpatialDimension);
                 lsUpdater.AddEvolver("Phi", fastMarcher);
                 lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
@@ -227,7 +227,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 int nodeCount = 30;
                 Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                 SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), "Phi", nodeCount);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, "Phi");
                 var SplineEvolver = new SplineLevelSetEvolver("Phi", (GridData)SplineLevelSet.GridDat);
                 lsUpdater.AddEvolver("Phi", SplineEvolver);
                 lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
@@ -236,7 +236,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 case LevelSetEvolution.None:
                 LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), "Phi");
                 levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, "Phi");
                 break;
                 default:
                 throw new NotImplementedException();

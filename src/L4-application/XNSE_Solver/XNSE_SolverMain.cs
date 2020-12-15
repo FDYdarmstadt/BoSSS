@@ -73,9 +73,9 @@ namespace BoSSS.Application.XNSE_Solver {
         // Main file
         //===========
         static void Main(string[] args) {
-            
-            //InitMPI();
-            //DeleteOldPlotFiles();
+
+            InitMPI();
+            DeleteOldPlotFiles();
 
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
@@ -86,7 +86,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-  
+
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(2, 0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
 
@@ -111,11 +111,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
 
 
-            //Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 3, LevelSetEvolution.FastMarching,
-            //    LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF3);
+            Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 3, LevelSetEvolution.FastMarching,
+                LevelSetHandling.Coupled_Once);
 
-            //return;
-            
+            return;
+
 
             _Main(args, false, delegate () {
                 var p = new XNSE();

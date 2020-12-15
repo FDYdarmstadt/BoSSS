@@ -27,6 +27,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.LevelSetTools {
 
@@ -99,15 +100,15 @@ namespace BoSSS.Solution.LevelSetTools {
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
                         var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k);
-                        return new LevelSet(ContinuousLevelSetBasis.ContainingDGBasis, "Phi");
+                        return new LevelSet(ContinuousLevelSetBasis.ContainingDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.ConstrainedDG: {
                         var ContinuousLevelSetDGBasis = new Basis(gridData, k);
-                        return new LevelSet(ContinuousLevelSetDGBasis, "Phi");
+                        return new LevelSet(ContinuousLevelSetDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.None: {
                         Console.WriteLine("WARNING: No additional enforcement of the level-set continuity!");
-                        LevelSet SmoothedLevelSet = new LevelSet(DGLevelSet.Basis, "Phi");
+                        LevelSet SmoothedLevelSet = new LevelSet(DGLevelSet.Basis, VariableNames.LevelSetCG);
                         DGLevelSet = SmoothedLevelSet;
                         return SmoothedLevelSet;
                     }

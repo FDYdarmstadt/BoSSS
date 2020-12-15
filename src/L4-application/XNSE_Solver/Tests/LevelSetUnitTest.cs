@@ -200,7 +200,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             C.Timestepper_LevelSetHandling = levelSetHandling;
-            //C.TimeSteppingScheme = timeSteppingScheme;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
 
 
             C.NoOfTimesteps = 5;

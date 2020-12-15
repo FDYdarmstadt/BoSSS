@@ -115,13 +115,13 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             // the following variable names for the level set will replace the above ones in the new XNSE!
-            FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
-                Degree = LevSetDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+            //    Degree = LevSetDegree,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
             FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
