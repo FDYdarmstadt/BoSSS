@@ -1316,7 +1316,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        int m_RetryCount = 1;
+        int m_RetryCount = 3;
 
         /// <summary>
         /// Number of times the job is submitted at maximum.
