@@ -158,18 +158,17 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         private void CheckIndices() {
-            for(int i=0;i < BMLoc.m_GlobalMask.Count; i++) {
-                int GlobIdx = BMLoc.m_GlobalMask.ToArray()[i];
+            for(int i = 0; i < BMLoc.m_GlobalMask.Count; i++) {
+                long GlobIdx = BMLoc.m_GlobalMask.ToArray()[i];
                 Debug.Assert(m_map.IsInLocalRange(GlobIdx));
             }
             for(int i = 0; i < BMExt.m_GlobalMask.Count; i++) {
-                int GlobIdx = BMExt.m_GlobalMask.ToArray()[i];
+                long GlobIdx = BMExt.m_GlobalMask.ToArray()[i];
                 Debug.Assert(!m_map.IsInLocalRange(GlobIdx));
             }
         }
-
         private void SetThisShitUp(BlockMaskBase[] masks) {
-            List<int> tmpOffsetList = new List<int>();
+            List<long> tmpOffsetList = new List<long>();
             List<int> tmpLengthList = new List<int>();
             List<extNi0[][][]> tmpNi0 = new List<extNi0[][][]>();
             foreach(var mask in masks) {
@@ -206,7 +205,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// collected sub matrix offsets of <see cref="BMLoc"/> and <see cref="BMExt"/>
         /// </summary>
-        List<int> SubMatrixOffsets;
+        List<long> SubMatrixOffsets;
 
         /// <summary>
         /// collected sub matrix lengths of <see cref="BMLoc"/> and <see cref="BMExt"/>
@@ -289,30 +288,30 @@ namespace BoSSS.Solution.AdvancedSolvers
                 var ExtRowsTmp = m_ExtRows;
 
                 int offset = BMLoc.m_GlobalMask.Count;
-                var extBlockRows = BMExt.m_GlobalMask.Count.ForLoop(i => i + offset);
-                var extBlockCols = BMExt.m_GlobalMask.Count.ForLoop(i => i + offset);
+                long[] extBlockRows = BMExt.m_GlobalMask.Count.ForLoop(i => (long)(i + offset));
+                long[] extBlockCols = BMExt.m_GlobalMask.Count.ForLoop(i => (long)(i + offset));
 
                 //ExtRowsTmp lives at the MPI-Communicator of the target, thus the global index is related to a new partitioning and has nothing to do with the partitioning of the multigrid operator ...
                 
-                var GlobalIdxExtRows = BMExt.m_GlobalMask.Count.ForLoop(i => BMExt.m_LocalMask[i] - m_map.LocalLength);
-                for (int iGlob=0; iGlob< GlobalIdxExtRows.Length; iGlob++) {
+                long[] GlobalIdxExtRows = BMExt.m_GlobalMask.Count.ForLoop(i => (long)(BMExt.m_LocalMask[i] - m_map.LocalLength));
+                for(int iGlob = 0; iGlob < GlobalIdxExtRows.Length; iGlob++) {
                     Debug.Assert(GlobalIdxExtRows[iGlob] < ExtRowsTmp._RowPartitioning.LocalLength);
                     GlobalIdxExtRows[iGlob] += ExtRowsTmp._RowPartitioning.i0;
                     Debug.Assert(ExtRowsTmp._RowPartitioning.IsInLocalRange(GlobalIdxExtRows[iGlob]));
                 }
                 
                 //add local Block ...
-                source.WriteSubMatrixTo(target, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
+                source.WriteSubMatrixTo(target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
 
                 //add columns related to external rows ...
-                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(int[]), new int[0], default(int[]), BMExt.m_GlobalMask, extBlockCols);
+                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(long[]), new long[0], default(long[]), BMExt.m_GlobalMask, extBlockCols);
 
                 //add external rows ...
-                ExtRowsTmp.AccSubMatrixTo(1.0, target, GlobalIdxExtRows, extBlockRows, BMLoc.m_GlobalMask, default(int[]), BMExt.m_GlobalMask, extBlockCols);
+                ExtRowsTmp.AccSubMatrixTo(1.0, target, GlobalIdxExtRows, extBlockRows, BMLoc.m_GlobalMask, default(long[]), BMExt.m_GlobalMask, extBlockCols);
             } else {
                 BlockPartitioning localBlocking = new BlockPartitioning(BMLoc.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF, i0isLocal: true);
                 target = new BlockMsrMatrix(localBlocking);
-                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
+                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
             }
             Debug.Assert(target != null);
             return target;
@@ -378,8 +377,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                                         for (int jMode = 0; jMode < mask.m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
                                             extNi0 RowNi0 = mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode];
                                             extNi0 ColNi0 = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode];
-                                            int Targeti0 = IsLocMask ? RowNi0.Gi0 : RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
-                                            int Targetj0 = ColNi0.Gi0;
+                                            long Targeti0 = IsLocMask ? RowNi0.Gi0 : RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
+                                            long Targetj0 = ColNi0.Gi0;
                                             int Subi0 = mask.GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
                                             int Subj0 = mask.GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
                                             int Subie = Subi0 + RowNi0.N - 1;
@@ -474,18 +473,17 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                                             extNi0 RowNi0 = RowNi0s[iLoc][iVar][iSpc][iMode];
                                             extNi0 ColNi0 = ColNi0s[jLoc][jVar][jSpc][jMode];
-                                            int Srci0 = IsLocalMask? RowNi0.Gi0: RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
-                                            int Srcj0 = ColNi0.Gi0;
+                                            long Srci0 = IsLocalMask? RowNi0.Gi0: RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
+                                            long Srcj0 = ColNi0.Gi0;
 
                                             var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
 
                                             int Trgj0 = ColNi0s[jLoc][jVar][jSpc][jMode].Si0;
-#if Debug
-
-                                            SubMSR.ReadBlock(SubRowIdx, SubColIdx, tmpBlock);
-                                            Debug.Assert(tmpBlock.Sum() == 0);
-                                            Debug.Assert(tmpBlock.InfNorm() == 0);
-#endif
+//#if DEBUG
+//                                            SubMSR.ReadBlock(SubRowIdx, SubColIdx, tmpBlock);
+//                                            Debug.Assert(tmpBlock.Sum() == 0);
+//                                            Debug.Assert(tmpBlock.InfNorm() == 0);
+//#endif
 
                                             try {
                                                 source.ReadBlock(Srci0, Srcj0,
@@ -751,6 +749,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             return BlockMsrMatrix.Multiply(Perm, M);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public static int GetLocalAndExternalDOF(MultigridMapping map) {
             int eCell = map.LocalNoOfBlocks + map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
             int eVar = map.AggBasis.Length - 1;
@@ -794,8 +795,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 for (int jMode = 0; jMode < StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
                                     extNi0 RowNi0 = StructuredNi0[iLoc][iVar][iSpc][iMode];
                                     extNi0 ColNi0 = StructuredNi0[jLoc][jVar][jSpc][jMode];
-                                    int Targeti0 = RowNi0.Gi0;
-                                    int Targetj0 = ColNi0.Gi0;
+                                    long Targeti0 = RowNi0.Gi0;
+                                    long Targetj0 = ColNi0.Gi0;
                                     int Subi0 = BMLoc.GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
                                     int Subj0 = BMLoc.GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
                                     int Subie = Subi0 + RowNi0.N - 1;
@@ -813,9 +814,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             return _Sblocks;
         }
 
-        public int[] GlobalIndices {
+        public long[] GlobalIndices {
             get {
-                List<int> tmp = new List<int>();
+                List<long> tmp = new List<long>();
                 if (m_includeExternalCells) {
                     if (BMLoc != null)
                         tmp.AddRange(BMLoc.m_GlobalMask);
@@ -841,7 +842,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// This is provided for testing or if you know what you are doing!
         /// </summary>
-        public List<int> GlobalIList_Internal {
+        public List<long> GlobalIList_Internal {
             get {
                 return BMLoc.m_GlobalMask;
             }
@@ -850,7 +851,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// This is provided for testing or if you know what you are doing!
         /// </summary>
-        public List<int> GlobalIList_External {
+        public List<long> GlobalIList_External {
             get {
                 return BMExt.m_GlobalMask;
             }

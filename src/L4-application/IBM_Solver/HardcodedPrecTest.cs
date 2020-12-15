@@ -527,17 +527,6 @@ namespace BoSSS.Application.IBM_Solver {
                         Prec = null;
                         break;
                     }
-                case 1:
-                    {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Schur;
-                        break;
-                    }
-                case 2:
-                    {
-
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Simple;
-                        break;
-                    }
                 case 3:
                     {
                         C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
@@ -565,12 +554,6 @@ namespace BoSSS.Application.IBM_Solver {
                         //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
                         C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS_MG;
                         C.NoOfMultigridLevels = 2;
-                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
-                        break;
-                    }
-                case 7:
-                    {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_localPrec; ;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
@@ -602,13 +585,14 @@ namespace BoSSS.Application.IBM_Solver {
                         break;
                     }
                 default:
-                    {
-                        Prec = new SchurPrecond()
-                        {
-                            SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-                        };
-                        break;
-                    }
+                //{
+                //    Prec = new SchurPrecond()
+                //    {
+                //        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+                //    };
+                //    break;
+                //}
+                throw new NotImplementedException();
             }
 
 

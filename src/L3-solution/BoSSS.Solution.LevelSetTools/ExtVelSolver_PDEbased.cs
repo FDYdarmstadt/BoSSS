@@ -90,8 +90,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 // ---------------------------
 
                 int N = ExtProperty.Basis.GetLength(jCell);
-                int i0G = ExtProperty.Mapping.GlobalUniqueCoordinateIndex(0, jCell, 0);
-                int i0L = ExtProperty.Mapping.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                long i0G = ExtProperty.Mapping.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                long i0L = ExtProperty.Mapping.GlobalUniqueCoordinateIndex(0, jCell, 0);
 
                 for(int n = 0; n < N; n++) {
                     this.m_ExtvelMatrix.ClearRow(i0G + n);
@@ -127,11 +127,11 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 for(int n = 0; n < N; n++) {
 #if DEBUG
                     int Lr;
-                    int[] row_cols = null;
+                    long[] row_cols = null;
                     double[] row_vals = null;
                     Lr = this.m_ExtvelMatrix.GetRow(i0G + n, ref row_cols, ref row_vals);
                     for(int lr = 0; lr < Lr; lr++) {
-                        int ColIndex = row_cols[lr];
+                        long ColIndex = row_cols[lr];
                         double Value = row_vals[lr];
                         Debug.Assert((ColIndex >= i0G && ColIndex < i0G + N) || (Value == 0.0), "Matrix is expected to be block-diagonal.");
                     }

@@ -219,21 +219,17 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
 
             R.GridFunc = delegate () {
-                //double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
                 double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
-                //double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
+                double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
-                //var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    byte ret;
+                    string ret;
                     if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
-                        ret = 1;
+                        ret = BoundaryType.Dirichlet.ToString();
                     else
-                        ret = 2;
+                        ret = BoundaryType.Neumann.ToString();
                     return ret;
                 });
 
@@ -354,7 +350,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
         /// <summary>
-        /// Test on a Cartesian grid, with a sinusodial solution.
+        /// 2D and 3D test on a Cartesian grid, with a sinusodial solution, on a domain of (0,10)x(-1,1)x(-1,1)
         /// </summary>
         /// <param name="Res">
         /// Grid resolution
@@ -386,6 +382,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
+            R.GridPartType = GridPartType.Hilbert;
             // exp_Kcycle_schwarz
             // exp_gmres_levelpmg
 
@@ -456,6 +453,8 @@ namespace BoSSS.Application.SipPoisson {
 
                      //throw new ArgumentOutOfRangeException();
                  });
+
+
             return R;
         }
 

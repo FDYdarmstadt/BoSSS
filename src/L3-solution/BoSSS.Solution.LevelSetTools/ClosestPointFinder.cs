@@ -899,19 +899,11 @@ namespace BoSSS.Solution.LevelSetTools {
                                     } else {
                                         alpha = zähler / nenner;
                                     }
-                                    //if(alpha > 0 && alpha < 1)
-                                    //    Console.WriteLine("öha! : " + alpha);
-                                    //if(jCell == 583 && iter == 49 && newLevSetValue.Abs() > 0.01)
-                                    //    Console.WriteLine("alpha = {0} = {1}/{2}", alpha, zähler, nenner);
-                                    //alpha = 1;
                                     alpha = Math.Max(-0.0, Math.Min(0.7, alpha));
 
-
-                                    //Debug.Assert(0.0 <= alpha && alpha <= 1.0);
                                     Debug.Assert(object.ReferenceEquals(x0_ip1_Global.Storage, X0_glb.Storage) == false);
                                     for(int d = 0; d < D; d++) {
                                         x0_ip1_Global[nn, d] = X0_glb[nn, d] * (1 - alpha) + x0_ip1_Global[nn, d] * alpha;
-                                        //x0_ip1_Global[nn, d] = X0_glb[nn, d] * alpha + x0_ip1_Global[nn, d] * (1 - alpha);
                                     }
                                 }
                             }
@@ -989,11 +981,6 @@ namespace BoSSS.Solution.LevelSetTools {
                         */
                         #endregion
 
-                        //if(iter == MaxIter - 1) {
-                        //    PlotOlt2NewStays("whatjump.csv", X0_global_before, X0_global_mitte);
-                        //    PlotOlt2NewStays("whatjump2.csv", X0_global_mitte, X0_global);
-                        //}
-                        
 
                         // test if any nodes have left their cell, and find new cells
                         // ----------------------------------------------------------

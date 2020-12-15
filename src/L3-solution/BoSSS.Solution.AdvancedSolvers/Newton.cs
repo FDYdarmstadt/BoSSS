@@ -1074,7 +1074,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double[] r = new double[n];
 
                     int Nloc = owner.CurrentLin.OperatorMatrix.RowPartitioning.LocalLength;
-                    int Ntot = owner.CurrentLin.OperatorMatrix.RowPartitioning.TotalLength;
+                    long Ntot = owner.CurrentLin.OperatorMatrix.RowPartitioning.TotalLength;
 
                     r = b;
 

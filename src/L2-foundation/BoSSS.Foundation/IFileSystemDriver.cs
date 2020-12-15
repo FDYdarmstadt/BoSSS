@@ -129,7 +129,8 @@ namespace BoSSS.Foundation.IO {
         /// returns a stream to save/load "SessionInfo"-objects;
         /// </summary>
         /// <param name="create">
-        /// true for a write stream, false for a read stream;
+        /// - true for a write stream (also overwriting)
+        /// - false for a read stream;
         /// </param>
         /// <param name="sessionGuid">
         /// the guid of the session for which the stream should be acquired;

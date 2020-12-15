@@ -156,9 +156,6 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_Kcycle_schwarz);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
             //Assert.AreEqual(1, 2, "Remove Me!!");
@@ -518,7 +515,7 @@ namespace BoSSS.Application.SipPoisson {
                     //Error.AccLaidBack(-1.0, Tex);
                 }
 
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                 double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
                 double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
@@ -839,9 +836,8 @@ namespace BoSSS.Application.SipPoisson {
                     T.Clear();
                     T.AccLaidBack(1.0, Tex);
 
-                    
-                    ConvergenceObserver CO = null;
-                    List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte=new List<Action<int, double[], double[], MultigridOperator>>();
+
+                    List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte = new List<Action<int, double[], double[], MultigridOperator>>();
                     ItCallbacks_Kollekte.Add(CustomItCallback);
 
                     ////Check if output analysis path is set, if invalid change to current directory ...

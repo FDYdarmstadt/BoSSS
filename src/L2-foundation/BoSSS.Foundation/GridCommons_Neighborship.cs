@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         [Serializable]
         private struct NodeCellIndexPair {
             public int NodeId;
-            public int GlobalCellIndex;
+            public long GlobalCellIndex;
         }
 
         /// <summary>
@@ -43,8 +43,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         [Serializable]
         private struct NodeCellListPair {
-            public int NodeId;
-            public int[] CellList;
+            public long NodeId;
+            public long[] CellList;
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// global index of neighbor cell.
             /// </summary>
-            public int Neighbour_GlobalIndex;
+            public long Neighbour_GlobalIndex;
 
             /// <summary>
             /// if present, a face tag
@@ -111,12 +111,12 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 var NPart = this.NodePartitioning;
                 int K = NPart.LocalLength;
-                int k0 = NPart.i0;
+                long k0 = NPart.i0;
                 int J = this.NoOfUpdateCells;
                 int J_BC = IncludeBcCells ? this.NoOfBcCells : 0;
-                int j0 = this.CellPartitioning.i0;
-                int Jglob = this.CellPartitioning.TotalLength;
-                int j0Bc = this.BcCellPartitioning.i0;
+                long j0 = this.CellPartitioning.i0;
+                long Jglob = this.CellPartitioning.TotalLength;
+                long j0Bc = this.BcCellPartitioning.i0;
 
                 /*
                 System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: false);
@@ -128,12 +128,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                 //-------------------------------------------
 
                 // Index: Node index
-                // Entry: Enumeration of global indices of cells that use this
-                // particular node
-                List<int>[] Nodes2Cells = new List<int>[K];
+                // Entry: Enumeration of global indices of cells that use this particular node
+                List<long>[] Nodes2Cells = new List<long>[K];
                 {
                     for (int k = 0; k < K; k++) {
-                        Nodes2Cells[k] = new List<int>();
+                        Nodes2Cells[k] = new List<long>();
                     }
 
                     // key: MPI processor rank
@@ -144,7 +143,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     for (int j = 0; j < (J + J_BC); j++) {
                         Element Cell_j;
                         RefElement Kref;
-                        int jCell_glob;
+                        long jCell_glob;
                         if (j < J) {
                             Cell_j = this.Cells[j];
                             Kref = this.m_RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
@@ -221,7 +220,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // 1st index: Local cell index
                 // 2nd index: Cell vertex index
                 // 3rd index: Collection of 'peer' cells
-                int[][][] NodePeers = new int[J + J_BC][][];
+                long[][][] NodePeers = new long[J + J_BC][][];
                 {
                     for (int j = 0; j < J + J_BC; j++) {
                         Element Cell_j;
@@ -230,7 +229,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         } else {
                             Cell_j = this.BcCells[j - J];
                         }
-                        NodePeers[j] = new int[Cell_j.NodeIndices.Length][];
+                        NodePeers[j] = new long[Cell_j.NodeIndices.Length][];
                     }
 
                     Dictionary<int, List<NodeCellListPair>> Y = new Dictionary<int, List<NodeCellListPair>>();
@@ -238,12 +237,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var CPart = this.CellPartitioning;
                     var BcPart = this.BcCellPartitioning;
                     for (int k = 0; k < K; k++) { // loop over locally assigned nodes
-                        int k_node = k + k0;
+                        long k_node = k + k0;
 
                         var cell_list = Nodes2Cells[k].ToArray();
                         foreach (int jCell in cell_list) { // loop over all cells that use node 'k'
                             int cell_proc;
-                            int local_offset;
+                            long local_offset;
                             if (jCell < Jglob) {
                                 // normal cell
                                 cell_proc = CPart.FindProcess(jCell);
@@ -256,7 +255,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                             if (cell_proc == MyRank) {
-                                int jCell_loc = jCell - local_offset;
+                                int jCell_loc = checked((int)(jCell - local_offset));
                                 int kC;
                                 bool bfound = false;
 
@@ -314,12 +313,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
                         foreach (var P in wp.list) {
-                            int k_node = P.NodeId;
-                            int[] cell_list = P.CellList;
+                            long k_node = P.NodeId;
+                            long[] cell_list = P.CellList;
 
                             foreach (int jCell in cell_list) {
                                 int cell_proc;
-                                int local_offset;
+                                long local_offset;
                                 if (jCell < Jglob) {
                                     // normal cell
                                     cell_proc = CPart.FindProcess(jCell);
@@ -332,7 +331,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 if (cell_proc == MyRank) {
 
-                                    int jCell_loc = jCell - local_offset;
+                                    int jCell_loc = checked((int)(jCell - local_offset));
 
                                     Element Cell_j;
                                     int oo;
@@ -385,7 +384,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         Element Cell_j;
                         RefElement Kref;
-                        int jCellGlob;
+                        long jCellGlob;
                         if (j < J) {
                             Cell_j = this.Cells[j];
                             Kref = this.m_RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
@@ -407,12 +406,12 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                             var faceVtx = Kref.FaceToVertexIndices;
-                            int[][] B = new int[faceVtx.GetLength(1)][];
+                            long[][] B = new long[faceVtx.GetLength(1)][];
                             for (int _iface = 0; _iface < Kref.NoOfFaces; _iface++) { // loop over faces of cell 'j' (local index) resp. 'jCellGlob' (global index)
                                 for (int iv = 0; iv < B.Length; iv++)
                                     B[iv] = NodePeers[j][faceVtx[_iface, iv]];
 
-                                int NeighIdx = Intersect(B, jCellGlob);
+                                long NeighIdx = Intersect(B, jCellGlob);
                                 if (NeighIdx >= 0) {
                                     Neighbour nCN = default(Neighbour);
                                     nCN.Neighbour_GlobalIndex = NeighIdx;
@@ -425,11 +424,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                         } else {
                             // boundary-condition cell: match the whole element
 
-                            int[][] B = new int[Kref.NoOfVertices][];
+                            long[][] B = new long[Kref.NoOfVertices][];
                             for (int iv = 0; iv < B.Length; iv++)
                                 B[iv] = NodePeers[j][iv];
 
-                            int NeighIdx = Intersect(B, jCellGlob);
+                            long NeighIdx = Intersect(B, jCellGlob);
                             if (NeighIdx >= 0) {
                                 Neighbour nCN = default(Neighbour);
                                 nCN.Neighbour_GlobalIndex = NeighIdx;
@@ -504,10 +503,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Either the global index of a neighbor cell, or a negative number if
         /// there is no neighbor.
         /// </returns>
-        static int Intersect(int[][] B, int j_cell_myself) {
-            int R;
-            int[] B0 = B[0];
-            int ret = int.MinValue;
+        static long Intersect(long[][] B, long j_cell_myself) {
+            long R;
+            long[] B0 = B[0];
+            long ret = long.MinValue;
             for (int l = 0; l < B0.Length; l++) {
                 R = B0[l];
                 if (R == j_cell_myself)
@@ -516,7 +515,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 bool AllPassed = true;
                 for (int j = 1; j < B.Length; j++) {
                     bool bfound = false;
-                    int[] Bj = B[j];
+                    long[] Bj = B[j];
                     for (int k = Bj.Length - 1; k >= 0; k--) {
                         if (Bj[k] == R) {
                             bfound = true;

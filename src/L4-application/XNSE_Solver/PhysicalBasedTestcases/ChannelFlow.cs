@@ -46,13 +46,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 9, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 3, int kelem = 8, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
             int D = 2;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             if (D == 3)
                 C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
@@ -64,7 +65,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Channel";
-            C.ProjectDescription = "Channel flow with kinetic energy";
+            C.ProjectDescription = "Channel flow multicore testing";
 
             //C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.ChannelFlow;
@@ -134,7 +135,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.beta_S = 0.05;
             //C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -144,12 +145,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 4;
+            double L = 2;
             double H = 1;
 
             if (D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, 4 * kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
@@ -244,7 +245,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
-            double[] center = (D == 2) ? new double[] { H / 2.0, H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
+            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.049, H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
             double radius = 0.2;
 
             if (D == 2) {
@@ -381,12 +382,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
@@ -397,11 +394,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Phi = (X,t) => ((X[0] - (center[0]+U*t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
             //C.useFiltLevSetGradientForEvolution = true;
             //C.ReInitPeriod = 1;
-            //C.ReInitOnRestart = true; 
-            
+            //C.ReInitOnRestart = true;  
+
             //C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
             //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
             //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
@@ -412,13 +409,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
             C.BaseRefinementLevel = 1;
             C.RefinementLevel = 2;
 
             C.InitSignedDistance = false;
-            C.adaptiveReInit = true;
+            C.adaptiveReInit = false;
 
             #endregion
 
@@ -437,7 +434,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 500;
+            C.NoOfTimesteps = 2; // 500;
             C.saveperiod = 10;
 
             #endregion

@@ -83,7 +83,6 @@ namespace BoSSS.Foundation.IO {
             using(Stream s = fsDriver.GetSessionInfoStream(true, session.ID)) {
                 Driver.Serialize(s, session, typeof(SessionInfo));
                 s.Close();
-                
             }
         }
 

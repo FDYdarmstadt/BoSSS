@@ -641,6 +641,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public Func<double[], double, double> Phi;
 
         /// <summary>
+        /// An explicit expression (y = f(x)) of the initial 0 Level-set. Used for <see cref="SplineLevelSet"/>
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double, double> Phi0Initial;
+
+        /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
         /// </summary>
         [NonSerialized]
@@ -653,6 +660,13 @@ namespace BoSSS.Application.XNSE_Solver {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
+
+        /// <summary>
+        /// Exact solution, temperature, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
 
         /// <summary>
         /// Control Options for ReInit
@@ -669,7 +683,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// three-step reinitialization with preconditioning fast-marching
         /// </summary>
         [DataMember]
-        public bool fullReInit = true;
+        public bool fullReInit = false;
 
         /// <summary>
         /// switch for the computation of the coupled heat solver

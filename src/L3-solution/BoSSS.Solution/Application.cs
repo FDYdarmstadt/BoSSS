@@ -445,8 +445,12 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+
+            int MPIrank = int.MinValue;
 #if DEBUG
             {
+
+                
 #else
             try {
 #endif
@@ -456,6 +460,7 @@ namespace BoSSS.Solution {
                 bool _MustFinalizeMPI = InitMPI(args);
                 ReadBatchModeConnectorConfig();
 
+                MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
@@ -514,7 +519,7 @@ namespace BoSSS.Solution {
                 Console.Error.WriteLine();
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine(e.GetType().Name + ":");
+                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
                 Console.Error.WriteLine(e.Message);
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");

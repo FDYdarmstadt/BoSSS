@@ -28,8 +28,7 @@ set x2tics format " "
 set ytics format "$10^{%L}$" 
 set ytics font "sans, 16" 
 set y2tics format " " 
-set termoption dashed
-plot "XdgStokesScaling_data_0.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgStokesScaling_data_1.csv" title "Kcycle w. add.-Schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgStokesScaling_data_2.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "XdgStokesScaling_data_0.csv" title "Kcycle w. add.-Schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgStokesScaling_data_1.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 set size 0.98,0.326666666666667
 set origin 0.01,0.336666666666667
 set lmargin 1e01
@@ -55,8 +54,7 @@ set x2tics format " "
 set ytics format "$10^{%L}$" 
 set ytics font "sans, 16" 
 set y2tics format " " 
-set termoption dashed
-plot "XdgStokesScaling_data_3.csv" title "Kcycle w. add.-Schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgStokesScaling_data_4.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgStokesScaling_data_5.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "XdgStokesScaling_data_2.csv" title "Kcycle w. add.-Schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgStokesScaling_data_3.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 set size 0.98,0.326666666666667
 set origin 0.01,0.00333333333333333
 set lmargin 1e01
@@ -84,8 +82,7 @@ set x2tics format " "
 set ytics format "$10^{%L}$" 
 set ytics font "sans, 16" 
 set y2tics format " " 
-set termoption dashed
-plot "XdgStokesScaling_data_6.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgStokesScaling_data_7.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "XdgStokesScaling_data_4.csv" title "Kcycle w. add.-Schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "XdgStokesScaling_data_5.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 
 
 exit

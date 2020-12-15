@@ -14,13 +14,14 @@ List of 1 instances of IDatabaseInfo {
 ==============
 ExecutionQueues;
 **************
-List of 3 instances of BatchProcessorClient {
+List of 4 instances of BatchProcessorClient {
   0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
-  1: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
-  2: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: project01217
+  1: MS HPC client DC2, @H:\weber\dply
+  2: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: special00006
+  3: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: special00006
 }
 ==============
-var ExQueque = ExecutionQueues[1];
+var ExQueque = ExecutionQueues[3];
 **************
 ==============
 var myBatch = (SlurmClient)ExQueque;
@@ -29,22 +30,22 @@ ExQueque.AllowedDatabases;
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-string WFlowName = "Xdg_Stokes_Schwarz_1TS";
+string WFlowName = "fuckit";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_Schwarz_1TS'.
+Project name is set to 'fuckit'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
-string dirname = "DB_XdgStokes_trans";
+string dirname = "trash";
 string linpath = @"/work/scratch/jw52xeqa/"+dirname;
 string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes_trans'.
+Opening existing database 'W:\work\scratch\jw52xeqa\trash'.
 
 ==============
 **************
@@ -87,13 +88,11 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 3 instances of IGridInfo {
-  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
-  2: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = 84c590fe-1af7-457e-91ca-9b3fb1643632; Name = test_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 8,16,32 };
+int[] Resolutions_3D = new int[] { 8 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -154,17 +153,13 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
-Found Grid: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
-Found Grid: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = 84c590fe-1af7-457e-91ca-9b3fb1643632; Name = test_J512; Cell Count = 512; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 3 instances of IGridInfo {
-  0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
-  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
-  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = 84c590fe-1af7-457e-91ca-9b3fb1643632; Name = test_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 **************
@@ -326,11 +321,11 @@ int[] NoSblocks = new int[]{4};
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    //LinearSolverCode.classic_pardiso,
+    LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
     //LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
-    LinearSolverCode.exp_Kcycle_schwarz,
+    //LinearSolverCode.exp_Kcycle_schwarz,
     //LinearSolverConfig.Code.classic_mumps, 
     //LinearSolverConfig.Code.classic_cg,
     //LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
@@ -344,10 +339,8 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 3 instances of IGridInfo {
-  0: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
-  1: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
-  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = 84c590fe-1af7-457e-91ca-9b3fb1643632; Name = test_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
@@ -388,15 +381,13 @@ for(int pLow=1;pLow<=k;pLow++){
 }
 }
 **************
-setting up: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
-setting up: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
-setting up: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-setting up: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
-setting up: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
+setting up: J512_p2_classic_pardiso
 
 ==============
+controls.Pick(0).GetAllSessions()
 **************
+List of 0 instances of ISessionInfo {
+}
 ==============
 **************
 ==============
@@ -433,68 +424,23 @@ foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
     var aJob = new Job(ctrl.SessionName, typeof(XNSE_SolverMain));
     aJob.SetControlObject(ctrl);
-    ((SlurmClient)ExQueque).SlurmAccount = "project01217";  // Jens 
     aJob.NumberOfMPIProcs         = 1;
-    aJob.ExecutionTime            = "05:00:00";
+    aJob.ExecutionTime            = "02:00:00";
     aJob.MemPerCPU                = "50000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
+ Submitting: spasst
+Deploying job spasst ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235506
-copied 32 files.
+Deployment directory: X:\Deployerie\fuckit-XNSE_Solver2020Dec03_185150
+copied 31 files.
    written file: control.obj
 deployment finished.
+16409622
 
-16154698
- Submitting: J512_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235510
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16154699
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235513
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16154700
- Submitting: J4096_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235516
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16154701
- Submitting: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow1
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235519
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16154702
- Submitting: J32768_p2_exp_Kcycle_schwarz_Sblocks4_pLow2
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_1TS-XNSE_Solver2020Oct29_235522
-copied 32 files.
-   written file: control.obj
-deployment finished.
-
-16154703
 
 ==============
 **************
@@ -877,6 +823,10 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

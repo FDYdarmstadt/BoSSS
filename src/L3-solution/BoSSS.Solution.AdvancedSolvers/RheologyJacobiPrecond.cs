@@ -66,7 +66,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public double m_We;
 
-        int[] ConstEqIdx;
+        long[] ConstEqIdx;
 
         SpatialOperator LocalOp;
 
@@ -107,17 +107,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             P = (BlockMsrMatrix)op.MassMatrix.Clone();
 
-            for (int i = ConstEqIdx[0]; i <= ConstEqIdx.Length; i++) {
-                for (int j = ConstEqIdx[0]; j <= ConstEqIdx.Length; j++) {
+            for (long i = ConstEqIdx[0]; i <= ConstEqIdx.Length; i++) {
+                for (long j = ConstEqIdx[0]; j <= ConstEqIdx.Length; j++) {
                     if (LocalMatrix[i, j] != 0) {
                         P[i, j] = LocalMatrix[i, j];
                     }
                 }
             }
 
-            LocalMatrix.SaveToTextFileSparse("LocalMatrix");
-            op.MassMatrix.SaveToTextFileSparse("MassMatrix");
-            P.SaveToTextFileSparse("PrecondMatrix");
+            //LocalMatrix.SaveToTextFileSparse("LocalMatrix");
+            //op.MassMatrix.SaveToTextFileSparse("MassMatrix");
+            //P.SaveToTextFileSparse("PrecondMatrix");
         }
 
         public void ResetStat() {

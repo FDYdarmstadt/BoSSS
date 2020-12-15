@@ -103,7 +103,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         bool m_supportExternal;
-        int[] Frame2Full_Lookup;
+        long[] Frame2Full_Lookup;
 
         void Setup_Frame2Full() {
             //if (FrameMap.Rank == 0)
@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             int L = FrameMap.LocalLength;
-            Frame2Full_Lookup = new int[L];
+            Frame2Full_Lookup = new long[L];
 
 
             Basis[] BasisS = FullMap.BasisS.ToArray();
@@ -126,8 +126,8 @@ namespace BoSSS.Foundation.XDG {
 
             var GridDat = this.FullMap.GridDat;
 
-            Frame2Full_Lookup = new int[L];
-            Frame2Full_Lookup.SetAll(int.MinValue);
+            Frame2Full_Lookup = new long[L];
+            Frame2Full_Lookup.SetAll(long.MinValue);
             int Jup = FrameMap.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             int Jtot = FrameMap.GridDat.iLogicalCells.Count;
             int G = BasisS.Length;
@@ -167,7 +167,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
 #if DEBUG
-            var _Frame2Full_Lookup = new int[L];
+            var _Frame2Full_Lookup = new long[L];
             for (int iLoc = 0; iLoc < L; iLoc++) { // loop over all indices of the frame...
                 int j, g, n;
                 FrameMap.LocalFieldCoordinateIndex(iLoc, out g, out j, out n);
@@ -180,13 +180,13 @@ namespace BoSSS.Foundation.XDG {
 
                 if (b_is_XDGbasis) {
                     if (iSpc < 0) {
-                        _Frame2Full_Lookup[iLoc] = int.MinValue;
+                        _Frame2Full_Lookup[iLoc] = long.MinValue;
                     } else {
                         int Nsep = xb.DOFperSpeciesPerCell;
-                        _Frame2Full_Lookup[iLoc] =  (int)(FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n));
+                        _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n);
                     }
                 } else {
-                    _Frame2Full_Lookup[iLoc] = (int)(FullMap.GlobalUniqueCoordinateIndex(g, j, n));
+                    _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, n);
 
                 }
                 Debug.Assert(_Frame2Full_Lookup[iLoc] == Frame2Full_Lookup[iLoc]);
@@ -323,14 +323,16 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="iFrame">
         /// a local index
         /// </param>
-        public int Frame2Full_Loc(int iFrame) {
+        public int Frame2Full_Loc(long iFrame) {
             if (iFrame < 0 || iFrame >= FrameMap.LocalLength)
                 throw new IndexOutOfRangeException();
             
-            int iGlob = Frame2Full_Lookup[iFrame];
-            if(iGlob >= 0)
-                iGlob -= FullMap.i0;
-            return iGlob;
+            long iGlob = Frame2Full_Lookup[iFrame];
+            int iLoc = int.MinValue;
+            if(iGlob >= 0) {
+                iLoc = (int)(iGlob - FullMap.i0);
+            }
+            return iLoc;
         }
 
         /// <summary>
@@ -339,7 +341,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="iFrame">
         /// a global index
         /// </param>
-        public int Frame2Full(int iFrame) {
+        public long Frame2Full(long iFrame) {
             if (FrameMap.IsInLocalRange(iFrame)) {
                 int iLoc = FrameMap.TransformIndexToLocal(iFrame);
                 return Frame2Full_Lookup[iLoc];
@@ -366,7 +368,7 @@ namespace BoSSS.Foundation.XDG {
                     int N_full = FullMap.MaxTotalNoOfCoordinatesPerCell;
 
 
-                    int jCellGlob = iFrame/N_frame;
+                    long jCellGlob = iFrame/N_frame;
                     int jCellLoc, iSpc;
                     if (m_Last_jCellGlob != jCellGlob) {
                         jCellLoc = Parallel.Global2LocalIdx[jCellGlob];
@@ -379,7 +381,7 @@ namespace BoSSS.Foundation.XDG {
                         iSpc = m_Last_iSpc;
                     }
 
-                    int n_frame = iFrame - N_frame*(jCellGlob);
+                    int n_frame = (int)(iFrame - N_frame*(jCellGlob));
                     int n_full = this.IndexTrafoWithinCell[iSpc, n_frame];
 
                     return jCellGlob*N_full + n_full;
@@ -387,7 +389,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        int m_Last_jCellGlob = int.MinValue;
+        long m_Last_jCellGlob = long.MinValue;
         int m_Last_jCellLoc = int.MinValue;
         int m_Last_iSpc = int.MinValue;
 
@@ -482,7 +484,7 @@ namespace BoSSS.Foundation.XDG {
         /// cells which are eliminated by the agglomeration are excluded from the sub-vector-indices-list
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        static public int[] GetSubvectorIndices(this UnsetteledCoordinateMapping mapping, LevelSetTracker.LevelSetRegions regions, int[] Fields,
+        static public long[] GetSubvectorIndices(this UnsetteledCoordinateMapping mapping, LevelSetTracker.LevelSetRegions regions, int[] Fields,
             ICollection<SpeciesId> _SpcIds = null, CellMask cm = null, bool presenceTest = true, MultiphaseCellAgglomerator drk = null) {
 
             #region Check Arguments
@@ -498,7 +500,7 @@ namespace BoSSS.Foundation.XDG {
 
             if (SpcIds.Length <= 0)
                 // return will be empty for no species
-                return new int[0]; 
+                return new long[0]; 
             #endregion
 
             #region collect cells which are excluded by agglomeration
@@ -541,7 +543,7 @@ namespace BoSSS.Foundation.XDG {
             #region build list
             // ==========
 
-            var R = new List<int>();
+            var R = new List<long>();
 
             // which basis is XDG?
             var _BasisS = mapping.BasisS.ToArray();

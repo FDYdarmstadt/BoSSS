@@ -25,7 +25,7 @@ using System;
 using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
-    class StaticDropletTest : ITest {
+    class StaticDropletTest : IXNSETest {
 
         public int SpatialDimension {
             get {

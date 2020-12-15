@@ -1287,12 +1287,12 @@ namespace BoSSS.Application.XRheology_Solver {
                                     {
                                         int[] VelVarIdx = new int[] { 3, 4, 5 };
 
-                                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        long[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        long[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
                                         int L = USubMatrixIdx_Row.Length;
 
                                         DiffMatrix = new MsrMatrix(L, L, 1, 1);
-                                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
+                                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(long[]), USubMatrixIdx_Col, default(long[]));
                                     }
 
                                     MultidimensionalArray ret = MultidimensionalArray.Create(1, 2);
@@ -1981,7 +1981,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
-                    int oldJ = this.GridData.CellPartitioning.TotalLength;
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                     // Update Grid
                     // ===========

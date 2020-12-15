@@ -555,7 +555,7 @@ namespace BoSSS.Foundation.XDG {
                 Basis[] RowBase = RowMapping.BasisS.ToArray();
                 Basis[] ColBase = ColMapping.BasisS.ToArray();
 
-                var _AvailableRowIdx = new List<int>();
+                var _AvailableRowIdx = new List<long>();
                 for (int j = 0; j < J; j++) {
                     int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
@@ -563,7 +563,7 @@ namespace BoSSS.Foundation.XDG {
                         for (int k = 0; k < RowBase.Length; k++) {
                             int N = RowBase[k].GetLength(j);
                             for (int n = 0; n < N; n++) {
-                                int iRow = RowFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
+                                long iRow = RowFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
                                 _AvailableRowIdx.Add(iRow);
                                 Debug.Assert(RowFrame.Frame2Full(iRow) >= 0);
                             }
@@ -573,7 +573,7 @@ namespace BoSSS.Foundation.XDG {
                 this.AvailableRowIdx = _AvailableRowIdx.ToArray();
 
 
-                var _AvailableColIdx = new List<int>();
+                var _AvailableColIdx = new List<long>();
                 for (int j = 0; j < JE; j++) {
                     int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
@@ -581,7 +581,7 @@ namespace BoSSS.Foundation.XDG {
                         for (int k = 0; k < ColBase.Length; k++) {
                             int N = ColBase[k].GetLength(j);
                             for (int n = 0; n < N; n++) {
-                                int iCol = ColFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
+                                long iCol = ColFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
                                 _AvailableColIdx.Add(iCol);
                                 Debug.Assert(ColFrame.Frame2Full(iCol) >= 0);
                             }
@@ -597,8 +597,8 @@ namespace BoSSS.Foundation.XDG {
 
 
 #if DEBUG
-            int[] AvailableRowIdx;
-            int[] AvailableColIdx;
+            long[] AvailableRowIdx;
+            long[] AvailableColIdx;
 #endif
 
             /// <summary>
@@ -634,7 +634,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// get a whole bunch of elements at once
             /// </summary>
-            public double[] GetValues(int RowIndex, int[] ColumnIndices) {
+            public double[] GetValues(long RowIndex, long[] ColumnIndices) {
                 int L = ColumnIndices.Length;
                 double[] ret = new double[L];
                 for(int j = 0; j < L; j++) {
@@ -646,7 +646,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// set a whole bunch of elements at once
             /// </summary>
-            public void SetValues(int RowIndex, int[] ColumnIndices, double[] newValues) {
+            public void SetValues(long RowIndex, long[] ColumnIndices, double[] newValues) {
                 if(ColumnIndices.Length != newValues.Length)
                     throw new ArgumentException();
 
@@ -657,8 +657,8 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
-            internal int iRowFrame2Full(int iFrame) {
-                int iFull = RowFrame.Frame2Full(iFrame);
+            internal long iRowFrame2Full(long iFrame) {
+                long iFull = RowFrame.Frame2Full(iFrame);
                 return iFull;
             }
 
@@ -666,8 +666,8 @@ namespace BoSSS.Foundation.XDG {
             //    return RowFrame.Full2Frame(iFull);
             //}
 
-            internal int iColFrame2Full(int iFrame) {
-                int iFull = ColFrame.Frame2Full(iFrame);
+            internal long iColFrame2Full(long iFrame) {
+                long iFull = ColFrame.Frame2Full(iFrame);
                 return iFull;
             }
 
@@ -682,7 +682,7 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             /// <param name="i">row index</param>
             /// <param name="j">column index</param>
-            public double this[int i, int j] {
+            public double this[long i, long j] {
                 get {
                     return m_full[iRowFrame2Full(i), iColFrame2Full(j)];
                 }
@@ -699,7 +699,7 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="j0">Column offset.</param>
             /// <param name="alpha">Scaling factor for the accumulation operation.</param>
             /// <param name="Block">Block to accumulate.</param>
-            public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+            public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block) {
                 this.AccBlock(i0, j0, alpha, Block, 1.0);
             }
 
@@ -712,7 +712,7 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="alpha">Scaling factor for the accumulation.</param>
             /// <param name="Block">Block to add.</param>
             /// <param name="beta">pre-scaling</param>
-            public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
+            public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
                 if(Block.Dimension != 2)
                     throw new ArgumentException();
                 int I = Block.NoOfRows;
@@ -728,20 +728,20 @@ namespace BoSSS.Foundation.XDG {
 
                 int NoIBlk = 1;
                 int[] i0S = new int[I];
-                int[] i0T = new int[I];
+                long[] i0T = new long[I];
                 int[] iLT = new int[I];
                 i0T[0] = iRowFrame2Full(i0);
                 iLT[0] = 1;
 
                 int NoJBlk = 1;
                 int[] j0S = new int[J];
-                int[] j0T = new int[J];
+                long[] j0T = new long[J];
                 int[] jLT = new int[J];
                 j0T[0] = iColFrame2Full(j0);
                 jLT[0] = 1;
 
                 for(int i = 1; i < I; i++) {
-                    int iT = iRowFrame2Full(i0 + i);
+                    long iT = iRowFrame2Full(i0 + i);
                     if(iT == i0T[NoIBlk - 1] + iLT[NoIBlk - 1]) {
                         iLT[NoIBlk - 1]++;
                     } else {
@@ -753,7 +753,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 for(int j = 1; j < J; j++) {
-                    int jT = iColFrame2Full(j0 + j);
+                    long jT = iColFrame2Full(j0 + j);
                     if(jT == j0T[NoJBlk - 1] + jLT[NoJBlk - 1]) {
                         jLT[NoJBlk - 1]++;
                     } else {
@@ -767,9 +767,10 @@ namespace BoSSS.Foundation.XDG {
 
                 for(int iBlk = 0; iBlk < NoIBlk; iBlk++) {
                     for(int jBlk = 0; jBlk < NoJBlk; jBlk++) {
-                        var SubBlock = Block.ExtractSubArrayShallow(new int[] { i0S[iBlk], j0S[jBlk] }, new int[] { i0S[iBlk] + iLT[iBlk] - 1, j0S[jBlk] + jLT[jBlk] - 1 });
-                        //double SubLinf = SubBlock.AbsSum();
-                        //if(SubLinf > 0)
+                        var SubBlock = Block.ExtractSubArrayShallow(
+                            new int[] { i0S[iBlk], j0S[jBlk] }, 
+                            new int[] { i0S[iBlk] + iLT[iBlk] - 1, j0S[jBlk] + jLT[jBlk] - 1 });
+
                         m_full.AccBlock(i0T[iBlk], j0T[jBlk], alpha, SubBlock, beta);
                     }
                 }
@@ -788,14 +789,14 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// read the value of the diagonal element.
             /// </summary>
-            public double GetDiagonalElement(int row) {
+            public double GetDiagonalElement(long row) {
                 return this[row, row];
             }
 
             /// <summary>
             /// setting of diagonal element.
             /// </summary>
-            public void SetDiagonalElement(int row, double val) {
+            public void SetDiagonalElement(long row, double val) {
                 this[row, row] = val;
             }
 
@@ -820,7 +821,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// total number of rows over all MPI processes
             /// </summary>
-            public int NoOfRows {
+            public long NoOfRows {
                 get {
                     return (int)(RowPartitioning.TotalLength);
                 }
@@ -829,7 +830,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// total number of rows over all MPI processes
             /// </summary>
-            public int NoOfCols {
+            public long NoOfCols {
                 get {
                     return (int)(ColMapping.TotalLength);
                 }
@@ -844,7 +845,7 @@ namespace BoSSS.Foundation.XDG {
                 throw new NotImplementedException();
             }
 
-            public int GetOccupiedColumnIndices(int RowIndex, ref int[] R) {
+            public int GetOccupiedColumnIndices(long RowIndex, ref long[] R) {
                 throw new NotImplementedException();
                 ////this.Ma
 
@@ -859,7 +860,7 @@ namespace BoSSS.Foundation.XDG {
                 //return ret.ToArray();
             }
 
-            public int GetRow(int RowIndex, ref int[] ColumnIndices, ref double[] Values) {
+            public int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values) {
                 //public MsrMatrix.MatrixEntry[] GetRow(int RowIndex) {
                 int LR = GetOccupiedColumnIndices(RowIndex, ref ColumnIndices);
                 //var row = new MsrMatrix.MatrixEntry[Occ.Length];
