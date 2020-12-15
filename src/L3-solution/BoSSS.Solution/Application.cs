@@ -623,21 +623,10 @@ namespace BoSSS.Solution {
                 // +++++++++++++++++++++
 
                 string JSON = File.ReadAllText(ControlFilePath);
-                object controlObj = AppControl.Deserialize(JSON);//, typeof(T));
-                                                                 //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                                                                 //    var bf = new BinaryFormatter();
-                                                                 //    controlObj = bf.Deserialize(fs);
-                                                                 //}
+                object controlObj = AppControl.Deserialize(JSON);
 
                 ctrlV2 = controlObj as T;
-                //Debugger.Launch();
-                //if (controlObj is T) {
-                //    ctrlV2 = (T)controlObj;
-
-                //} else if (controlObj is IEnumerable<T>) {
-                //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-
-                //} 
+               
 
                 if (ctrlV2 == null) {
                     throw new ApplicationException(string.Format(
