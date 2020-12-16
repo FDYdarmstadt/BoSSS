@@ -618,12 +618,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         private static void GenericTest(IXNSETest Tst, XNSE_Control C) {
-
-            if(Tst.SpatialDimension == 2 && C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                Console.WriteLine($"Reminder: skipping 2D test of {C.CutCellQuadratureType} for now...");
-                return;
-            }
-
             if (Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
                 return;
@@ -686,12 +680,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         private static void ScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode) {
-
-            if (CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                Console.WriteLine($"Reminder: skipping test of {CutCellQuadratureType} for now...");
-                return;
-            }
-
 
 #if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
