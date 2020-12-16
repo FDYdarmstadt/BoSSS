@@ -183,10 +183,10 @@ namespace BoSSS.Foundation.XDG {
                         _Frame2Full_Lookup[iLoc] = long.MinValue;
                     } else {
                         int Nsep = xb.DOFperSpeciesPerCell;
-                        _Frame2Full_Lookup[iLoc] =  (FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n));
+                        _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n);
                     }
                 } else {
-                    _Frame2Full_Lookup[iLoc] = (FullMap.GlobalUniqueCoordinateIndex(g, j, n));
+                    _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, n);
 
                 }
                 Debug.Assert(_Frame2Full_Lookup[iLoc] == Frame2Full_Lookup[iLoc]);

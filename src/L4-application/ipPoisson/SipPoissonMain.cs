@@ -836,9 +836,8 @@ namespace BoSSS.Application.SipPoisson {
                     T.Clear();
                     T.AccLaidBack(1.0, Tex);
 
-                    
-                    ConvergenceObserver CO = null;
-                    List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte=new List<Action<int, double[], double[], MultigridOperator>>();
+
+                    List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte = new List<Action<int, double[], double[], MultigridOperator>>();
                     ItCallbacks_Kollekte.Add(CustomItCallback);
 
                     ////Check if output analysis path is set, if invalid change to current directory ...

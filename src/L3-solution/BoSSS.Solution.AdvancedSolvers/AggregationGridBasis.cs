@@ -385,6 +385,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // check if aggregation is performed on a curved or affine linear grid
             if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
             {
+                // ++++++++++++++++++
+                // curved cell branch
+                // ++++++++++++++++++
+                
+                
                 if (agSeq.Length >= 2)
                 {
                     // directly compute the Injector for the coarsest level
@@ -416,7 +421,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
             else
-            {       
+            {   
+                // ++++++++++++++++++
+                // linear cell branch
+                // ++++++++++++++++++
+                
+                
+
+
                 // level 1
                 if (agSeq.Length >= 2)
                 {
@@ -494,6 +506,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return ret;
             }
         }
+
 
         /// <summary>
         /// computes the injector for multigrid level 2 and higher 
@@ -1039,6 +1052,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int thisMgLevel = ag.MgLevel;
             int Np = this.DGBasis.Length;
 
+           
             var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
             for(int i = 0; i < compCell.Length; i++) {
                 for(int n = 0; n < Np; n++) {
@@ -1140,7 +1154,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         void SetupCompositeBasis() {
             using(new FuncTrace()) {
 
-
+                Console.WriteLine("Warning: you are using a Method which is known to scale bad (worse than linear) with the number-of-cells.");
 
                 Basis b = this.DGBasis;
                 AggregationGridData ag = this.AggGrid;
