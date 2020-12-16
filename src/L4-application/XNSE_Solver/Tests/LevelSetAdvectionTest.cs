@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double dt {
             get {
-                return 0.001;
+                return 0.01;
             }
         }
 
@@ -184,7 +184,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             return config;
         }
 
-
+        bool quadratic = false;
 
         /// <summary>
         /// Level-Set: at t=0 circle with radius R, at the center (0,0); moving with Ux in x-direction.
@@ -195,15 +195,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 double x = X[0], y = X[1];
                 x -= time * Ux;
 
+                double dist;
                 switch (SpatialDimension) {
-                    case 2:
-                    return (Radius * Radius - (x * x + y * y));
-                    case 3:
-                    double z = X[2];
-                    return (Radius * Radius - (x * x + y * y + z * z));
+                    case 2: { dist = Math.Sqrt(x * x + y * y); break; }
+                    case 3: { double z = X[2]; dist = Math.Sqrt(x * x + y * y + z * z); break; }
                     default:
                     throw new ArgumentOutOfRangeException();
                 }
+
+                return quadratic ? (Radius * Radius - dist * dist) : Radius - dist;
 
             };
         }
@@ -324,7 +324,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double[] AcceptableL2Error {
             get {
-                  return new double[] { 1.0e-6, 1.0e-6, 1.0e-6 };
+                  return new double[] { 1.0e-7, 1.0e-7, 1.0e-1 };
             }
         }
 

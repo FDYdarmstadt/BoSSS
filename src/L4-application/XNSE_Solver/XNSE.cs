@@ -228,13 +228,16 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-            Tecplot.PlotFields(this.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
+
+            DGField[] plotFields = this.m_RegisteredFields.ToArray();
             if (Timestepping?.Parameters != null) {
-                Tecplot.PlotFields(Timestepping.Parameters, "XNSE_Solver_Time_Params" + timestepNo, physTime, superSampling);
+                plotFields = ArrayTools.Cat(plotFields, Timestepping.Parameters);
             }
             if (LsUpdater?.Parameters != null) {
-                Tecplot.PlotFields(LsUpdater.Parameters.Values, "XNSE_Solver_LevelSet_Params" + timestepNo, physTime, superSampling);
+                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.Interface].DGLevelSet);
             }
+
+            Tecplot.PlotFields(plotFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

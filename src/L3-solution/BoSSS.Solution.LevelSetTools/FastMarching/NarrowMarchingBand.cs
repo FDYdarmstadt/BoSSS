@@ -228,7 +228,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             double dt, LevelSetTracker Tracker,
             SinglePhaseField OldLevSet, SinglePhaseField NewLevelSet, VectorField<SinglePhaseField> LevelSetGrad,
             ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel, //DGField[] SourceParams,
-            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false, JumpPenalization.jumpPenalizationTerms penalization = JumpPenalization.jumpPenalizationTerms.None) //
+            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false, 
+            JumpPenalization.jumpPenalizationTerms penalization = JumpPenalization.jumpPenalizationTerms.Jump) //
         {
             GridData gdat = Tracker.GridDat;
             int D = gdat.SpatialDimension;

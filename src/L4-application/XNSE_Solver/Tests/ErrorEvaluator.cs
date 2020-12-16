@@ -251,8 +251,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// </summary>
         public override double[] ComputeL2Error(double time, XNSE_Control control) {
 
-            //CellMask cm = solver.LsTrk.Regions.GetCutCellMask();
-            CellMask cm = solver.LsTrk.Regions.GetNearFieldMask(1);
+            CellMask cm = solver.LsTrk.Regions.GetCutCellMask();
+            //CellMask cm = solver.LsTrk.Regions.GetNearFieldMask(1);
 
             double[] Ret = new double[3];
 

@@ -46,7 +46,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 1) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -265,15 +265,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
 
-            double U = 0.125;
+            double U = 0.0;
 
             //if (D == 3) {
             //    C.InitialValues_Evaluators.Add("VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
             //    C.InitialValues_Evaluators.Add("VelocityZ#B", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
             //}
 
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
+            if (wallBC == 0) {
+                U = 0.125;
+                C.InitialValues_Evaluators.Add("VelocityX#A", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
+                C.InitialValues_Evaluators.Add("VelocityX#B", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
+            }
 
             //C.InitialValues_Evaluators.Add("Pressure#A", X => 2.0 - X[0]);
 
@@ -287,9 +290,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("GravityX#A", X => 5.0);
             //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
 
-
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
+            if (wallBC == 1) {
+                U = 0.1;
+                C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
+                C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
+            }
 
             ////C.InitialValues_Evaluators.Add("Pressure#A", X => 2.0 - X[0]);
 
@@ -327,24 +332,24 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            //switch (wallBC) {
-            //    case 0:
-            //        goto default;
-            //    case 1:
-            //        C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
-            //        C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
-            //        C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
-            //        C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
-            //        break;
-            //    case 2:
-            //        C.AddBoundaryValue("navierslip_linear_lower");
-            //        C.AddBoundaryValue("navierslip_linear_upper");
-            //        break;
-            //    default:
-            //        C.AddBoundaryValue("wall_lower");
-            //        C.AddBoundaryValue("wall_upper");
-            //        break;
-            //}
+            switch (wallBC) {
+                case 0:
+                goto default;
+                case 1:
+                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
+                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
+                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
+                break;
+                case 2:
+                C.AddBoundaryValue("navierslip_linear_lower");
+                C.AddBoundaryValue("navierslip_linear_upper");
+                break;
+                default:
+                C.AddBoundaryValue("wall_lower");
+                C.AddBoundaryValue("wall_upper");
+                break;
+            }
 
 
 
@@ -361,10 +366,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("velocity_inlet_back", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U));
             }
 
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
+            if (wallBC == 0) {
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
+            }
+
+            if (wallBC == 1) {
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
+            }
 
             //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
             ////C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#B", X => U.Pow2() / 2); 
@@ -431,7 +441,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 

@@ -3,6 +3,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 
@@ -40,22 +41,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         ICollection<ILevelSetParameter> lsParameters;
 
-        public ICollection<ILevelSetParameter> LevelSetParameters
-        { 
-            get{ return lsParameters; }
+        public ICollection<ILevelSetParameter> LevelSetParameters {
+            get { return lsParameters; }
         }
 
-        public SingleLevelSetUpdater(DualLevelSet phaseInterface, ContinuityProjection enforcer)
-        {
+        public SingleLevelSetUpdater(DualLevelSet phaseInterface, ContinuityProjection enforcer) {
             this.enforcer = enforcer;
             this.phaseInterface = phaseInterface;
             lsParameters = new List<ILevelSetParameter>(10);
         }
 
-        public void SetLevelSetEvolver(ILevelSetEvolver evolver)
-        {
-            if(lsMover != null)
-            {
+        public void SetLevelSetEvolver(ILevelSetEvolver evolver) {
+            if (lsMover != null) {
                 throw new Exception("Only one evolver allowed for each levelSet.");
             }
             lsMover = evolver;
@@ -80,8 +77,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             lsParameters.Add(parameter);
         }
 
-        static void UpdateCurrentInterfaces(DualLevelSet phaseInterface)
-        {
+        static void UpdateCurrentInterfaces(DualLevelSet phaseInterface) {
+            // what for? 
             DualLevelSet combo = phaseInterface;
             combo.CGLevelSet = (LevelSet)phaseInterface.Tracker.LevelSets[phaseInterface.LevelSetIndex];
             combo.DGLevelSet.Clear();
@@ -147,12 +144,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 dgLs.Scale(underRelax);
                 dgLs.Acc((1.0 - underRelax), dglsBkUp);
             }
+
             //Make Continuous
             LevelSetTracker Tracker = phaseInterface.Tracker;
             CellMask Near1 = Tracker.Regions.GetNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
             CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
 
-            enforcer.SetFarField(phaseInterface.DGLevelSet, Near1, PosFF);
+            //enforcer.SetFarField(phaseInterface.DGLevelSet, Near1, PosFF);
             enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
         }
 
@@ -254,9 +252,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         {
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
+            //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "beforeUpdateParameters", time, 2);
             UpdateParameters(DomainVarFields, InnerParameterFields, time);
-            foreach (SingleLevelSetUpdater updater in lsUpdaters.Values) 
-            {
+            //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "afterUpdateParameters", time, 2);
+            foreach (SingleLevelSetUpdater updater in lsUpdaters.Values) {
                 residual += updater.UpdateLevelSet(
                     DomainVarFields,
                     InnerParameterFields,
@@ -275,12 +274,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields, 
             double time = 0.0)
         {
-            foreach (SingleLevelSetUpdater updater in lsUpdaters.Values)
-            {
+            foreach (SingleLevelSetUpdater updater in lsUpdaters.Values){
                 InitializeParameters(updater.LevelSetParameters, DomainVarFields, ParameterVarFields);
             }
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             UpdateParameters(DomainVarFields, InnerParameterFields, 0.0);
+            //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "afterUpdateParametersInitial", 0.0, 2);
         }
 
         void InitializeParameters(

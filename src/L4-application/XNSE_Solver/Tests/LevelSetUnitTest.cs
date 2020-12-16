@@ -102,7 +102,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         static AS_XNSE_Control LSTstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, 
             LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling,
-            int GridResolution = 1) {
+            int GridResolution = 2) {
 
             AS_XNSE_Control C = new AS_XNSE_Control();
             int D = tst.SpatialDimension;
