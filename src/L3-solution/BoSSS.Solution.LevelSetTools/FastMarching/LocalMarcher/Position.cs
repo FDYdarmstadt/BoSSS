@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,33 +25,43 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
     struct Position {
 
-        public double x;
-        public double y;
+        //public double x;
+        //public double y;
+        public double[] pos;
 
-        public Position(double X, double Y) {
-            x = X;
-            y = Y;
+        //public Position(double X, double Y) {
+        //    x = X;
+        //    y = Y;
+        //    pos = new double[] { X, Y };
+        //}
+
+        public Position(double[] Pos) {
+            pos = Pos;
         }
+
         public Position(Node node) {
-            x = node.X_local;
-            y = node.Y_local;
+            //x = node.X_local;
+            //y = node.Y_local;
+            pos = node.Pos_local;
         }
     }
 
     class PositionComparer : IEqualityComparer<Position> {
         public bool Equals(Position A, Position B) {
 
-            if ((Math.Abs(A.x - B.x)) < 1e-8) {
-                if (Math.Abs(A.y - B.y) < 1e-8) {
-                    return true;
-                }
+            Debug.Assert(A.pos.Length == B.pos.Length);
+
+            bool equal = true;
+            for (int d = 0; d < A.pos.Length; d++) {
+                if (Math.Abs(A.pos[d] - B.pos[d]) >= 1e-8)
+                    return false;
             }
 
-            return false;
+            return equal;
         }
 
         public int GetHashCode(Position A) {
-            int temp = (int)(A.x * 1e10);
+            int temp = (int)(A.pos[0] * 1e10);
             return temp.GetHashCode();
         }
     }

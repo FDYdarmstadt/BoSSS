@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.Advection;
@@ -57,8 +58,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            SinglePhaseField[] meanVelocity = new SinglePhaseField[]
-            {
+
+            SinglePhaseField[] meanVelocity = new SinglePhaseField[] {
                 (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityX)],
                 (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName,BoSSS.Solution.NSECommon.VariableNames.VelocityY)],
             };
@@ -66,8 +67,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             VectorField<SinglePhaseField> filtLevSetGradient = new VectorField<SinglePhaseField>(
                 phaseInterface.DGLevelSet.GridDat.SpatialDimension.ForLoop(d => new SinglePhaseField(phaseInterface.DGLevelSet.Basis)));
 
-            if (extensionVelocity == null)
-            {
+            if (extensionVelocity == null) {
                 int D = phaseInterface.Tracker.GridDat.SpatialDimension;
                 extensionVelocity = new SinglePhaseField[D];
                 Basis basis;
@@ -78,19 +78,25 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     basis = new Basis(phaseInterface.Tracker.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
                 }
 
-                for (int d = 0; d < D; ++d)
-                {
+                for (int d = 0; d < D; ++d) {
                     extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity" + d);
                 }
             }
             //Move LevelSet
             SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
 
+            //int TimestepNo = (int)(time / dt);
+            //TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
+            //DGField[] plotFields = ArrayTools.Cat<DGField>(meanVelocity);
+            //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, time, 2);
 
             NarrowMarchingBand.Evolve_Mk2(
                 dt, phaseInterface.Tracker, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
                 meanVelocity, extensionVelocity,
-                m_HMForder); 
+                m_HMForder);
+
+            //tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
+            //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, 0.0, 2);
         }        
     }
 }
