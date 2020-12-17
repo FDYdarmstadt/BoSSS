@@ -11,7 +11,7 @@ using System.Linq;
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     public abstract class SolverWithLevelSetUpdater<T> : XdgApplicationWithSolver<T> where T : AppControlSolver, new() {
         
-        LevelSetUpdater lsUpdater;
+        public LevelSetUpdater LsUpdater;
 
         protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
         {
@@ -38,7 +38,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected abstract LevelSetUpdater InstantiateLevelSetUpdater();
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-            return GetOperatorInstance(D, lsUpdater);
+            return GetOperatorInstance(D, LsUpdater);
         }
 
         protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
@@ -51,8 +51,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
-            lsUpdater = InstantiateLevelSetUpdater();
-            return lsUpdater.Tracker;
+            LsUpdater = InstantiateLevelSetUpdater();
+            return LsUpdater.Tracker;
         }
 
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental) {
@@ -67,7 +67,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
-            double residual = lsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
+            double residual = LsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
             Console.WriteLine("Residual of level-set update: " + residual);
             return 0.0;
         }
@@ -86,7 +86,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
-            lsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
+            LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
         }                    
     }
 }

@@ -63,10 +63,26 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
         /// <param name="ExtPropertyBasis"></param>
         public ExtVelSolver_Geometric(Basis ExtPropertyBasis) {
             this.SolverBasis = ExtPropertyBasis;
-            this.GridDat = (GridData)ExtPropertyBasis.GridDat; 
+            this.GridDat = (GridData)ExtPropertyBasis.GridDat;
+            int D = this.GridDat.SpatialDimension;
 
             //Build Edges.
-            double[] NodeGrid = GenericBlas.Linspace(-1, 1, Math.Max(20, (this.SolverBasis.Degree + 1) * 2));
+            double[] NodeGrid1D = GenericBlas.Linspace(-1, 1, Math.Max(20, (this.SolverBasis.Degree + 1) * 2));
+            int NoOfNodes = (int)Math.Pow(NodeGrid1D.Length, D - 1);
+            MultidimensionalArray NodeGrid = MultidimensionalArray.Create(NoOfNodes, D - 1);
+            int ndIdx = 0;
+            for (int nd0 = 0; nd0 < NodeGrid1D.Length; nd0++) {
+                if (D == 3) {
+                    for (int nd1 = 0; nd1 < NodeGrid1D.Length; nd1++) {
+                        NodeGrid[ndIdx, 0] = NodeGrid1D[nd0];
+                        NodeGrid[ndIdx, 1] = NodeGrid1D[nd1];
+                        ndIdx++;
+                    }
+                } else {
+                    NodeGrid[ndIdx, 0] = NodeGrid1D[nd0];
+                    ndIdx++;
+                }
+            }
             int maxNumberOfEdges = 6;
             edgesOfCell = new Edge[maxNumberOfEdges]; 
             for (int i = 0; i < maxNumberOfEdges; i++) {
@@ -140,18 +156,18 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             GridData Solver_Grid;
             Tuple<int, int, int> associatedNeighbour; 
             
-            public Edge(double[] Grid1D, GridData Solver_Grid) {
-                int noOfEdgeNodes = Grid1D.Length;
+            public Edge(MultidimensionalArray NodeGrid, GridData Solver_Grid) {
+                noOfEdgeNodes = NodeGrid.Lengths[0];
                 this.Solver_Grid = Solver_Grid;
 
-                initializeNodeSet(Grid1D);
+                initializeNodeSet(NodeGrid);
                 initializeBuffer(); 
             }
 
-            private void initializeNodeSet(double[] Grid1D) {
-                noOfEdgeNodes = Grid1D.Length;
-                this.EdgeNodes = new NodeSet(Solver_Grid.Edges.EdgeRefElements[0], noOfEdgeNodes, 1);
-                this.EdgeNodes.ExtractSubArrayShallow(-1, 0).SetVector(Grid1D);
+            private void initializeNodeSet(MultidimensionalArray NodeGrid) {
+                int D = Solver_Grid.Edges.EdgeRefElements[0].SpatialDimension;
+                this.EdgeNodes = new NodeSet(Solver_Grid.Edges.EdgeRefElements[0], NodeGrid.Lengths[0], D);
+                this.EdgeNodes.Set(NodeGrid);
                 this.EdgeNodes.LockForever();
             }
 

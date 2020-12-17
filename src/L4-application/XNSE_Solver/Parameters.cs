@@ -24,7 +24,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
                 levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             } else {
-                levelSetDegree = 1;
+                throw new Exception("Level set options not found in FieldOptions");
             }
 
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts)) {
                 curvatureDegree = opts.Degree;
             } else {
-                curvatureDegree = 1;
+                throw new Exception("Curvature options not found in FieldOptions");
             }
             
             string levelSet = levelSetName;
@@ -84,15 +84,13 @@ namespace BoSSS.Application.XNSE_Solver {
             //Mean Velocity
             XDGField[] EvoVelocity; // = new XDGField[]
             try {
-                EvoVelocity = new XDGField[]
-                {
+                EvoVelocity = new XDGField[] {
                     (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
                     (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
                 };
             } catch {
                 Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                EvoVelocity = new XDGField[]
-                {
+                EvoVelocity = new XDGField[] {
                     (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X],
                     (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Y],
                 };
@@ -113,59 +111,58 @@ namespace BoSSS.Application.XNSE_Solver {
             CellMask posNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Neg);
             CellMask negNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Pos);
 
-            for (int d = 0; d < D; d++)
-            {
-                Basis b = EvoVelocity[d].Basis.NonX_Basis;
+            for (int d = 0; d < D; d++) {
+                //Basis b = EvoVelocity[d].Basis.NonX_Basis;
                 meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
+                meanVelocity[d].Clear();
 
 
-                foreach (string spc in lsTrkr.SpeciesNames)
-                {
+                foreach (string spc in lsTrkr.SpeciesNames) {
                     double rhoSpc;
                     double muSpc;
-                    switch (spc)
-                    {
+                    switch (spc) {
                         case "A": rhoSpc = rho_A; muSpc = mu_A; break;
                         case "B": rhoSpc = rho_B; muSpc = mu_B; break;
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
 
                     double scale = 1.0;
-                    switch (averagingMode)
-                    {
-                        case XNSE_Control.InterfaceVelocityAveraging.mean:
-                            {
-                                scale = 0.5;
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.density:
-                            {
-                                scale = rhoSpc / (rho_A + rho_B);
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.viscosity:
-                            {
-                                scale = muSpc / (mu_A + mu_B);
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.phaseA:
-                            {
-                                scale = (spc == "A") ? 1.0 : 0.0;
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.phaseB:
-                            {
-                                scale = (spc == "B") ? 1.0 : 0.0;
-                                break;
-                            }
+                    switch (averagingMode) {
+                        case XNSE_Control.InterfaceVelocityAveraging.mean: {
+                            scale = 0.5;
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.density: {
+                            scale = rhoSpc / (rho_A + rho_B);
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.viscosity: {
+                            scale = muSpc / (mu_A + mu_B);
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseA: {
+                            scale = (spc == "A") ? 1.0 : 0.0;
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseB: {
+                            scale = (spc == "B") ? 1.0 : 0.0;
+                            break;
+                        }
                     }
 
                     meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
-                    switch (spc)
-                    {
+                    switch (spc) {
                         //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
-                        case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear); break;
-                        case "B": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear); break;
+                        case "A": {
+                            if (averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseB)
+                                meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear);
+                            break;
+                        }
+                        case "B": {
+                            if (averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseA)
+                                meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear);
+                            break;
+                        }
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
                 }

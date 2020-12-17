@@ -182,12 +182,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </param>
         public static AggregationGridData Coarsen(IGridData ag, int AggCellCount) {
             using (new FuncTrace()) {
-
                 int[][] Coarsened_ComositeCells = AggregationKernel(ag, AggCellCount);
                 return new AggregationGridData(ag, Coarsened_ComositeCells);
             }
         }
-
+        /*
         public static AggregationGridData Coarsen_hardcoded(IGridData ag, int AggCellCount)
         {
             using (new FuncTrace())
@@ -278,6 +277,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             Debug.Assert(UsedCellMarker.ToBoolArray().Where(b => !b).Count() == 0, "some cell was not processed.");
             return Coarsened_ComositeCells.ToArray();
         }
+        */
+
 
         /// <summary>
         /// coarsens level <paramref name="ag"/> (aggregation of grid objects)
@@ -306,6 +307,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 throw new ArgumentOutOfRangeException();
 
 
+
+
+
             // sort cells of parent grid by size:
             // we want to aggregate the smallest cells at first.
             int[] Perm = Jloc.ForLoop(j => j).OrderBy(j => ag.iLogicalCells.GetCellVolume(j)).ToArray();
@@ -313,6 +317,16 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             BitArray UsedCellMarker = new BitArray(Jloc);
 
             List<int[]> Coarsened_ComositeCells = new List<int[]>();
+
+            // caching Bounding-Boxes and cell sizes (quite expensive to compute)
+            BoundingBox[] Bbxes = new BoundingBox[Jloc];
+            double[] CellVol = new double[Jloc];
+            for(int j = 0; j < Jloc; j++) {
+                Bbxes[j] = new BoundingBox(D);
+                ag.iLogicalCells.GetCellBoundingBox(j, Bbxes[j]);
+                CellVol[j] = ag.iLogicalCells.GetCellVolume(j);
+            }
+
 
             //
             List<int> aggCell = new List<int>();
@@ -360,16 +374,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                                 aggBB[iNeig] = new BoundingBox(D); //ag.CompositeCellBB[jCell].CloneAs();
                                 foreach (int jTaken in aggCell) {
-                                    BoundingBox TempBB = new BoundingBox(D);
-                                    ag.iLogicalCells.GetCellBoundingBox(jTaken, TempBB);
-                                    aggBB[iNeig].AddBB(TempBB);
+                                    aggBB[iNeig].AddBB(Bbxes[jTaken]);
                                 }
 
-                                BoundingBox NeighBB = new BoundingBox(D);
-                                ag.iLogicalCells.GetCellBoundingBox(jCellNeigh, NeighBB);
-
-                                aggBB[iNeig].AddBB(NeighBB);
-                                sizes[iNeig] = ag.iLogicalCells.GetCellVolume(jCell) + ag.iLogicalCells.GetCellVolume(jCellNeigh);
+                                aggBB[iNeig].AddBB(Bbxes[jCellNeigh]);
+                                //sizes[iNeig] = ag.iLogicalCells.GetCellVolume(jCell) + ag.iLogicalCells.GetCellVolume(jCellNeigh);
+                                sizes[iNeig] = CellVol[jCell] + CellVol[jCellNeigh];
                                 aggBBaspect[iNeig] = aggBB[iNeig].AspectRatio;
                             }
 

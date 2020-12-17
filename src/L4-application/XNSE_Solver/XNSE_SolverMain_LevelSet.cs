@@ -166,13 +166,22 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int D = this.GridData.SpatialDimension;
 
+            //int pPhiDG;
+            //if (this.Control.FieldOptions.TryGetValue(VariableNames.LevelSetDG, out FieldOpts phiDG)) {
+            //    pPhiDG = phiDG.Degree;
+            //} else if (this.Control.FieldOptions.TryGetValue("Phi", out FieldOpts phi)) {
+            //    pPhiDG = phi.Degree;
+            //} else {
+            //    throw new Exception("Degree for LevelSetDG not found");
+            //}
+
             this.DGLevSet = new ScalarFieldHistory<SinglePhaseField>(
-                      new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions["Phi"].Degree), "PhiDG"));
+                new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.LevelSetCG].Degree), VariableNames.LevelSetDG));
 
             if (this.Control.FieldOptions["PhiDG"].Degree >= 0 && this.Control.FieldOptions["PhiDG"].Degree != this.DGLevSet.Current.Basis.Degree) {
                 throw new ApplicationException("Specification of polynomial degree for 'PhiDG' is not supported, since it is induced by polynomial degree of 'Phi'.");
             }
-            
+
             // ===================================================================
             // Initialize ContinuityProjection (if needed, if not , Option: None)
             // ===================================================================
@@ -434,7 +443,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
             }
-
         }
 
         /// <summary>

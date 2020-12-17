@@ -84,6 +84,7 @@
     <Compile Include="FastMarching\LocalMarcher\ILocalSolver.cs" />
     <Compile Include="FastMarching\LocalMarcher\Eikonal.cs" />
     <Compile Include="FastMarching\LocalMarcher\LocalMarcher_2DStructured.cs" />
+    <Compile Include="FastMarching\LocalMarcher\LocalMarcher_Structured.cs" />
     <Compile Include="FastMarching\LocalMarcher\Node.cs" />
     <Compile Include="FastMarching\LocalMarcher\Position.cs" />
     <Compile Include="FastMarching\PlotTools.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="Advection\ScalarVelocityAdvection.cs" />
     <Compile Include="FastMarching\FastMarchReinit.cs" />
     <Compile Include="Advection\NonconservativeAdvection.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\FourrierLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\LevelSetEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\LevelSetUpdater.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBase.cs" />
