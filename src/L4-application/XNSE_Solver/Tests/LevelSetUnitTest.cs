@@ -47,8 +47,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void LevelSetAdvectiontTest(
             [Values(2)] int spatialDimension,
             [Values(2,3,4)] int LSdegree,
-            [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.Fourier)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once, LevelSetHandling.Coupled_Iterative)] LevelSetHandling levelSetHandling)
+            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling levelSetHandling)
             //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
             {
                 // Todo: singleInit/multiInit, 

@@ -1056,10 +1056,8 @@ namespace BoSSS.Application.XNSE_Solver {
                                }
                                        //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
                                        double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
-                               double mEvap = (this.XOpConfig.prescribedMassflux != null) ? this.XOpConfig.prescribedMassflux(globX, hack_Phystime) : qEvap / this.Control.ThermalParameters.hVap; // mass flux
+                                       double mEvap = (this.XOpConfig.prescribedMassflux != null) ? this.XOpConfig.prescribedMassflux(globX, hack_Phystime) : qEvap / this.Control.ThermalParameters.hVap; // mass flux
                                                                                                                                                                                                    //double mEvap = qEvap / this.Control.ThermalParameters.hVap;
-                                                                                                                                                                                                   //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
-                                                                                                                                                                                                   //Console.WriteLine("prescribedMassFlux = {0}", this.XOpConfig.prescribedMassflux(globX, hack_Phystime));
 
                                        double sNeg = VelA[j, k, d] + mEvap * (1 / rhoA) * Normals[j, k, d];
                                        //Console.WriteLine("sNeg = {0}", sNeg);
